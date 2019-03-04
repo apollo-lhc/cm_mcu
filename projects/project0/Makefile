@@ -30,7 +30,8 @@ PART=TM4C1294NCPDT
 #
 # The base directory for TivaWare.
 #
-ROOT=../../../..
+#ROOT=../../../..
+ROOT=../..
 
 #
 # Include the common make definitions.
@@ -47,7 +48,7 @@ VPATH+=../../../../utils
 # Where to find header files that do not live in the source directory.
 #
 IPATH=..
-IPATH+=../../../..
+IPATH+=${ROOT}
 
 #
 # The default rule, which causes the Project Zero Example to be built.
