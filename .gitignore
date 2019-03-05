@@ -38,6 +38,10 @@
 *.i*86
 *.x86_64
 *.hex
+# ARM exe
+*.bin
+*.axf
+*/gcc/*
 
 # Debug files
 *.dSYM/

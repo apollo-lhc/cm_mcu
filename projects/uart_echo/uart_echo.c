@@ -80,28 +80,28 @@ UARTIntHandler(void)
   //
   // Get the interrrupt status.
   //
-  ui32Status = ROM_UARTIntStatus(UART0_BASE, true);
+  ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
 
   //
   // Clear the asserted interrupts.
   //
-  ROM_UARTIntClear(UART0_BASE, ui32Status);
+  ROM_UARTIntClear(UART4_BASE, ui32Status);
 
   //
   // Loop while there are characters in the receive FIFO.
   //
-  while(ROM_UARTCharsAvail(UART0_BASE))
+  while(ROM_UARTCharsAvail(UART4_BASE))
     {
       //
       // Read the next character from the UART and write it back to the UART.
       //
-      ROM_UARTCharPutNonBlocking(UART0_BASE,
-				 ROM_UARTCharGetNonBlocking(UART0_BASE));
+      ROM_UARTCharPutNonBlocking(UART4_BASE,
+				 ROM_UARTCharGetNonBlocking(UART4_BASE));
 
       //
       // Blink the LED to show a character transfer is occuring.
       //
-      GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, GPIO_PIN_0);
+      MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, GPIO_PIN_0);
 
       //
       // Delay for 1 millisecond.  Each SysCtlDelay is about 3 clocks.
@@ -111,7 +111,8 @@ UARTIntHandler(void)
       //
       // Turn off the LED
       //
-      GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, 0);
+      MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 0x0);
+      
     }
 }
 
@@ -131,7 +132,7 @@ UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count)
       //
       // Write the next character to the UART.
       //
-      ROM_UARTCharPutNonBlocking(UART0_BASE, *pui8Buffer++);
+      ROM_UARTCharPutNonBlocking(UART4_BASE, *pui8Buffer++);
     }
 }
 
@@ -153,17 +154,17 @@ main(void)
   //
   // Enable the GPIO port that is used for the on-board LED.
   //
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);
 
   //
   // Enable the GPIO pins for the LED (PN0).
   //
-  ROM_GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0);
+  MAP_GPIOPinTypeGPIOOutput(GPIO_PORTJ_BASE, GPIO_PIN_0);
 
   //
   // Enable the peripherals used by this example.
   //
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART4);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
   //
@@ -172,24 +173,34 @@ main(void)
   ROM_IntMasterEnable();
 
   //
-  // Set GPIO A0 and A1 as UART pins.
+  // Set relevant GPIO pins as UART pins.
   //
-  GPIOPinConfigure(GPIO_PA0_U0RX);
-  GPIOPinConfigure(GPIO_PA1_U0TX);
-  ROM_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+  //
+  // Configure the GPIO Pin Mux for PA2
+  // for U4RX
+  //
+  MAP_GPIOPinConfigure(GPIO_PA2_U4RX);
+  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_2);
+
+  //
+  // Configure the GPIO Pin Mux for PA3
+  // for U4TX
+  //
+  MAP_GPIOPinConfigure(GPIO_PA3_U4TX);
+  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_3);
 
   //
   // Configure the UART for 115,200, 8-N-1 operation.
   //
-  ROM_UARTConfigSetExpClk(UART0_BASE, g_ui32SysClock, 115200,
+  ROM_UARTConfigSetExpClk(UART4_BASE, g_ui32SysClock, 115200,
 			  (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
 			   UART_CONFIG_PAR_NONE));
 
   //
   // Enable the UART interrupt.
   //
-  ROM_IntEnable(INT_UART0);
-  ROM_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
+  ROM_IntEnable(INT_UART4);
+  ROM_UARTIntEnable(UART4_BASE, UART_INT_RX | UART_INT_RT);
 
   //
   // Prompt for text to be entered.
