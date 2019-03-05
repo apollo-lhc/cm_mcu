@@ -28,7 +28,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
-#include "utils/uartstdio.h"
+//#include "utils/uartstdio.h"
 
 //*****************************************************************************
 //
