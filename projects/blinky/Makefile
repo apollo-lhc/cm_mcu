@@ -25,7 +25,7 @@
 #
 # Defines the part type that this project uses.
 #
-PART=TM4C1294NCPDT
+PART=TM4C1290NCPDT
 
 #
 # The base directory for TivaWare.

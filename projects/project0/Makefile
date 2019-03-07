@@ -25,7 +25,7 @@
 #
 # Defines the part type that this project uses.
 #
-PART=TM4C1294NCPDT
+PART=TM4C1290NCPDT
 
 #
 # The base directory for TivaWare.
@@ -43,7 +43,7 @@ include ${ROOT}/makedefs
 #
 VPATH=../drivers
 VPATH+=../../../../utils
-
+VPATH+=../../board_specific
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -72,6 +72,7 @@ ${COMPILER}:
 # Rules for building the Project Zero Example.
 #
 ${COMPILER}/project0.axf: ${COMPILER}/project0.o
+${COMPILER}/project0.axf: ${COMPILER}/pinout.o
 ${COMPILER}/project0.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/project0.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project0.axf: project0.ld
