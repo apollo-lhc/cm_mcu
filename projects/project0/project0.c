@@ -35,7 +35,7 @@
 #include "driverlib/uart.h"
 #include "driverlib/interrupt.h"
 #include "board_specific/pinout.h"
-//#include "utils/uartstdio.h"
+#include "board_specific/pinsel.h"
 
 //*****************************************************************************
 //
@@ -43,19 +43,12 @@
 //
 //*****************************************************************************
 
-//*****************************************************************************
-//
-//! \addtogroup example_list
-//! <h1>Project Zero (project0)</h1>
-//!
-//! This example demonstrates the use of TivaWare to setup the clocks and
-//! toggle GPIO pins to make the LED blink. This is a good place to start
-//! understanding your launchpad and the tools that can be used to program it.
-//
-//*****************************************************************************
+#define USER_LED1_PIN  GPIO_PIN_0
+#define USER_LED2_PIN  GPIO_PIN_1
+#define USER_LED12_PORT GPIO_PORTJ_BASE // same port
 
-#define USER_LED1  GPIO_PIN_0
-#define USER_LED2  GPIO_PIN_1
+#define USER_LED3_PIN  GPIO_PIN_0
+#define USER_LED3_PORT GPIO_PORTP_BASE
 
 
 //*****************************************************************************
@@ -69,6 +62,30 @@ __error__(char *pcFilename, uint32_t ui32Line)
 {
 }
 #endif
+
+// write by pin number or name
+static inline
+void write_gpio_pin(int pin, uint8_t value)
+{
+  uint32_t gport;
+  uint8_t  gpin;
+  pinsel(pin, &gport, &gpin);
+  MAP_GPIOPinWrite(gport, gpin, value);
+  return;
+}
+
+// write by pin number or name
+static inline
+uint8_t read_gpio_pin(int pin)
+{
+  uint32_t gport;
+  uint8_t  gpin;
+  uint8_t value;
+  pinsel(pin, &gport, &gpin);
+  value = MAP_GPIOPinRead(gport, gpin);
+  return value;
+}
+
 
 
 // Initialize the UART 
@@ -98,8 +115,8 @@ UartInit(uint32_t ui32SysClock)
   // Configure the UART for 115,200, 8-N-1 operation.
   //
   MAP_UARTConfigSetExpClk(UART4_BASE, ui32SysClock, 115200,
-			  (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-			   UART_CONFIG_PAR_NONE));
+                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                           UART_CONFIG_PAR_NONE));
 
   //
   // Enable the UART interrupt.
@@ -109,9 +126,12 @@ UartInit(uint32_t ui32SysClock)
   return;
 }
 
+  
+
+
 //*****************************************************************************
 //
-// Send a string to the UART.
+// Send a string to the UART. From uart_echo example.
 //
 //*****************************************************************************
 void
@@ -132,48 +152,47 @@ UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count)
 uint32_t g_ui32SysClock = 0;
 
 
-// data structures to hold PIN information for the supplies
-struct supplies_t {
-  char *name;
-  int port, pin, priority;
+// data structures to hold GPIO PIN information 
+struct gpio_pin_t {
+  int name;
+  int priority;
 };
-  
 
-struct supplies_t enables[] = {
-  { "CTRL_K_VCCINT_PWR_EN", GPIO_PORTF_BASE, GPIO_PIN_2, 1},
-  { "CTRL_V_VCCINT_PWR_EN", GPIO_PORTA_BASE, GPIO_PIN_4, 1},
-  { "CTRL_VCC_1V8_PWR_EN",  GPIO_PORTA_BASE, GPIO_PIN_5, 2},
-  { "CTRL_VCC_3V3_PWR_EN",  GPIO_PORTF_BASE, GPIO_PIN_1, 3},
-  { "CTRL_V_MGTY1_VCCAUX_PWR_EN",GPIO_PORTN_BASE, GPIO_PIN_5, 4},
-  { "CTRL_V_MGTY2_VCCAUX_PWR_EN",GPIO_PORTN_BASE, GPIO_PIN_4, 4},
-  { "CTRL_K_MGTY_VCCAUX_PWR_EN", GPIO_PORTL_BASE, GPIO_PIN_2, 4},
-  { "CTRL_K_MGTH_VCCAUX_PWR_EN", GPIO_PORTL_BASE, GPIO_PIN_3, 4},
-  { "CTRL_V_MGTY1_AVCC_PWR_EN",GPIO_PORTN_BASE, GPIO_PIN_3, 5},
-  { "CTRL_V_MGTY2_AVCC_PWR_EN",GPIO_PORTN_BASE, GPIO_PIN_2, 5},
-  { "CTRL_K_MGTY_AVCC_PWR_EN", GPIO_PORTL_BASE, GPIO_PIN_4, 5},
-  { "CTRL_K_MGTH_AVCC_PWR_EN", GPIO_PORTL_BASE, GPIO_PIN_5, 5},
-  { "CTRL_K_MGTY_AVTT_PWR_EN", GPIO_PORTQ_BASE, GPIO_PIN_4, 6},
-  { "CTRL_K_MGTH_AVTT_PWR_EN", GPIO_PORTP_BASE, GPIO_PIN_2, 6},
-  { "CTRL_V_MGTY1_AVTT_PWR_EN",GPIO_PORTN_BASE, GPIO_PIN_1, 6},
-  { "CTRL_V_MGTY2_AVTT_PWR_EN",GPIO_PORTN_BASE, GPIO_PIN_0, 6}
+struct gpio_pin_t enables[] = {
+  {  CTRL_K_VCCINT_PWR_EN, 1},
+  {  CTRL_V_VCCINT_PWR_EN, 1},
+  {  CTRL_VCC_1V8_PWR_EN,  2},
+  {  CTRL_VCC_3V3_PWR_EN,  3},
+  {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 4},
+  {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 4},
+  {  CTRL_K_MGTY_VCCAUX_PWR_EN,  4},
+  {  CTRL_K_MGTH_VCCAUX_PWR_EN,  4},
+  {  CTRL_V_MGTY1_AVCC_PWR_EN, 5},
+  {  CTRL_V_MGTY2_AVCC_PWR_EN, 5},
+  {  CTRL_K_MGTY_AVCC_PWR_EN,  5},
+  {  CTRL_K_MGTH_AVCC_PWR_EN,  5},
+  {  CTRL_K_MGTY_AVTT_PWR_EN,  6},
+  {  CTRL_K_MGTH_AVTT_PWR_EN,  6},
+  {  CTRL_V_MGTY1_AVTT_PWR_EN, 6},
+  {  CTRL_V_MGTY2_AVTT_PWR_EN, 6}
 };
 const int nenables = sizeof(enables)/sizeof(enables[0]);
 
-struct supplies_t oks[] = {
-  { "K_VCCINT_PG_A", GPIO_PORTK_BASE, GPIO_PIN_5, 1},
-  { "K_VCCINT_PG_B", GPIO_PORTK_BASE, GPIO_PIN_6, 1},
-  { "V_VCCINT_PG_A", GPIO_PORTH_BASE, GPIO_PIN_3, 1},
-  { "V_VCCINT_PG_B", GPIO_PORTH_BASE, GPIO_PIN_2, 1},
-  { "VCC_1V8_PG",  GPIO_PORTH_BASE, GPIO_PIN_0, 2},
-  { "VCC_3V3_PG",  GPIO_PORTH_BASE, GPIO_PIN_1, 3},
-  { "V_MGTY1_AVCC_OK",GPIO_PORTC_BASE, GPIO_PIN_6, 5},
-  { "V_MGTY2_AVCC_OK",GPIO_PORTC_BASE, GPIO_PIN_5, 5},
-  { "K_MGTY_AVCC_OK", GPIO_PORTM_BASE, GPIO_PIN_2, 5},
-  { "K_MGTH_AVCC_OK", GPIO_PORTM_BASE, GPIO_PIN_3, 5},
-  { "K_MGTY_AVTT_OK", GPIO_PORTM_BASE, GPIO_PIN_1, 6},
-  { "K_MGTH_AVTT_OK", GPIO_PORTM_BASE, GPIO_PIN_4, 6},
-  { "V_MGTY1_AVTT_OK",GPIO_PORTC_BASE, GPIO_PIN_7, 6},
-  { "V_MGTY2_AVTT_OK",GPIO_PORTC_BASE, GPIO_PIN_4, 6}
+struct gpio_pin_t oks[] = {
+  { K_VCCINT_PG_A, 1},
+  { K_VCCINT_PG_B, 1},
+  { V_VCCINT_PG_A, 1},
+  { V_VCCINT_PG_B, 1},
+  { VCC_1V8_PG,    2},
+  { VCC_3V3_PG,    3},
+  { V_MGTY1_AVCC_OK, 5},
+  { V_MGTY2_AVCC_OK, 5},
+  { K_MGTY_AVCC_OK,  5},
+  { K_MGTH_AVCC_OK,  5},
+  { K_MGTY_AVTT_OK,  6},
+  { K_MGTH_AVTT_OK,  6},
+  { V_MGTY1_AVTT_OK, 6},
+  { V_MGTY2_AVTT_OK, 6}
 };
 const int noks = sizeof(oks)/sizeof(oks[0]);
 const int num_priorities = 6;
@@ -186,16 +205,14 @@ const int num_priorities = 6;
 bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
 {
   bool success = true; // return value
-  
 
-
-  // data structure to turn on various power supplies. This should be ordered such
-  // that the priority increases, though it's not necessary
+  // data structure to turn on various power supplies. This should be ordered
+  // such that the priority increases, though it's not necessary
   for ( int prio = 1; prio <= num_priorities; ++prio ) {
     // enable the supplies at the relevant priority
     for ( int e = 0; e < nenables; ++e ) {
-      if ( enables[e].priority == prio ) 
-	MAP_GPIOPinWrite(enables[e].port, enables[e].pin, 0x1);
+      if ( enables[e].priority == prio )
+        write_gpio_pin(enables[e].name, 0x1);
     }
     //
     // Delay for a bit
@@ -206,11 +223,11 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
     int o = -1;
     for ( o = 0; o < noks; ++o ) {
       if ( enables[o].priority <= prio ) {
-	int32_t val = MAP_GPIOPinRead(oks[o].port, oks[o].pin);
-	if ( val == 0 ) {
-	  all_good = false;
-	  break;
-	}
+        int8_t val = read_gpio_pin(oks[o].name);
+        if ( val == 0 ) {
+          all_good = false;
+          break;
+        }
       }
     } // loop over 'ok' bits
     if (  ! all_good ) { 
@@ -218,9 +235,9 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
       // turn off all supplies at current priority level or lower
       // that is probably overkill since they should not all be 
       for ( int e = 0; e < nenables; ++e ) {
-	  if ( enables[e].priority >= prio ) 
-	    MAP_GPIOPinWrite(enables[e].port, enables[e].pin, 0x0);
-	}
+          if ( enables[e].priority >= prio ) 
+            write_gpio_pin(enables[e].name, 0x0);
+        }
       success = false;
       break;
     }
@@ -240,22 +257,23 @@ check_ps(void)
     int o = -1;
     for ( o = 0; o < noks; ++o ) {
       if ( enables[o].priority <= prio ) {
-	int32_t val = MAP_GPIOPinRead(oks[o].port, oks[o].pin);
-	if ( val == 0 ) {
-	  all_good = false;
-	  break;
-	}
+        int8_t val = read_gpio_pin(oks[o].name);
+        if ( val == 0 ) {
+          all_good = false;
+          break;
+        }
       }
     } // loop over 'ok' bits
     if (  ! all_good ) { 
       // o tells you which one died. should I print something on UART?
       // turn off all supplies at current priority level or lower
       for ( int e = 0; e < nenables; ++e ) {
-	  if ( enables[e].priority >= prio ) 
-	    MAP_GPIOPinWrite(enables[e].port, enables[e].pin, 0x0);
-	}
-      success = false;
-      break;
+        if ( enables[e].priority >= prio ) {
+          write_gpio_pin(enables[e].name, 0x0);
+        }
+        success = false;
+        break;
+      }
     }
   } // loop over priorities
 
@@ -272,10 +290,8 @@ check_ps(void)
 int
 main(void)
 {
-
     // initialize all pins, using file setup by TI PINMUX tool
     PinoutSet();
-
 
     //
     // Run from the PLL at 120 MHz.
@@ -284,47 +300,40 @@ main(void)
                                        SYSCTL_OSC_MAIN |
                                        SYSCTL_USE_PLL |
                                        SYSCTL_CFG_VCO_480), 120000000);
-
-    //
-    // Enable and wait for the port to be ready for access
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOJ))
-    {
-    }
-    
-    //
-    // Configure the GPIO port for the LED operation.
-    //
-    GPIOPinTypeGPIOOutput(GPIO_PORTJ_BASE, (USER_LED1|USER_LED2));
-
+    UartInit(g_ui32SysClock);
     //
     // Say hello
     //
     UARTSend((uint8_t *)"Project0 starting", 16);
 
-    if ( !set_ps(true,true,false) ) {
-      UARTSend((uint8_t *)"set_ps failed!",16);
-    }
 
+    bool ps_good = true;
+    int bad_cnt = 1; // to toggle LED for failed PS check
     //
     // Loop Forever
     //
     while(1) {
       //
-      // Turn on the LED 1
+      // Turn on the LED 1, turn off LED 2
       //
-      GPIOPinWrite(GPIO_PORTJ_BASE, (USER_LED1|USER_LED2), 0x1);
+      MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x1);
       
       //
       // Delay for a bit
       //
       SysCtlDelay(g_ui32SysClock/6);
+
+      // turn on power supplies
+      if ( ! ps_good ) {
+        ps_good = set_ps(true,true,false) ;
+        if ( ! ps_good )
+          UARTSend((uint8_t *)"set_ps failed!",16);
+      }
       
       //
-      // Turn on the LED 2
+      // Turn on the LED 2, turn off LED 1
       //
-      GPIOPinWrite(GPIO_PORTJ_BASE, (USER_LED1|USER_LED2), 0x2);
+      MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x2);
 
       //
       // Delay for a bit
@@ -332,7 +341,13 @@ main(void)
       SysCtlDelay(g_ui32SysClock/6);
 
       if ( !check_ps() ) {
-	UARTSend((uint8_t *)"check_ps failed!",16);
+        UARTSend((uint8_t *)"check_ps failed!",16);
+        MAP_GPIOPinWrite(USER_LED3_PORT, USER_LED3_PIN, bad_cnt%2);
+        ++bad_cnt;
+        ps_good = false;
       }
     }
+    //_Static_assert (0, "assert1");
+
+    return 0;
 }
