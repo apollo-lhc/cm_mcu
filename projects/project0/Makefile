@@ -73,6 +73,7 @@ ${COMPILER}:
 #
 ${COMPILER}/project0.axf: ${COMPILER}/project0.o
 ${COMPILER}/project0.axf: ${COMPILER}/pinout.o
+${COMPILER}/project0.axf: ${COMPILER}/pinsel.o
 ${COMPILER}/project0.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/project0.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project0.axf: project0.ld
