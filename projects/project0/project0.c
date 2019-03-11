@@ -235,9 +235,9 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
       // turn off all supplies at current priority level or lower
       // that is probably overkill since they should not all be 
       for ( int e = 0; e < nenables; ++e ) {
-          if ( enables[e].priority >= prio ) 
-            write_gpio_pin(enables[e].name, 0x0);
-        }
+        if ( enables[e].priority >= prio ) 
+          write_gpio_pin(enables[e].name, 0x0);
+      }
       success = false;
       break;
     }
@@ -290,64 +290,64 @@ check_ps(void)
 int
 main(void)
 {
-    // initialize all pins, using file setup by TI PINMUX tool
-    PinoutSet();
+  // initialize all pins, using file setup by TI PINMUX tool
+  PinoutSet();
 
-    //
-    // Run from the PLL at 120 MHz.
-    //
-    g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
+  //
+  // Run from the PLL at 120 MHz.
+  //
+  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
                                        SYSCTL_OSC_MAIN |
                                        SYSCTL_USE_PLL |
                                        SYSCTL_CFG_VCO_480), 120000000);
-    UartInit(g_ui32SysClock);
-    //
-    // Say hello
-    //
-    UARTSend((uint8_t *)"Project0 starting", 16);
+  UartInit(g_ui32SysClock);
+  //
+  // Say hello
+  //
+  UARTSend((uint8_t *)"Project0 starting", 16);
 
 
-    bool ps_good = true;
-    int bad_cnt = 1; // to toggle LED for failed PS check
+  bool ps_good = true;
+  int bad_cnt = 1; // to toggle LED for failed PS check
+  //
+  // Loop Forever
+  //
+  while(1) {
     //
-    // Loop Forever
+    // Turn on the LED 1, turn off LED 2
     //
-    while(1) {
-      //
-      // Turn on the LED 1, turn off LED 2
-      //
-      MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x1);
+    MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x1);
       
-      //
-      // Delay for a bit
-      //
-      SysCtlDelay(g_ui32SysClock/6);
+    //
+    // Delay for a bit
+    //
+    SysCtlDelay(g_ui32SysClock/6);
 
-      // turn on power supplies
-      if ( ! ps_good ) {
-        ps_good = set_ps(true,true,false) ;
-        if ( ! ps_good )
-          UARTSend((uint8_t *)"set_ps failed!",16);
-      }
-      
-      //
-      // Turn on the LED 2, turn off LED 1
-      //
-      MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x2);
-
-      //
-      // Delay for a bit
-      //
-      SysCtlDelay(g_ui32SysClock/6);
-
-      if ( !check_ps() ) {
-        UARTSend((uint8_t *)"check_ps failed!",16);
-        MAP_GPIOPinWrite(USER_LED3_PORT, USER_LED3_PIN, bad_cnt%2);
-        ++bad_cnt;
-        ps_good = false;
-      }
+    // turn on power supplies
+    if ( ! ps_good ) {
+      ps_good = set_ps(true,true,false) ;
+      if ( ! ps_good )
+        UARTSend((uint8_t *)"set_ps failed!",16);
     }
-    //_Static_assert (0, "assert1");
+      
+    //
+    // Turn on the LED 2, turn off LED 1
+    //
+    MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x2);
 
-    return 0;
+    //
+    // Delay for a bit
+    //
+    SysCtlDelay(g_ui32SysClock/6);
+
+    if ( !check_ps() ) {
+      UARTSend((uint8_t *)"check_ps failed!",16);
+      MAP_GPIOPinWrite(USER_LED3_PORT, USER_LED3_PIN, bad_cnt%2);
+      ++bad_cnt;
+      ps_good = false;
+    }
+  }
+  //_Static_assert (0, "assert1");
+
+  return 0;
 }
