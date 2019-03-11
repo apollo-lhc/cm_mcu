@@ -88,7 +88,7 @@ CPU=-mcpu=cortex-m4
 #### WARNING -- I disabled mfloat-abi here since that is what PEtalinux uses. 
 #### NOT SURE IF THIS IS KOSHER
 #### WITTICH 3/2019. 
-FPU=-mfpu=fpv4-sp-d16 #-mfloat-abi=hard
+FPU=-mfpu=fpv4-sp-d16 -mfloat-abi=hard
 
 #
 # The flags passed to the assembler.
@@ -101,13 +101,14 @@ AFLAGS=-mthumb \
 #
 # The flags passed to the compiler.
 #
+#### WITTICH changed from c99 to c11 for static_assert
 CFLAGS=-mthumb             \
        ${CPU}              \
        ${FPU}              \
        -ffunction-sections \
        -fdata-sections     \
        -MD                 \
-       -std=c99            \
+       -std=c11            \
        -Wall               \
        -pedantic           \
        -DPART_${PART}      \
