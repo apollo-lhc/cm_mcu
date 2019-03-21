@@ -49,11 +49,11 @@ void initI2C1(void)
 }
 
 // added by PW
-bool writeI2Creg(uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data, const uint8_t ui8ByteCount)
+bool writeI2C(uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data, const uint8_t ui8ByteCount)
 {
 
     //specify that we are writing (a register address) to the
-    //slave device
+    //slave device. last argument is 'receive' boolean. false for write.
     I2CMasterSlaveAddrSet(I2C1_BASE, ui8Addr, false);
 
     //specify register to be written to
@@ -65,7 +65,7 @@ bool writeI2Creg(uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data, const uint8_t u
     //
     // Delay until transmission completes
     //
-    while(I2CMasterBusBusy(I2C1_BASE))
+    while(I2CMasterBusy(I2C1_BASE))
     {
     }
     //handle single
@@ -81,20 +81,22 @@ bool writeI2Creg(uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data, const uint8_t u
         //
         // Delay until transmission completes
         //
-        while(I2CMasterBusBusy(I2C1_BASE))
+        while(I2CMasterBusy(I2C1_BASE))
         {
         }
 
     }
     else { // more than one byte to send
-        for ( uint8_t i = 0; i < ui8ByteCount; ++i ) {
+        for ( int i = 0; i < ui8ByteCount; ++i ) {
             uint32_t cmd;
-	    if ( i == ui8ByteCount-1 ) { // end burst
+            if ( i == (ui8ByteCount-1) ) { // end burst
                 cmd = I2C_MASTER_CMD_BURST_SEND_FINISH;
             }
             else { // during burst
                 cmd = I2C_MASTER_CMD_BURST_SEND_CONT;
-            }        //
+            }
+            //UARTprintf("write: i=%d, command=%04x\n", i, cmd);
+            //
             // Place the character to be sent in the data register
             //
             I2CMasterDataPut(I2C1_BASE, Data[i]);
@@ -105,7 +107,7 @@ bool writeI2Creg(uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data, const uint8_t u
             //
             // Delay until transmission completes
             //
-            while(I2CMasterBusBusy(I2C1_BASE))
+            while(I2CMasterBusy(I2C1_BASE))
             {
             }
         }
@@ -168,4 +170,5 @@ bool readI2Creg(uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data, const uint8_t ui
     return true;
 
 }
+
 
