@@ -33,7 +33,7 @@ PART=TM4C1290NCPDT
 #ROOT=../../../..
 ROOT=../..
 
-FREERTOS_ROOT=../../../FreeRTOSv10.2.0/FreeRTOS/Source
+FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
 
 #
 # Include the common make definitions.

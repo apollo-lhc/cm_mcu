@@ -22,6 +22,12 @@
 #include "board_specific/pinout.h"
 #include "board_specific/pinsel.h"
 
+// FreeRTOS includes
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
+#include "queue.h"
+#include "portmacro.h"
 //*****************************************************************************
 //
 // Define pin to LED mapping.
@@ -265,7 +271,26 @@ check_ps(void)
   return success;
 }
 
+void SystemInit()
+{
+  // initialize all pins, using file setup by TI PINMUX tool
+  PinoutSet();
 
+  //
+  // Run from the PLL at 120 MHz.
+  //
+  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
+      SYSCTL_OSC_MAIN |
+      SYSCTL_USE_PLL |
+      SYSCTL_CFG_VCO_480), 120000000);
+  UartInit(g_ui32SysClock);
+  return;
+}
+
+void SystemCoreClockUpdate()
+{
+  return;
+}
 
 /*
  * This is a simple example that creates two tasks and one queue.  One task
@@ -277,13 +302,7 @@ check_ps(void)
  * excludes most features, including dynamic memory allocation.
  */
 
-/* Microchip includes. */
-//#include "common.h"
 
-/* Scheduler includes. */
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
 
 /* Priorities at which the tasks are created. */
 #define mainQUEUE_RECEIVE_TASK_PRIORITY		( tskIDLE_PRIORITY + 2 )
@@ -425,7 +444,7 @@ static void prvQueueReceiveTask( void *pvParameters )
 
 static void prvSetupHardware( void )
 {
-  SystemInit();
+  SystemInit();// these are CMSIS names
   SystemCoreClockUpdate();
 }
 /*-----------------------------------------------------------*/

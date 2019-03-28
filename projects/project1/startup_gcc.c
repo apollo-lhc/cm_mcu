@@ -35,6 +35,9 @@ void ResetISR(void);
 static void NmiSR(void);
 static void FaultISR(void);
 static void IntDefaultHandler(void);
+void SVHandler(void);
+static void PendSVHandler(void);
+void SysTickHandler(void);
 
 //*****************************************************************************
 //
@@ -71,11 +74,11 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     0,                                      // Reserved
     0,                                      // Reserved
-    IntDefaultHandler,                      // SVCall handler
+    SVHandler,                              // SVCall handler
     IntDefaultHandler,                      // Debug monitor handler
     0,                                      // Reserved
-    IntDefaultHandler,                      // The PendSV handler
-    IntDefaultHandler,                      // The SysTick handler
+    PendSVHandler,                          // The PendSV handler
+    SysTickHandler,                         // The SysTick handler
     IntDefaultHandler,                      // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
@@ -313,3 +316,34 @@ IntDefaultHandler(void)
     {
     }
 }
+
+void SVHandler(void)
+{
+    //
+    // Go into an infinite loop.
+    //
+    while(1)
+    {
+    }
+}
+
+static void PendSVHandler(void)
+{
+    //
+    // Go into an infinite loop.
+    //
+    while(1)
+    {
+    }
+}
+
+void SysTickHandler(void)
+{
+    //
+    // Go into an infinite loop.
+    //
+    while(1)
+    {
+    }
+}
+

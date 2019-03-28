@@ -55,9 +55,8 @@ http://www.FreeRTOS.org/a00016.html */
 #define configUSE_IDLE_HOOK						0
 #define configUSE_TICK_HOOK						0
 
-/* This demo is configured to use static allocation only. */
-#define configSUPPORT_STATIC_ALLOCATION			1
-#define configSUPPORT_DYNAMIC_ALLOCATION		0
+#define configSUPPORT_STATIC_ALLOCATION			0
+#define configSUPPORT_DYNAMIC_ALLOCATION		1
 
 /* Run time stats gathering definitions. */
 #define configGENERATE_RUN_TIME_STATS	0
@@ -128,9 +127,8 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */
-#error Fix me -- assumes CMSIS
-#define xPortPendSVHandler PendSV_Handler
-#define vPortSVCHandler SVC_Handler
+#define xPortPendSVHandler PendSVHandler
+#define vPortSVCHandler SVCHandler
 #define xPortSysTickHandler SysTick_Handler
 
 /* Normal assert() semantics without relying on the provision of an assert.h
