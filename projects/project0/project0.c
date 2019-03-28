@@ -284,7 +284,7 @@ check_ps(void)
 
 //*****************************************************************************
 //
-// Main 'C' Language entry point.  Toggle an LED using TivaWare.
+// Main 'C' Language entry point.
 //
 //*****************************************************************************
 int
