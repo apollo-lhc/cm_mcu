@@ -115,6 +115,11 @@ CFLAGS=-mthumb             \
        -c
 
 #
+# The size command
+#
+SIZE=${PREFIX}-size
+
+#
 # The command for calling the library archiver.
 #
 AR=${PREFIX}-ar
