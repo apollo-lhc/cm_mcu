@@ -78,7 +78,7 @@ UARTIntHandler(void)
   uint32_t ui32Status;
 
   //
-  // Get the interrrupt status.
+  // Get the interrupt status.
   //
   ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
 
@@ -99,7 +99,7 @@ UARTIntHandler(void)
 				 ROM_UARTCharGetNonBlocking(UART4_BASE));
 
       //
-      // Blink the LED to show a character transfer is occuring.
+      // Blink the LED to show a character transfer is occurring.
       //
       MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, GPIO_PIN_0);
 
