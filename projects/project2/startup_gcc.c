@@ -37,7 +37,8 @@ static void FaultISR(void);
 static void IntDefaultHandler(void);
 void SVHandler(void);
 static void PendSVHandler(void);
-void SysTickHandler(void);
+extern void SysTickHandler(void);
+extern void UARTIntHandler(void);
 
 //*****************************************************************************
 //
@@ -136,7 +137,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI2 Rx and Tx
     IntDefaultHandler,                      // SSI3 Rx and Tx
     IntDefaultHandler,                      // UART3 Rx and Tx
-    IntDefaultHandler,                      // UART4 Rx and Tx
+    UARTIntHandler,                         // UART4 Rx and Tx
     IntDefaultHandler,                      // UART5 Rx and Tx
     IntDefaultHandler,                      // UART6 Rx and Tx
     IntDefaultHandler,                      // UART7 Rx and Tx
@@ -337,13 +338,4 @@ static void PendSVHandler(void)
     }
 }
 
-void SysTickHandler(void)
-{
-    //
-    // Go into an infinite loop.
-    //
-    while(1)
-    {
-    }
-}
 

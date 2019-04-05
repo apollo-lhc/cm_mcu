@@ -77,6 +77,56 @@ uint8_t read_gpio_pin(int pin)
   return value;
 }
 
+uint32_t g_ui32SysClock = 0;
+
+//*****************************************************************************
+//
+// The UART interrupt handler.
+//
+//*****************************************************************************
+void
+UARTIntHandler(void)
+{
+  uint32_t ui32Status;
+
+  //
+  // Get the interrupt status.
+  //
+  ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
+
+  //
+  // Clear the asserted interrupts.
+  //
+  ROM_UARTIntClear(UART4_BASE, ui32Status);
+
+  //
+  // Loop while there are characters in the receive FIFO.
+  //
+  while(ROM_UARTCharsAvail(UART4_BASE))
+    {
+      //
+      // Read the next character from the UART and write it back to the UART.
+      //
+      ROM_UARTCharPutNonBlocking(UART4_BASE,
+				 ROM_UARTCharGetNonBlocking(UART4_BASE));
+
+      //
+      // Blink the LED to show a character transfer is occurring.
+      //
+      MAP_GPIOPinWrite(USER_LED12_PORT, USER_LED2_PIN, USER_LED2_PIN);
+
+      //
+      // Delay for 1 millisecond.  Each SysCtlDelay is about 3 clocks.
+      //
+      SysCtlDelay(g_ui32SysClock / (1000 * 3));
+
+      //
+      // Turn off the LED
+      //
+      MAP_GPIOPinWrite(USER_LED12_PORT, USER_LED2_PIN, 0x0);
+
+    }
+}
 
 
 // Initialize the UART 
@@ -126,7 +176,7 @@ UartInit(uint32_t ui32SysClock)
 //
 //*****************************************************************************
 void
-UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count)
+UARTSend(const uint32_t base, const uint8_t *pui8Buffer, uint32_t ui32Count)
 {
   //
   // Loop while there are more characters to send.
@@ -136,11 +186,10 @@ UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count)
       //
       // Write the next character to the UART.
       //
-      MAP_UARTCharPutNonBlocking(UART4_BASE, *pui8Buffer++);
+      MAP_UARTCharPutNonBlocking(base, *pui8Buffer++);
     }
 }
 
-uint32_t g_ui32SysClock = 0;
 
 
 // data structures to hold GPIO PIN information 
@@ -284,30 +333,75 @@ void SystemInit()
       SYSCTL_USE_PLL |
       SYSCTL_CFG_VCO_480), 120000000);
   UartInit(g_ui32SysClock);
+
+  // SYSTICK timer
+  MAP_SysTickPeriodSet(100); // period in Hz
+  MAP_SysTickIntEnable(); // enable the interrupt
+  MAP_SysTickEnable();
   return;
 }
+
+volatile uint32_t g_ui32SysTickCount;
+
+//*****************************************************************************
+//
+// This is the interrupt handler for the SysTick interrupt.
+//
+//*****************************************************************************
+void
+SysTickHandler(void)
+{
+  g_ui32SysTickCount++;
+}
+
+
+
+// Holds the handle of the created queue.
+static QueueHandle_t xLedQueue = NULL;
+
+#define PS_BAD 0x03;
+#define PS_GOOD 0x01;
 
 // control the LED
 void LedTask(void *parameters)
 {
+  uint32_t result;
   // this function never returns
   for ( ;; ) {
+      // wait for a new item in the queue
+      xQueueReceive(xLedQueue, &result, portMAX_DELAY);
+      switch (result ) {
+      case 0x00:
+	break;
+      case 0x01:
+	// do something
+	break;
+      default:
+	break;
+      }
 
   }
 }
-
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
+  bool lastStateGood = false;
 
   // this function never returns
   for ( ;; ) {
+      uint32_t message;
       bool good = check_ps();
       if ( ! good ) {
-
+	  message = PS_BAD;
+	  lastStateGood = false;
       }
+      else if ( !lastStateGood ) { // good now, was bad
+	  message = PS_GOOD;
+	  lastStateGood = true;
+      }
+      xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));
 
       vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   }
@@ -321,8 +415,6 @@ void CommandLineTask(void *parameters)
   }
 }
 
-// Holds the handle of the created queue.
-static QueueHandle_t xQueue = NULL;
 
 
 // 
@@ -330,13 +422,13 @@ int main( void )
 {
   // Set up the hardware ready to run the demo. 
   SystemInit();
-  UARTSend( (const uint8_t*)"Starting\r\n",10 );
+  UARTSend(UART4_BASE, (const uint8_t*)"Starting\r\n",10 );
 
   // semaphore for the UART
 
   // queue for the LED
-  xQueue = xQueueCreate( 5, // The maximum number of items the queue can hold.
-			 sizeof( uint32_t )); 		// The size of each item.
+  xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
+			   sizeof( uint32_t )); 		// The size of each item.
 
 
   // start the tasks here 
