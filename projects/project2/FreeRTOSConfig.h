@@ -122,12 +122,6 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY     ( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
 
 
-/* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
-standard names. */
-//#define xPortPendSVHandler PendSVHandler
-//#define vPortSVCHandler SVCHandler
-//#define xPortSysTickHandler SysTick_Handler
-
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
 //#define configASSERT( x ) if( ( x ) == 0UL ) { taskDISABLE_INTERRUPTS(); for( ;; ); }

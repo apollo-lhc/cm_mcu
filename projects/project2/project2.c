@@ -343,16 +343,6 @@ void SystemInit()
 
 volatile uint32_t g_ui32SysTickCount;
 
-//*****************************************************************************
-//
-// This is the interrupt handler for the SysTick interrupt.
-//
-//*****************************************************************************
-void
-SysTickHandler(void)
-{
-  g_ui32SysTickCount++;
-}
 
 
 
