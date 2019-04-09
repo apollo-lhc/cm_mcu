@@ -70,6 +70,7 @@ size: ${COMPILER}/project2.axf
 ${COMPILER}/project2.axf: ${COMPILER}/project2.o
 ${COMPILER}/project2.axf: ${COMPILER}/pinout.o
 ${COMPILER}/project2.axf: ${COMPILER}/pinsel.o
+${COMPILER}/project2.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
 ## freeRTOS
 ${COMPILER}/project2.axf: ${COMPILER}/tasks.o

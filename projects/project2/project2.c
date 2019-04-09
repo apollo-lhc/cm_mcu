@@ -27,6 +27,7 @@
 #include "FreeRTOSConfig.h"
 #include "task.h"
 #include "queue.h"
+#include "stream_buffer.h"
 #include "portmacro.h"
 //*****************************************************************************
 //
@@ -79,13 +80,54 @@ uint8_t read_gpio_pin(int pin)
 
 uint32_t g_ui32SysClock = 0;
 
+
+// Alternate UART signal handler
+/* A stream buffer that has already been created. */
+StreamBufferHandle_t xStreamBuffer;
+
+void UARTIntHandler( void )
+{
+
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  //
+  // Get the interrupt status.
+  //
+  uint32_t ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
+
+  //
+  // Clear the asserted interrupts.
+  //
+  ROM_UARTIntClear(UART4_BASE, ui32Status);
+
+  //
+  // Loop while there are characters in the receive FIFO.
+  //
+  while(ROM_UARTCharsAvail(UART4_BASE)) {
+
+      uint8_t byte = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
+      // Put byte in queue (ISR safe function)
+      xQueueSendToBackFromISR(xStreamBuffer, &byte, &xHigherPriorityTaskWoken);
+  }
+
+  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
+    xStreamBufferReceiveFromISR() then a task that has a priority above the
+    priority of the currently executing task was unblocked and a context
+    switch should be performed to ensure the ISR returns to the unblocked
+    task.  In most FreeRTOS ports this is done by simply passing
+    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
+    variables value, and perform the context switch if necessary.  Check the
+    documentation for the port in use for port specific instructions. */
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
+
 //*****************************************************************************
 //
 // The UART interrupt handler.
 //
 //*****************************************************************************
 void
-UARTIntHandler(void)
+UARTIntHandler2(void)
 {
   uint32_t ui32Status;
 
@@ -176,7 +218,7 @@ UartInit(uint32_t ui32SysClock)
 //
 //*****************************************************************************
 void
-UARTSend(const uint32_t base, const uint8_t *pui8Buffer, uint32_t ui32Count)
+UARTSend(const uint32_t base, const unsigned char *pui8Buffer, uint32_t ui32Count)
 {
   //
   // Loop while there are more characters to send.
@@ -397,13 +439,7 @@ void PowerSupplyTask(void *parameters)
   }
 }
 
-void CommandLineTask(void *parameters)
-{
-  //
-  for ( ;; ) {
-      ;
-  }
-}
+extern void vCommandLineTask(void *parameters);
 
 
 
@@ -422,9 +458,9 @@ int main( void )
 
 
   // start the tasks here 
-  xTaskCreate(PowerSupplyTask, "POW", 256, NULL, 5, NULL);
-  xTaskCreate(LedTask,         "LED", 256, NULL, 2, NULL);
-  xTaskCreate(CommandLineTask, "CON", 256, NULL, 1, NULL);
+  xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
+  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
+  xTaskCreate(vCommandLineTask,"CON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
@@ -434,12 +470,6 @@ int main( void )
 }
 
 
-
-//static void SetupHardware( void )
-//{
-//  SystemInit();// these are CMSIS names
-//  SystemCoreClockUpdate();
-//}
 /*-----------------------------------------------------------*/
 
 void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
