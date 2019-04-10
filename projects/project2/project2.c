@@ -7,6 +7,8 @@
 //
 //*****************************************************************************
 
+// TODO: break this out into separate files. Too much clutter here.
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_types.h"
@@ -102,12 +104,19 @@ void UARTIntHandler( void )
   //
   // Loop while there are characters in the receive FIFO.
   //
+  uint8_t bytes[8];
+  int received = 0;
   while(ROM_UARTCharsAvail(UART4_BASE)) {
 
-      uint8_t byte = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
-      // Put byte in queue (ISR safe function)
-      xQueueSendToBackFromISR(xStreamBuffer, &byte, &xHigherPriorityTaskWoken);
+      bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
+      // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+      if ( ++received == 8 ) {
+	  xStreamBufferSendFromISR(xStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+	  received = 0;
+      }
   }
+  if ( received )
+    xStreamBufferSendFromISR(xStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
     xStreamBufferReceiveFromISR() then a task that has a priority above the
@@ -448,7 +457,6 @@ int main( void )
 {
   // Set up the hardware ready to run the demo. 
   SystemInit();
-  UARTSend(UART4_BASE, (const uint8_t*)"Starting\r\n",10 );
 
   // semaphore for the UART
 
@@ -482,5 +490,9 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 }
 /*-----------------------------------------------------------*/
 
+void vApplicationIdleHook( void )
+{
+   // not doing anything right now; this is just here in case I need to use it
+}
 
 

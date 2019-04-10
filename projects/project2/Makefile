@@ -16,6 +16,7 @@ ROOT=../..
 
 # if the environment variable is not set, this is used
 FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
+FREERTOS_PLUS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS-Plus/Source
 
 #
 # Include the common make definitions.
@@ -33,6 +34,7 @@ VPATH+=../../board_specific
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
+VPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -41,6 +43,8 @@ IPATH+=..
 IPATH+=${ROOT}
 IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
+IPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
+
 #
 # The default rule, which causes the project to be built.
 #
@@ -70,6 +74,7 @@ size: ${COMPILER}/project2.axf
 ${COMPILER}/project2.axf: ${COMPILER}/project2.o
 ${COMPILER}/project2.axf: ${COMPILER}/pinout.o
 ${COMPILER}/project2.axf: ${COMPILER}/pinsel.o
+${COMPILER}/project2.axf: ${COMPILER}/i2c_reg.o
 ${COMPILER}/project2.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
 ## freeRTOS
@@ -77,7 +82,9 @@ ${COMPILER}/project2.axf: ${COMPILER}/tasks.o
 ${COMPILER}/project2.axf: ${COMPILER}/queue.o
 ${COMPILER}/project2.axf: ${COMPILER}/port.o
 ${COMPILER}/project2.axf: ${COMPILER}/list.o
+${COMPILER}/project2.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/project2.axf: ${COMPILER}/heap_4.o
+${COMPILER}/project2.axf: ${COMPILER}/FreeRTOS_CLI.o
 ## TivaWare
 ${COMPILER}/project2.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project2.axf: project2.ld
