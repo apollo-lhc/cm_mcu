@@ -104,9 +104,9 @@
 									<listOptionValue builtIn="false" value="PART_TM4C1290NCPDT"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.323903648" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="true" valueType="includePath">
-									<listOptionValue builtIn="false" value="/Users/wittich/Downloads/FreeRTOSv10.2.0/FreeRTOS/Source/include"/>
-									<listOptionValue builtIn="false" value="/Users/wittich/Downloads/FreeRTOSv10.2.0/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
-									<listOptionValue builtIn="false" value="/Users/wittich/Downloads/FreeRTOSv10.2.0/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI"/>
+									<listOptionValue builtIn="false" value="&quot;${FREERTOS_ROOT}/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${FREERTOS_ROOT}/portable/GCC/ARM_CM4F&quot;"/>
 								</option>
 								<inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1125633587" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input"/>
 							</tool>
