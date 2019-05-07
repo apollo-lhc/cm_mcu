@@ -379,10 +379,9 @@ void SystemInit()
   //
   // Run from the PLL at 120 MHz.
   //
-  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
-      SYSCTL_OSC_MAIN |
-      SYSCTL_USE_PLL |
-      SYSCTL_CFG_VCO_480), 120000000);
+  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT |
+                                       SYSCTL_USE_PLL |
+                                       SYSCTL_CFG_VCO_480), 120000000);
   UartInit(g_ui32SysClock);
 
   // SYSTICK timer

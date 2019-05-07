@@ -147,10 +147,9 @@ main(void)
   //
   // Set the clocking to run directly from the crystal at 120MHz.
   //
-  g_ui32SysClock = MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
-					   SYSCTL_OSC_MAIN |
-					   SYSCTL_USE_PLL |
-					   SYSCTL_CFG_VCO_480), 120000000);
+	g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT |
+                                		 SYSCTL_USE_PLL |
+			                             SYSCTL_CFG_VCO_480), 120000000);
   //
   // Enable the GPIO port that is used for the on-board LED.
   //
