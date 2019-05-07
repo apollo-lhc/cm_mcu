@@ -55,6 +55,7 @@ IPATH+=${ROOT}
 #
 all: ${COMPILER}
 all: ${COMPILER}/project0.axf
+all: size
 
 #
 # The rule to clean out all the build products.
@@ -68,6 +69,11 @@ clean:
 ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
+
+size: ${COMPILER}/project0.axf
+	${SIZE} $<
+
+
 #
 # Rules for building the Project Zero Example.
 #
@@ -79,7 +85,7 @@ ${COMPILER}/project0.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project0.axf: project0.ld
 SCATTERgcc_project0=project0.ld
 ENTRY_project0=ResetISR
-CFLAGSgcc=-DTARGET_IS_TM4C129_RA1
+CFLAGSgcc=-DTARGET_IS_TM4C129_RA2
 
 #
 # Include the automatically generated dependency files.

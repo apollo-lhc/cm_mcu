@@ -69,7 +69,7 @@ ${COMPILER}/blinky.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/blinky.axf: blinky.ld
 SCATTERgcc_blinky=blinky.ld
 ENTRY_blinky=ResetISR
-CFLAGSgcc=-DTARGET_IS_TM4C129_RA1
+CFLAGSgcc=-DTARGET_IS_TM4C129_RA2
 
 #
 # Include the automatically generated dependency files.
