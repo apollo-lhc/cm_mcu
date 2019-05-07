@@ -143,7 +143,7 @@ main(void)
     // Turn on the LEDs -- GREEN
     
     // 
-    MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, GPIO_PIN_0);
+    MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, GPIO_PIN_1);
 
     //
     // Delay for a bit.
