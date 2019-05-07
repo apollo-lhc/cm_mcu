@@ -1,6 +1,10 @@
 #ifndef PINSEL_H
 #define PINSEL_H
 
+#ifndef PART_TM4C1290NCPDT
+#define PART_TM4C1290NCPDT
+#endif // PART_TM4C1290NCPDT
+
 
 
 #define  TM4C_TO_VU7P_0 5 // port, local_pin = Q 0
