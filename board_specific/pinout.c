@@ -35,8 +35,8 @@
 //
 //*****************************************************************************
 
-// This file was automatically generated on 3/4/2019 at 12:14:48 PM
-// by TI PinMux version 4.0.1530 
+// This file was automatically generated on 5/7/2019 at 12:14:40 PM
+// by TI PinMux version 4.0.1531 
 //
 //*****************************************************************************
 
@@ -226,58 +226,6 @@ PinoutSet(void)
 	// for GPIO_PQ0
     //
 	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTQ_BASE, GPIO_PIN_0);
-
-	//
-	// Unlock the Port Pin and Set the Commit Bit
-	//
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = GPIO_LOCK_KEY;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_CR)   |= GPIO_PIN_0;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = 0x0;
-	
-    //
-    // Configure the GPIO Pin Mux for PC0
-	// for GPIO_PC0
-    //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTC_BASE, GPIO_PIN_0);
-
-	//
-	// Unlock the Port Pin and Set the Commit Bit
-	//
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = GPIO_LOCK_KEY;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_CR)   |= GPIO_PIN_2;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = 0x0;
-	
-    //
-    // Configure the GPIO Pin Mux for PC2
-	// for GPIO_PC2
-    //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTC_BASE, GPIO_PIN_2);
-
-	//
-	// Unlock the Port Pin and Set the Commit Bit
-	//
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = GPIO_LOCK_KEY;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_CR)   |= GPIO_PIN_3;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = 0x0;
-	
-    //
-    // Configure the GPIO Pin Mux for PC3
-	// for GPIO_PC3
-    //
-	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_3);
-
-	//
-	// Unlock the Port Pin and Set the Commit Bit
-	//
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = GPIO_LOCK_KEY;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_CR)   |= GPIO_PIN_1;
-	HWREG(GPIO_PORTC_BASE+GPIO_O_LOCK) = 0x0;
-	
-    //
-    // Configure the GPIO Pin Mux for PC1
-	// for GPIO_PC1
-    //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTC_BASE, GPIO_PIN_1);
 
     //
     // Configure the GPIO Pin Mux for PF0
