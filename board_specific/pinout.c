@@ -35,7 +35,7 @@
 //
 //*****************************************************************************
 
-// This file was automatically generated on 5/7/2019 at 12:14:40 PM
+// This file was automatically generated on 5/7/2019 at 6:25:31 PM
 // by TI PinMux version 4.0.1531 
 //
 //*****************************************************************************
@@ -429,25 +429,25 @@ PinoutSet(void)
     // Configure the GPIO Pin Mux for PL2
 	// for GPIO_PL2
     //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTL_BASE, GPIO_PIN_2);
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTL_BASE, GPIO_PIN_2);
 
     //
     // Configure the GPIO Pin Mux for PL3
 	// for GPIO_PL3
     //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTL_BASE, GPIO_PIN_3);
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTL_BASE, GPIO_PIN_3);
 
     //
     // Configure the GPIO Pin Mux for PL5
 	// for GPIO_PL5
     //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTL_BASE, GPIO_PIN_5);
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTL_BASE, GPIO_PIN_5);
 
     //
     // Configure the GPIO Pin Mux for PL4
 	// for GPIO_PL4
     //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTL_BASE, GPIO_PIN_4);
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTL_BASE, GPIO_PIN_4);
 
     //
     // Configure the GPIO Pin Mux for PL7
@@ -525,7 +525,7 @@ PinoutSet(void)
     // Configure the GPIO Pin Mux for PN5
 	// for GPIO_PN5
     //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTN_BASE, GPIO_PIN_5);
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_5);
 
     //
     // Configure the GPIO Pin Mux for PJ0
