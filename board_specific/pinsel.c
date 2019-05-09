@@ -5,6 +5,9 @@
 
 #include "pinsel.h"
 
+extern void __error__(char *pcFilename, uint32_t ui32Line);
+
+
 void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin )
 {
   uint8_t gpio_pin = -1;
@@ -350,6 +353,7 @@ void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin )
   default:
     gpio_port = -1;
     gpio_pin  = -1;
+    __error__(__FILE__, __LINE__);
     break;
   }
 
