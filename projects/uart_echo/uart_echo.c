@@ -101,7 +101,7 @@ UARTIntHandler(void)
       //
       // Blink the LED to show a character transfer is occurring.
       //
-      MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, GPIO_PIN_0);
+      MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, GPIO_PIN_1);
 
       //
       // Delay for 1 millisecond.  Each SysCtlDelay is about 3 clocks.
@@ -156,9 +156,9 @@ main(void)
   MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);
 
   //
-  // Enable the GPIO pins for the LED (PN0).
+  // Enable the GPIO pins for the LED (PJ1).
   //
-  MAP_GPIOPinTypeGPIOOutput(GPIO_PORTJ_BASE, GPIO_PIN_0);
+  MAP_GPIOPinTypeGPIOOutput(GPIO_PORTJ_BASE, GPIO_PIN_1);
 
   //
   // Enable the peripherals used by this example.
