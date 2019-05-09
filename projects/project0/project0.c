@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
@@ -60,6 +61,9 @@
 void
 __error__(char *pcFilename, uint32_t ui32Line)
 {
+	while (1) {
+
+	}
 }
 #endif
 
@@ -70,7 +74,12 @@ void write_gpio_pin(int pin, uint8_t value)
   uint32_t gport;
   uint8_t  gpin;
   pinsel(pin, &gport, &gpin);
-  MAP_GPIOPinWrite(gport, gpin, value);
+  uint8_t pinval;
+  if ( value == 1 )
+	  pinval = gpin;
+  else
+	  pinval = 0;
+  MAP_GPIOPinWrite(gport, gpin, pinval);
   return;
 }
 
@@ -86,57 +95,58 @@ uint8_t read_gpio_pin(int pin)
   return value;
 }
 
+// write by pin number or name
+static inline
+uint8_t toggle_gpio_pin(int pin)
+{
+  uint8_t val = read_gpio_pin(pin);
+  if ( val ) val = 0;
+  else
+	  val = 1;
+  write_gpio_pin(pin, val);
+  return val;
+}
+
 
 
 // Initialize the UART 
 // based on uart_echo demo project
 // we use UART4 (front panel) 
 void 
-UartInit(uint32_t ui32SysClock)
+UART4Init(uint32_t ui32SysClock)
 {
-  //
-  // Set relevant GPIO pins as UART pins.
-  //
-  //
-  // Configure the GPIO Pin Mux for PA2
-  // for U4RX
-  //
-  MAP_GPIOPinConfigure(GPIO_PA2_U4RX);
-  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_2);
+  // Turn on the UART peripheral
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART4);
 
-  //
-  // Configure the GPIO Pin Mux for PA3
-  // for U4TX
-  //
-  MAP_GPIOPinConfigure(GPIO_PA3_U4TX);
-  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_3);
 
   //
   // Configure the UART for 115,200, 8-N-1 operation.
   //
   MAP_UARTConfigSetExpClk(UART4_BASE, ui32SysClock, 115200,
-                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-                           UART_CONFIG_PAR_NONE));
+                         (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                          UART_CONFIG_PAR_NONE));
 
   //
   // Enable the UART interrupt.
   //
   MAP_IntEnable(INT_UART4);
   MAP_UARTIntEnable(UART4_BASE, UART_INT_RX | UART_INT_RT);
+
   return;
 }
 
   
-
 
 //*****************************************************************************
 //
 // Send a string to the UART. From uart_echo example.
 //
 //*****************************************************************************
+/*
 void
 UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count)
 {
+#ifdef USE_UART
   //
   // Loop while there are more characters to send.
   //
@@ -147,7 +157,25 @@ UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count)
       //
       MAP_UARTCharPutNonBlocking(UART4_BASE, *pui8Buffer++);
     }
+#endif // USE_UART
 }
+*/
+
+
+void UART4Print(const char* str)
+{
+	int size = strlen(str);
+	for ( int i = 0; i < size; ++i ) {
+		//
+		// Write the next character to the UART.
+		//
+		//MAP_UARTCharPutNonBlocking(UART4_BASE, str[i]);
+		MAP_UARTCharPut(UART4_BASE, str[i]);
+
+	}
+
+}
+
 
 uint32_t g_ui32SysClock = 0;
 
@@ -209,41 +237,46 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
   // data structure to turn on various power supplies. This should be ordered
   // such that the priority increases, though it's not necessary
   for ( int prio = 1; prio <= num_priorities; ++prio ) {
-    // enable the supplies at the relevant priority
-    for ( int e = 0; e < nenables; ++e ) {
-      if ( enables[e].priority == prio )
-        write_gpio_pin(enables[e].name, 0x1);
-    }
-    //
-    // Delay for a bit
-    //
-    SysCtlDelay(g_ui32SysClock/6);
-    // check power good at this level or higher priority (lower number)
-    bool all_good = true;
-    int o = -1;
-    for ( o = 0; o < noks; ++o ) {
-      if ( enables[o].priority <= prio ) {
-        int8_t val = read_gpio_pin(oks[o].name);
-        if ( val == 0 ) {
-          all_good = false;
-          break;
-        }
-      }
-    } // loop over 'ok' bits
-    if (  ! all_good ) { 
-      // o tells you which one died. should I print something on UART?
-      // turn off all supplies at current priority level or lower
-      // that is probably overkill since they should not all be 
-      for ( int e = 0; e < nenables; ++e ) {
-        if ( enables[e].priority >= prio ) 
-          write_gpio_pin(enables[e].name, 0x0);
-      }
-      success = false;
-      break;
-    }
+	  // enable the supplies at the relevant priority
+	  for ( int e = 0; e < nenables; ++e ) {
+		  if ( enables[e].priority == prio ) {
+			  write_gpio_pin(enables[e].name, 0x1);
+		  }
+	  }
+
+	  //
+	  // Delay for a bit
+	  //
+	  MAP_SysCtlDelay(g_ui32SysClock/6);
+	  // check power good at this level or higher priority (lower number)
+	  bool all_good = true;
+	  int o = -1;
+	  for ( o = 0; o < noks; ++o ) {
+		  if ( oks[o].priority <= prio ) {
+			  int8_t val = read_gpio_pin(oks[o].name);
+			  if ( val == 0 ) {
+				  all_good = false;
+				  break;
+			  }
+		  }
+	  } // loop over 'ok' bits
+	  if (  ! all_good ) {
+		  // o tells you which one died. should I print something on UART?
+		  // turn off all supplies at current priority level or lower
+		  // that is probably overkill since they should not all be
+		  for ( int e = 0; e < nenables; ++e ) {
+			  if ( enables[e].priority >= prio )
+				  write_gpio_pin(enables[e].name, 0x0);
+
+		  }
+		  // toggle RED leg
+		  toggle_gpio_pin(TM4C_LED_RED);
+		  success = false;
+		  break;
+	  }
   } // loop over priorities
 
-  return success;
+return success;
   
 }
 
@@ -272,6 +305,9 @@ check_ps(void)
           write_gpio_pin(enables[e].name, 0x0);
         }
         success = false;
+        // toggle on red LED
+        toggle_gpio_pin(TM4C_LED_RED);
+
         break;
       }
     }
@@ -292,62 +328,69 @@ main(void)
 {
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
+  //
+  // Enable processor interrupts.
+  //
+  MAP_IntMasterEnable();
 
   //
-  // Run from the PLL at 120 MHz.
+  // Run from the PLL at 120 MHz, using the internal oscillator.
   //
-  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
-                                       SYSCTL_OSC_MAIN |
-                                       SYSCTL_USE_PLL |
-                                       SYSCTL_CFG_VCO_480), 120000000);
-  UartInit(g_ui32SysClock);
+  g_ui32SysClock = MAP_SysCtlClockFreqSet((SYSCTL_OSC_INT |
+                                           SYSCTL_USE_PLL |
+                                           SYSCTL_CFG_VCO_480), 120000000);
+  UART4Init(g_ui32SysClock);
   //
   // Say hello
   //
-  UARTSend((uint8_t *)"Project0 starting", 16);
+  UART4Print("\nProject0 Starting\n");
+
+  // turn off all the LEDs
+  write_gpio_pin(TM4C_LED_RED,   0x0);
+  write_gpio_pin(TM4C_LED_BLUE,  0x0);
+  write_gpio_pin(TM4C_LED_GREEN, 0x0);
 
 
-  bool ps_good = true;
-  int bad_cnt = 1; // to toggle LED for failed PS check
+
+  bool ps_good = false;
+  int cnt = 1; // to toggle LED for failed PS check
   //
   // Loop Forever
   //
   while(1) {
     //
-    // Turn on the LED 1, turn off LED 2
-    //
-    MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x1);
-      
-    //
-    // Delay for a bit
-    //
-    SysCtlDelay(g_ui32SysClock/6);
 
     // turn on power supplies
     if ( ! ps_good ) {
       ps_good = set_ps(true,true,false) ;
       if ( ! ps_good )
-        UARTSend((uint8_t *)"set_ps failed!",16);
+        UART4Print("set_ps failed!\n");
     }
       
-    //
-    // Turn on the LED 2, turn off LED 1
-    //
-    MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), 0x2);
 
     //
     // Delay for a bit
     //
-    SysCtlDelay(g_ui32SysClock/6);
+    MAP_SysCtlDelay(g_ui32SysClock/10);
 
     if ( !check_ps() ) {
-      UARTSend((uint8_t *)"check_ps failed!",16);
-      MAP_GPIOPinWrite(USER_LED3_PORT, USER_LED3_PIN, bad_cnt%2);
-      ++bad_cnt;
-      ps_good = false;
+    	UART4Print("check_ps failed!\n");
+    	toggle_gpio_pin(TM4C_LED_RED);
+    	ps_good = false;
+    }
+    else {
+    	++cnt;
+    	// turn off red LED
+    	MAP_GPIOPinWrite(USER_LED3_PORT, USER_LED3_PIN, 0);
+    	//
+    	//
+    	// toggle green and blue LEDs
+    	//
+    	const uint8_t led_toggle[] = {USER_LED2_PIN, USER_LED1_PIN};
+    	MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), led_toggle[cnt%2]);
+
     }
   }
-  //_Static_assert (0, "assert1");
 
   return 0;
 }
