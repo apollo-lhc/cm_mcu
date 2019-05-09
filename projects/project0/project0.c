@@ -109,6 +109,7 @@ main(void)
   write_gpio_pin(TM4C_LED_RED,   0x0);
   write_gpio_pin(TM4C_LED_BLUE,  0x0);
   write_gpio_pin(TM4C_LED_GREEN, 0x0);
+  write_gpio_pin(BLADE_POWER_OK, 0x0);
 
 
 
@@ -125,6 +126,9 @@ main(void)
       ps_good = set_ps(true,true,false) ;
       if ( ! ps_good )
         UART4Print("set_ps failed!\n");
+      else
+      	write_gpio_pin(BLADE_POWER_OK, 0x1);
+
     }
       
 
@@ -136,6 +140,8 @@ main(void)
     if ( !check_ps() ) {
     	UART4Print("check_ps failed!\n");
     	toggle_gpio_pin(TM4C_LED_RED);
+    	write_gpio_pin(BLADE_POWER_OK, 0x0);
+
     	ps_good = false;
     }
     else {
@@ -148,6 +154,7 @@ main(void)
     	//
     	const uint8_t led_toggle[] = {USER_LED2_PIN, USER_LED1_PIN};
     	MAP_GPIOPinWrite(USER_LED12_PORT, (USER_LED1_PIN|USER_LED2_PIN), led_toggle[cnt%2]);
+    	write_gpio_pin(BLADE_POWER_OK, 0x1); // redundant?
 
     }
   }
