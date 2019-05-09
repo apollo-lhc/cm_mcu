@@ -1,4 +1,7 @@
 // higher level utilities for I2C
+
+#include "board_specific/pinsel.h"
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -7,8 +10,11 @@
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
 #include "driverlib/rom.h"
+#include "driverlib/gpio.h"
 #include "driverlib/rom_map.h"
+#include "driverlib/pin_map.h"
 #include "driverlib/i2c.h"
+#include "driverlib/sysctl.h"
 
 
 //initialize I2C module 1
@@ -31,8 +37,8 @@ void initI2C1(void)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
     // Configure the pin muxing for I2C1 functions on port A6 and A7.
-    GPIOPinConfigure(GPIO_PA6_I2C1SCL);
-    GPIOPinConfigure(GPIO_PA7_I2C1SDA);
+    GPIOPinConfigure(GPIO_PA6_I2C6SCL);
+    GPIOPinConfigure(GPIO_PA7_I2C6SDA);
 
     // Select the I2C function for these pins.
     GPIOPinTypeI2CSCL(GPIO_PORTA_BASE, GPIO_PIN_6);
