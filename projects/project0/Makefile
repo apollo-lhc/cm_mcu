@@ -41,9 +41,9 @@ include ${ROOT}/makedefs
 #
 # Where to find source files that do not live in this directory.
 #
-VPATH=../drivers
-VPATH+=../../../../utils
-VPATH+=../../common
+VPATH=../../common
+#VPATH=+../drivers
+#VPATH+=../../../../utils
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -80,6 +80,9 @@ size: ${COMPILER}/project0.axf
 ${COMPILER}/project0.axf: ${COMPILER}/project0.o
 ${COMPILER}/project0.axf: ${COMPILER}/pinout.o
 ${COMPILER}/project0.axf: ${COMPILER}/pinsel.o
+${COMPILER}/project0.axf: ${COMPILER}/uart.o
+${COMPILER}/project0.axf: ${COMPILER}/utils.o
+${COMPILER}/project0.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/project0.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/project0.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project0.axf: project0.ld

@@ -1,7 +1,7 @@
 
 include ../makedefs
 
-DIRS=blinky uart_echo project0 #i2c-sensors #project2
+DIRS=blinky uart_echo project0 project2 #i2c-sensors 
 
 all:
 	@for d in ${DIRS}; do \

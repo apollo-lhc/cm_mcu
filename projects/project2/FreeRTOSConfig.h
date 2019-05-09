@@ -29,7 +29,7 @@ extern "C" {
 #define configTICK_RATE_HZ                                     ( 100 )
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 		1
 #define configUSE_QUEUE_SETS                                    0
-#define configCPU_CLOCK_HZ                                      160000000
+#define configCPU_CLOCK_HZ                                      120000000
 #define configMAX_PRIORITIES                                    ( 5 )
 #define configMINIMAL_STACK_SIZE                                ( ( unsigned short ) 120 )
 #define configTOTAL_HEAP_SIZE                                   ( ( size_t ) ( 16 * 1024 ) )

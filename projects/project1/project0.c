@@ -21,6 +21,7 @@
 #include "driverlib/interrupt.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
+#include "common/uart.h"
 
 // FreeRTOS includes
 #include "FreeRTOS.h"

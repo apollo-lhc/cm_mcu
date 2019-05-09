@@ -85,9 +85,6 @@ ARMGCC_ROOT:=${shell dirname '${shell sh -c "which ${CC}"}'}/..
 # Set the compiler CPU/FPU options.
 #
 CPU=-mcpu=cortex-m4
-#### WARNING -- I disabled mfloat-abi here since that is what PEtalinux uses. 
-#### NOT SURE IF THIS IS KOSHER
-#### WITTICH 3/2019. 
 FPU=-mfpu=fpv4-sp-d16 -mfloat-abi=hard
 
 #
