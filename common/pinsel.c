@@ -353,7 +353,9 @@ void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin )
   default:
     gpio_port = -1;
     gpio_pin  = -1;
+#ifdef DEBUG
     __error__(__FILE__, __LINE__);
+#endif // DEBUG
     break;
   }
 
