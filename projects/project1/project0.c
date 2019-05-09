@@ -19,8 +19,8 @@
 #include "driverlib/rom_map.h"
 #include "driverlib/uart.h"
 #include "driverlib/interrupt.h"
-#include "board_specific/pinout.h"
-#include "board_specific/pinsel.h"
+#include "common/pinout.h"
+#include "common/pinsel.h"
 
 // FreeRTOS includes
 #include "FreeRTOS.h"

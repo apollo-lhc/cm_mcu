@@ -43,7 +43,7 @@ include ${ROOT}/makedefs
 #
 VPATH=../drivers
 VPATH+=../../../../utils
-VPATH+=../../board_specific
+VPATH+=../../common
 #
 # Where to find header files that do not live in the source directory.
 #

@@ -1,6 +1,6 @@
 // higher level utilities for I2C
 
-#include "board_specific/pinsel.h"
+#include "common/pinsel.h"
 
 #include <stdarg.h>
 #include <stdbool.h>

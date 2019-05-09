@@ -29,7 +29,7 @@ include ${ROOT}/makedefs
 VPATH=../drivers
 VPATH+=../../../../utils
 # board specific 
-VPATH+=../../board_specific
+VPATH+=../../common
 # FreeRTOS
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F

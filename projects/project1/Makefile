@@ -45,7 +45,7 @@ include ${ROOT}/makedefs
 #
 VPATH=../drivers
 VPATH+=../../../../utils
-VPATH+=../../board_specific
+VPATH+=../../common
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 #
