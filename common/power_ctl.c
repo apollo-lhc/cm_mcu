@@ -26,19 +26,19 @@ struct gpio_pin_t enables[] = {
   {  CTRL_K_VCCINT_PWR_EN, 1},
   {  CTRL_V_VCCINT_PWR_EN, 1},
   {  CTRL_VCC_1V8_PWR_EN,  2},
-  {  CTRL_VCC_3V3_PWR_EN,  3},
-  {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 4},
-  {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 4},
-  {  CTRL_K_MGTY_VCCAUX_PWR_EN,  4},
-  {  CTRL_K_MGTH_VCCAUX_PWR_EN,  4},
-  {  CTRL_V_MGTY1_AVCC_PWR_EN, 5},
-  {  CTRL_V_MGTY2_AVCC_PWR_EN, 5},
-  {  CTRL_K_MGTY_AVCC_PWR_EN,  5},
-  {  CTRL_K_MGTH_AVCC_PWR_EN,  5},
-  {  CTRL_K_MGTY_AVTT_PWR_EN,  6},
-  {  CTRL_K_MGTH_AVTT_PWR_EN,  6},
-  {  CTRL_V_MGTY1_AVTT_PWR_EN, 6},
-  {  CTRL_V_MGTY2_AVTT_PWR_EN, 6}
+  {  CTRL_VCC_3V3_PWR_EN,  2},
+  {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 3},
+  {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 3},
+  {  CTRL_K_MGTY_VCCAUX_PWR_EN,  3},
+  {  CTRL_K_MGTH_VCCAUX_PWR_EN,  3},
+  {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
+  {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
+  {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
+ // {  CTRL_K_MGTH_AVCC_PWR_EN,  4},
+  {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
+  {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
+  {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
+  {  CTRL_V_MGTY2_AVTT_PWR_EN, 5}
 };
 const int nenables = sizeof(enables)/sizeof(enables[0]);
 
@@ -48,18 +48,18 @@ struct gpio_pin_t oks[] = {
   { V_VCCINT_PG_A, 1},
   { V_VCCINT_PG_B, 1},
   { VCC_1V8_PG,    2},
-  { VCC_3V3_PG,    3},
-  { V_MGTY1_AVCC_OK, 5},
-  { V_MGTY2_AVCC_OK, 5},
-  { K_MGTY_AVCC_OK,  5},
-  { K_MGTH_AVCC_OK,  5},
-  { K_MGTY_AVTT_OK,  6},
-  { K_MGTH_AVTT_OK,  6},
-  { V_MGTY1_AVTT_OK, 6},
-  { V_MGTY2_AVTT_OK, 6}
+  { VCC_3V3_PG,    2},
+  { V_MGTY1_AVCC_OK, 4},
+  { V_MGTY2_AVCC_OK, 4},
+  { K_MGTY_AVCC_OK,  4},
+ // { K_MGTH_AVCC_OK,  4},
+  { K_MGTY_AVTT_OK,  5},
+  { K_MGTH_AVTT_OK,  5},
+  { V_MGTY1_AVTT_OK, 5},
+  { V_MGTY2_AVTT_OK, 5}
 };
 const int noks = sizeof(oks)/sizeof(oks[0]);
-const int num_priorities = 6;
+const int num_priorities = 5;
 
 
 
@@ -105,8 +105,6 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
 				  write_gpio_pin(enables[e].name, 0x0);
 
 		  }
-		  // toggle RED leg
-		  toggle_gpio_pin(TM4C_LED_RED);
 		  success = false;
 		  break;
 	  }
@@ -141,8 +139,6 @@ check_ps(void)
           write_gpio_pin(enables[e].name, 0x0);
         }
         success = false;
-        // toggle on red LED
-        toggle_gpio_pin(TM4C_LED_RED);
 
         break;
       }
