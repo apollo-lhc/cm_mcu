@@ -50,7 +50,6 @@ IPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
 #
 all: ${COMPILER}
 all: ${COMPILER}/project2.axf
-all: size
 
 #
 # The rule to clean out all the build products.
@@ -64,9 +63,6 @@ clean:
 ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
-
-size: ${COMPILER}/project2.axf
-	${SIZE} $<
 
 #
 # Rules for building the project

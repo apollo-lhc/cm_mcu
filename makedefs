@@ -222,7 +222,7 @@ ${COMPILER}${SUFFIX}/%.a:
 	@${AR} -cr ${@} ${^}
 
 #
-# The rule for linking the application.
+# The rule for linking the application. Also includes a SZ command
 #
 ${COMPILER}${SUFFIX}/%.axf:
 	@if [ 'x${SCATTERgcc_${notdir ${@:.axf=}}}' = x ];                    \
@@ -234,12 +234,14 @@ ${COMPILER}${SUFFIX}/%.axf:
 	 if [ 'x${VERBOSE}' = x ];                                            \
 	 then                                                                 \
 	     echo "  LD    ${@} ${LNK_SCP}";                                  \
+	     echo "  SZ    ${@}";                                             \
 	 else                                                                 \
 	     echo ${LD} -T $${ldname}                                         \
 	          --entry ${ENTRY_${notdir ${@:.axf=}}}                       \
 	          ${LDFLAGSgcc_${notdir ${@:.axf=}}}                          \
 	          ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})                  \
 	          '${LIBM}' '${LIBC}' '${LIBGCC}';                            \
+	     echo ${SIZE} ${@} ;                                                 \
 	 fi;                                                                  \
 	${LD} -T $${ldname}                                                   \
 	      --entry ${ENTRY_${notdir ${@:.axf=}}}                           \
@@ -247,5 +249,6 @@ ${COMPILER}${SUFFIX}/%.axf:
 	      ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})                      \
 	      '${LIBM}' '${LIBC}' '${LIBGCC}'
 	@${OBJCOPY} -O binary ${@} ${@:.axf=.bin}
+	@${SIZE} ${@}
 endif
 

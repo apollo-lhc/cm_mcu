@@ -55,7 +55,6 @@ IPATH+=${ROOT}
 #
 all: ${COMPILER}
 all: ${COMPILER}/project0.axf
-all: size
 
 #
 # The rule to clean out all the build products.
@@ -70,8 +69,6 @@ ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
 
-size: ${COMPILER}/project0.axf
-	${SIZE} $<
 
 
 #
