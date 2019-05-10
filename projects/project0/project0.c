@@ -70,7 +70,7 @@ __error__(char *pcFilename, uint32_t ui32Line)
 }
 #endif
 
-
+//#define USE_UART
 
 
 uint32_t g_ui32SysClock = 0;
@@ -99,12 +99,13 @@ main(void)
   g_ui32SysClock = MAP_SysCtlClockFreqSet((SYSCTL_OSC_INT |
                                            SYSCTL_USE_PLL |
                                            SYSCTL_CFG_VCO_480), 120000000);
+#ifdef USE_UART
   UART4Init(g_ui32SysClock);
   //
   // Say hello
   //
   UART4Print("\nProject0 Starting\n");
-
+#endif // USE_UART
   // turn off all the LEDs
   write_gpio_pin(TM4C_LED_RED,   0x0);
   write_gpio_pin(TM4C_LED_BLUE,  0x0);
@@ -124,10 +125,13 @@ main(void)
     // turn on power supplies
     if ( ! ps_good ) {
       ps_good = set_ps(true,true,false) ;
-      if ( ! ps_good )
-        UART4Print("set_ps failed!\n");
+      if ( ps_good )
+        write_gpio_pin(BLADE_POWER_OK, 0x1);
+#ifdef USE_UART
       else
-      	write_gpio_pin(BLADE_POWER_OK, 0x1);
+        UART4Print("set_ps failed!\n");
+#endif // USE_UART
+
 
     }
       
@@ -138,7 +142,9 @@ main(void)
     MAP_SysCtlDelay(g_ui32SysClock/10);
 
     if ( !check_ps() ) {
+#ifdef USE_UART
     	UART4Print("check_ps failed!\n");
+#endif // USE_UART
     	toggle_gpio_pin(TM4C_LED_RED);
     	write_gpio_pin(BLADE_POWER_OK, 0x0);
 
