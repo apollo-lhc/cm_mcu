@@ -66,5 +66,6 @@
 
 void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin );
 
+extern const char* const pin_names[];
 
 #endif // PINSEL_H

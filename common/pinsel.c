@@ -5,8 +5,9 @@
 
 #include "pinsel.h"
 
+#ifdef DEBUG
 extern void __error__(char *pcFilename, uint32_t ui32Line);
-
+#endif // DEBUG
 
 void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin )
 {
@@ -362,3 +363,64 @@ void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin )
   *x_gpio_port = gpio_port;
   *x_gpio_pin = gpio_pin;
 }
+
+const char* const pin_names[] =
+{
+    "TM4C_TO_VU7P_0",
+    "TM4C_FROM_VU7P_0",
+    "TM4C_DIP_SW_2",
+    "V_MGTY1_AVTT_OK",
+    "V_MGTY1_AVCC_OK",
+    "V_MGTY2_AVCC_OK",
+    "V_MGTY2_AVTT_OK",
+    "V_FPGA_PROGRAM",
+    "VCC_1V8_PG",
+    "VCC_3V3_PG",
+    "V_VCCINT_PG_B",
+    "V_VCCINT_PG_A",
+    "CTRL_V_VCCINT_PWR_EN",
+    "CTRL_VCC_1V8_PWR_EN",
+    "_FPGA_I2C_RESET",
+    "CTRL_VCC_3V3_PWR_EN",
+    "CTRL_K_VCCINT_PWR_EN",
+    "_PWR_I2C_RESET",
+    "TM4C_TP1",
+    "_CLOCKS_I2C_RESET",
+    "_V_OPTICS_I2C_RESET",
+    "_K_OPTICS_I2C_RESET",
+    "K_VCCINT_PG_B",
+    "K_VCCINT_PG_A",
+    "BLADE_POWER_OK",
+    "BLADE_ZYNQ_GPIO0",
+    "BLADE_ZYNQ_GPIO1",
+    "BLADE_ZYNQ_GPIO2",
+    "K_MGTH_AVTT_OK",
+    "K_MGTH_AVCC_OK",
+    "K_MGTY_AVCC_OK",
+    "K_MGTY_AVTT_OK",
+    "_K_FPGA_DONE",
+    "K_FPGA_PROGRAM",
+    "TM4C_DIP_SW_1",
+    "CTRL_K_MGTY_VCCAUX_PWR_EN",
+    "CTRL_K_MGTH_VCCAUX_PWR_EN",
+    "CTRL_K_MGTY_AVCC_PWR_EN",
+    "CTRL_K_MGTH_AVCC_PWR_EN",
+    "TM4C_FROM_KU15P_0",
+    "TM4C_TO_KU15P_0",
+    "CTRL_K_MGTY_AVTT_PWR_EN",
+    "CTRL_K_MGTH_AVTT_PWR_EN",
+    "TM4C_TP2",
+    "TM4C_TP3",
+    "ID_EEPROM_WP",
+    "CTRL_V_MGTY2_AVTT_PWR_EN",
+    "CTRL_V_MGTY1_AVTT_PWR_EN",
+    "CTRL_V_MGTY2_AVCC_PWR_EN",
+    "CTRL_V_MGTY1_AVCC_PWR_EN",
+    "CTRL_V_MGTY2_VCCAUX_PWR_EN",
+    "CTRL_V_MGTY1_VCCAUX_PWR_EN",
+    "TM4C_LED_BLUE",
+    "TM4C_LED_GREEN",
+    "TM4C_LED_RED",
+    "_V_FPGA_DONE"
+};
+
