@@ -176,7 +176,7 @@ void SystemInit()
   PinoutSet();
 
   //
-  // Run from the PLL at 120 MHz.
+  // Run from the PLL at the defined clock speed configCPU_CLOCK_HZ
   //
   g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT |
       SYSCTL_USE_PLL |
@@ -184,10 +184,10 @@ void SystemInit()
   UART4Init(g_ui32SysClock);
   initI2C1(g_ui32SysClock);
 
-  // SYSTICK timer
-  MAP_SysTickPeriodSet(configTICK_RATE_HZ); // period in Hz
-  MAP_SysTickIntEnable(); // enable the interrupt
-  MAP_SysTickEnable();
+//  // SYSTICK timer -- this is already enabled in the portable layer
+//  MAP_SysTickPeriodSet(configTICK_RATE_HZ); // period in Hz
+//  MAP_SysTickIntEnable(); // enable the interrupt
+//  MAP_SysTickEnable();
   return;
 }
 
@@ -199,28 +199,32 @@ volatile uint32_t g_ui32SysTickCount;
 // Holds the handle of the created queue.
 static QueueHandle_t xLedQueue = NULL;
 
-#define PS_BAD  0x02;
-#define PS_GOOD 0x01;
+#define PS_BAD  0x02
+#define PS_GOOD 0x01
 
 // control the LED
 void LedTask(void *parameters)
 {
   // TODO: this should also handle blinking, by using a non-blocking queue check and a vTaskDelayUntil call
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  uint32_t result;
+  uint32_t message;
   // this function never returns
   for ( ;; ) {
     // check for a new item in the queue but don't wait
-    xQueueReceive(xLedQueue, &result, 0);
-    switch (result ) {
-    case 0x00:
-      break;
-    case 0x01:
-      // do something
-      break;
-    default:
-      break;
+    if ( xQueueReceive(xLedQueue, &message, 0) ) {
+      switch (message ) {
+      case PS_BAD:
+        write_gpio_pin(BLADE_POWER_OK,0);
+        break;
+      case PS_GOOD:
+        write_gpio_pin(BLADE_POWER_OK, 1);
+        break;
+      default:
+        toggle_gpio_pin(TM4C_LED_RED); // message I don't understand? Toggle blue LED
+        break;
+      }
     }
+    toggle_gpio_pin(TM4C_LED_GREEN);
     // wait for next check
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
 
@@ -231,27 +235,30 @@ void PowerSupplyTask(void *parameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  bool lastStateGood = false;
+  bool lastState = false;
+
+  // turn on the power supply at the start of the task
+  set_ps(true,true,true);
 
   // this function never returns
   for ( ;; ) {
     uint32_t message;
-    bool good = check_ps();
-    if ( ! good ) {
+    bool state = check_ps();
+    if ( ! state ) {
       message = PS_BAD;
-      lastStateGood = false;
     }
-    else if ( !lastStateGood ) { // good now, was bad
+    else { // all good
       message = PS_GOOD;
-      lastStateGood = true;
     }
-    xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));
-
+    // only send a message on state change.
+    if ( lastState != state )
+      xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));
+    lastState = state;
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   }
 }
 
-extern void vCommandLineTask(void *parameters);
+//extern void vCommandLineTask(void *parameters);
 
 
 
@@ -263,15 +270,16 @@ int main( void )
 
   // semaphore for the UART
 
-  // queue for the LED
-  xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
-      sizeof( uint32_t )); 		// The size of each item.
-
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
-  xTaskCreate(vCommandLineTask,"CON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+  //xTaskCreate(vCommandLineTask,"CON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+
+  // queue for the LED
+  xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
+      sizeof( uint32_t ));    // The size of each item.
+
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
