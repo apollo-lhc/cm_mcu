@@ -37,7 +37,7 @@ extern "C" {
 #define configUSE_TRACE_FACILITY                                0
 #define configUSE_16_BIT_TICKS                                  0
 #define configIDLE_SHOULD_YIELD                                 1
-#define configUSE_MUTEXES                                       0
+#define configUSE_MUTEXES                                       1
 #define configQUEUE_REGISTRY_SIZE                               0
 #define configCHECK_FOR_STACK_OVERFLOW                          2
 #define configUSE_RECURSIVE_MUTEXES                             0
@@ -56,9 +56,9 @@ http://www.FreeRTOS.org/a00016.html */
 #define configSUPPORT_DYNAMIC_ALLOCATION                        1
 
 /* Run time stats gathering definitions. */
-#define configGENERATE_RUN_TIME_STATS                           0
+#define configGENERATE_RUN_TIME_STATS                           1
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#define portGET_RUN_TIME_COUNTER_VALUE()
+#define portGET_RUN_TIME_COUNTER_VALUE()                        xTaskGetTickCount()
 
 /* This demo makes use of one or more example stats formatting functions.  These
 format the raw data provided by the uxTaskGetSystemState() function in to human
@@ -128,6 +128,10 @@ header file. */
 
 // for the CLI
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE 256
+
+// non-standard
+#define CLI_UART UART4_BASE
+
 
 #ifdef __cplusplus
 }

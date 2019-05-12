@@ -15,6 +15,7 @@
 #include "FreeRTOS_CLI.h"
 
 #include "string.h"
+#include <stdlib.h>
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -27,14 +28,40 @@
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   100
 
-#define CLI_UART UART4_BASE
+// sample commands from the demo project
+void vRegisterSampleCLICommands( void );
+
+// Ugly hack for now -- I don't understand how to reconcile these
+// two parts of the FreeRTOS-Plus code w/o casts o plenty
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-sign"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 
 static BaseType_t readI2Creg1(char *m, size_t s, const char *mm)
 {
-	BaseType_t retval = 0;
-	return retval;
+
+	int8_t *p1, *p2, *p3;
+	BaseType_t p1l, p2l, p3l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l);
+  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l);
+  p1[p1l] = 0x00; // terminate strings
+  p2[p2l] = 0x00; // terminate strings
+  p3[p3l] = 0x00; // terminate strings
+
+  BaseType_t i1, i2, i3;
+  i1 = strtol(p1, NULL, 10);
+  i2 = strtol(p2, NULL, 10);
+  i3 = strtol(p3, NULL, 10);
+  uint8_t data[10];
+  if ( i3 > 10 ) i3 = 10;
+  readI2Creg(I2C1_BASE, i1, i2, data, i3);
+  // should actually do something here
+
+	return pdFALSE;
 }
 
+#pragma GCC diagnostic pop
 
 
 static const char * const pcWelcomeMessage =
@@ -57,6 +84,9 @@ void vCommandLineTask( void *pvParameters )
 
 	// register the commands
 	FreeRTOS_CLIRegisterCommand(&i2c_read_command);
+
+	// register sample commands
+	vRegisterSampleCLICommands();
 
 	/* Send a welcome message to the user knows they are connected. */
 	UARTPrint( CLI_UART, pcWelcomeMessage);

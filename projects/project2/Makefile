@@ -35,6 +35,8 @@ VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
 VPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
+# hack
+VPATH+=${FREERTOS_PLUS_ROOT}/../Demo/Common/FreeRTOS_Plus_CLI_Demos
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -84,6 +86,7 @@ ${COMPILER}/project2.axf: ${COMPILER}/list.o
 ${COMPILER}/project2.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/project2.axf: ${COMPILER}/heap_4.o
 ${COMPILER}/project2.axf: ${COMPILER}/FreeRTOS_CLI.o
+${COMPILER}/project2.axf: ${COMPILER}/Sample-CLI-commands.o
 ## TivaWare
 ${COMPILER}/project2.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project2.axf: project2.ld

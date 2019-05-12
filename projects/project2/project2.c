@@ -40,6 +40,7 @@
 #include "task.h"
 #include "queue.h"
 #include "stream_buffer.h"
+#include "semphr.h"
 #include "portmacro.h"
 //*****************************************************************************
 //
@@ -71,6 +72,19 @@ __error__(char *pcFilename, uint32_t ui32Line)
 
 uint32_t g_ui32SysClock = 0;
 
+
+SemaphoreHandle_t xMutex = NULL;
+
+static
+void Print(const char* str)
+{
+    xSemaphoreTake( xMutex, portMAX_DELAY );
+    {
+      UARTPrint(CLI_UART, str);
+    }
+    xSemaphoreGive( xMutex );
+  return;
+}
 
 // Alternate UART signal handler
 /* A stream buffer that has already been created. */
@@ -169,7 +183,6 @@ UARTIntHandler2(void)
 }
 
 
-
 void SystemInit()
 {
   // initialize all pins, using file setup by TI PINMUX tool
@@ -245,6 +258,7 @@ void PowerSupplyTask(void *parameters)
     uint32_t message;
     bool state = check_ps();
     if ( ! state ) {
+      Print("check_ps failed!\n");
       message = PS_BAD;
     }
     else { // all good
@@ -258,7 +272,7 @@ void PowerSupplyTask(void *parameters)
   }
 }
 
-//extern void vCommandLineTask(void *parameters);
+void vCommandLineTask(void *parameters);
 
 
 
@@ -268,13 +282,14 @@ int main( void )
   // Set up the hardware ready to run the demo. 
   SystemInit();
 
-  // semaphore for the UART
+  // mutex for the UART
+  xMutex = xSemaphoreCreateMutex();
 
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
-  //xTaskCreate(vCommandLineTask,"CON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+  xTaskCreate(vCommandLineTask,"CON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
