@@ -10,4 +10,13 @@ The code will use the Tivaware driver library since this is stored in the ROM of
 
 Utimately we will likely use [FreeRTOS](https://www.freertos.org/RTOS-Cortex-M3-M4.html) to provide a basic RTOS.
 
-Currently investigating using the [Black Magic Probe](https://github.com/blacksphere/blackmagic/wiki) as the JTAG programmer for the device.
+We have settled on the [Segger J-LINK EDU](https://www.segger.com) ($60 USD, plus another $60 if you want to get the custom Xilinx JTAG header adapter). 
+
+The project is a makefile project; you can also use the Eclipse-based [GNU MCU Eclipse](https://gnu-mcu-eclipse.github.io) IDE which integrates well with the Segger debugger. An Eclipse project is included in the repo. Again the build proceeds via `make` even if you use the IDE.  Follow the instructions on this page, also for windows you'll need to install `make`, `echo` and `rm` (as explained on the GNU MCU web page.
+
+We are also using [FreeRTOS](https://freertos.org) also to provide basicl multi-tasking. Install FreeRTOS from the above link somewhere and then set the environment variables as follows:
+```bash
+export FREERTOS_ROOT=/base/of/install/FreeRTOS/Source
+export FREERTOS_PLUS_ROOT=/base/of/install/FreeRTOS-Plus/Source
+```
+The second link is needed for some CLI handling tools.
