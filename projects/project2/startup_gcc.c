@@ -85,8 +85,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    IntDefaultHandler,                      // UART0 Rx and Tx
-    IntDefaultHandler,                      // UART1 Rx and Tx
+    UARTIntHandler,                         // UART0 Rx and Tx
+    UARTIntHandler,                         // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
     IntDefaultHandler,                      // PWM Fault
@@ -136,11 +136,11 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port L
     IntDefaultHandler,                      // SSI2 Rx and Tx
     IntDefaultHandler,                      // SSI3 Rx and Tx
-    IntDefaultHandler,                      // UART3 Rx and Tx
+    UARTIntHandler,                         // UART3 Rx and Tx
     UARTIntHandler,                         // UART4 Rx and Tx
-    IntDefaultHandler,                      // UART5 Rx and Tx
-    IntDefaultHandler,                      // UART6 Rx and Tx
-    IntDefaultHandler,                      // UART7 Rx and Tx
+    UARTIntHandler,                         // UART5 Rx and Tx
+    UARTIntHandler,                         // UART6 Rx and Tx
+    UARTIntHandler,                         // UART7 Rx and Tx
     IntDefaultHandler,                      // I2C2 Master and Slave
     IntDefaultHandler,                      // I2C3 Master and Slave
     IntDefaultHandler,                      // Timer 4 subtimer A
