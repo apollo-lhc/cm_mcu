@@ -24,13 +24,6 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>Source</name>
-			<type>2</type>
-			<location>/mnt/scratch/wittich/tracklet/apollo/FreeRTOSv10.2.0/FreeRTOS/Source</location>
-		</link>
-	</linkedResources>
 	<filteredResources>
 		<filter>
 			<id>1557586053831</id>
