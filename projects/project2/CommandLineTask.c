@@ -109,6 +109,30 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// send LED commands
+static BaseType_t led_ctl(char *m, size_t s, const char *mm)
+{
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p1[p1l] = 0x00; // terminate strings
+  BaseType_t i1 = strtol(p1, NULL, 10);
+
+  uint32_t message;
+  if ( !(i1 == 1 || i1 == 0 )) {
+    snprintf(m, s, "led_ctl: invalid argument %d received\n", i1);
+    return pdFALSE;
+  }
+  else if ( i1 == 1 ) {
+    message = PS_ON; // turn on power supply
+  }
+  else if ( i1 == 0 ) {
+    message = PS_OFF; // turn off power supply
+  }
+  xQueueSendToBack(xPwrQueue, &message, pdMS_TO_TICKS(10));
+
+  return pdFALSE;
+}
 
 #pragma GCC diagnostic pop
 

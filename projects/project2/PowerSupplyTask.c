@@ -20,11 +20,7 @@
 // FreeRTOS includes
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
-//#include "task.h"
 #include "queue.h"
-//#include "stream_buffer.h"
-//#include "semphr.h"
-//#include "portmacro.h"
 
 
 
@@ -86,6 +82,8 @@ void PowerSupplyTask(void *parameters)
     if ( oldState != newstate )
       xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));// todo: check on fail to send
     oldState = newstate;
+
+    // wait here for the x MS, where x is 2nd argument below.
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   }
 }
