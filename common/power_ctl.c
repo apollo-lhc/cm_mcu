@@ -13,6 +13,11 @@
 #include "driverlib/rom_map.h"
 #include "driverlib/sysctl.h"
 
+#ifdef USE_FREERTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#endif // USE_FREERTOS
+
 
 extern uint32_t g_ui32SysClock;
 
@@ -34,7 +39,7 @@ struct gpio_pin_t enables[] = {
   {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
   {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
   {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
- // {  CTRL_K_MGTH_AVCC_PWR_EN,  4},
+//  {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
   {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
   {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
   {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
@@ -52,7 +57,7 @@ struct gpio_pin_t oks[] = {
   { V_MGTY1_AVCC_OK, 4},
   { V_MGTY2_AVCC_OK, 4},
   { K_MGTY_AVCC_OK,  4},
- // { K_MGTH_AVCC_OK,  4},
+ // { K_MGTH_AVCC_OK,  4}, // this one is broken on S/N 001
   { K_MGTY_AVTT_OK,  5},
   { K_MGTH_AVTT_OK,  5},
   { V_MGTY1_AVTT_OK, 5},
@@ -80,10 +85,14 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
 		  }
 	  }
 
+#ifdef USE_FREERTOS
+    vTaskDelay(pdMS_TO_TICKS(100));
+#else
 	  //
 	  // Delay for a bit
 	  //
 	  MAP_SysCtlDelay(g_ui32SysClock/6);
+#endif // USER_FREERTOS
 	  // check power good at this level or higher priority (lower number)
 	  bool all_good = true;
 	  int o = -1;
@@ -123,7 +132,7 @@ check_ps(void)
     bool all_good = true;
     int o = -1;
     for ( o = 0; o < noks; ++o ) {
-      if ( enables[o].priority <= prio ) {
+      if ( oks[o].priority <= prio ) {
         int8_t val = read_gpio_pin(oks[o].name);
         if ( val == 0 ) {
           all_good = false;
@@ -134,6 +143,8 @@ check_ps(void)
     if (  ! all_good ) {
       // o tells you which one died. should I print something on UART?
       // turn off all supplies at current priority level or lower
+      //UART4Print("Failure reading port ");
+      //UART4Print(pin_names[enables[o].name]);
       for ( int e = 0; e < nenables; ++e ) {
         if ( enables[e].priority >= prio ) {
           write_gpio_pin(enables[e].name, 0x0);
@@ -147,3 +158,33 @@ check_ps(void)
 
   return success;
 }
+
+bool
+disable_ps(void)
+{
+  bool success = true;
+  // disable in reverse order
+  for (int prio = num_priorities; prio > 0;  --prio) {
+    // disable the supplies at the relevant priority
+    for ( int e = 0; e < nenables; ++e ) {
+      if ( enables[e].priority == prio ) {
+        write_gpio_pin(enables[e].name, 0x0);
+      }
+    } // loop over enables
+    bool ready_to_proceed = false;
+    while ( ! ready_to_proceed ) {
+      bool all_ready = true;
+      for ( int o = 0; o < noks; ++o ) {
+         if ( oks[o].priority >= prio ) {
+           int8_t val = read_gpio_pin(oks[o].name);
+           if ( val == 1 ) {
+             all_ready = false;
+           }
+         }
+       } // loop over 'ok' bits
+      if ( all_ready) ready_to_proceed = true;
+    }
+  } // loop over priorities
+  return success;
+}
+
