@@ -77,6 +77,7 @@ ${COMPILER}/project2.axf: ${COMPILER}/uart.o
 ${COMPILER}/project2.axf: ${COMPILER}/utils.o
 ${COMPILER}/project2.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/project2.axf: ${COMPILER}/CommandLineTask.o
+${COMPILER}/project2.axf: ${COMPILER}/PowerSupplyTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/project2.axf: ${COMPILER}/tasks.o
