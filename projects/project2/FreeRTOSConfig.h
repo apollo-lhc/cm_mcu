@@ -34,7 +34,7 @@ extern "C" {
 #define configMINIMAL_STACK_SIZE                                ( ( unsigned short ) 120 )
 #define configTOTAL_HEAP_SIZE                                   ( ( size_t ) ( 16 * 1024 ) )
 #define configMAX_TASK_NAME_LEN                                 ( 10 )
-#define configUSE_TRACE_FACILITY                                0
+#define configUSE_TRACE_FACILITY                                1
 #define configUSE_16_BIT_TICKS                                  0
 #define configIDLE_SHOULD_YIELD                                 1
 #define configUSE_MUTEXES                                       1
@@ -46,8 +46,6 @@ extern "C" {
 #define configUSE_TICKLESS_IDLE                                 1
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS                 0
 
-/* The simple demo does not use any hook functions.  See
-http://www.FreeRTOS.org/a00016.html */
 #define configUSE_MALLOC_FAILED_HOOK                            0
 #define configUSE_IDLE_HOOK                                     0
 #define configUSE_TICK_HOOK                                     0
@@ -64,7 +62,7 @@ http://www.FreeRTOS.org/a00016.html */
 format the raw data provided by the uxTaskGetSystemState() function in to human
 readable ASCII form.  See the notes in the implementation of vTaskList() within
 FreeRTOS/Source/tasks.c for limitations. */
-#define configUSE_STATS_FORMATTING_FUNCTIONS                    0
+#define configUSE_STATS_FORMATTING_FUNCTIONS                    1
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                                   0
@@ -84,7 +82,7 @@ to exclude the API function. */
 #define INCLUDE_vTaskCleanUpResources                   0
 #define INCLUDE_vTaskSuspend                            1
 #define INCLUDE_vTaskDelayUntil                         1
-#define INCLUDE_vTaskDelay                              0
+#define INCLUDE_vTaskDelay                              1
 #define INCLUDE_eTaskGetState                           0
 #define INCLUDE_xTimerPendFunctionCall                  0
 #define INCLUDE_xSemaphoreGetMutexHolder                0
@@ -129,7 +127,7 @@ header file. */
 // for the CLI
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE 256
 
-// non-standard
+// non-standard, park this here for now
 #define CLI_UART UART4_BASE
 
 

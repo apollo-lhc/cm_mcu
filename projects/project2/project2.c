@@ -75,7 +75,7 @@ uint32_t g_ui32SysClock = 0;
 
 SemaphoreHandle_t xMutex = NULL;
 
-static
+
 void Print(const char* str)
 {
     xSemaphoreTake( xMutex, portMAX_DELAY );
@@ -92,26 +92,26 @@ StreamBufferHandle_t xStreamBuffer;
 
 void UARTIntHandler( void )
 {
-
+  // TODO: figure out which UART caused the interrupt -- can I do this?
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   //
   // Get the interrupt status.
   //
-  uint32_t ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
+  uint32_t ui32Status = ROM_UARTIntStatus(CLI_UART, true);
 
   //
   // Clear the asserted interrupts.
   //
-  ROM_UARTIntClear(UART4_BASE, ui32Status);
+  ROM_UARTIntClear(CLI_UART, ui32Status);
 
   //
   // Loop while there are characters in the receive FIFO.
   //
   uint8_t bytes[8];
   int received = 0;
-  while(ROM_UARTCharsAvail(UART4_BASE)) {
+  while(ROM_UARTCharsAvail(CLI_UART)) {
 
-    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
+    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(CLI_UART);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
     if ( ++received == 8 ) {
       xStreamBufferSendFromISR(xStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
@@ -119,7 +119,7 @@ void UARTIntHandler( void )
     }
   }
   if ( received )
-    xStreamBufferSendFromISR(xStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+    xStreamBufferSendFromISR(xStreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
     xStreamBufferReceiveFromISR() then a task that has a priority above the
@@ -133,74 +133,30 @@ void UARTIntHandler( void )
 }
 
 
-//*****************************************************************************
-//
-// The UART interrupt handler.
-//
-//*****************************************************************************
-void
-UARTIntHandler2(void)
-{
-  uint32_t ui32Status;
-
-  //
-  // Get the interrupt status.
-  //
-  ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
-
-  //
-  // Clear the asserted interrupts.
-  //
-  ROM_UARTIntClear(UART4_BASE, ui32Status);
-
-  //
-  // Loop while there are characters in the receive FIFO.
-  //
-  while(ROM_UARTCharsAvail(UART4_BASE))
-  {
-    //
-    // Read the next character from the UART and write it back to the UART.
-    //
-    ROM_UARTCharPutNonBlocking(UART4_BASE,
-        ROM_UARTCharGetNonBlocking(UART4_BASE));
-
-    //
-    // Blink the LED to show a character transfer is occurring.
-    //
-    MAP_GPIOPinWrite(USER_LED12_PORT, USER_LED2_PIN, USER_LED2_PIN);
-
-    //
-    // Delay for 1 millisecond.  Each SysCtlDelay is about 3 clocks.
-    //
-    SysCtlDelay(g_ui32SysClock / (1000 * 3));
-
-    //
-    // Turn off the LED
-    //
-    MAP_GPIOPinWrite(USER_LED12_PORT, USER_LED2_PIN, 0x0);
-
-  }
-}
 
 
 void SystemInit()
 {
+  //
+  // Run from the PLL, internal oscillator, at the defined clock speed configCPU_CLOCK_HZ
+  //
+  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT|SYSCTL_USE_PLL |
+                                       SYSCTL_CFG_VCO_480), configCPU_CLOCK_HZ);
+  // Enable processor interrupts.
+  //
+  MAP_IntMasterEnable();
+
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
 
-  //
-  // Run from the PLL at the defined clock speed configCPU_CLOCK_HZ
-  //
-  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT |
-      SYSCTL_USE_PLL |
-      SYSCTL_CFG_VCO_480), configCPU_CLOCK_HZ);
+#if (CLI_UART == UART4_BASE)
   UART4Init(g_ui32SysClock);
+#else
+#error "CLI UART not initialized"
+#endif
   initI2C1(g_ui32SysClock);
 
-//  // SYSTICK timer -- this is already enabled in the portable layer
-//  MAP_SysTickPeriodSet(configTICK_RATE_HZ); // period in Hz
-//  MAP_SysTickIntEnable(); // enable the interrupt
-//  MAP_SysTickEnable();
+  // SYSTICK timer -- this is already enabled in the portable layer
   return;
 }
 
@@ -209,16 +165,12 @@ volatile uint32_t g_ui32SysTickCount;
 
 
 
-// Holds the handle of the created queue.
+// Holds the handle of the created queue for the LED task.
 static QueueHandle_t xLedQueue = NULL;
-
-#define PS_BAD  0x02
-#define PS_GOOD 0x01
 
 // control the LED
 void LedTask(void *parameters)
 {
-  // TODO: this should also handle blinking, by using a non-blocking queue check and a vTaskDelayUntil call
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint32_t message;
   // this function never returns
@@ -243,31 +195,60 @@ void LedTask(void *parameters)
 
   }
 }
+
+// Holds the handle of the created queue for the power supply task.
+QueueHandle_t xPwrQueue = NULL;
+
+
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  bool lastState = false;
+  enum state { PWR_ON, PWR_OFF, UNKNOWN};
+  enum state oldState = UNKNOWN;
 
   // turn on the power supply at the start of the task
-  set_ps(true,true,true);
+  if ( set_ps(true,true,true) ) {
+    oldState = PWR_ON;
+  }
+  else {
+    oldState = PWR_OFF;
+  }
 
   // this function never returns
   for ( ;; ) {
+    // first check for message on the queue and act on any messages.
+    // non-blocking call.
     uint32_t message;
-    bool state = check_ps();
-    if ( ! state ) {
-      Print("check_ps failed!\n");
+    if ( xQueueReceive(xPwrQueue, &message, 0) ) {
+      switch (message ) {
+      case PS_OFF:
+        disable_ps();
+        break;
+      case PS_ON:
+        set_ps(true,true,true);
+        break;
+      default:
+        toggle_gpio_pin(TM4C_LED_RED); // message I don't understand? Toggle blue LED
+        break;
+      }
+    }
+    // now check the actual state
+    bool psgood = check_ps();
+    enum state newstate = psgood?PWR_ON:PWR_OFF;
+
+    if ( newstate == PWR_OFF  && oldState == PWR_ON) {
+      Print("\nPowerSupplyTask: power supplied turned off.\n");
       message = PS_BAD;
     }
     else { // all good
       message = PS_GOOD;
     }
     // only send a message on state change.
-    if ( lastState != state )
-      xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));
-    lastState = state;
+    if ( oldState != newstate )
+      xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));// todo: check on fail to send
+    oldState = newstate;
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   }
 }
@@ -282,9 +263,14 @@ int main( void )
   // Set up the hardware ready to run the demo. 
   SystemInit();
 
-  // mutex for the UART
+  // mutex for the UART output
   xMutex = xSemaphoreCreateMutex();
 
+  //  Create the stream buffer that sends data from the interrupt to the
+  //  task, and create the task.
+  // todo: handle sending more than one byte at a time
+  xStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
+                     1); // number of items before a trigger is sent
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
@@ -294,8 +280,11 @@ int main( void )
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
       sizeof( uint32_t ));    // The size of each item.
+  xPwrQueue = xQueueCreate(5, sizeof(uint32_t)); // PWR queue
 
-
+  Print("\n----------------------------\n");
+  Print("Staring Project2 (FreeRTOS scheduler about to start)\n");
+  Print(  "----------------------------\n");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
 
@@ -305,7 +294,7 @@ int main( void )
 
 
 /*-----------------------------------------------------------*/
-
+#if  (configCHECK_FOR_STACK_OVERFLOW != 0)
 void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 {
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
@@ -314,11 +303,13 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
   ( void ) pcTaskName;
   for( ;; );
 }
+#endif
 /*-----------------------------------------------------------*/
 
+#if ( configUSE_IDLE_HOOK == 1 )
 void vApplicationIdleHook( void )
 {
   // not doing anything right now; this is just here in case I need to use it
 }
-
+#endif
 

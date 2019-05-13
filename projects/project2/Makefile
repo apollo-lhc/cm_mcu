@@ -87,12 +87,13 @@ ${COMPILER}/project2.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/project2.axf: ${COMPILER}/heap_4.o
 ${COMPILER}/project2.axf: ${COMPILER}/FreeRTOS_CLI.o
 ${COMPILER}/project2.axf: ${COMPILER}/Sample-CLI-commands.o
+${COMPILER}/project2.axf: ${COMPILER}/printf-stdarg.o
 ## TivaWare
 ${COMPILER}/project2.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project2.axf: project2.ld
 SCATTERgcc_project2=project2.ld
 ENTRY_project2=ResetISR
-CFLAGSgcc=-DTARGET_IS_TM4C129_RA1
+CFLAGSgcc=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
 
 #
 # Include the automatically generated dependency files.
