@@ -54,6 +54,7 @@ void vRegisterSampleCLICommands( void );
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-sign"
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#pragma GCC diagnostic ignored "-Wformat="
 
 static BaseType_t readI2Creg1(char *m, size_t s, const char *mm)
 {
