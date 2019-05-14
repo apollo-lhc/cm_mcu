@@ -56,7 +56,7 @@ void vRegisterSampleCLICommands( void );
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma GCC diagnostic ignored "-Wformat="
 
-static BaseType_t readI2Creg1(char *m, size_t s, const char *mm)
+static BaseType_t i2c1_ctl(char *m, size_t s, const char *mm)
 {
 
 	int8_t *p1, *p2, *p3;
@@ -123,11 +123,14 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
     snprintf(m, s, "led_ctl: invalid argument %d received\n", i1);
     return pdFALSE;
   }
-  else if ( i1 == 1 ) {
-    message = PS_ON; // turn on power supply
-  }
   else if ( i1 == 0 ) {
-    message = PS_OFF; // turn off power supply
+    message = RED_LED_TOGGLE; // turn on power supply
+  }
+  else if ( i1 == 1 ) {
+    message = RED_LED_TOGGLE3; // turn off power supply
+  }
+  else if ( i1 == 2 ) {
+    message = RED_LED_TOGGLE4; // turn off power supply
   }
   xQueueSendToBack(xPwrQueue, &message, pdMS_TO_TICKS(10));
 
@@ -143,7 +146,7 @@ static const char * const pcWelcomeMessage =
 CLI_Command_Definition_t i2c_read_command = {
 		.pcCommand="i2cr",
 		.pcHelpString="i2cr <address> <reg> <number of bytes>\n Read no1 I2C controller.\r\n",
-		.pxCommandInterpreter = readI2Creg1,
+		.pxCommandInterpreter = i2c1_ctl,
 		3
 };
 
