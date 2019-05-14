@@ -51,3 +51,4 @@
 *.pdb
 
 .DS_Store
+common/version.h

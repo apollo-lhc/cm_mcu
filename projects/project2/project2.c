@@ -20,6 +20,7 @@
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
+#include "common/version.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -193,7 +194,7 @@ int main( void )
 
   //  Create the stream buffer that sends data from the interrupt to the
   //  task, and create the task.
-  // todo: handle sending more than one byte at a time
+  // todo: handle sending more than one byte at a time, if needed
   xStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
                      1); // number of items before a trigger is sent
 
@@ -208,7 +209,7 @@ int main( void )
   xPwrQueue = xQueueCreate(5, sizeof(uint32_t)); // PWR queue
 
   Print("\n----------------------------\n");
-  Print("Staring Project2 (FreeRTOS scheduler about to start)\n");
+  Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n");
   Print(  "----------------------------\n");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
