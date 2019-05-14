@@ -28,12 +28,13 @@ enum LEDpattern { OFF=0, ON=1, TOGGLE=2, TOGGLE3, TOGGLE4};
 QueueHandle_t xLedQueue = NULL;
 
 // control the LED
+// Todo: expand beyond just controlling the red LED, if needed, for the command line interface. Probably not needed.
 void LedTask(void *parameters)
 {
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint32_t callcnt = 0;
 
-  enum LEDpattern greenLedPattern = TOGGLE;
+  enum LEDpattern greenLedPattern = OFF;
   enum LEDpattern blueLedPattern = OFF;
   enum LEDpattern redLedPattern = OFF;
 
@@ -77,10 +78,20 @@ void LedTask(void *parameters)
     else if ( callcnt%greenLedPattern == 0 ) // toggle patterns
       toggle_gpio_pin(TM4C_LED_GREEN);
     // Red LED
-    if ( callcnt%blueLedPattern == 0 )
-      toggle_gpio_pin(TM4C_LED_BLUE);
-    if ( callcnt%redLedPattern == 0 )
+    if ( redLedPattern == OFF)
+      write_gpio_pin(TM4C_LED_RED, 0x0);
+    else if ( redLedPattern == ON )
+      write_gpio_pin(TM4C_LED_RED, 0x1);
+    else if ( callcnt%redLedPattern == 0 ) // toggle patterns
       toggle_gpio_pin(TM4C_LED_RED);
+    // Blue LED
+    if ( blueLedPattern == OFF)
+      write_gpio_pin(TM4C_LED_BLUE, 0x0);
+    else if ( blueLedPattern == ON )
+      write_gpio_pin(TM4C_LED_BLUE, 0x1);
+    else if ( callcnt%blueLedPattern == 0 ) // toggle patterns
+      toggle_gpio_pin(TM4C_LED_BLUE);
+    ++callcnt;
     // wait for next check
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
 

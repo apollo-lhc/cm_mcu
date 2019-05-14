@@ -42,12 +42,7 @@ void PowerSupplyTask(void *parameters)
   enum state oldState = UNKNOWN;
 
   // turn on the power supply at the start of the task
-  if ( set_ps(true,true,true) ) {
-    oldState = PWR_ON;
-  }
-  else {
-    oldState = PWR_OFF;
-  }
+  set_ps(true,true,true) ;
 
   // this function never returns
   for ( ;; ) {
@@ -83,7 +78,7 @@ void PowerSupplyTask(void *parameters)
       xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));// todo: check on fail to send
     oldState = newstate;
 
-    // wait here for the x MS, where x is 2nd argument below.
+    // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   }
 }

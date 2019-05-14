@@ -23,6 +23,8 @@
 #define RED_LED_TOGGLE3 (8)
 #define RED_LED_TOGGLE4 (9)
 
+#define HUH             (99)
+
 
 bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2);
 bool check_ps(void);

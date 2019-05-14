@@ -26,7 +26,7 @@
 #include "FreeRTOS_CLI.h"
 
 // Generic C headers -- caveat emptor
-// todo: do I need these
+// todo: do I need these include files here
 #include "string.h"
 #include <stdlib.h>
 
@@ -41,6 +41,7 @@ int snprintf( char *buf, unsigned int count, const char *format, ... );
 
 // external definition
 extern QueueHandle_t xPwrQueue;
+extern QueueHandle_t xLedQueue;
 
 
 #define MAX_INPUT_LENGTH    50
@@ -50,13 +51,13 @@ extern QueueHandle_t xPwrQueue;
 void vRegisterSampleCLICommands( void );
 
 // Ugly hack for now -- I don't understand how to reconcile these
-// two parts of the FreeRTOS-Plus code w/o casts o plenty
+// two parts of the FreeRTOS-Plus code w/o casts-o-plenty
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-sign"
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma GCC diagnostic ignored "-Wformat="
 
-static BaseType_t i2c1_ctl(char *m, size_t s, const char *mm)
+static BaseType_t i2c1_ctlr(char *m, size_t s, const char *mm)
 {
 
 	int8_t *p1, *p2, *p3;
@@ -73,15 +74,48 @@ static BaseType_t i2c1_ctl(char *m, size_t s, const char *mm)
   i2 = strtol(p2, NULL, 16);
   i3 = strtol(p3, NULL, 16);
   uint8_t data[10];
-  memset(data,0,10);
-  if ( i3 > 10 ) i3 = 10;
+  memset(data,0,10*sizeof(uint8_t));
+  if ( i3 > 10 )
+    i3 = 10;
   char tmp[64];
-  snprintf(tmp, 64, "readI2CReg1: command arguments are: %x %x %x\n", i1, i2, i3);
+  snprintf(tmp, 64, "readI2CReg1: command arguments are: 0x%x 0x%x 0x%x\n", i1, i2, i3);
+  Print(tmp);
+  snprintf(tmp, 64, "readI2CReg1: Read %d bytes from I2C address 0x%x\n", i3, i1);
   Print(tmp);
   readI2Creg(I2C1_BASE, i1, i2, data, i3);
-  // should actually do something here
-  snprintf(m, s, "Read: %d %d %d\n", data[0], data[1], data[2]);
+
+  snprintf(m, s, "Read, 1st 3 bytes: %d %d %d\n", data[0], data[1], data[2]);
 	return pdFALSE;
+}
+
+static BaseType_t i2c1_ctlw(char *m, size_t s, const char *mm)
+{
+
+  int8_t *p1, *p2, *p3;
+  BaseType_t p1l, p2l, p3l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // register
+  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l); // byte to write
+  p1[p1l] = 0x00; // terminate strings
+  p2[p2l] = 0x00; // terminate strings
+  p3[p3l] = 0x00; // terminate strings
+
+  BaseType_t i1, i2, i3;
+  i1 = strtol(p1, NULL, 16);
+  i2 = strtol(p2, NULL, 16);
+  i3 = strtol(p3, NULL, 16);
+  uint8_t data[10];
+  memset(data,0,10*sizeof(uint8_t));
+  data[0] = i3;
+  char tmp[64];
+  snprintf(tmp, 64, "i2c1_ctlw: command arguments are: 0x%x 0x%x 0x%x\n", i1, i2, i3);
+  Print(tmp);
+  snprintf(tmp, 64, "i2c1_ctlw: write 0x%x to address 0x%x, register 0x%x\n", i3, i1, i2);
+  Print(tmp);
+  writeI2Creg(I2C1_BASE, i1, i2, data, 1);
+
+  snprintf(m, s, "Wrote, 3 bytes: %d %d %d\n", data[0], data[1], data[2]);
+  return pdFALSE;
 }
 
 // send power control commands
@@ -104,7 +138,9 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   else if ( i1 == 0 ) {
     message = PS_OFF; // turn off power supply
   }
+  // Send a message to the power supply task
   xQueueSendToBack(xPwrQueue, &message, pdMS_TO_TICKS(10));
+  m[0] = '\0'; // no output from this command
 
   return pdFALSE;
 }
@@ -118,21 +154,25 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i1 = strtol(p1, NULL, 10);
 
-  uint32_t message;
-  if ( !(i1 == 1 || i1 == 0 )) {
-    snprintf(m, s, "led_ctl: invalid argument %d received\n", i1);
-    return pdFALSE;
+  uint32_t message = HUH; // default: message not understood
+  if ( i1 == 0 ) { // ToDo: make messages less clunky. break out color.
+    message = RED_LED_OFF;
   }
-  else if ( i1 == 0 ) {
-    message = RED_LED_TOGGLE; // turn on power supply
-  }
-  else if ( i1 == 1 ) {
-    message = RED_LED_TOGGLE3; // turn off power supply
+  else if (i1 == 1 ) {
+    message = RED_LED_ON;
   }
   else if ( i1 == 2 ) {
+    message = RED_LED_TOGGLE; // turn on power supply
+  }
+  else if ( i1 == 3 ) {
+    message = RED_LED_TOGGLE3; // turn off power supply
+  }
+  else if ( i1 == 4 ) {
     message = RED_LED_TOGGLE4; // turn off power supply
   }
-  xQueueSendToBack(xPwrQueue, &message, pdMS_TO_TICKS(10));
+  // Send a message to the LED task
+  xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));
+  m[0] = '\0'; // no output from this command
 
   return pdFALSE;
 }
@@ -146,8 +186,15 @@ static const char * const pcWelcomeMessage =
 CLI_Command_Definition_t i2c_read_command = {
 		.pcCommand="i2cr",
 		.pcHelpString="i2cr <address> <reg> <number of bytes>\n Read no1 I2C controller.\r\n",
-		.pxCommandInterpreter = i2c1_ctl,
+		.pxCommandInterpreter = i2c1_ctlr,
 		3
+};
+
+CLI_Command_Definition_t i2c_write_command = {
+    .pcCommand="i2cw",
+    .pcHelpString="i2cw <address> <reg> <number of bytes>\n Write no1 I2C controller.\r\n",
+    .pxCommandInterpreter = i2c1_ctlw,
+    3
 };
 
 CLI_Command_Definition_t pwr_ctl_command = {
@@ -157,13 +204,19 @@ CLI_Command_Definition_t pwr_ctl_command = {
     1
 };
 
+CLI_Command_Definition_t led_ctl_command = {
+    .pcCommand="led",
+    .pcHelpString="led (0|1)\n Turn on red LED (for now).\r\n",
+    .pxCommandInterpreter = led_ctl,
+    1
+};
+
 
 extern StreamBufferHandle_t xStreamBuffer;
 
 
 void vCommandLineTask( void *pvParameters )
 {
-  // todo: echo what you typed
   uint8_t cRxedChar, cInputIndex = 0;
   BaseType_t xMoreDataToFollow;
   /* The input and output buffers are declared static to keep them off the stack. */
@@ -171,14 +224,17 @@ void vCommandLineTask( void *pvParameters )
 
 
   // register the commands
-  FreeRTOS_CLIRegisterCommand(&i2c_read_command);
-  FreeRTOS_CLIRegisterCommand( &pwr_ctl_command);
+  FreeRTOS_CLIRegisterCommand(&i2c_read_command );
+  FreeRTOS_CLIRegisterCommand(&i2c_write_command);
+  FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
+  FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
 
   // register sample commands
   vRegisterSampleCLICommands();
 
   /* Send a welcome message to the user knows they are connected. */
   Print(pcWelcomeMessage);
+  Print("% ");
 
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
@@ -190,37 +246,40 @@ void vCommandLineTask( void *pvParameters )
       /* A newline character was received, so the input command string is
             complete and can be processed.  Transmit a line separator, just to
             make the output easier to read. */
-      Print("\r\n");
+      //Print("\r\n");
+      if ( cInputIndex != 0 ) { // empty command -- skip
 
-      snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "\nCalling command %s\n",
-          (const char*)pcInputString);
+        snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\n",
+            (const char*)pcInputString);
 
-      Print((const char*)pcOutputString);
-      /* The command interpreter is called repeatedly until it returns
+        Print((const char*)pcOutputString);
+        /* The command interpreter is called repeatedly until it returns
             pdFALSE.  See the "Implementing a command" documentation for an
             explanation of why this is. */
-      do {
-        /* Send the command string to the command interpreter.  Any
+        do {
+          /* Send the command string to the command interpreter.  Any
                 output generated by the command interpreter will be placed in the
                 pcOutputString buffer. */
-        xMoreDataToFollow = FreeRTOS_CLIProcessCommand
-            (
-                (const char*)pcInputString,   /* The command string.*/
-                (char*)pcOutputString,  /* The output buffer. */
-                MAX_OUTPUT_LENGTH/* The size of the output buffer. */
-            );
+          xMoreDataToFollow = FreeRTOS_CLIProcessCommand
+              (
+                  (const char*)pcInputString,   /* The command string.*/
+                  (char*)pcOutputString,  /* The output buffer. */
+                  MAX_OUTPUT_LENGTH/* The size of the output buffer. */
+              );
 
-        /* Write the output generated by the command interpreter to the
+          /* Write the output generated by the command interpreter to the
                 console. */
-        Print((char*)pcOutputString);
+          if ( pcOutputString[0] != '\0')
+            Print((char*)pcOutputString);
 
-      } while( xMoreDataToFollow != pdFALSE );
+        } while( xMoreDataToFollow != pdFALSE );
 
-      /* All the strings generated by the input command have been sent.
+        /* All the strings generated by the input command have been sent.
             Processing of the command is complete.  Clear the input string ready
             to receive the next command. */
-      cInputIndex = 0;
-      memset( pcInputString, 0x00, MAX_INPUT_LENGTH );
+        cInputIndex = 0;
+        memset( pcInputString, 0x00, MAX_INPUT_LENGTH );
+      }
       Print("% ");
     }
     else {
