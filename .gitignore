@@ -52,3 +52,4 @@
 
 .DS_Store
 common/version.h
+.settings/language.settings.xml
