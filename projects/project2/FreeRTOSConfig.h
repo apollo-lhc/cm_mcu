@@ -122,10 +122,11 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
-//#define configASSERT( x ) if( ( x ) == 0UL ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
+#define configASSERT( x ) if( ( x ) == 0UL ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
 
 // for the CLI
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE 256
+
 
 // non-standard, park this here for now
 #define CLI_UART UART4_BASE

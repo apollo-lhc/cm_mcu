@@ -23,6 +23,7 @@ FREERTOS_PLUS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS-Plus/Source
 #
 include ${ROOT}/makedefs
 
+CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #
 # Where to find source files that do not live in this directory.
 #
