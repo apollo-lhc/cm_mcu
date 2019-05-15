@@ -15,6 +15,9 @@
 #include "driverlib/uart.h"
 #include "driverlib/interrupt.h"
 
+#ifdef USE_FREERTOS
+#include "FreeRTOS.h"
+#endif // USE_FREERTOS
 
 // Initialize the UART
 // based on uart_echo demo project
@@ -36,6 +39,9 @@ UART4Init(uint32_t ui32SysClock)
   //
   // Enable the UART interrupt.
   //
+#ifdef USE_FREERTOS
+  IntPrioritySet( INT_UART4, configKERNEL_INTERRUPT_PRIORITY );
+#endif // USE_FREERTOS
   MAP_IntEnable(INT_UART4);
   MAP_UARTIntEnable(UART4_BASE, UART_INT_RX | UART_INT_RT);
 
