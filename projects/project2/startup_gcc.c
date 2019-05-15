@@ -33,13 +33,15 @@
 //*****************************************************************************
 void ResetISR(void);
 static void NmiSR(void);
-static void FaultISR(void);
 static void IntDefaultHandler(void);
 extern void UARTIntHandler(void);
 extern void xPortPendSVHandler(void);
 extern void vPortSVCHandler(void);
 extern void xPortSysTickHandler(void);
 
+/* The prototype shows it is a naked function - in effect this is just an
+assembly function. */
+static void HardFault_Handler( void ) __attribute__( ( naked ) );
 //*****************************************************************************
 //
 // The entry point for the application.
@@ -67,7 +69,7 @@ void (* const g_pfnVectors[])(void) =
                                             // The initial stack pointer
     ResetISR,                               // The reset handler
     NmiSR,                                  // The NMI handler
-    FaultISR,                               // The hard fault handler
+    HardFault_Handler,                               // The hard fault handler -- was FaultISR
     IntDefaultHandler,                      // The MPU fault handler
     IntDefaultHandler,                      // The bus fault handler
     IntDefaultHandler,                      // The usage fault handler
@@ -85,8 +87,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    UARTIntHandler,                         // UART0 Rx and Tx
-    UARTIntHandler,                         // UART1 Rx and Tx
+    IntDefaultHandler,                         // UART0 Rx and Tx
+    IntDefaultHandler,                         // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
     IntDefaultHandler,                      // PWM Fault
@@ -136,11 +138,11 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port L
     IntDefaultHandler,                      // SSI2 Rx and Tx
     IntDefaultHandler,                      // SSI3 Rx and Tx
-    UARTIntHandler,                         // UART3 Rx and Tx
+    IntDefaultHandler,                         // UART3 Rx and Tx
     UARTIntHandler,                         // UART4 Rx and Tx
-    UARTIntHandler,                         // UART5 Rx and Tx
-    UARTIntHandler,                         // UART6 Rx and Tx
-    UARTIntHandler,                         // UART7 Rx and Tx
+    IntDefaultHandler,                         // UART5 Rx and Tx
+    IntDefaultHandler,                         // UART6 Rx and Tx
+    IntDefaultHandler,                         // UART7 Rx and Tx
     IntDefaultHandler,                      // I2C2 Master and Slave
     IntDefaultHandler,                      // I2C3 Master and Slave
     IntDefaultHandler,                      // Timer 4 subtimer A
@@ -281,6 +283,9 @@ NmiSR(void)
     {
     }
 }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 //*****************************************************************************
 //
@@ -289,16 +294,54 @@ NmiSR(void)
 // for examination by a debugger.
 //
 //*****************************************************************************
-static void
-FaultISR(void)
+static
+void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
 {
-    //
-    // Enter an infinite loop.
-    //
-    while(1)
-    {
-    }
+  /* These are volatile to try and prevent the compiler/linker optimizing them
+away as the variables never actually get used.  If the debugger won't show the
+values of the variables, make them global my moving their declaration outside
+of this function. */
+  volatile uint32_t r0;
+  volatile uint32_t r1;
+  volatile uint32_t r2;
+  volatile uint32_t r3;
+  volatile uint32_t r12;
+  volatile uint32_t lr; /* Link register. */
+  volatile uint32_t pc; /* Program counter. */
+  volatile uint32_t psr;/* Program status register. */
+
+  r0 = pulFaultStackAddress[ 0 ];
+  r1 = pulFaultStackAddress[ 1 ];
+  r2 = pulFaultStackAddress[ 2 ];
+  r3 = pulFaultStackAddress[ 3 ];
+
+  r12 = pulFaultStackAddress[ 4 ];
+  lr = pulFaultStackAddress[ 5 ];
+  pc = pulFaultStackAddress[ 6 ];
+  psr = pulFaultStackAddress[ 7 ];
+
+  /* When the following line is hit, the variables contain the register values. */
+  for( ;; );
 }
+#pragma GCC diagnostic pop
+
+/* The fault handler implementation calls a function called
+prvGetRegistersFromStack(). */
+static void HardFault_Handler(void)
+{
+    __asm volatile
+    (
+        " tst lr, #4                                                \n"
+        " ite eq                                                    \n"
+        " mrseq r0, msp                                             \n"
+        " mrsne r0, psp                                             \n"
+        " ldr r1, [r0, #24]                                         \n"
+        " ldr r2, handler2_address_const                            \n"
+        " bx r2                                                     \n"
+        " handler2_address_const: .word prvGetRegistersFromStack    \n"
+    );
+}
+
 
 //*****************************************************************************
 //
