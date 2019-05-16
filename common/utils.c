@@ -51,4 +51,19 @@ uint8_t toggle_gpio_pin(int pin)
   return val;
 }
 
+// Set up all the active low pins to be off (i.e., high)
+void setupActiveLowPins(void)
+{
+  const int pins[] = {
+      _FPGA_I2C_RESET,
+      _PWR_I2C_RESET,
+      _CLOCKS_I2C_RESET,
+      _V_OPTICS_I2C_RESET,
+      _K_OPTICS_I2C_RESET
+  };
+  const int8_t npins = sizeof(pins)/pins[0];
+  for (int8_t i = 0; i < npins; ++i ) {
+    write_gpio_pin(pins[i], 0x1);
+  }
+}
 

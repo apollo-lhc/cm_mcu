@@ -17,6 +17,7 @@ uint8_t read_gpio_pin(int pin);
 uint8_t toggle_gpio_pin(int pin);
 
 
+void setupActiveLowPins(void);
 
 
 
