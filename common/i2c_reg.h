@@ -13,11 +13,19 @@
 
 void initI2C1(const uint32_t sysclockfreq);
 
+// write to an i2c register
 bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data,
-    const uint8_t ui8ByteCount);
-bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data, const uint8_t ui8ByteCount);
+                 const uint8_t ui8ByteCount);
+// read from an i2c register
+bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data,
+                const uint8_t ui8ByteCount);
 
+// non-register write
+bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
+              const uint8_t ui8ByteCount);
 
-
+// non-register read
+bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
+             const uint8_t ui8ByteCount);
 
 #endif /* COMMON_I2C_REG_H_ */
