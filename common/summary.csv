@@ -21,15 +21,11 @@ Pin#, PORT IO, Function, Directions
 127,PD6,AIN5, , ,
 6,PQ1,GPIO_PQ1, false, false,Input
 5,PQ0,GPIO_PQ0, false, false,Output
-100,PC0,GPIO_PC0, false, false,Input
-98,PC2,GPIO_PC2, false, false,Input
-97,PC3,GPIO_PC3, false, false,Output
-99,PC1,GPIO_PC1, false, false,Input
-42,PF0,GPIO_PF0, false, false,Output
-57,PQ5,GPIO_PQ5, false, false,Output
+42,PF0,GPIO_PF0, false, false,Output OD
+57,PQ5,GPIO_PQ5, false, false,Output OD
 78,PM0,GPIO_PM0, false, false,Input
-59,PK7,GPIO_PK7, false, false,Output
-45,PF3,GPIO_PF3, false, false,Output
+59,PK7,GPIO_PK7, false, false,Output OD
+45,PF3,GPIO_PF3, false, false,Output OD
 11,PQ2,GPIO_PQ2, false, false,Input
 22,PC7,GPIO_PC7, false, false,Input
 23,PC6,GPIO_PC6, false, false,Input
@@ -45,7 +41,7 @@ Pin#, PORT IO, Function, Directions
 43,PF1,GPIO_PF1, false, false,Output
 44,PF2,GPIO_PF2, false, false,Output
 46,PF4,GPIO_PF4, false, false,Input
-58,PQ6,GPIO_PQ6, false, false,Output
+58,PQ6,GPIO_PQ6, false, false,Output OD
 60,PK6,GPIO_PK6, false, false,Input
 61,PK5,GPIO_PK5, false, false,Input
 62,PK4,GPIO_PK4, false, false,Output
@@ -58,10 +54,10 @@ Pin#, PORT IO, Function, Directions
 77,PM1,GPIO_PM1, false, false,Input
 81,PL0,GPIO_PL0, false, false,Output
 82,PL1,GPIO_PL1, false, false,Input
-83,PL2,GPIO_PL2, false, false,Input
-84,PL3,GPIO_PL3, false, false,Input
-86,PL5,GPIO_PL5, false, false,Input
-85,PL4,GPIO_PL4, false, false,Input
+83,PL2,GPIO_PL2, false, false,Output
+84,PL3,GPIO_PL3, false, false,Output
+86,PL5,GPIO_PL5, false, false,Output
+85,PL4,GPIO_PL4, false, false,Output
 93,PL7,GPIO_PL7, false, false,Input
 94,PL6,GPIO_PL6, false, false,Output
 102,PQ4,GPIO_PQ4, false, false,Output
@@ -74,7 +70,7 @@ Pin#, PORT IO, Function, Directions
 109,PN2,GPIO_PN2, false, false,Output
 110,PN3,GPIO_PN3, false, false,Output
 111,PN4,GPIO_PN4, false, false,Output
-112,PN5,GPIO_PN5, false, false,Input
+112,PN5,GPIO_PN5, false, false,Output
 116,PJ0,GPIO_PJ0, false, false,Output
 117,PJ1,GPIO_PJ1, false, false,Output
 118,PP0,GPIO_PP0, false, false,Output
