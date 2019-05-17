@@ -39,7 +39,7 @@ struct gpio_pin_t enables[] = {
   {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
   {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
   {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
-//  {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
+  {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
   {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
   {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
   {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
@@ -57,7 +57,7 @@ struct gpio_pin_t oks[] = {
   { V_MGTY1_AVCC_OK, 4},
   { V_MGTY2_AVCC_OK, 4},
   { K_MGTY_AVCC_OK,  4},
- // { K_MGTH_AVCC_OK,  4}, // this one is broken on S/N 001
+  { K_MGTH_AVCC_OK,  4}, // this one is broken on S/N 001
   { K_MGTY_AVTT_OK,  5},
   { K_MGTH_AVTT_OK,  5},
   { V_MGTY1_AVTT_OK, 5},
@@ -66,6 +66,8 @@ struct gpio_pin_t oks[] = {
 const int noks = sizeof(oks)/sizeof(oks[0]);
 const int num_priorities = 5;
 
+// Todo: move this to an apprpriate place
+//void Print(const char* str);
 
 
 //
@@ -141,10 +143,8 @@ check_ps(void)
       }
     } // loop over 'ok' bits
     if (  ! all_good ) {
-      // o tells you which one died. should I print something on UART?
+      // Todo: o tells you which one died. should I print something on UART?
       // turn off all supplies at current priority level or lower
-      //UART4Print("Failure reading port ");
-      //UART4Print(pin_names[enables[o].name]);
       for ( int e = 0; e < nenables; ++e ) {
         if ( enables[e].priority >= prio ) {
           write_gpio_pin(enables[e].name, 0x0);
