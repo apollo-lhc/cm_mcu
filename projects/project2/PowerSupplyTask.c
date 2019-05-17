@@ -40,6 +40,7 @@ void PowerSupplyTask(void *parameters)
   TickType_t xLastWakeTime = xTaskGetTickCount();
   enum state { PWR_ON, PWR_OFF, UNKNOWN};
   enum state oldState = UNKNOWN;
+  //enum state desiredState = PWR_ON; // start with power-on right away
 
   // turn on the power supply at the start of the task
   set_ps(true,true,true) ;
@@ -49,16 +50,18 @@ void PowerSupplyTask(void *parameters)
     // first check for message on the queue and act on any messages.
     // non-blocking call.
     uint32_t message;
-    if ( xQueueReceive(xPwrQueue, &message, 0) ) {
+    if ( xQueueReceive(xPwrQueue, &message, 0) ) { // TODO: what if I receive more than one message
       switch (message ) {
       case PS_OFF:
         disable_ps();
+        //desiredState= PWR_OFF;
         break;
       case PS_ON:
         set_ps(true,true,true);
+        //desiredState = PWR_ON;
         break;
       default:
-        toggle_gpio_pin(TM4C_LED_RED); // message I don't understand? Toggle blue LED
+        toggle_gpio_pin(TM4C_LED_RED); // message I don't understand? Toggle red LED
         break;
       }
     }
