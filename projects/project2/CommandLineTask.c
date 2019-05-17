@@ -25,8 +25,7 @@
 
 #include "FreeRTOS_CLI.h"
 
-// Generic C headers -- caveat emptor
-// todo: do I need these include files here
+// strlen, strtol, and strncpy
 #include "string.h"
 #include <stdlib.h>
 
@@ -47,55 +46,48 @@ extern QueueHandle_t xLedQueue;
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   100
 
-// sample commands from the demo project
-void vRegisterSampleCLICommands( void );
 
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-sign"
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
-#pragma GCC diagnostic ignored "-Wformat="
+#pragma GCC diagnostic ignored "-Wformat=" // because of our mini-sprintf
 
-static BaseType_t i2c1_ctlr(char *m, size_t s, const char *mm)
+static BaseType_t i2c1_ctl_r(char *m, size_t s, const char *mm)
 {
 
-	int8_t *p1, *p2, *p3;
-	BaseType_t p1l, p2l, p3l;
-  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
-  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l);
-  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l);
+  int8_t *p1, *p2;
+  BaseType_t p1l, p2l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // number of bytes
   p1[p1l] = 0x00; // terminate strings
   p2[p2l] = 0x00; // terminate strings
-  p3[p3l] = 0x00; // terminate strings
 
-  BaseType_t i1, i2, i3;
+  BaseType_t i1, i2;
   i1 = strtol(p1, NULL, 16);
-  i2 = strtol(p2, NULL, 16);
-  i3 = strtol(p3, NULL, 16);
-  uint8_t data[10];
-  memset(data,0,10*sizeof(uint8_t));
-  if ( i3 > 10 )
-    i3 = 10;
-  char tmp[64];
-  snprintf(tmp, 64, "readI2CReg1: command arguments are: 0x%x 0x%x 0x%x\n", i1, i2, i3);
-  Print(tmp);
-  snprintf(tmp, 64, "readI2CReg1: Read %d bytes from I2C address 0x%x\n", i3, i1);
-  Print(tmp);
-  readI2Creg(I2C1_BASE, i1, i2, data, i3);
+  i2 = strtol(p2, NULL, 10);
+  const int MAX_BYTES=4;
+  uint8_t data[MAX_BYTES];
+  memset(data,0,MAX_BYTES*sizeof(data[0]));
+  if ( i2 > MAX_BYTES )
+    i2 = MAX_BYTES;
 
-  snprintf(m, s, "Read, 1st 3 bytes: %d %d %d\n", data[0], data[1], data[2]);
-	return pdFALSE;
+  snprintf(m, s, "i2c1_ctl_r: Read %d bytes from I2C address 0x%x\n", i2, i1);
+  Print(m);
+  readI2C(I2C1_BASE, i1, data, i2);
+  snprintf(m, s, "i2cr: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
+           i1, data[3], data[2], data[1], data[0]);
+  return pdFALSE;
 }
-
-static BaseType_t i2c1_ctlw(char *m, size_t s, const char *mm)
+static BaseType_t i2c1_ctl_reg_r(char *m, size_t s, const char *mm)
 {
 
   int8_t *p1, *p2, *p3;
   BaseType_t p1l, p2l, p3l;
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
   p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // register
-  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l); // byte to write
+  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l); // number of bytes
   p1[p1l] = 0x00; // terminate strings
   p2[p2l] = 0x00; // terminate strings
   p3[p3l] = 0x00; // terminate strings
@@ -103,20 +95,88 @@ static BaseType_t i2c1_ctlw(char *m, size_t s, const char *mm)
   BaseType_t i1, i2, i3;
   i1 = strtol(p1, NULL, 16);
   i2 = strtol(p2, NULL, 16);
-  i3 = strtol(p3, NULL, 16);
-  uint8_t data[10];
-  memset(data,0,10*sizeof(uint8_t));
-  data[0] = i3;
-  char tmp[64];
-  snprintf(tmp, 64, "i2c1_ctlw: command arguments are: 0x%x 0x%x 0x%x\n", i1, i2, i3);
-  Print(tmp);
-  snprintf(tmp, 64, "i2c1_ctlw: write 0x%x to address 0x%x, register 0x%x\n", i3, i1, i2);
-  Print(tmp);
-  writeI2Creg(I2C1_BASE, i1, i2, data, 1);
+  i3 = strtol(p3, NULL, 10);
+  const int MAX_BYTES=4;
+  uint8_t data[MAX_BYTES];
+  memset(data,0,MAX_BYTES*sizeof(data[0]));
+  if ( i3 > MAX_BYTES )
+    i3 = MAX_BYTES;
+  snprintf(m, s, "i2c1_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", i3, i1, i2);
+  Print(m);
+  readI2Creg(I2C1_BASE, i1, i2, data, i3);
 
-  snprintf(m, s, "Wrote, 3 bytes: %d %d %d\n", data[0], data[1], data[2]);
+  snprintf(m, s, "i2cr: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
+           i1, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
+
+static BaseType_t i2c1_ctl_reg_w(char *m, size_t s, const char *mm)
+{
+
+  int8_t *p1, *p2, *p3, *p4;
+  BaseType_t p1l, p2l, p3l, p4l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // register
+  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l); // value(s)
+  p4 = FreeRTOS_CLIGetParameter(mm, 4, &p4l); // byte to write
+  p1[p1l] = 0x00; // terminate strings
+  p2[p2l] = 0x00; // terminate strings
+  p3[p3l] = 0x00; // terminate strings
+  p4[p4l] = 0x00; // terminate strings
+
+  BaseType_t i1, i2, i3, i4;
+  i1 = strtol(p1, NULL, 16);
+  i2 = strtol(p2, NULL, 16);
+  i3 = strtol(p3, NULL, 16);
+  i4 = strtol(p4, NULL, 16);
+  const int MAX_BYTES=4;
+  uint8_t data[MAX_BYTES];
+  for (int i = 0; i < MAX_BYTES; ++i ) {
+    data[i] = (i4 >> i*8) & 0xFFUL;
+  }
+  if ( i3 > MAX_BYTES )
+    i3 = MAX_BYTES;
+  snprintf(m, s, "i2c1_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n",
+           i4, i1, i2, i3);
+  Print(m);
+  writeI2Creg(I2C1_BASE, i1, i2, data, i3);
+
+  snprintf(m, s, "i2cwr: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", i1, i2, i3, i4);
+  return pdFALSE;
+}
+
+static BaseType_t i2c1_ctl_w(char *m, size_t s, const char *mm)
+{
+
+  int8_t *p1, *p3, *p4;
+  BaseType_t p1l, p3l, p4l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p3 = FreeRTOS_CLIGetParameter(mm, 2, &p3l); // value(s)
+  p4 = FreeRTOS_CLIGetParameter(mm, 3, &p4l); // byte to write
+  p1[p1l] = 0x00; // terminate strings
+  p3[p3l] = 0x00; // terminate strings
+  p4[p4l] = 0x00; // terminate strings
+
+  BaseType_t i1, i3, i4;
+  i1 = strtol(p1, NULL, 16);
+  i3 = strtol(p3, NULL, 16);
+  i4 = strtol(p4, NULL, 16);
+  const int MAX_BYTES=4;
+  uint8_t data[MAX_BYTES];
+  for (int i = 0; i < MAX_BYTES; ++i ) {
+    data[i] = (i4 >> i*8) & 0xFFUL;
+  }
+  if ( i3 > MAX_BYTES )
+    i3 = MAX_BYTES;
+  snprintf(m, s, "i2c1_ctl_w: write 0x%x to address 0x%x  (%d bytes)\n",
+           i4, i1, i3);
+  Print(m);
+  writeI2C(I2C1_BASE, i1, data, i3);
+
+  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", i1, i4, i3);
+  return pdFALSE;
+}
+
 
 // send power control commands
 static BaseType_t power_ctl(char *m, size_t s, const char *mm)
@@ -177,24 +237,134 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+
+static
+void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
+{
+  TaskStatus_t *pxTaskStatusArray;
+  volatile UBaseType_t uxArraySize, x;
+  uint32_t ulTotalRunTime, ulStatsAsPercentage;
+
+  // Make sure the write buffer does not contain a string.
+  *pcWriteBuffer = 0x00;
+
+  // Take a snapshot of the number of tasks in case it changes while this
+  // function is executing.
+  uxArraySize = uxTaskGetNumberOfTasks();
+
+  // Allocate a TaskStatus_t structure for each task.  An array could be
+  // allocated statically at compile time.
+  pxTaskStatusArray = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
+
+  if( pxTaskStatusArray != NULL )
+  {
+    // Generate raw status information about each task.
+    uxArraySize = uxTaskGetSystemState( pxTaskStatusArray, uxArraySize, &ulTotalRunTime );
+
+    // For percentage calculations.
+    ulTotalRunTime /= 100UL;
+
+    // Avoid divide by zero errors.
+    if( ulTotalRunTime > 0 )
+    {
+      // For each populated position in the pxTaskStatusArray array,
+      // format the raw data as human readable ASCII data
+      for( x = 0; x < uxArraySize; x++ )
+      {
+        // What percentage of the total run time has the task used?
+        // This will always be rounded down to the nearest integer.
+        // ulTotalRunTimeDiv100 has already been divided by 100.
+        ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
+
+        if( ulStatsAsPercentage > 0UL )
+        {
+          snprintf( pcWriteBuffer, bufferLength, "%s\t\t%u\t\t%u%%\r\n",
+              pxTaskStatusArray[ x ].pcTaskName, pxTaskStatusArray[ x ].ulRunTimeCounter, ulStatsAsPercentage );
+        }
+        else
+        {
+          // If the percentage is zero here then the task has
+          // consumed less than 1% of the total run time.
+          snprintf( pcWriteBuffer, bufferLength, "%s\t\t%u\t\t<1%%\r\n", pxTaskStatusArray[ x ].pcTaskName, pxTaskStatusArray[ x ].ulRunTimeCounter );
+        }
+        size_t added = strlen( ( char * ) pcWriteBuffer );
+        pcWriteBuffer += added;
+        bufferLength  -= added;
+      }
+    }
+
+    // The array is no longer needed, free the memory it consumes.
+    vPortFree( pxTaskStatusArray );
+  }
+}
 #pragma GCC diagnostic pop
+
+static
+BaseType_t TaskStatsCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+  const char *const pcHeader = "     State   Time  Fraction    #\r\n************************************************\r\n";
+  BaseType_t xSpacePadding;
+
+
+  ( void ) pcCommandString;
+  configASSERT( pcWriteBuffer );
+  int copied = 0;
+
+  /* Generate a table of task stats. */
+  strncpy( pcWriteBuffer, "Task", xWriteBufferLen);
+  pcWriteBuffer += strlen( pcWriteBuffer );
+  copied += strlen(pcWriteBuffer);
+
+  /* Minus three for the null terminator and half the number of characters in
+  "Task" so the column lines up with the centre of the heading. */
+  configASSERT( configMAX_TASK_NAME_LEN > 3 );
+  for( xSpacePadding = strlen( "Task" ); xSpacePadding < ( configMAX_TASK_NAME_LEN - 3 ); xSpacePadding++ )
+  {
+    /* Add a space to align columns after the task's name. */
+    *pcWriteBuffer = ' ';
+    pcWriteBuffer++; ++copied;
+
+    /* Ensure always terminated. */
+    *pcWriteBuffer = 0x00;
+  }
+  strncpy( pcWriteBuffer, pcHeader,xWriteBufferLen-copied );
+  copied += strlen(pcHeader);
+  TaskGetRunTimeStats( pcWriteBuffer + strlen( pcHeader ), xWriteBufferLen-copied );
+
+  /* There is no more data to return after this single string, so return
+  pdFALSE. */
+  return pdFALSE;
+}
 
 
 static const char * const pcWelcomeMessage =
-		"FreeRTOS command server.\r\nType Help to view a list of registered commands.\r\n";
+		"FreeRTOS command server.\r\nType \"help\" to view a list of registered commands.\r\n";
 
 CLI_Command_Definition_t i2c_read_command = {
-		.pcCommand="i2cr",
-		.pcHelpString="i2cr <address> <reg> <number of bytes>\n Read no1 I2C controller.\r\n",
-		.pxCommandInterpreter = i2c1_ctlr,
-		3
+    .pcCommand="i2cr",
+    .pcHelpString="i2cr <address> <number of bytes>\n Read no1 I2C controller. Addr in hex.\r\n",
+    .pxCommandInterpreter = i2c1_ctl_r,
+    2
+};
+CLI_Command_Definition_t i2c_read_reg_command = {
+    .pcCommand="i2crr",
+    .pcHelpString="i2crr <address> <reg> <number of bytes>\n Read no1 I2C controller. Addr in hex\r\n",
+    .pxCommandInterpreter = i2c1_ctl_reg_r,
+    3
 };
 
 CLI_Command_Definition_t i2c_write_command = {
     .pcCommand="i2cw",
-    .pcHelpString="i2cw <address> <reg> <number of bytes>\n Write no1 I2C controller.\r\n",
-    .pxCommandInterpreter = i2c1_ctlw,
+    .pcHelpString="i2cw <address> <number of bytes> <value>\n Write no1 I2C controller.\r\n",
+    .pxCommandInterpreter = i2c1_ctl_w,
     3
+};
+
+CLI_Command_Definition_t i2c_write_reg_command = {
+    .pcCommand="i2cwr",
+    .pcHelpString="i2cwr <address> <reg> <number of bytes>\n Write no1 I2C controller.\r\n",
+    .pxCommandInterpreter = i2c1_ctl_reg_w,
+    4
 };
 
 CLI_Command_Definition_t pwr_ctl_command = {
@@ -211,6 +381,13 @@ CLI_Command_Definition_t led_ctl_command = {
     1
 };
 
+CLI_Command_Definition_t task_stats_command = {
+    .pcCommand="task-stats",
+    .pcHelpString="task-stats\n Displays a table showing the state of each FreeRTOS task\r\n",
+    .pxCommandInterpreter = TaskStatsCommand,
+    0
+};
+
 
 extern StreamBufferHandle_t xStreamBuffer;
 
@@ -224,13 +401,15 @@ void vCommandLineTask( void *pvParameters )
 
 
   // register the commands
+  FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
+  FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
   FreeRTOS_CLIRegisterCommand(&i2c_write_command);
+  FreeRTOS_CLIRegisterCommand(&i2c_write_reg_command);
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
 
-  // register sample commands
-  vRegisterSampleCLICommands();
+
 
   /* Send a welcome message to the user knows they are connected. */
   Print(pcWelcomeMessage);
@@ -250,9 +429,9 @@ void vCommandLineTask( void *pvParameters )
       if ( cInputIndex != 0 ) { // empty command -- skip
 
         snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\n",
-            (const char*)pcInputString);
+            pcInputString);
 
-        Print((const char*)pcOutputString);
+        Print(pcOutputString);
         /* The command interpreter is called repeatedly until it returns
             pdFALSE.  See the "Implementing a command" documentation for an
             explanation of why this is. */
@@ -270,7 +449,7 @@ void vCommandLineTask( void *pvParameters )
           /* Write the output generated by the command interpreter to the
                 console. */
           if ( pcOutputString[0] != '\0')
-            Print((char*)pcOutputString);
+            Print(pcOutputString);
 
         } while( xMoreDataToFollow != pdFALSE );
 
