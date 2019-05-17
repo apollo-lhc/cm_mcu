@@ -38,7 +38,7 @@ extern "C" {
 #define configUSE_16_BIT_TICKS                                  0
 #define configIDLE_SHOULD_YIELD                                 1
 #define configUSE_MUTEXES                                       1
-#define configQUEUE_REGISTRY_SIZE                               0
+#define configQUEUE_REGISTRY_SIZE                               3
 #define configCHECK_FOR_STACK_OVERFLOW                          2
 #define configUSE_RECURSIVE_MUTEXES                             0
 #define configUSE_APPLICATION_TASK_TAG                          0
@@ -57,6 +57,7 @@ extern "C" {
 #define configGENERATE_RUN_TIME_STATS                           1
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 #define portGET_RUN_TIME_COUNTER_VALUE()                        xTaskGetTickCount()
+#define configRECORD_STACK_HIGH_ADDRESS                         1
 
 /* This demo makes use of one or more example stats formatting functions.  These
 format the raw data provided by the uxTaskGetSystemState() function in to human
