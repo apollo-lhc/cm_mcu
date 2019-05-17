@@ -89,7 +89,7 @@ ${COMPILER}/project2.axf: ${COMPILER}/list.o
 ${COMPILER}/project2.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/project2.axf: ${COMPILER}/heap_4.o
 ${COMPILER}/project2.axf: ${COMPILER}/FreeRTOS_CLI.o
-${COMPILER}/project2.axf: ${COMPILER}/Sample-CLI-commands.o
+#${COMPILER}/project2.axf: ${COMPILER}/Sample-CLI-commands.o
 ${COMPILER}/project2.axf: ${COMPILER}/printf-stdarg.o
 ## TivaWare
 ${COMPILER}/project2.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
