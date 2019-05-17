@@ -149,6 +149,7 @@ void SystemInit()
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
+  setupActiveLowPins();
 
 #if (CLI_UART == UART4_BASE)
   UART4Init(g_ui32SysClock);
@@ -181,6 +182,23 @@ void PowerSupplyTask(void *parameters);
 
 void vCommandLineTask(void *parameters);
 
+// playground to test the ADCs
+void RandomTask(void *parameters)
+{
+  // initialize to the current tick time
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  // TODO: this should go in system init
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+
+  for (;;) {
+
+
+    // wait here for the x msec, where x is 2nd argument below.
+    vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
+  }
+
+}
+
 
 
 // 
@@ -201,12 +219,22 @@ int main( void )
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
-  xTaskCreate(vCommandLineTask,"CON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+  xTaskCreate(vCommandLineTask,"CON", 256, NULL, tskIDLE_PRIORITY+1, NULL);
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
       sizeof( uint32_t ));    // The size of each item.
+  configASSERT(xLedQueue != NULL);
+
   xPwrQueue = xQueueCreate(5, sizeof(uint32_t)); // PWR queue
+  configASSERT(xPwrQueue != NULL);
+//  char tmp[128];
+//  snprintf(tmp, 128, "queue pointers: LED: 0x%x, PWR: 0x%0x\n", &xLedQueue, &xPwrQueue);
+//  Print(tmp);
+
+
+  vQueueAddToRegistry(xLedQueue, "LedQueue");
+  vQueueAddToRegistry(xPwrQueue, "PwrQueue");
 
   Print("\n----------------------------\n");
   Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n");
