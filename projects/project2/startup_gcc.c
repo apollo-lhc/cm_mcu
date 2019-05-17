@@ -329,6 +329,7 @@ of this function. */
 prvGetRegistersFromStack(). */
 static void HardFault_Handler(void)
 {
+#ifdef DEBUG
     __asm volatile
     (
         " tst lr, #4                                                \n"
@@ -340,6 +341,9 @@ static void HardFault_Handler(void)
         " bx r2                                                     \n"
         " handler2_address_const: .word prvGetRegistersFromStack    \n"
     );
+#else
+    for (;;);
+#endif
 }
 
 
