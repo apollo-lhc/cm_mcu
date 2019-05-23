@@ -31,25 +31,21 @@ void initI2C1(const uint32_t sysclockfreq)
     {
     }
 
-    //reset module
+    // Stop the Clock, Reset and Enable I2C Module
+    // in Master Function
+    //
+    MAP_SysCtlPeripheralDisable(SYSCTL_PERIPH_I2C1);
     MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C1);
+    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C1);
 
-    //enable GPIO peripheral that contains I2C 1
-    //SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C1));
 
-//    // Configure the pin muxing for I2C1 functions.
-//    MAP_GPIOPinConfigure(GPIO_PG0_I2C1SCL);
-//    MAP_GPIOPinConfigure(GPIO_PG1_I2C1SDA);
-//
-//    // Select the I2C function for these pins.
-//    MAP_GPIOPinTypeI2CSCL(GPIO_PORTG_BASE, GPIO_PIN_0);
-//    MAP_GPIOPinTypeI2C(GPIO_PORTG_BASE, GPIO_PIN_1);
-
-    // Enable and initialize the I2C1 master module.  Use the system clock for
+    // Enable and initialize the I2C master module.  Use the system clock for
     // the I2C1 module.  The last parameter sets the I2C data transfer rate.
     // If false the data rate is set to 100kbps and if true the data rate will
     // be set to 400kbps.
     MAP_I2CMasterInitExpClk(I2C1_BASE, sysclockfreq, false);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C1));
 
     //clear I2C FIFOs
     //HWREG(I2C1_BASE + I2C_0_FIFOCTL) = 80008000;
@@ -137,6 +133,8 @@ bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Dat
     return true;
 }
 // Read from an I2C device with an internal register
+// this intentionally sends two starts without a finish, as per
+// recommendation from various docs.
 bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data,
 		const uint8_t ui8ByteCount)
 {
@@ -148,7 +146,7 @@ bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data
     I2CMasterDataPut(i2cbase, ui8Reg);
 
     //send control byte and register address byte to slave device
-    I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_SEND);
+    I2CMasterControl(i2cbase, I2C_MASTER_CMD_BURST_SEND_START);
 
     //wait for MCU to finish transaction
     while(I2CMasterBusy(i2cbase));
@@ -208,12 +206,14 @@ bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
     // Put the outgoing data into the control register
     I2CMasterDataPut(i2cbase, *Data);
 
-    //send control byte and read from the register we
-    //specified
+    //send control byte and write the data
     I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_SEND);
 
     //wait for MCU to finish transaction
     while(I2CMasterBusy(i2cbase));
+    // see if transaction succeeded
+    if ( I2CMasterErr(i2cbase) != I2C_MASTER_ERR_NONE )
+      return false; // transaction failed
 
   }
   else {
@@ -238,6 +238,10 @@ bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
 
       //wait for MCU to finish transaction
       while(I2CMasterBusy(i2cbase));
+
+      // see if transaction succeeded
+      if ( I2CMasterErr(i2cbase) != I2C_MASTER_ERR_NONE )
+        return false; // transaction failed
 
     }
   }
