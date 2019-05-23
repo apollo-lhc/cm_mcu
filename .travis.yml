@@ -1,5 +1,5 @@
 notifications:
-  email: false
+  email: true
 
 sudo: false
 
@@ -16,12 +16,12 @@ addons:
     packages:
     - libc6-i386 
 
-env:
-    - FREERTOS_URL=https://downloads.sourceforge.net/project/freertos/FreeRTOS/V10.2.1/FreeRTOSv10.2.1.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Ffreertos%2Ffiles%2Flatest%2Fdownload%3Fsource%3Dfiles&ts=1558641665
+
 
 
 
 install:
+  - env
   - pushd .
   - cd ~ 
   - mkdir arm-gcc-toolchain
@@ -29,14 +29,11 @@ install:
   - cd arm-gcc-toolchain
   - tar -jxf gcc.tar.bz2 --strip=1
   - cd $HOME
-  - mkdir FreeRTOS
-  - wget -O $HOME/FreeRTOS/FreeRTOS.zip $FREERTOS_URL
-  - cd FreeRTOS
-  - unzip FreeRTOS.zip
+  - svn checkout https://svn.code.sf.net/p/freertos/code/trunk freertos-code
   - popd
   - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
-  - export FREERTOS_ROOT=$HOME/FreeRTOS/FreeRTOS/Source
-  - export FREERTOS_PLUS_ROOT=$HOME/FreeRTOS/FreeRTOS-Plus/Source
+  - export FREERTOS_ROOT=$HOME/freertos-code/FreeRTOS/Source
+  - export FREERTOS_PLUS_ROOT=$HOME/freertos-code/FreeRTOS-Plus/Source
 
 before_script:
   - arm-none-eabi-gcc --version
