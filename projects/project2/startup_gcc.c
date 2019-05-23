@@ -34,6 +34,7 @@
 void ResetISR(void);
 static void NmiSR(void);
 static void IntDefaultHandler(void);
+static void SMBusMasterIntHandler(void);
 extern void UARTIntHandler(void);
 extern void xPortPendSVHandler(void);
 extern void vPortSVCHandler(void);
@@ -119,7 +120,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI1 Rx and Tx
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
-    IntDefaultHandler,                      // I2C1 Master and Slave
+    SMBusMasterIntHandler,                  // I2C1 Master and Slave
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
     IntDefaultHandler,                      // Ethernet
@@ -365,6 +366,42 @@ IntDefaultHandler(void)
     }
 }
 
+#include "common/smbus.h"
+extern tSMBus g_sMaster;
+extern tSMBusStatus eStatus;
+// SMBUs specific handler for I2C
+static void
+SMBusMasterIntHandler(void)
+{
+  tSMBusStatus eStatus;
+  //
+  // Process the interrupt.
+  //
+  eStatus = SMBusMasterIntProcess(&g_sMaster);
+  //
+  // Check for errors.
+  //
+  switch(eStatus)
+  {
+  case SMBUS_OK:
+  {
+    break; // do nothing
+  }
+  case SMBUS_PEC_ERROR:
+  {
+    //
+    // Ignore error.
+    //
+    break;
+  }
+  case SMBUS_TIMEOUT:
+  case SMBUS_ADDR_ACK_ERROR:
+  case SMBUS_DATA_ACK_ERROR:
+  default:
+    //while(1); // wait here for debugger
+    break;
+  }
+}
 
 
 
