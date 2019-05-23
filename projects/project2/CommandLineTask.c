@@ -105,8 +105,8 @@ static BaseType_t i2c1_ctl_reg_r(char *m, size_t s, const char *mm)
   Print(m);
   readI2Creg(I2C1_BASE, i1, i2, data, i3);
 
-  snprintf(m, s, "i2cr: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
-           i1, data[3], data[2], data[1], data[0]);
+  snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\n",
+           i1, i2, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
 
