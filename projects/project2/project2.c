@@ -164,6 +164,9 @@ void SystemInit()
   //
   SMBusMasterInit(&g_sMaster, I2C1_BASE, g_ui32SysClock);
   //SMBusPECEnable(&g_sMaster);
+
+  IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
+
   //
   // Enable master interrupts.
   //
