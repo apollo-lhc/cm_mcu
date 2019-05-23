@@ -28,14 +28,16 @@ install:
   - wget -O $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
   - cd arm-gcc-toolchain
   - tar -jxf gcc.tar.bz2 --strip=1
+  - cd $HOME
   - mkdir FreeRTOS
   - wget -O $HOME/FreeRTOS/FreeRTOS.zip $FREERTOS_URL
   - cd FreeRTOS
   - unzip FreeRTOS.zip
   - popd
   - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
-  - export FREERTOS_ROOT=$HOME/src/FreeRTOS/FreeRTOS/Source
-  - export FREERTOS_PLUS_ROOT=$HOME/src/FreeRTOS/FreeRTOS-Plus/Source
+  - export FREERTOS_ROOT=$HOME/FreeRTOS/FreeRTOS/Source
+  - export FREERTOS_PLUS_ROOT=$HOME/FreeRTOS/FreeRTOS-Plus/Source
+
 before_script:
   - arm-none-eabi-gcc --version
 
