@@ -8,10 +8,10 @@ language: c
 matrix:
   fast_finish: true
   include:
-    - name: 7-2018-q2
-      env: GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu-rm/7-2018q2/gcc-arm-none-eabi-7-2018-q2-update-linux.tar.bz2?revision=bc2c96c0-14b5-4bb4-9f18-bceb4050fee7?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Linux,7-2018-q2-update
     - name: 8-2018-q4
       env: GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2?revision=d830f9dd-cd4f-406d-8672-cca9210dd220?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Linux,8-2018-q4-major
+    - name: FreeRTOSv10.2.1
+      env: FREERTOS_URL=https://downloads.sourceforge.net/project/freertos/FreeRTOS/V10.2.1/FreeRTOSv10.2.1.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Ffreertos%2Ffiles%2Flatest%2Fdownload%3Fsource%3Dfiles&ts=1558641665
 addons:
   apt:
     packages:
@@ -24,11 +24,16 @@ install:
   - wget -O $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
   - cd arm-gcc-toolchain
   - tar -jxf gcc.tar.bz2 --strip=1
+  - mkdir FreeRTOS
+  - wget -O $HOME/FreeRTOS/FreeRTOS.zip $FREERTOS_URL
+  - cd FreeRTOS
+  - unzip FreeRTOS.zip
   - popd
   - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
-  
+  - export FREERTOS_ROOT=$HOME/src/FreeRTOS/FreeRTOS/Source
+  - export FREERTOS_PLUS_ROOT=$HOME/src/FreeRTOS/FreeRTOS-Plus/Source
 before_script:
   - arm-none-eabi-gcc --version
 
 script:
-  - make
+  - make VERBOSE=1
