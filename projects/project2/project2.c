@@ -134,6 +134,46 @@ void UARTIntHandler( void )
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
+#include "common/smbus.h"
+extern tSMBus g_sMaster;
+extern tSMBusStatus eStatus;
+// SMBUs specific handler for I2C
+void
+SMBusMasterIntHandler(void)
+{
+  // TODO: figure out which UART caused the interrupt -- can I do this?
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  //
+  // Process the interrupt.
+  //
+  eStatus = SMBusMasterIntProcess(&g_sMaster);
+  //
+  // Check for errors.
+  //
+  switch(eStatus)
+  {
+  case SMBUS_OK:
+  {
+    break; // do nothing
+  }
+  case SMBUS_PEC_ERROR:
+  {
+    //
+    // Ignore error.
+    //
+    break;
+  }
+  case SMBUS_TIMEOUT:
+  case SMBUS_ADDR_ACK_ERROR:
+  case SMBUS_DATA_ACK_ERROR:
+  default:
+    //while(1); // wait here for debugger
+    break;
+  }
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
 
 tSMBus g_sMaster;
 
