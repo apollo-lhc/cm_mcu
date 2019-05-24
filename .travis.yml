@@ -29,7 +29,7 @@ install:
   - cd arm-gcc-toolchain
   - tar -jxf gcc.tar.bz2 --strip=1
   - cd $HOME
-  - svn checkout https://svn.code.sf.net/p/freertos/code/trunk freertos-code
+  - svn checkout -q https://svn.code.sf.net/p/freertos/code/trunk freertos-code
   - popd
   - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
   - export FREERTOS_ROOT=$HOME/freertos-code/FreeRTOS/Source
@@ -39,4 +39,5 @@ before_script:
   - arm-none-eabi-gcc --version
 
 script:
-  - make VERBOSE=1
+  - arm-none-eabi-gcc --version
+  - make 
