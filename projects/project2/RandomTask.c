@@ -101,8 +101,10 @@ void RandomTask(void *parameters)
         Print(tmp);
       }
       // loop over pages on the supply
-      for ( int page = 0; page < 2; ++page ) {
-        tSMBusStatus r = SMBusMasterByteSend(&g_sMaster, 0x00U, page);
+      for ( uint8_t page = 0; page < 2; ++page ) {
+#define PAGE_COMMAND 0x0
+        tSMBusStatus r = SMBusMasterByteWordWrite(&g_sMaster, addrs[ps], PAGE_COMMAND,
+            &page, 1);
         if ( r != SMBUS_OK ) {
                     Print("SMBUS command failed\n");
         }
@@ -111,10 +113,10 @@ void RandomTask(void *parameters)
         }
         // this is checking the return from the interrupt
         if (eStatus != SMBUS_OK ) {
-          snprintf(tmp, 64, "RDM: SMBUS ERROR: %d\n", eStatus);
+          snprintf(tmp, 64, "RDM: Page SMBUS ERROR: %d\n", eStatus);
           Print(tmp);
         }
-        snprintf(tmp, 64, "RDM: Page %d\n", page);
+        snprintf(tmp, 64, "\t\tRDM: Page %d\n", page);
         Print(tmp);
 
         // loop over commands
@@ -137,6 +139,7 @@ void RandomTask(void *parameters)
           Print(tmp);
           if ( pm_common[c].type == PM_LINEAR11 ) {
             linear11_val_t ii; ii.raw = (data[1] << 8) | data[0];
+            // TODO: Printouts of floats fail when value is negative.
             float val = linear11_to_float(ii);
             int tens = val;
             int fraction = (val - tens)*100.0;
@@ -145,6 +148,7 @@ void RandomTask(void *parameters)
           }
           else if ( pm_common[c].type == PM_LINEAR16U ) {
             uint16_t ii = (data[1] << 8) | data[0];
+            // TODO: Printouts of floats fail when value is negative.
             float val = linear16u_to_float(ii);
             int tens = val;
             int fraction = (val - tens)*100.0;
