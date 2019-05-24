@@ -165,6 +165,7 @@ void SystemInit()
   SMBusMasterInit(&g_sMaster, I2C1_BASE, g_ui32SysClock);
   //SMBusPECEnable(&g_sMaster);
 
+  // FreeRTOS insists that the priority of interrupts be set up like this.
   IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
 
   //

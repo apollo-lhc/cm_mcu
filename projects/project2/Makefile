@@ -69,7 +69,7 @@ ${COMPILER}:
 
 #
 # Rules for building the project
-#p
+# 
 ${COMPILER}/project2.axf: ${COMPILER}/project2.o
 ${COMPILER}/project2.axf: ${COMPILER}/pinout.o
 ${COMPILER}/project2.axf: ${COMPILER}/pinsel.o
