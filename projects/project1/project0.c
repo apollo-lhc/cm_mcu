@@ -332,21 +332,10 @@ static void prvQueueSendTask( void *pvParameters );
 
 /*-----------------------------------------------------------*/
 
-/* configSUPPORT_STATIC_ALLOCATION is 1 and configSUPPORT_DYNAMIC_ALLOCATION is
-   0 so the queue structure and the queue storage area can only be statically
-   allocated.  See http://TBD for more information.
-   The queue storage area is dimensioned to hold just one 32-bit value. */
-static StaticQueue_t xStaticQueue;
-static uint8_t ucQueueStorageArea[ mainQUEUE_LENGTH_IN_ITEMS * sizeof( uint32_t ) ];
 
 /* Holds the handle of the created queue. */
 static QueueHandle_t xQueue = NULL;
 
-/* configSUPPORT_STATIC_ALLOCATION is 1 and configSUPPORT_DYNAMIC_ALLOCATION is
-   0 so the task structure and the stacks used by the tasks can only be statically
-   allocated.  See http://TBD for more information. */
-StaticTask_t xRxTCBBuffer, xTxTCBBuffer;
-static StackType_t uxRxStackBuffer[ configMINIMAL_STACK_SIZE ], uxTxStackBuffer[ configMINIMAL_STACK_SIZE ];
 
 /*-----------------------------------------------------------*/
 
@@ -361,29 +350,24 @@ int main( void )
      pre-allocated queue storage area.  The second new parameter is a pointer to
      the StaticQueue_t structure that will hold the queue state information in
      an anonymous way. */
-  xQueue = xQueueCreateStatic( mainQUEUE_LENGTH_IN_ITEMS, /* The maximum number of items the queue can hold. */
-			       sizeof( uint32_t ), 		/* The size of each item. */
-			       ucQueueStorageArea, 		/* The buffer used to hold items within the queue. */
-			       &xStaticQueue );	 		/* The static queue structure that will hold the state of the queue. */
+  xQueue = xQueueCreate( mainQUEUE_LENGTH_IN_ITEMS, /* The maximum number of items the queue can hold. */
+			 sizeof( uint32_t )); 		/* The size of each item. */
 
   /* Create the two tasks as described in the comments at the top of this
      file. */
-  xTaskCreateStatic(	prvQueueReceiveTask, 			/* Function that implements the task. */
+  xTaskCreate(    	prvQueueReceiveTask, 			/* Function that implements the task. */
 			"Rx",							/* Human readable name for the task. */
 			configMINIMAL_STACK_SIZE,		/* Task's stack size, in words (not bytes!). */
 			NULL,							/* Parameter to pass into the task. */
 			mainQUEUE_RECEIVE_TASK_PRIORITY,/* The priority of the task. */
-			&( uxRxStackBuffer[ 0 ] ),		/* The buffer to use as the task's stack. */
-			&xRxTCBBuffer );				/* The variable that will hold that task's TCB. */
+			NULL);
 
-  xTaskCreateStatic(	prvQueueSendTask, 				/* Function that implements the task. */
+  xTaskCreate(  	prvQueueSendTask, 				/* Function that implements the task. */
 			"Tx",							/* Human readable name for the task. */
 			configMINIMAL_STACK_SIZE,		/* Task's stack size, in words (not bytes!). */
 			NULL,							/* Parameter to pass into the task. */
 			mainQUEUE_SEND_TASK_PRIORITY,	/* The priority of the task. */
-			&( uxTxStackBuffer[ 0 ] ),		/* The buffer to use as the task's stack. */
-			&xTxTCBBuffer );				/* The variable that will hold that task's TCB. */
-
+			NULL);
   /* Start the scheduler. */
   vTaskStartScheduler();
 
@@ -459,30 +443,7 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 }
 /*-----------------------------------------------------------*/
 
-/* configUSE_STATIC_ALLOCATION is set to 1, so the application must provide an
-   implementation of vApplicationGetIdleTaskMemory() to provide the memory that is
-   used by the Idle task. */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
-{
-  /* If the buffers to be provided to the Idle task are declared inside this
-     function then they must be declared static - otherwise they will be allocated on
-     the stack and so not exists after this function exits. */
-  static StaticTask_t xIdleTaskTCB;
-  static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
 
-  /* Pass out a pointer to the StaticTask_t structure in which the Idle task's
-     state will be stored. */
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
-
-  /* Pass out the array that will be used as the Idle task's stack. */
-  *ppxIdleTaskStackBuffer = uxIdleTaskStack;
-
-  /* Pass out the size of the array pointed to by *ppxIdleTaskStackBuffer.
-     Note that, as the array is necessarily of type StackType_t,
-     configMINIMAL_STACK_SIZE is specified in words, not bytes. */
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-}
-/*-----------------------------------------------------------*/
 
 /* configUSE_STATIC_ALLOCATION and configUSE_TIMERS are both set to 1, so the
    application must provide an implementation of vApplicationGetTimerTaskMemory()

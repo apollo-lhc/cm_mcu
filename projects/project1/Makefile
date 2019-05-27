@@ -48,6 +48,7 @@ VPATH+=../../../../utils
 VPATH+=../../common
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
+VPATH+=${FREERTOS_ROOT}/portable/MemMang
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -57,7 +58,7 @@ IPATH+=${ROOT}
 IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 #
-# The default rule, which causes the Project Zero Example to be built.
+# The default rule, which causes the project to be built.
 #
 all: ${COMPILER}
 all: ${COMPILER}/project0.axf
@@ -86,6 +87,7 @@ ${COMPILER}/project0.axf: ${COMPILER}/tasks.o
 ${COMPILER}/project0.axf: ${COMPILER}/queue.o
 ${COMPILER}/project0.axf: ${COMPILER}/port.o
 ${COMPILER}/project0.axf: ${COMPILER}/list.o
+${COMPILER}/project0.axf: ${COMPILER}/heap_4.o
 ## TivaWare
 ${COMPILER}/project0.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/project0.axf: project0.ld
