@@ -296,7 +296,7 @@ NmiSR(void)
 //
 //*****************************************************************************
 static
-void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
+void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress ) // @suppress("Unused static function")
 {
   /* These are volatile to try and prevent the compiler/linker optimizing them
 away as the variables never actually get used.  If the debugger won't show the
@@ -324,7 +324,6 @@ of this function. */
   /* When the following line is hit, the variables contain the register values. */
   for( ;; );
 }
-#pragma GCC diagnostic pop
 
 /* The fault handler implementation calls a function called
 prvGetRegistersFromStack(). */
@@ -346,6 +345,7 @@ static void HardFault_Handler(void)
     for (;;);
 #endif
 }
+#pragma GCC diagnostic pop
 
 
 //*****************************************************************************

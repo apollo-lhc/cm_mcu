@@ -32,6 +32,9 @@
 // TivaWare includes
 #include "driverlib/uart.h"
 
+#include "MonitorTask.h"
+
+
 // prototype of mutex'd print
 void Print(const char* str);
 
@@ -44,7 +47,7 @@ extern QueueHandle_t xLedQueue;
 
 
 #define MAX_INPUT_LENGTH    50
-#define MAX_OUTPUT_LENGTH   100
+#define MAX_OUTPUT_LENGTH   256
 
 
 // Ugly hack for now -- I don't understand how to reconcile these
@@ -238,6 +241,35 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
 }
 
 
+
+// dump monitor information
+static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
+{
+ int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p1[p1l] = 0x00; // terminate strings
+  BaseType_t i1 = strtol(p1, NULL, 10);
+  int copied = 0;
+  copied += snprintf(m+copied, s-copied, "%s\n", pm_common[i1].name);
+  for (int ps = 0; ps < NSUPPLIES; ++ps) {
+    copied += snprintf(m+copied, s-copied, "SUPPLY %d\n", ps);
+    for (int page = 0; page < NPAGES; ++page ) {
+      float val = pm_values[ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+i1];
+      int tens = val;
+      int frac = ABS((val - tens)*100.0);
+
+      copied += snprintf(m+copied, s-copied, "VALUE %d.%d\t", tens, frac );
+    }
+    copied += snprintf(m+copied, s-copied, "\n");
+  }
+
+
+  return pdFALSE;
+}
+
+
+
 static
 void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 {
@@ -297,8 +329,13 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
     vPortFree( pxTaskStatusArray );
   }
 }
-#pragma GCC diagnostic pop
 
+
+
+
+#pragma GCC diagnostic pop
+// WARNING: this command easily leads to stack overflows. It does not correctly
+// ensure that there are no overwrites to pcCommandString.
 static
 BaseType_t TaskStatsCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 {
@@ -389,6 +426,14 @@ CLI_Command_Definition_t task_stats_command = {
 };
 
 
+
+CLI_Command_Definition_t monitor_command = {
+    .pcCommand="mon",
+    .pcHelpString="mon\n Displays a table showing the state of power supplies\r\n",
+    .pxCommandInterpreter = mon_ctl,
+    1
+};
+
 extern StreamBufferHandle_t xStreamBuffer;
 
 
@@ -408,6 +453,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&i2c_write_reg_command);
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
+  FreeRTOS_CLIRegisterCommand(&monitor_command  );
 
 
 

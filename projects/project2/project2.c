@@ -241,8 +241,11 @@ extern QueueHandle_t xPwrQueue;
 
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters);
+void MonitorTask(void *parameters);
 
+// Command line interface
 void vCommandLineTask(void *parameters);
+
 
 // playground to test various things
 void RandomTask(void *parameters);
@@ -268,7 +271,8 @@ int main( void )
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
   xTaskCreate(vCommandLineTask,"CON", 512,                      NULL, tskIDLE_PRIORITY+1, NULL);
-  xTaskCreate(RandomTask,      "RDM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+0, NULL);
+  //xTaskCreate(RandomTask,      "RDM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+0, NULL);
+  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.

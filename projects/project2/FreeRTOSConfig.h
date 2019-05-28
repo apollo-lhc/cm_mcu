@@ -55,6 +55,7 @@ extern "C" {
 
 /* Run time stats gathering definitions. */
 #define configGENERATE_RUN_TIME_STATS                           1
+// Todo: this counter should be implemented to get better stats. See DWT cycle count register.
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 #define portGET_RUN_TIME_COUNTER_VALUE()                        xTaskGetTickCount()
 #define configRECORD_STACK_HIGH_ADDRESS                         1
