@@ -141,13 +141,16 @@ void MonitorTask(void *parameters)
             snprintf(tmp, 64,  "\t\t%d.%02d (linear16u)\n", tens, fraction);
             DPRINT(tmp);
           }
+          else {
+            val = -99.0; // should never get here
+          }
           pm_values[ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+c] = val;
           // wait here for the x msec, where x is 2nd argument below.
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 50 ) );
         } // loop over commands
       } // loop over pages
-      vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 1000 ) );
-    }
-  }
+    } // loop over power supplies
+    vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 1000 ) );
+  } // infinite loop
 
 }

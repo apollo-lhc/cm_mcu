@@ -34,8 +34,13 @@
 
 #include "MonitorTask.h"
 
-
+#ifdef DEBUG_CON
 // prototype of mutex'd print
+# define DPRINT(x) Print(x)
+#else // DEBUG_CON
+# define DPRINT(x)
+#endif // DEBUG_CON
+
 void Print(const char* str);
 
 // local sprintf prototype
@@ -77,7 +82,7 @@ static BaseType_t i2c1_ctl_r(char *m, size_t s, const char *mm)
     i2 = MAX_BYTES;
 
   snprintf(m, s, "i2c1_ctl_r: Read %d bytes from I2C address 0x%x\n", i2, i1);
-  Print(m);
+  DPRINT(m);
   readI2C(I2C1_BASE, i1, data, i2);
   snprintf(m, s, "i2cr: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
            i1, data[3], data[2], data[1], data[0]);
@@ -105,7 +110,7 @@ static BaseType_t i2c1_ctl_reg_r(char *m, size_t s, const char *mm)
   if ( i3 > MAX_BYTES )
     i3 = MAX_BYTES;
   snprintf(m, s, "i2c1_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", i3, i1, i2);
-  Print(m);
+  DPRINT(m);
   readI2Creg(I2C1_BASE, i1, i2, data, i3);
 
   snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\n",
@@ -141,7 +146,7 @@ static BaseType_t i2c1_ctl_reg_w(char *m, size_t s, const char *mm)
     i3 = MAX_BYTES;
   snprintf(m, s, "i2c1_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n",
            i4, i1, i2, i3);
-  Print(m);
+  DPRINT(m);
   writeI2Creg(I2C1_BASE, i1, i2, data, i3);
 
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", i1, i2, i3, i4);
@@ -173,7 +178,7 @@ static BaseType_t i2c1_ctl_w(char *m, size_t s, const char *mm)
     i3 = MAX_BYTES;
   snprintf(m, s, "i2c1_ctl_w: write 0x%x to address 0x%x  (%d bytes)\n",
            i4, i1, i3);
-  Print(m);
+  DPRINT(m);
   writeI2C(I2C1_BASE, i1, data, i3);
 
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", i1, i4, i3);
@@ -259,7 +264,7 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
       int tens = val;
       int frac = ABS((val - tens)*100.0);
 
-      copied += snprintf(m+copied, s-copied, "VALUE %d.%d\t", tens, frac );
+      copied += snprintf(m+copied, s-copied, "VALUE %02d.%02d\t", tens, frac );
     }
     copied += snprintf(m+copied, s-copied, "\n");
   }
@@ -477,7 +482,7 @@ void vCommandLineTask( void *pvParameters )
         snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\n",
             pcInputString);
 
-        Print(pcOutputString);
+        DPRINT(pcOutputString);
         /* The command interpreter is called repeatedly until it returns
             pdFALSE.  See the "Implementing a command" documentation for an
             explanation of why this is. */
