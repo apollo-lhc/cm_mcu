@@ -255,6 +255,12 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i1 = strtol(p1, NULL, 10);
+
+  if ( i1 < 0 || i1 >= NCOMMANDS ) {
+    snprintf(m, s, "Invalid argument, must be between 0 and %d\n", NCOMMANDS-1);
+    return pdFALSE;
+  }
+
   int copied = 0;
   copied += snprintf(m+copied, s-copied, "%s\n", pm_common[i1].name);
   for (int ps = 0; ps < NSUPPLIES; ++ps) {
@@ -434,7 +440,7 @@ CLI_Command_Definition_t task_stats_command = {
 
 CLI_Command_Definition_t monitor_command = {
     .pcCommand="mon",
-    .pcHelpString="mon\n Displays a table showing the state of power supplies\r\n",
+    .pcHelpString="mon <#>\n Displays a table showing the state of power supplies.\r\n",
     .pxCommandInterpreter = mon_ctl,
     1
 };
