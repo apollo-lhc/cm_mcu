@@ -14,6 +14,11 @@
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 
+// driverlib
+#include "driverlib/adc.h"
+#include "driverlib/sysctl.h" // --> systeminit
+#include "driverlib/gpio.h"   // --> systeminit
+
 // FreeRTOS
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
@@ -32,8 +37,22 @@ void RandomTask(void *parameters)
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
 
+  // initialize the ADCs. This should all go into SystemInit()
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+  GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);
+
+  ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
+  ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);
+  ADCSequenceEnable(ADC0_BASE, 3);
+  ADCIntClear(ADC0_BASE, 3);
+
+
   for (;;) {
     // do stuff
+
+
+    // wait x ms for next iteration
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 1000 ) );
 
   }
