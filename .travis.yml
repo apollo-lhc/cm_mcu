@@ -5,7 +5,7 @@ branches:
  except:
    - dummy
 
-sudo: false
+sudo: true
 
 # Ubuntu 16.04 LTS
 dist: xenial
@@ -22,7 +22,6 @@ addons:
   apt:
     packages:
     - libc6-i386 
-    - gcc-arm-none-eabi
 
 #before_deploy:
 ## Set up git user name and tag this commit
@@ -37,11 +36,16 @@ addons:
 #  on:
 #    tags: true
 
+before_install:
+  - sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa
+  - sudo apt-get update -q
+  - sudo apt-get install gcc-arm-non-eabi -y
 
 install:
   - env
   - pushd .
   - cd ~ 
+  - lsb_release -a
 #  - mkdir arm-gcc-toolchain
 #  - wget -O $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
 #  - cd arm-gcc-toolchain
