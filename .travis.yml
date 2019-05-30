@@ -5,7 +5,7 @@ branches:
  except:
    - dummy
 
-sudo: true
+sudo: false
 
 # Ubuntu 16.04 LTS
 dist: xenial
@@ -36,24 +36,20 @@ addons:
 #  on:
 #    tags: true
 
-before_install:
-  - sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa
-  - sudo apt-get update -q
-  - sudo apt-get install gcc-arm-non-eabi -y
 
 install:
   - env
   - pushd .
   - cd ~ 
   - lsb_release -a
-#  - mkdir arm-gcc-toolchain
-#  - wget -O $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
-#  - cd arm-gcc-toolchain
-#  - tar -jxf gcc.tar.bz2 --strip=1
+  - mkdir arm-gcc-toolchain
+  - wget -O $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
+  - cd arm-gcc-toolchain
+  - tar -jxf gcc.tar.bz2 --strip=1
   - cd $HOME
   - svn checkout -q https://svn.code.sf.net/p/freertos/code/trunk freertos-code
   - popd
-#  - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
+  - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
   - export FREERTOS_ROOT=$HOME/freertos-code/FreeRTOS/Source
   - export FREERTOS_PLUS_ROOT=$HOME/freertos-code/FreeRTOS-Plus/Source
 
