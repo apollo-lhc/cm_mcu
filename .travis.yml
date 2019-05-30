@@ -1,6 +1,10 @@
 notifications:
   email: true
 
+branches:
+ except:
+   - dummy
+
 sudo: false
 
 # Ubuntu 16.04 LTS
