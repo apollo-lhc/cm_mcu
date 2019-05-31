@@ -69,7 +69,7 @@ void PowerSupplyTask(void *parameters)
     bool psgood = check_ps();
     enum state newstate = psgood?PWR_ON:PWR_OFF;
 
-    if ( newstate == PWR_OFF  && oldState == PWR_ON) {
+    if ( newstate == PWR_OFF  && oldState != PWR_OFF) {
       Print("\nPowerSupplyTask: power supplied turned off.\n");
       message = PS_BAD;
     }
