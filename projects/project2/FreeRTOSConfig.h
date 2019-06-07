@@ -131,7 +131,8 @@ header file. */
 
 
 // non-standard, park this here for now
-#define CLI_UART UART4_BASE
+#define CLI_UART UART4_BASE // Front panel
+  //#define CLI_UART UART1_BASE // Zynq 
 
 
 #ifdef __cplusplus
