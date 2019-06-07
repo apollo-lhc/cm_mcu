@@ -185,19 +185,20 @@ void SystemInit()
   //
   g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT|SYSCTL_USE_PLL |
                                        SYSCTL_CFG_VCO_480), configCPU_CLOCK_HZ);
-  // Enable processor interrupts.
-  //
-  MAP_IntMasterEnable();
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
 
-#if (CLI_UART == UART4_BASE)
+#if (CLI_UART == UART4_BASE) // front panel
   UART4Init(g_ui32SysClock);
-#else
+#elif (CLI_UART == UART1_BASE) // zynq
+  UART1Init(g_ui32SysClock);
+#else 
 #error "CLI UART not initialized"
 #endif
-  initI2C1(g_ui32SysClock);
+  initI2C1(g_ui32SysClock); // controller for power supplies
+  initI2C3(g_ui32SysClock); // controller for V optics
+  
 
   //smbus
   // Initialize the master SMBus port.
@@ -213,10 +214,11 @@ void SystemInit()
   //
   SMBusMasterIntEnable(&g_sMaster);
 
+
   //
-  // Enable interrupts to the processor.
+  // Enable processor interrupts.
   //
-  IntMasterEnable();
+//  MAP_IntMasterEnable(); the FreeRTOS kernel does this at the appropriate moment
 
   setupActiveLowPins();
 
@@ -248,15 +250,13 @@ void vCommandLineTask(void *parameters);
 
 
 // playground to test various things
-void RandomTask(void *parameters);
+void RandomTask(void *parameters); // @suppress("Unused function declaration")
 
 
 
 // 
 int main( void )
 {
-  // Set up the hardware ready to run the demo. 
-  SystemInit();
 
   // mutex for the UART output
   xMutex = xSemaphoreCreateMutex();
@@ -286,9 +286,14 @@ int main( void )
   vQueueAddToRegistry(xLedQueue, "LedQueue");
   vQueueAddToRegistry(xPwrQueue, "PwrQueue");
 
-  Print("\n----------------------------\n");
-  Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n");
-  Print(  "----------------------------\n");
+  // Set up the hardware ready to run the demo. Don't do this earlier as the interrupts
+  // call some FreeRTOS tasks that need to be set up first.
+  SystemInit();
+
+
+  Print("\n----------------------------\n\r");
+  Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n\r");
+  Print(  "----------------------------\n\r");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
 
