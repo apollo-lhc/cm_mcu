@@ -27,7 +27,7 @@ struct pm_list {
 #define NCOMMANDS 5 // number of entries in above array
 #define NPAGES    2 // number of pages on the power supplies.
 
-extern struct pm_list pm_common[];
+extern struct pm_list pm_command_dcdc[];
 
 
 #endif /* PROJECTS_PROJECT2_MONITORTASK_H_ */

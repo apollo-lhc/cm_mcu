@@ -25,10 +25,11 @@
 #include "common/smbus_units.h"
 #include "MonitorTask.h"
 
+void Print(const char* str);
+
 
 #ifdef DEBUG_MON
 // prototype of mutex'd print
-void Print(const char* str);
 # define DPRINT(x) Print(x)
 #else // DEBUG_MON
 # define DPRINT(x)
@@ -38,7 +39,7 @@ void Print(const char* str);
 
 
 
-struct pm_list pm_common[] = {
+struct pm_list pm_command_dcdc[] = {
   { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
   { 0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11 },
   { 0x88, 2, "READ_VIN", "V", PM_LINEAR11 },
@@ -110,8 +111,8 @@ void MonitorTask(void *parameters)
         for (int c = 0; c < NCOMMANDS; ++c ) {
 
           data[0] = 0x0U; data[1] = 0x0U;
-          r = SMBusMasterByteWordRead(&g_sMaster, addrs[ps], pm_common[c].command,
-              data, pm_common[c].size);
+          r = SMBusMasterByteWordRead(&g_sMaster, addrs[ps], pm_command_dcdc[c].command,
+              data, pm_command_dcdc[c].size);
           if ( r != SMBUS_OK ) {
             DPRINT("SMBUS command failed\n");
           }
@@ -122,10 +123,14 @@ void MonitorTask(void *parameters)
             snprintf(tmp, 64, "MON: SMBUS ERROR: %d\n", eStatus);
             DPRINT(tmp);
           }
-          snprintf(tmp, 64, "MON: %d %s is 0x%02x %02x\n", ps, pm_common[c].name, data[1], data[0]);
+          if ( eStatus == SMBUS_TIMEOUT ) {
+        	  Print("Timeout, Continue...\n");
+        	  continue;
+          }
+          snprintf(tmp, 64, "MON: %d %s is 0x%02x %02x\n", ps, pm_command_dcdc[c].name, data[1], data[0]);
           DPRINT(tmp);
           float val;
-          if ( pm_common[c].type == PM_LINEAR11 ) {
+          if ( pm_command_dcdc[c].type == PM_LINEAR11 ) {
             linear11_val_t ii; ii.raw = (data[1] << 8) | data[0];
             val = linear11_to_float(ii);
             int tens = val;
@@ -133,7 +138,7 @@ void MonitorTask(void *parameters)
             snprintf(tmp, 64, "\t\t%d.%02d (linear11)\n", tens, fraction);
             DPRINT(tmp);
           }
-          else if ( pm_common[c].type == PM_LINEAR16U ) {
+          else if ( pm_command_dcdc[c].type == PM_LINEAR16U ) {
             uint16_t ii = (data[1] << 8) | data[0];
             val = linear16u_to_float(ii);
             int tens = val;
@@ -146,7 +151,7 @@ void MonitorTask(void *parameters)
           }
           pm_values[ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+c] = val;
           // wait here for the x msec, where x is 2nd argument below.
-          vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 50 ) );
+          vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ) );
         } // loop over commands
       } // loop over pages
     } // loop over power supplies
