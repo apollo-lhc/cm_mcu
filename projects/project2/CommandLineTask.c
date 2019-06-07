@@ -54,6 +54,8 @@ extern QueueHandle_t xLedQueue;
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   256
 
+static int32_t current_i2c_base = 0; 
+
 
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
@@ -62,7 +64,24 @@ extern QueueHandle_t xLedQueue;
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma GCC diagnostic ignored "-Wformat=" // because of our mini-sprintf
 
-static BaseType_t i2c1_ctl_r(char *m, size_t s, const char *mm)
+static BaseType_t i2c_ctl_set_dev(char *m, size_t s, const char *mm)
+{
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // device number
+  p1[p1l] = 0x00; // terminate strings
+  BaseType_t i = strtol(p1, NULL, 10);
+  if ( i >= 0 || i <= 9 ) {
+    current_i2c_base = I2C_BASE[i];
+    snprintf(m, s,"Setting i2c device to %d (0x%08x)\n", i, current_i2c_base);
+  }
+  else {
+    snprintf(m, s, "Invalid i2c device %d (%s)\n", i, p1);
+  }
+  return pdFALSE;
+}
+
+static BaseType_t i2c_ctl_r(char *m, size_t s, const char *mm)
 {
 
   int8_t *p1, *p2;
@@ -81,14 +100,14 @@ static BaseType_t i2c1_ctl_r(char *m, size_t s, const char *mm)
   if ( i2 > MAX_BYTES )
     i2 = MAX_BYTES;
 
-  snprintf(m, s, "i2c1_ctl_r: Read %d bytes from I2C address 0x%x\n", i2, i1);
+  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\n", i2, i1);
   DPRINT(m);
-  readI2C(I2C1_BASE, i1, data, i2);
+  readI2C(current_i2c_base, i1, data, i2);
   snprintf(m, s, "i2cr: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
            i1, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
-static BaseType_t i2c1_ctl_reg_r(char *m, size_t s, const char *mm)
+static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
 {
 
   int8_t *p1, *p2, *p3;
@@ -109,16 +128,16 @@ static BaseType_t i2c1_ctl_reg_r(char *m, size_t s, const char *mm)
   memset(data,0,MAX_BYTES*sizeof(data[0]));
   if ( i3 > MAX_BYTES )
     i3 = MAX_BYTES;
-  snprintf(m, s, "i2c1_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", i3, i1, i2);
+  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", i3, i1, i2);
   DPRINT(m);
-  readI2Creg(I2C1_BASE, i1, i2, data, i3);
+  readI2Creg(current_i2c_base, i1, i2, data, i3);
 
   snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\n",
            i1, i2, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
 
-static BaseType_t i2c1_ctl_reg_w(char *m, size_t s, const char *mm)
+static BaseType_t i2c_ctl_reg_w(char *m, size_t s, const char *mm)
 {
 
   int8_t *p1, *p2, *p3, *p4;
@@ -144,16 +163,16 @@ static BaseType_t i2c1_ctl_reg_w(char *m, size_t s, const char *mm)
   }
   if ( i3 > MAX_BYTES )
     i3 = MAX_BYTES;
-  snprintf(m, s, "i2c1_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n",
+  snprintf(m, s, "i2c_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n",
            i4, i1, i2, i3);
   DPRINT(m);
-  writeI2Creg(I2C1_BASE, i1, i2, data, i3);
+  writeI2Creg(current_i2c_base, i1, i2, data, i3);
 
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", i1, i2, i3, i4);
   return pdFALSE;
 }
 
-static BaseType_t i2c1_ctl_w(char *m, size_t s, const char *mm)
+static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
 {
 
   int8_t *p1, *p3, *p4;
@@ -176,10 +195,10 @@ static BaseType_t i2c1_ctl_w(char *m, size_t s, const char *mm)
   }
   if ( i3 > MAX_BYTES )
     i3 = MAX_BYTES;
-  snprintf(m, s, "i2c1_ctl_w: write 0x%x to address 0x%x  (%d bytes)\n",
+  snprintf(m, s, "i2c_ctl_w: write 0x%x to address 0x%x  (%d bytes)\n",
            i4, i1, i3);
   DPRINT(m);
-  writeI2C(I2C1_BASE, i1, data, i3);
+  writeI2C(current_i2c_base, i1, data, i3);
 
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", i1, i4, i3);
   return pdFALSE;
@@ -262,7 +281,7 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   }
 
   int copied = 0;
-  copied += snprintf(m+copied, s-copied, "%s\n", pm_common[i1].name);
+  copied += snprintf(m+copied, s-copied, "%s\n", pm_command_dcdc[i1].name);
   for (int ps = 0; ps < NSUPPLIES; ++ps) {
     copied += snprintf(m+copied, s-copied, "SUPPLY %d\n", ps);
     for (int page = 0; page < NPAGES; ++page ) {
@@ -388,30 +407,37 @@ BaseType_t TaskStatsCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const 
 static const char * const pcWelcomeMessage =
 		"FreeRTOS command server.\r\nType \"help\" to view a list of registered commands.\r\n";
 
+CLI_Command_Definition_t i2c_set_dev = {
+    .pcCommand="i2c_base",
+    .pcHelpString="i2c_base <device>\n Set I2C controller number. Value between 0-9.\r\n",
+    .pxCommandInterpreter = i2c_ctl_set_dev,
+    2
+};
+
 CLI_Command_Definition_t i2c_read_command = {
     .pcCommand="i2cr",
     .pcHelpString="i2cr <address> <number of bytes>\n Read no1 I2C controller. Addr in hex.\r\n",
-    .pxCommandInterpreter = i2c1_ctl_r,
+    .pxCommandInterpreter = i2c_ctl_r,
     2
 };
 CLI_Command_Definition_t i2c_read_reg_command = {
     .pcCommand="i2crr",
     .pcHelpString="i2crr <address> <reg> <number of bytes>\n Read no1 I2C controller. Addr in hex\r\n",
-    .pxCommandInterpreter = i2c1_ctl_reg_r,
+    .pxCommandInterpreter = i2c_ctl_reg_r,
     3
 };
 
 CLI_Command_Definition_t i2c_write_command = {
     .pcCommand="i2cw",
     .pcHelpString="i2cw <address> <number of bytes> <value>\n Write no1 I2C controller.\r\n",
-    .pxCommandInterpreter = i2c1_ctl_w,
+    .pxCommandInterpreter = i2c_ctl_w,
     3
 };
 
 CLI_Command_Definition_t i2c_write_reg_command = {
     .pcCommand="i2cwr",
     .pcHelpString="i2cwr <address> <reg> <number of bytes>\n Write no1 I2C controller.\r\n",
-    .pxCommandInterpreter = i2c1_ctl_reg_w,
+    .pxCommandInterpreter = i2c_ctl_reg_w,
     4
 };
 
@@ -459,6 +485,7 @@ void vCommandLineTask( void *pvParameters )
   // register the commands
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
+  FreeRTOS_CLIRegisterCommand(&i2c_set_dev );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
   FreeRTOS_CLIRegisterCommand(&i2c_write_command);
   FreeRTOS_CLIRegisterCommand(&i2c_write_reg_command);
@@ -478,14 +505,17 @@ void vCommandLineTask( void *pvParameters )
     xStreamBufferReceive(xStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
     UARTCharPut(CLI_UART, cRxedChar); // TODO this should use the Mutex
 
-    if( cRxedChar == '\n' ) {
+    // TODO: on lnx231 the terminal _only_ sends a \r which I did not think was possible.
+    // on some platforms (Mac) I think this will cause the command to be sent 2x.
+    // this should be set in the terminal client
+    if( cRxedChar == '\n' || cRxedChar == '\r' ) {
       /* A newline character was received, so the input command string is
             complete and can be processed.  Transmit a line separator, just to
             make the output easier to read. */
       //Print("\r\n");
       if ( cInputIndex != 0 ) { // empty command -- skip
 
-        snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\n",
+        snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\n\r",
             pcInputString);
 
         DPRINT(pcOutputString);

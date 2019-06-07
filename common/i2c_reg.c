@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "inc/hw_i2c.h"
-#include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
 #include "driverlib/rom.h"
@@ -17,9 +16,28 @@
 #include "common/pinsel.h"
 #include "common/utils.h"
 
+#ifdef USE_FREERTOS
+#include "FreeRTOS.h"
+#endif // USE_FREERTOS
+
+// This array helps us simplify the use of different I2C devices in the board.
+uint32_t I2C_BASE[] = {
+  I2C0_BASE,
+  I2C1_BASE,
+  I2C2_BASE,
+  I2C3_BASE,
+  I2C4_BASE,
+  I2C5_BASE,
+  I2C6_BASE,
+  I2C7_BASE,
+  I2C8_BASE,
+  I2C9_BASE
+};
+
+
 //initialize I2C module 1
 // Slightly modified version of TI's example code
-// TODO: add for I2C modules 0, 2, 3, 4 and 6
+// TODO: add for I2C modules 0, 2, 4 and 6
 void initI2C1(const uint32_t sysclockfreq)
 {
     //enable I2C module 1
@@ -56,6 +74,47 @@ void initI2C1(const uint32_t sysclockfreq)
     write_gpio_pin(_PWR_I2C_RESET, 0x0); // active low
     SysCtlDelay(sysclockfreq/10);
     write_gpio_pin(_PWR_I2C_RESET, 0x1); // active low
+
+
+}
+
+// I2C controller 3 is for V_OPTICS on the CM
+void initI2C3(const uint32_t sysclockfreq)
+{
+    //enable I2C module 3
+    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C3);
+    //
+    // Wait for the I2C3 module to be ready.
+    //
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3))
+    {
+    }
+
+    // Stop the Clock, Reset and Enable I2C Module
+    // in Master Function
+    //
+    MAP_SysCtlPeripheralDisable(SYSCTL_PERIPH_I2C3);
+    MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C3);
+    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C3);
+
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3));
+
+    // Enable and initialize the I2C master module.  Use the system clock for
+    // the I2C3 module.  The last parameter sets the I2C data transfer rate.
+    // If false the data rate is set to 100kbps and if true the data rate will
+    // be set to 400kbps.
+    MAP_I2CMasterInitExpClk(I2C3_BASE, sysclockfreq, false);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3));
+
+    //clear I2C FIFOs
+    //HWREG(I2C3_BASE + I2C_0_FIFOCTL) = 80008000;
+    I2CRxFIFOFlush(I2C3_BASE);
+    I2CTxFIFOFlush(I2C3_BASE);
+
+    // toggle relevant reset
+    write_gpio_pin(_V_OPTICS_I2C_RESET, 0x0); // active low
+    SysCtlDelay(sysclockfreq/10);
+    write_gpio_pin(_V_OPTICS_I2C_RESET, 0x1); // active low
 
 
 }
