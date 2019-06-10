@@ -75,16 +75,16 @@ __error__(char *pcFilename, uint32_t ui32Line)
 uint32_t g_ui32SysClock = 0;
 
 
-static SemaphoreHandle_t xMutex = NULL;
+static SemaphoreHandle_t xUARTMutex = NULL;
 
 
 void Print(const char* str)
 {
-    xSemaphoreTake( xMutex, portMAX_DELAY );
+    xSemaphoreTake( xUARTMutex, portMAX_DELAY );
     {
       UARTPrint(CLI_UART, str);
     }
-    xSemaphoreGive( xMutex );
+    xSemaphoreGive( xUARTMutex );
   return;
 }
 
@@ -252,14 +252,17 @@ void vCommandLineTask(void *parameters);
 // playground to test various things
 void RandomTask(void *parameters); // @suppress("Unused function declaration")
 
-
+void ShortDelay()
+{
+  vTaskDelay(pdMS_TO_TICKS(100));
+}
 
 // 
 int main( void )
 {
 
   // mutex for the UART output
-  xMutex = xSemaphoreCreateMutex();
+  xUARTMutex = xSemaphoreCreateMutex();
 
   //  Create the stream buffer that sends data from the interrupt to the
   //  task, and create the task.

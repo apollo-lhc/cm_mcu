@@ -18,16 +18,15 @@
 #include "task.h"
 #endif // USE_FREERTOS
 
+void ShortDelay(); // needs to be implemented in each project
 
-extern uint32_t g_ui32SysClock;
 
-// data structures to hold GPIO PIN information
-struct gpio_pin_t {
-  int name;
-  int priority;
-};
+void Print(const char* ); // needs to be implemented in each project
 
-struct gpio_pin_t enables[] = {
+
+
+// if you update this you need to update N_PS_ENABLES
+static struct gpio_pin_t enables[] = {
   {  CTRL_K_VCCINT_PWR_EN, 1},
   {  CTRL_V_VCCINT_PWR_EN, 1},
   {  CTRL_VCC_1V8_PWR_EN,  2},
@@ -45,8 +44,9 @@ struct gpio_pin_t enables[] = {
   {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
   {  CTRL_V_MGTY2_AVTT_PWR_EN, 5}
 };
-const int nenables = sizeof(enables)/sizeof(enables[0]);
+static const int nenables = sizeof(enables)/sizeof(enables[0]);
 
+//if you update this you need to update N_PS_OKS too
 struct gpio_pin_t oks[] = {
   { K_VCCINT_PG_A, 1},
   { K_VCCINT_PG_B, 1},
@@ -63,12 +63,29 @@ struct gpio_pin_t oks[] = {
   { V_MGTY1_AVTT_OK, 5},
   { V_MGTY2_AVTT_OK, 5}
 };
-const int noks = sizeof(oks)/sizeof(oks[0]);
 const int num_priorities = 5;
 
-// Todo: move this to an apprpriate place
-//void Print(const char* str);
+// this array states[] holds the current status of these power supplies
+static enum ps_state states[N_PS_OKS] = { UNKNOWN };
 
+// this variable holds the current lowest enabled power supply
+static int lowest_enabled_ps_prio = 0;
+
+int getLowestEnabledPSPriority()
+{
+  return lowest_enabled_ps_prio;
+}
+
+enum ps_state getPSStatus(int i)
+{
+  if ( i < 0 || i >= N_PS_OKS) return UNKNOWN;
+  return states[i];
+}
+void setPSStatus(int i, enum ps_state theState)
+{
+  if ( i < 0 || i >= N_PS_OKS) return;
+  states[i] = theState;
+}
 
 //
 // check the power supplies and turn them on one by one
@@ -80,60 +97,20 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
   // data structure to turn on various power supplies. This should be ordered
   // such that the priority increases, though it's not necessary
   for ( int prio = 1; prio <= num_priorities; ++prio ) {
-	  // enable the supplies at the relevant priority
-	  for ( int e = 0; e < nenables; ++e ) {
-		  if ( enables[e].priority == prio ) {
-			  write_gpio_pin(enables[e].name, 0x1);
-		  }
-	  }
-
-#ifdef USE_FREERTOS
-    vTaskDelay(pdMS_TO_TICKS(100));
-#else
-	  //
-	  // Delay for a bit
-	  //
-	  MAP_SysCtlDelay(g_ui32SysClock/6);
-#endif // USER_FREERTOS
-	  // check power good at this level or higher priority (lower number)
-	  bool all_good = true;
-	  int o = -1;
-	  for ( o = 0; o < noks; ++o ) {
-		  if ( oks[o].priority <= prio ) {
-			  int8_t val = read_gpio_pin(oks[o].name);
-			  if ( val == 0 ) {
-				  all_good = false;
-				  break;
-			  }
-		  }
-	  } // loop over 'ok' bits
-	  if (  ! all_good ) {
-		  // o tells you which one died. should I print something on UART?
-		  // turn off all supplies at current priority level or lower
-		  // that is probably overkill since they should not all be
-		  for ( int e = 0; e < nenables; ++e ) {
-			  if ( enables[e].priority >= prio )
-				  write_gpio_pin(enables[e].name, 0x0);
-
-		  }
-		  success = false;
-		  break;
-	  }
-  } // loop over priorities
-
-return success;
-
-}
-
-bool
-check_ps(void)
-{
-  bool success = true;
-  for ( int prio = 1; prio <= num_priorities; ++prio ) {
     // enable the supplies at the relevant priority
+    lowest_enabled_ps_prio = prio;
+    for ( int e = 0; e < nenables; ++e ) {
+      if ( enables[e].priority == prio ) {
+        write_gpio_pin(enables[e].name, 0x1);
+      }
+    }
+
+    ShortDelay();
+
+    // check power good at this level or higher priority (lower number)
     bool all_good = true;
     int o = -1;
-    for ( o = 0; o < noks; ++o ) {
+    for ( o = 0; o < N_PS_OKS; ++o ) {
       if ( oks[o].priority <= prio ) {
         int8_t val = read_gpio_pin(oks[o].name);
         if ( val == 0 ) {
@@ -143,15 +120,63 @@ check_ps(void)
       }
     } // loop over 'ok' bits
     if (  ! all_good ) {
-      // Todo: o tells you which one died. should I print something on UART?
+      // o tells you which one died.
+      Print("set_ps: Power supply check failed: ");
+      Print(pin_names[oks[o].name]);
+      Print(". Turning off all supplies at this level or lower.\n");
       // turn off all supplies at current priority level or lower
+      // that is probably overkill since they should not all be
+      lowest_enabled_ps_prio = oks[o].priority - 1;
       for ( int e = 0; e < nenables; ++e ) {
-        if ( enables[e].priority >= prio ) {
+        if ( enables[e].priority >= prio )
           write_gpio_pin(enables[e].name, 0x0);
-        }
-        success = false;
 
-        break;
+      }
+      success = false;
+      break;
+    }
+  } // loop over priorities
+
+  return success;
+
+}
+// check_ps(Void)
+// in this function we check the status of the supplies. The function returns
+// true if all supplies it expects to be good, are good. That means that if one
+// supply is disabled then it will not check it and return 'good' even if the
+// supply is not good (in fact it will not be checked.)
+
+bool
+check_ps(void)
+{
+
+  bool success = true;
+  // first check all the GPIO pins for various status bits
+  for ( int o = 0; o < N_PS_OKS; ++o ) {
+    int8_t val = read_gpio_pin(oks[o].name);
+    if ( val == 0 ) {
+      states[o] = PWR_OFF;
+      success = false;
+    }
+    else {
+      states[o] = PWR_ON;
+    }
+  }
+
+  // now find the lowest priority pin that is off
+  int max_good_prio = -1;
+  for ( int o = 0; o < N_PS_OKS; ++o ) {
+    if ( states[o] == PWR_ON ) {
+      if ( oks[o].priority > max_good_prio)
+        max_good_prio = oks[o].priority;
+
+    }
+  }
+  if ( ! success ) {
+    // turn off all supplies at current priority level or lower
+    for ( int e = 0; e < nenables; ++e ) {
+      if ( enables[e].priority > max_good_prio ) {
+        write_gpio_pin(enables[e].name, 0x0);
       }
     }
   } // loop over priorities
@@ -174,7 +199,7 @@ disable_ps(void)
     bool ready_to_proceed = false;
     while ( ! ready_to_proceed ) {
       bool all_ready = true;
-      for ( int o = 0; o < noks; ++o ) {
+      for ( int o = 0; o < N_PS_OKS; ++o ) {
          if ( oks[o].priority >= prio ) {
            int8_t val = read_gpio_pin(oks[o].name);
            if ( val == 1 ) {
@@ -184,6 +209,7 @@ disable_ps(void)
        } // loop over 'ok' bits
       if ( all_ready) ready_to_proceed = true;
     }
+    lowest_enabled_ps_prio = prio;
   } // loop over priorities
   return success;
 }

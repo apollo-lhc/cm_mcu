@@ -16,6 +16,7 @@
 #include "common/i2c_reg.h"
 #include "common/uart.h"
 #include "common/power_ctl.h"
+#include "common/pinsel.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
@@ -26,7 +27,7 @@
 #include "FreeRTOS_CLI.h"
 
 // strlen, strtol, and strncpy
-#include "string.h"
+#include <string.h>
 #include <stdlib.h>
 
 // TivaWare includes
@@ -52,7 +53,7 @@ extern QueueHandle_t xLedQueue;
 
 
 #define MAX_INPUT_LENGTH    50
-#define MAX_OUTPUT_LENGTH   256
+#define MAX_OUTPUT_LENGTH   512
 
 static int32_t current_i2c_base = 0; 
 
@@ -205,6 +206,8 @@ static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
 }
 
 
+extern struct gpio_pin_t oks[];
+
 // send power control commands
 static BaseType_t power_ctl(char *m, size_t s, const char *mm)
 {
@@ -212,25 +215,55 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   BaseType_t p1l;
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
   p1[p1l] = 0x00; // terminate strings
-  BaseType_t i1 = strtol(p1, NULL, 10);
 
   uint32_t message;
-  if ( !(i1 == 1 || i1 == 0 )) {
-    snprintf(m, s, "power_ctl: invalid argument %d received\n", i1);
-    return pdFALSE;
-  }
-  else if ( i1 == 1 ) {
+  if ( strcmp(p1, "on") == 0 ) {
     message = PS_ON; // turn on power supply
   }
-  else if ( i1 == 0 ) {
+  else if ( strcmp(p1, "off")  == 0 ) {
     message = PS_OFF; // turn off power supply
   }
-  // Send a message to the power supply task
+  else if ( strcmp(p1, "status") == 0 ) {
+    int copied = 0;
+    copied += snprintf(m+copied, s-copied, "power_ctl:\nLowest ena: %d\n",
+        getLowestEnabledPSPriority());
+    for ( int i = 0; i < N_PS_OKS; ++i ) {
+      int j = getPSStatus(i);
+      char *c;
+      switch (j) {
+              case 0:
+                c = "UNKNOWN";
+                break;
+              case 1:
+                c = "PWR_ON";
+                break;
+              case 2:
+                c = "PWR_OFF";
+                break;
+              case 3:
+              default:
+                c = "UNKNOWN";
+                break;
+    }
+
+      copied += snprintf(m+copied, s-copied, "%15s: %s\n",
+          pin_names[oks[i].name],  c);
+      if ( copied >= MAX_OUTPUT_LENGTH ) break;
+    }
+    return pdFALSE;
+  }
+  else {
+    snprintf(m, s, "power_ctl: invalid argument %s received\n", p1);
+    return pdFALSE;
+  }
+  // Send a message to the power supply task, if needed
   xQueueSendToBack(xPwrQueue, &message, pdMS_TO_TICKS(10));
   m[0] = '\0'; // no output from this command
 
   return pdFALSE;
 }
+
+
 
 // send LED commands
 static BaseType_t led_ctl(char *m, size_t s, const char *mm)
@@ -443,14 +476,14 @@ CLI_Command_Definition_t i2c_write_reg_command = {
 
 CLI_Command_Definition_t pwr_ctl_command = {
     .pcCommand="pwr",
-    .pcHelpString="pwr (0|1)\n Turn on or off all power.\r\n",
+    .pcHelpString="pwr (on|off|status)\n Turn on or off all power.\r\n",
     .pxCommandInterpreter = power_ctl,
     1
 };
 
 CLI_Command_Definition_t led_ctl_command = {
     .pcCommand="led",
-    .pcHelpString="led (0|1)\n Turn on red LED (for now).\r\n",
+    .pcHelpString="led (0-4)\n Manipulate red LED.\r\n",
     .pxCommandInterpreter = led_ctl,
     1
 };

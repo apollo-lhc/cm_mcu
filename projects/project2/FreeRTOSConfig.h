@@ -127,7 +127,7 @@ header file. */
 #define configASSERT( x ) if( ( x ) == 0UL ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
 
 // for the CLI
-#define configCOMMAND_INT_MAX_OUTPUT_SIZE 256
+#define configCOMMAND_INT_MAX_OUTPUT_SIZE 1
 
 
 // non-standard, park this here for now

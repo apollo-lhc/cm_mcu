@@ -366,6 +366,7 @@ void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin )
 
 const char* const pin_names[] =
 {
+    "Dummy", // 0
     "VCC_M1V8",// 1
     "VCC_M3V3",// 2
     "VCC_2V5",// 3

@@ -5,6 +5,12 @@
 #define PART_TM4C1290NCPDT
 #endif // PART_TM4C1290NCPDT
 
+// data structures to hold GPIO PIN information
+struct gpio_pin_t {
+  int name;
+  int priority;
+};
+
 
 
 #define  TM4C_TO_VU7P_0 5 // port, local_pin = Q 0

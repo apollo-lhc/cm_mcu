@@ -38,8 +38,7 @@ void PowerSupplyTask(void *parameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  enum state { PWR_ON, PWR_OFF, UNKNOWN};
-  enum state oldState = UNKNOWN;
+  enum ps_state oldState = UNKNOWN;
   //enum state desiredState = PWR_ON; // start with power-on right away
 
   // turn on the power supply at the start of the task
@@ -67,10 +66,10 @@ void PowerSupplyTask(void *parameters)
     }
     // now check the actual state
     bool psgood = check_ps();
-    enum state newstate = psgood?PWR_ON:PWR_OFF;
+    enum ps_state newstate = psgood?PWR_ON:PWR_OFF;
 
     if ( newstate == PWR_OFF  && oldState != PWR_OFF) {
-      Print("\nPowerSupplyTask: power supplied turned off.\n");
+      Print("\nPowerSupplyTask: power supplies turned off.\n");
       message = PS_BAD;
     }
     else { // all good

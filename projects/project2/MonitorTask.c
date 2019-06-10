@@ -27,7 +27,7 @@
 
 void Print(const char* str);
 
-
+//#define DEBUG_MON
 #ifdef DEBUG_MON
 // prototype of mutex'd print
 # define DPRINT(x) Print(x)
@@ -64,9 +64,19 @@ void MonitorTask(void *parameters)
 
   // these I2C addresses correspond to the addresses of the power supplies hanging
   // off the TM4C PWR I2C bus
+  // TODO: clean up this information and collect in one place
+  // Supply Address | Voltages | Priority
+  // ---------------+----------|-----------
+  //       0x40     | 3.3 & 1.8|     2
+  //       0x44     | KVCCINT  |     1
+  //       0x43     | KVCCINT  |     1
+  //       0x46     | VVCCINT  |     1
+  //       0x45     | VVCCINT  |     1
   const uint8_t addrs[NSUPPLIES] = { 0x40, 0x44, 0x43, 0x46, 0x45};
+//  const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
 
   for (;;) {
+//    int prio = getLowestEnabledPSPriority();
     // loop over power supplies attached to the MUX
     for ( uint8_t ps = 0; ps < NSUPPLIES; ++ ps ) {
       char tmp[64];
@@ -149,7 +159,8 @@ void MonitorTask(void *parameters)
           else {
             val = -99.0; // should never get here
           }
-          pm_values[ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+c] = val;
+          int index = ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+c;
+          pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ) );
         } // loop over commands
