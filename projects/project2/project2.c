@@ -168,7 +168,7 @@ SMBusMasterIntHandler(void)
   case SMBUS_ADDR_ACK_ERROR:
   case SMBUS_DATA_ACK_ERROR:
   default:
-    while(1); // wait here for debugger
+//    while(1); // wait here for debugger
     break;
   }
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
@@ -176,6 +176,39 @@ SMBusMasterIntHandler(void)
 
 
 tSMBus g_sMaster1;
+
+
+// ARM DWT
+#define DEMCR_TRCENA    0x01000000
+
+/* Core Debug registers */
+#define DEMCR           (*(volatile uint32_t *)0xE000EDFC)
+#define DWT_CTRL        (*(volatile uint32_t *)0xe0001000)
+#define CYCCNTENA       (1<<0)
+#define DWT_CYCCNT      ((volatile uint32_t *)0xE0001004)
+#define CPU_CYCLES      *DWT_CYCCNT
+
+static uint32_t counter, prev_count;
+
+void stopwatch_reset(void)
+{
+    /* Enable DWT */
+    DEMCR |= DEMCR_TRCENA;
+    *DWT_CYCCNT = 0;
+    /* Enable CPU cycle counter */
+    DWT_CTRL |= CYCCNTENA;
+    counter = prev_count = 0U;
+}
+
+uint32_t stopwatch_getticks()
+{
+    uint32_t curr_count =  CPU_CYCLES;
+    uint32_t diff = curr_count - prev_count;
+    prev_count = curr_count;
+    counter += diff>>12;
+    return counter;
+}
+
 
 
 void SystemInit()
