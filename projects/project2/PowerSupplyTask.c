@@ -81,6 +81,6 @@ void PowerSupplyTask(void *parameters)
     oldState = newstate;
 
     // wait here for the x msec, where x is 2nd argument below.
-    vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
+    vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 25 ) );
   }
 }

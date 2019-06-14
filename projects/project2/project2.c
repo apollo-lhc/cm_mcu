@@ -135,7 +135,7 @@ void UARTIntHandler( void )
 }
 
 #include "common/smbus.h"
-extern tSMBus g_sMaster;
+extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus;
 // SMBUs specific handler for I2C
 void
@@ -147,7 +147,7 @@ SMBusMasterIntHandler(void)
   //
   // Process the interrupt.
   //
-  eStatus = SMBusMasterIntProcess(&g_sMaster);
+  eStatus = SMBusMasterIntProcess(&g_sMaster1);
   //
   // Check for errors.
   //
@@ -168,14 +168,14 @@ SMBusMasterIntHandler(void)
   case SMBUS_ADDR_ACK_ERROR:
   case SMBUS_DATA_ACK_ERROR:
   default:
-    //while(1); // wait here for debugger
+    while(1); // wait here for debugger
     break;
   }
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 
-tSMBus g_sMaster;
+tSMBus g_sMaster1;
 
 
 void SystemInit()
@@ -184,11 +184,15 @@ void SystemInit()
   // Run from the PLL, internal oscillator, at the defined clock speed configCPU_CLOCK_HZ
   //
   g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT|SYSCTL_USE_PLL |
-                                       SYSCTL_CFG_VCO_480), configCPU_CLOCK_HZ);
+                                       SYSCTL_CFG_VCO_320), configCPU_CLOCK_HZ);
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
 
+  // Enable the FPU unit
+  MAP_FPULazyStackingEnable();
+  MAP_FPUEnable();
+  // Set up the CLI
 #if (CLI_UART == UART4_BASE) // front panel
   UART4Init(g_ui32SysClock);
 #elif (CLI_UART == UART1_BASE) // zynq
@@ -203,7 +207,7 @@ void SystemInit()
   //smbus
   // Initialize the master SMBus port.
   //
-  SMBusMasterInit(&g_sMaster, I2C1_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster1, I2C1_BASE, g_ui32SysClock);
   //SMBusPECEnable(&g_sMaster);
 
   // FreeRTOS insists that the priority of interrupts be set up like this.
@@ -212,7 +216,7 @@ void SystemInit()
   //
   // Enable master interrupts.
   //
-  SMBusMasterIntEnable(&g_sMaster);
+  SMBusMasterIntEnable(&g_sMaster1);
 
 
   //

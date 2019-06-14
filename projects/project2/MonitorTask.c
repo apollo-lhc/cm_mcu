@@ -38,20 +38,32 @@ void Print(const char* str);
 // Todo: rewrite to get away from awkward/bad SMBUS implementation from TI
 
 
-
+// Beware: you need to update NCOMMANDS in header file if you change
+// the number of entries in this array.
 struct pm_list pm_command_dcdc[] = {
   { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
   { 0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11 },
   { 0x88, 2, "READ_VIN", "V", PM_LINEAR11 },
   { 0x8B, 2, "READ_VOUT", "V", PM_LINEAR16U },
-  { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 }
+  { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 },
+  { 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
+  { 0x79, 2, "STATUS_WORD", "", PM_STATUS }
 };
 
-extern tSMBus g_sMaster;
+extern tSMBus g_sMaster1;
 
 volatile tSMBusStatus eStatus = SMBUS_OK;
 
 float pm_values[NSUPPLIES*NPAGES*NCOMMANDS];
+static float pm_values_max[NSUPPLIES*NPAGES*NCOMMANDS] = {-99.0};
+
+static
+void update_max() {
+  for (int i = 0; i < NSUPPLIES*NPAGES*NCOMMANDS; ++i ) {
+    if ( pm_values_max[i] < pm_values[i])
+      pm_values_max[i] = pm_values[i];
+  }
+}
 
 // Monitor temperatures, voltages, currents, usually via I2C/PMBUS
 void MonitorTask(void *parameters)
@@ -73,10 +85,10 @@ void MonitorTask(void *parameters)
   //       0x46     | VVCCINT  |     1
   //       0x45     | VVCCINT  |     1
   const uint8_t addrs[NSUPPLIES] = { 0x40, 0x44, 0x43, 0x46, 0x45};
-//  const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
+  const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
 
   for (;;) {
-//    int prio = getLowestEnabledPSPriority();
+    int prio = getLowestEnabledPSPriority();
     // loop over power supplies attached to the MUX
     for ( uint8_t ps = 0; ps < NSUPPLIES; ++ ps ) {
       char tmp[64];
@@ -84,15 +96,41 @@ void MonitorTask(void *parameters)
       data[0] = 0x1U<<ps;
       snprintf(tmp, 64, "MON: Output of mux set to 0x%02x\n", data[0]);
       DPRINT(tmp);
-      bool success = writeI2C(I2C1_BASE, 0x70U, data, 1);
-      if ( ! success ) {
-        DPRINT("MON: Write of MUX output failed\n");
+      tSMBusStatus r = SMBusMasterI2CWrite(&g_sMaster1, 0x70U, data, 1);
+      if ( r != SMBUS_OK ) {
+        Print("MON: I2CBus command failed  (setting mux)\n");
+        continue;
       }
-      vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ));
+      while ( SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
+        vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
+      }
+      if ( eStatus != SMBUS_OK ) {
+        snprintf(tmp, 64, "MON: Mux writing error %d, break out of loop (ps=%d) ...\n", eStatus, ps);
+        Print(tmp);
+        break;
+      }
+
+//      bool success = writeI2C(I2C1_BASE, 0x70U, data, 1);
+//      if ( ! success ) {
+//        DPRINT("MON: Write of MUX output failed\n");
+//      }
+//      vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ));
       data[0] = 0xAAU;
-      success = readI2C(I2C1_BASE, 0x70U, data, 1);
-      if ( ! success ) {
-        DPRINT("MON: Read of MUX output failed\n");
+//      success = readI2C(I2C1_BASE, 0x70U, data, 1);
+//      if ( ! success ) {
+//        Print("MON: Read of MUX output failed\n");
+//      }
+      r = SMBusMasterI2CRead(&g_sMaster1, 0x70U, data, 1);
+      if ( r != SMBUS_OK ) {
+        Print("MON: Read of MUX output failed\n");
+      }
+      while ( SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
+        vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
+      }
+      if ( eStatus != SMBUS_OK ) {
+        snprintf(tmp, 64, "MON: Mux reading error %d, break out of loop (ps=%d) ...\n", eStatus, ps);
+        Print(tmp);
+        break;
       }
       else {
         snprintf(tmp, 64, "MON: read back register on mux to be %02x\n", data[0]);
@@ -101,18 +139,18 @@ void MonitorTask(void *parameters)
       // loop over pages on the supply
       for ( uint8_t page = 0; page < NPAGES; ++page ) {
 #define PAGE_COMMAND 0x0
-        tSMBusStatus r = SMBusMasterByteWordWrite(&g_sMaster, addrs[ps], PAGE_COMMAND,
+        r = SMBusMasterByteWordWrite(&g_sMaster1, addrs[ps], PAGE_COMMAND,
             &page, 1);
         if ( r != SMBUS_OK ) {
-          DPRINT("SMBUS command failed\n");
+          Print("SMBUS command failed  (setting page)\n");
         }
-        while ( SMBusStatusGet(&g_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
+        while ( SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
         }
         // this is checking the return from the interrupt
         if (eStatus != SMBUS_OK ) {
           snprintf(tmp, 64, "MON: Page SMBUS ERROR: %d\n", eStatus);
-          DPRINT(tmp);
+          Print(tmp);
         }
         snprintf(tmp, 64, "\t\tMON: Page %d\n", page);
         DPRINT(tmp);
@@ -121,21 +159,24 @@ void MonitorTask(void *parameters)
         for (int c = 0; c < NCOMMANDS; ++c ) {
 
           data[0] = 0x0U; data[1] = 0x0U;
-          r = SMBusMasterByteWordRead(&g_sMaster, addrs[ps], pm_command_dcdc[c].command,
+          r = SMBusMasterByteWordRead(&g_sMaster1, addrs[ps], pm_command_dcdc[c].command,
               data, pm_command_dcdc[c].size);
           if ( r != SMBUS_OK ) {
-            DPRINT("SMBUS command failed\n");
+            snprintf(tmp, 64, "MON: SMBUS COMMAND failed (master or busy busy, (ps=%d,c=%d,p=%d)\n", ps,c,page);
+            Print(tmp);
+            continue; // abort reading this register
           }
-          while ( SMBusStatusGet(&g_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
+          while ( SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
           }
           if (eStatus != SMBUS_OK ) {
             snprintf(tmp, 64, "MON: SMBUS ERROR: %d\n", eStatus);
             DPRINT(tmp);
           }
-          if ( eStatus == SMBUS_TIMEOUT ) {
-        	  Print("Timeout, Continue...\n");
-        	  continue;
+          if ( eStatus != SMBUS_OK ) {
+            snprintf(tmp, 64, "Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\n", eStatus, ps,c,page);
+        	  Print(tmp);
+        	  break;
           }
           snprintf(tmp, 64, "MON: %d %s is 0x%02x %02x\n", ps, pm_command_dcdc[c].name, data[1], data[0]);
           DPRINT(tmp);
@@ -156,6 +197,9 @@ void MonitorTask(void *parameters)
             snprintf(tmp, 64,  "\t\t%d.%02d (linear16u)\n", tens, fraction);
             DPRINT(tmp);
           }
+          else if ( pm_command_dcdc[c].type == PM_STATUS ) {
+            val = (float)((data[1] << 8) | data[0]); // ugly is my middle name
+          }
           else {
             val = -99.0; // should never get here
           }
@@ -166,6 +210,7 @@ void MonitorTask(void *parameters)
         } // loop over commands
       } // loop over pages
     } // loop over power supplies
+    update_max();
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 1000 ) );
   } // infinite loop
 

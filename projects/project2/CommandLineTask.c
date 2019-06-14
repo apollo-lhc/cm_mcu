@@ -55,7 +55,7 @@ extern QueueHandle_t xLedQueue;
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   512
 
-static int32_t current_i2c_base = 0; 
+static int32_t current_i2c_base = I2C1_BASE;
 
 
 // Ugly hack for now -- I don't understand how to reconcile these
@@ -103,8 +103,12 @@ static BaseType_t i2c_ctl_r(char *m, size_t s, const char *mm)
 
   snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\n", i2, i1);
   DPRINT(m);
-  readI2C(current_i2c_base, i1, data, i2);
-  snprintf(m, s, "i2cr: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
+  bool r = readI2C(current_i2c_base, i1, data, i2);
+  if ( r == false ) {
+    snprintf(m,s, "i2c_ctl_r: read failed\n");
+    return pdFALSE;
+  }
+  snprintf(m, s, "i2c_ctl_r: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
            i1, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
@@ -131,7 +135,11 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
     i3 = MAX_BYTES;
   snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", i3, i1, i2);
   DPRINT(m);
-  readI2Creg(current_i2c_base, i1, i2, data, i3);
+  bool r = readI2Creg(current_i2c_base, i1, i2, data, i3);
+  if ( r == false ) {
+    snprintf(m,s, "i2c_ctl_reg_r: read failed\n");
+    return pdFALSE;
+  }
 
   snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\n",
            i1, i2, data[3], data[2], data[1], data[0]);
@@ -167,7 +175,12 @@ static BaseType_t i2c_ctl_reg_w(char *m, size_t s, const char *mm)
   snprintf(m, s, "i2c_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n",
            i4, i1, i2, i3);
   DPRINT(m);
-  writeI2Creg(current_i2c_base, i1, i2, data, i3);
+  bool r = writeI2Creg(current_i2c_base, i1, i2, data, i3);
+  if ( r == false ) {
+    snprintf(m,s, "i2c_ctl_reg_w: write failed\n");
+    return pdFALSE;
+  }
+
 
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", i1, i2, i3, i4);
   return pdFALSE;
@@ -199,7 +212,11 @@ static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
   snprintf(m, s, "i2c_ctl_w: write 0x%x to address 0x%x  (%d bytes)\n",
            i4, i1, i3);
   DPRINT(m);
-  writeI2C(current_i2c_base, i1, data, i3);
+  bool r = writeI2C(current_i2c_base, i1, data, i3);
+  if ( r == false ) {
+    snprintf(m,s, "i2c_ctl_w: write failed\n");
+    return pdFALSE;
+  }
 
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", i1, i4, i3);
   return pdFALSE;
@@ -263,7 +280,26 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-
+static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
+{
+  // takes no arguments
+  int copied = 0;
+  copied += snprintf(m, s, "i2c scan of bus at base address %08x\n", current_i2c_base);
+  copied += snprintf(m+copied,s-copied,
+      "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n00:         ");
+  for (int i = 0x3; i < 0x78; ++i ) {
+    uint8_t data;
+    if ( i%16 ==0 ) copied += snprintf(m+copied,s-copied,"\n%2x:", i);
+    bool retval = readI2C(current_i2c_base,i,&data,1);
+    if ( retval )
+      copied += snprintf(m+copied, s-copied, " %2x", i);
+    else
+      copied += snprintf(m+copied, s-copied, " --");
+    configASSERT(copied < s);
+  }
+  copied += snprintf(m+copied, s-copied,"\n");
+  return pdFALSE;
+}
 
 // send LED commands
 static BaseType_t led_ctl(char *m, size_t s, const char *mm)
@@ -444,35 +480,43 @@ CLI_Command_Definition_t i2c_set_dev = {
     .pcCommand="i2c_base",
     .pcHelpString="i2c_base <device>\n Set I2C controller number. Value between 0-9.\r\n",
     .pxCommandInterpreter = i2c_ctl_set_dev,
-    2
+    1
 };
 
 CLI_Command_Definition_t i2c_read_command = {
     .pcCommand="i2cr",
-    .pcHelpString="i2cr <address> <number of bytes>\n Read no1 I2C controller. Addr in hex.\r\n",
+    .pcHelpString="i2cr <address> <number of bytes>\n Read I2C controller. Addr in hex.\r\n",
     .pxCommandInterpreter = i2c_ctl_r,
     2
 };
 CLI_Command_Definition_t i2c_read_reg_command = {
     .pcCommand="i2crr",
-    .pcHelpString="i2crr <address> <reg> <number of bytes>\n Read no1 I2C controller. Addr in hex\r\n",
+    .pcHelpString="i2crr <address> <reg> <number of bytes>\n Read I2C controller. Addr in hex\r\n",
     .pxCommandInterpreter = i2c_ctl_reg_r,
     3
 };
 
 CLI_Command_Definition_t i2c_write_command = {
     .pcCommand="i2cw",
-    .pcHelpString="i2cw <address> <number of bytes> <value>\n Write no1 I2C controller.\r\n",
+    .pcHelpString="i2cw <address> <number of bytes> <value>\n Write I2C controller.\r\n",
     .pxCommandInterpreter = i2c_ctl_w,
     3
 };
 
 CLI_Command_Definition_t i2c_write_reg_command = {
     .pcCommand="i2cwr",
-    .pcHelpString="i2cwr <address> <reg> <number of bytes>\n Write no1 I2C controller.\r\n",
+    .pcHelpString="i2cwr <address> <reg> <number of bytes>\n Write I2C controller.\r\n",
     .pxCommandInterpreter = i2c_ctl_reg_w,
     4
 };
+
+CLI_Command_Definition_t i2c_scan_command = {
+    .pcCommand="i2c_scan",
+    .pcHelpString="i2c_scan\n Scan current I2C bus.\r\n",
+    .pxCommandInterpreter = i2c_scan,
+    0
+};
+
 
 CLI_Command_Definition_t pwr_ctl_command = {
     .pcCommand="pwr",
@@ -522,6 +566,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
   FreeRTOS_CLIRegisterCommand(&i2c_write_command);
   FreeRTOS_CLIRegisterCommand(&i2c_write_reg_command);
+  FreeRTOS_CLIRegisterCommand(&i2c_scan_command );
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );

@@ -20,6 +20,10 @@
 
 void ShortDelay(); // needs to be implemented in each project
 
+// local sprintf prototype
+int snprintf( char *buf, unsigned int count, const char *format, ... );
+
+
 
 void Print(const char* ); // needs to be implemented in each project
 
@@ -151,31 +155,42 @@ check_ps(void)
 {
 
   bool success = true;
+  enum ps_state new_states[N_PS_OKS];
   // first check all the GPIO pins for various status bits
   for ( int o = 0; o < N_PS_OKS; ++o ) {
     int8_t val = read_gpio_pin(oks[o].name);
     if ( val == 0 ) {
-      states[o] = PWR_OFF;
+      new_states[o] = PWR_OFF;
       success = false;
     }
     else {
-      states[o] = PWR_ON;
+      new_states[o] = PWR_ON;
     }
+  }
+  // find out if any of the failures are new failures or not
+  for ( int o = 0; o < N_PS_OKS; ++o ) {
+    if ( new_states[o] != states[o]  && states[o] != UNKNOWN) {
+      static char tmp[128];
+      snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\n", pin_names[oks[o].name],
+               oks[o].priority);
+      Print(tmp);
+    }
+    states[o] = new_states[o];
   }
 
   // now find the lowest priority pin that is off
-  int max_good_prio = -1;
+  int min_good_prio = 99;
   for ( int o = 0; o < N_PS_OKS; ++o ) {
-    if ( states[o] == PWR_ON ) {
-      if ( oks[o].priority > max_good_prio)
-        max_good_prio = oks[o].priority;
+    if ( states[o] == PWR_OFF ) {
+      if ( oks[o].priority < min_good_prio)
+        min_good_prio = oks[o].priority;
 
     }
   }
   if ( ! success ) {
     // turn off all supplies at current priority level or lower
     for ( int e = 0; e < nenables; ++e ) {
-      if ( enables[e].priority > max_good_prio ) {
+      if ( enables[e].priority > min_good_prio ) {
         write_gpio_pin(enables[e].name, 0x0);
       }
     }

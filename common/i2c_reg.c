@@ -145,6 +145,12 @@ bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Dat
     while(I2CMasterBusy(i2cbase))
     {
     }
+    // check the error register
+    uint32_t err = I2CMasterErr(i2cbase);
+    if ( err != I2C_MASTER_ERR_NONE ) {
+      return false;
+    }
+
     //handle single
     if ( ui8ByteCount == 1 ) {
         //
@@ -160,6 +166,11 @@ bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Dat
         //
         while(I2CMasterBusy(i2cbase))
         {
+        }
+        // check the error register
+        err = I2CMasterErr(i2cbase);
+        if ( err != I2C_MASTER_ERR_NONE ) {
+          return false;
         }
 
     }
@@ -187,6 +198,13 @@ bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Dat
             while(I2CMasterBusy(i2cbase))
             {
             }
+            // check the error register
+            err = I2CMasterErr(i2cbase);
+            if ( err != I2C_MASTER_ERR_NONE ) {
+              return false;
+            }
+
+
         }
     }
     return true;
@@ -210,6 +228,12 @@ bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data
     //wait for MCU to finish transaction
     while(I2CMasterBusy(i2cbase));
 
+    // check the error register
+    uint32_t err = I2CMasterErr(i2cbase);
+    if ( err != I2C_MASTER_ERR_NONE ) {
+      return false;
+    }
+
     //specify that we are going to read from slave device
     I2CMasterSlaveAddrSet(i2cbase, ui8Addr, true);
     if ( ui8ByteCount == 1 ) {
@@ -219,6 +243,12 @@ bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data
 
         //wait for MCU to finish transaction
         while(I2CMasterBusy(i2cbase));
+        // check the error register
+        err = I2CMasterErr(i2cbase);
+        if ( err != I2C_MASTER_ERR_NONE ) {
+          return false;
+        }
+
 
         //return data pulled from the specified register
         *Data = I2CMasterDataGet(i2cbase);
@@ -243,7 +273,13 @@ bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data
             //wait for MCU to finish transaction
             while(I2CMasterBusy(i2cbase));
 
-            //return data pulled from the specified register
+            // check the error register
+            err = I2CMasterErr(i2cbase);
+            if ( err != I2C_MASTER_ERR_NONE ) {
+              return false;
+            }
+
+           //return data pulled from the specified register
             Data[i] = I2CMasterDataGet(i2cbase);
         }
     }
@@ -322,6 +358,13 @@ bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
     //wait for MCU to finish transaction
     while(I2CMasterBusy(i2cbase));
 
+    // check the error register
+    uint32_t err = I2CMasterErr(i2cbase);
+    if ( err != I2C_MASTER_ERR_NONE ) {
+      return false;
+    }
+
+
     //return data pulled from the specified register
     *Data = I2CMasterDataGet(i2cbase);
   }
@@ -344,6 +387,12 @@ bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
 
       //wait for MCU to finish transaction
       while(I2CMasterBusy(i2cbase));
+      // check the error register
+      uint32_t err = I2CMasterErr(i2cbase);
+      if ( err != I2C_MASTER_ERR_NONE ) {
+        return false;
+      }
+
 
       //return data pulled from the specified register
       Data[i] = I2CMasterDataGet(i2cbase);
