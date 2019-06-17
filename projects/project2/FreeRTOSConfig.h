@@ -22,6 +22,10 @@ extern "C" {
 //  * See http://www.freertos.org/a00110.html
 //  *----------------------------------------------------------
 
+uint32_t stopwatch_getticks();
+void stopwatch_reset(void);
+
+
 
 
 #define configUSE_PREEMPTION                                    1

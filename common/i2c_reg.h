@@ -19,6 +19,8 @@ extern uint32_t I2C_BASE[];
 
 void initI2C1(const uint32_t sysclockfreq); // power supply I2C bus
 void initI2C3(const uint32_t sysclockfreq); // V optics I2C bus
+void initI2C4(const uint32_t sysclockfreq); // K optics I2C bus
+void initI2C6(const uint32_t sysclockfreq); // FPGA     I2C bus
 
 // write to an i2c register
 bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data,

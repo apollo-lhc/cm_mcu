@@ -17,6 +17,7 @@
 #include "common/uart.h"
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
+#include "common/smbus.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
@@ -185,6 +186,8 @@ static BaseType_t i2c_ctl_reg_w(char *m, size_t s, const char *mm)
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", i1, i2, i3, i4);
   return pdFALSE;
 }
+extern tSMBus g_sMaster4;
+extern tSMBusStatus eStatus4;
 
 static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
 {
@@ -198,27 +201,41 @@ static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
   p3[p3l] = 0x00; // terminate strings
   p4[p4l] = 0x00; // terminate strings
 
-  BaseType_t i1, i3, i4;
-  i1 = strtol(p1, NULL, 16);
-  i3 = strtol(p3, NULL, 16);
-  i4 = strtol(p4, NULL, 16);
+  BaseType_t address, nbytes, value;
+  address = strtol(p1, NULL, 16);
+  nbytes = strtol(p3, NULL, 16);
+  value = strtol(p4, NULL, 16);
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i ) {
-    data[i] = (i4 >> i*8) & 0xFFUL;
+    data[i] = (value >> i*8) & 0xFFUL;
   }
-  if ( i3 > MAX_BYTES )
-    i3 = MAX_BYTES;
+  if ( nbytes > MAX_BYTES )
+    nbytes = MAX_BYTES;
   snprintf(m, s, "i2c_ctl_w: write 0x%x to address 0x%x  (%d bytes)\n",
-           i4, i1, i3);
+           value, address, nbytes);
   DPRINT(m);
-  bool r = writeI2C(current_i2c_base, i1, data, i3);
-  if ( r == false ) {
-    snprintf(m,s, "i2c_ctl_w: write failed\n");
+
+  tSMBusStatus r = SMBusMasterI2CWrite(&g_sMaster4, address, data, nbytes);
+  if (r != SMBUS_OK) {
+    snprintf(m,s, "i2c_ctl_w: write failed (1)\n");
+    return pdFALSE;
+  }
+  while (SMBusStatusGet(&g_sMaster4) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+  if ( eStatus4 != SMBUS_OK) {
+    snprintf(m,s, "i2c_ctl_w: write failed (2)\n");
     return pdFALSE;
   }
 
-  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", i1, i4, i3);
+//  bool r = writeI2C(current_i2c_base, i1, data, i3);
+//  if ( r == false ) {
+//    snprintf(m,s, "i2c_ctl_w: write failed\n");
+//    return pdFALSE;
+//  }
+
+  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", address, value, nbytes);
   return pdFALSE;
 }
 
@@ -280,6 +297,9 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+extern tSMBus g_sMaster4;
+extern tSMBusStatus eStatus4;
+
 static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
 {
   // takes no arguments
@@ -287,11 +307,19 @@ static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
   copied += snprintf(m, s, "i2c scan of bus at base address %08x\n", current_i2c_base);
   copied += snprintf(m+copied,s-copied,
       "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n00:         ");
-  for (int i = 0x3; i < 0x78; ++i ) {
+  for (uint8_t i = 0x3; i < 0x78; ++i ) {
     uint8_t data;
     if ( i%16 ==0 ) copied += snprintf(m+copied,s-copied,"\n%2x:", i);
-    bool retval = readI2C(current_i2c_base,i,&data,1);
-    if ( retval )
+    tSMBusStatus r = SMBusMasterI2CRead(&g_sMaster4, i, &data, 1);
+    if ( r != SMBUS_OK ) {
+      Print("i2c_scan: Probe failed 1\n");
+    }
+    while ( SMBusStatusGet(&g_sMaster4) == SMBUS_TRANSFER_IN_PROGRESS) {
+      vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
+    }
+    if ( eStatus4 == SMBUS_OK )
+//    bool retval = readI2C(current_i2c_base,i,&data,1);
+//    if ( retval )
       copied += snprintf(m+copied, s-copied, " %2x", i);
     else
       copied += snprintf(m+copied, s-copied, " --");
@@ -548,7 +576,7 @@ CLI_Command_Definition_t monitor_command = {
     1
 };
 
-extern StreamBufferHandle_t xStreamBuffer;
+extern StreamBufferHandle_t xUARTStreamBuffer;
 
 
 void vCommandLineTask( void *pvParameters )
@@ -580,7 +608,7 @@ void vCommandLineTask( void *pvParameters )
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
         Blocked state until a character is received. */
-    xStreamBufferReceive(xStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
+    xStreamBufferReceive(xUARTStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
     UARTCharPut(CLI_UART, cRxedChar); // TODO this should use the Mutex
 
     // TODO: on lnx231 the terminal _only_ sends a \r which I did not think was possible.

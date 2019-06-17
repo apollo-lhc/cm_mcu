@@ -52,7 +52,8 @@ struct pm_list pm_command_dcdc[] = {
 
 extern tSMBus g_sMaster1;
 
-volatile tSMBusStatus eStatus = SMBUS_OK;
+volatile tSMBusStatus eStatus1 = SMBUS_OK;
+volatile tSMBusStatus eStatus4 = SMBUS_OK; // TODO: move these to the right place
 
 float pm_values[NSUPPLIES*NPAGES*NCOMMANDS];
 static float pm_values_max[NSUPPLIES*NPAGES*NCOMMANDS] = {-99.0};
@@ -65,7 +66,7 @@ void update_max() {
   }
 }
 
-// Monitor temperatures, voltages, currents, usually via I2C/PMBUS
+// Monitor temperatures, voltages, currents, via I2C/PMBUS
 void MonitorTask(void *parameters)
 {
   // initialize to the current tick time
@@ -85,10 +86,10 @@ void MonitorTask(void *parameters)
   //       0x46     | VVCCINT  |     1
   //       0x45     | VVCCINT  |     1
   const uint8_t addrs[NSUPPLIES] = { 0x40, 0x44, 0x43, 0x46, 0x45};
-  const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
+  //const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
 
   for (;;) {
-    int prio = getLowestEnabledPSPriority();
+    //int prio = getLowestEnabledPSPriority();
     // loop over power supplies attached to the MUX
     for ( uint8_t ps = 0; ps < NSUPPLIES; ++ ps ) {
       char tmp[64];
@@ -104,8 +105,8 @@ void MonitorTask(void *parameters)
       while ( SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
-      if ( eStatus != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON: Mux writing error %d, break out of loop (ps=%d) ...\n", eStatus, ps);
+      if ( eStatus1 != SMBUS_OK ) {
+        snprintf(tmp, 64, "MON: Mux writing error %d, break out of loop (ps=%d) ...\n", eStatus1, ps);
         Print(tmp);
         break;
       }
@@ -127,8 +128,8 @@ void MonitorTask(void *parameters)
       while ( SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
-      if ( eStatus != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON: Mux reading error %d, break out of loop (ps=%d) ...\n", eStatus, ps);
+      if ( eStatus1 != SMBUS_OK ) {
+        snprintf(tmp, 64, "MON: Mux reading error %d, break out of loop (ps=%d) ...\n", eStatus1, ps);
         Print(tmp);
         break;
       }
@@ -148,8 +149,8 @@ void MonitorTask(void *parameters)
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
         }
         // this is checking the return from the interrupt
-        if (eStatus != SMBUS_OK ) {
-          snprintf(tmp, 64, "MON: Page SMBUS ERROR: %d\n", eStatus);
+        if (eStatus1 != SMBUS_OK ) {
+          snprintf(tmp, 64, "MON: Page SMBUS ERROR: %d\n", eStatus1);
           Print(tmp);
         }
         snprintf(tmp, 64, "\t\tMON: Page %d\n", page);
@@ -169,12 +170,12 @@ void MonitorTask(void *parameters)
           while ( SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
           }
-          if (eStatus != SMBUS_OK ) {
-            snprintf(tmp, 64, "MON: SMBUS ERROR: %d\n", eStatus);
+          if (eStatus1 != SMBUS_OK ) {
+            snprintf(tmp, 64, "MON: SMBUS ERROR: %d\n", eStatus1);
             DPRINT(tmp);
           }
-          if ( eStatus != SMBUS_OK ) {
-            snprintf(tmp, 64, "Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\n", eStatus, ps,c,page);
+          if ( eStatus1 != SMBUS_OK ) {
+            snprintf(tmp, 64, "Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\n", eStatus1, ps,c,page);
         	  Print(tmp);
         	  break;
           }

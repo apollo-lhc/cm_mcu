@@ -90,7 +90,7 @@ void Print(const char* str)
 
 // Alternate UART signal handler
 /* A stream buffer that has already been created. */
-StreamBufferHandle_t xStreamBuffer;
+StreamBufferHandle_t xUARTStreamBuffer;
 
 void UARTIntHandler( void )
 {
@@ -116,12 +116,12 @@ void UARTIntHandler( void )
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(CLI_UART);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
     if ( ++received == 8 ) {
-      xStreamBufferSendFromISR(xStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
     }
   }
   if ( received )
-    xStreamBufferSendFromISR(xStreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+    xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
     xStreamBufferReceiveFromISR() then a task that has a priority above the
@@ -135,47 +135,38 @@ void UARTIntHandler( void )
 }
 
 #include "common/smbus.h"
-extern tSMBus g_sMaster1;
-extern tSMBusStatus eStatus;
+tSMBus g_sMaster1; // for I2C #1
+tSMBus g_sMaster4; // for I2C #4
+extern tSMBusStatus eStatus1;
+extern tSMBusStatus eStatus4;
 // SMBUs specific handler for I2C
 void
-SMBusMasterIntHandler(void)
+SMBusMasterIntHandler1(void)
 {
-  // TODO: figure out which UART caused the interrupt -- can I do this?
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
   //
   // Process the interrupt.
   //
-  eStatus = SMBusMasterIntProcess(&g_sMaster1);
+  eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
+  // handle errors in the returning function
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
+void
+SMBusMasterIntHandler4(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
   //
-  // Check for errors.
+  // Process the interrupt.
   //
-  switch(eStatus)
-  {
-  case SMBUS_OK:
-  {
-    break; // do nothing
-  }
-  case SMBUS_PEC_ERROR:
-  {
-    //
-    // Ignore error.
-    //
-    break;
-  }
-  case SMBUS_TIMEOUT:
-  case SMBUS_ADDR_ACK_ERROR:
-  case SMBUS_DATA_ACK_ERROR:
-  default:
-//    while(1); // wait here for debugger
-    break;
-  }
+  eStatus4 = SMBusMasterIntProcess(&g_sMaster4);
+  // handle errors in the returning function
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 
-tSMBus g_sMaster1;
 
 
 // ARM DWT
@@ -222,9 +213,7 @@ void SystemInit()
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
 
-  // Enable the FPU unit
-  MAP_FPULazyStackingEnable();
-  MAP_FPUEnable();
+
   // Set up the CLI
 #if (CLI_UART == UART4_BASE) // front panel
   UART4Init(g_ui32SysClock);
@@ -235,27 +224,32 @@ void SystemInit()
 #endif
   initI2C1(g_ui32SysClock); // controller for power supplies
   initI2C3(g_ui32SysClock); // controller for V optics
+  initI2C6(g_ui32SysClock); // controller for FPGAs
+  initI2C4(g_ui32SysClock); // controller for K optics
   
 
   //smbus
   // Initialize the master SMBus port.
   //
   SMBusMasterInit(&g_sMaster1, I2C1_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
   //SMBusPECEnable(&g_sMaster);
 
   // FreeRTOS insists that the priority of interrupts be set up like this.
-  IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
+  ROM_IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
+  ROM_IntPrioritySet( INT_I2C4, configKERNEL_INTERRUPT_PRIORITY );
 
   //
   // Enable master interrupts.
   //
   SMBusMasterIntEnable(&g_sMaster1);
+  SMBusMasterIntEnable(&g_sMaster4);
 
 
   //
   // Enable processor interrupts.
   //
-//  MAP_IntMasterEnable(); the FreeRTOS kernel does this at the appropriate moment
+  // MAP_IntMasterEnable(); the FreeRTOS kernel does this at the appropriate moment
 
   setupActiveLowPins();
 
@@ -304,8 +298,8 @@ int main( void )
   //  Create the stream buffer that sends data from the interrupt to the
   //  task, and create the task.
   // todo: handle sending more than one byte at a time, if needed
-  xStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
-                     1); // number of items before a trigger is sent
+  xUARTStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
+                                           1);  // number of items before a trigger is sent
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);

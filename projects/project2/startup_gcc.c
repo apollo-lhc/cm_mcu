@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include "inc/hw_nvic.h"
 #include "inc/hw_types.h"
-
+#include "driverlib/rom.h"
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -34,7 +34,8 @@
 void ResetISR(void);
 static void NmiSR(void);
 static void IntDefaultHandler(void);
-void SMBusMasterIntHandler(void);
+void SMBusMasterIntHandler1(void);
+void SMBusMasterIntHandler4(void);
 extern void UARTIntHandler(void);
 extern void xPortPendSVHandler(void);
 extern void vPortSVCHandler(void);
@@ -120,7 +121,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI1 Rx and Tx
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
-    SMBusMasterIntHandler,                  // I2C1 Master and Slave
+    SMBusMasterIntHandler1,                  // I2C1 Master and Slave
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
     IntDefaultHandler,                      // Ethernet
@@ -153,7 +154,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // FPU
     0,                                      // Reserved
     0,                                      // Reserved
-    IntDefaultHandler,                      // I2C4 Master and Slave
+    SMBusMasterIntHandler4,                 // I2C4 Master and Slave
     IntDefaultHandler,                      // I2C5 Master and Slave
     IntDefaultHandler,                      // GPIO Port M
     IntDefaultHandler,                      // GPIO Port N
@@ -254,6 +255,7 @@ ResetISR(void)
     // enabled).  Any configuration of the floating-point unit using DriverLib
     // APIs must be done here prior to the floating-point unit being enabled.
     //
+    ROM_FPULazyStackingEnable();
     // Note that this does not use DriverLib since it might not be included in
     // this project.
     //
