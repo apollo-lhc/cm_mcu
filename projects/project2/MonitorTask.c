@@ -46,8 +46,9 @@ struct pm_list pm_command_dcdc[] = {
   { 0x88, 2, "READ_VIN", "V", PM_LINEAR11 },
   { 0x8B, 2, "READ_VOUT", "V", PM_LINEAR16U },
   { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 },
-  { 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
-  { 0x79, 2, "STATUS_WORD", "", PM_STATUS }
+  //{ 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
+  { 0x79, 2, "STATUS_WORD", "", PM_STATUS },
+  { 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
 };
 
 extern tSMBus g_sMaster1;
@@ -56,13 +57,21 @@ volatile tSMBusStatus eStatus1 = SMBUS_OK;
 volatile tSMBusStatus eStatus4 = SMBUS_OK; // TODO: move these to the right place
 
 float pm_values[NSUPPLIES*NPAGES*NCOMMANDS];
-static float pm_values_max[NSUPPLIES*NPAGES*NCOMMANDS] = {-99.0};
+static float pm_values_max[NSUPPLIES*NPAGES*NCOMMANDS];
+static float pm_values_min[NSUPPLIES*NPAGES*NCOMMANDS];
 
 static
 void update_max() {
   for (int i = 0; i < NSUPPLIES*NPAGES*NCOMMANDS; ++i ) {
     if ( pm_values_max[i] < pm_values[i])
       pm_values_max[i] = pm_values[i];
+  }
+}
+static
+void update_min() {
+  for (int i = 0; i < NSUPPLIES*NPAGES*NCOMMANDS; ++i ) {
+    if ( pm_values_min[i] > pm_values[i])
+      pm_values_min[i] = pm_values[i];
   }
 }
 
@@ -73,7 +82,13 @@ void MonitorTask(void *parameters)
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint8_t data[2];
 
-  vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 500 ) );
+  for ( int i = 0; i < NSUPPLIES*NPAGES*NCOMMANDS; ++i ) {
+    pm_values_max[i] = -99;
+    pm_values_min[i] = +99;
+  }
+
+  //vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 500 ) );
+  vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
 
   // these I2C addresses correspond to the addresses of the power supplies hanging
   // off the TM4C PWR I2C bus
@@ -90,6 +105,18 @@ void MonitorTask(void *parameters)
 
   for (;;) {
     //int prio = getLowestEnabledPSPriority();
+//    static bool good = false;
+//    if ( getPSStatus(5) != PWR_ON) {
+//      if ( good ) {
+//        Print("MON: 3V3 died. Skipping I2C monitoring.\n");
+//        good = false;
+//      }
+//      vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
+//      continue;
+//    }
+//    else {
+//      good = true;
+//    }
     // loop over power supplies attached to the MUX
     for ( uint8_t ps = 0; ps < NSUPPLIES; ++ ps ) {
       char tmp[64];
@@ -211,8 +238,8 @@ void MonitorTask(void *parameters)
         } // loop over commands
       } // loop over pages
     } // loop over power supplies
-    update_max();
-    vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 1000 ) );
+    update_max(); update_min();
+    vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   } // infinite loop
 
 }
