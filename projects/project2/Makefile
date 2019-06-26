@@ -80,7 +80,7 @@ ${COMPILER}/project2.axf: ${COMPILER}/smbus.o
 ${COMPILER}/project2.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/project2.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/PowerSupplyTask.o
-#${COMPILER}/project2.axf: ${COMPILER}/RandomTask.o
+${COMPILER}/project2.axf: ${COMPILER}/RandomTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/MonitorTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
