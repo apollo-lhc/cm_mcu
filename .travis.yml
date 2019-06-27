@@ -1,7 +1,14 @@
 notifications:
   email: true
 
+branches:
+ except:
+   - dummy
+
 sudo: false
+
+# Ubuntu 16.04 LTS
+dist: xenial
 
 language: c
 
@@ -16,14 +23,25 @@ addons:
     packages:
     - libc6-i386 
 
+#before_deploy:
+## Set up git user name and tag this commit
+#   - git config --local user.name pwittich
+#   - git config --local user.email wittich@cornell.edu
 
-
+#deploy:
+#  provider: releases
+#  api_key: "GITHUB OAUTH TOKEN"
+#  file: projects/project2/gcc/project2.axf
+#  skip_cleanup: true
+#  on:
+#    tags: true
 
 
 install:
   - env
   - pushd .
   - cd ~ 
+  - lsb_release -a
   - mkdir arm-gcc-toolchain
   - wget -O $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
   - cd arm-gcc-toolchain

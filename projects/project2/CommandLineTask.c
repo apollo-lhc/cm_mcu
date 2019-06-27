@@ -366,7 +366,7 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
 // dump monitor information
 static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
 {
- int8_t *p1;
+  int8_t *p1;
   BaseType_t p1l;
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
   p1[p1l] = 0x00; // terminate strings
@@ -392,6 +392,25 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   }
 
 
+  return pdFALSE;
+}
+
+const char* getADCname(const int i);
+float getADCvalue(const int i);
+
+
+
+static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  copied += snprintf(m+copied, s-copied, "ADC outputs\n");
+  for ( int i = 0; i < 21; ++i ) {
+    float val = getADCvalue(i);
+    int tens = val;
+    int frac = ABS((val-tens)*100.);
+    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\n", getADCname(i), tens, frac);
+
+  }
   return pdFALSE;
 }
 
@@ -437,14 +456,14 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 
         if( ulStatsAsPercentage > 0UL )
         {
-          snprintf( pcWriteBuffer, bufferLength, "%s\t\t%u\t\t%u%%\r\n",
+          snprintf( pcWriteBuffer, bufferLength, "%s\t\t%12u\t\t%2u%%\r\n",
               pxTaskStatusArray[ x ].pcTaskName, pxTaskStatusArray[ x ].ulRunTimeCounter, ulStatsAsPercentage );
         }
         else
         {
           // If the percentage is zero here then the task has
           // consumed less than 1% of the total run time.
-          snprintf( pcWriteBuffer, bufferLength, "%s\t\t%u\t\t<1%%\r\n", pxTaskStatusArray[ x ].pcTaskName, pxTaskStatusArray[ x ].ulRunTimeCounter );
+          snprintf( pcWriteBuffer, bufferLength, "%s\t\t%12u\t\t<1%%\r\n", pxTaskStatusArray[ x ].pcTaskName, pxTaskStatusArray[ x ].ulRunTimeCounter );
         }
         size_t added = strlen( ( char * ) pcWriteBuffer );
         pcWriteBuffer += added;
@@ -576,6 +595,13 @@ CLI_Command_Definition_t monitor_command = {
     1
 };
 
+CLI_Command_Definition_t adc_command = {
+    .pcCommand="adc",
+    .pcHelpString="adc\n Displays a table showing the state of ADC inputs.\r\n",
+    .pxCommandInterpreter = adc_ctl,
+    0
+};
+
 extern StreamBufferHandle_t xUARTStreamBuffer;
 
 
@@ -598,6 +624,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
+  FreeRTOS_CLIRegisterCommand(&adc_command  );
 
 
 
