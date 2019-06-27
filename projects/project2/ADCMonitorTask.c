@@ -1,5 +1,5 @@
 /*
- * RandomTask.c
+ * ADCMonitorTask.c
  *
  *  Created on: May 19, 2019
  *      Author: wittich
@@ -15,6 +15,9 @@
  *      We always use sequencer 0 for ADC1 and sequencer 1 for ADC0. The end of
  *      conversion is signaled by an interrupt, which is handled here.
  *
+ *      Todo:
+ *      * handle errors but not with assert
+ *      * change 2nd ADC to use sequence 0 (one fewer interrupt)
  */
 
 // includes for types
@@ -26,6 +29,7 @@
 #include "inc/hw_memmap.h"
 
 // driverlib
+#include "driverlib/rom.h"
 #include "driverlib/adc.h"
 
 // FreeRTOS
@@ -37,6 +41,8 @@
 // Some signals must be scaled to fit in this range.
 #define ADC_MAX_VOLTAGE_RANGE 2.5
 
+#define ADC_CHANNEL_COUNT 21
+#define ADC_INFO_TEMP_ENTRY 12
 
 // a struct to hold some information about the ADC channel.
 struct ADC_Info_t {
@@ -80,19 +86,19 @@ struct ADC_Info_t ADCs[] = {
     {11, "K_MGTH_AVTT", 1.},
 };
 
-static float fADCvalues[21]; // ADC values in volts
+static float fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
 
 // read-only accessor functions for ADC names and values.
 
 const char* getADCname(const int i)
 {
-  configASSERT(i>=0&&i<21);
+  configASSERT(i>=0&&i<ADC_CHANNEL_COUNT);
   return ADCs[i].name;
 }
 
 float getADCvalue(const int i)
 {
-  configASSERT(i>=0&&i<21);
+  configASSERT(i>=0&&i<ADC_CHANNEL_COUNT);
   return fADCvalues[i];
 }
 
@@ -106,7 +112,7 @@ void ADCSeq0Interrupt()
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  ADCIntClear(ADC1_BASE, 0);
+  ROM_ADCIntClear(ADC1_BASE, 0);
 
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
@@ -131,7 +137,7 @@ void ADCSeq1Interrupt()
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  ADCIntClear(ADC0_BASE, 1);
+  ROM_ADCIntClear(ADC0_BASE, 1);
 
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
@@ -156,21 +162,21 @@ void ADCSeq1Interrupt()
 static
 void initADC1FirstSequence()
 {
-  ADCSequenceConfigure(ADC1_BASE, 0, ADC_TRIGGER_PROCESSOR, 0);
+  ROM_ADCSequenceConfigure(ADC1_BASE, 0, ADC_TRIGGER_PROCESSOR, 0);
 
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 0, ADCs[0].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 1, ADCs[1].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 2, ADCs[2].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 3, ADCs[3].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 4, ADCs[4].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 5, ADCs[5].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 6, ADCs[6].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 7, ADCs[7].channel | ADC_CTL_IE | ADC_CTL_END);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 0, ADCs[0].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 1, ADCs[1].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 2, ADCs[2].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 3, ADCs[3].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 4, ADCs[4].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 5, ADCs[5].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 6, ADCs[6].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 7, ADCs[7].channel | ADC_CTL_IE | ADC_CTL_END);
 
-  ADCSequenceEnable(ADC1_BASE, 0);
+  ROM_ADCSequenceEnable(ADC1_BASE, 0);
 
 
-  ADCIntClear(ADC1_BASE, 0);
+  ROM_ADCIntClear(ADC1_BASE, 0);
 
 
 }
@@ -178,14 +184,14 @@ void initADC1FirstSequence()
 static
 void initADC1SecondSequence()
 {
-  ADCSequenceConfigure(ADC1_BASE, 0, ADC_TRIGGER_PROCESSOR, 0);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 0, ADCs[8].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 1, ADCs[9].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 2, ADCs[10].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 3, ADCs[11].channel);
-  ADCSequenceStepConfigure(ADC1_BASE, 0, 4, ADC_CTL_TS| ADC_CTL_IE | ADC_CTL_END);
-  ADCSequenceEnable(ADC1_BASE, 0);
-  ADCIntClear(ADC1_BASE, 0);
+  ROM_ADCSequenceConfigure(ADC1_BASE, 0, ADC_TRIGGER_PROCESSOR, 0);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 0, ADCs[8].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 1, ADCs[9].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 2, ADCs[10].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 3, ADCs[11].channel);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 4, ADC_CTL_TS| ADC_CTL_IE | ADC_CTL_END);
+  ROM_ADCSequenceEnable(ADC1_BASE, 0);
+  ROM_ADCIntClear(ADC1_BASE, 0);
 
 }
 
@@ -193,53 +199,53 @@ void initADC1SecondSequence()
 static
 void initADC0FirstSequence()
 {
-  ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADCs[13].channel);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADCs[14].channel);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADCs[15].channel);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 3, ADCs[16].channel| ADC_CTL_IE | ADC_CTL_END);
-  ADCSequenceEnable(ADC0_BASE, 1);
-  ADCIntClear(ADC0_BASE, 1);
+  ROM_ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADCs[13].channel);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADCs[14].channel);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADCs[15].channel);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 3, ADCs[16].channel| ADC_CTL_IE | ADC_CTL_END);
+  ROM_ADCSequenceEnable(ADC0_BASE, 1);
+  ROM_ADCIntClear(ADC0_BASE, 1);
 
 }
 
 static
 void initADC0SecondSequence()
 {
-  ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADCs[17].channel);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADCs[18].channel);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADCs[19].channel);
-  ADCSequenceStepConfigure(ADC0_BASE, 1, 3, ADCs[20].channel| ADC_CTL_IE | ADC_CTL_END);
-  ADCSequenceEnable(ADC0_BASE, 1);
-  ADCIntClear(ADC0_BASE, 1);
+  ROM_ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADCs[17].channel);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADCs[18].channel);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADCs[19].channel);
+  ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 3, ADCs[20].channel| ADC_CTL_IE | ADC_CTL_END);
+  ROM_ADCSequenceEnable(ADC0_BASE, 1);
+  ROM_ADCIntClear(ADC0_BASE, 1);
 
 }
 
 
 // playground to test various things
-void RandomTask(void *parameters)
+void ADCMonitorTask(void *parameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  uint32_t iADCvalues[21]; // raw adc outputs
+  uint32_t iADCvalues[ADC_CHANNEL_COUNT]; // raw adc outputs
 
 
   const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 20000 );
 
   for (;;) {
-    // First sequence for both ADCs
+    // First sequence for ADC1
     initADC1FirstSequence();
 
     // Set up the task notification and start the conversion.
     TaskNotifyADC = xTaskGetCurrentTaskHandle();
-    ADCProcessorTrigger(ADC1_BASE, 0);
+    ROM_ADCProcessorTrigger(ADC1_BASE, 0);
 
     // Wait to be notified that the transmission is complete.
     unsigned long ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues);
+      ROM_ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues);
     }
     else {
       // handle error here
@@ -248,11 +254,11 @@ void RandomTask(void *parameters)
     // ADC0,first sequence
     initADC0FirstSequence();
     TaskNotifyADC = xTaskGetCurrentTaskHandle();
-    ADCProcessorTrigger(ADC0_BASE, 1);
+    ROM_ADCProcessorTrigger(ADC0_BASE, 1);
     ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ADCSequenceDataGet(ADC0_BASE, 1, iADCvalues+13); // check offset
+      ROM_ADCSequenceDataGet(ADC0_BASE, 1, iADCvalues+ADCs_ADC0_START); // check offset
     }
     else {
       // handle error here
@@ -260,14 +266,14 @@ void RandomTask(void *parameters)
     }
 
 
-    // second sequence
+    // second sequence for ADC0
     initADC0SecondSequence();
     TaskNotifyADC = xTaskGetCurrentTaskHandle();
-    ADCProcessorTrigger(ADC0_BASE, 1);
+    ROM_ADCProcessorTrigger(ADC0_BASE, 1);
     ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ADCSequenceDataGet(ADC0_BASE, 1, iADCvalues+ADCs_ADC1_ENTRIES+ADCs_ADC0_FIRST_SEQ_LENGTH); // check offset
+      ROM_ADCSequenceDataGet(ADC0_BASE, 1, iADCvalues+ADCs_ADC1_ENTRIES+ADCs_ADC0_FIRST_SEQ_LENGTH); // check offset
     }
     else {
       // handle error here
@@ -275,13 +281,13 @@ void RandomTask(void *parameters)
     }
     initADC1SecondSequence();
     TaskNotifyADC = xTaskGetCurrentTaskHandle();
-    ADCProcessorTrigger(ADC1_BASE, 0);
+    ROM_ADCProcessorTrigger(ADC1_BASE, 0);
 
     // Wait to be notified that the transmission is complete.
     ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues+ADCs_ADC1_FIRST_SEQ_LENGTH);
+      ROM_ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues+ADCs_ADC1_FIRST_SEQ_LENGTH);
     }
     else {
       // handle error here
@@ -289,11 +295,12 @@ void RandomTask(void *parameters)
     }
 
     // convert data to float values
-    for ( int i = 0; i < 21; ++i ) {
+    for ( int i = 0; i < ADC_CHANNEL_COUNT; ++i ) {
       fADCvalues[i] = iADCvalues[i]/4096.*ADC_MAX_VOLTAGE_RANGE * ADCs[i].scale;
     }
     // special: temperature of Tiva die. Tiva manu 15.3.6, last equation.
-    fADCvalues[12] = 147.5 - ( 75 * ADC_MAX_VOLTAGE_RANGE * iADCvalues[12])/4096;
+    fADCvalues[ADC_INFO_TEMP_ENTRY] = 147.5
+        - ( 75 * ADC_MAX_VOLTAGE_RANGE * iADCvalues[ADC_INFO_TEMP_ENTRY])/4096.;
 
 
     // wait x ms for next iteration

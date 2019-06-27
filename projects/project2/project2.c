@@ -208,8 +208,8 @@ void SystemInit()
   //
   // Run from the PLL, internal oscillator, at the defined clock speed configCPU_CLOCK_HZ
   //
-  g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_OSC_INT|SYSCTL_USE_PLL |
-                                       SYSCTL_CFG_VCO_320), configCPU_CLOCK_HZ);
+  g_ui32SysClock = MAP_SysCtlClockFreqSet((SYSCTL_OSC_INT|SYSCTL_USE_PLL |
+                                           SYSCTL_CFG_VCO_320), configCPU_CLOCK_HZ);
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
@@ -228,17 +228,17 @@ void SystemInit()
   initI2C6(g_ui32SysClock); // controller for FPGAs
   initI2C4(g_ui32SysClock); // controller for K optics
   
-  // initialize the ADCs. This should all go into SystemInit()
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
+  // initialize the ADCs.
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
   // Set the reference to external
-  ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V );
-  ADCReferenceSet(ADC1_BASE, ADC_REF_EXT_3V );
+  ROM_ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V );
+  ROM_ADCReferenceSet(ADC1_BASE, ADC_REF_EXT_3V );
   ROM_ADCIntEnable(ADC0_BASE, 1); // enable interrupt for sequence 1
   ROM_ADCIntEnable(ADC1_BASE, 0); // enable interrupt for sequence 0
   // clear the interrupts
-  ADCIntClear(ADC0_BASE, 1);
-  ADCIntClear(ADC1_BASE, 0);
+  ROM_ADCIntClear(ADC0_BASE, 1);
+  ROM_ADCIntClear(ADC1_BASE, 0);
   // FreeRTOS insists that the priority of interrupts be set up like this.
   ROM_IntPrioritySet( INT_ADC0SS1, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_ADC1SS0, configKERNEL_INTERRUPT_PRIORITY );
@@ -298,8 +298,8 @@ void MonitorTask(void *parameters);
 void vCommandLineTask(void *parameters);
 
 
-// playground to test various things
-void RandomTask(void *parameters); // @suppress("Unused function declaration")
+// Monitoring using the ADC inputs
+void ADCMonitorTask(void *parameters);
 
 void ShortDelay()
 {
@@ -323,7 +323,7 @@ int main( void )
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
   xTaskCreate(vCommandLineTask,"CON", 512,                      NULL, tskIDLE_PRIORITY+1, NULL);
-  xTaskCreate(RandomTask,      "RDM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+0, NULL);
+  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
   xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
 
   // queue for the LED
