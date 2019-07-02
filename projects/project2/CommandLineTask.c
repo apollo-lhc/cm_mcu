@@ -399,7 +399,7 @@ const char* getADCname(const int i);
 float getADCvalue(const int i);
 
 
-
+// this command takes no arguments
 static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
 {
   int copied = 0;
@@ -476,7 +476,39 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
   }
 }
 
+void vGetTaskHandle(char *key, TaskHandle_t  *t);
 
+extern TaskHandle_t tMon;
+
+static BaseType_t task_ctl(char *m, size_t s, const char *mm)
+{
+  int8_t *p1, *p2;
+  BaseType_t p1l, p2l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // task
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // command
+  p1[p1l] = 0x00; // terminate strings
+  p2[p2l] = 0x00; // terminate strings
+
+  TaskHandle_t t = 0;
+  vGetTaskHandle(p1,&t);
+  if ( t == NULL ) {
+    snprintf(m,s, "%s: invalid task %s requested\n", __func__, p1);
+    return pdFALSE;
+  }
+  if (strncmp(p2,  "susp", 4) == 0 ) {
+    vTaskSuspend(t);
+    snprintf(m,s, "%s: suspended task %s\n", __func__, p1);
+  }
+  else if ( strncmp(p2, "resu",4) == 0 ) {
+    vTaskResume(t);
+    snprintf(m,s, "%s: resumed task %s\n", __func__, p1);
+  }
+  else { // unrecognized command
+    snprintf(m,s,"%s: command %s not recognized. Valid commands are 'suspend' and 'resume'.\n",
+        __func__, p2);
+  }
+  return pdFALSE;
+}
 
 
 #pragma GCC diagnostic pop
@@ -523,40 +555,42 @@ BaseType_t TaskStatsCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const 
 static const char * const pcWelcomeMessage =
 		"FreeRTOS command server.\r\nType \"help\" to view a list of registered commands.\r\n";
 
-CLI_Command_Definition_t i2c_set_dev = {
+static
+CLI_Command_Definition_t i2c_set_dev_command = {
     .pcCommand="i2c_base",
     .pcHelpString="i2c_base <device>\n Set I2C controller number. Value between 0-9.\r\n",
     .pxCommandInterpreter = i2c_ctl_set_dev,
     1
 };
-
+static
 CLI_Command_Definition_t i2c_read_command = {
     .pcCommand="i2cr",
     .pcHelpString="i2cr <address> <number of bytes>\n Read I2C controller. Addr in hex.\r\n",
     .pxCommandInterpreter = i2c_ctl_r,
     2
 };
+static
 CLI_Command_Definition_t i2c_read_reg_command = {
     .pcCommand="i2crr",
     .pcHelpString="i2crr <address> <reg> <number of bytes>\n Read I2C controller. Addr in hex\r\n",
     .pxCommandInterpreter = i2c_ctl_reg_r,
     3
 };
-
+static
 CLI_Command_Definition_t i2c_write_command = {
     .pcCommand="i2cw",
     .pcHelpString="i2cw <address> <number of bytes> <value>\n Write I2C controller.\r\n",
     .pxCommandInterpreter = i2c_ctl_w,
     3
 };
-
+static
 CLI_Command_Definition_t i2c_write_reg_command = {
     .pcCommand="i2cwr",
     .pcHelpString="i2cwr <address> <reg> <number of bytes>\n Write I2C controller.\r\n",
     .pxCommandInterpreter = i2c_ctl_reg_w,
     4
 };
-
+static
 CLI_Command_Definition_t i2c_scan_command = {
     .pcCommand="i2c_scan",
     .pcHelpString="i2c_scan\n Scan current I2C bus.\r\n",
@@ -564,21 +598,21 @@ CLI_Command_Definition_t i2c_scan_command = {
     0
 };
 
-
+static
 CLI_Command_Definition_t pwr_ctl_command = {
     .pcCommand="pwr",
     .pcHelpString="pwr (on|off|status)\n Turn on or off all power.\r\n",
     .pxCommandInterpreter = power_ctl,
     1
 };
-
+static
 CLI_Command_Definition_t led_ctl_command = {
     .pcCommand="led",
     .pcHelpString="led (0-4)\n Manipulate red LED.\r\n",
     .pxCommandInterpreter = led_ctl,
     1
 };
-
+static
 CLI_Command_Definition_t task_stats_command = {
     .pcCommand="task-stats",
     .pcHelpString="task-stats\n Displays a table showing the state of each FreeRTOS task\r\n",
@@ -587,20 +621,29 @@ CLI_Command_Definition_t task_stats_command = {
 };
 
 
-
+static
 CLI_Command_Definition_t monitor_command = {
     .pcCommand="mon",
     .pcHelpString="mon <#>\n Displays a table showing the state of power supplies.\r\n",
     .pxCommandInterpreter = mon_ctl,
     1
 };
-
+static
 CLI_Command_Definition_t adc_command = {
     .pcCommand="adc",
     .pcHelpString="adc\n Displays a table showing the state of ADC inputs.\r\n",
     .pxCommandInterpreter = adc_ctl,
     0
 };
+
+static
+CLI_Command_Definition_t task_command = {
+    .pcCommand="task",
+    .pcHelpString="task <name> <command>\n Manipulate task <name>. Options are suspend and restart.\r\n",
+    .pxCommandInterpreter = task_ctl,
+    2
+};
+
 
 extern StreamBufferHandle_t xUARTStreamBuffer;
 
@@ -616,7 +659,7 @@ void vCommandLineTask( void *pvParameters )
   // register the commands
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
-  FreeRTOS_CLIRegisterCommand(&i2c_set_dev );
+  FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
   FreeRTOS_CLIRegisterCommand(&i2c_write_command);
   FreeRTOS_CLIRegisterCommand(&i2c_write_reg_command);
@@ -625,6 +668,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
   FreeRTOS_CLIRegisterCommand(&adc_command  );
+  FreeRTOS_CLIRegisterCommand(&task_command  );
 
 
 

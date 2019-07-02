@@ -42,7 +42,7 @@
 #define ADC_MAX_VOLTAGE_RANGE 2.5
 
 #define ADC_CHANNEL_COUNT 21
-#define ADC_INFO_TEMP_ENTRY 12
+#define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
 // a struct to hold some information about the ADC channel.
 struct ADC_Info_t {
@@ -55,35 +55,41 @@ struct ADC_Info_t {
 // which ADC they have been assigned to in the TI PinMux tool. I could
 // probably consider reassigning them in the PinMUX tool to make it more
 // logical.
-#define ADCs_ADC1_START 0
-#define ADCs_ADC1_ENTRIES 13
-#define ADCs_ADC1_FIRST_SEQ_LENGTH 8
-#define ADCs_ADC0_START 13
-#define ADCs_ADC0_ENTRIES 8
-#define ADCs_ADC0_FIRST_SEQ_LENGTH 4
+#define ADCs_ADC1_START             0
+#define ADCs_ADC1_FIRST_SEQ_LENGTH  8
+#define ADCs_ADC1_SECOND_SEQ_LENGTH 5
+#define ADCs_ADC1_ENTRIES          (ADCs_ADC1_FIRST_SEQ_LENGTH+ADCs_ADC1_SECOND_SEQ_LENGTH)
+#define ADCs_ADC0_START             ADCs_ADC1_ENTRIES
+#define ADCs_ADC0_ENTRIES           8
+#define ADCs_ADC0_FIRST_SEQ_LENGTH  4
+#define ADCs_ADC0_SECOND_SEQ_LENGTH 4
+// This array holds the list of ADCs with the AIN channels on the TM4C1290NCPDT
+// on Apollo CM v1, and whatever scaling is needed to get the value correct.
+// We also read out the internal temperature sensor, which has a special
+// channel sensor.
 static
 struct ADC_Info_t ADCs[] = {
-    {0, "V_MGTY1_AVTT", 1.}, // ADC1
-    {1, "V_MGTY1_AVCC", 1.},
-    {2, "V_MGTY1_VCCAUX", 1.},
-    {3, "V_VCCINT", 1.},
     {12, "VCC_12V", 6.},
     {13, "VCC_2V5", 2.},
     {14, "VCC_M3V3", 2.},
-    {15, "VCC_M1V8", 1.},
     {16, "VCC_3V3", 2.},
-    {17, "V_MGTY2_VCCAUX", 1.},
-    {18, "V_MGTY2_AVCC", 1.},
+    { 7, "VCC_1V8", 1.},
+    {15, "VCC_M1V8", 1.},
+    { 3, "V_VCCINT", 1.},
+    { 8, "K_VCCINT", 1.},
+    { 0, "V_MGTY1_AVTT", 1.},
     {19, "V_MGTY2_AVTT", 1.},
-    {20, "TM4C_TEMP", 1.}, // this one is special, temp in C
-    {4, "K_MGTY_AVTT", 1.}, // ADC0
-    {5, "K_MGTY_AVCC", 1.},
-    {6, "K_MGTY_VCCAUX", 1.},
-    {7, "VCC_1V8", 1.},
-    {8, "K_VCCINT", 1.},
-    {9, "K_MGTH_VCCAUX", 1.},
-    {10, "K_MGTH_AVCC", 1.},
     {11, "K_MGTH_AVTT", 1.},
+    { 4, "K_MGTY_AVTT", 1.},
+    { 2, "V_MGTY1_VCCAUX", 1.},
+    {17, "V_MGTY2_VCCAUX", 1.},
+    { 6, "K_MGTY_VCCAUX", 1.},
+    { 9, "K_MGTH_VCCAUX", 1.},
+    { 1, "V_MGTY1_AVCC", 1.},
+    {18, "V_MGTY2_AVCC", 1.},
+    { 5, "K_MGTY_AVCC", 1.},
+    {10, "K_MGTH_AVCC", 1.},
+    {ADC_CTL_TS, "TM4C_TEMP", 1.}, // this one is special, temp in C
 };
 
 static float fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
@@ -162,6 +168,9 @@ void ADCSeq1Interrupt()
 static
 void initADC1FirstSequence()
 {
+
+  ROM_ADCSequenceDisable(ADC1_BASE, 0);
+
   ROM_ADCSequenceConfigure(ADC1_BASE, 0, ADC_TRIGGER_PROCESSOR, 0);
 
   ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 0, ADCs[0].channel);
@@ -184,12 +193,14 @@ void initADC1FirstSequence()
 static
 void initADC1SecondSequence()
 {
+  ROM_ADCSequenceDisable(ADC1_BASE, 0);
+
   ROM_ADCSequenceConfigure(ADC1_BASE, 0, ADC_TRIGGER_PROCESSOR, 0);
   ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 0, ADCs[8].channel);
   ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 1, ADCs[9].channel);
   ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 2, ADCs[10].channel);
   ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 3, ADCs[11].channel);
-  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 4, ADC_CTL_TS| ADC_CTL_IE | ADC_CTL_END);
+  ROM_ADCSequenceStepConfigure(ADC1_BASE, 0, 4, ADCs[12].channel | ADC_CTL_IE | ADC_CTL_END);
   ROM_ADCSequenceEnable(ADC1_BASE, 0);
   ROM_ADCIntClear(ADC1_BASE, 0);
 
@@ -199,6 +210,7 @@ void initADC1SecondSequence()
 static
 void initADC0FirstSequence()
 {
+  ROM_ADCSequenceDisable(ADC0_BASE, 1);
   ROM_ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
   ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADCs[13].channel);
   ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADCs[14].channel);
@@ -212,6 +224,7 @@ void initADC0FirstSequence()
 static
 void initADC0SecondSequence()
 {
+  ROM_ADCSequenceDisable(ADC0_BASE, 1);
   ROM_ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
   ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADCs[17].channel);
   ROM_ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADCs[18].channel);
@@ -245,7 +258,8 @@ void ADCMonitorTask(void *parameters)
     unsigned long ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ROM_ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues);
+      uint32_t got = ROM_ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues);
+      configASSERT(got == ADCs_ADC1_FIRST_SEQ_LENGTH);
     }
     else {
       // handle error here
@@ -258,7 +272,8 @@ void ADCMonitorTask(void *parameters)
     ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ROM_ADCSequenceDataGet(ADC0_BASE, 1, iADCvalues+ADCs_ADC0_START); // check offset
+      uint32_t got = ROM_ADCSequenceDataGet(ADC0_BASE, 1, iADCvalues+ADCs_ADC0_START);
+      configASSERT(got == ADCs_ADC0_FIRST_SEQ_LENGTH);
     }
     else {
       // handle error here
@@ -273,7 +288,9 @@ void ADCMonitorTask(void *parameters)
     ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ROM_ADCSequenceDataGet(ADC0_BASE, 1, iADCvalues+ADCs_ADC1_ENTRIES+ADCs_ADC0_FIRST_SEQ_LENGTH); // check offset
+      uint32_t got = ROM_ADCSequenceDataGet(ADC0_BASE, 1,
+          iADCvalues+ADCs_ADC0_START+ADCs_ADC0_FIRST_SEQ_LENGTH);
+      configASSERT(got == ADCs_ADC0_SECOND_SEQ_LENGTH);
     }
     else {
       // handle error here
@@ -287,7 +304,8 @@ void ADCMonitorTask(void *parameters)
     ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
     if( ulNotificationValue == 1 ) {
-      ROM_ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues+ADCs_ADC1_FIRST_SEQ_LENGTH);
+      uint32_t got = ROM_ADCSequenceDataGet(ADC1_BASE, 0, iADCvalues+ADCs_ADC1_FIRST_SEQ_LENGTH);
+      configASSERT(got == ADCs_ADC1_SECOND_SEQ_LENGTH);
     }
     else {
       // handle error here

@@ -12,6 +12,9 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
+
+#include <string.h>
 
 // local includes
 #include "common/uart.h"
@@ -306,6 +309,24 @@ void ShortDelay()
   vTaskDelay(pdMS_TO_TICKS(100));
 }
 
+
+struct TaskNamePair_t {
+  char key[configMAX_TASK_NAME_LEN];
+  TaskHandle_t value;
+} ;
+
+static struct TaskNamePair_t TaskNamePairs[5];
+
+void vGetTaskHandle( char *key, TaskHandle_t *t)
+{
+  *t = NULL;
+  for (int i = 0; i < 5; ++i) {
+    if ( strncmp(key, TaskNamePairs[i].key,3) == 0)
+      *t = TaskNamePairs[i].value;
+  }
+  return ;
+}
+
 // 
 int main( void )
 {
@@ -315,16 +336,23 @@ int main( void )
 
   //  Create the stream buffer that sends data from the interrupt to the
   //  task, and create the task.
-  // todo: handle sending more than one byte at a time, if needed
+  // todo: TaskNamePairs sending more than one byte at a time, if needed
   xUARTStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
+
   // start the tasks here 
-  xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
-  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
-  xTaskCreate(vCommandLineTask,"CON", 512,                      NULL, tskIDLE_PRIORITY+1, NULL);
-  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
-  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
+  xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
+  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
+  xTaskCreate(vCommandLineTask,"CON", 512,                      NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
+  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[3].value);
+  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
+
+  snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
+  snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
+  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CON");
+  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"ADC");
+  snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"MON");
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.

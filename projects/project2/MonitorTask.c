@@ -48,7 +48,8 @@ struct pm_list pm_command_dcdc[] = {
   { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 },
   //{ 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
   { 0x79, 2, "STATUS_WORD", "", PM_STATUS },
-  { 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
+  //{ 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
+  { 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
 };
 
 extern tSMBus g_sMaster1;
@@ -138,16 +139,7 @@ void MonitorTask(void *parameters)
         break;
       }
 
-//      bool success = writeI2C(I2C1_BASE, 0x70U, data, 1);
-//      if ( ! success ) {
-//        DPRINT("MON: Write of MUX output failed\n");
-//      }
-//      vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ));
       data[0] = 0xAAU;
-//      success = readI2C(I2C1_BASE, 0x70U, data, 1);
-//      if ( ! success ) {
-//        Print("MON: Read of MUX output failed\n");
-//      }
       r = SMBusMasterI2CRead(&g_sMaster1, 0x70U, data, 1);
       if ( r != SMBUS_OK ) {
         Print("MON: Read of MUX output failed\n");

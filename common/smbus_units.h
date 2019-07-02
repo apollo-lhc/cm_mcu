@@ -35,4 +35,9 @@ float linear16u_to_float(uint16_t t )
   return 1.0*t*pow(2,mantissa);
 }
 
+uint16_t float_to_linear11(float t)
+{
+  return (uint16_t)(t * (1 << 5));
+}
+
 #endif // _COMMON_SMBUS_UNITS_H

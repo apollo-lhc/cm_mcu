@@ -57,23 +57,23 @@ void initI2C1(const uint32_t sysclockfreq)
     MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C1);
     MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C1);
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C1));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C1));
 
     // Enable and initialize the I2C master module.  Use the system clock for
     // the I2C1 module.  The last parameter sets the I2C data transfer rate.
     // If false the data rate is set to 100kbps and if true the data rate will
     // be set to 400kbps.
     MAP_I2CMasterInitExpClk(I2C1_BASE, sysclockfreq, false);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C1));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C1));
 
     //clear I2C FIFOs
     //HWREG(I2C1_BASE + I2C_0_FIFOCTL) = 80008000;
-    I2CRxFIFOFlush(I2C1_BASE);
-    I2CTxFIFOFlush(I2C1_BASE);
+    MAP_I2CRxFIFOFlush(I2C1_BASE);
+    MAP_I2CTxFIFOFlush(I2C1_BASE);
 
     // toggle relevant reset
     write_gpio_pin(_PWR_I2C_RESET, 0x0); // active low
-    SysCtlDelay(sysclockfreq/10);;
+    MAP_SysCtlDelay(sysclockfreq/10);;
     write_gpio_pin(_PWR_I2C_RESET, 0x1); // active low
 
 
@@ -98,23 +98,23 @@ void initI2C3(const uint32_t sysclockfreq)
     MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C3);
     MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C3);
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3));
 
     // Enable and initialize the I2C master module.  Use the system clock for
     // the I2C3 module.  The last parameter sets the I2C data transfer rate.
     // If false the data rate is set to 100kbps and if true the data rate will
     // be set to 400kbps.
     MAP_I2CMasterInitExpClk(I2C3_BASE, sysclockfreq, false);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3));
 
     //clear I2C FIFOs
     //HWREG(I2C3_BASE + I2C_0_FIFOCTL) = 80008000;
-    I2CRxFIFOFlush(I2C3_BASE);
-    I2CTxFIFOFlush(I2C3_BASE);
+    MAP_I2CRxFIFOFlush(I2C3_BASE);
+    MAP_I2CTxFIFOFlush(I2C3_BASE);
 
     // toggle relevant reset
     write_gpio_pin(_V_OPTICS_I2C_RESET, 0x0); // active low
-    SysCtlDelay(sysclockfreq/10);;
+    MAP_SysCtlDelay(sysclockfreq/10);;
     write_gpio_pin(_V_OPTICS_I2C_RESET, 0x1); // active low
 
 
@@ -140,23 +140,23 @@ void initI2C4(const uint32_t sysclockfreq)
     MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C4);
     MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C4);
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C4));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C4));
 
     // Enable and initialize the I2C master module.  Use the system clock for
     // the I2C4 module.  The last parameter sets the I2C data transfer rate.
     // If false the data rate is set to 100kbps and if true the data rate will
     // be set to 400kbps.
     MAP_I2CMasterInitExpClk(I2C4_BASE, sysclockfreq, false);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C4));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C4));
 
     //clear I2C FIFOs
     //HWREG(I2C4_BASE + I2C_0_FIFOCTL) = 80008000;
-    I2CRxFIFOFlush(I2C4_BASE);
-    I2CTxFIFOFlush(I2C4_BASE);
+    MAP_I2CRxFIFOFlush(I2C4_BASE);
+    MAP_I2CTxFIFOFlush(I2C4_BASE);
 
     // toggle relevant reset
     write_gpio_pin(_K_OPTICS_I2C_RESET, 0x0); // active low
-    SysCtlDelay(sysclockfreq/10);;
+    MAP_SysCtlDelay(sysclockfreq/10);;
     write_gpio_pin(_K_OPTICS_I2C_RESET, 0x1); // active low
 
 
@@ -181,23 +181,23 @@ void initI2C6(const uint32_t sysclockfreq)
     MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C6);
     MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C6);
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C6));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C6));
 
     // Enable and initialize the I2C master module.  Use the system clock for
     // the I2C6 module.  The last parameter sets the I2C data transfer rate.
     // If false the data rate is set to 100kbps and if true the data rate will
     // be set to 400kbps.
     MAP_I2CMasterInitExpClk(I2C6_BASE, sysclockfreq, false);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C6));
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C6));
 
     //clear I2C FIFOs
     //HWREG(I2C6_BASE + I2C_0_FIFOCTL) = 80008000;
-    I2CRxFIFOFlush(I2C6_BASE);
-    I2CTxFIFOFlush(I2C6_BASE);
+    MAP_I2CRxFIFOFlush(I2C6_BASE);
+    MAP_I2CTxFIFOFlush(I2C6_BASE);
 
     // toggle relevant reset
     write_gpio_pin(_FPGA_I2C_RESET, 0x0); // active low
-    SysCtlDelay(sysclockfreq/10);;
+    MAP_SysCtlDelay(sysclockfreq/10);;
     write_gpio_pin(_FPGA_I2C_RESET, 0x1); // active low
 
 
@@ -215,22 +215,22 @@ bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Dat
 
     //specify that we are writing (a register address) to the
     //slave device. last argument is 'receive' boolean. false for write.
-    I2CMasterSlaveAddrSet(i2cbase, ui8Addr, false);
+    MAP_I2CMasterSlaveAddrSet(i2cbase, ui8Addr, false);
 
     //specify register to be written to
-    I2CMasterDataPut(i2cbase, ui8Reg);
+    MAP_I2CMasterDataPut(i2cbase, ui8Reg);
 
     // Initiate send of character from Master to Slave
     //
-    I2CMasterControl(i2cbase, I2C_MASTER_CMD_BURST_SEND_START);
+    MAP_I2CMasterControl(i2cbase, I2C_MASTER_CMD_BURST_SEND_START);
     //
     // Delay until transmission completes
     //
-    while(I2CMasterBusy(i2cbase))
+    while(MAP_I2CMasterBusy(i2cbase))
     {
     }
     // check the error register
-    uint32_t err = I2CMasterErr(i2cbase);
+    uint32_t err = MAP_I2CMasterErr(i2cbase);
     if ( err != I2C_MASTER_ERR_NONE ) {
       return false;
     }
@@ -240,19 +240,19 @@ bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Dat
         //
         // Place the character to be sent in the data register
         //
-        I2CMasterDataPut(i2cbase, *Data);
+        MAP_I2CMasterDataPut(i2cbase, *Data);
         //
         // Initiate send of character from Master to Slave
         //
-        I2CMasterControl(i2cbase, I2C_MASTER_CMD_BURST_SEND_FINISH);
+        MAP_I2CMasterControl(i2cbase, I2C_MASTER_CMD_BURST_SEND_FINISH);
         //
         // Delay until transmission completes
         //
-        while(I2CMasterBusy(i2cbase))
+        while(MAP_I2CMasterBusy(i2cbase))
         {
         }
         // check the error register
-        err = I2CMasterErr(i2cbase);
+        err = MAP_I2CMasterErr(i2cbase);
         if ( err != I2C_MASTER_ERR_NONE ) {
           return false;
         }
@@ -271,19 +271,19 @@ bool writeI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Dat
             //
             // Place the character to be sent in the data register
             //
-            I2CMasterDataPut(i2cbase, Data[i]);
+            MAP_I2CMasterDataPut(i2cbase, Data[i]);
             //
             // Initiate send of character from Master to Slave
             //
-            I2CMasterControl(i2cbase, cmd);
+            MAP_I2CMasterControl(i2cbase, cmd);
             //
             // Delay until transmission completes
             //
-            while(I2CMasterBusy(i2cbase))
+            while(MAP_I2CMasterBusy(i2cbase))
             {
             }
             // check the error register
-            err = I2CMasterErr(i2cbase);
+            err = MAP_I2CMasterErr(i2cbase);
             if ( err != I2C_MASTER_ERR_NONE ) {
               return false;
             }
@@ -301,41 +301,41 @@ bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data
 {
     //specify that we are writing (a register address) to the
     //slave device
-    I2CMasterSlaveAddrSet(i2cbase, ui8Addr, false);
+    MAP_I2CMasterSlaveAddrSet(i2cbase, ui8Addr, false);
 
     //specify register to be read
-    I2CMasterDataPut(i2cbase, ui8Reg);
+    MAP_I2CMasterDataPut(i2cbase, ui8Reg);
 
     //send control byte and register address byte to slave device
-    I2CMasterControl(i2cbase, I2C_MASTER_CMD_BURST_SEND_START);
+    MAP_I2CMasterControl(i2cbase, I2C_MASTER_CMD_BURST_SEND_START);
 
     //wait for MCU to finish transaction
-    while(I2CMasterBusy(i2cbase));
+    while(MAP_I2CMasterBusy(i2cbase));
 
     // check the error register
-    uint32_t err = I2CMasterErr(i2cbase);
+    uint32_t err = MAP_I2CMasterErr(i2cbase);
     if ( err != I2C_MASTER_ERR_NONE ) {
       return false;
     }
 
     //specify that we are going to read from slave device
-    I2CMasterSlaveAddrSet(i2cbase, ui8Addr, true);
+    MAP_I2CMasterSlaveAddrSet(i2cbase, ui8Addr, true);
     if ( ui8ByteCount == 1 ) {
         //send control byte and read from the register we
         //specified
-        I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_RECEIVE);
+        MAP_I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_RECEIVE);
 
         //wait for MCU to finish transaction
-        while(I2CMasterBusy(i2cbase));
+        while(MAP_I2CMasterBusy(i2cbase));
         // check the error register
-        err = I2CMasterErr(i2cbase);
+        err = MAP_I2CMasterErr(i2cbase);
         if ( err != I2C_MASTER_ERR_NONE ) {
           return false;
         }
 
 
         //return data pulled from the specified register
-        *Data = I2CMasterDataGet(i2cbase);
+        *Data = MAP_I2CMasterDataGet(i2cbase);
     }
     else {
 
@@ -352,19 +352,19 @@ bool readI2Creg(uint32_t i2cbase, uint8_t ui8Addr, uint8_t ui8Reg, uint8_t *Data
             else { // during burst
                 cmd = I2C_MASTER_CMD_BURST_RECEIVE_CONT;
             }
-            I2CMasterControl(i2cbase, cmd);
+            MAP_I2CMasterControl(i2cbase, cmd);
 
             //wait for MCU to finish transaction
-            while(I2CMasterBusy(i2cbase));
+            while(MAP_I2CMasterBusy(i2cbase));
 
             // check the error register
-            err = I2CMasterErr(i2cbase);
+            err = MAP_I2CMasterErr(i2cbase);
             if ( err != I2C_MASTER_ERR_NONE ) {
               return false;
             }
 
            //return data pulled from the specified register
-            Data[i] = I2CMasterDataGet(i2cbase);
+            Data[i] = MAP_I2CMasterDataGet(i2cbase);
         }
     }
     return true;
@@ -378,20 +378,20 @@ bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
 
   // specify that we are writing to the
   // slave device. last argument is 'receive' boolean. false for write.
-  I2CMasterSlaveAddrSet(i2cbase, ui8Addr, false);
+  MAP_I2CMasterSlaveAddrSet(i2cbase, ui8Addr, false);
 
   if ( ui8ByteCount == 1 ) {
 
     // Put the outgoing data into the control register
-    I2CMasterDataPut(i2cbase, *Data);
+    MAP_I2CMasterDataPut(i2cbase, *Data);
 
     //send control byte and write the data
-    I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_SEND);
+    MAP_I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_SEND);
 
     //wait for MCU to finish transaction
-    while(I2CMasterBusy(i2cbase));
+    while(MAP_I2CMasterBusy(i2cbase));
     // see if transaction succeeded
-    if ( I2CMasterErr(i2cbase) != I2C_MASTER_ERR_NONE )
+    if ( MAP_I2CMasterErr(i2cbase) != I2C_MASTER_ERR_NONE )
       return false; // transaction failed
 
   }
@@ -399,7 +399,7 @@ bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
 
     for ( uint8_t i = 0; i < ui8ByteCount; ++i ) {
       // Put the outgoing data into the control register
-      I2CMasterDataPut(i2cbase, Data[i]);
+      MAP_I2CMasterDataPut(i2cbase, Data[i]);
 
       //send control byte and read from the register we
       //specified
@@ -413,13 +413,13 @@ bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
       else { // during burst
         cmd = I2C_MASTER_CMD_BURST_SEND_CONT;
       }
-      I2CMasterControl(i2cbase, cmd);
+      MAP_I2CMasterControl(i2cbase, cmd);
 
       //wait for MCU to finish transaction
-      while(I2CMasterBusy(i2cbase));
+      while(MAP_I2CMasterBusy(i2cbase));
 
       // see if transaction succeeded
-      if ( I2CMasterErr(i2cbase) != I2C_MASTER_ERR_NONE )
+      if ( MAP_I2CMasterErr(i2cbase) != I2C_MASTER_ERR_NONE )
         return false; // transaction failed
 
     }
@@ -433,24 +433,24 @@ bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
              const uint8_t ui8ByteCount)
 {
   //specify that we are going to read from slave device
-  I2CMasterSlaveAddrSet(i2cbase, ui8Addr, true);
+  MAP_I2CMasterSlaveAddrSet(i2cbase, ui8Addr, true);
   if ( ui8ByteCount == 1 ) {
     //send control byte and read from the register we
     //specified
-    I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_RECEIVE);
+    MAP_I2CMasterControl(i2cbase, I2C_MASTER_CMD_SINGLE_RECEIVE);
 
     //wait for MCU to finish transaction
-    while(I2CMasterBusy(i2cbase));
+    while(MAP_I2CMasterBusy(i2cbase));
 
     // check the error register
-    uint32_t err = I2CMasterErr(i2cbase);
+    uint32_t err = MAP_I2CMasterErr(i2cbase);
     if ( err != I2C_MASTER_ERR_NONE ) {
       return false;
     }
 
 
     //return data pulled from the specified register
-    *Data = I2CMasterDataGet(i2cbase);
+    *Data = MAP_I2CMasterDataGet(i2cbase);
   }
   else {
 
@@ -467,19 +467,19 @@ bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
       else { // during burst
         cmd = I2C_MASTER_CMD_BURST_RECEIVE_CONT;
       }
-      I2CMasterControl(i2cbase, cmd);
+      MAP_I2CMasterControl(i2cbase, cmd);
 
       //wait for MCU to finish transaction
-      while(I2CMasterBusy(i2cbase));
+      while(MAP_I2CMasterBusy(i2cbase));
       // check the error register
-      uint32_t err = I2CMasterErr(i2cbase);
+      uint32_t err = MAP_I2CMasterErr(i2cbase);
       if ( err != I2C_MASTER_ERR_NONE ) {
         return false;
       }
 
 
       //return data pulled from the specified register
-      Data[i] = I2CMasterDataGet(i2cbase);
+      Data[i] = MAP_I2CMasterDataGet(i2cbase);
     }
   }
   return true;
