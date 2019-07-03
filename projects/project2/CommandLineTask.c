@@ -58,6 +58,13 @@ extern QueueHandle_t xLedQueue;
 
 static int32_t current_i2c_base = I2C1_BASE;
 
+extern tSMBus g_sMaster4;
+extern tSMBusStatus eStatus4;
+extern tSMBus g_sMaster1;
+extern tSMBusStatus eStatus1;
+
+static tSMBus *p_sMaster = &g_sMaster4;
+static tSMBusStatus * p_eStatus = &eStatus4;
 
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
@@ -73,13 +80,19 @@ static BaseType_t i2c_ctl_set_dev(char *m, size_t s, const char *mm)
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // device number
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i = strtol(p1, NULL, 10);
-  if ( i >= 0 || i <= 9 ) {
-    current_i2c_base = I2C_BASE[i];
-    snprintf(m, s,"Setting i2c device to %d (0x%08x)\n", i, current_i2c_base);
+  if ( ! ((i == 1)||(i==4))) {
+    snprintf(m, s, "Invalid i2c device %d (%s), only 1 and 4 supported\n", i, p1);
+    return pdFALSE;
   }
-  else {
-    snprintf(m, s, "Invalid i2c device %d (%s)\n", i, p1);
+  if ( i == 1 ) {
+    p_sMaster = &g_sMaster1;
+    p_eStatus = &eStatus1;
   }
+  else { // i = 4
+    p_sMaster = &g_sMaster4;
+    p_eStatus = &eStatus4;
+  }
+  snprintf(m, s,"Setting i2c device to %d (0x%08x)\n", i, current_i2c_base);
   return pdFALSE;
 }
 
@@ -93,24 +106,33 @@ static BaseType_t i2c_ctl_r(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   p2[p2l] = 0x00; // terminate strings
 
-  BaseType_t i1, i2;
-  i1 = strtol(p1, NULL, 16);
-  i2 = strtol(p2, NULL, 10);
+  BaseType_t address, nbytes;
+  address = strtol(p1, NULL, 16);
+  nbytes = strtol(p2, NULL, 10);
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   memset(data,0,MAX_BYTES*sizeof(data[0]));
-  if ( i2 > MAX_BYTES )
-    i2 = MAX_BYTES;
+  if ( nbytes > MAX_BYTES )
+    nbytes = MAX_BYTES;
 
-  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\n", i2, i1);
+  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\n", nbytes, address);
   DPRINT(m);
-  bool r = readI2C(current_i2c_base, i1, data, i2);
-  if ( r == false ) {
-    snprintf(m,s, "i2c_ctl_r: read failed\n");
+
+  tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
+  if (r != SMBUS_OK) {
+    snprintf(m,s, "%s: operation failed (1)\n", __func__);
     return pdFALSE;
   }
-  snprintf(m, s, "i2c_ctl_r: add: 0x%02x: value 0x%02x %02x %02x %02x\n",
-           i1, data[3], data[2], data[1], data[0]);
+  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+  if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "%s: operation failed (2)\n", __func__);
+    return pdFALSE;
+  }
+
+  snprintf(m, s, "%s: add: 0x%02x: value 0x%02x %02x %02x %02x\n", __func__,
+           address, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
 static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
@@ -125,25 +147,35 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
   p2[p2l] = 0x00; // terminate strings
   p3[p3l] = 0x00; // terminate strings
 
-  BaseType_t i1, i2, i3;
-  i1 = strtol(p1, NULL, 16);
-  i2 = strtol(p2, NULL, 16);
-  i3 = strtol(p3, NULL, 10);
+  BaseType_t address, reg_address, nbytes;
+  address = strtol(p1, NULL, 16);
+  reg_address = strtol(p2, NULL, 16);
+  nbytes = strtol(p3, NULL, 10);
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
+  uint8_t txdata = reg_address;
   memset(data,0,MAX_BYTES*sizeof(data[0]));
-  if ( i3 > MAX_BYTES )
-    i3 = MAX_BYTES;
-  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", i3, i1, i2);
+  if ( nbytes > MAX_BYTES )
+    nbytes = MAX_BYTES;
+  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", nbytes, address, reg_address);
   DPRINT(m);
-  bool r = readI2Creg(current_i2c_base, i1, i2, data, i3);
-  if ( r == false ) {
-    snprintf(m,s, "i2c_ctl_reg_r: read failed\n");
+
+  tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
+  if (r != SMBUS_OK) {
+    snprintf(m,s, "%s: operation failed (1)\n", __func__);
+    return pdFALSE;
+  }
+  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+  if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "%s: operation failed (2)\n", __func__);
     return pdFALSE;
   }
 
+
   snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\n",
-           i1, i2, data[3], data[2], data[1], data[0]);
+           address, reg_address, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
 
@@ -152,42 +184,50 @@ static BaseType_t i2c_ctl_reg_w(char *m, size_t s, const char *mm)
 
   int8_t *p1, *p2, *p3, *p4;
   BaseType_t p1l, p2l, p3l, p4l;
-  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
-  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // register
-  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l); // value(s)
-  p4 = FreeRTOS_CLIGetParameter(mm, 4, &p4l); // byte to write
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); //
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); //
+  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l); //
+  p4 = FreeRTOS_CLIGetParameter(mm, 4, &p4l); //
   p1[p1l] = 0x00; // terminate strings
   p2[p2l] = 0x00; // terminate strings
   p3[p3l] = 0x00; // terminate strings
   p4[p4l] = 0x00; // terminate strings
-
-  BaseType_t i1, i2, i3, i4;
-  i1 = strtol(p1, NULL, 16);
-  i2 = strtol(p2, NULL, 16);
-  i3 = strtol(p3, NULL, 16);
-  i4 = strtol(p4, NULL, 16);
+  // first byte is the register, others are the data
+  BaseType_t address, reg_address, nbytes, packed_data;
+  address = strtol(p1, NULL, 16); // address
+  reg_address = strtol(p2, NULL, 16); // register
+  nbytes = strtol(p3, NULL, 16); // number of bytes
+  packed_data = strtol(p4, NULL, 16); // data
   const int MAX_BYTES=4;
-  uint8_t data[MAX_BYTES];
-  for (int i = 0; i < MAX_BYTES; ++i ) {
-    data[i] = (i4 >> i*8) & 0xFFUL;
+  uint8_t data[MAX_BYTES+1];
+  data[0] = reg_address;
+  for (int i = 1; i < MAX_BYTES+1; ++i ) {
+    data[i] = (packed_data >> i*8) & 0xFFUL;
   }
-  if ( i3 > MAX_BYTES )
-    i3 = MAX_BYTES;
-  snprintf(m, s, "i2c_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n",
-           i4, i1, i2, i3);
+  if ( nbytes > MAX_BYTES )
+    nbytes = MAX_BYTES;
+  snprintf(m, s, "%s: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n", __func__,
+           packed_data, address, reg_address, nbytes);
   DPRINT(m);
-  bool r = writeI2Creg(current_i2c_base, i1, i2, data, i3);
-  if ( r == false ) {
-    snprintf(m,s, "i2c_ctl_reg_w: write failed\n");
+
+  tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
+  if (r != SMBUS_OK) {
+    snprintf(m,s, "%s: operation failed (1)\n", __func__);
+    return pdFALSE;
+  }
+  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+  if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "%s: operation failed (2)\n", __func__);
     return pdFALSE;
   }
 
-
-  snprintf(m, s, "i2cwr: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", i1, i2, i3, i4);
+  snprintf(m, s, "%s: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", __func__,
+           address, reg_address, packed_data, nbytes);
   return pdFALSE;
 }
-extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
+
 
 static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
 {
@@ -212,28 +252,22 @@ static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
   }
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  snprintf(m, s, "i2c_ctl_w: write 0x%x to address 0x%x  (%d bytes)\n",
+  snprintf(m, s, "%s: write 0x%x to address 0x%x  (%d bytes)\n", __func__,
            value, address, nbytes);
   DPRINT(m);
 
-  tSMBusStatus r = SMBusMasterI2CWrite(&g_sMaster4, address, data, nbytes);
+  tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
-    snprintf(m,s, "i2c_ctl_w: write failed (1)\n");
+    snprintf(m,s, "%s: write failed (1)\n", __func__);
     return pdFALSE;
   }
-  while (SMBusStatusGet(&g_sMaster4) == SMBUS_TRANSFER_IN_PROGRESS) {
+  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if ( eStatus4 != SMBUS_OK) {
-    snprintf(m,s, "i2c_ctl_w: write failed (2)\n");
+  if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "%s: write failed (2)\n", __func__);
     return pdFALSE;
   }
-
-//  bool r = writeI2C(current_i2c_base, i1, data, i3);
-//  if ( r == false ) {
-//    snprintf(m,s, "i2c_ctl_w: write failed\n");
-//    return pdFALSE;
-//  }
 
   snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", address, value, nbytes);
   return pdFALSE;
@@ -297,8 +331,7 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
+
 
 static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
 {
@@ -310,16 +343,14 @@ static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
   for (uint8_t i = 0x3; i < 0x78; ++i ) {
     uint8_t data;
     if ( i%16 ==0 ) copied += snprintf(m+copied,s-copied,"\n%2x:", i);
-    tSMBusStatus r = SMBusMasterI2CRead(&g_sMaster4, i, &data, 1);
+    tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, i, &data, 1);
     if ( r != SMBUS_OK ) {
       Print("i2c_scan: Probe failed 1\n");
     }
-    while ( SMBusStatusGet(&g_sMaster4) == SMBUS_TRANSFER_IN_PROGRESS) {
+    while ( SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
     }
-    if ( eStatus4 == SMBUS_OK )
-//    bool retval = readI2C(current_i2c_base,i,&data,1);
-//    if ( retval )
+    if ( *p_eStatus == SMBUS_OK )
       copied += snprintf(m+copied, s-copied, " %2x", i);
     else
       copied += snprintf(m+copied, s-copied, " --");
@@ -373,7 +404,8 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   BaseType_t i1 = strtol(p1, NULL, 10);
 
   if ( i1 < 0 || i1 >= NCOMMANDS ) {
-    snprintf(m, s, "Invalid argument, must be between 0 and %d\n", NCOMMANDS-1);
+    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\n", __func__,
+        NCOMMANDS-1);
     return pdFALSE;
   }
 
@@ -477,8 +509,6 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 }
 
 void vGetTaskHandle(char *key, TaskHandle_t  *t);
-
-extern TaskHandle_t tMon;
 
 static BaseType_t task_ctl(char *m, size_t s, const char *mm)
 {

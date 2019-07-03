@@ -202,6 +202,7 @@ void initI2C6(const uint32_t sysclockfreq)
 
 
 }
+#if 0 // obsolete
 
 // ---------------------------------------------------------------------
 // There are two types of I2C devices: those with and those without internal registers.
@@ -427,7 +428,6 @@ bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
   return true;
 }
 
-
 // non-register read
 bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
              const uint8_t ui8ByteCount)
@@ -485,4 +485,4 @@ bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
   return true;
 
 }
-
+#endif // 0

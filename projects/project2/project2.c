@@ -336,7 +336,7 @@ int main( void )
 
   //  Create the stream buffer that sends data from the interrupt to the
   //  task, and create the task.
-  // todo: TaskNamePairs sending more than one byte at a time, if needed
+  // todo: handle sending more than one byte at a time, if needed
   xUARTStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
