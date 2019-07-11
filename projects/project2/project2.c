@@ -140,9 +140,15 @@ void UARTIntHandler( void )
 
 #include "common/smbus.h"
 tSMBus g_sMaster1; // for I2C #1
+tSMBus g_sMaster2; // for I2C #2
+tSMBus g_sMaster3; // for I2C #3
 tSMBus g_sMaster4; // for I2C #4
+tSMBus g_sMaster6; // for I2C #6
 extern tSMBusStatus eStatus1;
+extern tSMBusStatus eStatus2;
+extern tSMBusStatus eStatus3;
 extern tSMBusStatus eStatus4;
+extern tSMBusStatus eStatus6;
 // SMBUs specific handler for I2C
 void
 SMBusMasterIntHandler1(void)
@@ -153,6 +159,32 @@ SMBusMasterIntHandler1(void)
   // Process the interrupt.
   //
   eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
+  // handle errors in the returning function
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
+void
+SMBusMasterIntHandler2(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  //
+  // Process the interrupt.
+  //
+  eStatus2 = SMBusMasterIntProcess(&g_sMaster2);
+  // handle errors in the returning function
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
+void
+SMBusMasterIntHandler3(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  //
+  // Process the interrupt.
+  //
+  eStatus3 = SMBusMasterIntProcess(&g_sMaster3);
   // handle errors in the returning function
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -169,6 +201,21 @@ SMBusMasterIntHandler4(void)
   // handle errors in the returning function
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
+
+void
+SMBusMasterIntHandler6(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  //
+  // Process the interrupt.
+  //
+  eStatus6 = SMBusMasterIntProcess(&g_sMaster6);
+  // handle errors in the returning function
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
+
 
 
 
@@ -227,6 +274,7 @@ void SystemInit()
 #error "CLI UART not initialized"
 #endif
   initI2C1(g_ui32SysClock); // controller for power supplies
+  initI2C2(g_ui32SysClock); // controller for clocks
   initI2C3(g_ui32SysClock); // controller for V optics
   initI2C6(g_ui32SysClock); // controller for FPGAs
   initI2C4(g_ui32SysClock); // controller for K optics
@@ -253,18 +301,27 @@ void SystemInit()
   // Initialize the master SMBus port.
   //
   SMBusMasterInit(&g_sMaster1, I2C1_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster2, I2C2_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster3, I2C3_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster6, I2C6_BASE, g_ui32SysClock);
   //SMBusPECEnable(&g_sMaster);
 
   // FreeRTOS insists that the priority of interrupts be set up like this.
   ROM_IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
+  ROM_IntPrioritySet( INT_I2C2, configKERNEL_INTERRUPT_PRIORITY );
+  ROM_IntPrioritySet( INT_I2C3, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_I2C4, configKERNEL_INTERRUPT_PRIORITY );
+  ROM_IntPrioritySet( INT_I2C6, configKERNEL_INTERRUPT_PRIORITY );
 
   //
   // Enable master interrupts.
   //
   SMBusMasterIntEnable(&g_sMaster1);
+  SMBusMasterIntEnable(&g_sMaster2);
+  SMBusMasterIntEnable(&g_sMaster3);
   SMBusMasterIntEnable(&g_sMaster4);
+  SMBusMasterIntEnable(&g_sMaster6);
 
 
   //

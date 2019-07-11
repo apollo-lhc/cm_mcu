@@ -55,7 +55,10 @@ struct pm_list pm_command_dcdc[] = {
 extern tSMBus g_sMaster1;
 
 volatile tSMBusStatus eStatus1 = SMBUS_OK;
+volatile tSMBusStatus eStatus2 = SMBUS_OK;
+volatile tSMBusStatus eStatus3 = SMBUS_OK;
 volatile tSMBusStatus eStatus4 = SMBUS_OK; // TODO: move these to the right place
+volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
 float pm_values[NSUPPLIES*NPAGES*NCOMMANDS];
 static float pm_values_max[NSUPPLIES*NPAGES*NCOMMANDS];

@@ -56,12 +56,17 @@ extern QueueHandle_t xLedQueue;
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   512
 
-static int32_t current_i2c_base = I2C1_BASE;
 
-extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
+extern tSMBus g_sMaster2;
+extern tSMBusStatus eStatus2;
+extern tSMBus g_sMaster3;
+extern tSMBusStatus eStatus3;
+extern tSMBus g_sMaster4;
+extern tSMBusStatus eStatus4;
+extern tSMBus g_sMaster6;
+extern tSMBusStatus eStatus6;
 
 static tSMBus *p_sMaster = &g_sMaster4;
 static tSMBusStatus * p_eStatus = &eStatus4;
@@ -80,19 +85,37 @@ static BaseType_t i2c_ctl_set_dev(char *m, size_t s, const char *mm)
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // device number
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i = strtol(p1, NULL, 10);
-  if ( ! ((i == 1)||(i==4))) {
-    snprintf(m, s, "Invalid i2c device %d (%s), only 1 and 4 supported\n", i, p1);
+  if ( ! ((i == 1)||(i==2)||(i==3)||(i==4)||(i==6))) {
+    snprintf(m, s, "Invalid i2c device %d (%s), only 1,2,3, 4 and 6 supported\n", i, p1);
     return pdFALSE;
   }
-  if ( i == 1 ) {
-    p_sMaster = &g_sMaster1;
-    p_eStatus = &eStatus1;
+  switch (i) {
+    case 1:
+      p_sMaster = &g_sMaster1;
+      p_eStatus = &eStatus1;
+      break;
+    case 2:
+      p_sMaster = &g_sMaster2;
+      p_eStatus = &eStatus2;
+      break;
+    case 3:
+      p_sMaster = &g_sMaster3;
+      p_eStatus = &eStatus3;
+      break;
+    case 4:
+      p_sMaster = &g_sMaster4;
+      p_eStatus = &eStatus4;
+      break;
+    case 6:
+      p_sMaster = &g_sMaster6;
+      p_eStatus = &eStatus6;
+      break;
+    default:
+      snprintf(m, s, "%s: huh? line %d\n", __func__, __LINE__);
+      return pdFALSE;
+      break;
   }
-  else { // i = 4
-    p_sMaster = &g_sMaster4;
-    p_eStatus = &eStatus4;
-  }
-  snprintf(m, s,"Setting i2c device to %d (0x%08x)\n", i, current_i2c_base);
+  snprintf(m, s,"Setting i2c device to %d \n", i);
   return pdFALSE;
 }
 
@@ -127,7 +150,7 @@ static BaseType_t i2c_ctl_r(char *m, size_t s, const char *mm)
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2)\n", __func__);
+    snprintf(m,s, "%s: operation failed (2, value=%d)\n", __func__, *p_eStatus);
     return pdFALSE;
   }
 
@@ -158,7 +181,7 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
   snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", nbytes, address, reg_address);
-  DPRINT(m);
+  Print(m);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
   if (r != SMBUS_OK) {
@@ -169,7 +192,7 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2)\n", __func__);
+    snprintf(m,s, "%s: operation failed (2, value=%d)\n", __func__, *p_eStatus);
     return pdFALSE;
   }
 
@@ -337,7 +360,7 @@ static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
 {
   // takes no arguments
   int copied = 0;
-  copied += snprintf(m, s, "i2c scan of bus at base address %08x\n", current_i2c_base);
+  copied += snprintf(m, s, "i2c bus scan\n");
   copied += snprintf(m+copied,s-copied,
       "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n00:         ");
   for (uint8_t i = 0x3; i < 0x78; ++i ) {

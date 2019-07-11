@@ -35,7 +35,10 @@ void ResetISR(void);
 static void NmiSR(void);
 static void IntDefaultHandler(void);
 void SMBusMasterIntHandler1(void);
+void SMBusMasterIntHandler2(void);
+void SMBusMasterIntHandler3(void);
 void SMBusMasterIntHandler4(void);
+void SMBusMasterIntHandler6(void);
 extern void UARTIntHandler(void);
 extern void xPortPendSVHandler(void);
 extern void vPortSVCHandler(void);
@@ -92,8 +95,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    IntDefaultHandler,                         // UART0 Rx and Tx
-    IntDefaultHandler,                         // UART1 Rx and Tx
+    IntDefaultHandler,                      // UART0 Rx and Tx
+    IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
     IntDefaultHandler,                      // PWM Fault
@@ -102,7 +105,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // PWM Generator 2
     IntDefaultHandler,                      // Quadrature Encoder 0
     IntDefaultHandler,                      // ADC Sequence 0
-    ADCSeq1Interrupt,                          // ADC Sequence 1
+    ADCSeq1Interrupt,                       // ADC Sequence 1
     IntDefaultHandler,                      // ADC Sequence 2
     IntDefaultHandler,                      // ADC Sequence 3
     IntDefaultHandler,                      // Watchdog timer
@@ -124,7 +127,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI1 Rx and Tx
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
-    SMBusMasterIntHandler1,                  // I2C1 Master and Slave
+    SMBusMasterIntHandler1,                 // I2C1 Master and Slave
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
     IntDefaultHandler,                      // Ethernet
@@ -148,8 +151,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                         // UART5 Rx and Tx
     IntDefaultHandler,                         // UART6 Rx and Tx
     IntDefaultHandler,                         // UART7 Rx and Tx
-    IntDefaultHandler,                      // I2C2 Master and Slave
-    IntDefaultHandler,                      // I2C3 Master and Slave
+    SMBusMasterIntHandler2,                 // I2C2 Master and Slave
+    SMBusMasterIntHandler3,                 // I2C3 Master and Slave
     IntDefaultHandler,                      // Timer 4 subtimer A
     IntDefaultHandler,                      // Timer 4 subtimer B
     IntDefaultHandler,                      // Timer 5 subtimer A
@@ -189,7 +192,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Timer 6 subtimer B
     IntDefaultHandler,                      // Timer 7 subtimer A
     IntDefaultHandler,                      // Timer 7 subtimer B
-    IntDefaultHandler,                      // I2C6 Master and Slave
+    SMBusMasterIntHandler6,                 // I2C6 Master and Slave
     IntDefaultHandler,                      // I2C7 Master and Slave
     IntDefaultHandler,                      // HIM Scan Matrix Keyboard 0
     IntDefaultHandler,                      // One Wire 0

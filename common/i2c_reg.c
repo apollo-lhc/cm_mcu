@@ -38,7 +38,6 @@ uint32_t I2C_BASE[] = {
 
 //initialize I2C module 1
 // Slightly modified version of TI's example code
-// TODO: add for I2C modules 0, 2, 4 and 6
 void initI2C1(const uint32_t sysclockfreq)
 {
     //enable I2C module 1
@@ -78,6 +77,47 @@ void initI2C1(const uint32_t sysclockfreq)
 
 
 }
+// i2c 2 is for the clock chips
+void initI2C2(const uint32_t sysclockfreq)
+{
+    //enable I2C module 2
+    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C2);
+    //
+    // Wait for the I2C1 module to be ready.
+    //
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C2))
+    {
+    }
+
+    // Stop the Clock, Reset and Enable I2C Module
+    // in Master Function
+    //
+    MAP_SysCtlPeripheralDisable(SYSCTL_PERIPH_I2C2);
+    MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C2);
+    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C2);
+
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C2));
+
+    // Enable and initialize the I2C master module.  Use the system clock for
+    // the I2C1 module.  The last parameter sets the I2C data transfer rate.
+    // If false the data rate is set to 100kbps and if true the data rate will
+    // be set to 400kbps.
+    MAP_I2CMasterInitExpClk(I2C2_BASE, sysclockfreq, false);
+    while(!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C2));
+
+    //clear I2C FIFOs
+    //HWREG(I2C1_BASE + I2C_0_FIFOCTL) = 80008000;
+    MAP_I2CRxFIFOFlush(I2C2_BASE);
+    MAP_I2CTxFIFOFlush(I2C2_BASE);
+
+    // toggle relevant reset
+    write_gpio_pin(_CLOCKS_I2C_RESET, 0x0); // active low
+    MAP_SysCtlDelay(sysclockfreq/10);;
+    write_gpio_pin(_CLOCKS_I2C_RESET, 0x1); // active low
+
+
+}
+
 
 // I2C controller 3 is for V_OPTICS on the CM
 void initI2C3(const uint32_t sysclockfreq)
