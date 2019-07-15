@@ -47,11 +47,12 @@ install:
   - cd arm-gcc-toolchain
   - tar -jxf gcc.tar.bz2 --strip=1
   - cd $HOME
-  - svn checkout -q https://svn.code.sf.net/p/freertos/code/trunk freertos-code
+  - curl -L -o freertos-code.zip https://sourceforge.net/projects/freertos/files/FreeRTOS/V10.2.1/FreeRTOSv10.2.1.zip/download
+  - unzip -q   freertos-code.zip  -d freertos-code 
   - popd
   - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
-  - export FREERTOS_ROOT=$HOME/freertos-code/FreeRTOS/Source
-  - export FREERTOS_PLUS_ROOT=$HOME/freertos-code/FreeRTOS-Plus/Source
+  - export FREERTOS_ROOT=$HOME/freertos-code/FreeRTOSv10.2.1/FreeRTOS/Source
+  - export FREERTOS_PLUS_ROOT=$HOME/freertos-code/FreeRTOSv10.2.1/FreeRTOS-Plus/Source
 
 before_script:
   - arm-none-eabi-gcc --version
