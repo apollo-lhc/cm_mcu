@@ -23,6 +23,7 @@
 #include "common/i2c_reg.h"
 #include "common/smbus.h"
 #include "common/smbus_units.h"
+#include "common/power_ctl.h"
 #include "MonitorTask.h"
 
 void Print(const char* str);
@@ -109,18 +110,18 @@ void MonitorTask(void *parameters)
 
   for (;;) {
     //int prio = getLowestEnabledPSPriority();
-//    static bool good = false;
-//    if ( getPSStatus(5) != PWR_ON) {
-//      if ( good ) {
-//        Print("MON: 3V3 died. Skipping I2C monitoring.\n");
-//        good = false;
-//      }
-//      vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
-//      continue;
-//    }
-//    else {
-//      good = true;
-//    }
+    static bool good = false;
+    if ( getPSStatus(5) != PWR_ON) {
+      if ( good ) {
+        Print("MON: 3V3 died. Skipping I2C monitoring.\n");
+        good = false;
+      }
+      vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
+      continue;
+    }
+    else {
+      good = true;
+    }
     // loop over power supplies attached to the MUX
     for ( uint8_t ps = 0; ps < NSUPPLIES; ++ ps ) {
       char tmp[64];
