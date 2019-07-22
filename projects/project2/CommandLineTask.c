@@ -181,7 +181,7 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
   snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", nbytes, address, reg_address);
-  Print(m);
+  DPRINT(m);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
   if (r != SMBUS_OK) {
@@ -426,18 +426,18 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i1 = strtol(p1, NULL, 10);
 
-  if ( i1 < 0 || i1 >= NCOMMANDS ) {
+  if ( i1 < 0 || i1 >= NCOMMANDS_PS ) {
     snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\n", __func__,
-        NCOMMANDS-1);
+        NCOMMANDS_PS-1);
     return pdFALSE;
   }
 
   int copied = 0;
   copied += snprintf(m+copied, s-copied, "%s\n", pm_command_dcdc[i1].name);
-  for (int ps = 0; ps < NSUPPLIES; ++ps) {
+  for (int ps = 0; ps < NSUPPLIES_PS; ++ps) {
     copied += snprintf(m+copied, s-copied, "SUPPLY %d\n", ps);
-    for (int page = 0; page < NPAGES; ++page ) {
-      float val = pm_values[ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+i1];
+    for (int page = 0; page < NPAGES_PS; ++page ) {
+      float val = pm_values[ps*(NCOMMANDS_PS*NPAGES_PS)+page*NCOMMANDS_PS+i1];
       int tens = val;
       int frac = ABS((val - tens)*100.0);
 

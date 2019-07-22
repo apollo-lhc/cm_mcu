@@ -60,20 +60,20 @@ volatile tSMBusStatus eStatus3 = SMBUS_OK;
 volatile tSMBusStatus eStatus4 = SMBUS_OK; // TODO: move these to the right place
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
-float pm_values[NSUPPLIES*NPAGES*NCOMMANDS];
-static float pm_values_max[NSUPPLIES*NPAGES*NCOMMANDS];
-static float pm_values_min[NSUPPLIES*NPAGES*NCOMMANDS];
+float pm_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
+static float pm_values_max[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
+static float pm_values_min[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
 
 static
 void update_max() {
-  for (int i = 0; i < NSUPPLIES*NPAGES*NCOMMANDS; ++i ) {
+  for (int i = 0; i < NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS; ++i ) {
     if ( pm_values_max[i] < pm_values[i])
       pm_values_max[i] = pm_values[i];
   }
 }
 static
 void update_min() {
-  for (int i = 0; i < NSUPPLIES*NPAGES*NCOMMANDS; ++i ) {
+  for (int i = 0; i < NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS; ++i ) {
     if ( pm_values_min[i] > pm_values[i])
       pm_values_min[i] = pm_values[i];
   }
@@ -86,7 +86,7 @@ void MonitorTask(void *parameters)
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint8_t data[2];
 
-  for ( int i = 0; i < NSUPPLIES*NPAGES*NCOMMANDS; ++i ) {
+  for ( int i = 0; i < NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS; ++i ) {
     pm_values_max[i] = -99;
     pm_values_min[i] = +99;
   }
@@ -104,7 +104,7 @@ void MonitorTask(void *parameters)
   //       0x43     | KVCCINT  |     1
   //       0x46     | VVCCINT  |     1
   //       0x45     | VVCCINT  |     1
-  const uint8_t addrs[NSUPPLIES] = { 0x40, 0x44, 0x43, 0x46, 0x45};
+  const uint8_t addrs[NSUPPLIES_PS] = { 0x40, 0x44, 0x43, 0x46, 0x45};
   //const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
 
   for (;;) {
@@ -122,7 +122,7 @@ void MonitorTask(void *parameters)
 //      good = true;
 //    }
     // loop over power supplies attached to the MUX
-    for ( uint8_t ps = 0; ps < NSUPPLIES; ++ ps ) {
+    for ( uint8_t ps = 0; ps < NSUPPLIES_PS; ++ ps ) {
       char tmp[64];
       // select the appropriate output for the mux
       data[0] = 0x1U<<ps;
@@ -160,7 +160,7 @@ void MonitorTask(void *parameters)
         DPRINT(tmp);
       }
       // loop over pages on the supply
-      for ( uint8_t page = 0; page < NPAGES; ++page ) {
+      for ( uint8_t page = 0; page < NPAGES_PS; ++page ) {
 #define PAGE_COMMAND 0x0
         r = SMBusMasterByteWordWrite(&g_sMaster1, addrs[ps], PAGE_COMMAND,
             &page, 1);
@@ -179,7 +179,7 @@ void MonitorTask(void *parameters)
         DPRINT(tmp);
 
         // loop over commands
-        for (int c = 0; c < NCOMMANDS; ++c ) {
+        for (int c = 0; c < NCOMMANDS_PS; ++c ) {
 
           data[0] = 0x0U; data[1] = 0x0U;
           r = SMBusMasterByteWordRead(&g_sMaster1, addrs[ps], pm_command_dcdc[c].command,
@@ -226,7 +226,7 @@ void MonitorTask(void *parameters)
           else {
             val = -99.0; // should never get here
           }
-          int index = ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+c;
+          int index = ps*(NCOMMANDS_PS*NPAGES_PS)+page*NCOMMANDS_PS+c;
           pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ) );

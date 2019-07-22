@@ -77,11 +77,13 @@ ${COMPILER}/project2.axf: ${COMPILER}/i2c_reg.o
 ${COMPILER}/project2.axf: ${COMPILER}/uart.o
 ${COMPILER}/project2.axf: ${COMPILER}/utils.o
 ${COMPILER}/project2.axf: ${COMPILER}/smbus.o
+${COMPILER}/project2.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/project2.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/project2.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/PowerSupplyTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/MonitorTask.o
+${COMPILER}/project2.axf: ${COMPILER}/FireFlyTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
