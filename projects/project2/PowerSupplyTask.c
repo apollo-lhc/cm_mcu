@@ -41,8 +41,10 @@ void PowerSupplyTask(void *parameters)
   enum ps_state oldState = UNKNOWN;
   //enum state desiredState = PWR_ON; // start with power-on right away
 
-  // turn on the power supply at the start of the task
-  set_ps(true,true,true) ;
+  // turn on the power supply at the start of the task, if the power enable is sent by the
+  // zynq
+  if ( read_gpio_pin(BLADE_POWER_EN) == 1 )
+    set_ps(true,true,true) ;
 
   // this function never returns
   for ( ;; ) {
