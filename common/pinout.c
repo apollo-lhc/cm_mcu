@@ -35,7 +35,7 @@
 //
 //*****************************************************************************
 
-// This file was automatically generated on 5/16/2019 at 12:45:58 PM
+// This file was automatically generated on 8/3/2019 at 9:39:54 PM
 // by TI PinMux version 4.0.1532 
 //
 //*****************************************************************************
@@ -372,24 +372,6 @@ PinoutSet(void)
 	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTK_BASE, GPIO_PIN_4);
 
     //
-    // Configure the GPIO Pin Mux for PM7
-	// for GPIO_PM7
-    //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_7);
-
-    //
-    // Configure the GPIO Pin Mux for PM6
-	// for GPIO_PM6
-    //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_6);
-
-    //
-    // Configure the GPIO Pin Mux for PM5
-	// for GPIO_PM5
-    //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_5);
-
-    //
     // Configure the GPIO Pin Mux for PM4
 	// for GPIO_PM4
     //
@@ -550,6 +532,25 @@ PinoutSet(void)
 	// for GPIO_PP1
     //
 	MAP_GPIOPinTypeGPIOInput(GPIO_PORTP_BASE, GPIO_PIN_1);
+
+    //
+    // Configure the GPIO Pin Mux for PM7
+	// for GPIO_PM7
+    //
+	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_7);
+	MAP_GPIOPadConfigSet(GPIO_PORTM_BASE, GPIO_PIN_7, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+
+    //
+    // Configure the GPIO Pin Mux for PM6
+	// for GPIO_PM6
+    //
+	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_6);
+
+    //
+    // Configure the GPIO Pin Mux for PM5
+	// for GPIO_PM5
+    //
+	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_5);
 
     //
     // Configure the GPIO Pin Mux for PB2

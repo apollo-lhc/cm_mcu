@@ -45,9 +45,6 @@ Pin#, PORT IO, Function, Directions
 60,PK6,GPIO_PK6, false, false,Input
 61,PK5,GPIO_PK5, false, false,Input
 62,PK4,GPIO_PK4, false, false,Output
-71,PM7,GPIO_PM7, false, false,Input
-72,PM6,GPIO_PM6, false, false,Input
-73,PM5,GPIO_PM5, false, false,Input
 74,PM4,GPIO_PM4, false, false,Input
 75,PM3,GPIO_PM3, false, false,Input
 76,PM2,GPIO_PM2, false, false,Input
@@ -75,6 +72,9 @@ Pin#, PORT IO, Function, Directions
 117,PJ1,GPIO_PJ1, false, false,Output
 118,PP0,GPIO_PP0, false, false,Output
 119,PP1,GPIO_PP1, false, false,Input
+71,PM7,GPIO_PM7, false, true,Input
+72,PM6,GPIO_PM6, false, false,Input
+73,PM5,GPIO_PM5, false, false,Input
 91,PB2,I2C0SCL, , ,
 92,PB3,I2C0SDA, , ,
 49,PG0,I2C1SCL, , ,

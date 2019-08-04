@@ -5,6 +5,7 @@
  *      Author: wittich
  */
 
+#include <string.h>
 
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
@@ -97,6 +98,9 @@ void setPSStatus(int i, enum ps_state theState)
 bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
 {
   bool success = true; // return value
+  // read two dip switches to see if we are powering either or both FPGAs
+  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
 
   // data structure to turn on various power supplies. This should be ordered
   // such that the priority increases, though it's not necessary
@@ -105,6 +109,13 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
     lowest_enabled_ps_prio = prio;
     for ( int e = 0; e < nenables; ++e ) {
       if ( enables[e].priority == prio ) {
+        // if the supply is for VU7P and dip switch says ignore it, continue
+        if ((strncmp(pin_names[enables[e].name], "CTRL_V_", 7) == 0) && !vu_enable )
+          continue;
+        // ditto for KU15P
+        if ((strncmp(pin_names[enables[e].name], "CTRL_K_", 7) == 0) && !ku_enable )
+          continue;
+        // remember that there are some VCC_ supplies too!
         write_gpio_pin(enables[e].name, 0x1);
       }
     }
@@ -118,6 +129,13 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
       if ( oks[o].priority <= prio ) {
         int8_t val = read_gpio_pin(oks[o].name);
         if ( val == 0 ) {
+          // if this is a VU7P supply and dip switch says ignore it, continue
+          if ((strncmp(pin_names[oks[o].name], "V_", 2) == 0) && !vu_enable )
+            continue;
+          // ditto for KU15P
+          if ( (strncmp(pin_names[oks[o].name], "K_", 2) == 0) && !ku_enable )
+            continue;
+          // remember the VCC_ supplies
           all_good = false;
           break;
         }
@@ -141,6 +159,10 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
     }
   } // loop over priorities
 
+  if ( success )
+    write_gpio_pin(BLADE_POWER_OK, 0x1);
+  else
+    write_gpio_pin(BLADE_POWER_OK, 0x0);
   return success;
 
 }
@@ -155,9 +177,18 @@ check_ps(void)
 {
 
   bool success = true;
+
+  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
   enum ps_state new_states[N_PS_OKS];
   // first check all the GPIO pins for various status bits
   for ( int o = 0; o < N_PS_OKS; ++o ) {
+    // if this is a VU7P supply and dip switch says ignore it, continue
+    if ((strncmp(pin_names[oks[o].name], "V_", 2) == 0) && !vu_enable )
+      continue;
+    // ditto for KU15P
+    if ( (strncmp(pin_names[oks[o].name], "K_", 2) == 0) && !ku_enable )
+      continue;
     int8_t val = read_gpio_pin(oks[o].name);
     if ( val == 0 ) {
       new_states[o] = PWR_OFF;
