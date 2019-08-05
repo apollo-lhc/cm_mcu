@@ -96,28 +96,28 @@ void Print(const char* str)
 /* A stream buffer that has already been created. */
 StreamBufferHandle_t xUARTStreamBuffer;
 
-void UARTIntHandler( void )
+void UART1IntHandler( void )
 {
   // TODO: figure out which UART caused the interrupt -- can I do this?
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   //
   // Get the interrupt status.
   //
-  uint32_t ui32Status = ROM_UARTIntStatus(CLI_UART, true);
+  uint32_t ui32Status = ROM_UARTIntStatus(UART1_BASE, true);
 
   //
   // Clear the asserted interrupts.
   //
-  ROM_UARTIntClear(CLI_UART, ui32Status);
+  ROM_UARTIntClear(UART1_BASE, ui32Status);
 
   //
   // Loop while there are characters in the receive FIFO.
   //
   uint8_t bytes[8];
   int received = 0;
-  while(ROM_UARTCharsAvail(CLI_UART)) {
+  while(ROM_UARTCharsAvail(UART1_BASE)) {
 
-    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(CLI_UART);
+    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART1_BASE);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
     if ( ++received == 8 ) {
       xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
@@ -137,6 +137,49 @@ void UARTIntHandler( void )
     documentation for the port in use for port specific instructions. */
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
+
+void UART4IntHandler( void )
+{
+  // TODO: figure out which UART caused the interrupt -- can I do this?
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  //
+  // Get the interrupt status.
+  //
+  uint32_t ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
+
+  //
+  // Clear the asserted interrupts.
+  //
+  ROM_UARTIntClear(UART4_BASE, ui32Status);
+
+  //
+  // Loop while there are characters in the receive FIFO.
+  //
+  uint8_t bytes[8];
+  int received = 0;
+  while(ROM_UARTCharsAvail(UART4_BASE)) {
+
+    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
+    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    if ( ++received == 8 ) {
+      xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      received = 0;
+    }
+  }
+  if ( received )
+    xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+
+  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
+    xStreamBufferReceiveFromISR() then a task that has a priority above the
+    priority of the currently executing task was unblocked and a context
+    switch should be performed to ensure the ISR returns to the unblocked
+    task.  In most FreeRTOS ports this is done by simply passing
+    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
+    variables value, and perform the context switch if necessary.  Check the
+    documentation for the port in use for port specific instructions. */
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
 
 #include "common/smbus.h"
 tSMBus g_sMaster1; // for I2C #1

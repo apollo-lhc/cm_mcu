@@ -26,6 +26,7 @@
 #include "inc/hw_nvic.h"
 #include "inc/hw_types.h"
 #include "driverlib/rom.h"
+#include "FreeRTOSConfig.h"
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -39,7 +40,8 @@ void SMBusMasterIntHandler2(void);
 void SMBusMasterIntHandler3(void);
 void SMBusMasterIntHandler4(void);
 void SMBusMasterIntHandler6(void);
-extern void UARTIntHandler(void);
+extern void UART1IntHandler(void);
+extern void UART4IntHandler(void);
 extern void xPortPendSVHandler(void);
 extern void vPortSVCHandler(void);
 extern void xPortSysTickHandler(void);
@@ -96,7 +98,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
     IntDefaultHandler,                      // UART0 Rx and Tx
-    IntDefaultHandler,                      // UART1 Rx and Tx
+    UART1IntHandler,                         // UART1 Rx and Tx -- ZYNQ UART
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
     IntDefaultHandler,                      // PWM Fault
@@ -147,7 +149,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI2 Rx and Tx
     IntDefaultHandler,                      // SSI3 Rx and Tx
     IntDefaultHandler,                         // UART3 Rx and Tx
-    UARTIntHandler,                         // UART4 Rx and Tx
+    UART4IntHandler,                         // UART4 Rx and Tx -- FRONT PANEL
     IntDefaultHandler,                         // UART5 Rx and Tx
     IntDefaultHandler,                         // UART6 Rx and Tx
     IntDefaultHandler,                         // UART7 Rx and Tx
