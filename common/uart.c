@@ -92,7 +92,6 @@ void UART4Print(const char* str)
 		//
 		// Write the next character to the UART.
 		//
-		//MAP_UARTCharPutNonBlocking(UART4_BASE, str[i]);
 		MAP_UARTCharPut(UART4_BASE, str[i]);
 
 	}
@@ -107,7 +106,6 @@ void UARTPrint(uint32_t uart_base, const char* str)
 		//
 		// Write the next character to the UART.
 		//
-		//MAP_UARTCharPutNonBlocking(UART4_BASE, str[i]);
 		MAP_UARTCharPut(uart_base, str[i]);
 
 	}

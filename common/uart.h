@@ -12,7 +12,8 @@
 #include <stdbool.h>
 
 
-// Initialize UART4. Assumes pin definitions were already run.
+// Initialize UART4 and 1. Assumes pin definitions were already run.
+void UART1Init(uint32_t ui32SysClock);
 void UART4Init(uint32_t ui32SysClock);
 
 
