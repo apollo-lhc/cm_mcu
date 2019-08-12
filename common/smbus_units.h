@@ -24,20 +24,10 @@ typedef union
   uint16_t raw;
 } linear11_val_t;
 
-float linear11_to_float(linear11_val_t t)
-{
-  return t.linear.base * pow(2, t.linear.mantissa);
-}
+float linear11_to_float(linear11_val_t t);
 
-float linear16u_to_float(uint16_t t )
-{
-  const float mantissa = -13;
-  return 1.0*t*pow(2,mantissa);
-}
+float linear16u_to_float(uint16_t t );
 
-uint16_t float_to_linear11(float t)
-{
-  return (uint16_t)(t * (1 << 5));
-}
+uint16_t float_to_linear11(float t);
 
 #endif // _COMMON_SMBUS_UNITS_H

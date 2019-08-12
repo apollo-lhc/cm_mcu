@@ -51,10 +51,8 @@ struct ADC_Info_t {
   float scale; // scaling, if needed, for signals bigger than 2.5V
 };
 
-// These are not in order of channel number but instead grouped by
-// which ADC they have been assigned to in the TI PinMux tool. I could
-// probably consider reassigning them in the PinMUX tool to make it more
-// logical.
+// parameters for how data is organized in the fADC arrays and how the
+// sequencers are organized
 #define ADCs_ADC1_START             0
 #define ADCs_ADC1_FIRST_SEQ_LENGTH  8
 #define ADCs_ADC1_SECOND_SEQ_LENGTH 5
@@ -236,7 +234,7 @@ void initADC0SecondSequence()
 }
 
 
-// playground to test various things
+// ADC monitoring task.
 void ADCMonitorTask(void *parameters)
 {
   // initialize to the current tick time
