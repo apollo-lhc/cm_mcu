@@ -26,9 +26,11 @@
 #include "MonitorTask.h"
 
 
-#define NFIREFLIES 8
-#define NPAGES_FF 2
-#define NCOMMANDS_FF 2
+#define NFIREFLIES_KU15P 11
+#define NFIREFLIES_VU7P 14
+#define NFIREFLIES (NFIREFLIES_KU15P+NFIREFLIES_VU7P)
+#define NPAGES_FF 1
+#define NCOMMANDS_FF 1
 
 // local prototype
 void Print(const char* str);
@@ -41,21 +43,42 @@ void Print(const char* str);
 # define DPRINT(x)
 #endif // DEBUG_FIF
 
-
-
-// Beware: you need to update NCOMMANDS_FF if you change
-// the number of entries in this array.
-struct pm_list pm_command_ff[] = {
-  { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
-  { 0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11 },
-  { 0x88, 2, "READ_VIN", "V", PM_LINEAR11 },
-  { 0x8B, 2, "READ_VOUT", "V", PM_LINEAR16U },
-  { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 },
-  //{ 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
-  { 0x79, 2, "STATUS_WORD", "", PM_STATUS },
-  //{ 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
-  { 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
+struct ff_i2c_addr_t {
+  char *name;
+  uint8_t mux_addr; // I2C address of the Mux
+  uint8_t mux_bit;  // port of the mux; write value 0x1U<<mux_bit to the mux register
+  uint8_t dev_addr; // I2C address of device. Either 0x50 or 0x54
 };
+
+struct ff_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
+    {"K01 12 Tx GTH", 0x70, 0, 0x54},
+    {"K01 12 Rx GTH", 0x70, 1, 0x50},
+    {"K02 12 Tx GTH", 0x70, 2, 0x54},
+    {"K02 12 Rx GTH", 0x70, 3, 0x50},
+    {"K03 12 Tx GTH", 0x70, 4, 0x54},
+    {"K03 12 Rx GTH", 0x70, 5, 0x50},
+    {"K04  4 Tx/Rx GTY", 0x71, 0, 0x50},
+    {"K05  4 Tx/Rx GTY", 0x71, 1, 0x50},
+    {"K06  4 Tx/Rx GTY", 0x71, 2, 0x50},
+    {"K07 12 Tx GTY", 0x71, 3, 0x54},
+    {"K07 12 Rx GTY", 0x71, 4, 0x50},
+  {"V01 4 Tx/Rx GTY",     0x70, 0,     0x50},
+  {"V02 4 Tx/Rx GTY",     0x70, 1,     0x50},
+  {"V03 4 Tx/Rx GTY",     0x70, 2,     0x50},
+  {"V04 4 Tx/Rx GTY",     0x70, 3,     0x50},
+  {"V05 4 Tx/Rx GTY",     0x70, 4,     0x50},
+  {"V06 4 Tx/Rx GTY",     0x70, 5,     0x50},
+  {"V07 4 Tx/Rx GTY",     0x71, 0,     0x50},
+  {"V08 4 Tx/Rx GTY",     0x71, 1,     0x50},
+  {"V09 4 Tx/Rx GTY",     0x71, 2,     0x50},
+  {"V10 4 Tx/Rx GTY",    0x71, 3,     0x50},
+  {"V11 12 Tx GTY",     0x70, 6,     0x54},
+  {"V11 12 Rx GTY",     0x70, 7,     0x50},
+  {"V12 12 Tx GTY",     0x71, 4,     0x54},
+  {"V12 12 Rx GTY",     0x71, 5,     0x50},
+};
+
+#define FF_TEMP_COMMAND_REG 0x16 // 8 bit 2's complement int, valid from 0-80 C, LSB is 1 deg C
 
 // I2C for VU7P optics
 extern tSMBus g_sMaster3;
@@ -64,28 +87,40 @@ extern tSMBusStatus eStatus3 ;
 extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4 ;
 
-// pointers to controller info for the I2C masters
-static tSMBus      *masters[2] = {g_sMaster3, g_sMaster4};
-static tSMBusStatus *status[2] = {eStatus3,   eStatus4};
 
-float pm_values[NFIREFLIES*NPAGES_FF*NCOMMANDS_FF];
-static float pm_values_max[NFIREFLIES*NPAGES_FF*NCOMMANDS_FF];
-static float pm_values_min[NFIREFLIES*NPAGES_FF*NCOMMANDS_FF];
+static int8_t ff_temp[NFIREFLIES*NPAGES_FF*NCOMMANDS_FF];
+static int8_t ff_temp_max[NFIREFLIES*NPAGES_FF*NCOMMANDS_FF];
+static int8_t ff_temp_min[NFIREFLIES*NPAGES_FF*NCOMMANDS_FF];
 
 static
 void update_max() {
-  for (int i = 0; i < NFIREFLIES*NPAGES_FF*NCOMMANDS_FF; ++i ) {
-    if ( pm_values_max[i] < pm_values[i])
-      pm_values_max[i] = pm_values[i];
+  for (uint8_t i = 0; i < NFIREFLIES*NPAGES_FF*NCOMMANDS_FF; ++i ) {
+    if ( ff_temp_max[i] < ff_temp[i])
+      ff_temp_max[i] = ff_temp[i];
   }
 }
 static
 void update_min() {
-  for (int i = 0; i < NFIREFLIES*NPAGES_FF*NCOMMANDS_FF; ++i ) {
-    if ( pm_values_min[i] > pm_values[i])
-      pm_values_min[i] = pm_values[i];
+  for (uint8_t i = 0; i < NFIREFLIES*NPAGES_FF*NCOMMANDS_FF; ++i ) {
+    if ( ff_temp_min[i] > ff_temp[i])
+      ff_temp_min[i] = ff_temp[i];
   }
 }
+
+// read-only accessor functions for Firefly names and values.
+
+const char* getFFname(const uint8_t i)
+{
+  configASSERT(i>=0&&i<NFIREFLIES);
+  return ff_i2c_addrs[i].name;
+}
+
+int8_t getFFvalue(const uint8_t i)
+{
+  configASSERT(i>=0&&i<NFIREFLIES);
+  return ff_temp[i];
+}
+
 
 // FireFly temperatures, voltages, currents, via I2C/PMBUS
 void FireFlyTask(void *parameters)
@@ -94,28 +129,35 @@ void FireFlyTask(void *parameters)
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint8_t data[2];
 
-  for ( int i = 0; i < NFIREFLIES*NPAGES_FF*NCOMMANDS_FF; ++i ) {
-    pm_values_max[i] = -99;
-    pm_values_min[i] = +99;
+  for ( uint8_t i = 0; i < NFIREFLIES*NPAGES_FF*NCOMMANDS_FF; ++i ) {
+    ff_temp_max[i] = -99;
+    ff_temp_min[i] = +99;
   }
 
   vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
 
 
-  const uint8_t addrs[NFIREFLIES] = { 0x40, 0x44, 0x43, 0x46, 0x45};
-  //const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
-  tSMBus *smbus = masters[0];
-  tSMBusStatus *p_status = status[0];
+
 
   for (;;) {
-    // loop over power supplies attached to the MUX
+    tSMBus *smbus;
+    tSMBusStatus *p_status;
+
+    // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
+      if ( ff < NFIREFLIES_KU15P ) {
+        smbus = &g_sMaster4; p_status = &eStatus4;
+      }
+      else {
+        smbus = &g_sMaster3; p_status = &eStatus3;
+      }
+
       char tmp[64];
       // select the appropriate output for the mux
-      data[0] = 0x1U<<ff;
+      data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
       snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\n", data[0]);
       DPRINT(tmp);
-      tSMBusStatus r = SMBusMasterI2CWrite(smbus, 0x70U, data, 1);
+      tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
       if ( r != SMBUS_OK ) {
         Print("FIF: I2CBus command failed  (setting mux)\n");
         continue;
@@ -129,8 +171,9 @@ void FireFlyTask(void *parameters)
         break;
       }
 
+#ifdef DEBUG_FIF
       data[0] = 0xAAU;
-      r = SMBusMasterI2CRead(smbus, 0x70U, data, 1);
+      r = SMBusMasterI2CRead(smbus, ff_i2c_addrs[index].mux_addr, data, 1);
       if ( r != SMBUS_OK ) {
         Print("FIF: Read of MUX output failed\n");
       }
@@ -138,7 +181,7 @@ void FireFlyTask(void *parameters)
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *p_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "FIF: Mux reading error %d, break out of loop (ps=%d) ...\n", *p_status, ff);
+        snprintf(tmp, 64, "FIF: Mux read error %d, break out of loop (ps=%d) ...\n", *p_status, index);
         Print(tmp);
         break;
       }
@@ -146,82 +189,45 @@ void FireFlyTask(void *parameters)
         snprintf(tmp, 64, "FIF: read back register on mux to be %02x\n", data[0]);
         DPRINT(tmp);
       }
-      // loop over pages on the supply
-      for ( uint8_t page = 0; page < NPAGES_FF; ++page ) {
-#define PAGE_COMMAND 0x0
-        r = SMBusMasterByteWordWrite(smbus, addrs[ff], PAGE_COMMAND,
-            &page, 1);
+#endif // DEBUG_FIF      
+
+      // loop over commands. Currently just one command.
+      for (int c = 0; c < NCOMMANDS_FF; ++c ) {
+
+        data[0] = 0x0U; data[1] = 0x0U;
+        r = SMBusMasterI2CRead(smbus, ff_i2c_addrs[ff].dev_addr, data, 1);
+
         if ( r != SMBUS_OK ) {
-          Print("SMBUS command failed  (setting page)\n");
+          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\n", __func__, ff,c);
+          Print(tmp);
+          continue; // abort reading this register
         }
         while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
         }
-        // this is checking the return from the interrupt
-        if (*p_status != SMBUS_OK ) {
-          snprintf(tmp, 64, "FIF: Page SMBUS ERROR: %d\n", *p_status);
+        if ( *p_status != SMBUS_OK ) {
+          snprintf(tmp, 64, "FIF: %s: Error %d, break out of loop (ps=%d,c=%d) ...\n", __func__, *p_status, ff,c);
           Print(tmp);
+          break;
         }
-        snprintf(tmp, 64, "\t\tFIF: Page %d\n", page);
+#ifdef DEBUG_FIF
+        snprintf(tmp, 64, "FIF: %d %s is 0x%02x\n", index, ff_i2c_addrs[index].name, data[0]);
         DPRINT(tmp);
+#endif // DEBUG_FIF
+        typedef union {
+           uint8_t us;
+           int8_t s;
+         } convert_8_t;
+        convert_8_t tmp; tmp.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_temp[ff] = tmp.s;
 
-        // loop over commands
-        for (int c = 0; c < NCOMMANDS_FF; ++c ) {
 
-          data[0] = 0x0U; data[1] = 0x0U;
-          r = SMBusMasterByteWordRead(smbus, addrs[ff], pm_command_ff[c].command,
-              data, pm_command_ff[c].size);
-          if ( r != SMBUS_OK ) {
-            snprintf(tmp, 64, "FIF: SMBUS COMMAND failed (master or busy busy, (ps=%d,c=%d,p=%d)\n", ff,c,page);
-            Print(tmp);
-            continue; // abort reading this register
-          }
-          while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-            vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
-          }
-          if (*p_status != SMBUS_OK ) {
-            snprintf(tmp, 64, "FIF: SMBUS ERROR: %d\n", *p_status);
-            DPRINT(tmp);
-          }
-          if ( *p_status != SMBUS_OK ) {
-            snprintf(tmp, 64, "Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\n", *p_status, ff,c,page);
-        	  Print(tmp);
-        	  break;
-          }
-          snprintf(tmp, 64, "FIF: %d %s is 0x%02x %02x\n", ff, pm_command_ff[c].name, data[1], data[0]);
-          DPRINT(tmp);
-          float val;
-          if ( pm_command_ff[c].type == PM_LINEAR11 ) {
-            linear11_val_t ii; ii.raw = (data[1] << 8) | data[0];
-            val = linear11_to_float(ii);
-            int tens = val;
-            int fraction = ABS((val - tens)*100.0);
-            snprintf(tmp, 64, "\t\t%d.%02d (linear11)\n", tens, fraction);
-            DPRINT(tmp);
-          }
-          else if ( pm_command_ff[c].type == PM_LINEAR16U ) {
-            uint16_t ii = (data[1] << 8) | data[0];
-            val = linear16u_to_float(ii);
-            int tens = val;
-            int fraction = ABS((val - tens)*100.0);
-            snprintf(tmp, 64,  "\t\t%d.%02d (linear16u)\n", tens, fraction);
-            DPRINT(tmp);
-          }
-          else if ( pm_command_ff[c].type == PM_STATUS ) {
-            val = (float)((data[1] << 8) | data[0]); // ugly is my middle name
-          }
-          else {
-            val = -99.0; // should never get here
-          }
-          int index = ff*(NCOMMANDS_FF*NPAGES_FF)+page*NCOMMANDS_FF+c;
-          pm_values[index] = val;
-          // wait here for the x msec, where x is 2nd argument below.
-          vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ) );
-        } // loop over commands
-      } // loop over pages
-    } // loop over power supplies
+        // wait here for the x msec, where x is 2nd argument below.
+        vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ) );
+      } // loop over commands
+    } // loop over firefly modules
     update_max(); update_min();
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
-  } // infinite loop
+  } // infinite loop for task
 
 }
