@@ -44,7 +44,7 @@ void PowerSupplyTask(void *parameters)
   // turn on the power supply at the start of the task, if the power enable is sent by the
   // zynq
   if ( read_gpio_pin(BLADE_POWER_EN) == 1 )
-    set_ps(true,true,true) ;
+    set_ps() ;
 
   // this function never returns
   for ( ;; ) {
@@ -58,7 +58,7 @@ void PowerSupplyTask(void *parameters)
         //desiredState= PWR_OFF;
         break;
       case PS_ON:
-        set_ps(true,true,true);
+        set_ps();
         //desiredState = PWR_ON;
         break;
       default:
@@ -66,15 +66,34 @@ void PowerSupplyTask(void *parameters)
         break;
       }
     }
+    enum ps_state newstate;
+    // Check the state of BLADE_POWER_EN. The MCU will
+    // run the disable command even if the power was already
+    // off, just to be sure. check_ps() above can return PWR_OFF
+    // even if some supplies are still on (it really is checking if _all__
+    // expected supplies are good.)
+    // Eventually this will be replaced by a message from an interrupt handler.
+    bool blade_power_enable = (read_gpio_pin(BLADE_POWER_EN) == 1);
+    if ( ! blade_power_enable  ) {
+      disable_ps();
+      newstate = PWR_OFF;
+    }
+    else { // blade_power_enable
+      set_ps();
+      newstate = PWR_ON;
+    }
     // now check the actual state
     bool psgood = check_ps();
-    enum ps_state newstate = psgood?PWR_ON:PWR_OFF;
+    newstate = psgood?PWR_ON:PWR_OFF;
+
 
     if ( newstate == PWR_OFF  && oldState != PWR_OFF) {
       Print("\nPowerSupplyTask: power supplies turned off.\n");
+      if ( ! blade_power_enable )
+        Print("\nPowerSupplyTask: PWR_EN removed by SM\n");
       message = PS_BAD;
     }
-    else { // all good
+    else { // either the PS is now good or there was no change.
       message = PS_GOOD;
     }
     // only send a message on state change.

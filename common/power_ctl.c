@@ -94,10 +94,20 @@ void setPSStatus(int i, enum ps_state theState)
 
 //
 // check the power supplies and turn them on one by one
-//
-bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
+// Assert BLADE_POWER_OK if you are successful.
+// Return immediately if BLADE_POWER_EN is not asserted by the SM.
+bool set_ps()
 {
   bool success = true; // return value
+
+  // if blade_power_en is false, return with failure
+  bool blade_power_en = (read_gpio_pin(BLADE_POWER_EN)==1);
+  if ( ! blade_power_en ) {
+    write_gpio_pin(BLADE_POWER_OK, 0x0);
+    success = false;
+    return success;
+  }
+
   // read two dip switches to see if we are powering either or both FPGAs
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
@@ -171,7 +181,8 @@ bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2)
 // true if all supplies it expects to be good, are good. That means that if one
 // supply is disabled then it will not check it and return 'good' even if the
 // supply is not good (in fact it will not be checked.)
-
+//
+// BLADE_POWER_OK will be asserted if this function returns successfully
 bool
 check_ps(void)
 {
@@ -226,10 +237,16 @@ check_ps(void)
       }
     }
   } // loop over priorities
+  if ( success )
+    write_gpio_pin(BLADE_POWER_OK, 0x1);
+  else
+    write_gpio_pin(BLADE_POWER_OK, 0x0);
 
   return success;
 }
 
+// turn off all power supplies in the proper order
+// de-assert BLADE_POWER_OK on successful exit.
 bool
 disable_ps(void)
 {
@@ -257,6 +274,12 @@ disable_ps(void)
     }
     lowest_enabled_ps_prio = prio;
   } // loop over priorities
+
+  // turn off POWER_OK when we are done
+  if ( success )
+    write_gpio_pin(BLADE_POWER_OK, 0x0);
+  else
+    write_gpio_pin(BLADE_POWER_OK, 0x1);
   return success;
 }
 

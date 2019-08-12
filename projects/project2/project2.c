@@ -98,7 +98,6 @@ StreamBufferHandle_t xUARTStreamBuffer;
 
 void UART1IntHandler( void )
 {
-  // TODO: figure out which UART caused the interrupt -- can I do this?
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   //
   // Get the interrupt status.
@@ -140,7 +139,6 @@ void UART1IntHandler( void )
 
 void UART4IntHandler( void )
 {
-  // TODO: figure out which UART caused the interrupt -- can I do this?
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   //
   // Get the interrupt status.
@@ -308,20 +306,10 @@ void SystemInit()
   PinoutSet();
 
 
-  // Set up the CLI
-#if (CLI_UART == UART4_BASE) // front panel
-  UART4Init(g_ui32SysClock);
-#elif (CLI_UART == UART1_BASE) // zynq
-  UART1Init(g_ui32SysClock);
-#else 
-#error "CLI UART not initialized"
-#endif
-  initI2C1(g_ui32SysClock); // controller for power supplies
-  initI2C2(g_ui32SysClock); // controller for clocks
-  initI2C3(g_ui32SysClock); // controller for V optics
-  initI2C6(g_ui32SysClock); // controller for FPGAs
-  initI2C4(g_ui32SysClock); // controller for K optics
-  
+  // Set up the UARTs for the CLI
+  UART1Init(g_ui32SysClock); // ZYNQ UART
+  UART4Init(g_ui32SysClock); // front panel UART
+
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
@@ -340,6 +328,13 @@ void SystemInit()
   ROM_IntEnable(INT_ADC0SS1);
   ROM_IntEnable(INT_ADC1SS0);
 
+  // Set up the I2C controllers
+  initI2C1(g_ui32SysClock); // controller for power supplies
+  initI2C2(g_ui32SysClock); // controller for clocks
+  initI2C3(g_ui32SysClock); // controller for V optics
+  initI2C4(g_ui32SysClock); // controller for K optics
+  initI2C6(g_ui32SysClock); // controller for FPGAs
+
   //smbus
   // Initialize the master SMBus port.
   //
@@ -348,7 +343,6 @@ void SystemInit()
   SMBusMasterInit(&g_sMaster3, I2C3_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster6, I2C6_BASE, g_ui32SysClock);
-  //SMBusPECEnable(&g_sMaster);
 
   // FreeRTOS insists that the priority of interrupts be set up like this.
   ROM_IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
