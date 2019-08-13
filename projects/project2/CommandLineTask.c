@@ -469,6 +469,22 @@ static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+const char* getFFname(const uint8_t i);
+int8_t getFFvalue(const uint8_t i);
+
+
+// this command takes no arguments
+static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  copied += snprintf(m+copied, s-copied, "FF temperatures\n");
+  for ( int i = 0; i < 25; ++i ) {
+    uint8_t val = getFFvalue(i);
+    copied += snprintf(m+copied, s-copied, "%14s: %02d\n", getFFname(i), val);
+
+  }
+  return pdFALSE;
+}
 
 
 static
@@ -697,6 +713,13 @@ CLI_Command_Definition_t task_command = {
     2
 };
 
+static
+CLI_Command_Definition_t ff_command = {
+    .pcCommand="ff",
+    .pcHelpString="ff\n Displays a table showing the state of FF modules.\r\n",
+    .pxCommandInterpreter = ff_ctl,
+    0
+};
 
 extern StreamBufferHandle_t xUARTStreamBuffer;
 
@@ -711,6 +734,7 @@ void vCommandLineTask( void *pvParameters )
 
   // register the commands
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
+  FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
@@ -720,8 +744,8 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
-  FreeRTOS_CLIRegisterCommand(&adc_command  );
-  FreeRTOS_CLIRegisterCommand(&task_command  );
+  FreeRTOS_CLIRegisterCommand(&adc_command      );
+  FreeRTOS_CLIRegisterCommand(&ff_command       );
 
 
 
