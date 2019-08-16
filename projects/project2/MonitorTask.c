@@ -186,7 +186,7 @@ void MonitorTask(void *parameters)
           r = SMBusMasterByteWordRead(&g_sMaster1, addrs[ps], pm_command_dcdc[c].command,
               data, pm_command_dcdc[c].size);
           if ( r != SMBUS_OK ) {
-            snprintf(tmp, 64, "MON: SMBUS COMMAND failed (master or busy busy, (ps=%d,c=%d,p=%d)\n", ps,c,page);
+            snprintf(tmp, 64, "MON: SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\n", ps,c,page);
             Print(tmp);
             continue; // abort reading this register
           }
