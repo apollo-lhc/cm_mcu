@@ -181,7 +181,7 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
   snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", nbytes, address, reg_address);
-  Print(m);
+  DPRINT(m);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
   if (r != SMBUS_OK) {
@@ -426,18 +426,18 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i1 = strtol(p1, NULL, 10);
 
-  if ( i1 < 0 || i1 >= NCOMMANDS ) {
+  if ( i1 < 0 || i1 >= NCOMMANDS_PS ) {
     snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\n", __func__,
-        NCOMMANDS-1);
+        NCOMMANDS_PS-1);
     return pdFALSE;
   }
 
   int copied = 0;
   copied += snprintf(m+copied, s-copied, "%s\n", pm_command_dcdc[i1].name);
-  for (int ps = 0; ps < NSUPPLIES; ++ps) {
+  for (int ps = 0; ps < NSUPPLIES_PS; ++ps) {
     copied += snprintf(m+copied, s-copied, "SUPPLY %d\n", ps);
-    for (int page = 0; page < NPAGES; ++page ) {
-      float val = pm_values[ps*(NCOMMANDS*NPAGES)+page*NCOMMANDS+i1];
+    for (int page = 0; page < NPAGES_PS; ++page ) {
+      float val = pm_values[ps*(NCOMMANDS_PS*NPAGES_PS)+page*NCOMMANDS_PS+i1];
       int tens = val;
       int frac = ABS((val - tens)*100.0);
 
@@ -458,17 +458,56 @@ float getADCvalue(const int i);
 static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  copied += snprintf(m+copied, s-copied, "ADC outputs\n");
-  for ( int i = 0; i < 21; ++i ) {
-    float val = getADCvalue(i);
+  static int whichadc = 0;
+  if ( whichadc == 0 ) {
+    copied += snprintf(m+copied, s-copied, "ADC outputs\n");
+  }
+  for ( ; whichadc < 21; ++whichadc ) {
+    float val = getADCvalue(whichadc);
     int tens = val;
     int frac = ABS((val-tens)*100.);
-    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\n", getADCname(i), tens, frac);
-
+    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\n", getADCname(whichadc), tens, frac);
+    if ( (s-copied) < 20 ) {
+      ++whichadc;
+      return pdTRUE;
+    }
   }
+  whichadc = 0;
   return pdFALSE;
 }
 
+const char* getFFname(const uint8_t i);
+int8_t getFFvalue(const uint8_t i);
+
+
+// this command takes no arguments
+static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  static int whichff = 0;
+  if ( whichff == 0 ) {
+    copied += snprintf(m+copied, s-copied, "FF temperatures\n");
+  }
+  for ( ; whichff < 25; ++whichff ) {
+    int8_t val = getFFvalue(whichff);
+    copied += snprintf(m+copied, s-copied, "%17s: %3d", getFFname(whichff), val);
+    if ( whichff%2 == 1 )
+      copied += snprintf(m+copied, s-copied, "\n");
+    else
+      copied += snprintf(m+copied, s-copied, "\t");
+    if ( (s-copied ) < 20 ) {
+      ++whichff;
+      return pdTRUE;
+    }
+
+  }
+  if ( whichff%2 ==1 ) {
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichff = 0;
+  return pdFALSE;
+}
 
 
 static
@@ -697,6 +736,13 @@ CLI_Command_Definition_t task_command = {
     2
 };
 
+static
+CLI_Command_Definition_t ff_command = {
+    .pcCommand="ff",
+    .pcHelpString="ff\n Displays a table showing the state of FF modules.\r\n",
+    .pxCommandInterpreter = ff_ctl,
+    0
+};
 
 extern StreamBufferHandle_t xUARTStreamBuffer;
 
@@ -711,6 +757,7 @@ void vCommandLineTask( void *pvParameters )
 
   // register the commands
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
+  FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
@@ -720,8 +767,8 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
-  FreeRTOS_CLIRegisterCommand(&adc_command  );
-  FreeRTOS_CLIRegisterCommand(&task_command  );
+  FreeRTOS_CLIRegisterCommand(&adc_command      );
+  FreeRTOS_CLIRegisterCommand(&ff_command       );
 
 
 
