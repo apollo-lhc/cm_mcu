@@ -458,14 +458,21 @@ float getADCvalue(const int i);
 static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  copied += snprintf(m+copied, s-copied, "ADC outputs\n");
-  for ( int i = 0; i < 21; ++i ) {
-    float val = getADCvalue(i);
+  static int whichadc = 0;
+  if ( whichadc == 0 ) {
+    copied += snprintf(m+copied, s-copied, "ADC outputs\n");
+  }
+  for ( ; whichadc < 21; ++whichadc ) {
+    float val = getADCvalue(whichadc);
     int tens = val;
     int frac = ABS((val-tens)*100.);
-    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\n", getADCname(i), tens, frac);
-
+    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\n", getADCname(whichadc), tens, frac);
+    if ( (s-copied) < 20 ) {
+      ++whichadc;
+      return pdTRUE;
+    }
   }
+  whichadc = 0;
   return pdFALSE;
 }
 
@@ -477,12 +484,28 @@ int8_t getFFvalue(const uint8_t i);
 static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  copied += snprintf(m+copied, s-copied, "FF temperatures\n");
-  for ( int i = 0; i < 25; ++i ) {
-    uint8_t val = getFFvalue(i);
-    copied += snprintf(m+copied, s-copied, "%14s: %02d\n", getFFname(i), val);
+  static int whichff = 0;
+  if ( whichff == 0 ) {
+    copied += snprintf(m+copied, s-copied, "FF temperatures\n");
+  }
+  for ( ; whichff < 25; ++whichff ) {
+    int8_t val = getFFvalue(whichff);
+    copied += snprintf(m+copied, s-copied, "%17s: %3d", getFFname(whichff), val);
+    if ( whichff%2 == 1 )
+      copied += snprintf(m+copied, s-copied, "\n");
+    else
+      copied += snprintf(m+copied, s-copied, "\t");
+    if ( (s-copied ) < 20 ) {
+      ++whichff;
+      return pdTRUE;
+    }
 
   }
+  if ( whichff%2 ==1 ) {
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichff = 0;
   return pdFALSE;
 }
 

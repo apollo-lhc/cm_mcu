@@ -132,6 +132,7 @@ void FireFlyTask(void *parameters)
   for ( uint8_t i = 0; i < NFIREFLIES*NPAGES_FF*NCOMMANDS_FF; ++i ) {
     ff_temp_max[i] = -99;
     ff_temp_min[i] = +99;
+    ff_temp    [i] = -55;
   }
 
   vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
@@ -195,11 +196,12 @@ void FireFlyTask(void *parameters)
       for (int c = 0; c < NCOMMANDS_FF; ++c ) {
 
         data[0] = 0x0U; data[1] = 0x0U;
-        r = SMBusMasterI2CRead(smbus, ff_i2c_addrs[ff].dev_addr, data, 1);
+        uint8_t reg_addr = FF_TEMP_COMMAND_REG;
+        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
         if ( r != SMBUS_OK ) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\n", __func__, ff,c);
-          Print(tmp);
+          DPRINT(tmp);
           continue; // abort reading this register
         }
         while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
@@ -207,7 +209,7 @@ void FireFlyTask(void *parameters)
         }
         if ( *p_status != SMBUS_OK ) {
           snprintf(tmp, 64, "FIF: %s: Error %d, break out of loop (ps=%d,c=%d) ...\n", __func__, *p_status, ff,c);
-          Print(tmp);
+          DPRINT(tmp);
           break;
         }
 #ifdef DEBUG_FIF
