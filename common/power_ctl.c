@@ -111,9 +111,6 @@ bool set_ps()
     return success;
   }
 
-  // read two dip switches to see if we are powering either or both FPGAs
-  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
 
   // data structure to turn on various power supplies. This should be ordered
   // such that the priority increases, though it's not necessary
