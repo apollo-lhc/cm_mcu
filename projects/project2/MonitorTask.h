@@ -23,9 +23,9 @@ struct pm_list {
   int type;
 };
 
-#define NSUPPLIES (5) // 5 devices, 2 pages each
-#define NCOMMANDS 7 // number of entries in above array
-#define NPAGES    2 // number of pages on the power supplies.
+#define NSUPPLIES_PS (5) // 5 devices, 2 pages each
+#define NCOMMANDS_PS 7 // number of entries in above array
+#define NPAGES_PS    2 // number of pages on the power supplies.
 
 extern struct pm_list pm_command_dcdc[];
 

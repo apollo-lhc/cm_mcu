@@ -391,6 +391,9 @@ extern QueueHandle_t xPwrQueue;
 void PowerSupplyTask(void *parameters);
 void MonitorTask(void *parameters);
 
+// firefly monitoring
+void FireFlyTask(void *parameters);
+
 // Command line interface
 void vCommandLineTask(void *parameters);
 
@@ -409,12 +412,12 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-static struct TaskNamePair_t TaskNamePairs[5];
+static struct TaskNamePair_t TaskNamePairs[6];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
 {
   *t = NULL;
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 6; ++i) {
     if ( strncmp(key, TaskNamePairs[i].key,3) == 0)
       *t = TaskNamePairs[i].value;
   }
@@ -441,12 +444,14 @@ int main( void )
   xTaskCreate(vCommandLineTask,"CON", 512,                      NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
   xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[3].value);
   xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
+  xTaskCreate(FireFlyTask,     "FLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
   snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CON");
   snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"ADC");
   snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"MON");
+  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"FLY");
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.

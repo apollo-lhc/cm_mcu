@@ -99,6 +99,9 @@ void setPSStatus(int i, enum ps_state theState)
 bool set_ps()
 {
   bool success = true; // return value
+  // read two dip switches to see if we are powering either or both FPGAs
+  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
 
   // if blade_power_en is false, return with failure
   bool blade_power_en = (read_gpio_pin(BLADE_POWER_EN)==1);
