@@ -23,7 +23,7 @@
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
-#include "common/version.h"
+//#include "common/version.h"
 #include "common/smbus.h"
 
 // TI Includes
@@ -469,9 +469,9 @@ int main( void )
   // call some FreeRTOS tasks that need to be set up first.
   SystemInit();
 
-
-  Print("\n----------------------------\n\r");
+  Print("\n\r----------------------------\n\r");
   Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n\r");
+  Print("Built at " __TIME__"," __DATE__ "\n\r");
   Print(  "----------------------------\n\r");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();

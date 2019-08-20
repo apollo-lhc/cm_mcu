@@ -39,7 +39,6 @@ void PowerSupplyTask(void *parameters)
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
   enum ps_state oldState = UNKNOWN;
-  //enum state desiredState = PWR_ON; // start with power-on right away
 
   // turn on the power supply at the start of the task, if the power enable is sent by the
   // zynq
@@ -55,11 +54,9 @@ void PowerSupplyTask(void *parameters)
       switch (message ) {
       case PS_OFF:
         disable_ps();
-        //desiredState= PWR_OFF;
         break;
       case PS_ON:
         set_ps();
-        //desiredState = PWR_ON;
         break;
       default:
         toggle_gpio_pin(TM4C_LED_RED); // message I don't understand? Toggle red LED
