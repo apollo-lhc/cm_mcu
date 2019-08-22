@@ -23,8 +23,8 @@
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
-//#include "common/version.h"
 #include "common/smbus.h"
+#include "CommandLineTask.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -94,7 +94,7 @@ void Print(const char* str)
 
 // Alternate UART signal handler
 /* A stream buffer that has already been created. */
-StreamBufferHandle_t xUARTStreamBuffer;
+StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
 
 void UART1IntHandler( void )
 {
@@ -119,12 +119,12 @@ void UART1IntHandler( void )
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART1_BASE);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
     if ( ++received == 8 ) {
-      xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
     }
   }
   if ( received )
-    xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+    xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
     xStreamBufferReceiveFromISR() then a task that has a priority above the
@@ -160,12 +160,12 @@ void UART4IntHandler( void )
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
     if ( ++received == 8 ) {
-      xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
     }
   }
   if ( received )
-    xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+    xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
     xStreamBufferReceiveFromISR() then a task that has a priority above the
@@ -394,8 +394,6 @@ void MonitorTask(void *parameters);
 // firefly monitoring
 void FireFlyTask(void *parameters);
 
-// Command line interface
-void vCommandLineTask(void *parameters);
 
 
 // Monitoring using the ADC inputs
@@ -431,24 +429,28 @@ int main( void )
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
 
-  //  Create the stream buffer that sends data from the interrupt to the
+  //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
-  // todo: handle sending more than one byte at a time, if needed
-  xUARTStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
+  // There are two buffers for the two CLIs (front panel and Zynq)
+  xUART4StreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
+                                           1);  // number of items before a trigger is sent
+  xUART1StreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
+  CommandLineArgs_t cli_uart1 = {.uart_base = UART1_BASE, .UartStreamBuffer = xUART1StreamBuffer}; (void)cli_uart1;
+  CommandLineArgs_t cli_uart4 = {.uart_base = UART4_BASE, .UartStreamBuffer = xUART4StreamBuffer};
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
-  xTaskCreate(vCommandLineTask,"CON", 512,                      NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
+  xTaskCreate(vCommandLineTask,"CL4", 512,         (void*)&cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
   xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[3].value);
   xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
   xTaskCreate(FireFlyTask,     "FLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
-  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CON");
+  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CL4");
   snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"ADC");
   snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"MON");
   snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"FLY");

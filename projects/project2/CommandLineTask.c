@@ -37,6 +37,8 @@
 
 #include "MonitorTask.h"
 
+#include "CommandLineTask.h"
+
 #ifdef DEBUG_CON
 // prototype of mutex'd print
 # define DPRINT(x) Print(x)
@@ -750,7 +752,6 @@ CLI_Command_Definition_t ff_command = {
     0
 };
 
-extern StreamBufferHandle_t xUARTStreamBuffer;
 
 
 void vCommandLineTask( void *pvParameters )
@@ -760,6 +761,11 @@ void vCommandLineTask( void *pvParameters )
   /* The input and output buffers are declared static to keep them off the stack. */
   static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH ];
 
+  configASSERT(pvParameters != 0);
+
+  CommandLineArgs_t *args = pvParameters;
+  StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
+  uint32_t uart_base = args->uart_base;
 
   // register the commands
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
@@ -785,8 +791,8 @@ void vCommandLineTask( void *pvParameters )
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
         Blocked state until a character is received. */
-    xStreamBufferReceive(xUARTStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
-    UARTCharPut(CLI_UART, cRxedChar); // TODO this should use the Mutex
+    xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
+    UARTCharPut(uart_base, cRxedChar); // TODO this should use the Mutex
 
     // TODO: on lnx231 the terminal _only_ sends a \r which I did not think was possible.
     // on some platforms (Mac) I think this will cause the command to be sent 2x.
