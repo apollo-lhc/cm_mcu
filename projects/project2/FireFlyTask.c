@@ -24,6 +24,7 @@
 #include "common/smbus.h"
 #include "common/smbus_units.h"
 #include "MonitorTask.h"
+#include "common/power_ctl.h"
 
 
 #define NFIREFLIES_KU15P 11
@@ -143,7 +144,7 @@ void FireFlyTask(void *parameters)
   for (;;) {
     tSMBus *smbus;
     tSMBusStatus *p_status;
-
+    bool good = false;
     // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
       if ( ff < NFIREFLIES_KU15P ) {
@@ -151,6 +152,17 @@ void FireFlyTask(void *parameters)
       }
       else {
         smbus = &g_sMaster3; p_status = &eStatus3;
+      }
+      if ( getPSStatus(5) != PWR_ON) {
+        if ( good ) {
+          Print("FIF: 3V3 died. Skipping I2C monitoring.\n");
+          good = false;
+        }
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
+        continue;
+      }
+      else {
+        good = true;
       }
 
       char tmp[64];

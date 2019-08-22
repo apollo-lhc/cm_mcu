@@ -147,7 +147,10 @@ bool set_ps()
             continue;
           // remember the VCC_ supplies
           all_good = false;
-          break;
+          states[o] = PWR_OFF;
+        }
+        else {
+          states[o] = PWR_ON;
         }
       }
     } // loop over 'ok' bits
@@ -268,6 +271,8 @@ disable_ps(void)
            if ( val == 1 ) {
              all_ready = false;
            }
+           else
+             states[o] = PWR_OFF;
          }
        } // loop over 'ok' bits
       if ( all_ready) ready_to_proceed = true;

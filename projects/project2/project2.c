@@ -410,7 +410,7 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-static struct TaskNamePair_t TaskNamePairs[6];
+static struct TaskNamePair_t TaskNamePairs[7];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
 {
@@ -421,6 +421,9 @@ void vGetTaskHandle( char *key, TaskHandle_t *t)
   }
   return ;
 }
+
+CommandLineArgs_t cli_uart1;
+CommandLineArgs_t cli_uart4;
 
 // 
 int main( void )
@@ -437,23 +440,25 @@ int main( void )
   xUART1StreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
-  CommandLineArgs_t cli_uart1 = {.uart_base = UART1_BASE, .UartStreamBuffer = xUART1StreamBuffer}; (void)cli_uart1;
-  CommandLineArgs_t cli_uart4 = {.uart_base = UART4_BASE, .UartStreamBuffer = xUART4StreamBuffer};
+  cli_uart1.uart_base = UART1_BASE; cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
+  cli_uart4.uart_base = UART4_BASE; cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
-  xTaskCreate(vCommandLineTask,"CL4", 512,         (void*)&cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
-  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[3].value);
-  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
-  xTaskCreate(FireFlyTask,     "FLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
+  xTaskCreate(vCommandLineTask,"CL1", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
+  xTaskCreate(vCommandLineTask,"CL4", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
+  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
+  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
+  xTaskCreate(FireFlyTask,     "FLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
-  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CL4");
-  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"ADC");
-  snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"MON");
-  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"FLY");
+  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CL1");
+  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"CL4");
+  snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"ADC");
+  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"MON");
+  snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FLY");
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
