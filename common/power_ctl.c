@@ -62,7 +62,7 @@ struct gpio_pin_t oks[] = {
   { V_MGTY1_AVCC_OK, 4},
   { V_MGTY2_AVCC_OK, 4},
   { K_MGTY_AVCC_OK,  4},
-  { K_MGTH_AVCC_OK,  4}, // this one is broken on S/N 001
+  { K_MGTH_AVCC_OK,  4},
   { K_MGTY_AVTT_OK,  5},
   { K_MGTH_AVTT_OK,  5},
   { V_MGTY1_AVTT_OK, 5},
