@@ -254,6 +254,12 @@ bool
 disable_ps(void)
 {
   bool success = true;
+
+  // first set the supplies to off to tell the
+  // other tasks to prepare
+  for ( int o = 0; o < N_PS_OKS; ++o )
+    states[o] = PWR_OFF;
+  ShortDelay();
   // disable in reverse order
   for (int prio = num_priorities; prio > 0;  --prio) {
     // disable the supplies at the relevant priority
@@ -270,9 +276,8 @@ disable_ps(void)
            int8_t val = read_gpio_pin(oks[o].name);
            if ( val == 1 ) {
              all_ready = false;
+             states[o] = UNKNOWN;
            }
-           else
-             states[o] = PWR_OFF;
          }
        } // loop over 'ok' bits
       if ( all_ready) ready_to_proceed = true;

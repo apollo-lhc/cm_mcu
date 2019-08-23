@@ -401,7 +401,7 @@ void ADCMonitorTask(void *parameters);
 
 void ShortDelay()
 {
-  vTaskDelay(pdMS_TO_TICKS(100));
+  vTaskDelay(pdMS_TO_TICKS(25));
 }
 
 
