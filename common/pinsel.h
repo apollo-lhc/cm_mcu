@@ -38,7 +38,7 @@ struct gpio_pin_t {
 #define  K_VCCINT_PG_B 60 // port, local_pin = K 6
 #define  K_VCCINT_PG_A 61 // port, local_pin = K 5
 #define  BLADE_POWER_OK 62 // port, local_pin = K 4
-#define  BLADE_ZYNQ_GPIO0 71 // port, local_pin = M 7
+#define  BLADE_POWER_EN 71 // port, local_pin = M 7
 #define  BLADE_ZYNQ_GPIO1 72 // port, local_pin = M 6
 #define  BLADE_ZYNQ_GPIO2 73 // port, local_pin = M 5
 #define  K_MGTH_AVTT_OK 74 // port, local_pin = M 4

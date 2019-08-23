@@ -23,8 +23,8 @@
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
-#include "common/version.h"
 #include "common/smbus.h"
+#include "CommandLineTask.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -94,38 +94,37 @@ void Print(const char* str)
 
 // Alternate UART signal handler
 /* A stream buffer that has already been created. */
-StreamBufferHandle_t xUARTStreamBuffer;
+StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
 
-void UARTIntHandler( void )
+void UART1IntHandler( void )
 {
-  // TODO: figure out which UART caused the interrupt -- can I do this?
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   //
   // Get the interrupt status.
   //
-  uint32_t ui32Status = ROM_UARTIntStatus(CLI_UART, true);
+  uint32_t ui32Status = ROM_UARTIntStatus(UART1_BASE, true);
 
   //
   // Clear the asserted interrupts.
   //
-  ROM_UARTIntClear(CLI_UART, ui32Status);
+  ROM_UARTIntClear(UART1_BASE, ui32Status);
 
   //
   // Loop while there are characters in the receive FIFO.
   //
   uint8_t bytes[8];
   int received = 0;
-  while(ROM_UARTCharsAvail(CLI_UART)) {
+  while(ROM_UARTCharsAvail(UART1_BASE)) {
 
-    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(CLI_UART);
+    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART1_BASE);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
     if ( ++received == 8 ) {
-      xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
     }
   }
   if ( received )
-    xStreamBufferSendFromISR(xUARTStreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+    xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
     xStreamBufferReceiveFromISR() then a task that has a priority above the
@@ -137,6 +136,48 @@ void UARTIntHandler( void )
     documentation for the port in use for port specific instructions. */
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
+
+void UART4IntHandler( void )
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  //
+  // Get the interrupt status.
+  //
+  uint32_t ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
+
+  //
+  // Clear the asserted interrupts.
+  //
+  ROM_UARTIntClear(UART4_BASE, ui32Status);
+
+  //
+  // Loop while there are characters in the receive FIFO.
+  //
+  uint8_t bytes[8];
+  int received = 0;
+  while(ROM_UARTCharsAvail(UART4_BASE)) {
+
+    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
+    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    if ( ++received == 8 ) {
+      xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      received = 0;
+    }
+  }
+  if ( received )
+    xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+
+  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
+    xStreamBufferReceiveFromISR() then a task that has a priority above the
+    priority of the currently executing task was unblocked and a context
+    switch should be performed to ensure the ISR returns to the unblocked
+    task.  In most FreeRTOS ports this is done by simply passing
+    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
+    variables value, and perform the context switch if necessary.  Check the
+    documentation for the port in use for port specific instructions. */
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
 
 #include "common/smbus.h"
 tSMBus g_sMaster1; // for I2C #1
@@ -265,20 +306,10 @@ void SystemInit()
   PinoutSet();
 
 
-  // Set up the CLI
-#if (CLI_UART == UART4_BASE) // front panel
-  UART4Init(g_ui32SysClock);
-#elif (CLI_UART == UART1_BASE) // zynq
-  UART1Init(g_ui32SysClock);
-#else 
-#error "CLI UART not initialized"
-#endif
-  initI2C1(g_ui32SysClock); // controller for power supplies
-  initI2C2(g_ui32SysClock); // controller for clocks
-  initI2C3(g_ui32SysClock); // controller for V optics
-  initI2C6(g_ui32SysClock); // controller for FPGAs
-  initI2C4(g_ui32SysClock); // controller for K optics
-  
+  // Set up the UARTs for the CLI
+  UART1Init(g_ui32SysClock); // ZYNQ UART
+  UART4Init(g_ui32SysClock); // front panel UART
+
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
@@ -297,6 +328,13 @@ void SystemInit()
   ROM_IntEnable(INT_ADC0SS1);
   ROM_IntEnable(INT_ADC1SS0);
 
+  // Set up the I2C controllers
+  initI2C1(g_ui32SysClock); // controller for power supplies
+  initI2C2(g_ui32SysClock); // controller for clocks
+  initI2C3(g_ui32SysClock); // controller for V optics
+  initI2C4(g_ui32SysClock); // controller for K optics
+  initI2C6(g_ui32SysClock); // controller for FPGAs
+
   //smbus
   // Initialize the master SMBus port.
   //
@@ -305,7 +343,6 @@ void SystemInit()
   SMBusMasterInit(&g_sMaster3, I2C3_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster6, I2C6_BASE, g_ui32SysClock);
-  //SMBusPECEnable(&g_sMaster);
 
   // FreeRTOS insists that the priority of interrupts be set up like this.
   ROM_IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
@@ -357,8 +394,6 @@ void MonitorTask(void *parameters);
 // firefly monitoring
 void FireFlyTask(void *parameters);
 
-// Command line interface
-void vCommandLineTask(void *parameters);
 
 
 // Monitoring using the ADC inputs
@@ -366,7 +401,7 @@ void ADCMonitorTask(void *parameters);
 
 void ShortDelay()
 {
-  vTaskDelay(pdMS_TO_TICKS(100));
+  vTaskDelay(pdMS_TO_TICKS(25));
 }
 
 
@@ -375,7 +410,7 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-static struct TaskNamePair_t TaskNamePairs[6];
+static struct TaskNamePair_t TaskNamePairs[7];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
 {
@@ -387,6 +422,9 @@ void vGetTaskHandle( char *key, TaskHandle_t *t)
   return ;
 }
 
+CommandLineArgs_t cli_uart1;
+CommandLineArgs_t cli_uart4;
+
 // 
 int main( void )
 {
@@ -394,27 +432,33 @@ int main( void )
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
 
-  //  Create the stream buffer that sends data from the interrupt to the
+  //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
-  // todo: handle sending more than one byte at a time, if needed
-  xUARTStreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
+  // There are two buffers for the two CLIs (front panel and Zynq)
+  xUART4StreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
+                                           1);  // number of items before a trigger is sent
+  xUART1StreamBuffer = xStreamBufferCreate( 128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
+  cli_uart1.uart_base = UART1_BASE; cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
+  cli_uart4.uart_base = UART4_BASE; cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
-  xTaskCreate(vCommandLineTask,"CON", 512,                      NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
-  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[3].value);
-  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
-  xTaskCreate(FireFlyTask,     "FLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
+  xTaskCreate(vCommandLineTask,"CL1", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
+  xTaskCreate(vCommandLineTask,"CL4", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
+  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
+  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
+  xTaskCreate(FireFlyTask,     "FLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
-  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CON");
-  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"ADC");
-  snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"MON");
-  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"FLY");
+  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CL1");
+  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"CL4");
+  snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"ADC");
+  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"MON");
+  snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FLY");
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
@@ -432,9 +476,9 @@ int main( void )
   // call some FreeRTOS tasks that need to be set up first.
   SystemInit();
 
-
-  Print("\n----------------------------\n\r");
+  Print("\n\r----------------------------\n\r");
   Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n\r");
+  Print("Built at " __TIME__"," __DATE__ "\n\r");
   Print(  "----------------------------\n\r");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();

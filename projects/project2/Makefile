@@ -48,6 +48,12 @@ IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 IPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
 
+# GIT 
+GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
+
+CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
+
+
 #
 # The default rule, which causes the project to be built.
 #

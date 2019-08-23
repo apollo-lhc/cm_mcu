@@ -165,7 +165,7 @@ void pinsel(int pin, uint32_t * x_gpio_port, uint8_t * x_gpio_pin )
       gpio_pin  = GPIO_PIN_4;
       break;
     }
-  case  BLADE_ZYNQ_GPIO0 :
+  case  BLADE_POWER_EN :
     {
       gpio_port = GPIO_PORTM_BASE;
       gpio_pin  = GPIO_PIN_7;
@@ -437,7 +437,7 @@ const char* const pin_names[] =
     "VCC_M3V3",// 68
     "VCC_M3V3",// 69
     "TM4C_ENABLE",// 70
-    "BLADE_ZYNQ_GPIO0",// 71
+    "BLADE_POWER_EN",// 71
     "BLADE_ZYNQ_GPIO1",// 72
     "BLADE_ZYNQ_GPIO2",// 73
     "K_MGTH_AVTT_OK",// 74

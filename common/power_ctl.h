@@ -37,7 +37,7 @@ int getLowestEnabledPSPriority();
 
 
 
-bool set_ps(bool KU15P, bool VU7PMGT1, bool VU7PMGT2);
+bool set_ps(void);
 bool check_ps(void);
 bool disable_ps(void);
 

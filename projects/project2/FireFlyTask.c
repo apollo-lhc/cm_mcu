@@ -24,6 +24,7 @@
 #include "common/smbus.h"
 #include "common/smbus_units.h"
 #include "MonitorTask.h"
+#include "common/power_ctl.h"
 
 
 #define NFIREFLIES_KU15P 11
@@ -57,25 +58,25 @@ struct ff_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"K02 12 Rx GTH", 0x70, 3, 0x50},
     {"K03 12 Tx GTH", 0x70, 4, 0x54},
     {"K03 12 Rx GTH", 0x70, 5, 0x50},
-    {"K04  4 Tx/Rx GTY", 0x71, 0, 0x50},
-    {"K05  4 Tx/Rx GTY", 0x71, 1, 0x50},
-    {"K06  4 Tx/Rx GTY", 0x71, 2, 0x50},
+    {"K04 4 XCVR GTY", 0x71, 0, 0x50},
+    {"K05 4 XCVR GTY", 0x71, 1, 0x50},
+    {"K06 4 XCVR GTY", 0x71, 2, 0x50},
     {"K07 12 Tx GTY", 0x71, 3, 0x54},
     {"K07 12 Rx GTY", 0x71, 4, 0x50},
-  {"V01 4 Tx/Rx GTY",     0x70, 0,     0x50},
-  {"V02 4 Tx/Rx GTY",     0x70, 1,     0x50},
-  {"V03 4 Tx/Rx GTY",     0x70, 2,     0x50},
-  {"V04 4 Tx/Rx GTY",     0x70, 3,     0x50},
-  {"V05 4 Tx/Rx GTY",     0x70, 4,     0x50},
-  {"V06 4 Tx/Rx GTY",     0x70, 5,     0x50},
-  {"V07 4 Tx/Rx GTY",     0x71, 0,     0x50},
-  {"V08 4 Tx/Rx GTY",     0x71, 1,     0x50},
-  {"V09 4 Tx/Rx GTY",     0x71, 2,     0x50},
-  {"V10 4 Tx/Rx GTY",    0x71, 3,     0x50},
-  {"V11 12 Tx GTY",     0x70, 6,     0x54},
-  {"V11 12 Rx GTY",     0x70, 7,     0x50},
-  {"V12 12 Tx GTY",     0x71, 4,     0x54},
-  {"V12 12 Rx GTY",     0x71, 5,     0x50},
+    {"V01 4 XCVR GTY", 0x70, 0, 0x50},
+    {"V02 4 XCVR GTY", 0x70, 1, 0x50},
+    {"V03 4 XCVR GTY", 0x70, 2, 0x50},
+    {"V04 4 XCVR GTY", 0x70, 3, 0x50},
+    {"V05 4 XCVR GTY", 0x70, 4, 0x50},
+    {"V06 4 XCVR GTY", 0x70, 5, 0x50},
+    {"V07 4 XCVR GTY", 0x71, 0, 0x50},
+    {"V08 4 XCVR GTY", 0x71, 1, 0x50},
+    {"V09 4 XCVR GTY", 0x71, 2, 0x50},
+    {"V10 4 XCVR GTY", 0x71, 3, 0x50},
+    {"V11 12 Tx GTY", 0x70, 6, 0x54},
+    {"V11 12 Rx GTY", 0x70, 7, 0x50},
+    {"V12 12 Tx GTY", 0x71, 4, 0x54},
+    {"V12 12 Rx GTY", 0x71, 5, 0x50},
 };
 
 #define FF_TEMP_COMMAND_REG 0x16 // 8 bit 2's complement int, valid from 0-80 C, LSB is 1 deg C
@@ -143,7 +144,7 @@ void FireFlyTask(void *parameters)
   for (;;) {
     tSMBus *smbus;
     tSMBusStatus *p_status;
-
+    bool good = false;
     // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
       if ( ff < NFIREFLIES_KU15P ) {
@@ -151,6 +152,17 @@ void FireFlyTask(void *parameters)
       }
       else {
         smbus = &g_sMaster3; p_status = &eStatus3;
+      }
+      if ( getPSStatus(5) != PWR_ON) {
+        if ( good ) {
+          Print("FIF: 3V3 died. Skipping I2C monitoring.\n");
+          good = false;
+        }
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
+        continue;
+      }
+      else {
+        good = true;
       }
 
       char tmp[64];

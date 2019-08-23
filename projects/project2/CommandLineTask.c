@@ -18,6 +18,7 @@
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
 #include "common/smbus.h"
+#include "common/utils.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
@@ -35,6 +36,8 @@
 #include "driverlib/uart.h"
 
 #include "MonitorTask.h"
+
+#include "CommandLineTask.h"
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
@@ -86,7 +89,7 @@ static BaseType_t i2c_ctl_set_dev(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i = strtol(p1, NULL, 10);
   if ( ! ((i == 1)||(i==2)||(i==3)||(i==4)||(i==6))) {
-    snprintf(m, s, "Invalid i2c device %d (%s), only 1,2,3, 4 and 6 supported\n", i, p1);
+    snprintf(m, s, "Invalid i2c device %d (%s), only 1,2,3, 4 and 6 supported\r\n", i, p1);
     return pdFALSE;
   }
   switch (i) {
@@ -111,11 +114,11 @@ static BaseType_t i2c_ctl_set_dev(char *m, size_t s, const char *mm)
       p_eStatus = &eStatus6;
       break;
     default:
-      snprintf(m, s, "%s: huh? line %d\n", __func__, __LINE__);
+      snprintf(m, s, "%s: huh? line %d\r\n", __func__, __LINE__);
       return pdFALSE;
       break;
   }
-  snprintf(m, s,"Setting i2c device to %d \n", i);
+  snprintf(m, s,"Setting i2c device to %d \r\n", i);
   return pdFALSE;
 }
 
@@ -138,23 +141,23 @@ static BaseType_t i2c_ctl_r(char *m, size_t s, const char *mm)
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
 
-  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\n", nbytes, address);
+  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\r\n", nbytes, address);
   DPRINT(m);
 
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (1)\n", __func__);
+    snprintf(m,s, "%s: operation failed (1)\r\n", __func__);
     return pdFALSE;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2, value=%d)\n", __func__, *p_eStatus);
+    snprintf(m,s, "%s: operation failed (2, value=%d)\r\n", __func__, *p_eStatus);
     return pdFALSE;
   }
 
-  snprintf(m, s, "%s: add: 0x%02x: value 0x%02x %02x %02x %02x\n", __func__,
+  snprintf(m, s, "%s: add: 0x%02x: value 0x%02x %02x %02x %02x\r\n", __func__,
            address, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
@@ -180,24 +183,24 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
   memset(data,0,MAX_BYTES*sizeof(data[0]));
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\n", nbytes, address, reg_address);
-  DPRINT(m);
+  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\r\n", nbytes, address, reg_address);
+  Print(m);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
   if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (1)\n", __func__);
+    snprintf(m,s, "%s: operation failed (1)\r\n", __func__);
     return pdFALSE;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2, value=%d)\n", __func__, *p_eStatus);
+    snprintf(m,s, "%s: operation failed (2, value=%d)\r\n", __func__, *p_eStatus);
     return pdFALSE;
   }
 
 
-  snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\n",
+  snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\r\n",
            address, reg_address, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
@@ -229,24 +232,24 @@ static BaseType_t i2c_ctl_reg_w(char *m, size_t s, const char *mm)
   }
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  snprintf(m, s, "%s: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\n", __func__,
+  snprintf(m, s, "%s: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes)\r\n", __func__,
            packed_data, address, reg_address, nbytes);
   DPRINT(m);
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (1)\n", __func__);
+    snprintf(m,s, "%s: operation failed (1)\r\n", __func__);
     return pdFALSE;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2)\n", __func__);
+    snprintf(m,s, "%s: operation failed (2)\r\n", __func__);
     return pdFALSE;
   }
 
-  snprintf(m, s, "%s: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\n", __func__,
+  snprintf(m, s, "%s: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\r\n", __func__,
            address, reg_address, packed_data, nbytes);
   return pdFALSE;
 }
@@ -275,24 +278,24 @@ static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
   }
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  snprintf(m, s, "%s: write 0x%x to address 0x%x  (%d bytes)\n", __func__,
+  snprintf(m, s, "%s: write 0x%x to address 0x%x  (%d bytes)\r\n", __func__,
            value, address, nbytes);
   DPRINT(m);
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: write failed (1)\n", __func__);
+    snprintf(m,s, "%s: write failed (1)\r\n", __func__);
     return pdFALSE;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: write failed (2)\n", __func__);
+    snprintf(m,s, "%s: write failed (2)\r\n", __func__);
     return pdFALSE;
   }
 
-  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\n", address, value, nbytes);
+  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n", address, value, nbytes);
   return pdFALSE;
 }
 
@@ -314,10 +317,13 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   else if ( strcmp(p1, "off")  == 0 ) {
     message = PS_OFF; // turn off power supply
   }
-  else if ( strcmp(p1, "status") == 0 ) {
+  else if ( strcmp(p1, "status") == 0 ) { // report status to UART
     int copied = 0;
-    copied += snprintf(m+copied, s-copied, "power_ctl:\nLowest ena: %d\n",
+    copied += snprintf(m+copied, s-copied, "power_ctl:\r\nLowest ena: %d\r\n",
         getLowestEnabledPSPriority());
+    bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+    bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+    copied += snprintf(m+copied, s-copied, "VU_ENABLE:\t%d\r\nKU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
     for ( int i = 0; i < N_PS_OKS; ++i ) {
       int j = getPSStatus(i);
       char *c;
@@ -337,14 +343,14 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
                 break;
     }
 
-      copied += snprintf(m+copied, s-copied, "%15s: %s\n",
+      copied += snprintf(m+copied, s-copied, "%15s: %s\r\n",
           pin_names[oks[i].name],  c);
       if ( copied >= MAX_OUTPUT_LENGTH ) break;
     }
     return pdFALSE;
   }
   else {
-    snprintf(m, s, "power_ctl: invalid argument %s received\n", p1);
+    snprintf(m, s, "power_ctl: invalid argument %s received\r\n", p1);
     return pdFALSE;
   }
   // Send a message to the power supply task, if needed
@@ -360,15 +366,15 @@ static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
 {
   // takes no arguments
   int copied = 0;
-  copied += snprintf(m, s, "i2c bus scan\n");
+  copied += snprintf(m, s, "i2c bus scan\r\n");
   copied += snprintf(m+copied,s-copied,
-      "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n00:         ");
+      "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n00:         ");
   for (uint8_t i = 0x3; i < 0x78; ++i ) {
     uint8_t data;
-    if ( i%16 ==0 ) copied += snprintf(m+copied,s-copied,"\n%2x:", i);
+    if ( i%16 ==0 ) copied += snprintf(m+copied,s-copied,"\r\n%2x:", i);
     tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, i, &data, 1);
     if ( r != SMBUS_OK ) {
-      Print("i2c_scan: Probe failed 1\n");
+      Print("i2c_scan: Probe failed 1\r\n");
     }
     while ( SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
@@ -379,7 +385,7 @@ static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
       copied += snprintf(m+copied, s-copied, " --");
     configASSERT(copied < s);
   }
-  copied += snprintf(m+copied, s-copied,"\n");
+  copied += snprintf(m+copied, s-copied,"\r\n");
   return pdFALSE;
 }
 
@@ -427,15 +433,15 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   BaseType_t i1 = strtol(p1, NULL, 10);
 
   if ( i1 < 0 || i1 >= NCOMMANDS_PS ) {
-    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\n", __func__,
+    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", __func__,
         NCOMMANDS_PS-1);
     return pdFALSE;
   }
 
   int copied = 0;
-  copied += snprintf(m+copied, s-copied, "%s\n", pm_command_dcdc[i1].name);
+  copied += snprintf(m+copied, s-copied, "%s\r\n", pm_command_dcdc[i1].name);
   for (int ps = 0; ps < NSUPPLIES_PS; ++ps) {
-    copied += snprintf(m+copied, s-copied, "SUPPLY %d\n", ps);
+    copied += snprintf(m+copied, s-copied, "SUPPLY %d\r\n", ps);
     for (int page = 0; page < NPAGES_PS; ++page ) {
       float val = pm_values[ps*(NCOMMANDS_PS*NPAGES_PS)+page*NCOMMANDS_PS+i1];
       int tens = val;
@@ -443,7 +449,7 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
 
       copied += snprintf(m+copied, s-copied, "VALUE %02d.%02d\t", tens, frac );
     }
-    copied += snprintf(m+copied, s-copied, "\n");
+    copied += snprintf(m+copied, s-copied, "\r\n");
   }
 
 
@@ -458,15 +464,16 @@ float getADCvalue(const int i);
 static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
 {
   int copied = 0;
+
   static int whichadc = 0;
   if ( whichadc == 0 ) {
-    copied += snprintf(m+copied, s-copied, "ADC outputs\n");
+    copied += snprintf(m+copied, s-copied, "ADC outputs\r\n");
   }
   for ( ; whichadc < 21; ++whichadc ) {
     float val = getADCvalue(whichadc);
     int tens = val;
     int frac = ABS((val-tens)*100.);
-    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\n", getADCname(whichadc), tens, frac);
+    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\r\n", getADCname(whichadc), tens, frac);
     if ( (s-copied) < 20 ) {
       ++whichadc;
       return pdTRUE;
@@ -486,13 +493,13 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   int copied = 0;
   static int whichff = 0;
   if ( whichff == 0 ) {
-    copied += snprintf(m+copied, s-copied, "FF temperatures\n");
+    copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
   }
   for ( ; whichff < 25; ++whichff ) {
     int8_t val = getFFvalue(whichff);
     copied += snprintf(m+copied, s-copied, "%17s: %3d", getFFname(whichff), val);
     if ( whichff%2 == 1 )
-      copied += snprintf(m+copied, s-copied, "\n");
+      copied += snprintf(m+copied, s-copied, "\r\n");
     else
       copied += snprintf(m+copied, s-copied, "\t");
     if ( (s-copied ) < 20 ) {
@@ -502,6 +509,7 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
 
   }
   if ( whichff%2 ==1 ) {
+    m[copied++] = '\r';
     m[copied++] = '\n';
     m[copied] = '\0';
   }
@@ -584,19 +592,19 @@ static BaseType_t task_ctl(char *m, size_t s, const char *mm)
   TaskHandle_t t = 0;
   vGetTaskHandle(p1,&t);
   if ( t == NULL ) {
-    snprintf(m,s, "%s: invalid task %s requested\n", __func__, p1);
+    snprintf(m,s, "%s: invalid task %s requested\r\n", __func__, p1);
     return pdFALSE;
   }
   if (strncmp(p2,  "susp", 4) == 0 ) {
     vTaskSuspend(t);
-    snprintf(m,s, "%s: suspended task %s\n", __func__, p1);
+    snprintf(m,s, "%s: suspended task %s\r\n", __func__, p1);
   }
   else if ( strncmp(p2, "resu",4) == 0 ) {
     vTaskResume(t);
-    snprintf(m,s, "%s: resumed task %s\n", __func__, p1);
+    snprintf(m,s, "%s: resumed task %s\r\n", __func__, p1);
   }
   else { // unrecognized command
-    snprintf(m,s,"%s: command %s not recognized. Valid commands are 'suspend' and 'resume'.\n",
+    snprintf(m,s,"%s: command %s not recognized. Valid commands are 'suspend' and 'resume'.\r\n",
         __func__, p2);
   }
   return pdFALSE;
@@ -650,42 +658,42 @@ static const char * const pcWelcomeMessage =
 static
 CLI_Command_Definition_t i2c_set_dev_command = {
     .pcCommand="i2c_base",
-    .pcHelpString="i2c_base <device>\n Set I2C controller number. Value between 0-9.\r\n",
+    .pcHelpString="i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n",
     .pxCommandInterpreter = i2c_ctl_set_dev,
     1
 };
 static
 CLI_Command_Definition_t i2c_read_command = {
     .pcCommand="i2cr",
-    .pcHelpString="i2cr <address> <number of bytes>\n Read I2C controller. Addr in hex.\r\n",
+    .pcHelpString="i2cr <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n",
     .pxCommandInterpreter = i2c_ctl_r,
     2
 };
 static
 CLI_Command_Definition_t i2c_read_reg_command = {
     .pcCommand="i2crr",
-    .pcHelpString="i2crr <address> <reg> <number of bytes>\n Read I2C controller. Addr in hex\r\n",
+    .pcHelpString="i2crr <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n",
     .pxCommandInterpreter = i2c_ctl_reg_r,
     3
 };
 static
 CLI_Command_Definition_t i2c_write_command = {
     .pcCommand="i2cw",
-    .pcHelpString="i2cw <address> <number of bytes> <value>\n Write I2C controller.\r\n",
+    .pcHelpString="i2cw <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
     .pxCommandInterpreter = i2c_ctl_w,
     3
 };
 static
 CLI_Command_Definition_t i2c_write_reg_command = {
     .pcCommand="i2cwr",
-    .pcHelpString="i2cwr <address> <reg> <number of bytes>\n Write I2C controller.\r\n",
+    .pcHelpString="i2cwr <address> <reg> <number of bytes>\r\n Write I2C controller.\r\n",
     .pxCommandInterpreter = i2c_ctl_reg_w,
     4
 };
 static
 CLI_Command_Definition_t i2c_scan_command = {
     .pcCommand="i2c_scan",
-    .pcHelpString="i2c_scan\n Scan current I2C bus.\r\n",
+    .pcHelpString="i2c_scan\r\n Scan current I2C bus.\r\n",
     .pxCommandInterpreter = i2c_scan,
     0
 };
@@ -693,21 +701,21 @@ CLI_Command_Definition_t i2c_scan_command = {
 static
 CLI_Command_Definition_t pwr_ctl_command = {
     .pcCommand="pwr",
-    .pcHelpString="pwr (on|off|status)\n Turn on or off all power.\r\n",
+    .pcHelpString="pwr (on|off|status)\r\n Turn on or off all power.\r\n",
     .pxCommandInterpreter = power_ctl,
     1
 };
 static
 CLI_Command_Definition_t led_ctl_command = {
     .pcCommand="led",
-    .pcHelpString="led (0-4)\n Manipulate red LED.\r\n",
+    .pcHelpString="led (0-4)\r\n Manipulate red LED.\r\n",
     .pxCommandInterpreter = led_ctl,
     1
 };
 static
 CLI_Command_Definition_t task_stats_command = {
     .pcCommand="task-stats",
-    .pcHelpString="task-stats\n Displays a table showing the state of each FreeRTOS task\r\n",
+    .pcHelpString="task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n",
     .pxCommandInterpreter = TaskStatsCommand,
     0
 };
@@ -716,14 +724,14 @@ CLI_Command_Definition_t task_stats_command = {
 static
 CLI_Command_Definition_t monitor_command = {
     .pcCommand="mon",
-    .pcHelpString="mon <#>\n Displays a table showing the state of power supplies.\r\n",
+    .pcHelpString="mon <#>\r\n Displays a table showing the state of power supplies.\r\n",
     .pxCommandInterpreter = mon_ctl,
     1
 };
 static
 CLI_Command_Definition_t adc_command = {
     .pcCommand="adc",
-    .pcHelpString="adc\n Displays a table showing the state of ADC inputs.\r\n",
+    .pcHelpString="adc\r\n Displays a table showing the state of ADC inputs.\r\n",
     .pxCommandInterpreter = adc_ctl,
     0
 };
@@ -731,7 +739,7 @@ CLI_Command_Definition_t adc_command = {
 static
 CLI_Command_Definition_t task_command = {
     .pcCommand="task",
-    .pcHelpString="task <name> <command>\n Manipulate task <name>. Options are suspend and restart.\r\n",
+    .pcHelpString="task <name> <command>\r\n Manipulate task <name>. Options are suspend and restart.\r\n",
     .pxCommandInterpreter = task_ctl,
     2
 };
@@ -739,12 +747,11 @@ CLI_Command_Definition_t task_command = {
 static
 CLI_Command_Definition_t ff_command = {
     .pcCommand="ff",
-    .pcHelpString="ff\n Displays a table showing the state of FF modules.\r\n",
+    .pcHelpString="ff\r\n Displays a table showing the state of FF modules.\r\n",
     .pxCommandInterpreter = ff_ctl,
     0
 };
 
-extern StreamBufferHandle_t xUARTStreamBuffer;
 
 
 void vCommandLineTask( void *pvParameters )
@@ -754,6 +761,11 @@ void vCommandLineTask( void *pvParameters )
   /* The input and output buffers are declared static to keep them off the stack. */
   static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH ];
 
+  configASSERT(pvParameters != 0);
+
+  CommandLineArgs_t *args = pvParameters;
+  StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
+  uint32_t uart_base = args->uart_base;
 
   // register the commands
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
@@ -773,14 +785,14 @@ void vCommandLineTask( void *pvParameters )
 
 
   /* Send a welcome message to the user knows they are connected. */
-  Print(pcWelcomeMessage);
-  Print("% ");
+  UARTPrint(uart_base,pcWelcomeMessage);
+  UARTPrint(uart_base,"% ");
 
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
         Blocked state until a character is received. */
-    xStreamBufferReceive(xUARTStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
-    UARTCharPut(CLI_UART, cRxedChar); // TODO this should use the Mutex
+    xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
+    UARTCharPut(uart_base, cRxedChar); // TODO this should use the Mutex
 
     // TODO: on lnx231 the terminal _only_ sends a \r which I did not think was possible.
     // on some platforms (Mac) I think this will cause the command to be sent 2x.
@@ -789,10 +801,10 @@ void vCommandLineTask( void *pvParameters )
       /* A newline character was received, so the input command string is
             complete and can be processed.  Transmit a line separator, just to
             make the output easier to read. */
-      //Print("\r\n");
+      //UARTPrint(uart_base,"\r\n");
       if ( cInputIndex != 0 ) { // empty command -- skip
 
-        snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\n\r",
+        snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\r\n",
             pcInputString);
 
         DPRINT(pcOutputString);
@@ -813,7 +825,7 @@ void vCommandLineTask( void *pvParameters )
           /* Write the output generated by the command interpreter to the
                 console. */
           if ( pcOutputString[0] != '\0')
-            Print(pcOutputString);
+            UARTPrint(uart_base,pcOutputString);
 
         } while( xMoreDataToFollow != pdFALSE );
 
@@ -823,7 +835,7 @@ void vCommandLineTask( void *pvParameters )
         cInputIndex = 0;
         memset( pcInputString, 0x00, MAX_INPUT_LENGTH );
       }
-      Print("% ");
+      UARTPrint(uart_base,"% ");
     }
     else {
       /* The if() clause performs the processing after a newline character
