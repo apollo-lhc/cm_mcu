@@ -91,6 +91,7 @@ ${COMPILER}/project2.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/MonitorTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/FireFlyTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/LedTask.o
+${COMPILER}/project2.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/project2.axf: ${COMPILER}/tasks.o

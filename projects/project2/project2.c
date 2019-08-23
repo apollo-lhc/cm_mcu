@@ -25,6 +25,7 @@
 #include "common/pinsel.h"
 #include "common/smbus.h"
 #include "CommandLineTask.h"
+#include "InterruptHandlers.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -91,171 +92,6 @@ void Print(const char* str)
     xSemaphoreGive( xUARTMutex );
   return;
 }
-
-// Alternate UART signal handler
-/* A stream buffer that has already been created. */
-StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
-
-void UART1IntHandler( void )
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  //
-  // Get the interrupt status.
-  //
-  uint32_t ui32Status = ROM_UARTIntStatus(UART1_BASE, true);
-
-  //
-  // Clear the asserted interrupts.
-  //
-  ROM_UARTIntClear(UART1_BASE, ui32Status);
-
-  //
-  // Loop while there are characters in the receive FIFO.
-  //
-  uint8_t bytes[8];
-  int received = 0;
-  while(ROM_UARTCharsAvail(UART1_BASE)) {
-
-    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART1_BASE);
-    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
-    if ( ++received == 8 ) {
-      xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
-      received = 0;
-    }
-  }
-  if ( received )
-    xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
-
-  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
-    xStreamBufferReceiveFromISR() then a task that has a priority above the
-    priority of the currently executing task was unblocked and a context
-    switch should be performed to ensure the ISR returns to the unblocked
-    task.  In most FreeRTOS ports this is done by simply passing
-    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
-    variables value, and perform the context switch if necessary.  Check the
-    documentation for the port in use for port specific instructions. */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
-
-void UART4IntHandler( void )
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  //
-  // Get the interrupt status.
-  //
-  uint32_t ui32Status = ROM_UARTIntStatus(UART4_BASE, true);
-
-  //
-  // Clear the asserted interrupts.
-  //
-  ROM_UARTIntClear(UART4_BASE, ui32Status);
-
-  //
-  // Loop while there are characters in the receive FIFO.
-  //
-  uint8_t bytes[8];
-  int received = 0;
-  while(ROM_UARTCharsAvail(UART4_BASE)) {
-
-    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
-    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
-    if ( ++received == 8 ) {
-      xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
-      received = 0;
-    }
-  }
-  if ( received )
-    xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
-
-  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
-    xStreamBufferReceiveFromISR() then a task that has a priority above the
-    priority of the currently executing task was unblocked and a context
-    switch should be performed to ensure the ISR returns to the unblocked
-    task.  In most FreeRTOS ports this is done by simply passing
-    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
-    variables value, and perform the context switch if necessary.  Check the
-    documentation for the port in use for port specific instructions. */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
-
-
-#include "common/smbus.h"
-tSMBus g_sMaster1; // for I2C #1
-tSMBus g_sMaster2; // for I2C #2
-tSMBus g_sMaster3; // for I2C #3
-tSMBus g_sMaster4; // for I2C #4
-tSMBus g_sMaster6; // for I2C #6
-extern tSMBusStatus eStatus1;
-extern tSMBusStatus eStatus2;
-extern tSMBusStatus eStatus3;
-extern tSMBusStatus eStatus4;
-extern tSMBusStatus eStatus6;
-// SMBUs specific handler for I2C
-void
-SMBusMasterIntHandler1(void)
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
-
-void
-SMBusMasterIntHandler2(void)
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus2 = SMBusMasterIntProcess(&g_sMaster2);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
-
-void
-SMBusMasterIntHandler3(void)
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus3 = SMBusMasterIntProcess(&g_sMaster3);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
-
-void
-SMBusMasterIntHandler4(void)
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus4 = SMBusMasterIntProcess(&g_sMaster4);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
-
-void
-SMBusMasterIntHandler6(void)
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus6 = SMBusMasterIntProcess(&g_sMaster6);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
-
 
 
 
@@ -425,6 +261,8 @@ void vGetTaskHandle( char *key, TaskHandle_t *t)
 CommandLineArgs_t cli_uart1;
 CommandLineArgs_t cli_uart4;
 
+
+
 // 
 int main( void )
 {
@@ -478,7 +316,7 @@ int main( void )
 
   Print("\n\r----------------------------\n\r");
   Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n\r");
-  Print("Built at " __TIME__"," __DATE__ "\n\r");
+  Print("Built at " __TIME__", " __DATE__ "\n\r");
   Print(  "----------------------------\n\r");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();

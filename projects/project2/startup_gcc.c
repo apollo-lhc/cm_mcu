@@ -26,6 +26,7 @@
 #include "inc/hw_nvic.h"
 #include "inc/hw_types.h"
 #include "driverlib/rom.h"
+#include "InterruptHandlers.h"
 #include "FreeRTOSConfig.h"
 //*****************************************************************************
 //
@@ -35,18 +36,6 @@
 void ResetISR(void);
 static void NmiSR(void);
 static void IntDefaultHandler(void);
-void SMBusMasterIntHandler1(void);
-void SMBusMasterIntHandler2(void);
-void SMBusMasterIntHandler3(void);
-void SMBusMasterIntHandler4(void);
-void SMBusMasterIntHandler6(void);
-extern void UART1IntHandler(void);
-extern void UART4IntHandler(void);
-extern void xPortPendSVHandler(void);
-extern void vPortSVCHandler(void);
-extern void xPortSysTickHandler(void);
-void ADCSeq0Interrupt();
-void ADCSeq1Interrupt();
 
 
 /* The prototype shows it is a naked function - in effect this is just an
