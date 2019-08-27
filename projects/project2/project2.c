@@ -228,7 +228,7 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-static struct TaskNamePair_t TaskNamePairs[7];
+static struct TaskNamePair_t TaskNamePairs[8];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
 {
@@ -266,6 +266,13 @@ struct MonitorTaskArgs_t fpga_args = {
     .smbus_status = &eStatus6,
 };
 
+// Supply Address | Voltages | Priority
+// ---------------+----------|-----------
+//       0x40     | 3.3 & 1.8|     2
+//       0x44     | KVCCINT  |     1
+//       0x43     | KVCCINT  |     1
+//       0x46     | VVCCINT  |     1
+//       0x45     | VVCCINT  |     1
 struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"3V3/1V8", 0x70, 0, 0x40},
     {"KVCCINT1", 0x70, 1, 0x44},
@@ -318,6 +325,12 @@ int main( void )
   cli_uart1.uart_base = UART1_BASE; cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
   cli_uart4.uart_base = UART4_BASE; cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
 
+  // clear the various buffers
+  for (int i =0; i < dcdc_args.n_values; ++i)
+    dcdc_args.pm_values[i] = -999.;
+  for (int i =0; i < fpga_args.n_values; ++i)
+    fpga_args.pm_values[i] = -999.;
+
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
@@ -327,6 +340,7 @@ int main( void )
   xTaskCreate(FireFlyTask,    "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
+  xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
@@ -336,7 +350,10 @@ int main( void )
   snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"PSMON");
   snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FFLY");
   snprintf(TaskNamePairs[7].key,configMAX_TASK_NAME_LEN,"XIMON");
+  snprintf(TaskNamePairs[8].key,configMAX_TASK_NAME_LEN,"ALARM");
 
+  // -------------------------------------------------
+  // Initialize all the queues
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
       sizeof( uint32_t ));    // The size of each item.
@@ -346,17 +363,25 @@ int main( void )
   configASSERT(xPwrQueue != NULL);
 
 
+  xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
+  configASSERT(xAlmQueue != NULL);
+
+#ifdef DEBUGxx
   vQueueAddToRegistry(xLedQueue, "LedQueue");
   vQueueAddToRegistry(xPwrQueue, "PwrQueue");
+#endif // DEBUG
 
-  // Set up the hardware ready to run the demo. Don't do this earlier as the interrupts
-  // call some FreeRTOS tasks that need to be set up first.
+  // Set up the hardware ready to run the firmware. Don't do this earlier as
+  // the interrupts call some FreeRTOS tasks that need to be set up first.
   SystemInit();
 
-  Print("\n\r----------------------------\n\r");
-  Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n\r");
-  Print("Built on " __TIME__", " __DATE__ "\n\r");
-  Print(  "----------------------------\n\r");
+  // Say hello. The information below is only updated when the main()
+  // function is recompiled.
+  Print("\r\n----------------------------\r\n");
+  Print("Staring Apollo CM MCU firmware " FIRMWARE_VERSION
+        "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
+  Print("Built on " __TIME__", " __DATE__ "\r\n");
+  Print(  "----------------------------\r\n");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
 

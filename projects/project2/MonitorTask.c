@@ -3,6 +3,12 @@
  *
  *  Created on: May 19, 2019
  *      Author: wittich
+ *
+ * Monitor temperatures, voltages, currents, via I2C/PMBUS. Generic,
+ * pass in addresses via parameter to the task.
+ *
+ * It only handles PMBUS, not raw I2C.
+ *
  */
 
 // includes for types
@@ -43,26 +49,8 @@ void Print(const char* str);
 
 
 
-//float pm_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
-//static float pm_values_max[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
-//static float pm_values_min[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
-//
-//static
-//void update_max(float pm_values_max[], float pm_values[], int nentries) {
-//  for (int i = 0; i < nentries; ++i ) {
-//    if ( pm_values_max[i] < pm_values[i])
-//      pm_values_max[i] = pm_values[i];
-//  }
-//}
-//static
-//void update_min() {
-//  for (int i = 0; i < NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS; ++i ) {
-//    if ( pm_values_min[i] > pm_values[i])
-//      pm_values_min[i] = pm_values[i];
-//  }
-//}
 
-// Monitor temperatures, voltages, currents, via I2C/PMBUS
+
 void MonitorTask(void *parameters)
 {
   // initialize to the current tick time
@@ -71,26 +59,9 @@ void MonitorTask(void *parameters)
 
   struct MonitorTaskArgs_t *args = parameters;
 
-//  for ( int i = 0; i < NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS; ++i ) {
-//    pm_values_max[i] = -99;
-//    pm_values_min[i] = +99;
-//  }
 
-  //vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 500 ) );
-  vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
+  //vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
 
-  // these I2C addresses correspond to the addresses of the power supplies hanging
-  // off the TM4C PWR I2C bus
-  // TODO: clean up this information and collect in one place
-  // Supply Address | Voltages | Priority
-  // ---------------+----------|-----------
-  //       0x40     | 3.3 & 1.8|     2
-  //       0x44     | KVCCINT  |     1
-  //       0x43     | KVCCINT  |     1
-  //       0x46     | VVCCINT  |     1
-  //       0x45     | VVCCINT  |     1
-  //const uint8_t addrs[NSUPPLIES_PS] = { 0x40, 0x44, 0x43, 0x46, 0x45};
-  //const uint8_t supply_prios[NSUPPLIES] = {2, 1, 1, 1, 1};
 
   for (;;) {
     // check if the 3.3V is there or not. If it disappears then nothing works
@@ -124,7 +95,8 @@ void MonitorTask(void *parameters)
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *args->smbus_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON: Mux writing error %d, break out of loop (ps=%d) ...\n", *args->smbus_status, ps);
+        snprintf(tmp, 64, "MON: Mux writing error %d, break out of loop (ps=%d) ...\n",
+            *args->smbus_status, ps);
         Print(tmp);
         break;
       }
@@ -138,7 +110,8 @@ void MonitorTask(void *parameters)
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *args->smbus_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON: Mux reading error %d, break out of loop (ps=%d) ...\n", *args->smbus_status, ps);
+        snprintf(tmp, 64, "MON: Mux reading error %d, break out of loop (ps=%d) ...\n",
+            *args->smbus_status, ps);
         Print(tmp);
         break;
       }
@@ -169,8 +142,8 @@ void MonitorTask(void *parameters)
         for (int c = 0; c < args->n_commands; ++c ) {
 
           data[0] = 0x0U; data[1] = 0x0U;
-          r = SMBusMasterByteWordRead(args->smbus, args->devices[ps].dev_addr, args->commands[c].command,
-              data, args->commands[c].size);
+          r = SMBusMasterByteWordRead(args->smbus, args->devices[ps].dev_addr,
+              args->commands[c].command, data, args->commands[c].size);
           if ( r != SMBUS_OK ) {
             snprintf(tmp, 64, "MON: SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\n", ps,c,page);
             Print(tmp);
@@ -184,11 +157,13 @@ void MonitorTask(void *parameters)
             DPRINT(tmp);
           }
           if ( *args->smbus_status != SMBUS_OK ) {
-            snprintf(tmp, 64, "Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\n", *args->smbus_status, ps,c,page);
+            snprintf(tmp, 64, "Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\n",
+                *args->smbus_status, ps,c,page);
         	  Print(tmp);
         	  break;
           }
-          snprintf(tmp, 64, "MON: %d %s is 0x%02x %02x\n", ps, args->commands[c].name, data[1], data[0]);
+          snprintf(tmp, 64, "MON: %d %s is 0x%02x %02x\n", ps, args->commands[c].name,
+                   data[1], data[0]);
           DPRINT(tmp);
           float val;
           if ( args->commands[c].type == PM_LINEAR11 ) {
@@ -221,7 +196,6 @@ void MonitorTask(void *parameters)
         } // loop over commands
       } // loop over pages
     } // loop over power supplies
-    //update_max(pm_values_max, args->pm_values, args->n_values); update_min();
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   } // infinite loop
 

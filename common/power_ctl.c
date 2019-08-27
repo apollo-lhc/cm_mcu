@@ -71,7 +71,7 @@ struct gpio_pin_t oks[] = {
 const int num_priorities = 5;
 
 // this array states[] holds the current status of these power supplies
-static enum ps_state states[N_PS_OKS] = { UNKNOWN };
+static enum ps_state states[N_PS_OKS] = { PWR_UNKNOWN };
 
 // this variable holds the current lowest enabled power supply
 static int lowest_enabled_ps_prio = 0;
@@ -83,7 +83,7 @@ int getLowestEnabledPSPriority()
 
 enum ps_state getPSStatus(int i)
 {
-  if ( i < 0 || i >= N_PS_OKS) return UNKNOWN;
+  if ( i < 0 || i >= N_PS_OKS) return PWR_UNKNOWN;
   return states[i];
 }
 void setPSStatus(int i, enum ps_state theState)
@@ -214,7 +214,7 @@ check_ps(void)
   }
   // find out if any of the failures are new failures or not
   for ( int o = 0; o < N_PS_OKS; ++o ) {
-    if ( new_states[o] != states[o]  && states[o] != UNKNOWN) {
+    if ( new_states[o] != states[o]  && states[o] != PWR_UNKNOWN) {
       static char tmp[128];
       snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\n", pin_names[oks[o].name],
                oks[o].priority);
@@ -276,7 +276,7 @@ disable_ps(void)
            int8_t val = read_gpio_pin(oks[o].name);
            if ( val == 1 ) {
              all_ready = false;
-             states[o] = UNKNOWN;
+             states[o] = PWR_UNKNOWN;
            }
          }
        } // loop over 'ok' bits

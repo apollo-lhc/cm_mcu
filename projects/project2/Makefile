@@ -90,6 +90,7 @@ ${COMPILER}/project2.axf: ${COMPILER}/PowerSupplyTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/MonitorTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/FireFlyTask.o
+${COMPILER}/project2.axf: ${COMPILER}/AlarmTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/project2.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
@@ -110,6 +111,12 @@ SCATTERgcc_project2=project2.ld
 ENTRY_project2=ResetISR
 CFLAGSgcc=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
 
+# this rule forces the main function to be recompiled when
+# any of the dependencies are out of date, to get the
+# git and compile time info right.
+SRCS=$(shell ls *.c ../../common/*.c)
+HDRS=$(shell ls *.h ../../common/*.h)
+${COMPILER}/project2.o: ${SRCS} ${HDRS}
 #
 # Include the automatically generated dependency files.
 #

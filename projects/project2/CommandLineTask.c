@@ -52,10 +52,6 @@ void Print(const char* str);
 // local sprintf prototype
 int snprintf( char *buf, unsigned int count, const char *format, ... );
 
-// external definition
-extern QueueHandle_t xPwrQueue;
-extern QueueHandle_t xLedQueue;
-
 
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   512
@@ -364,6 +360,63 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// takes one argument
+static BaseType_t alarm_ctl(char *m, size_t s, const char *mm)
+{
+  int8_t *p1, *p2;
+  BaseType_t p1l, p2l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l);
+  if ( p1 == NULL ) {
+    snprintf(m, s, "%s: need one or more arguments\r\n", __func__);
+    return pdFALSE;
+  }
+  p1[p1l] = 0x00; // terminate strings
+
+  uint32_t message;
+  if ( strcmp(p1, "clear") == 0 ) {
+    message = TEMP_ALARM_CLEAR_ALL; // turn on power supply
+    xQueueSendToBack(xAlmQueue, &message, pdMS_TO_TICKS(10));
+    m[0] = '\0'; // no output from this command
+
+    return pdFALSE;
+  }
+  else if ( strcmp(p1, "status") == 0 ) { // report status to UART
+    int copied = 0;
+    copied += snprintf(m+copied,s-copied, "%s: ALARM status\r\n", __func__);
+    int32_t stat = getAlarmStatus();
+    float val = getAlarmTemperature();
+    int tens = val; int frac = ABS((tens-val))*100;
+    copied += snprintf(m+copied, s-copied, "Temperature threshold: %02d.%02d\n\r",
+        tens,frac);
+    copied += snprintf(m+copied, s-copied, "Raw: 0x%08x\r\n", stat);
+    copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s\r\n",
+        stat&ALM_STAT_TM4C_OVERTEMP?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s\r\n",
+        stat&ALM_STAT_FPGA_OVERTEMP?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s\r\n",
+        stat&ALM_STAT_FIREFLY_OVERTEMP?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s\r\n",
+        stat&ALM_STAT_DCDC_OVERTEMP?"ALARM":"GOOD");
+    return pdFALSE;
+  }
+  else if ( strcmp(p1, "settemp") == 0 ) {
+    p2[p2l] = 0x00; // terminate strings
+    char *ptr;
+    float newtemp = strtol((const char*)p2,&ptr,10);
+    setAlarmTemperature(newtemp);
+    snprintf(m,s, "%s: set alarm temperature to %s\r\n", __func__, p2);
+    return pdFALSE;
+  }
+  else {
+    snprintf(m, s, "%s: invalid argument %s received\r\n", __func__, p1);
+    return pdFALSE;
+  }
+
+  return pdFALSE;
+}
+
+
 
 
 static BaseType_t i2c_scan(char *m, size_t s, const char *mm)
@@ -425,9 +478,6 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-// TODO move this into a cleaner environment
-//extern struct pm_command_t pm_command_dcdc[];
-extern struct MonitorTaskArgs_t dcdc_args;
 // dump monitor information
 static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
 {
@@ -487,9 +537,6 @@ static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-const char* getFFname(const uint8_t i);
-int8_t getFFvalue(const uint8_t i);
-
 
 // this command takes no arguments
 static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
@@ -521,7 +568,6 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-extern struct MonitorTaskArgs_t fpga_args;
 // this command takes no arguments since there is only one command
 // right now.
 static BaseType_t fpga_ctl(char *m, size_t s, const char *mm)
@@ -562,7 +608,6 @@ static BaseType_t fpga_ctl(char *m, size_t s, const char *mm)
 
 // this command takes no arguments since there is only one command
 // right now.
-#define MAX(a,b) ((a)>(b)?a:b)
 static BaseType_t sensor_summary(char *m, size_t s, const char *mm)
 {
   int copied = 0;
@@ -797,6 +842,15 @@ CLI_Command_Definition_t pwr_ctl_command = {
     1
 };
 static
+CLI_Command_Definition_t alm_ctl_command = {
+    .pcCommand="alm",
+    .pcHelpString="alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
+    .pxCommandInterpreter = alarm_ctl,
+    -1 // variable number of commands
+};
+
+
+static
 CLI_Command_Definition_t led_ctl_command = {
     .pcCommand="led",
     .pcHelpString="led (0-4)\r\n Manipulate red LED.\r\n",
@@ -889,11 +943,12 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&ff_command       );
   FreeRTOS_CLIRegisterCommand(&fpga_command       );
   FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
+  FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
 
 
   /* Send a welcome message to the user knows they are connected. */
-  UARTPrint(uart_base,pcWelcomeMessage);
-  UARTPrint(uart_base,"% ");
+  UARTPrint(uart_base, pcWelcomeMessage);
+  UARTPrint(uart_base, "% ");
 
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
@@ -901,14 +956,7 @@ void vCommandLineTask( void *pvParameters )
     xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
     UARTCharPut(uart_base, cRxedChar); // TODO this should use the Mutex
 
-    // TODO: on lnx231 the terminal _only_ sends a \r which I did not think was possible.
-    // on some platforms (Mac) I think this will cause the command to be sent 2x.
-    // this should be set in the terminal client
     if( cRxedChar == '\n' || cRxedChar == '\r' ) {
-      /* A newline character was received, so the input command string is
-            complete and can be processed.  Transmit a line separator, just to
-            make the output easier to read. */
-      //UARTPrint(uart_base,"\r\n");
       if ( cInputIndex != 0 ) { // empty command -- skip
 
         snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\r\n",
