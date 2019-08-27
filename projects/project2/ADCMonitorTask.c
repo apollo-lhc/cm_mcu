@@ -32,17 +32,13 @@
 #include "driverlib/rom.h"
 #include "driverlib/adc.h"
 
-// FreeRTOS
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
-#include "task.h"
+#include "InterruptHandlers.h"
+#include "Tasks.h"
 
 // On Apollo the ADC range is from 0 - 2.5V.
 // Some signals must be scaled to fit in this range.
 #define ADC_MAX_VOLTAGE_RANGE 2.5
 
-#define ADC_CHANNEL_COUNT 21
-#define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
 // a struct to hold some information about the ADC channel.
 struct ADC_Info_t {
@@ -107,59 +103,6 @@ float getADCvalue(const int i)
 }
 
 
-
-// Stores the handle of the task that will be notified when the
-// ADC conversion is complete.
-static TaskHandle_t TaskNotifyADC = NULL;
-
-void ADCSeq0Interrupt()
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  ROM_ADCIntClear(ADC1_BASE, 0);
-
-  /* At this point xTaskToNotify should not be NULL as a transmission was
-      in progress. */
-  configASSERT( TaskNotifyADC != NULL );
-
-  /* Notify the task that the transmission is complete. */
-  vTaskNotifyGiveFromISR( TaskNotifyADC, &xHigherPriorityTaskWoken );
-
-  /* There are no transmissions in progress, so no tasks to notify. */
-  TaskNotifyADC = NULL;
-
-  /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
-      should be performed to ensure the interrupt returns directly to the highest
-      priority task.  The macro used for this purpose is dependent on the port in
-      use and may be called portEND_SWITCHING_ISR(). */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-  return;
-}
-
-
-void ADCSeq1Interrupt()
-{
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  ROM_ADCIntClear(ADC0_BASE, 1);
-
-  /* At this point xTaskToNotify should not be NULL as a transmission was
-      in progress. */
-  configASSERT( TaskNotifyADC != NULL );
-
-  /* Notify the task that the transmission is complete. */
-  vTaskNotifyGiveFromISR( TaskNotifyADC, &xHigherPriorityTaskWoken );
-
-  /* There are no transmissions in progress, so no tasks to notify. */
-  TaskNotifyADC = NULL;
-
-  /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
-      should be performed to ensure the interrupt returns directly to the highest
-      priority task.  The macro used for this purpose is dependent on the port in
-      use and may be called portEND_SWITCHING_ISR(). */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-  return;
-}
 
 // there is a lot of copy-paste in the following functions,
 // but it makes it very clear what's going on here.

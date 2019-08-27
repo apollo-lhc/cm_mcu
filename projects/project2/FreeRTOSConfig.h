@@ -37,7 +37,7 @@ void stopwatch_reset(void);
 #define configMAX_PRIORITIES                                    ( 5 )
 #define configMINIMAL_STACK_SIZE                                ( ( unsigned short ) 256 )
 #define configTOTAL_HEAP_SIZE                                   ( ( size_t ) ( 16 * 1024 ) )
-#define configMAX_TASK_NAME_LEN                                 ( 5 )
+#define configMAX_TASK_NAME_LEN                                 ( 6 )
 #define configUSE_TRACE_FACILITY                                1
 #define configUSE_16_BIT_TICKS                                  0
 #define configIDLE_SHOULD_YIELD                                 1
@@ -59,7 +59,6 @@ void stopwatch_reset(void);
 
 /* Run time stats gathering definitions. */
 #define configGENERATE_RUN_TIME_STATS                           1
-// Todo: this counter should be implemented to get better stats. See DWT cycle count register.
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()                stopwatch_reset()
 #define portGET_RUN_TIME_COUNTER_VALUE()                        stopwatch_getticks()
 #define configRECORD_STACK_HIGH_ADDRESS                         1

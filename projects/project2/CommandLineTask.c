@@ -38,6 +38,7 @@
 #include "MonitorTask.h"
 
 #include "CommandLineTask.h"
+#include "Tasks.h"
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
@@ -50,10 +51,6 @@ void Print(const char* str);
 
 // local sprintf prototype
 int snprintf( char *buf, unsigned int count, const char *format, ... );
-
-// external definition
-extern QueueHandle_t xPwrQueue;
-extern QueueHandle_t xLedQueue;
 
 
 #define MAX_INPUT_LENGTH    50
@@ -183,7 +180,8 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
   memset(data,0,MAX_BYTES*sizeof(data[0]));
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\r\n", nbytes, address, reg_address);
+  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\r\n",
+           nbytes, address, reg_address);
   Print(m);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
@@ -295,7 +293,8 @@ static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
     return pdFALSE;
   }
 
-  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n", address, value, nbytes);
+  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
+           address, value, nbytes);
   return pdFALSE;
 }
 
@@ -323,7 +322,8 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
         getLowestEnabledPSPriority());
     bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-    copied += snprintf(m+copied, s-copied, "VU_ENABLE:\t%d\r\nKU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
+    copied += snprintf(m+copied, s-copied, "VU_ENABLE:\t%d\r\nKU_ENABLE:\t%d\r\n",
+        vu_enable, ku_enable);
     for ( int i = 0; i < N_PS_OKS; ++i ) {
       int j = getPSStatus(i);
       char *c;
@@ -359,6 +359,63 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
 
   return pdFALSE;
 }
+
+// takes one argument
+static BaseType_t alarm_ctl(char *m, size_t s, const char *mm)
+{
+  int8_t *p1, *p2;
+  BaseType_t p1l, p2l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l);
+  if ( p1 == NULL ) {
+    snprintf(m, s, "%s: need one or more arguments\r\n", __func__);
+    return pdFALSE;
+  }
+  p1[p1l] = 0x00; // terminate strings
+
+  uint32_t message;
+  if ( strcmp(p1, "clear") == 0 ) {
+    message = TEMP_ALARM_CLEAR_ALL; // turn on power supply
+    xQueueSendToBack(xAlmQueue, &message, pdMS_TO_TICKS(10));
+    m[0] = '\0'; // no output from this command
+
+    return pdFALSE;
+  }
+  else if ( strcmp(p1, "status") == 0 ) { // report status to UART
+    int copied = 0;
+    copied += snprintf(m+copied,s-copied, "%s: ALARM status\r\n", __func__);
+    int32_t stat = getAlarmStatus();
+    float val = getAlarmTemperature();
+    int tens = val; int frac = ABS((tens-val))*100;
+    copied += snprintf(m+copied, s-copied, "Temperature threshold: %02d.%02d\n\r",
+        tens,frac);
+    copied += snprintf(m+copied, s-copied, "Raw: 0x%08x\r\n", stat);
+    copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s\r\n",
+        stat&ALM_STAT_TM4C_OVERTEMP?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s\r\n",
+        stat&ALM_STAT_FPGA_OVERTEMP?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s\r\n",
+        stat&ALM_STAT_FIREFLY_OVERTEMP?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s\r\n",
+        stat&ALM_STAT_DCDC_OVERTEMP?"ALARM":"GOOD");
+    return pdFALSE;
+  }
+  else if ( strcmp(p1, "settemp") == 0 ) {
+    p2[p2l] = 0x00; // terminate strings
+    char *ptr;
+    float newtemp = strtol((const char*)p2,&ptr,10);
+    setAlarmTemperature(newtemp);
+    snprintf(m,s, "%s: set alarm temperature to %s\r\n", __func__, p2);
+    return pdFALSE;
+  }
+  else {
+    snprintf(m, s, "%s: invalid argument %s received\r\n", __func__, p1);
+    return pdFALSE;
+  }
+
+  return pdFALSE;
+}
+
 
 
 
@@ -421,8 +478,6 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-
-
 // dump monitor information
 static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
 {
@@ -432,18 +487,20 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i1 = strtol(p1, NULL, 10);
 
-  if ( i1 < 0 || i1 >= NCOMMANDS_PS ) {
+  if ( i1 < 0 || i1 >= dcdc_args.n_commands ) {
     snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", __func__,
-        NCOMMANDS_PS-1);
+        dcdc_args.n_commands-1);
     return pdFALSE;
   }
 
   int copied = 0;
-  copied += snprintf(m+copied, s-copied, "%s\r\n", pm_command_dcdc[i1].name);
-  for (int ps = 0; ps < NSUPPLIES_PS; ++ps) {
-    copied += snprintf(m+copied, s-copied, "SUPPLY %d\r\n", ps);
-    for (int page = 0; page < NPAGES_PS; ++page ) {
-      float val = pm_values[ps*(NCOMMANDS_PS*NPAGES_PS)+page*NCOMMANDS_PS+i1];
+  copied += snprintf(m+copied, s-copied, "%s\r\n", dcdc_args.commands[i1].name);
+  for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
+    copied += snprintf(m+copied, s-copied, "SUPPLY %s\r\n",
+        dcdc_args.devices[ps].name);
+    for (int page = 0; page < dcdc_args.n_pages; ++page ) {
+      float val = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
+                                      +page*dcdc_args.n_commands+i1];
       int tens = val;
       int frac = ABS((val - tens)*100.0);
 
@@ -455,9 +512,6 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
 
   return pdFALSE;
 }
-
-const char* getADCname(const int i);
-float getADCvalue(const int i);
 
 
 // this command takes no arguments
@@ -483,9 +537,6 @@ static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-const char* getFFname(const uint8_t i);
-int8_t getFFvalue(const uint8_t i);
-
 
 // this command takes no arguments
 static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
@@ -495,7 +546,7 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   if ( whichff == 0 ) {
     copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
   }
-  for ( ; whichff < 25; ++whichff ) {
+  for ( ; whichff < NFIREFLIES; ++whichff ) {
     int8_t val = getFFvalue(whichff);
     copied += snprintf(m+copied, s-copied, "%17s: %3d", getFFname(whichff), val);
     if ( whichff%2 == 1 )
@@ -517,6 +568,91 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// this command takes no arguments since there is only one command
+// right now.
+static BaseType_t fpga_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  static int whichfpga = 0;
+  int howmany = fpga_args.n_devices*fpga_args.n_pages;
+  if ( whichfpga == 0 ) {
+    copied += snprintf(m+copied, s-copied, "FPGA monitors\r\n");
+    copied += snprintf(m+copied, s-copied, "%s\r\n", fpga_args.commands[0].name);
+  }
+
+  for ( ; whichfpga < howmany; ++whichfpga ) {
+    float val = fpga_args.pm_values[whichfpga];
+    int tens = val;
+    int frac = ABS((val - tens)*100.0);
+
+    copied += snprintf(m+copied, s-copied, "%5s: %02d.%02d",
+        fpga_args.devices[whichfpga].name, tens, frac);
+    if ( whichfpga%2 == 1 )
+      copied += snprintf(m+copied, s-copied, "\r\n");
+    else
+      copied += snprintf(m+copied, s-copied, "\t");
+    if ( (s-copied ) < 20 ) {
+      ++whichfpga;
+      return pdTRUE;
+    }
+
+  }
+  if ( whichfpga%2 ==1 ) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichfpga = 0;
+  return pdFALSE;
+}
+
+// this command takes no arguments since there is only one command
+// right now.
+static BaseType_t sensor_summary(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  // collect all sensor information
+  // highest temperature for each
+  // Firefly
+  // FPGA
+  // DCDC
+  // TM4C
+  float tm4c_temp = getADCvalue(ADC_INFO_TEMP_ENTRY);
+  int tens = tm4c_temp;
+  int frac = ABS((tm4c_temp-tens))*100.;
+  copied += snprintf(m+copied, s-copied, "MCU %02d.%02d\r\n", tens, frac);
+  // Fireflies. These are reported as ints but we are asked
+  // to report a float.
+  int8_t imax_temp = -99.0;
+  for ( int i = 0; i < NFIREFLIES; ++i ) {
+    int8_t v = getFFvalue(i);
+    if ( v > imax_temp )
+      imax_temp = v;
+  }
+  copied += snprintf(m+copied, s-copied, "FIREFLY %02d.0\r\n", imax_temp);
+  // FPGAs. This is gonna bite me in the @#$#@ someday
+  float max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+  tens = max_fpga;
+  frac = ABS((tens-max_fpga))*100.;
+  copied += snprintf(m+copied, s-copied, "FPGA %02d.%02d\r\n", tens, frac);
+
+  // DCDC. The first command is READ_TEMPERATURE_1.
+  // I am assuming it stays that way!!!!!!!!
+  float max_temp = -99.0;
+  for (int ps = 0; ps < dcdc_args.n_devices; ++ps ) {
+    for ( int page = 0; page < dcdc_args.n_pages; ++page ) {
+      float thistemp = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
+                                           +page*dcdc_args.n_commands+0];
+      if ( thistemp > max_temp )
+        max_temp = thistemp;
+    }
+  }
+  tens = max_temp;
+  frac = ABS((max_temp-tens))*100.0;
+  copied += snprintf(m+copied, s-copied, "REG %02d.%02d\r\n", tens, frac);
+
+  return pdFALSE;
+}
 
 static
 void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
@@ -706,6 +842,15 @@ CLI_Command_Definition_t pwr_ctl_command = {
     1
 };
 static
+CLI_Command_Definition_t alm_ctl_command = {
+    .pcCommand="alm",
+    .pcHelpString="alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
+    .pxCommandInterpreter = alarm_ctl,
+    -1 // variable number of commands
+};
+
+
+static
 CLI_Command_Definition_t led_ctl_command = {
     .pcCommand="led",
     .pcHelpString="led (0-4)\r\n Manipulate red LED.\r\n",
@@ -752,6 +897,21 @@ CLI_Command_Definition_t ff_command = {
     0
 };
 
+static
+CLI_Command_Definition_t fpga_command = {
+    .pcCommand="fpga",
+    .pcHelpString="fpga\r\n Displays a table showing the state of FPGAs.\r\n",
+    .pxCommandInterpreter = fpga_ctl,
+    0
+};
+static
+CLI_Command_Definition_t sensor_summary_command = {
+    .pcCommand="simple_sensor",
+    .pcHelpString="simple_sensor\r\n Displays a table showing the state of temps.\r\n",
+    .pxCommandInterpreter = sensor_summary,
+    0
+};
+
 
 
 void vCommandLineTask( void *pvParameters )
@@ -763,7 +923,7 @@ void vCommandLineTask( void *pvParameters )
 
   configASSERT(pvParameters != 0);
 
-  CommandLineArgs_t *args = pvParameters;
+  CommandLineTaskArgs_t *args = pvParameters;
   StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
   uint32_t uart_base = args->uart_base;
 
@@ -781,12 +941,14 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
   FreeRTOS_CLIRegisterCommand(&adc_command      );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
-
+  FreeRTOS_CLIRegisterCommand(&fpga_command       );
+  FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
+  FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
 
 
   /* Send a welcome message to the user knows they are connected. */
-  UARTPrint(uart_base,pcWelcomeMessage);
-  UARTPrint(uart_base,"% ");
+  UARTPrint(uart_base, pcWelcomeMessage);
+  UARTPrint(uart_base, "% ");
 
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
@@ -794,14 +956,7 @@ void vCommandLineTask( void *pvParameters )
     xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
     UARTCharPut(uart_base, cRxedChar); // TODO this should use the Mutex
 
-    // TODO: on lnx231 the terminal _only_ sends a \r which I did not think was possible.
-    // on some platforms (Mac) I think this will cause the command to be sent 2x.
-    // this should be set in the terminal client
     if( cRxedChar == '\n' || cRxedChar == '\r' ) {
-      /* A newline character was received, so the input command string is
-            complete and can be processed.  Transmit a line separator, just to
-            make the output easier to read. */
-      //UARTPrint(uart_base,"\r\n");
       if ( cInputIndex != 0 ) { // empty command -- skip
 
         snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\r\n",

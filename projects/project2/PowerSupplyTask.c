@@ -38,7 +38,8 @@ void PowerSupplyTask(void *parameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  enum ps_state oldState = UNKNOWN;
+  enum ps_state oldState = PWR_UNKNOWN;
+  bool alarm = false;
 
   // turn on the power supply at the start of the task, if the power enable is sent by the
   // zynq
@@ -54,6 +55,13 @@ void PowerSupplyTask(void *parameters)
       switch (message ) {
       case PS_OFF:
         disable_ps();
+        break;
+      case TEMP_ALARM:
+        alarm = true;
+        disable_ps();
+        break;
+      case TEMP_ALARM_CLEAR:
+        alarm = false;
         break;
       case PS_ON:
         set_ps();
@@ -75,7 +83,7 @@ void PowerSupplyTask(void *parameters)
       disable_ps();
       newstate = PWR_OFF;
     }
-    else { // blade_power_enable
+    else if ( ! alarm ) { // blade_power_enable and not alarm
       set_ps();
       newstate = PWR_ON;
     }

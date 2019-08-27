@@ -25,7 +25,7 @@
 #include "common/smbus_units.h"
 #include "MonitorTask.h"
 #include "common/power_ctl.h"
-
+#include "Tasks.h"
 
 #define NFIREFLIES_KU15P 11
 #define NFIREFLIES_VU7P 14
@@ -44,14 +44,9 @@ void Print(const char* str);
 # define DPRINT(x)
 #endif // DEBUG_FIF
 
-struct ff_i2c_addr_t {
-  char *name;
-  uint8_t mux_addr; // I2C address of the Mux
-  uint8_t mux_bit;  // port of the mux; write value 0x1U<<mux_bit to the mux register
-  uint8_t dev_addr; // I2C address of device. Either 0x50 or 0x54
-};
 
-struct ff_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
+
+struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"K01 12 Tx GTH", 0x70, 0, 0x54},
     {"K01 12 Rx GTH", 0x70, 1, 0x50},
     {"K02 12 Tx GTH", 0x70, 2, 0x54},

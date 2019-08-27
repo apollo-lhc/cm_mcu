@@ -23,6 +23,6 @@ void vCommandLineTask(void *parameters);
 typedef struct {
   StreamBufferHandle_t UartStreamBuffer;
   uint32_t uart_base;
-} CommandLineArgs_t;
+} CommandLineTaskArgs_t;
 
 #endif /* PROJECTS_PROJECT2_COMMANDLINETASK_H_ */
