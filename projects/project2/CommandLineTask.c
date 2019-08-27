@@ -38,6 +38,7 @@
 #include "MonitorTask.h"
 
 #include "CommandLineTask.h"
+#include "Tasks.h"
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
@@ -183,7 +184,8 @@ static BaseType_t i2c_ctl_reg_r(char *m, size_t s, const char *mm)
   memset(data,0,MAX_BYTES*sizeof(data[0]));
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\r\n", nbytes, address, reg_address);
+  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\r\n",
+           nbytes, address, reg_address);
   Print(m);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
@@ -295,7 +297,8 @@ static BaseType_t i2c_ctl_w(char *m, size_t s, const char *mm)
     return pdFALSE;
   }
 
-  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n", address, value, nbytes);
+  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
+           address, value, nbytes);
   return pdFALSE;
 }
 
@@ -323,7 +326,8 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
         getLowestEnabledPSPriority());
     bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-    copied += snprintf(m+copied, s-copied, "VU_ENABLE:\t%d\r\nKU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
+    copied += snprintf(m+copied, s-copied, "VU_ENABLE:\t%d\r\nKU_ENABLE:\t%d\r\n",
+        vu_enable, ku_enable);
     for ( int i = 0; i < N_PS_OKS; ++i ) {
       int j = getPSStatus(i);
       char *c;
@@ -421,8 +425,9 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-
-
+// TODO move this into a cleaner environment
+//extern struct pm_command_t pm_command_dcdc[];
+extern struct MonitorTaskArgs_t dcdc_args;
 // dump monitor information
 static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
 {
@@ -432,18 +437,20 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   BaseType_t i1 = strtol(p1, NULL, 10);
 
-  if ( i1 < 0 || i1 >= NCOMMANDS_PS ) {
+  if ( i1 < 0 || i1 >= dcdc_args.n_commands ) {
     snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", __func__,
-        NCOMMANDS_PS-1);
+        dcdc_args.n_commands-1);
     return pdFALSE;
   }
 
   int copied = 0;
-  copied += snprintf(m+copied, s-copied, "%s\r\n", pm_command_dcdc[i1].name);
-  for (int ps = 0; ps < NSUPPLIES_PS; ++ps) {
-    copied += snprintf(m+copied, s-copied, "SUPPLY %d\r\n", ps);
-    for (int page = 0; page < NPAGES_PS; ++page ) {
-      float val = pm_values[ps*(NCOMMANDS_PS*NPAGES_PS)+page*NCOMMANDS_PS+i1];
+  copied += snprintf(m+copied, s-copied, "%s\r\n", dcdc_args.commands[i1].name);
+  for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
+    copied += snprintf(m+copied, s-copied, "SUPPLY %s\r\n",
+        dcdc_args.devices[ps].name);
+    for (int page = 0; page < dcdc_args.n_pages; ++page ) {
+      float val = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
+                                      +page*dcdc_args.n_commands+i1];
       int tens = val;
       int frac = ABS((val - tens)*100.0);
 
@@ -455,9 +462,6 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
 
   return pdFALSE;
 }
-
-const char* getADCname(const int i);
-float getADCvalue(const int i);
 
 
 // this command takes no arguments
@@ -495,7 +499,7 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   if ( whichff == 0 ) {
     copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
   }
-  for ( ; whichff < 25; ++whichff ) {
+  for ( ; whichff < NFIREFLIES; ++whichff ) {
     int8_t val = getFFvalue(whichff);
     copied += snprintf(m+copied, s-copied, "%17s: %3d", getFFname(whichff), val);
     if ( whichff%2 == 1 )
@@ -517,6 +521,93 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+extern struct MonitorTaskArgs_t fpga_args;
+// this command takes no arguments since there is only one command
+// right now.
+static BaseType_t fpga_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  static int whichfpga = 0;
+  int howmany = fpga_args.n_devices*fpga_args.n_pages;
+  if ( whichfpga == 0 ) {
+    copied += snprintf(m+copied, s-copied, "FPGA monitors\r\n");
+    copied += snprintf(m+copied, s-copied, "%s\r\n", fpga_args.commands[0].name);
+  }
+
+  for ( ; whichfpga < howmany; ++whichfpga ) {
+    float val = fpga_args.pm_values[whichfpga];
+    int tens = val;
+    int frac = ABS((val - tens)*100.0);
+
+    copied += snprintf(m+copied, s-copied, "%5s: %02d.%02d",
+        fpga_args.devices[whichfpga].name, tens, frac);
+    if ( whichfpga%2 == 1 )
+      copied += snprintf(m+copied, s-copied, "\r\n");
+    else
+      copied += snprintf(m+copied, s-copied, "\t");
+    if ( (s-copied ) < 20 ) {
+      ++whichfpga;
+      return pdTRUE;
+    }
+
+  }
+  if ( whichfpga%2 ==1 ) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichfpga = 0;
+  return pdFALSE;
+}
+
+// this command takes no arguments since there is only one command
+// right now.
+#define MAX(a,b) ((a)>(b)?a:b)
+static BaseType_t sensor_summary(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  // collect all sensor information
+  // highest temperature for each
+  // Firefly
+  // FPGA
+  // DCDC
+  // TM4C
+  float tm4c_temp = getADCvalue(ADC_INFO_TEMP_ENTRY);
+  int tens = tm4c_temp;
+  int frac = ABS((tm4c_temp-tens))*100.;
+  copied += snprintf(m+copied, s-copied, "MCU %02d.%02d\r\n", tens, frac);
+  // Fireflies. These are reported as ints but we are asked
+  // to report a float.
+  int8_t imax_temp = -99.0;
+  for ( int i = 0; i < NFIREFLIES; ++i ) {
+    int8_t v = getFFvalue(i);
+    if ( v > imax_temp )
+      imax_temp = v;
+  }
+  copied += snprintf(m+copied, s-copied, "FIREFLY %02d.0\r\n", imax_temp);
+  // FPGAs. This is gonna bite me in the @#$#@ someday
+  float max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+  tens = max_fpga;
+  frac = ABS((tens-max_fpga))*100.;
+  copied += snprintf(m+copied, s-copied, "FPGA %02d.%02d\r\n", tens, frac);
+
+  // DCDC. The first command is READ_TEMPERATURE_1.
+  // I am assuming it stays that way!!!!!!!!
+  float max_temp = -99.0;
+  for (int ps = 0; ps < dcdc_args.n_devices; ++ps ) {
+    for ( int page = 0; page < dcdc_args.n_pages; ++page ) {
+      float thistemp = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
+                                           +page*dcdc_args.n_commands+0];
+      if ( thistemp > max_temp )
+        max_temp = thistemp;
+    }
+  }
+  tens = max_temp;
+  frac = ABS((max_temp-tens))*100.0;
+  copied += snprintf(m+copied, s-copied, "REG %02d.%02d\r\n", tens, frac);
+
+  return pdFALSE;
+}
 
 static
 void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
@@ -752,6 +843,21 @@ CLI_Command_Definition_t ff_command = {
     0
 };
 
+static
+CLI_Command_Definition_t fpga_command = {
+    .pcCommand="fpga",
+    .pcHelpString="fpga\r\n Displays a table showing the state of FPGAs.\r\n",
+    .pxCommandInterpreter = fpga_ctl,
+    0
+};
+static
+CLI_Command_Definition_t sensor_summary_command = {
+    .pcCommand="simple_sensor",
+    .pcHelpString="simple_sensor\r\n Displays a table showing the state of temps.\r\n",
+    .pxCommandInterpreter = sensor_summary,
+    0
+};
+
 
 
 void vCommandLineTask( void *pvParameters )
@@ -763,7 +869,7 @@ void vCommandLineTask( void *pvParameters )
 
   configASSERT(pvParameters != 0);
 
-  CommandLineArgs_t *args = pvParameters;
+  CommandLineTaskArgs_t *args = pvParameters;
   StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
   uint32_t uart_base = args->uart_base;
 
@@ -781,7 +887,8 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
   FreeRTOS_CLIRegisterCommand(&adc_command      );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
-
+  FreeRTOS_CLIRegisterCommand(&fpga_command       );
+  FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
 
 
   /* Send a welcome message to the user knows they are connected. */

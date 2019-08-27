@@ -25,7 +25,7 @@
 #include "common/smbus_units.h"
 #include "MonitorTask.h"
 #include "common/power_ctl.h"
-
+#include "Tasks.h"
 
 #define NFIREFLIES_KU15P 11
 #define NFIREFLIES_VU7P 14

@@ -26,6 +26,8 @@
 #include "common/smbus.h"
 #include "CommandLineTask.h"
 #include "InterruptHandlers.h"
+#include "MonitorTask.h"
+#include "Tasks.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -213,27 +215,7 @@ volatile uint32_t g_ui32SysTickCount;
 
 
 
-// Holds the handle of the created queue for the LED task.
-extern QueueHandle_t xLedQueue;
 
-// control the LED
-void LedTask(void *parameters);
-
-// Holds the handle of the created queue for the power supply task.
-extern QueueHandle_t xPwrQueue;
-
-
-// monitor and control the power supplies
-void PowerSupplyTask(void *parameters);
-void MonitorTask(void *parameters);
-
-// firefly monitoring
-void FireFlyTask(void *parameters);
-
-
-
-// Monitoring using the ADC inputs
-void ADCMonitorTask(void *parameters);
 
 void ShortDelay()
 {
@@ -258,10 +240,65 @@ void vGetTaskHandle( char *key, TaskHandle_t *t)
   return ;
 }
 
-CommandLineArgs_t cli_uart1;
-CommandLineArgs_t cli_uart4;
+CommandLineTaskArgs_t cli_uart1;
+CommandLineTaskArgs_t cli_uart4;
+
+struct dev_i2c_addr_t fpga_addrs[] = {
+    {"VU7P", 0x70, 1, 0x36},
+    {"KU15P", 0x70, 0, 0x36},
+};
+struct pm_command_t pm_command_fpga[] = {
+    { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
+};
+
+float pm_fpga[2] = {0.0,0.0};
+
+struct MonitorTaskArgs_t fpga_args = {
+    .name = "FMON",
+    .devices = fpga_addrs,
+    .n_devices = 2,
+    .commands = pm_command_fpga,
+    .n_commands = 1,
+    .pm_values = pm_fpga,
+    .n_values = 2,
+    .n_pages = 1,
+    .smbus = &g_sMaster6,
+    .smbus_status = &eStatus6,
+};
+
+struct dev_i2c_addr_t pm_addrs_dcdc[] = {
+    {"3V3/1V8", 0x70, 0, 0x40},
+    {"KVCCINT1", 0x70, 1, 0x44},
+    {"KVCCINT2", 0x70, 2, 0x43},
+    {"VVCCINT1", 0x70, 3, 0x46},
+    {"VVCCINT2", 0x70, 4, 0x45},
+};
 
 
+struct pm_command_t pm_command_dcdc[] = {
+        { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
+        { 0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11 },
+        { 0x88, 2, "READ_VIN", "V", PM_LINEAR11 },
+        { 0x8B, 2, "READ_VOUT", "V", PM_LINEAR16U },
+        { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 },
+        //{ 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
+        { 0x79, 2, "STATUS_WORD", "", PM_STATUS },
+        //{ 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
+        { 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
+      };
+float dcdc_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
+struct MonitorTaskArgs_t dcdc_args = {
+    .name = "VMON",
+    .devices = pm_addrs_dcdc,
+    .n_devices = 5,
+    .commands = pm_command_dcdc,
+    .n_commands = 7,
+    .pm_values = dcdc_values,
+    .n_values = NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS,
+    .n_pages = 2,
+    .smbus = &g_sMaster1,
+    .smbus_status = &eStatus1,
+};
 
 // 
 int main( void )
@@ -284,19 +321,21 @@ int main( void )
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
-  xTaskCreate(vCommandLineTask,"CL1", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
-  xTaskCreate(vCommandLineTask,"CL4", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
+  xTaskCreate(vCommandLineTask,"CLIZY", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
+  xTaskCreate(vCommandLineTask,"CLIFP", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
   xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
-  xTaskCreate(MonitorTask,     "MON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
-  xTaskCreate(FireFlyTask,     "FLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
+  xTaskCreate(FireFlyTask,    "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
+  xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
+  xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
-  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CL1");
-  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"CL4");
+  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CLIZY");
+  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"CLIFP");
   snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"ADC");
-  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"MON");
-  snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FLY");
+  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"PSMON");
+  snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FFLY");
+  snprintf(TaskNamePairs[7].key,configMAX_TASK_NAME_LEN,"XIMON");
 
   // queue for the LED
   xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
@@ -316,7 +355,7 @@ int main( void )
 
   Print("\n\r----------------------------\n\r");
   Print("Staring Project2 " FIRMWARE_VERSION " (FreeRTOS scheduler about to start)\n\r");
-  Print("Built at " __TIME__", " __DATE__ "\n\r");
+  Print("Built on " __TIME__", " __DATE__ "\n\r");
   Print(  "----------------------------\n\r");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();

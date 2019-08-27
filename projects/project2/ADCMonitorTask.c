@@ -33,14 +33,12 @@
 #include "driverlib/adc.h"
 
 #include "InterruptHandlers.h"
-
+#include "Tasks.h"
 
 // On Apollo the ADC range is from 0 - 2.5V.
 // Some signals must be scaled to fit in this range.
 #define ADC_MAX_VOLTAGE_RANGE 2.5
 
-#define ADC_CHANNEL_COUNT 21
-#define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
 // a struct to hold some information about the ADC channel.
 struct ADC_Info_t {
