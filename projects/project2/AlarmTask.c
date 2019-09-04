@@ -34,7 +34,7 @@ uint32_t getAlarmStatus()
   return status;
 }
 
-#define INITIAL_ALARM_TEMP 55.0 // in Celsius duh
+#define INITIAL_ALARM_TEMP 65.0 // in Celsius duh
 static float alarm_temp = INITIAL_ALARM_TEMP;
 
 float getAlarmTemperature()

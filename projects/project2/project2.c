@@ -228,12 +228,13 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-static struct TaskNamePair_t TaskNamePairs[8];
+#define MAX_TASK_COUNT 9
+static struct TaskNamePair_t TaskNamePairs[MAX_TASK_COUNT];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
 {
   *t = NULL;
-  for (int i = 0; i < 6; ++i) {
+  for (int i = 0; i < MAX_TASK_COUNT; ++i) {
     if ( strncmp(key, TaskNamePairs[i].key,3) == 0)
       *t = TaskNamePairs[i].value;
   }
@@ -254,7 +255,7 @@ struct pm_command_t pm_command_fpga[] = {
 float pm_fpga[2] = {0.0,0.0};
 
 struct MonitorTaskArgs_t fpga_args = {
-    .name = "FMON",
+    .name = "XIMON",
     .devices = fpga_addrs,
     .n_devices = 2,
     .commands = pm_command_fpga,
@@ -291,18 +292,18 @@ struct pm_command_t pm_command_dcdc[] = {
         //{ 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
         { 0x79, 2, "STATUS_WORD", "", PM_STATUS },
         //{ 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
-        { 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
+        //{ 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
       };
 float dcdc_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
 struct MonitorTaskArgs_t dcdc_args = {
-    .name = "VMON",
+    .name = "PSMON",
     .devices = pm_addrs_dcdc,
-    .n_devices = 5,
+    .n_devices = NSUPPLIES_PS,
     .commands = pm_command_dcdc,
-    .n_commands = 7,
+    .n_commands = NCOMMANDS_PS,
     .pm_values = dcdc_values,
     .n_values = NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS,
-    .n_pages = 2,
+    .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
 };

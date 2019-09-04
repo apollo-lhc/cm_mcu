@@ -955,8 +955,14 @@ void vCommandLineTask( void *pvParameters )
         Blocked state until a character is received. */
     xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
     UARTCharPut(uart_base, cRxedChar); // TODO this should use the Mutex
-
+    // ugh there has to be a better way of handling this
+    if ( cRxedChar == '\177') {
+      UARTCharPut(uart_base, '\b');
+      UARTCharPut(uart_base, ' ');
+      UARTCharPut(uart_base, '\b'); // I hate you screen
+    }
     if( cRxedChar == '\n' || cRxedChar == '\r' ) {
+      UARTCharPut(uart_base, '\n');
       if ( cInputIndex != 0 ) { // empty command -- skip
 
         snprintf(pcOutputString, MAX_OUTPUT_LENGTH, "Calling command >%s<\r\n",
@@ -996,11 +1002,7 @@ void vCommandLineTask( void *pvParameters )
       /* The if() clause performs the processing after a newline character
             is received.  This else clause performs the processing if any other
             character is received. */
-
-      if( cRxedChar == '\r' ) {
-        /* Ignore carriage returns. */
-      }
-      else if( cRxedChar == '\b' ) {
+      if( cRxedChar == '\b' || cRxedChar == '\177' ) {
         /* Backspace was pressed.  Erase the last character in the input
                 buffer - if there are any. */
         if( cInputIndex > 0 ) {

@@ -93,9 +93,9 @@ void PowerSupplyTask(void *parameters)
 
 
     if ( newstate == PWR_OFF  && oldState != PWR_OFF) {
-      Print("\nPowerSupplyTask: power supplies turned off.\n");
+      Print("\r\nPowerSupplyTask: power supplies turned off.\r\n");
       if ( ! blade_power_enable )
-        Print("\nPowerSupplyTask: PWR_EN removed by SM\n");
+        Print("\r\nPowerSupplyTask: PWR_EN removed by SM\r\n");
       message = PS_BAD;
     }
     else { // either the PS is now good or there was no change.
