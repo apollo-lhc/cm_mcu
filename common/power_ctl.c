@@ -156,9 +156,9 @@ bool set_ps()
     } // loop over 'ok' bits
     if (  ! all_good ) {
       // o tells you which one died.
-      Print("set_ps: Power supply check failed: ");
-      Print(pin_names[oks[o].name]);
-      Print(". Turning off all supplies at this level or lower.\n");
+      Print("set_ps: Power supply check failed. ");
+//      Print(pin_names[oks[o].name]);
+      Print(". Turning off all supplies at this level or lower.\r\n");
       // turn off all supplies at current priority level or lower
       // that is probably overkill since they should not all be
       lowest_enabled_ps_prio = oks[o].priority - 1;
@@ -216,7 +216,7 @@ check_ps(void)
   for ( int o = 0; o < N_PS_OKS; ++o ) {
     if ( new_states[o] != states[o]  && states[o] != PWR_UNKNOWN) {
       static char tmp[128];
-      snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\n", pin_names[oks[o].name],
+      snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\r\n", pin_names[oks[o].name],
                oks[o].priority);
       Print(tmp);
     }

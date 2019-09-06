@@ -50,6 +50,9 @@ void FireFlyTask(void *parameters);
 const char* getFFname(const uint8_t i);
 int8_t getFFvalue(const uint8_t i);
 
+// version info
+const char* buildTime();
+const char* gitVersion();
 
 // ---- ALARMS
 
@@ -69,7 +72,6 @@ void AlarmTask(void *parameters);
 float getAlarmTemperature();
 void setAlarmTemperature(const float);
 uint32_t getAlarmStatus();
-
 
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);

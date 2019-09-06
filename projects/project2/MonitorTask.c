@@ -47,8 +47,30 @@ void Print(const char* str);
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
+static
+void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
+{
+  const int error_max = 40;
+  const int error_restart_threshold = 30;
 
+  if (*current_error_cnt < error_max ) {
+    if ( *logging == true ) {
+      Print(str);
+      ++(*current_error_cnt);
+      if (*current_error_cnt == error_max)
+        Print("\t--> suppressing further errors for now\r\n");
+    }
+    else { // not logging
+      if ( *current_error_cnt <= error_restart_threshold )
+        *logging = true; // restart logging
+    }
+  }
+  else { // more than error_max errors
+    *logging = false;
+  }
 
+  return;
+}
 
 
 void MonitorTask(void *parameters)
@@ -59,18 +81,23 @@ void MonitorTask(void *parameters)
 
   struct MonitorTaskArgs_t *args = parameters;
 
+  configASSERT(args->name != 0);
 
-  //vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
+  bool log = true;
+  int current_error_cnt = 0;
 
 
   for (;;) {
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next
     // rev of the board.
+    char tmp[64];
     static bool good = false;
     if ( getPSStatus(5) != PWR_ON) {
       if ( good ) {
-        Print("MON: 3V3 died. Skipping I2C monitoring.\n");
+        snprintf(tmp, 64, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
+            args->name);
+        SuppressedPrint(tmp, &current_error_cnt, &log);
         good = false;
       }
       vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
@@ -81,42 +108,48 @@ void MonitorTask(void *parameters)
     }
     // loop over devices
     for ( uint8_t ps = 0; ps < args->n_devices; ++ ps ) {
-      char tmp[64];
+      if ( getPSStatus(5) != PWR_ON)
+        break;
+
       // select the appropriate output for the mux
       data[0] = 0x1U<<args->devices[ps].mux_bit;
-      snprintf(tmp, 64, "MON: Output of mux set to 0x%02x\n", data[0]);
+      snprintf(tmp, 64, "MON(%s): Output of mux set to 0x%02x\r\n", args->name,
+               data[0]);
       DPRINT(tmp);
       tSMBusStatus r = SMBusMasterI2CWrite(args->smbus, args->devices[ps].mux_addr, data, 1);
       if ( r != SMBUS_OK ) {
-        Print("MON: I2CBus command failed  (setting mux)\n");
+        snprintf(tmp, 64, "MON(%s): I2CBus command failed  (setting mux)\r\n", args->name);
+        SuppressedPrint(tmp, &current_error_cnt, &log);
         continue;
       }
       while ( SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *args->smbus_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON: Mux writing error %d, break out of loop (ps=%d) ...\n",
-            *args->smbus_status, ps);
-        Print(tmp);
+        snprintf(tmp, 64, "MON(%s): Mux writing error %d, break out of loop (ps=%d) ...\r\n",
+            args->name, *args->smbus_status, ps);
+        SuppressedPrint(tmp, &current_error_cnt, &log);
         break;
       }
 #ifdef DEBUG_MON
       data[0] = 0xAAU;
       r = SMBusMasterI2CRead(args->smbus, 0x70U, data, 1);
       if ( r != SMBUS_OK ) {
-        Print("MON: Read of MUX output failed\n");
+        snprintf(tmp, 64, "MON(%s): Read of MUX output failed\r\n", args->name);
+        SuppressedPrint(tmp, &current_error_cnt, &log);
       }
       while ( SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *args->smbus_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON: Mux reading error %d, break out of loop (ps=%d) ...\n",
-            *args->smbus_status, ps);
-        Print(tmp);
+        snprintf(tmp, 64, "MON(%s): Mux reading error %d, break out of loop (ps=%d) ...\r\n",
+            args->name, *args->smbus_status, ps);
+        SuppressedPrint(tmp, &current_error_cnt, &log);
         break;
       }
       else {
-        snprintf(tmp, 64, "MON: read back register on mux to be %02x\n", data[0]);
+        snprintf(tmp, 64, "MON(%s): read back register on mux to be %02x\r\n",
+            args->name, data[0]);
         DPRINT(tmp);
       }
 #endif  // DEBUG_MON
@@ -125,17 +158,18 @@ void MonitorTask(void *parameters)
         r = SMBusMasterByteWordWrite(args->smbus, args->devices[ps].dev_addr, PAGE_COMMAND,
             &page, 1);
         if ( r != SMBUS_OK ) {
-          Print("SMBUS command failed  (setting page)\n");
+          Print("SMBUS command failed  (setting page)\r\n");
         }
         while ( SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
         }
         // this is checking the return from the interrupt
         if (*args->smbus_status != SMBUS_OK ) {
-          snprintf(tmp, 64, "MON: Page SMBUS ERROR: %d\n", *args->smbus_status);
-          Print(tmp);
+          snprintf(tmp, 64, "MON(%s): Page SMBUS ERROR: %d\r\n",
+              args->name, *args->smbus_status);
+          SuppressedPrint(tmp, &current_error_cnt, &log);
         }
-        snprintf(tmp, 64, "\t\tMON: Page %d\n", page);
+        snprintf(tmp, 64, "\t\tMON(%s): Page %d\r\n", args->name, page);
         DPRINT(tmp);
 
         // loop over commands
@@ -145,25 +179,26 @@ void MonitorTask(void *parameters)
           r = SMBusMasterByteWordRead(args->smbus, args->devices[ps].dev_addr,
               args->commands[c].command, data, args->commands[c].size);
           if ( r != SMBUS_OK ) {
-            snprintf(tmp, 64, "MON: SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\n", ps,c,page);
-            Print(tmp);
+            snprintf(tmp, 64, "MON(%s): SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\r\n",
+                args->name, ps,c,page);
+            SuppressedPrint(tmp, &current_error_cnt, &log);
             continue; // abort reading this register
           }
           while ( SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
           }
           if (*args->smbus_status != SMBUS_OK ) {
-            snprintf(tmp, 64, "MON: SMBUS ERROR: %d\n", *args->smbus_status);
+            snprintf(tmp, 64, "MON(%s): SMBUS ERROR: %d\r\n",args->name, *args->smbus_status);
             DPRINT(tmp);
           }
           if ( *args->smbus_status != SMBUS_OK ) {
-            snprintf(tmp, 64, "Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\n",
-                *args->smbus_status, ps,c,page);
-        	  Print(tmp);
+            snprintf(tmp, 64, "MON(%s): Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n",
+                args->name, *args->smbus_status, ps,c,page);
+        	  SuppressedPrint(tmp, &current_error_cnt, &log);
         	  break;
           }
-          snprintf(tmp, 64, "MON: %d %s is 0x%02x %02x\n", ps, args->commands[c].name,
-                   data[1], data[0]);
+          snprintf(tmp, 64, "MON(%s): %d %s is 0x%02x %02x\r\n", args->name, ps,
+                   args->commands[c].name, data[1], data[0]);
           DPRINT(tmp);
           float val;
           if ( args->commands[c].type == PM_LINEAR11 ) {
@@ -171,7 +206,7 @@ void MonitorTask(void *parameters)
             val = linear11_to_float(ii);
             int tens = val;
             int fraction = ABS((val - tens)*100.0);
-            snprintf(tmp, 64, "\t\t%d.%02d (linear11)\n", tens, fraction);
+            snprintf(tmp, 64, "\t\t%d.%02d (linear11)\r\n", tens, fraction);
             DPRINT(tmp);
           }
           else if ( args->commands[c].type == PM_LINEAR16U ) {
@@ -179,7 +214,7 @@ void MonitorTask(void *parameters)
             val = linear16u_to_float(ii);
             int tens = val;
             int fraction = ABS((val - tens)*100.0);
-            snprintf(tmp, 64,  "\t\t%d.%02d (linear16u)\n", tens, fraction);
+            snprintf(tmp, 64,  "\t\t%d.%02d (linear16u)\r\n", tens, fraction);
             DPRINT(tmp);
           }
           else if ( args->commands[c].type == PM_STATUS ) {

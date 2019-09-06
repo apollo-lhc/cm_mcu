@@ -44,20 +44,24 @@ void Print(const char* str);
 # define DPRINT(x)
 #endif // DEBUG_FIF
 
+// i2c addresses
+// ECUO-B04 XCVR: 0x50 7 bit I2C address
+// ECUO-T12 Tx:   0x50 7 bit I2C address
+// ECUO-R12 Rx:   0x54 7 bit I2C address
 
 
 struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
-    {"K01 12 Tx GTH", 0x70, 0, 0x54},
-    {"K01 12 Rx GTH", 0x70, 1, 0x50},
-    {"K02 12 Tx GTH", 0x70, 2, 0x54},
-    {"K02 12 Rx GTH", 0x70, 3, 0x50},
-    {"K03 12 Tx GTH", 0x70, 4, 0x54},
-    {"K03 12 Rx GTH", 0x70, 5, 0x50},
+    {"K01  12 Tx GTH", 0x70, 0, 0x50},
+    {"K01  12 Rx GTH", 0x70, 1, 0x54},
+    {"K02  12 Tx GTH", 0x70, 2, 0x50},
+    {"K02  12 Rx GTH", 0x70, 3, 0x54},
+    {"K03  12 Tx GTH", 0x70, 4, 0x50},
+    {"K03  12 Rx GTH", 0x70, 5, 0x54},
     {"K04 4 XCVR GTY", 0x71, 0, 0x50},
     {"K05 4 XCVR GTY", 0x71, 1, 0x50},
     {"K06 4 XCVR GTY", 0x71, 2, 0x50},
-    {"K07 12 Tx GTY", 0x71, 3, 0x54},
-    {"K07 12 Rx GTY", 0x71, 4, 0x50},
+    {"K07  12 Tx GTY", 0x71, 3, 0x50},
+    {"K07  12 Rx GTY", 0x71, 4, 0x54},
     {"V01 4 XCVR GTY", 0x70, 0, 0x50},
     {"V02 4 XCVR GTY", 0x70, 1, 0x50},
     {"V03 4 XCVR GTY", 0x70, 2, 0x50},
@@ -68,14 +72,15 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"V08 4 XCVR GTY", 0x71, 1, 0x50},
     {"V09 4 XCVR GTY", 0x71, 2, 0x50},
     {"V10 4 XCVR GTY", 0x71, 3, 0x50},
-    {"V11 12 Tx GTY", 0x70, 6, 0x54},
-    {"V11 12 Rx GTY", 0x70, 7, 0x50},
-    {"V12 12 Tx GTY", 0x71, 4, 0x54},
-    {"V12 12 Rx GTY", 0x71, 5, 0x50},
+    {"V11  12 Tx GTY", 0x70, 6, 0x50},
+    {"V11  12 Rx GTY", 0x70, 7, 0x54},
+    {"V12  12 Tx GTY", 0x71, 4, 0x50},
+    {"V12  12 Rx GTY", 0x71, 5, 0x54},
 };
 
-#define FF_TEMP_COMMAND_REG 0x16 // 8 bit 2's complement int, valid from 0-80 C, LSB is 1 deg C
-
+// 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
+// Same address for 4 XCVR and 12 Tx/Rx devices
+#define FF_TEMP_COMMAND_REG 0x16
 // I2C for VU7P optics
 extern tSMBus g_sMaster3;
 extern tSMBusStatus eStatus3 ;
@@ -150,7 +155,7 @@ void FireFlyTask(void *parameters)
       }
       if ( getPSStatus(5) != PWR_ON) {
         if ( good ) {
-          Print("FIF: 3V3 died. Skipping I2C monitoring.\n");
+          Print("FIF: 3V3 died. Skipping I2C monitoring.\r\n");
           good = false;
         }
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
@@ -163,18 +168,18 @@ void FireFlyTask(void *parameters)
       char tmp[64];
       // select the appropriate output for the mux
       data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\n", data[0]);
+      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\r\n", data[0]);
       DPRINT(tmp);
       tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
       if ( r != SMBUS_OK ) {
-        Print("FIF: I2CBus command failed  (setting mux)\n");
+        Print("FIF: I2CBus command failed  (setting mux)\r\n");
         continue;
       }
       while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *p_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "FIF: Mux writing error %d, break out of loop (ps=%d) ...\n", *p_status, ff);
+        snprintf(tmp, 64, "FIF: Mux writing error %d, break out of loop (ps=%d) ...\r\n", *p_status, ff);
         Print(tmp);
         break;
       }
@@ -183,18 +188,18 @@ void FireFlyTask(void *parameters)
       data[0] = 0xAAU;
       r = SMBusMasterI2CRead(smbus, ff_i2c_addrs[index].mux_addr, data, 1);
       if ( r != SMBUS_OK ) {
-        Print("FIF: Read of MUX output failed\n");
+        Print("FIF: Read of MUX output failed\r\n");
       }
       while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *p_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "FIF: Mux read error %d, break out of loop (ps=%d) ...\n", *p_status, index);
+        snprintf(tmp, 64, "FIF: Mux read error %d, break out of loop (ps=%d) ...\r\n", *p_status, index);
         Print(tmp);
         break;
       }
       else {
-        snprintf(tmp, 64, "FIF: read back register on mux to be %02x\n", data[0]);
+        snprintf(tmp, 64, "FIF: read back register on mux to be %02x\r\n", data[0]);
         DPRINT(tmp);
       }
 #endif // DEBUG_FIF      
@@ -207,7 +212,7 @@ void FireFlyTask(void *parameters)
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
         if ( r != SMBUS_OK ) {
-          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\n", __func__, ff,c);
+          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,c);
           DPRINT(tmp);
           continue; // abort reading this register
         }
@@ -215,25 +220,45 @@ void FireFlyTask(void *parameters)
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
         }
         if ( *p_status != SMBUS_OK ) {
-          snprintf(tmp, 64, "FIF: %s: Error %d, break out of loop (ps=%d,c=%d) ...\n", __func__, *p_status, ff,c);
+          snprintf(tmp, 64, "FIF: %s: Error %d, break out of loop (ps=%d,c=%d) ...\r\n", __func__, *p_status, ff,c);
           DPRINT(tmp);
           break;
         }
 #ifdef DEBUG_FIF
-        snprintf(tmp, 64, "FIF: %d %s is 0x%02x\n", index, ff_i2c_addrs[index].name, data[0]);
+        snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
         DPRINT(tmp);
 #endif // DEBUG_FIF
         typedef union {
            uint8_t us;
            int8_t s;
          } convert_8_t;
-        convert_8_t tmp; tmp.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_temp[ff] = tmp.s;
+        convert_8_t tmp1; tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_temp[ff] = tmp1.s;
+
 
 
         // wait here for the x msec, where x is 2nd argument below.
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ) );
       } // loop over commands
+
+      // clear the I2C mux
+      data[0] = 0x0;
+      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x (clear)\r\n", data[0]);
+      DPRINT(tmp);
+      r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
+      if ( r != SMBUS_OK ) {
+        Print("FIF: I2CBus command failed  (clearing mux)\r\n");
+        continue;
+      }
+      while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+        vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
+      }
+      if ( *p_status != SMBUS_OK ) {
+        snprintf(tmp, 64, "FIF: Mux clearing error %d, break out of loop (ps=%d) ...\r\n", *p_status, ff);
+        Print(tmp);
+        break;
+      }
+
     } // loop over firefly modules
     update_max(); update_min();
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
