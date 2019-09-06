@@ -537,6 +537,15 @@ static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// this command takes no arguments
+static BaseType_t ver_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  copied += snprintf(m+copied, s-copied, "Version %s built at %s.\r\n",
+      gitVersion(), buildTime()) ;
+  return pdFALSE;
+}
+
 
 // this command takes no arguments
 static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
@@ -548,11 +557,16 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   }
   for ( ; whichff < NFIREFLIES; ++whichff ) {
     int8_t val = getFFvalue(whichff);
-    copied += snprintf(m+copied, s-copied, "%17s: %3d", getFFname(whichff), val);
-    if ( whichff%2 == 1 )
-      copied += snprintf(m+copied, s-copied, "\r\n");
-    else
+    const char *name = getFFname(whichff);
+    if ( val > 0 )
+      copied += snprintf(m+copied, s-copied, "%17s: %2d", name, val);
+    else // dummy value
+      copied += snprintf(m+copied, s-copied, "%17s: %2s", name, "--");
+    bool isTx = (strstr(name, "Tx") != NULL);
+    if ( isTx )
       copied += snprintf(m+copied, s-copied, "\t");
+    else
+      copied += snprintf(m+copied, s-copied, "\r\n");
     if ( (s-copied ) < 20 ) {
       ++whichff;
       return pdTRUE;
@@ -912,6 +926,14 @@ CLI_Command_Definition_t sensor_summary_command = {
     0
 };
 
+static
+CLI_Command_Definition_t version_command = {
+    .pcCommand="version",
+    .pcHelpString="version\r\n Displays information about MCU firmware\r\n",
+    .pxCommandInterpreter = ver_ctl,
+    0
+};
+
 
 
 void vCommandLineTask( void *pvParameters )
@@ -928,22 +950,23 @@ void vCommandLineTask( void *pvParameters )
   uint32_t uart_base = args->uart_base;
 
   // register the commands
-  FreeRTOS_CLIRegisterCommand(&task_stats_command );
-  FreeRTOS_CLIRegisterCommand(&task_command  );
+  FreeRTOS_CLIRegisterCommand(&adc_command      );
+  FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
+  FreeRTOS_CLIRegisterCommand(&ff_command       );
+  FreeRTOS_CLIRegisterCommand(&fpga_command       );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
-  FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
+  FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
   FreeRTOS_CLIRegisterCommand(&i2c_write_command);
   FreeRTOS_CLIRegisterCommand(&i2c_write_reg_command);
   FreeRTOS_CLIRegisterCommand(&i2c_scan_command );
-  FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
-  FreeRTOS_CLIRegisterCommand(&adc_command      );
-  FreeRTOS_CLIRegisterCommand(&ff_command       );
-  FreeRTOS_CLIRegisterCommand(&fpga_command       );
+  FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
-  FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
+  FreeRTOS_CLIRegisterCommand(&task_stats_command );
+  FreeRTOS_CLIRegisterCommand(&task_command  );
+  FreeRTOS_CLIRegisterCommand(&version_command  );
 
 
   /* Send a welcome message to the user knows they are connected. */

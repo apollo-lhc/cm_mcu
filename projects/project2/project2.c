@@ -308,6 +308,18 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus_status = &eStatus1,
 };
 
+const char* buildTime()
+{
+  const char *btime = __TIME__ ", " __DATE__;
+  return btime;
+}
+
+const char* gitVersion()
+{
+  const char *gitVersion = FIRMWARE_VERSION;
+  return gitVersion;
+}
+
 // 
 int main( void )
 {

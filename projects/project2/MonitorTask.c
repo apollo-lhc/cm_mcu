@@ -48,19 +48,21 @@ void Print(const char* str);
 #define PAGE_COMMAND 0x0
 
 static
-void SuppressedPrint(const char* str, int * current_error_cnt, bool * logging)
+void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
 {
-  const int error_max = 100;
-  const int error_restart_threshold = 50;
+  const int error_max = 40;
+  const int error_restart_threshold = 30;
 
   if (*current_error_cnt < error_max ) {
     if ( *logging == true ) {
       Print(str);
       ++(*current_error_cnt);
+      if (*current_error_cnt == error_max)
+        Print("\t--> suppressing further errors for now\r\n");
     }
     else { // not logging
       if ( *current_error_cnt <= error_restart_threshold )
-        *logging = true;
+        *logging = true; // restart logging
     }
   }
   else { // more than error_max errors
