@@ -222,6 +222,7 @@ void FireFlyTask(void *parameters)
         if ( *p_status != SMBUS_OK ) {
           snprintf(tmp, 64, "FIF: %s: Error %d, break out of loop (ps=%d,c=%d) ...\r\n", __func__, *p_status, ff,c);
           DPRINT(tmp);
+          ff_temp[ff] =-55;
           break;
         }
 #ifdef DEBUG_FIF
