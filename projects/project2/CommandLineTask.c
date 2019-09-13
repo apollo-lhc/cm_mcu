@@ -71,6 +71,16 @@ extern tSMBusStatus eStatus6;
 static tSMBus *p_sMaster = &g_sMaster4;
 static tSMBusStatus * p_eStatus = &eStatus4;
 
+// use these mutexes to ensure that the
+// state of the I2C muxes is not changed
+//extern SemaphoreHandle_t xI2C1Mutex;
+//extern SemaphoreHandle_t xI2C2Mutex;
+//extern SemaphoreHandle_t xI2C3Mutex;
+//extern SemaphoreHandle_t xI2C4Mutex;
+//extern SemaphoreHandle_t xI2C6Mutex;
+//
+//static SemaphoreHandle_t xCurrentI2CMutex;
+
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
 #pragma GCC diagnostic push
@@ -465,13 +475,13 @@ static BaseType_t led_ctl(char *m, size_t s, const char *mm)
     message = RED_LED_ON;
   }
   else if ( i1 == 2 ) {
-    message = RED_LED_TOGGLE; // turn on power supply
+    message = RED_LED_TOGGLE;
   }
   else if ( i1 == 3 ) {
-    message = RED_LED_TOGGLE3; // turn off power supply
+    message = RED_LED_TOGGLE3;
   }
   else if ( i1 == 4 ) {
-    message = RED_LED_TOGGLE4; // turn off power supply
+    message = RED_LED_TOGGLE4;
   }
   // Send a message to the LED task
   xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));
@@ -549,38 +559,90 @@ static BaseType_t ver_ctl(char *m, size_t s, const char *mm)
 }
 
 
-// this command takes no arguments
+// this command takes up to two arguments
 static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
 {
+  // argument handling
+  int8_t *p1, *p2;
+  BaseType_t p1l, p2l;
+  int argc = 0;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l);
+  if ( p1 != NULL ) {
+    ++argc;
+    p1[p1l] = 0x00; // terminate strings
+  }
+  if ( p2 != NULL ) {
+    ++argc;
+    p2[p2l] = 0x00; // terminate strings
+  }
   int copied = 0;
   static int whichff = 0;
-  if ( whichff == 0 ) {
-    copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
-  }
-  for ( ; whichff < NFIREFLIES; ++whichff ) {
-    int8_t val = getFFvalue(whichff);
-    const char *name = getFFname(whichff);
-    if ( val > 0 )
-      copied += snprintf(m+copied, s-copied, "%17s: %2d", name, val);
-    else // dummy value
-      copied += snprintf(m+copied, s-copied, "%17s: %2s", name, "--");
-    bool isTx = (strstr(name, "Tx") != NULL);
-    if ( isTx )
-      copied += snprintf(m+copied, s-copied, "\t");
-    else
-      copied += snprintf(m+copied, s-copied, "\r\n");
-    if ( (s-copied ) < 20 ) {
-      ++whichff;
-      return pdTRUE;
-    }
 
+  if ( argc == 0 ) { // default command: temps
+
+    if ( whichff == 0 ) {
+      copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
+    }
+    for ( ; whichff < NFIREFLIES; ++whichff ) {
+      int8_t val = getFFvalue(whichff);
+      const char *name = getFFname(whichff);
+      if ( val > 0 )
+        copied += snprintf(m+copied, s-copied, "%17s: %2d", name, val);
+      else // dummy value
+        copied += snprintf(m+copied, s-copied, "%17s: %2s", name, "--");
+      bool isTx = (strstr(name, "Tx") != NULL);
+      if ( isTx )
+        copied += snprintf(m+copied, s-copied, "\t");
+      else
+        copied += snprintf(m+copied, s-copied, "\r\n");
+      if ( (s-copied ) < 20 ) {
+        ++whichff;
+        return pdTRUE;
+      }
+
+    }
+    if ( whichff%2 ==1 ) {
+      m[copied++] = '\r';
+      m[copied++] = '\n';
+      m[copied] = '\0';
+    }
+    whichff = 0;
   }
-  if ( whichff%2 ==1 ) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
+  else { // more than one argument, check which command
+    if ( argc == 1 ) {
+      copied += snprintf(m+copied, s-copied, "%s: command %s needs an argument\r\n",
+          __func__, p1);
+      return pdFALSE;
+    }
+    char *c;
+    int message;
+    if ( strncmp(p1, "cdr",3) == 0 ) {
+      c = "off";
+      message = FFLY_DISABLE_CDR; // default: disable
+      if ( strncmp(p2, "on", 2) == 0 ) {
+        message = FFLY_ENABLE_CDR;
+        c = "on";
+      }
+    }
+    else if (strncmp(p1, "xmit",4) == 0 ) {
+      c = "off";
+      message = FFLY_DISABLE_TRANSMITTERS;
+      if ( strncmp(p2, "on", 2) == 0 ) {
+        message = FFLY_ENABLE_TRANSMITTERS;
+        c = "on";
+      }
+    }
+    else {
+      copied += snprintf(m+copied,s-copied, "%s: command %s not recognized\r\n",
+          __func__, p1);
+      return pdFALSE;
+    }
+    xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
+    copied += snprintf(m+copied,s-copied, "%s: command %s %s sent.\r\n",
+        __func__, p1,c);
+
+  } // end commands with arguments
   return pdFALSE;
 }
 
@@ -910,7 +972,7 @@ CLI_Command_Definition_t ff_command = {
     .pcCommand="ff",
     .pcHelpString="ff\r\n Displays a table showing the state of FF modules.\r\n",
     .pxCommandInterpreter = ff_ctl,
-    0
+    -1
 };
 
 static

@@ -16,6 +16,7 @@
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
+#include "Tasks.h"
 
 // FreeRTOS includes
 #include "FreeRTOS.h"
@@ -67,7 +68,8 @@ void PowerSupplyTask(void *parameters)
         set_ps();
         break;
       default:
-        toggle_gpio_pin(TM4C_LED_RED); // message I don't understand? Toggle red LED
+        message = RED_LED_TOGGLE;
+        xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10)); // message I don't understand? Toggle red LED
         break;
       }
     }
