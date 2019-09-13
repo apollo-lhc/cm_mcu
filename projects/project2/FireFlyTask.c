@@ -126,7 +126,7 @@ int8_t getFFvalue(const uint8_t i)
 }
 
 static
-int write_ff_register(const char*name, uint8_t reg, uint16_t value, int size)
+int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
 {
   configASSERT(size <= 2);
   // find the appropriate information for this FF device
@@ -191,20 +191,25 @@ int write_ff_register(const char*name, uint8_t reg, uint16_t value, int size)
   return 0;
 }
 
+#define ECU0_14G_TX_DISABLE_REG      0x34
 #define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
 #define ECU0_25G_XVCR_CDR_REG        0x62
 
 static
-int disable_xcvr_transmit(bool disable)
+int disable_transmit(bool disable)
 {
   int ret = 0;
-  uint8_t value = 0xf;
+  uint16_t value = 0x3ff;
   if ( disable == false )
     value = 0x0;
   for ( int i = 0; i < NFIREFLIES; ++ i) {
     if ( strstr(ff_i2c_addrs[i].name, "XCVR") != NULL ) {
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG,
           value, 1);
+    }
+    else if ( strstr(ff_i2c_addrs[i].name, "Tx") != NULL ) {
+      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG,
+          value, 2);
     }
   }
   return ret;
@@ -284,10 +289,10 @@ void FireFlyTask(void *parameters)
           set_xcvr_cdr(0x00);
           break;
         case FFLY_DISABLE_TRANSMITTERS:
-          disable_xcvr_transmit(true);
+          disable_transmit(true);
           break;
         case FFLY_ENABLE_TRANSMITTERS:
-          disable_xcvr_transmit(false);
+          disable_transmit(false);
           break;
         default:
           message = RED_LED_TOGGLE;
