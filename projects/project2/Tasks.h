@@ -14,6 +14,7 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "queue.h"
+#include "semphr.h"
 
  #define MAX(a,b) (a)>(b)?(a):(b)
 
@@ -31,6 +32,13 @@ extern QueueHandle_t xLedQueue;
 // control the LED
 void LedTask(void *parameters);
 
+// this should go elsewhere
+#define RED_LED_OFF     (25)
+#define RED_LED_ON      (26)
+#define RED_LED_TOGGLE  (27)
+#define RED_LED_TOGGLE3 (28)
+#define RED_LED_TOGGLE4 (29)
+
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task
@@ -46,11 +54,26 @@ void MonitorTask(void *parameters);
 #define NFIREFLIES (NFIREFLIES_KU15P+NFIREFLIES_VU7P)
 
 void FireFlyTask(void *parameters);
+extern QueueHandle_t xFFlyQueue;
 
 const char* getFFname(const uint8_t i);
 int8_t getFFvalue(const uint8_t i);
 
-// version info
+int disable_xcvr_cdr(const char *name);
+
+// messages for FF task
+#define FFLY_DISABLE_TRANSMITTERS (1)
+#define FFLY_ENABLE_TRANSMITTERS  (2)
+#define FFLY_ENABLE_CDR        (3)
+#define FFLY_DISABLE_CDR       (4)
+//// control access to I2C
+//extern SemaphoreHandle_t xI2C1Mutex;
+//extern SemaphoreHandle_t xI2C2Mutex;
+//extern SemaphoreHandle_t xI2C3Mutex;
+//extern SemaphoreHandle_t xI2C4Mutex;
+//extern SemaphoreHandle_t xI2C6Mutex;
+
+// ---- version info
 const char* buildTime();
 const char* gitVersion();
 

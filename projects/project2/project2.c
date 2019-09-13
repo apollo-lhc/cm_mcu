@@ -81,8 +81,15 @@ __error__(char *pcFilename, uint32_t ui32Line)
 
 uint32_t g_ui32SysClock = 0;
 
-
+// Mutex for UART -- should really have one for each UART
 static SemaphoreHandle_t xUARTMutex = NULL;
+
+// Mutex for I2C controllers
+//SemaphoreHandle_t xI2C1Mutex = NULL;
+//SemaphoreHandle_t xI2C2Mutex = NULL;
+//SemaphoreHandle_t xI2C3Mutex = NULL;
+//SemaphoreHandle_t xI2C4Mutex = NULL;
+//SemaphoreHandle_t xI2C6Mutex = NULL;
 
 
 void Print(const char* str)
@@ -98,7 +105,8 @@ void Print(const char* str)
 
 
 
-
+// These register locations are defined by the ARM Cortex-M4F
+// specification and do not depend on the TM4C1290NCPDT
 // ARM DWT
 #define DEMCR_TRCENA    0x01000000
 
@@ -126,7 +134,7 @@ uint32_t stopwatch_getticks()
     uint32_t curr_count =  CPU_CYCLES;
     uint32_t diff = curr_count - prev_count;
     prev_count = curr_count;
-    counter += diff>>12;
+    counter += diff>>12; // degrade counter a bit-- don't need this precision
     return counter;
 }
 
@@ -326,6 +334,12 @@ int main( void )
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
+//  // I2C Mutex for Fireflies
+//  xI2C1Mutex = xSemaphoreCreateMutex();
+//  xI2C2Mutex = xSemaphoreCreateMutex();
+//  xI2C3Mutex = xSemaphoreCreateMutex();
+//  xI2C4Mutex = xSemaphoreCreateMutex();
+//  xI2C6Mutex = xSemaphoreCreateMutex();
 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
@@ -374,6 +388,10 @@ int main( void )
 
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xPwrQueue != NULL);
+
+  xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
+  configASSERT(xFFlyQueue != NULL);
+
 
 
   xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue

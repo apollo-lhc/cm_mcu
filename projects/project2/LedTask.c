@@ -15,6 +15,7 @@
 #include "common/power_ctl.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
+#include "Tasks.h"
 
 // FreeRTOS includes
 #include "FreeRTOS.h"
@@ -45,10 +46,10 @@ void LedTask(void *parameters)
     if ( xQueueReceive(xLedQueue, &message, 0) ) {
       switch (message ) {
       case PS_BAD:
-        write_gpio_pin(BLADE_POWER_OK,0);
+        write_gpio_pin(BLADE_POWER_OK,0); // this should not be here
         break;
       case PS_GOOD:
-        write_gpio_pin(BLADE_POWER_OK, 1);
+        write_gpio_pin(BLADE_POWER_OK, 1); // this should not be here
         break;
       case RED_LED_ON:
         redLedPattern = ON;

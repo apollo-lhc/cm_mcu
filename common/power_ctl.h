@@ -26,13 +26,6 @@
 
 // alarms
 
-// this should go elsewhere
-#define RED_LED_OFF     (25)
-#define RED_LED_ON      (26)
-#define RED_LED_TOGGLE  (27)
-#define RED_LED_TOGGLE3 (28)
-#define RED_LED_TOGGLE4 (29)
-
 #define HUH             (99)
 
 enum ps_state { PWR_UNKNOWN, PWR_ON, PWR_OFF, DISABLED };
