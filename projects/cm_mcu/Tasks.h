@@ -8,8 +8,8 @@
  *      where a dedicated header file would be overkill.
  */
 
-#ifndef PROJECTS_PROJECT2_TASKS_H_
-#define PROJECTS_PROJECT2_TASKS_H_
+#ifndef PROJECTS_CMU_TASKS_H_
+#define PROJECTS_CMU_TASKS_H_
 
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
@@ -99,4 +99,4 @@ uint32_t getAlarmStatus();
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
 
-#endif /* PROJECTS_PROJECT2_TASKS_H_ */
+#endif /* PROJECTS_CMU_TASKS_H_ */

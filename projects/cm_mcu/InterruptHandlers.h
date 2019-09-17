@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef PROJECTS_PROJECT2_INTERRUPTHANDLERS_H_
-#define PROJECTS_PROJECT2_INTERRUPTHANDLERS_H_
+#ifndef PROJECTS_CMU_INTERRUPTHANDLERS_H_
+#define PROJECTS_CMU_INTERRUPTHANDLERS_H_
 
 // local include
 #include "common/smbus.h"
@@ -58,4 +58,4 @@ void xPortSysTickHandler(void);
 
 
 
-#endif /* PROJECTS_PROJECT2_INTERRUPTHANDLERS_H_ */
+#endif /* PROJECTS_CMU_INTERRUPTHANDLERS_H_ */
