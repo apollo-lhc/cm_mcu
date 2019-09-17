@@ -5,8 +5,8 @@
  *      Author: pw94
  */
 
-#ifndef PROJECTS_PROJECT2_COMMANDLINETASK_H_
-#define PROJECTS_PROJECT2_COMMANDLINETASK_H_
+#ifndef PROJECTS_CMU_COMMANDLINETASK_H_
+#define PROJECTS_CMU_COMMANDLINETASK_H_
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
@@ -25,4 +25,4 @@ typedef struct {
   uint32_t uart_base;
 } CommandLineTaskArgs_t;
 
-#endif /* PROJECTS_PROJECT2_COMMANDLINETASK_H_ */
+#endif /* PROJECTS_CMU_COMMANDLINETASK_H_ */

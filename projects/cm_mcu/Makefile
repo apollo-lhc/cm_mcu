@@ -58,7 +58,7 @@ CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
 # The default rule, which causes the project to be built.
 #
 all: ${COMPILER}
-all: ${COMPILER}/project2.axf
+all: ${COMPILER}/cm_mcu.axf
 
 #
 # The rule to clean out all the build products.
@@ -76,39 +76,39 @@ ${COMPILER}:
 #
 # Rules for building the project
 # 
-${COMPILER}/project2.axf: ${COMPILER}/project2.o
-${COMPILER}/project2.axf: ${COMPILER}/pinout.o
-${COMPILER}/project2.axf: ${COMPILER}/pinsel.o
-${COMPILER}/project2.axf: ${COMPILER}/i2c_reg.o
-${COMPILER}/project2.axf: ${COMPILER}/uart.o
-${COMPILER}/project2.axf: ${COMPILER}/utils.o
-${COMPILER}/project2.axf: ${COMPILER}/smbus.o
-${COMPILER}/project2.axf: ${COMPILER}/smbus_units.o
-${COMPILER}/project2.axf: ${COMPILER}/power_ctl.o
-${COMPILER}/project2.axf: ${COMPILER}/CommandLineTask.o
-${COMPILER}/project2.axf: ${COMPILER}/PowerSupplyTask.o
-${COMPILER}/project2.axf: ${COMPILER}/ADCMonitorTask.o
-${COMPILER}/project2.axf: ${COMPILER}/MonitorTask.o
-${COMPILER}/project2.axf: ${COMPILER}/FireFlyTask.o
-${COMPILER}/project2.axf: ${COMPILER}/AlarmTask.o
-${COMPILER}/project2.axf: ${COMPILER}/LedTask.o
-${COMPILER}/project2.axf: ${COMPILER}/InterruptHandlers.o
-${COMPILER}/project2.axf: ${COMPILER}/startup_${COMPILER}.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/cm_mcu.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/pinsel.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/i2c_reg.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/uart.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/utils.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/ADCMonitorTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/FireFlyTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
-${COMPILER}/project2.axf: ${COMPILER}/tasks.o
-${COMPILER}/project2.axf: ${COMPILER}/queue.o
-${COMPILER}/project2.axf: ${COMPILER}/port.o
-${COMPILER}/project2.axf: ${COMPILER}/list.o
-${COMPILER}/project2.axf: ${COMPILER}/stream_buffer.o
-${COMPILER}/project2.axf: ${COMPILER}/heap_4.o
-${COMPILER}/project2.axf: ${COMPILER}/FreeRTOS_CLI.o
-#${COMPILER}/project2.axf: ${COMPILER}/Sample-CLI-commands.o
-${COMPILER}/project2.axf: ${COMPILER}/printf-stdarg.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/queue.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/port.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/list.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/stream_buffer.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/heap_4.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/FreeRTOS_CLI.o
+#${COMPILER}/cm_mcu.axf: ${COMPILER}/Sample-CLI-commands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/printf-stdarg.o
 ## TivaWare
-${COMPILER}/project2.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
-${COMPILER}/project2.axf: project2.ld
-SCATTERgcc_project2=project2.ld
-ENTRY_project2=ResetISR
+${COMPILER}/cm_mcu.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
+${COMPILER}/cm_mcu.axf: cm_mcu.ld
+SCATTERgcc_cm_mcu=cm_mcu.ld
+ENTRY_cm_mcu=ResetISR
 CFLAGSgcc=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
 
 # this rule forces the main function to be recompiled when
@@ -116,7 +116,7 @@ CFLAGSgcc=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
 # git and compile time info right.
 SRCS=$(shell ls *.c ../../common/*.c)
 HDRS=$(shell ls *.h ../../common/*.h)
-${COMPILER}/project2.o: ${SRCS} ${HDRS}
+${COMPILER}/cm_mcu.o: ${SRCS} ${HDRS}
 #
 # Include the automatically generated dependency files.
 #
