@@ -31,7 +31,7 @@ addons:
 #deploy:
 #  provider: releases
 #  api_key: "GITHUB OAUTH TOKEN"
-#  file: projects/project2/gcc/project2.axf
+#  file: projects/project2/gcc/cm_mcu.axf
 #  skip_cleanup: true
 #  on:
 #    tags: true
