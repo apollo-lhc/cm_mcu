@@ -47,7 +47,7 @@ install:
   - cd arm-gcc-toolchain
   - tar -jxf gcc.tar.bz2 --strip=1
   - cd $HOME
-  - curl -L -o freertos-code.zip https://sourceforge.net/projects/freertos/files/FreeRTOS/V10.2.1/FreeRTOSv10.2.1.zip/download
+  - travis_retry curl -L -o freertos-code.zip https://sourceforge.net/projects/freertos/files/FreeRTOS/V10.2.1/FreeRTOSv10.2.1.zip/download
   - unzip -q   freertos-code.zip  -d freertos-code 
   - popd
   - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
