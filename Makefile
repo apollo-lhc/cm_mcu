@@ -2,7 +2,7 @@
 include ./makedefs
 
 
-DIRS=driverlib projects
+DIRS=driverlib projects boot_loader
 
 all: 
 	@for d in ${DIRS}; do \
