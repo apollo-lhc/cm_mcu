@@ -11,6 +11,9 @@
 #include <stdbool.h>
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
+#include "inc/hw_nvic.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/systick.h"
 
 // local includes
 #include "common/i2c_reg.h"
@@ -551,6 +554,41 @@ static BaseType_t adc_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// this command takes no arguments and never returns.
+static BaseType_t bl_ctl(char *m, size_t s, const char *mm)
+{
+  Print("Jumping to boot loader.\r\n");
+  // this code is copied from the JumpToBootLoader()
+  // stack from the boot_demo1 application in the
+  // ek-tm4c129exl part of tiva ware.
+  //
+  // We must make sure we turn off SysTick and its interrupt before entering
+  // the boot loader!
+  //
+  MAP_SysTickIntDisable();
+  MAP_SysTickDisable();
+
+  //
+  // Disable all processor interrupts.  Instead of disabling them
+  // one at a time, a direct write to NVIC is done to disable all
+  // peripheral interrupts.
+  //
+  HWREG(NVIC_DIS0) = 0xffffffff;
+  HWREG(NVIC_DIS1) = 0xffffffff;
+  HWREG(NVIC_DIS2) = 0xffffffff;
+  HWREG(NVIC_DIS3) = 0xffffffff;
+
+  //
+  // Return control to the boot loader.  This is a call to the SVC
+  // handler in the boot loader.
+  //
+  (*((void (*)(void))(*(uint32_t *)0x2c)))();
+
+  // the above points to a memory location in flash.
+  // shut up compiler warning. This will never get called
+  return pdFALSE;
+}
+
 // this command takes no arguments
 static BaseType_t ver_ctl(char *m, size_t s, const char *mm)
 {
@@ -1000,6 +1038,14 @@ CLI_Command_Definition_t version_command = {
     0
 };
 
+static
+CLI_Command_Definition_t bootloader_command = {
+    .pcCommand="bootloader",
+    .pcHelpString="bootloader\r\n Call the boot loader\r\n",
+    .pxCommandInterpreter = bl_ctl,
+    0
+};
+
 
 
 void vCommandLineTask( void *pvParameters )
@@ -1019,6 +1065,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&adc_command      );
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
+  FreeRTOS_CLIRegisterCommand(&bootloader_command  );
   FreeRTOS_CLIRegisterCommand(&fpga_command       );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
