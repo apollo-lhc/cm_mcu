@@ -64,7 +64,7 @@ ${COMPILER}/bl_main.axf: ${COMPILER}/bl_startup_${COMPILER}.o
 ## FreeRTOS
 SCATTERgcc_bl_main=bl_link.ld
 ENTRY_bl_main=ResetISR
-CFLAGSgcc=-DTARGET_IS_TM4C129_RA1 
+CFLAGSgcc=-DTARGET_IS_TM4C129_RA2 
 
 # this rule forces the main function to be recompiled when
 # any of the dependencies are out of date, to get the

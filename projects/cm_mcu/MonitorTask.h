@@ -5,8 +5,8 @@
  *      Author: wittich
  */
 
-#ifndef PROJECTS_CMU_MONITORTASK_H_
-#define PROJECTS_CMU_MONITORTASK_H_
+#ifndef PROJECTS_CM_MCU_MONITORTASK_H_
+#define PROJECTS_CM_MCU_MONITORTASK_H_
 
 #include "common/smbus.h"
 
@@ -55,4 +55,4 @@ extern struct MonitorTaskArgs_t fpga_args;
 
 
 
-#endif /* PROJECTS_CMU_MONITORTASK_H_ */
+#endif /* PROJECTS_CM_MCU_MONITORTASK_H_ */
