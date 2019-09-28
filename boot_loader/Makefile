@@ -26,11 +26,17 @@ IPATH=.
 IPATH+=..
 IPATH+=${ROOT}
 
+## where to find sources
+VPATH=.
+VPATH+=../common
+
 # GIT 
 GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
 
 CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
-
+CFLAGS+=-DTARGET_IS_TM4C129_RA2
+#ugh
+CFLAGS:=$(filter-out -DDEBUG,$(CFLAGS))
 
 #
 # The default rule, which causes the project to be built.
@@ -60,8 +66,12 @@ ${COMPILER}/bl_main.axf: ${COMPILER}/bl_check.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_packet.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_autobaud.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_flash.o
+${COMPILER}/bl_main.axf: ${COMPILER}/bl_userhooks.o
+${COMPILER}/bl_main.axf: ${COMPILER}/uart.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_startup_${COMPILER}.o
-## FreeRTOS
+# TIVAWARE
+#${COMPILER}/bl_main.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
+
 SCATTERgcc_bl_main=bl_link.ld
 ENTRY_bl_main=ResetISR
 CFLAGSgcc=-DTARGET_IS_TM4C129_RA2 

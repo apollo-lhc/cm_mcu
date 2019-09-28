@@ -57,7 +57,7 @@ uint32_t g_ui32Forced;
 // delay.
 //
 //*****************************************************************************
-extern void Delay(uint32_t ui32Count);
+extern void Delay(uint32_t ui32Count); // @suppress("Unused function declaration")
 
 //*****************************************************************************
 //

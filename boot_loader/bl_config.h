@@ -1340,7 +1340,7 @@
 // void MyInitFunc(void);
 //
 //*****************************************************************************
-//#define BL_INIT_FN_HOOK         MyInitFunc
+#define BL_INIT_FN_HOOK         bl_user_init_fn
 
 //*****************************************************************************
 //
@@ -1387,7 +1387,7 @@
 // - ulTotal indicates the number of bytes expected or 0 if this is not known.
 //
 //*****************************************************************************
-//#define BL_PROGRESS_FN_HOOK     MyProgressFunc
+#define BL_PROGRESS_FN_HOOK     bl_user_progress_hook
 
 //*****************************************************************************
 //
@@ -1401,7 +1401,7 @@
 // void MyEndFunc(void);
 //
 //*****************************************************************************
-//#define BL_END_FN_HOOK          MyEndFunc
+#define BL_END_FN_HOOK          bl_user_end_hook
 
 //*****************************************************************************
 //
@@ -1515,7 +1515,7 @@
 // error was detected.
 //
 //*****************************************************************************
-//#define BL_FLASH_ERROR_FN_HOOK  MyFlashErrorFunc
+//#define BL_FLASH_ERROR_FN_HOOK  bl_user_flash_error
 
 //*****************************************************************************
 //

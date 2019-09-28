@@ -50,8 +50,8 @@ void Print(const char* str);
 static
 void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
 {
-  const int error_max = 40;
-  const int error_restart_threshold = 30;
+  const int error_max = 25;
+  const int error_restart_threshold = error_max - 10;
 
   if (*current_error_cnt < error_max ) {
     if ( *logging == true ) {
@@ -86,6 +86,10 @@ void MonitorTask(void *parameters)
   bool log = true;
   int current_error_cnt = 0;
 
+  Print(args->name);
+  char tmp[64];
+  snprintf(tmp, 64, "\tnumber of devices is %d %s\r\n", args->n_devices, args->devices->name);
+  Print(tmp);
 
   for (;;) {
     // check if the 3.3V is there or not. If it disappears then nothing works

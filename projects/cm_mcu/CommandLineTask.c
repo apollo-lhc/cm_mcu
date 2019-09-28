@@ -12,6 +12,7 @@
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_nvic.h"
+#include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/systick.h"
 
@@ -565,8 +566,8 @@ static BaseType_t bl_ctl(char *m, size_t s, const char *mm)
   // We must make sure we turn off SysTick and its interrupt before entering
   // the boot loader!
   //
-  MAP_SysTickIntDisable();
-  MAP_SysTickDisable();
+  ROM_SysTickIntDisable();
+  ROM_SysTickDisable();
 
   //
   // Disable all processor interrupts.  Instead of disabling them

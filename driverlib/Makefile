@@ -52,6 +52,11 @@ include ${ROOT}/makedefs
 #
 IPATH=..
 
+# definitions of the part
+PART=TM4C1290NCPDT
+
+CFLAGS+=-DTARGET_IS_TM4C129_RA2
+
 #
 # The default rule, which causes the driver library to be built.
 #
