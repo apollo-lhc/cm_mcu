@@ -32,6 +32,7 @@
 //*****************************************************************************
 extern void Delay(uint32_t ui32Count);
 
+void ConfigureDevice(void);
 
 void
 bl_user_init_fn(void)
@@ -47,6 +48,8 @@ bl_user_init_fn(void)
   ROM_UARTConfigSetExpClk(UART1_BASE, CRYSTAL_FREQ, 115200,
                           (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                               UART_CONFIG_PAR_NONE));
+
+  ConfigureDevice();
 
   UARTPrint(UART4_BASE, "Bootloader starting\r\n");
   UARTPrint(UART4_BASE, FIRMWARE_VERSION "\r\n");
@@ -140,6 +143,10 @@ bl_user_UARTReceive_timeout(uint8_t *pui8Data, uint32_t ui32Size, uint32_t timeo
 #define BUFFER_SZ  4
 unsigned long bl_user_checkupdate_hook(void)
 {
+  ConfigureDevice();
+  //
+  UARTPrint(UART4_BASE, __func__);
+
   int timeout = 100000;
   uint32_t ui32Size = BUFFER_SIZE;
   uint8_t ui8Data[BUFFER_SZ];
