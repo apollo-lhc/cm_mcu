@@ -9,6 +9,8 @@
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
+#include "inc/hw_uart.h"
+#include "inc/hw_types.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/sysctl.h"
@@ -17,6 +19,8 @@
 #include "driverlib/gpio.h"
 
 #include "boot_loader/bl_config.h"
+#include "boot_loader/bl_uart.h"
+
 
 #include "common/uart.h"
 
@@ -98,4 +102,77 @@ void bl_user_flash_error()
 //  Delay(LONG_DELAY);
 
   return;
+}
+#if 0
+// UART receive with timeout
+static
+int
+bl_user_UARTReceive_timeout(uint8_t *pui8Data, uint32_t ui32Size, uint32_t timeout)
+{
+  timeout = (timeout<0?-timeout:timeout);
+  //
+  // Send out the number of bytes requested.
+  //
+  while(ui32Size--)
+  {
+    //
+    // Wait for the FIFO to not be empty.
+    //
+    while ((HWREG(UARTx_BASE + UART_O_FR) & UART_FR_RXFE))
+    {
+      if ( timeout-- <=0 )
+        break;
+    }
+    if ( timeout <0)
+      return 0;
+
+    //
+    // Receive a byte from the UART.
+    //
+    *pui8Data++ = HWREG(UARTx_BASE + UART_O_DR);
+  }
+  return ui32Size;
+}
+#endif
+// check the UART, if I receive the special command within
+// some period of time I force an update
+// return non-zero to force an update
+#define BUFFER_SZ  4
+unsigned long bl_user_checkupdate_hook(void)
+{
+  int timeout = 100000;
+  uint32_t ui32Size = BUFFER_SIZE;
+  uint8_t ui8Data[BUFFER_SZ];
+  uint8_t recvd = 0;
+  //
+  // Send out the number of bytes requested.
+  //
+  while(ui32Size--)
+  {
+    //
+    // Wait for the FIFO to not be empty.
+    //
+    while ((HWREG(UARTx_BASE + UART_O_FR) & UART_FR_RXFE))
+    {
+      if ( timeout-- <=0 )
+        break;
+    }
+    if ( timeout <=0)
+      break;
+
+    //
+    // Receive a byte from the UART.
+    //
+    ui8Data[recvd++] = HWREG(UARTx_BASE + UART_O_DR);
+  }
+  if ( ! recvd )
+    return 0; // got nothing on the UART
+  // look for the special signal
+  if ( ui8Data[0] == 'A'  &&
+      ui8Data[0] == '5'  &&
+      ui8Data[0] == 'A'  &&
+      ui8Data[0] == '5'
+      )
+    return 1;
+  return 0;
 }

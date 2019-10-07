@@ -402,7 +402,7 @@ AckPacket();
 void
 Updater(void)
 {
-  UARTPrint(UART4_BASE, "starting Updater\r\n");
+  UARTPrint(UART4_BASE, "-------------------\r\nCM MCU BOOT LOADER\r\n--------------------\r\n");
   UARTPrint(UART4_BASE, "build version " FIRMWARE_VERSION "\r\n");
 
 
@@ -695,7 +695,7 @@ Updater(void)
       HWREG(SYSCTL_SRSSI) = SSI_CLOCK_ENABLE;
       HWREG(SYSCTL_SRSSI) = 0;
 #endif
-
+      ROM_SysCtlReset(); // PW HACK
       //
       // Branch to the specified address.  This should never return.
       // If it does, very bad things will likely happen since it is
