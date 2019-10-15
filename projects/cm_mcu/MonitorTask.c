@@ -86,11 +86,6 @@ void MonitorTask(void *parameters)
   bool log = true;
   int current_error_cnt = 0;
 
-  Print(args->name);
-  char tmp[64];
-  snprintf(tmp, 64, "\tnumber of devices is %d %s\r\n", args->n_devices, args->devices->name);
-  Print(tmp);
-
   for (;;) {
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next
