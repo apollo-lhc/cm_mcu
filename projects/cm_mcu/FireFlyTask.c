@@ -356,7 +356,7 @@ void FireFlyTask(void *parameters)
           vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
         }
         if ( *p_status != SMBUS_OK ) {
-          snprintf(tmp, 64, "FIF: %s: Error %d, break out of loop (ps=%d,c=%d) ...\r\n", __func__, *p_status, ff,c);
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status, ff,c);
           DPRINT(tmp);
           ff_temp[ff] =-55;
           break;

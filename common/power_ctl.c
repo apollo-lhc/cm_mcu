@@ -279,7 +279,12 @@ disable_ps(void)
   for ( int o = 0; o < N_PS_OKS; ++o )
     if ( states[o] != PWR_DISABLED )
       states[o] = PWR_OFF;
-  ShortDelay();
+  // this long delay (probably too long) allows all I2C tasks
+  // to finish their activity. For Rev2 of the CM (when the I2C
+  // pullups are from management power) this delay can be reduced or
+  // removed.
+  vTaskDelay(pdMS_TO_TICKS(200));
+
   // disable in reverse order
   for (int prio = num_priorities; prio > 0;  --prio) {
     // disable the supplies at the relevant priority

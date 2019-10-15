@@ -1,8 +1,8 @@
 /******************************************************************************
  *
- * project0.ld - Linker configuration file for project0.
+ * bl_link.ld - Scatter file for Gnu tools
  *
- * Copyright (c) 2013-2017 Texas Instruments Incorporated.  All rights reserved.
+ * Copyright (c) 2007-2017 Texas Instruments Incorporated.  All rights reserved.
  * Software License Agreement
  * 
  * Texas Instruments (TI) is supplying this software for use solely and
@@ -18,41 +18,34 @@
  * CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
  * DAMAGES, FOR ANY REASON WHATSOEVER.
  * 
- * This is part of revision 2.1.4.178 of the EK-TM4C1294XL Firmware Package.
+ * This is part of revision 2.1.4.178 of the Tiva Firmware Development Package.
  *
  *****************************************************************************/
 
-MEMORY
-{
-    FLASH (rx) : ORIGIN = 0x00004000, LENGTH = 0x000fc000
-    SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00040000
-}
-
 SECTIONS
 {
-    .text :
+    .text 0x20000000 : AT (0x00000000)
     {
         _text = .;
         KEEP(*(.isr_vector))
         *(.text*)
         *(.rodata*)
         _etext = .;
-    } > FLASH
+    }
 
-    .data : AT(ADDR(.text) + SIZEOF(.text))
+    .data 0x20000000 + SIZEOF(.text) : AT (SIZEOF(.text))
     {
         _data = .;
-        _ldata = LOADADDR (.data);
-        *(vtable)
         *(.data*)
         _edata = .;
-    } > SRAM
+    }
 
-    .bss :
+    .bss 0x20000000 + SIZEOF(.text) + SIZEOF(.data) :
+        AT (ADDR(.data) + SIZEOF(.data))
     {
         _bss = .;
         *(.bss*)
         *(COMMON)
         _ebss = .;
-    } > SRAM
+    }
 }

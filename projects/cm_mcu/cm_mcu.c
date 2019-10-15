@@ -384,6 +384,8 @@ int main( void )
   for (int i =0; i < fpga_args.n_values; ++i)
     fpga_args.pm_values[i] = -999.;
 
+
+
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
