@@ -330,26 +330,28 @@ static BaseType_t power_ctl(char *m, size_t s, const char *mm)
   }
   else if ( strcmp(p1, "status") == 0 ) { // report status to UART
     int copied = 0;
-    copied += snprintf(m+copied, s-copied, "power_ctl:\r\nLowest ena: %d\r\n",
-        getLowestEnabledPSPriority());
+//    copied += snprintf(m+copied, s-copied, "power_ctl:\r\nLowest ena: %d\r\n",
+//        getLowestEnabledPSPriority());
     bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-    copied += snprintf(m+copied, s-copied, "VU_ENABLE:\t%d\r\nKU_ENABLE:\t%d\r\n",
-        vu_enable, ku_enable);
+    copied += snprintf(m+copied, s-copied, "pwr_ctl:\r\nVU_ENABLE:\t%d\r\n"
+        "KU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
     for ( int i = 0; i < N_PS_OKS; ++i ) {
-      int j = getPSStatus(i);
+      enum ps_state j = getPSStatus(i);
       char *c;
       switch (j) {
-              case 0:
-                c = "UNKNOWN";
+              case PWR_UNKNOWN:
+                c = "PWR_UNKNOWN";
                 break;
-              case 1:
+              case PWR_ON:
                 c = "PWR_ON";
                 break;
-              case 2:
+              case PWR_OFF:
                 c = "PWR_OFF";
                 break;
-              case 3:
+              case PWR_DISABLED:
+                c = "PWR_DISABLED";
+                break;
               default:
                 c = "UNKNOWN";
                 break;
