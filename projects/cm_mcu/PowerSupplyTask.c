@@ -42,6 +42,8 @@ void PowerSupplyTask(void *parameters)
   enum ps_state oldState = PWR_UNKNOWN;
   bool alarm = false;
 
+  bool cli_powerdown_request = false;
+
   // turn on the power supply at the start of the task, if the power enable is sent by the
   // zynq
   if ( read_gpio_pin(BLADE_POWER_EN) == 1 )
@@ -55,6 +57,7 @@ void PowerSupplyTask(void *parameters)
     if ( xQueueReceive(xPwrQueue, &message, 0) ) { // TODO: what if I receive more than one message
       switch (message ) {
       case PS_OFF:
+        cli_powerdown_request = true;
         disable_ps();
         break;
       case TEMP_ALARM:
@@ -65,6 +68,7 @@ void PowerSupplyTask(void *parameters)
         alarm = false;
         break;
       case PS_ON:
+        cli_powerdown_request = false;
         set_ps();
         break;
       default:
@@ -85,7 +89,7 @@ void PowerSupplyTask(void *parameters)
       disable_ps();
       newstate = PWR_OFF;
     }
-    else if ( ! alarm ) { // blade_power_enable and not alarm
+    else if ( ! alarm && ! cli_powerdown_request ) { // blade_power_enable and not alarm
       set_ps();
       newstate = PWR_ON;
     }

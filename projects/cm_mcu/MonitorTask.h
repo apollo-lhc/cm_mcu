@@ -36,7 +36,7 @@ struct dev_i2c_addr_t {
 struct MonitorTaskArgs_t {
   const char *name;
   struct dev_i2c_addr_t * devices;
-  const int n_devices;
+  int n_devices;
   struct pm_command_t * commands;
   const int n_commands;
   float *pm_values;

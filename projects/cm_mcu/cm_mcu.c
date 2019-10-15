@@ -152,7 +152,13 @@ void SystemInit()
   PinoutSet();
 
 
+ }
+// This set of functions partially contains calls that require
+// the FreeRTOS to be further configured.
+void SystemInitInterrupts()
+{
   // Set up the UARTs for the CLI
+  // this also sets up the interrupts
   UART1Init(g_ui32SysClock); // ZYNQ UART
   UART4Init(g_ui32SysClock); // front panel UART
 
@@ -215,8 +221,11 @@ void SystemInit()
   setupActiveLowPins();
 
   // SYSTICK timer -- this is already enabled in the portable layer
-  return;
+return;
+
+
 }
+
 
 volatile uint32_t g_ui32SysTickCount;
 
@@ -256,6 +265,17 @@ struct dev_i2c_addr_t fpga_addrs[] = {
     {"VU7P", 0x70, 1, 0x36},
     {"KU15P", 0x70, 0, 0x36},
 };
+
+struct dev_i2c_addr_t fpga_addrs_kuonly[] = {
+    {"KU15P", 0x70, 0, 0x36},
+};
+
+struct dev_i2c_addr_t fpga_addrs_vuonly[] = {
+    {"VU7P", 0x70, 1, 0x36},
+};
+
+
+
 struct pm_command_t pm_command_fpga[] = {
     { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
 };
@@ -331,15 +351,21 @@ const char* gitVersion()
 // 
 int main( void )
 {
+  SystemInit();
+  // check if we are to include both FPGAs or not
+  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  if ( ! ku_enable ) {
+    fpga_args.devices = fpga_addrs_vuonly;
+    fpga_args.n_devices = 1;
+  }
+  else if ( ! vu_enable ) {
+    fpga_args.devices = fpga_addrs_kuonly;
+    fpga_args.n_devices = 1;
+  }
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
-//  // I2C Mutex for Fireflies
-//  xI2C1Mutex = xSemaphoreCreateMutex();
-//  xI2C2Mutex = xSemaphoreCreateMutex();
-//  xI2C3Mutex = xSemaphoreCreateMutex();
-//  xI2C4Mutex = xSemaphoreCreateMutex();
-//  xI2C6Mutex = xSemaphoreCreateMutex();
 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
@@ -404,7 +430,7 @@ int main( void )
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.
-  SystemInit();
+  SystemInitInterrupts();
 
   // Say hello. The information below is only updated when the main()
   // function is recompiled.
@@ -429,6 +455,10 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
      function will automatically get called if a task overflows its stack. */
   ( void ) pxTask;
   ( void ) pcTaskName;
+  char tmp[256];
+  snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
+  Print(tmp);
+
   for( ;; );
 }
 #endif
