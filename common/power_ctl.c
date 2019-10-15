@@ -114,9 +114,7 @@ bool set_ps()
     return success;
   }
 
-
-  // data structure to turn on various power supplies. This should be ordered
-  // such that the priority increases, though it's not necessary
+  // loop over the enables
   for ( int prio = 1; prio <= num_priorities; ++prio ) {
     // enable the supplies at the relevant priority
     lowest_enabled_ps_prio = prio;
@@ -162,7 +160,7 @@ bool set_ps()
     } // loop over 'ok' bits
     if (  ! all_good ) {
       Print("set_ps: Power supply check failed. ");
-      Print(". Turning off all supplies at this level or lower.\r\n");
+      Print("Turning off all supplies at this level or lower.\r\n");
       // turn off all supplies at current priority level or lower
       // that is probably overkill since they should not all be
       //lowest_enabled_ps_prio = oks[o].priority - 1;
@@ -171,6 +169,13 @@ bool set_ps()
           write_gpio_pin(enables[e].name, 0x0);
 
       }
+      for ( int o = 0; o < N_PS_OKS; ++o ) {
+        if ( states[o] == PWR_DISABLED) continue;
+        if (oks[o].priority >= prio ) {
+          states[o] = PWR_OFF;
+        }
+      }
+      // turn off the state variable too
       success = false;
       break;
     }
@@ -198,33 +203,40 @@ check_ps(void)
 
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-  enum ps_state new_states[N_PS_OKS];
+  enum ps_state new_states[N_PS_OKS] = {PWR_UNKNOWN};
   // first check all the GPIO pins for various status bits
   for ( int o = 0; o < N_PS_OKS; ++o ) {
     // if this is a VU7P supply and dip switch says ignore it, continue
-    if ( !vu_enable && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) )
+    if ( !vu_enable && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) ) {
+      new_states[o] = PWR_DISABLED;
       continue;
+    }
     // ditto for KU15P
-    if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) )
+    else if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) ) {
+      new_states[o] = PWR_DISABLED;
       continue;
-    int8_t val = read_gpio_pin(oks[o].name);
-    if ( val == 0 ) {
-      new_states[o] = PWR_OFF;
-      success = false;
     }
     else {
-      new_states[o] = PWR_ON;
+      int8_t val = read_gpio_pin(oks[o].name);
+      if ( val == 0 ) {
+        new_states[o] = PWR_OFF;
+        success = false;
+      }
+      else {
+        new_states[o] = PWR_ON;
+      }
     }
-  }
+  } // loop over N_PS_OKS
+
   // find out if any of the failures are new failures or not
   for ( int o = 0; o < N_PS_OKS; ++o ) {
     if ( (new_states[o] != states[o])  &&
         (states[o] != PWR_UNKNOWN) &&
         (states[o] != PWR_DISABLED)
         ) {
-      static char tmp[128];
-      snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\r\n", pin_names[oks[o].name],
-               oks[o].priority);
+      char tmp[128];
+      snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\r\n",
+               pin_names[oks[o].name], oks[o].priority);
       Print(tmp);
     }
     states[o] = new_states[o];
@@ -265,7 +277,8 @@ disable_ps(void)
   // first set the supplies to off to tell the
   // other tasks to prepare
   for ( int o = 0; o < N_PS_OKS; ++o )
-    states[o] = PWR_OFF;
+    if ( states[o] != PWR_DISABLED )
+      states[o] = PWR_OFF;
   ShortDelay();
   // disable in reverse order
   for (int prio = num_priorities; prio > 0;  --prio) {
@@ -281,7 +294,7 @@ disable_ps(void)
       for ( int o = 0; o < N_PS_OKS; ++o ) {
          if ( oks[o].priority >= prio ) {
            int8_t val = read_gpio_pin(oks[o].name);
-           if ( val == 1 ) {
+           if ( val == 1 ) { // all supplies are supposed to be off now
              all_ready = false;
              states[o] = PWR_UNKNOWN;
            }
