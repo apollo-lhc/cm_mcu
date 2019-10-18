@@ -773,6 +773,16 @@ static BaseType_t sensor_summary(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// This command takes no arguments
+static BaseType_t restart_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  copied += snprintf(m+copied, s-copied, "Restarting MCU\r\n");
+  SysCtlReset();	// This function does not return
+  return pdFALSE;
+}
+
+
 static
 void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 {
@@ -1047,7 +1057,13 @@ CLI_Command_Definition_t bootloader_command = {
     0
 };
 
-
+static
+CLI_Command_Definition_t restart_command = {
+    .pcCommand="restart_mcu",
+    .pcHelpString="restart_mcu\r\n Restart mcu\r\n",
+    .pxCommandInterpreter = restart_ctl,
+    0
+};
 
 void vCommandLineTask( void *pvParameters )
 {
@@ -1081,6 +1097,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&version_command  );
+  FreeRTOS_CLIRegisterCommand(&restart_command  );
 
 
   /* Send a welcome message to the user knows they are connected. */
