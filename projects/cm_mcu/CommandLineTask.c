@@ -15,6 +15,7 @@
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/systick.h"
+#include "driverlib/sysctl.h"
 
 // local includes
 #include "common/i2c_reg.h"
