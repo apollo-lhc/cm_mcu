@@ -9,12 +9,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_nvic.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/systick.h"
+#include "driverlib/sysctl.h"
 
 // local includes
 #include "common/i2c_reg.h"
@@ -782,6 +784,34 @@ static BaseType_t restart_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// This command takes 1 argument, either k or v
+static BaseType_t fpga_reset_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p1[p1l] = 0x00; // terminate strings
+  char fpga[];
+
+  if ( strcmp(p1, "v") == 0 ) {
+	  fpga = "VU7P";	// assign fpga name string "VU7P"
+	  ASSERT(read_gpio_pin(V_FPGA_PROGRAM)==0x0);
+	  write_gpio_pin(V_FPGA_PROGRAM, 0x1);
+	  usleep(10);	  // wait a bit
+	  write_gpio_pin(V_FPGA_PROGRAM, 0x0);
+    }
+  if ( strcmp(p1, "k") == 0 ) {
+	  fpga = "KU15P";// assign fpga name string "KU15P"
+	  ASSERT(read_gpio_pin(K_FPGA_PROGRAM)==0x0);
+	  write_gpio_pin(K_FPGA_PROGRAM, 0x1);
+	  usleep(10);	  // wait a bit
+	  write_gpio_pin(K_FPGA_PROGRAM, 0x0);
+    }
+
+  copied += snprintf(m+copied, s-copied, "%s has been reset\r\n", fpga); // Change so that it prints either KU15P or VU7P
+  return pdFALSE;
+}
 
 static
 void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
@@ -1065,6 +1095,14 @@ CLI_Command_Definition_t restart_command = {
     0
 };
 
+static
+CLI_Command_Definition_t fpga_reset_command = {
+    .pcCommand="fpga_reset",
+    .pcHelpString="fpga_reset (k|v)\r\n Resets either the KU15P or VU7P FPGA according to argument\r\n",
+    .pxCommandInterpreter = fpga_reset_ctl,
+    1
+};
+
 void vCommandLineTask( void *pvParameters )
 {
   uint8_t cRxedChar, cInputIndex = 0;
@@ -1098,6 +1136,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&version_command  );
   FreeRTOS_CLIRegisterCommand(&restart_command  );
+  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
 
 
   /* Send a welcome message to the user knows they are connected. */
