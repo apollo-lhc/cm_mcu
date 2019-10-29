@@ -6,7 +6,6 @@
  */
 
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -792,24 +791,22 @@ static BaseType_t fpga_reset_ctl(char *m, size_t s, const char *mm)
   BaseType_t p1l;
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
   p1[p1l] = 0x00; // terminate strings
-  char fpga[];
 
   if ( strcmp(p1, "v") == 0 ) {
-	  fpga = "VU7P";	// assign fpga name string "VU7P"
-	  ASSERT(read_gpio_pin(V_FPGA_PROGRAM)==0x0);
+//	  assert(read_gpio_pin(V_FPGA_PROGRAM)==0x0);
 	  write_gpio_pin(V_FPGA_PROGRAM, 0x1);
-	  usleep(10);	  // wait a bit
+	  SysCtlDelay(1000u);
 	  write_gpio_pin(V_FPGA_PROGRAM, 0x0);
+	  copied += snprintf(m+copied, s-copied, "VU7P has been reset\r\n");
     }
   if ( strcmp(p1, "k") == 0 ) {
-	  fpga = "KU15P";// assign fpga name string "KU15P"
-	  ASSERT(read_gpio_pin(K_FPGA_PROGRAM)==0x0);
+//	  assert(read_gpio_pin(K_FPGA_PROGRAM)==0x0);
 	  write_gpio_pin(K_FPGA_PROGRAM, 0x1);
-	  usleep(10);	  // wait a bit
+	  SysCtlDelay(1000u);
 	  write_gpio_pin(K_FPGA_PROGRAM, 0x0);
-    }
+	  copied += snprintf(m+copied, s-copied, "KU15P has been reset\r\n");
 
-  copied += snprintf(m+copied, s-copied, "%s has been reset\r\n", fpga); // Change so that it prints either KU15P or VU7P
+    }
   return pdFALSE;
 }
 
