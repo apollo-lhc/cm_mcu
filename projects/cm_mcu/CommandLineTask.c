@@ -812,7 +812,7 @@ static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
 }
 
 // This command takes 2 args, the address and the number of bytes
-// Right now, <number of bytes> can only be 0 or 4
+// Might change to 1 arg if <number of bytes> is as unnecessary as it seems
 static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
 {
   int copied = 0;
@@ -834,9 +834,10 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   dataptr = &data;
   dlen = strtol(p2,NULL,16);
   addr = strtol(p1,NULL,16);
+  uint32_t block = EEPROMBlockFromAddr(addr);
 
   EEPROMRead(dataptr,addr,dlen);
-  copied += snprintf(m+copied, s-copied, "Data read from EEPROM: %x \r\n",data);
+  copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %x \r\n",block,data);
 
   return pdFALSE;
 }
@@ -863,12 +864,15 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   dataptr = &data;
   dlen = 4;
   addr = strtol(p1,NULL,16);
+  addr = strtol(p1,NULL,16);
+  uint32_t block = EEPROMBlockFromAddr(addr);
+
 
   if (EEPROMProgram(dataptr,addr,dlen)!=0){
 	  copied += snprintf(m+copied, s-copied, "Something wrong with the EEPROM. Try again!");
 	  return pdFALSE;
   }
-  copied += snprintf(m+copied, s-copied, "Data wrote to EEPROM: %x \r\n",data);
+  copied += snprintf(m+copied, s-copied, "Data wrote to EEPROM block %d: %x \r\n",block,data);
 
   return pdFALSE;
 }
