@@ -811,6 +811,8 @@ static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// This command takes 2 args, the address and the number of bytes
+// Right now, <number of bytes> can only be 0 or 4
 static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
 {
   int copied = 0;
@@ -825,9 +827,9 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   if (EEPROMInit()!=0){
 	  copied += snprintf(m+copied, s-copied, "Something's up with the EEPROM. Try again!\r\n");
 	  return pdFALSE;
-  } // Add a part here to check EEPROM_RC_WORKING == 0
+  }
 
-  uint32_t data, *dataptr, dlen, addr;
+  uint32_t dlen,addr,data,*dataptr;
   data = 0x0;
   dataptr = &data;
   dlen = strtol(p2,NULL,16);
@@ -839,6 +841,7 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// This command takes 2 args, the address and 4 bytes of data to be written
 static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
 {
   int copied = 0;
@@ -851,9 +854,9 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
 
   SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
   if (EEPROMInit()!=0){
-	  copied += snprintf(m+copied, s-copied, "Something's up with the EEPROM. Try again!\r\n");
+	  copied += snprintf(m+copied, s-copied, "Something wrong with the EEPROM. Try again!\r\n");
 	  return pdFALSE;
-  } // Add a part here to check EEPROM_RC_WORKING == 0
+  }
 
   uint32_t data, *dataptr, dlen, addr;
   data = strtol(p2,NULL,16);
@@ -861,8 +864,30 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   dlen = 4;
   addr = strtol(p1,NULL,16);
 
-  EEPROMProgram(dataptr,addr,dlen);
+  if (EEPROMProgram(dataptr,addr,dlen)!=0){
+	  copied += snprintf(m+copied, s-copied, "Something wrong with the EEPROM. Try again!");
+	  return pdFALSE;
+  }
   copied += snprintf(m+copied, s-copied, "Data wrote to EEPROM: %x \r\n",data);
+
+  return pdFALSE;
+}
+
+// Takes 0 arguments
+static BaseType_t eeprom_ctl(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  if (EEPROMInit()!=0){
+	  copied += snprintf(m+copied, s-copied, "Something wrong with the EEPROM. Try again!\r\n");
+	  return pdFALSE;
+  }
+
+  uint32_t eepromsize = EEPROMSizeGet();
+  uint32_t nblocks = EEPROMBlockCountGet();
+  uint32_t blocksize = eepromsize/nblocks;
+
+  copied += snprintf(m+copied, s-copied, "EEPROM has %d blocks of %d bytes each. \r\n",nblocks,blocksize);
 
   return pdFALSE;
 }
@@ -1173,6 +1198,14 @@ CLI_Command_Definition_t eeprom_write_command = {
     2
 };
 
+static
+CLI_Command_Definition_t eeprom_info_command = {
+    .pcCommand="eeprom_info",
+    .pcHelpString="eeprom_info\r\n Prints information about the EEPROM.\r\n",
+    .pxCommandInterpreter = eeprom_ctl,
+    0
+};
+
 void vCommandLineTask( void *pvParameters )
 {
   uint8_t cRxedChar, cInputIndex = 0;
@@ -1209,6 +1242,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
+  FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
 
 
   /* Send a welcome message to the user knows they are connected. */
