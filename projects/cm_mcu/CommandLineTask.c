@@ -878,7 +878,7 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
 }
 
 // Takes 0 arguments
-static BaseType_t eeprom_ctl(char *m, size_t s, const char *mm)
+static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
 {
   int copied = 0;
   SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
@@ -1206,7 +1206,7 @@ static
 CLI_Command_Definition_t eeprom_info_command = {
     .pcCommand="eeprom_info",
     .pcHelpString="eeprom_info\r\n Prints information about the EEPROM.\r\n",
-    .pxCommandInterpreter = eeprom_ctl,
+    .pxCommandInterpreter = eeprom_info,
     0
 };
 
