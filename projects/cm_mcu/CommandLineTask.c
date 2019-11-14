@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <unistd.h>
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_nvic.h"
@@ -792,18 +791,17 @@ static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
   BaseType_t p1l;
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
   p1[p1l] = 0x00; // terminate strings
+  const TickType_t delay = 1 / portTICK_PERIOD_MS;  // 1 ms delay
 
   if ( strcmp(p1, "v") == 0 ) {
-//	  assert(read_gpio_pin(V_FPGA_PROGRAM)==0x0);
 	  write_gpio_pin(V_FPGA_PROGRAM, 0x1);
-	  SysCtlDelay(1000u);
+	  vTaskDelay(delay);
 	  write_gpio_pin(V_FPGA_PROGRAM, 0x0);
 	  copied += snprintf(m+copied, s-copied, "VU7P has been reset\r\n");
     }
   if ( strcmp(p1, "k") == 0 ) {
-//	  assert(read_gpio_pin(K_FPGA_PROGRAM)==0x0);
 	  write_gpio_pin(K_FPGA_PROGRAM, 0x1);
-	  SysCtlDelay(1000u);
+	  vTaskDelay(delay);
 	  write_gpio_pin(K_FPGA_PROGRAM, 0x0);
 	  copied += snprintf(m+copied, s-copied, "KU15P has been reset\r\n");
 
@@ -811,17 +809,14 @@ static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
-// This command takes 2 args, the address and the number of bytes
-// Might change to 1 arg if <number of bytes> is as unnecessary as it seems
+// This command takes 1 arg, the address
 static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  int8_t *p1, *p2;
-  BaseType_t p1l, p2l;
+  int8_t *p1;
+  BaseType_t p1l;
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
-  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // number of bytes
   p1[p1l] = 0x00; // terminate strings
-  p2[p2l] = 0x00; // terminate strings
 
   SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
   if (EEPROMInit()!=0){
@@ -832,7 +827,7 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   uint32_t dlen,addr,data,*dataptr;
   data = 0x0;
   dataptr = &data;
-  dlen = strtol(p2,NULL,16);
+  dlen = 4;
   addr = strtol(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
 
@@ -860,11 +855,14 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   }
 
   uint32_t data, *dataptr, dlen, addr;
-  data = strtol(p2,NULL,16);
+  data = strtoul(p2,NULL,16);
   dataptr = &data;
   dlen = 4;
-  addr = strtol(p1,NULL,16);
-  addr = strtol(p1,NULL,16);
+  addr = strtoul(p1,NULL,16);
+  if(addr>=0x1800){
+	  copied += snprintf(m+copied, s-copied, "Please enter an address lower than 0x1800 \r\n");
+	  return pdFALSE;
+  }
   uint32_t block = EEPROMBlockFromAddr(addr);
 
 
@@ -1189,9 +1187,9 @@ CLI_Command_Definition_t fpga_reset_command = {
 static
 CLI_Command_Definition_t eeprom_read_command = {
     .pcCommand="eeprom_read",
-    .pcHelpString="eeprom_read <address> <number of bytes>\r\n Reads from EEPROM. Both args should be multiples of 4.\r\n",
+    .pcHelpString="eeprom_read <address> \r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
     .pxCommandInterpreter = eeprom_read,
-    2
+    1
 };
 
 static
@@ -1228,7 +1226,11 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
   FreeRTOS_CLIRegisterCommand(&bootloader_command  );
+  FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
+  FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
+  FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
   FreeRTOS_CLIRegisterCommand(&fpga_command       );
+  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
   FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
@@ -1238,15 +1240,11 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
+  FreeRTOS_CLIRegisterCommand(&restart_command  );
   FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&version_command  );
-  FreeRTOS_CLIRegisterCommand(&restart_command  );
-  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
-  FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
-  FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
-  FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
 
 
   /* Send a welcome message to the user knows they are connected. */
