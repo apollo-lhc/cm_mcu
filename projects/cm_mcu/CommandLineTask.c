@@ -6,7 +6,6 @@
  */
 
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_types.h"
@@ -16,6 +15,7 @@
 #include "driverlib/rom_map.h"
 #include "driverlib/systick.h"
 #include "driverlib/sysctl.h"
+#include "driverlib/eeprom.h"
 
 // local includes
 #include "common/i2c_reg.h"
@@ -775,7 +775,7 @@ static BaseType_t sensor_summary(char *m, size_t s, const char *mm)
 }
 
 // This command takes no arguments
-static BaseType_t restart_ctl(char *m, size_t s, const char *mm)
+static BaseType_t restart_mcu(char *m, size_t s, const char *mm)
 {
   int copied = 0;
   copied += snprintf(m+copied, s-copied, "Restarting MCU\r\n");
@@ -783,6 +783,116 @@ static BaseType_t restart_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+// This command takes 1 argument, either k or v
+static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p1[p1l] = 0x00; // terminate strings
+  const TickType_t delay = 1 / portTICK_PERIOD_MS;  // 1 ms delay
+
+  if ( strcmp(p1, "v") == 0 ) {
+	  write_gpio_pin(V_FPGA_PROGRAM, 0x1);
+	  vTaskDelay(delay);
+	  write_gpio_pin(V_FPGA_PROGRAM, 0x0);
+	  copied += snprintf(m+copied, s-copied, "VU7P has been reset\r\n");
+    }
+  if ( strcmp(p1, "k") == 0 ) {
+	  write_gpio_pin(K_FPGA_PROGRAM, 0x1);
+	  vTaskDelay(delay);
+	  write_gpio_pin(K_FPGA_PROGRAM, 0x0);
+	  copied += snprintf(m+copied, s-copied, "KU15P has been reset\r\n");
+
+    }
+  return pdFALSE;
+}
+
+// This command takes 1 arg, the address
+static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p1[p1l] = 0x00; // terminate strings
+
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  if (EEPROMInit()!=0){
+	  copied += snprintf(m+copied, s-copied, "Something's up with the EEPROM. Try again!\r\n");
+	  return pdFALSE;
+  }
+
+  uint32_t dlen,addr,data,*dataptr;
+  data = 0x0;
+  dataptr = &data;
+  dlen = 4;
+  addr = strtol(p1,NULL,16);
+  uint32_t block = EEPROMBlockFromAddr(addr);
+
+  EEPROMRead(dataptr,addr,dlen);
+  copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %x \r\n",block,data);
+
+  return pdFALSE;
+}
+
+// This command takes 2 args, the address and 4 bytes of data to be written
+static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1, *p2;
+  BaseType_t p1l, p2l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // data
+  p1[p1l] = 0x00; // terminate strings
+  p2[p2l] = 0x00; // terminate strings
+
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  if (EEPROMInit()!=0){
+	  copied += snprintf(m+copied, s-copied, "Something wrong with the EEPROM. Try again!\r\n");
+	  return pdFALSE;
+  }
+
+  uint32_t data, *dataptr, dlen, addr;
+  data = strtoul(p2,NULL,16);
+  dataptr = &data;
+  dlen = 4;
+  addr = strtoul(p1,NULL,16);
+  if(addr>=0x1800){
+	  copied += snprintf(m+copied, s-copied, "Please enter an address lower than 0x1800 \r\n");
+	  return pdFALSE;
+  }
+  uint32_t block = EEPROMBlockFromAddr(addr);
+
+
+  if (EEPROMProgram(dataptr,addr,dlen)!=0){
+	  copied += snprintf(m+copied, s-copied, "Something wrong with the EEPROM. Try again!");
+	  return pdFALSE;
+  }
+  copied += snprintf(m+copied, s-copied, "Data wrote to EEPROM block %d: %x \r\n",block,data);
+
+  return pdFALSE;
+}
+
+// Takes 0 arguments
+static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  if (EEPROMInit()!=0){
+	  copied += snprintf(m+copied, s-copied, "Something wrong with the EEPROM. Try again!\r\n");
+	  return pdFALSE;
+  }
+
+  uint32_t eepromsize = EEPROMSizeGet();
+  uint32_t nblocks = EEPROMBlockCountGet();
+  uint32_t blocksize = eepromsize/nblocks;
+
+  copied += snprintf(m+copied, s-copied, "EEPROM has %d blocks of %d bytes each. \r\n",nblocks,blocksize);
+
+  return pdFALSE;
+}
 
 static
 void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
@@ -1062,7 +1172,39 @@ static
 CLI_Command_Definition_t restart_command = {
     .pcCommand="restart_mcu",
     .pcHelpString="restart_mcu\r\n Restart mcu\r\n",
-    .pxCommandInterpreter = restart_ctl,
+    .pxCommandInterpreter = restart_mcu,
+    0
+};
+
+static
+CLI_Command_Definition_t fpga_reset_command = {
+    .pcCommand="fpga_reset",
+    .pcHelpString="fpga_reset (k|v)\r\n Resets either the KU15P or VU7P FPGA according to argument\r\n",
+    .pxCommandInterpreter = fpga_reset,
+    1
+};
+
+static
+CLI_Command_Definition_t eeprom_read_command = {
+    .pcCommand="eeprom_read",
+    .pcHelpString="eeprom_read <address> \r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
+    .pxCommandInterpreter = eeprom_read,
+    1
+};
+
+static
+CLI_Command_Definition_t eeprom_write_command = {
+    .pcCommand="eeprom_write",
+    .pcHelpString="eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
+    .pxCommandInterpreter = eeprom_write,
+    2
+};
+
+static
+CLI_Command_Definition_t eeprom_info_command = {
+    .pcCommand="eeprom_info",
+    .pcHelpString="eeprom_info\r\n Prints information about the EEPROM.\r\n",
+    .pxCommandInterpreter = eeprom_info,
     0
 };
 
@@ -1084,7 +1226,11 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
   FreeRTOS_CLIRegisterCommand(&bootloader_command  );
+  FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
+  FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
+  FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
   FreeRTOS_CLIRegisterCommand(&fpga_command       );
+  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
   FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
@@ -1094,11 +1240,11 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
+  FreeRTOS_CLIRegisterCommand(&restart_command  );
   FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&version_command  );
-  FreeRTOS_CLIRegisterCommand(&restart_command  );
 
 
   /* Send a welcome message to the user knows they are connected. */
