@@ -267,4 +267,28 @@ void ADCSeq1Interrupt()
   return;
 }
 
+// -----------------------------------------
+TaskHandle_t TaskNotifyI2CSlave = NULL;
 
+
+void I2CSlaveInterrupt()
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  // read the interrupt register
+
+  // Notify the task
+  /* At this point xTaskToNotify should not be NULL as a transmission was
+      in progress. */
+  configASSERT( TaskNotifyI2CSlave != NULL );
+
+  /* Notify the task that the transmission is complete. */
+  vTaskNotifyGiveFromISR( TaskNotifyI2CSlave, &xHigherPriorityTaskWoken );
+
+
+  /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
+      should be performed to ensure the interrupt returns directly to the highest
+      priority task.  The macro used for this purpose is dependent on the port in
+      use and may be called portEND_SWITCHING_ISR(). */
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}

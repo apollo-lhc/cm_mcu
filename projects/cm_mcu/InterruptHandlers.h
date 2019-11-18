@@ -45,6 +45,9 @@ void SMBusMasterIntHandler3(void);
 void SMBusMasterIntHandler4(void);
 void SMBusMasterIntHandler6(void);
 
+// I2C Slave
+extern TaskHandle_t TaskNotifyI2CSlave;
+
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
 
