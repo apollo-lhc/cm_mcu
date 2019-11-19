@@ -28,6 +28,7 @@
 #include "InterruptHandlers.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
+#include "I2CSlaveTask.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -184,6 +185,7 @@ void SystemInitInterrupts()
   ROM_IntEnable(INT_ADC1SS0);
 
   // Set up the I2C controllers
+  initI2C0(g_ui32SysClock); // controller for power supplies
   initI2C1(g_ui32SysClock); // controller for power supplies
   initI2C2(g_ui32SysClock); // controller for clocks
   initI2C3(g_ui32SysClock); // controller for V optics
@@ -207,7 +209,7 @@ void SystemInitInterrupts()
   ROM_IntPrioritySet( INT_I2C6, configKERNEL_INTERRUPT_PRIORITY );
 
   //
-  // Enable master interrupts.
+  // Enable I2C master interrupts.
   //
   SMBusMasterIntEnable(&g_sMaster1);
   SMBusMasterIntEnable(&g_sMaster2);
@@ -248,7 +250,7 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-#define MAX_TASK_COUNT 9
+#define MAX_TASK_COUNT 10
 static struct TaskNamePair_t TaskNamePairs[MAX_TASK_COUNT];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
@@ -339,6 +341,10 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus_status = &eStatus1,
 };
 
+struct I2CSlaveTaskArgs_t i2c0_slave_args = {
+    .smbus = &g_sSlave0,
+};
+
 const char* buildTime()
 {
   const char *btime = __TIME__ ", " __DATE__;
@@ -400,6 +406,7 @@ int main( void )
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
+  xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, &i2c0_slave_args, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
@@ -410,6 +417,7 @@ int main( void )
   snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FFLY");
   snprintf(TaskNamePairs[7].key,configMAX_TASK_NAME_LEN,"XIMON");
   snprintf(TaskNamePairs[8].key,configMAX_TASK_NAME_LEN,"ALARM");
+  snprintf(TaskNamePairs[9].key,configMAX_TASK_NAME_LEN,"I2CS0");
 
   // -------------------------------------------------
   // Initialize all the queues
@@ -421,10 +429,8 @@ int main( void )
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xPwrQueue != NULL);
 
-  xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
+  xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
   configASSERT(xFFlyQueue != NULL);
-
-
 
   xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
   configASSERT(xAlmQueue != NULL);
@@ -444,7 +450,7 @@ int main( void )
   Print("Staring Apollo CM MCU firmware " FIRMWARE_VERSION
         "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__", " __DATE__ "\r\n");
-  Print(  "----------------------------\r\n");
+  Print("----------------------------\r\n");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
 

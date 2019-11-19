@@ -8,19 +8,17 @@
 #include "InterruptHandlers.h"
 #include "Tasks.h"
 #include "common/smbus.h"
+#include "I2CSlaveTask.h"
 
-struct I2CSlaveTaskArgs_t {
-  tSMBus *s;
-};
 
 void I2CSlaveTask(void *parameters)
 {
   struct I2CSlaveTaskArgs_t * args = parameters;
 
   // set up the control data structure for the I2C slave.
-  tSMBus * slave = args->s;
+  tSMBus * slave = args->smbus;
   SMBusSlaveInit(slave, I2C0_BASE);
-  SMBusSlaveAddressSet(slave, 0, 0x40); // set my i2c address
+  SMBusSlaveAddressSet(slave, 0, 0x50); // set my i2c address
   SMBusSlaveI2CEnable(slave); // allow raw I2C commands
   SMBusSlaveIntEnable(slave); // enable my interrupts
 

@@ -131,6 +131,7 @@ void UART4IntHandler( void )
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
+tSMBus g_sSlave0;  // for I2C #0
 
 tSMBus g_sMaster1; // for I2C #1
 tSMBus g_sMaster2; // for I2C #2
