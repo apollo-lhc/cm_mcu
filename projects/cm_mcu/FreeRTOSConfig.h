@@ -137,6 +137,7 @@ header file. */
 #define CLI_UART UART4_BASE // Front panel
 //#define CLI_UART UART1_BASE // Zynq
 
+#define pdTICKS_TO_MS( xTicks )    ( ( ( TickType_t ) ( xTicks ) * 1000u ) / configTICK_RATE_HZ )
 
 #ifdef __cplusplus
 }

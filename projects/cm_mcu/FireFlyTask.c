@@ -125,6 +125,12 @@ int8_t getFFvalue(const uint8_t i)
   return ff_temp[i];
 }
 
+static TickType_t ff_updateTick = 0;
+TickType_t getFFupdateTick()
+{
+  return ff_updateTick;
+}
+
 static
 int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
 {
@@ -300,7 +306,7 @@ void FireFlyTask(void *parameters)
           break;
         }
       }
-
+      ff_updateTick = xTaskGetTickCount();
       // select the appropriate output for the mux
       data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
       char tmp[64];
