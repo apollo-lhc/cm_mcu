@@ -286,6 +286,9 @@ void I2CSlaveInterrupt()
   /* Notify the task that the transmission is complete. */
   vTaskNotifyGiveFromISR( TaskNotifyI2CSlave, &xHigherPriorityTaskWoken );
 
+  /* There are no transmissions in progress, so no tasks to notify. */
+  TaskNotifyI2CSlave = NULL;
+
 
   /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
       should be performed to ensure the interrupt returns directly to the highest

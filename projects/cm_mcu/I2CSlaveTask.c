@@ -22,6 +22,8 @@ void I2CSlaveTask(void *parameters)
   SMBusSlaveI2CEnable(slave); // allow raw I2C commands
   SMBusSlaveIntEnable(slave); // enable my interrupts
 
+  TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
+
   // startup code
   SMBusSlaveTransferInit(slave); // this is called per transfer
   // start
@@ -31,10 +33,12 @@ void I2CSlaveTask(void *parameters)
   uint8_t txbuffer[8]; const uint8_t txbuffer_sz = 8;
   // loop forever
   for (;;) {
+	TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
+
     // block on notification from the I2C Slave interrupt handler
     // Wait to be notified that the transmission is complete.
     //unsigned long ulNotificationValue =
-    ulTaskNotifyTake( pdTRUE, 0 );
+    ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
     // we received an interrupt.
     tSMBusStatus retval = SMBusSlaveIntProcess(slave);
