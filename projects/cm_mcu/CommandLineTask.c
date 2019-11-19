@@ -512,12 +512,12 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
     return pdFALSE;
   }
   // update times, in seconds
-  TickType_t now = 1000*pdTICKS_TO_MS( xTaskGetTickCount());
-  TickType_t last = 1000*pdTICKS_TO_MS(dcdc_args.updateTick);
+  TickType_t now = pdTICKS_TO_MS( xTaskGetTickCount())/1000;
+  TickType_t last = pdTICKS_TO_MS(dcdc_args.updateTick)/1000;
   int copied = 0;
   if ( (now-last) > 60 ) {
     int mins = (now-last)/60;
-    copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago", __func__, mins);
+    copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
   }
   copied += snprintf(m+copied, s-copied, "%s\r\n", dcdc_args.commands[i1].name);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
@@ -629,11 +629,11 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
 
   if ( whichff == 0 ) {
     // check for stale data
-    TickType_t now =  1000*pdTICKS_TO_MS( xTaskGetTickCount());
-    TickType_t last = 1000*pdTICKS_TO_MS(getFFupdateTick());
+    TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
     if ( (now-last) > 60 ) {
       int mins = (now-last)/60;
-      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago", __func__, mins);
+      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
     }
 
   }
@@ -713,11 +713,11 @@ static BaseType_t fpga_ctl(char *m, size_t s, const char *mm)
   static int whichfpga = 0;
   int howmany = fpga_args.n_devices*fpga_args.n_pages;
   if ( whichfpga == 0 ) {
-    TickType_t now =  1000*pdTICKS_TO_MS( xTaskGetTickCount());
-    TickType_t last = 1000*pdTICKS_TO_MS(fpga_args.updateTick);
+    TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
     if ( (now-last) > 60 ) {
       int mins = (now-last)/60;
-      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago", __func__, mins);
+      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
     }
 
     copied += snprintf(m+copied, s-copied, "FPGA monitors\r\n");
