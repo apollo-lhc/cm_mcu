@@ -185,7 +185,7 @@ void SystemInitInterrupts()
   ROM_IntEnable(INT_ADC1SS0);
 
   // Set up the I2C controllers
-  initI2C0(g_ui32SysClock); // controller for power supplies
+  initI2C0(g_ui32SysClock); // Slave controller
   initI2C1(g_ui32SysClock); // controller for power supplies
   initI2C2(g_ui32SysClock); // controller for clocks
   initI2C3(g_ui32SysClock); // controller for V optics
@@ -202,6 +202,7 @@ void SystemInitInterrupts()
   SMBusMasterInit(&g_sMaster6, I2C6_BASE, g_ui32SysClock);
 
   // FreeRTOS insists that the priority of interrupts be set up like this.
+  ROM_IntPrioritySet( INT_I2C0, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_I2C2, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_I2C3, configKERNEL_INTERRUPT_PRIORITY );

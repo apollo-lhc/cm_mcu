@@ -5,6 +5,8 @@
  *      Author: pw94
  */
 #include "inc/hw_memmap.h"
+#include "inc/hw_ints.h" // to be removed
+#include "driverlib/rom.h" // to be removed
 #include "InterruptHandlers.h"
 #include "Tasks.h"
 #include "common/smbus.h"
@@ -19,6 +21,8 @@ void I2CSlaveTask(void *parameters)
   tSMBus * slave = args->smbus;
   SMBusSlaveInit(slave, I2C0_BASE);
   SMBusSlaveAddressSet(slave, 0, 0x50); // set my i2c address
+  ROM_IntPrioritySet( INT_I2C0, configKERNEL_INTERRUPT_PRIORITY );
+
   SMBusSlaveI2CEnable(slave); // allow raw I2C commands
   SMBusSlaveIntEnable(slave); // enable my interrupts
 
