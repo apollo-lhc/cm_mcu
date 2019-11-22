@@ -272,19 +272,23 @@ void ADCSeq1Interrupt()
 TaskHandle_t TaskNotifyI2CSlave = NULL;
 
 
-void I2CSlaveInterrupt()
+void I2CSlave0Interrupt()
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
   // read the interrupt register
+  uint32_t ui32InterruptStatus = ROM_I2CSlaveIntStatusEx(I2C0_BASE, true);
 
-  // Notify the task
+  // clear the interrupt register
+  ROM_I2CSlaveIntClear(I2C0_BASE);
+
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
   configASSERT( TaskNotifyI2CSlave != NULL );
 
   /* Notify the task that the transmission is complete. */
-  vTaskNotifyGiveFromISR( TaskNotifyI2CSlave, &xHigherPriorityTaskWoken );
+  xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus,
+                     eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 
   /* There are no transmissions in progress, so no tasks to notify. */
   TaskNotifyI2CSlave = NULL;
