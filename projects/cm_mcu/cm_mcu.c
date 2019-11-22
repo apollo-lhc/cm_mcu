@@ -37,6 +37,7 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
+#include "driverlib/i2c.h"
 #include "driverlib/rom.h"
 #include "driverlib/adc.h"
 #include "driverlib/rom_map.h"
@@ -218,6 +219,15 @@ void SystemInitInterrupts()
   SMBusMasterIntEnable(&g_sMaster4);
   SMBusMasterIntEnable(&g_sMaster6);
 
+  // I2C slave
+  ROM_I2CSlaveAddressSet(I2C0_BASE, 0, 0x50);
+
+  ROM_IntPrioritySet( INT_I2C0, configKERNEL_INTERRUPT_PRIORITY );
+
+  // ignore I2C_SLAVE_INT_START?
+  ROM_I2CSlaveIntEnableEx(I2C0_BASE,
+                      I2C_SLAVE_INT_DATA  | I2C_SLAVE_INT_START);//| I2C_SLAVE_INT_STOP);
+  ROM_IntEnable(INT_I2C0);
 
   //
   // Enable processor interrupts.
@@ -343,7 +353,7 @@ struct MonitorTaskArgs_t dcdc_args = {
 };
 
 struct I2CSlaveTaskArgs_t i2c0_slave_args = {
-    .smbus = &g_sSlave0,
+    .smbus = 0,//&g_sSlave0,
 };
 
 const char* buildTime()

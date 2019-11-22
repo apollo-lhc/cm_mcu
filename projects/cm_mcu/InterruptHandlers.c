@@ -131,7 +131,7 @@ void UART4IntHandler( void )
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
-tSMBus g_sSlave0;  // for I2C #0
+//tSMBus g_sSlave0;  // for I2C #0
 
 tSMBus g_sMaster1; // for I2C #1
 tSMBus g_sMaster2; // for I2C #2
@@ -281,7 +281,7 @@ void I2CSlave0Interrupt()
 
   // clear the interrupt register
   ROM_I2CSlaveIntClear(I2C0_BASE);
-
+  ROM_SysCtlDelay(100u);
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
   configASSERT( TaskNotifyI2CSlave != NULL );

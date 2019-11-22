@@ -27,7 +27,7 @@ void UART1IntHandler( void );
 void UART4IntHandler( void );
 
 // SMBUs specific handler for I2C
-extern tSMBus g_sSlave0;  // for I2C #0
+//extern tSMBus g_sSlave0;  // for I2C #0
 
 extern tSMBus g_sMaster1; // for I2C #1
 extern tSMBus g_sMaster2; // for I2C #2
