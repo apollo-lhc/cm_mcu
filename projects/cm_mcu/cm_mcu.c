@@ -165,6 +165,9 @@ void SystemInitInterrupts()
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
+  // initialize the EEPROM.
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  ROM_EEPROMInit();
   // Set the reference to external
   ROM_ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V );
   ROM_ADCReferenceSet(ADC1_BASE, ADC_REF_EXT_3V );

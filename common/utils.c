@@ -11,6 +11,38 @@
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/debug.h"
+#include "driverlib/eeprom.h"
+#include "driverlib/sysctl.h"
+
+// initialize and write to eeprom
+
+void write_eeprom_single(uint32_t data, uint32_t addr)
+{
+	uint32_t dlen,*dataptr;
+	dataptr = &data;
+	dlen = 4;
+	EEPROMProgram(dataptr,addr,dlen);
+}
+// initialize and read eeprom
+uint32_t read_eeprom_single(uint32_t addr)
+{
+	uint32_t data,*dataptr;
+	uint32_t dlen = 4;
+	data = 0x0;
+	dataptr = &data;
+	EEPROMRead(dataptr,addr,dlen);
+	return data;
+}
+
+uint64_t read_eeprom_multi(uint32_t addr)
+{
+	static uint32_t dataptr[2] = {0x0, 0x0};
+	uint32_t dlen = 8;
+	uint32_t *data0 = &dataptr[0];
+	EEPROMRead(data0,addr,dlen);
+	uint64_t data = ((uint64_t)dataptr[0])|((uint64_t)dataptr[1]<<32);
+	return data;
+}
 
 // write by pin number or name
 void write_gpio_pin(int pin, uint8_t value)
