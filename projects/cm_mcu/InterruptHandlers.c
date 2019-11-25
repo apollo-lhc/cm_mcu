@@ -281,7 +281,7 @@ void I2CSlave0Interrupt()
 
   // clear the interrupt register
   ROM_I2CSlaveIntClear(I2C0_BASE);
-  ROM_SysCtlDelay(100u);
+  //ROM_SysCtlDelay(100u);
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
   configASSERT( TaskNotifyI2CSlave != NULL );

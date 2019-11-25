@@ -86,13 +86,6 @@ uint32_t g_ui32SysClock = 0;
 // Mutex for UART -- should really have one for each UART
 static SemaphoreHandle_t xUARTMutex = NULL;
 
-// Mutex for I2C controllers
-//SemaphoreHandle_t xI2C1Mutex = NULL;
-//SemaphoreHandle_t xI2C2Mutex = NULL;
-//SemaphoreHandle_t xI2C3Mutex = NULL;
-//SemaphoreHandle_t xI2C4Mutex = NULL;
-//SemaphoreHandle_t xI2C6Mutex = NULL;
-
 
 void Print(const char* str)
 {
