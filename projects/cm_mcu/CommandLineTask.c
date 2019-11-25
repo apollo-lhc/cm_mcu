@@ -1053,6 +1053,13 @@ static BaseType_t task_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+static BaseType_t uptime(char *m, size_t s, const char *mm)
+{
+  TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000/60; // time in minutes
+  snprintf(m,s, "%s: MCU uptime %d minutes\r\n", now);
+  return pdFALSE;
+}
+
 
 #pragma GCC diagnostic pop
 // WARNING: this command easily leads to stack overflows. It does not correctly
@@ -1097,6 +1104,14 @@ BaseType_t TaskStatsCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const 
 
 static const char * const pcWelcomeMessage =
 		"FreeRTOS command server.\r\nType \"help\" to view a list of registered commands.\r\n";
+
+static
+CLI_Command_Definition_t alm_ctl_command = {
+    .pcCommand="alm",
+    .pcHelpString="alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
+    .pxCommandInterpreter = alarm_ctl,
+    -1 // variable number of commands
+};
 
 static
 CLI_Command_Definition_t i2c_set_dev_command = {
@@ -1147,13 +1162,6 @@ CLI_Command_Definition_t pwr_ctl_command = {
     .pcHelpString="pwr (on|off|status)\r\n Turn on or off all power.\r\n",
     .pxCommandInterpreter = power_ctl,
     1
-};
-static
-CLI_Command_Definition_t alm_ctl_command = {
-    .pcCommand="alm",
-    .pcHelpString="alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
-    .pxCommandInterpreter = alarm_ctl,
-    -1 // variable number of commands
 };
 
 
@@ -1216,6 +1224,14 @@ CLI_Command_Definition_t sensor_summary_command = {
     .pcCommand="simple_sensor",
     .pcHelpString="simple_sensor\r\n Displays a table showing the state of temps.\r\n",
     .pxCommandInterpreter = sensor_summary,
+    0
+};
+
+static
+CLI_Command_Definition_t uptime_command = {
+    .pcCommand = "uptime",
+    .pcHelpString="uptime in minutes\r\n",
+    .pxCommandInterpreter = uptime,
     0
 };
 
@@ -1338,6 +1354,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&set_id_password_command);
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&task_command  );
+  FreeRTOS_CLIRegisterCommand(&uptime_command);
   FreeRTOS_CLIRegisterCommand(&version_command  );
 
 
