@@ -931,7 +931,7 @@ static BaseType_t board_id_info(char *m, size_t s, const char *mm)
 
   copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);
   copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
-  //copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
+  copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
   // TODO: Figure out the best way to organize firefly information
 
   return pdFALSE;

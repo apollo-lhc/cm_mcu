@@ -12,10 +12,8 @@
 #include "driverlib/rom_map.h"
 #include "driverlib/debug.h"
 #include "driverlib/eeprom.h"
-#include "driverlib/sysctl.h"
 
-// initialize and write to eeprom
-
+// write single word to eeprom
 void write_eeprom_single(uint32_t data, uint32_t addr)
 {
 	uint32_t dlen,*dataptr;
@@ -23,7 +21,8 @@ void write_eeprom_single(uint32_t data, uint32_t addr)
 	dlen = 4;
 	EEPROMProgram(dataptr,addr,dlen);
 }
-// initialize and read eeprom
+
+// read single word from eeprom
 uint32_t read_eeprom_single(uint32_t addr)
 {
 	uint32_t data,*dataptr;
@@ -34,6 +33,7 @@ uint32_t read_eeprom_single(uint32_t addr)
 	return data;
 }
 
+// read 2 words from eeprom
 uint64_t read_eeprom_multi(uint32_t addr)
 {
 	static uint32_t dataptr[2] = {0x0, 0x0};
