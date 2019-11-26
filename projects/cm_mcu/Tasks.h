@@ -58,6 +58,8 @@ extern QueueHandle_t xFFlyQueue;
 
 const char* getFFname(const uint8_t i);
 int8_t getFFvalue(const uint8_t i);
+TickType_t getFFupdateTick();
+
 
 int disable_xcvr_cdr(const char *name);
 

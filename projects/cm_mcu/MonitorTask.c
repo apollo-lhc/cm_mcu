@@ -85,6 +85,7 @@ void MonitorTask(void *parameters)
 
   bool log = true;
   int current_error_cnt = 0;
+  args->updateTick = xLastWakeTime; // initial value
 
   for (;;) {
     // check if the 3.3V is there or not. If it disappears then nothing works
@@ -105,6 +106,7 @@ void MonitorTask(void *parameters)
     else {
       good = true;
     }
+    args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
     for ( uint8_t ps = 0; ps < args->n_devices; ++ ps ) {
       if ( getPSStatus(5) != PWR_ON)
