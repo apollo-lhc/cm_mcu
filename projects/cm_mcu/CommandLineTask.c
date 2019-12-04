@@ -41,9 +41,9 @@
 #include "driverlib/uart.h"
 
 #include "MonitorTask.h"
-
 #include "CommandLineTask.h"
 #include "Tasks.h"
+#include "EEPROMTask.h"
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
@@ -842,11 +842,15 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
   p1[p1l] = 0x00; // terminate strings
 
-  uint32_t addr;
-  uint64_t data;
+  uint64_t addr, data;
   addr = strtol(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  data = read_eeprom_multi(addr);
+
+  // Define this as function somewhere else?
+  uint64_t message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(addr<<32);
+  xQueueSendToBack(xEPRMQueue, &message, portMAX_DELAY);	// is there a good time to set this to?
+  data = EEPROM_read();
+  //data = read_eeprom_multi(addr);
 
   copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %08x%08x \r\n",block,data);
 
@@ -864,11 +868,14 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   p2[p2l] = 0x00; // terminate strings
 
-  uint32_t data, addr;
+  uint64_t data, addr;
   data = strtoul(p2,NULL,16);
   addr = strtoul(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  write_eeprom_single(data,addr);
+
+  uint64_t message = ((uint64_t)EPRM_WRITE_SINGLE<<48)|(addr<<32)|data;
+  xQueueSendToBack(xEPRMQueue, &message, portMAX_DELAY);	// is there a good time to set this to?
+
   copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %08x \r\n",block,data);
 
   return pdFALSE;
@@ -912,6 +919,7 @@ static BaseType_t set_board_id(char *m, size_t s, const char *mm)
   uint32_t dlen = 4;
   uint32_t err = 0;
 
+  // TODO: replace this to work through EEPROM task
   err += EEPROMBlockUnlock(1, pPassword, 1);
   err += EEPROMProgram(dataptr,addr,dlen);
   err += EEPROMBlockLock(1);
@@ -930,6 +938,8 @@ static BaseType_t set_board_id_password(char *m, size_t s, const char *mm)
   int copied = 0;
   uint32_t pass = 0x12345678;
   uint32_t *passptr = &pass;
+
+  // WARNING: DOES NOT GO THROUGH GATEKEEPER TASK
   EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
   EEPROMBlockPasswordSet(1, passptr, 1);
   EEPROMBlockLock(1);
@@ -942,15 +952,25 @@ static BaseType_t set_board_id_password(char *m, size_t s, const char *mm)
 static BaseType_t board_id_info(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  uint32_t wordsize = 0x0004;
-  uint32_t sn_addr = 0x0040;
-  uint32_t ff_addr = sn_addr + wordsize;
+  uint64_t wordsize = 0x0004;
+  uint64_t sn_addr = 0x0040;
+  uint64_t ff_addr = sn_addr + wordsize;
 
-  uint32_t sn = read_eeprom_single(sn_addr);	// last byte is revision, first 3 are serial number
+  uint64_t sn_message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(sn_addr<<32);
+  xQueueSendToBack(xEPRMQueue, &sn_message, portMAX_DELAY);	// is there a good time to set this to?
+  uint64_t sn = EEPROM_read();
+
+  uint64_t ff_message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(ff_addr<<32);
+  xQueueSendToBack(xEPRMQueue, &ff_message, portMAX_DELAY);	// is there a good time to set this to?
+  uint64_t ff = EEPROM_read();
+
+  // TODO: replace this to work through EEPROM task
+  //uint32_t sn = read_eeprom_single(sn_addr);	// last byte is revision, first 3 are serial number
+  //uint32_t ff = read_eeprom_single(ff_addr);
+
   uint32_t num = sn >> 16;
   uint32_t rev = sn&0xff;
 
-  uint32_t ff = read_eeprom_single(ff_addr);
   copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",sn);
 
   copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);

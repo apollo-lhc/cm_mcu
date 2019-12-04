@@ -28,6 +28,7 @@
 #include "InterruptHandlers.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
+#include "EEPROMTask.c"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -248,7 +249,7 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-#define MAX_TASK_COUNT 9
+#define MAX_TASK_COUNT 10
 static struct TaskNamePair_t TaskNamePairs[MAX_TASK_COUNT];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
@@ -399,6 +400,8 @@ int main( void )
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
+  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
+    // TODO: Check that I added EEPROMTask correctly (priority, etc)
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
@@ -409,6 +412,7 @@ int main( void )
   snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FFLY");
   snprintf(TaskNamePairs[7].key,configMAX_TASK_NAME_LEN,"XIMON");
   snprintf(TaskNamePairs[8].key,configMAX_TASK_NAME_LEN,"ALARM");
+  snprintf(TaskNamePairs[9].key,configMAX_TASK_NAME_LEN,"EPRM");
 
   // -------------------------------------------------
   // Initialize all the queues
@@ -423,7 +427,8 @@ int main( void )
   xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xFFlyQueue != NULL);
 
-
+  xEPRMQueue = xQueueCreate(10, sizeof(uint64_t)); // EPRM queue
+  configASSERT(xEPRMQueue != NULL);
 
   xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
   configASSERT(xAlmQueue != NULL);
