@@ -28,7 +28,6 @@
 #include "InterruptHandlers.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
-#include "EEPROMTask.c"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -392,7 +391,7 @@ int main( void )
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
-  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
+  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[1].value);
   xTaskCreate(vCommandLineTask,"CLIZY", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
   xTaskCreate(vCommandLineTask,"CLIFP", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
   xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
@@ -400,7 +399,7 @@ int main( void )
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
-  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
+  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[9].value);
     // TODO: Check that I added EEPROMTask correctly (priority, etc)
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
@@ -417,7 +416,7 @@ int main( void )
   // -------------------------------------------------
   // Initialize all the queues
   // queue for the LED
-  xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
+  xLedQueue = xQueueCreate(3, // The maximum number of items the queue can hold.
       sizeof( uint32_t ));    // The size of each item.
   configASSERT(xLedQueue != NULL);
 
@@ -427,7 +426,7 @@ int main( void )
   xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xFFlyQueue != NULL);
 
-  xEPRMQueue = xQueueCreate(10, sizeof(uint64_t)); // EPRM queue
+  xEPRMQueue = xQueueCreate(5, sizeof(uint64_t)); // EPRM queue
   configASSERT(xEPRMQueue != NULL);
 
   xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
@@ -436,6 +435,7 @@ int main( void )
 #ifdef DEBUGxx
   vQueueAddToRegistry(xLedQueue, "LedQueue");
   vQueueAddToRegistry(xPwrQueue, "PwrQueue");
+  vQueueAddToRegistry(xEPRMQueue, "EPRMQueue");
 #endif // DEBUG
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as

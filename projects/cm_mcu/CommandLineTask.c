@@ -43,7 +43,6 @@
 #include "MonitorTask.h"
 #include "CommandLineTask.h"
 #include "Tasks.h"
-#include "EEPROMTask.h"
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
@@ -849,8 +848,7 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   // Define this as function somewhere else?
   uint64_t message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(addr<<32);
   xQueueSendToBack(xEPRMQueue, &message, portMAX_DELAY);	// is there a good time to set this to?
-  data = EEPROM_read();
-  //data = read_eeprom_multi(addr);
+  data = EEPROM_retrieve();
 
   copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %08x%08x \r\n",block,data);
 
@@ -872,9 +870,13 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   data = strtoul(p2,NULL,16);
   addr = strtoul(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
+  if(block==1){
+	  copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
+	  return pdFALSE;
+  }
 
   uint64_t message = ((uint64_t)EPRM_WRITE_SINGLE<<48)|(addr<<32)|data;
-  xQueueSendToBack(xEPRMQueue, &message, portMAX_DELAY);	// is there a good time to set this to?
+  xQueueSendToBack(xEPRMQueue, &message, portMAX_DELAY);
 
   copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %08x \r\n",block,data);
 
@@ -887,6 +889,7 @@ static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
   int copied = 0;
 
   copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
+  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t r \t Free \r\n");
   copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t r \t Apollo ID Information. Password: 0x12345678 \r\n");
 
   return pdFALSE;
@@ -939,7 +942,7 @@ static BaseType_t set_board_id_password(char *m, size_t s, const char *mm)
   uint32_t pass = 0x12345678;
   uint32_t *passptr = &pass;
 
-  // WARNING: DOES NOT GO THROUGH GATEKEEPER TASK
+  // DOES NOT GO THROUGH GATEKEEPER TASK
   EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
   EEPROMBlockPasswordSet(1, passptr, 1);
   EEPROMBlockLock(1);
@@ -956,17 +959,13 @@ static BaseType_t board_id_info(char *m, size_t s, const char *mm)
   uint64_t sn_addr = 0x0040;
   uint64_t ff_addr = sn_addr + wordsize;
 
-  uint64_t sn_message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(sn_addr<<32);
+  uint64_t sn_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(sn_addr<<32);
   xQueueSendToBack(xEPRMQueue, &sn_message, portMAX_DELAY);	// is there a good time to set this to?
-  uint64_t sn = EEPROM_read();
+  uint32_t sn = (uint32_t)EEPROM_retrieve();
 
-  uint64_t ff_message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(ff_addr<<32);
+  uint64_t ff_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(ff_addr<<32);
   xQueueSendToBack(xEPRMQueue, &ff_message, portMAX_DELAY);	// is there a good time to set this to?
-  uint64_t ff = EEPROM_read();
-
-  // TODO: replace this to work through EEPROM task
-  //uint32_t sn = read_eeprom_single(sn_addr);	// last byte is revision, first 3 are serial number
-  //uint32_t ff = read_eeprom_single(ff_addr);
+  uint32_t ff = (uint32_t)EEPROM_retrieve();
 
   uint32_t num = sn >> 16;
   uint32_t rev = sn&0xff;
@@ -1336,12 +1335,12 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&adc_command      );
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
-  FreeRTOS_CLIRegisterCommand(&bootloader_command  );
+//  FreeRTOS_CLIRegisterCommand(&bootloader_command  );
   FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
   FreeRTOS_CLIRegisterCommand(&fpga_command       );
-  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
+//  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
   FreeRTOS_CLIRegisterCommand(&id_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
@@ -1355,7 +1354,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&restart_command  );
   FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
   FreeRTOS_CLIRegisterCommand(&set_id_command);
-  FreeRTOS_CLIRegisterCommand(&set_id_password_command);
+//  FreeRTOS_CLIRegisterCommand(&set_id_password_command);
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&version_command  );

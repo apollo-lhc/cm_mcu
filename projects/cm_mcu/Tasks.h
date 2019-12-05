@@ -101,4 +101,23 @@ uint32_t getAlarmStatus();
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
 
+//	---- EEPROM
+
+// define any relevant registers...
+
+// EEPROM Queue
+extern QueueHandle_t xEPRMQueue;
+// messages (1st character)
+#define EPRM_WRITE_SINGLE 1
+#define EPRM_READ_SINGLE 2
+#define EPRM_READ_DOUBLE 3
+#define EPRM_SET_ID 4
+#define EPRM_BUFF_IN 5
+#define EPRM_BUFF_OUT 6 // ...
+
+//	Functions
+void EEPROMTask(void *parameters);
+uint64_t EEPROM_retrieve();
+
+
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */
