@@ -1335,12 +1335,12 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&adc_command      );
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
-//  FreeRTOS_CLIRegisterCommand(&bootloader_command  );
+  FreeRTOS_CLIRegisterCommand(&bootloader_command  );
   FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
   FreeRTOS_CLIRegisterCommand(&fpga_command       );
-//  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
+  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
   FreeRTOS_CLIRegisterCommand(&id_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
@@ -1354,7 +1354,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&restart_command  );
   FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
   FreeRTOS_CLIRegisterCommand(&set_id_command);
-//  FreeRTOS_CLIRegisterCommand(&set_id_password_command);
+  FreeRTOS_CLIRegisterCommand(&set_id_password_command);
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&task_command  );
   FreeRTOS_CLIRegisterCommand(&version_command  );

@@ -24,7 +24,7 @@ static uint64_t message_out;
 uint8_t nread,nretrieve;
 
 uint64_t EEPROM_retrieve(){
-	// make sure EEPROMTask is done
+	// use a second queue instead
 	nretrieve++;
 	for (;;){
 		if(nread==nretrieve){
@@ -42,7 +42,7 @@ void EEPROMTask(void *parameters){
 	// write data should be at most 1 word (32 bits)
 
 	for(;;){
-		if(xQueueReceive(xEPRMQueue, &message_in, 0)){
+		if(xQueueReceive(xEPRMQueue, &message_in, portMAX_DELAY)){
 			// Example message:
 			// 0x 0001 0022 ffffffff
 			// Corresponds to writing ffffffff to register 0x22
