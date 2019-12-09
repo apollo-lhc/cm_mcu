@@ -86,6 +86,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
