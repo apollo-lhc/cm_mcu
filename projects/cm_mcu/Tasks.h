@@ -103,21 +103,21 @@ void ADCMonitorTask(void *parameters);
 
 //	---- EEPROM
 
-// define any relevant registers...
-
-// EEPROM Queue
-extern QueueHandle_t xEPRMQueue;
+// EEPROM Queues
+extern QueueHandle_t xEPRMQueue_in;
+extern QueueHandle_t xEPRMQueue_out;
 // messages (1st character)
 #define EPRM_WRITE_SINGLE 1
 #define EPRM_READ_SINGLE 2
 #define EPRM_READ_DOUBLE 3
-#define EPRM_SET_ID 4
-#define EPRM_BUFF_IN 5
-#define EPRM_BUFF_OUT 6 // ...
+#define EPRM_LOCK_BLOCK 4
+#define EPRM_UNLOCK_BLOCK 5
+#define EPRM_BUFF_IN 6
+#define EPRM_BUFF_OUT 7 // ...
 
 //	Functions
+uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
 void EEPROMTask(void *parameters);
-uint64_t EEPROM_retrieve();
 
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

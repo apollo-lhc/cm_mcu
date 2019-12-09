@@ -399,8 +399,7 @@ int main( void )
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
-  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[9].value);
-    // TODO: Check that I added EEPROMTask correctly (priority, etc)
+  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[9].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
@@ -426,8 +425,10 @@ int main( void )
   xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xFFlyQueue != NULL);
 
-  xEPRMQueue = xQueueCreate(5, sizeof(uint64_t)); // EPRM queue
-  configASSERT(xEPRMQueue != NULL);
+  xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queue
+  configASSERT(xEPRMQueue_in != NULL);
+  xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
+  configASSERT(xEPRMQueue_out != NULL);
 
   xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
   configASSERT(xAlmQueue != NULL);
@@ -435,7 +436,8 @@ int main( void )
 #ifdef DEBUGxx
   vQueueAddToRegistry(xLedQueue, "LedQueue");
   vQueueAddToRegistry(xPwrQueue, "PwrQueue");
-  vQueueAddToRegistry(xEPRMQueue, "EPRMQueue");
+  vQueueAddToRegistry(xEPRMQueue_in, "EPRMQueue_in");
+  vQueueAddToRegistry(xEPRMQueue_out, "EPRMQueue_out");
 #endif // DEBUG
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as

@@ -10,39 +10,27 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-
 #include "driverlib/eeprom.h"
 #include "common/utils.h"
 
 #include "Tasks.h"
 
-// This queue is used to handle EEPROM commands
-QueueHandle_t xEPRMQueue;
+QueueHandle_t xEPRMQueue_in;
+QueueHandle_t xEPRMQueue_out;
 
-// Define outgoing message out here, then make simple function to retrieve it
-static uint64_t message_out;
-uint8_t nread,nretrieve;
 
-uint64_t EEPROM_retrieve(){
-	// use a second queue instead
-	nretrieve++;
-	for (;;){
-		if(nread==nretrieve){
-			return message_out;
-		}
-	}
-	// shouldn't get here
-	return 0x0;
+uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data){
+	return ((action<<48)|(addr<<32)|data);
 }
 
 void EEPROMTask(void *parameters){
-	uint64_t message_in;
+	uint64_t message_in, message_out;
 
 	// At the moment, let's do 1 byte key , 1 byte optional addr, 2 bytes data
 	// write data should be at most 1 word (32 bits)
 
 	for(;;){
-		if(xQueueReceive(xEPRMQueue, &message_in, portMAX_DELAY)){
+		if(xQueueReceive(xEPRMQueue_in, &message_in, portMAX_DELAY)){
 			// Example message:
 			// 0x 0001 0022 ffffffff
 			// Corresponds to writing ffffffff to register 0x22
@@ -55,26 +43,30 @@ void EEPROMTask(void *parameters){
 				write_eeprom_single(data,addr);
 				break;
 			case EPRM_READ_SINGLE:
-				nread++;
 				message_out = (uint64_t)read_eeprom_single(addr);
+				xQueueSendToBack(xEPRMQueue_out, &message_out, portMAX_DELAY);
 				break;
 			case EPRM_READ_DOUBLE:
-				nread++;
 				message_out = read_eeprom_multi(addr);
+				xQueueSendToBack(xEPRMQueue_out, &message_out, portMAX_DELAY);
 				break;
-			case EPRM_SET_ID:
-				// TODO
+			case EPRM_UNLOCK_BLOCK: ;
+				uint32_t *dataptr = &data;
+				EEPROMBlockUnlock(addr, dataptr, 1);
+				break;
+			case EPRM_LOCK_BLOCK:
+				EEPROMBlockLock(addr);
 				break;
 			case EPRM_BUFF_IN:
 				// need buffer method
 				break;
 			case EPRM_BUFF_OUT:
-				nread++;
 				// need buffer method and return message
 				break;
 			default:
 				break;
-			} continue;
+			}
+			continue;
 		}
 	}
 }

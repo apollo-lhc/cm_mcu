@@ -841,14 +841,13 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
   p1[p1l] = 0x00; // terminate strings
 
-  uint64_t addr, data;
+  uint64_t addr, data, message;
   addr = strtol(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
 
-  // Define this as function somewhere else?
-  uint64_t message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(addr<<32);
-  xQueueSendToBack(xEPRMQueue, &message, portMAX_DELAY);	// is there a good time to set this to?
-  data = EEPROM_retrieve();
+  message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(addr<<32);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+  xQueueReceive(xEPRMQueue_out, &data, portMAX_DELAY);
 
   copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %08x%08x \r\n",block,data);
 
@@ -876,9 +875,7 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   }
 
   uint64_t message = ((uint64_t)EPRM_WRITE_SINGLE<<48)|(addr<<32)|data;
-  xQueueSendToBack(xEPRMQueue, &message, portMAX_DELAY);
-
-  copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %08x \r\n",block,data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   return pdFALSE;
 }
@@ -908,30 +905,25 @@ static BaseType_t set_board_id(char *m, size_t s, const char *mm)
   p2[p2l] = 0x00; // terminate strings
   p3[p3l] = 0x00; // terminate strings
 
-  uint32_t pass, addr, data;
+  uint64_t pass, addr, data;
   pass = strtoul(p1,NULL,16);
   addr = strtoul(p2,NULL,16);
   data = strtoul(p3,NULL,16);
-  uint32_t block = EEPROMBlockFromAddr(addr);
+  uint64_t block = EEPROMBlockFromAddr(addr);
   if (block!=1){
 	  copied += snprintf(m+copied, s-copied, "Please input address in Block 1\r\n");
 	  return pdFALSE;
   }
-  uint32_t *pPassword = &pass;
-  uint32_t *dataptr = &data;
-  uint32_t dlen = 4;
-  uint32_t err = 0;
 
-  // TODO: replace this to work through EEPROM task
-  err += EEPROMBlockUnlock(1, pPassword, 1);
-  err += EEPROMProgram(dataptr,addr,dlen);
-  err += EEPROMBlockLock(1);
-  uint32_t success = 1;
-  if(err!=success){
-	  copied += snprintf(m+copied, s-copied, "Write unsuccessful \r\n");
-	  return pdFALSE;
-  }
-  copied += snprintf(m+copied, s-copied, "Successfully wrote to 0x%x in ID Block: %08x \r\n",addr,data);
+  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK,block,pass);
+    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE,addr,data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+  uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK,block<<32,0);
+  xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
   return pdFALSE;
 }
 
@@ -958,17 +950,18 @@ static BaseType_t board_id_info(char *m, size_t s, const char *mm)
   uint64_t wordsize = 0x0004;
   uint64_t sn_addr = 0x0040;
   uint64_t ff_addr = sn_addr + wordsize;
+  uint64_t sn,ff;
 
   uint64_t sn_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(sn_addr<<32);
-  xQueueSendToBack(xEPRMQueue, &sn_message, portMAX_DELAY);	// is there a good time to set this to?
-  uint32_t sn = (uint32_t)EEPROM_retrieve();
+  xQueueSendToBack(xEPRMQueue_in, &sn_message, portMAX_DELAY);	// is there a good time to set this to?
+  xQueueReceive(xEPRMQueue_out, &sn, portMAX_DELAY);
 
   uint64_t ff_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(ff_addr<<32);
-  xQueueSendToBack(xEPRMQueue, &ff_message, portMAX_DELAY);	// is there a good time to set this to?
-  uint32_t ff = (uint32_t)EEPROM_retrieve();
+  xQueueSendToBack(xEPRMQueue_in, &ff_message, portMAX_DELAY);	// is there a good time to set this to?
+  xQueueReceive(xEPRMQueue_out, &ff, portMAX_DELAY);
 
-  uint32_t num = sn >> 16;
-  uint32_t rev = sn&0xff;
+  uint32_t num = (uint32_t)sn >> 16;
+  uint32_t rev = ((uint32_t)sn)&0xff;
 
   copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",sn);
 
