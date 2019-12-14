@@ -11,9 +11,9 @@
 #include "common/smbus.h"
 
 // I2C Slave
-struct I2CSlaveTaskArgs_t {
-  tSMBus *smbus;
-};
+//struct I2CSlaveTaskArgs_t {
+//  tSMBus *smbus;
+//};
 
 
 #endif /* PROJECTS_CM_MCU_I2CSLAVETASK_H_ */
