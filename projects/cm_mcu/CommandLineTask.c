@@ -1056,7 +1056,7 @@ static BaseType_t task_ctl(char *m, size_t s, const char *mm)
 static BaseType_t uptime(char *m, size_t s, const char *mm)
 {
   TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000/60; // time in minutes
-  snprintf(m,s, "%s: MCU uptime %d minutes\r\n", now);
+  snprintf(m,s, "%s: MCU uptime %d minutes\r\n", __func__, now);
   return pdFALSE;
 }
 
