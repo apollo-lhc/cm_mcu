@@ -60,7 +60,6 @@ const char* getFFname(const uint8_t i);
 int8_t getFFvalue(const uint8_t i);
 TickType_t getFFupdateTick();
 
-
 int disable_xcvr_cdr(const char *name);
 
 // messages for FF task
@@ -100,5 +99,8 @@ uint32_t getAlarmStatus();
 
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
+
+// I2C Slave
+void I2CSlaveTask(void *parameters);
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

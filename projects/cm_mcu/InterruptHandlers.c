@@ -131,6 +131,7 @@ void UART4IntHandler( void )
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
+//tSMBus g_sSlave0;  // for I2C #0
 
 tSMBus g_sMaster1; // for I2C #1
 tSMBus g_sMaster2; // for I2C #2
@@ -267,4 +268,35 @@ void ADCSeq1Interrupt()
   return;
 }
 
+// -----------------------------------------
+TaskHandle_t TaskNotifyI2CSlave = NULL;
 
+
+void I2CSlave0Interrupt()
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  // read the interrupt register
+  uint32_t ui32InterruptStatus = ROM_I2CSlaveIntStatusEx(I2C0_BASE, true);
+
+  // clear the interrupt register
+  ROM_I2CSlaveIntClear(I2C0_BASE);
+  //ROM_SysCtlDelay(100u);
+  /* At this point xTaskToNotify should not be NULL as a transmission was
+      in progress. */
+  configASSERT( TaskNotifyI2CSlave != NULL );
+
+  /* Notify the task that the transmission is complete. */
+  xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus,
+                     eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+
+  /* There are no transmissions in progress, so no tasks to notify. */
+  TaskNotifyI2CSlave = NULL;
+
+
+  /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
+      should be performed to ensure the interrupt returns directly to the highest
+      priority task.  The macro used for this purpose is dependent on the port in
+      use and may be called portEND_SWITCHING_ISR(). */
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}

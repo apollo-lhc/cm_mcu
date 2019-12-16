@@ -28,7 +28,7 @@
 
 #define HUH             (99)
 
-enum ps_state { PWR_UNKNOWN, PWR_ON, PWR_OFF, PWR_DISABLED };
+enum ps_state { PWR_UNKNOWN, PWR_ON, PWR_OFF, PWR_DISABLED, PWR_FAILED };
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
 int getLowestEnabledPSPriority();

@@ -27,6 +27,8 @@ void UART1IntHandler( void );
 void UART4IntHandler( void );
 
 // SMBUs specific handler for I2C
+//extern tSMBus g_sSlave0;  // for I2C #0
+
 extern tSMBus g_sMaster1; // for I2C #1
 extern tSMBus g_sMaster2; // for I2C #2
 extern tSMBus g_sMaster3; // for I2C #3
@@ -44,6 +46,10 @@ void SMBusMasterIntHandler2(void);
 void SMBusMasterIntHandler3(void);
 void SMBusMasterIntHandler4(void);
 void SMBusMasterIntHandler6(void);
+
+// I2C Slave
+extern TaskHandle_t TaskNotifyI2CSlave;
+void I2CSlave0Interrupt();
 
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
