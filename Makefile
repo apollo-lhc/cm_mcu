@@ -6,7 +6,7 @@ DIRS=driverlib projects boot_loader
 
 all: 
 	@for d in ${DIRS}; do \
-	   ${MAKE} DEBUG=1 -C $$d ;\
+	   ${MAKE} -C $$d ;\
 	done
 
 clean:
