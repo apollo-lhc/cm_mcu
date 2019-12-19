@@ -351,10 +351,12 @@ const char* gitVersion()
   return gitVersion;
 }
 
+errbuf_handle_t ebuf;
 // 
 int main( void )
 {
   SystemInit();
+
   // check if we are to include both FPGAs or not
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
@@ -386,8 +388,6 @@ int main( void )
     dcdc_args.pm_values[i] = -999.;
   for (int i =0; i < fpga_args.n_values; ++i)
     fpga_args.pm_values[i] = -999.;
-
-
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
@@ -443,6 +443,9 @@ int main( void )
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.
   SystemInitInterrupts();
+
+  // initialize eeprom buffer
+  ebuf = errbuffer_init(2,4);
 
   // Say hello. The information below is only updated when the main()
   // function is recompiled.

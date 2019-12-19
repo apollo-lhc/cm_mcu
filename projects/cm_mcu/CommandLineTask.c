@@ -833,7 +833,7 @@ static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
 }
 
 // This command takes 1 arg, the address
-static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
+static BaseType_t eeprom_r(char *m, size_t s, const char *mm)
 {
   int copied = 0;
   int8_t *p1;
@@ -841,21 +841,18 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
   p1[p1l] = 0x00; // terminate strings
 
-  uint64_t addr, data, message;
+  uint32_t addr;
   addr = strtol(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
 
-  message = ((uint64_t)EPRM_READ_DOUBLE<<48)|(addr<<32);
-  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-  xQueueReceive(xEPRMQueue_out, &data, portMAX_DELAY);
-
+  uint64_t data = read_eeprom_multi(addr);
   copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %08x%08x \r\n",block,data);
 
   return pdFALSE;
 }
 
 // This command takes 2 args, the address and 4 bytes of data to be written
-static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
+static BaseType_t eeprom_w(char *m, size_t s, const char *mm)
 {
   int copied = 0;
   int8_t *p1, *p2;
@@ -865,17 +862,16 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
   p2[p2l] = 0x00; // terminate strings
 
-  uint64_t data, addr;
+  uint32_t data, addr;
   data = strtoul(p2,NULL,16);
   addr = strtoul(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  if(block==1){
+  if(block>0 && block<5){
 	  copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
 	  return pdFALSE;
   }
-
-  uint64_t message = ((uint64_t)EPRM_WRITE_SINGLE<<48)|(addr<<32)|data;
-  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+  write_eeprom(data,addr);
+  copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %08x \r\n",block,data);
 
   return pdFALSE;
 }
@@ -916,13 +912,17 @@ static BaseType_t set_board_id(char *m, size_t s, const char *mm)
   }
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK,block,pass);
-    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+  xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
 
   uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE,addr,data);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK,block<<32,0);
   xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
+  if(pass==0x12345678){
+	  copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %x \r\n",block,(uint32_t)data);
+  }	// data not printing correctly?
 
   return pdFALSE;
 }
@@ -969,6 +969,57 @@ static BaseType_t board_id_info(char *m, size_t s, const char *mm)
   copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
   copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
   // TODO: Figure out the best way to organize firefly information
+
+  return pdFALSE;
+}
+
+// This command takes 1 arg, the data to be written to the buffer
+// Just tests reading and writing, not incrementation
+static BaseType_t errbuff_in(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // data
+  p1[p1l] = 0x00; // terminate strings
+
+  uint64_t data;
+  data = strtoul(p1,NULL,16);
+  errbuffer_put(ebuf,data);
+  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %08x \r\n",data);
+
+  return pdFALSE;
+}
+
+static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  uint32_t arr[5];
+  uint32_t (*arrptr)[5]=&arr;
+  errbuffer_getlast5(ebuf,arrptr);
+
+  copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
+
+  int i=0, max=5;
+  while(i<max){
+	  copied += snprintf(m+copied, s-copied, "%08x \r\n",(*arrptr)[i]);
+	  i++;
+  }
+  return pdFALSE;
+}
+
+static BaseType_t errbuff_info(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  uint32_t cap, minaddr, maxaddr;
+
+  cap = errbuffer_capacity(ebuf);
+  minaddr = errbuffer_minaddr(ebuf);
+  maxaddr = errbuffer_maxaddr(ebuf);
+
+  copied += snprintf(m+copied, s-copied, "Capacity of EEPROM buffer: %08x \r\n",cap);
+  copied += snprintf(m+copied, s-copied, "Min address: %08x \r\n",minaddr);
+  copied += snprintf(m+copied, s-copied, "Max address: %08x \r\n",maxaddr);
 
   return pdFALSE;
 }
@@ -1267,7 +1318,7 @@ static
 CLI_Command_Definition_t eeprom_read_command = {
     .pcCommand="eeprom_read",
     .pcHelpString="eeprom_read <address> \r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
-    .pxCommandInterpreter = eeprom_read,
+    .pxCommandInterpreter = eeprom_r,
     1
 };
 
@@ -1275,7 +1326,7 @@ static
 CLI_Command_Definition_t eeprom_write_command = {
     .pcCommand="eeprom_write",
     .pcHelpString="eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
-    .pxCommandInterpreter = eeprom_write,
+    .pxCommandInterpreter = eeprom_w,
     2
 };
 
@@ -1311,6 +1362,31 @@ CLI_Command_Definition_t id_command = {
     0
 };
 
+static
+CLI_Command_Definition_t buffer_in_command = {
+    .pcCommand="buffer_in",
+    .pcHelpString="buffer_in <data> \r\n Manual entry into the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_in,
+    1
+};
+
+static
+CLI_Command_Definition_t buffer_out_command = {
+    .pcCommand="buffer_out",
+    .pcHelpString="buffer_out <data> \r\n Prints last entry in the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_out,
+    0
+};
+
+static
+CLI_Command_Definition_t buffer_info_command = {
+    .pcCommand="buffer_info",
+    .pcHelpString="buffer_info <data> \r\n Prints information about the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_info,
+    0
+};
+
+
 void vCommandLineTask( void *pvParameters )
 {
   uint8_t cRxedChar, cInputIndex = 0;
@@ -1329,6 +1405,9 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
   FreeRTOS_CLIRegisterCommand(&bootloader_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_in_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_info_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_out_command  );
   FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);

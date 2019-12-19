@@ -5,6 +5,8 @@
  *      Author: wittich
  */
 
+#include <stddef.h>
+#include <stdlib.h>
 #include "common/utils.h"
 #include "common/pinsel.h"
 #include "driverlib/gpio.h"
@@ -12,35 +14,35 @@
 #include "driverlib/rom_map.h"
 #include "driverlib/debug.h"
 #include "driverlib/eeprom.h"
+#include "FreeRTOS.h"
+#include "Tasks.h"
 
 // write single word to eeprom
-void write_eeprom_single(uint32_t data, uint32_t addr)
+void write_eeprom(uint32_t data, uint32_t addr)
 {
-	uint32_t dlen,*dataptr;
-	dataptr = &data;
-	dlen = 4;
-	EEPROMProgram(dataptr,addr,dlen);
+	uint64_t message;
+	message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE,addr,data);
+	xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+	return;
 }
 
 // read single word from eeprom
 uint32_t read_eeprom_single(uint32_t addr)
 {
-	uint32_t data,*dataptr;
-	uint32_t dlen = 4;
-	data = 0x0;
-	dataptr = &data;
-	EEPROMRead(dataptr,addr,dlen);
+	uint32_t data;
+	uint64_t message = EPRMMessage((uint64_t)EPRM_READ_SINGLE,addr,0);
+	xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);	// is there a good time to set this to?
+	xQueueReceive(xEPRMQueue_out, &data, portMAX_DELAY);
 	return data;
 }
 
 // read 2 words from eeprom
 uint64_t read_eeprom_multi(uint32_t addr)
 {
-	static uint32_t dataptr[2] = {0x0, 0x0};
-	uint32_t dlen = 8;
-	uint32_t *data0 = &dataptr[0];
-	EEPROMRead(data0,addr,dlen);
-	uint64_t data = ((uint64_t)dataptr[0])|((uint64_t)dataptr[1]<<32);
+	uint64_t data, message;
+	message = EPRMMessage((uint64_t)EPRM_READ_DOUBLE,addr,0);
+	xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+	xQueueReceive(xEPRMQueue_out, &data, portMAX_DELAY);
 	return data;
 }
 
@@ -98,4 +100,88 @@ void setupActiveLowPins(void)
     write_gpio_pin(pins[i], 0x1);
   }
 }
+
+// EEPROM Buffer
+
+struct error_buffer_t {
+	uint32_t minaddr;
+	uint32_t maxaddr;
+	uint32_t head;
+	uint32_t capacity;
+};
+
+void decrease_head(errbuf_handle_t ebuf){
+	(ebuf->head)-=4;
+	if(ebuf->head<ebuf->minaddr){ebuf->head=ebuf->maxaddr;}
+	return;
+}
+void increase_head(errbuf_handle_t ebuf){
+	(ebuf->head)+=4;	// Increment by 1 word
+	if (ebuf->head>ebuf->maxaddr){ebuf->head=ebuf->minaddr;}
+	return;
+}
+
+uint32_t errbuffer_findhead(errbuf_handle_t ebuf){
+	uint32_t b1=ebuf->minaddr,b2=ebuf->minaddr+4, maddr=ebuf->maxaddr;
+	uint32_t addr = b1, entry, previous=1;
+	while(addr<=maddr){
+		entry = read_eeprom_single(addr);
+		if(entry==0&&previous==0){
+			b2 = addr;
+			b1 = addr-4;
+			break;
+		}
+		previous = entry;
+		addr+=4;
+	}
+	write_eeprom(0,b1);
+	write_eeprom(0,b2);
+	return b1;
+}
+
+errbuf_handle_t errbuffer_init(uint8_t minblk, uint8_t maxblk){
+	errbuf_handle_t ebuf = pvPortMalloc(sizeof(error_buffer_t));
+	ebuf->minaddr=EEPROMAddrFromBlock(minblk);
+	ebuf->maxaddr=EEPROMAddrFromBlock(maxblk);
+	ebuf->capacity= (uint32_t)((ebuf->maxaddr - ebuf->minaddr)>>2);
+	ebuf->head=errbuffer_findhead(ebuf);
+
+	errbuffer_put(ebuf,RESTART);
+	return ebuf;
+}
+
+void errbuffer_reset(errbuf_handle_t ebuf){
+	// TODO: set all words to FFFFFFFF except 1st and 2nd which are 00000000
+	// TODO: set head to 1st entry
+	return;
+}
+
+void errbuffer_put(errbuf_handle_t ebuf, uint32_t entry){
+	write_eeprom(entry,ebuf->head);
+	increase_head(ebuf);
+	write_eeprom(0,ebuf->head+4);
+	return;
+}
+
+void errbuffer_getlast5(errbuf_handle_t ebuf, uint32_t (*arrptr)[5]){
+	int i=0,j=0,max=5;
+	while(i<max){i++; decrease_head(ebuf);}
+	while(j<max){
+		(*arrptr)[j] = read_eeprom_single(ebuf->head);
+		increase_head(ebuf);
+		j++;
+	}
+	return;
+}
+
+uint32_t errbuffer_entry(void){
+	return 0x12345678;	// just for testing
+}
+
+uint32_t errbuffer_capacity(errbuf_handle_t ebuf){
+	return ebuf->capacity; }
+uint32_t errbuffer_minaddr(errbuf_handle_t ebuf){
+	return ebuf->minaddr; }
+uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf){
+	return ebuf->maxaddr; }
 

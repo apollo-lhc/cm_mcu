@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 // write to and read from eeprom
-void write_eeprom_single(uint32_t data, uint32_t addr);
+void write_eeprom(uint32_t data, uint32_t addr);
 uint32_t read_eeprom_single(uint32_t addr);
 uint64_t read_eeprom_multi(uint32_t addr);
 
@@ -25,7 +25,32 @@ uint8_t toggle_gpio_pin(int pin);
 
 void setupActiveLowPins(void);
 
+// EEPROM buffer
 
+// error codes
+#define RESTART 1
+
+typedef struct error_buffer_t error_buffer_t;
+typedef error_buffer_t* errbuf_handle_t;
+
+extern errbuf_handle_t ebuf;
+
+errbuf_handle_t errbuffer_init(uint8_t minblk, uint8_t maxblk);
+void errbuffer_reset(errbuf_handle_t ebuf);
+
+void errbuffer_put(errbuf_handle_t ebuf, uint32_t data);
+void errbuffer_getlast5(errbuf_handle_t ebuf, uint32_t (*arrptr)[5]);
+uint32_t errbuffer_entry(void);
+
+uint32_t errbuffer_capacity(errbuf_handle_t ebuf);
+uint32_t errbuffer_minaddr(errbuf_handle_t ebuf);
+uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf);
+
+// Shouldn't be using these outside of utils:
+
+//void increase_head(errbuf_handle_t ebuf);
+//void decrease_head(errbuf_handle_t ebuf);
+//uint32_t errbuffer_findhead(errbuf_handle_t ebuf);
 
 
 
