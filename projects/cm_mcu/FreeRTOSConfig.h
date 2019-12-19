@@ -36,7 +36,7 @@ void stopwatch_reset(void);
 #define configCPU_CLOCK_HZ                                      40000000
 #define configMAX_PRIORITIES                                    ( 5 )
 #define configMINIMAL_STACK_SIZE                                ( ( unsigned short ) 256 )
-#define configTOTAL_HEAP_SIZE                                   ( ( size_t ) ( 16 * 1024 ) )
+#define configTOTAL_HEAP_SIZE                                   ( ( size_t ) ( 32 * 1024 ) )
 #define configMAX_TASK_NAME_LEN                                 ( 6 )
 #define configUSE_TRACE_FACILITY                                1
 #define configUSE_16_BIT_TICKS                                  0
@@ -137,6 +137,7 @@ header file. */
 #define CLI_UART UART4_BASE // Front panel
 //#define CLI_UART UART1_BASE // Zynq
 
+#define pdTICKS_TO_MS( xTicks )    ( ( ( TickType_t ) ( xTicks ) * 1000u ) / configTICK_RATE_HZ )
 
 #ifdef __cplusplus
 }

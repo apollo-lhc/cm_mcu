@@ -6,7 +6,6 @@
  */
 
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_types.h"
@@ -15,6 +14,8 @@
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/systick.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/eeprom.h"
 
 // local includes
 #include "common/i2c_reg.h"
@@ -510,8 +511,14 @@ static BaseType_t mon_ctl(char *m, size_t s, const char *mm)
         dcdc_args.n_commands-1);
     return pdFALSE;
   }
-
+  // update times, in seconds
+  TickType_t now = pdTICKS_TO_MS( xTaskGetTickCount())/1000;
+  TickType_t last = pdTICKS_TO_MS(dcdc_args.updateTick)/1000;
   int copied = 0;
+  if ( (now-last) > 60 ) {
+    int mins = (now-last)/60;
+    copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
+  }
   copied += snprintf(m+copied, s-copied, "%s\r\n", dcdc_args.commands[i1].name);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     copied += snprintf(m+copied, s-copied, "SUPPLY %s\r\n",
@@ -620,6 +627,17 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
   int copied = 0;
   static int whichff = 0;
 
+  if ( whichff == 0 ) {
+    // check for stale data
+    TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
+    if ( (now-last) > 60 ) {
+      int mins = (now-last)/60;
+      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
+    }
+
+  }
+
   if ( argc == 0 ) { // default command: temps
 
     if ( whichff == 0 ) {
@@ -695,6 +713,13 @@ static BaseType_t fpga_ctl(char *m, size_t s, const char *mm)
   static int whichfpga = 0;
   int howmany = fpga_args.n_devices*fpga_args.n_pages;
   if ( whichfpga == 0 ) {
+    TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
+    if ( (now-last) > 60 ) {
+      int mins = (now-last)/60;
+      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
+    }
+
     copied += snprintf(m+copied, s-copied, "FPGA monitors\r\n");
     copied += snprintf(m+copied, s-copied, "%s\r\n", fpga_args.commands[0].name);
   }
@@ -769,6 +794,169 @@ static BaseType_t sensor_summary(char *m, size_t s, const char *mm)
   tens = max_temp;
   frac = ABS((max_temp-tens))*100.0;
   copied += snprintf(m+copied, s-copied, "REG %02d.%02d\r\n", tens, frac);
+
+  return pdFALSE;
+}
+
+// This command takes no arguments
+static BaseType_t restart_mcu(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  copied += snprintf(m+copied, s-copied, "Restarting MCU\r\n");
+  SysCtlReset();	// This function does not return
+  return pdFALSE;
+}
+
+// This command takes 1 argument, either k or v
+static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  p1[p1l] = 0x00; // terminate strings
+  const TickType_t delay = 1 / portTICK_PERIOD_MS;  // 1 ms delay
+
+  if ( strcmp(p1, "v") == 0 ) {
+	  write_gpio_pin(V_FPGA_PROGRAM, 0x1);
+	  vTaskDelay(delay);
+	  write_gpio_pin(V_FPGA_PROGRAM, 0x0);
+	  copied += snprintf(m+copied, s-copied, "VU7P has been reset\r\n");
+    }
+  if ( strcmp(p1, "k") == 0 ) {
+	  write_gpio_pin(K_FPGA_PROGRAM, 0x1);
+	  vTaskDelay(delay);
+	  write_gpio_pin(K_FPGA_PROGRAM, 0x0);
+	  copied += snprintf(m+copied, s-copied, "KU15P has been reset\r\n");
+
+    }
+  return pdFALSE;
+}
+
+// This command takes 1 arg, the address
+static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p1[p1l] = 0x00; // terminate strings
+
+  uint32_t addr;
+  uint64_t data;
+  addr = strtol(p1,NULL,16);
+  uint32_t block = EEPROMBlockFromAddr(addr);
+  data = read_eeprom_multi(addr);
+
+  copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %08x%08x \r\n",block,data);
+
+  return pdFALSE;
+}
+
+// This command takes 2 args, the address and 4 bytes of data to be written
+static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1, *p2;
+  BaseType_t p1l, p2l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // address
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // data
+  p1[p1l] = 0x00; // terminate strings
+  p2[p2l] = 0x00; // terminate strings
+
+  uint32_t data, addr;
+  data = strtoul(p2,NULL,16);
+  addr = strtoul(p1,NULL,16);
+  uint32_t block = EEPROMBlockFromAddr(addr);
+  write_eeprom_single(data,addr);
+  copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %08x \r\n",block,data);
+
+  return pdFALSE;
+}
+
+// Takes 0 arguments
+static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+
+  copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
+  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t r \t Apollo ID Information. Password: 0x12345678 \r\n");
+
+  return pdFALSE;
+}
+
+// Takes 3 arguments
+static BaseType_t set_board_id(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1, *p2, *p3;
+  BaseType_t p1l, p2l, p3l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // password
+  p2 = FreeRTOS_CLIGetParameter(mm, 2, &p2l); // address
+  p3 = FreeRTOS_CLIGetParameter(mm, 3, &p3l); // input data
+  p1[p1l] = 0x00; // terminate strings
+  p2[p2l] = 0x00; // terminate strings
+  p3[p3l] = 0x00; // terminate strings
+
+  uint32_t pass, addr, data;
+  pass = strtoul(p1,NULL,16);
+  addr = strtoul(p2,NULL,16);
+  data = strtoul(p3,NULL,16);
+  uint32_t block = EEPROMBlockFromAddr(addr);
+  if (block!=1){
+	  copied += snprintf(m+copied, s-copied, "Please input address in Block 1\r\n");
+	  return pdFALSE;
+  }
+  uint32_t *pPassword = &pass;
+  uint32_t *dataptr = &data;
+  uint32_t dlen = 4;
+  uint32_t err = 0;
+
+  err += EEPROMBlockUnlock(1, pPassword, 1);
+  err += EEPROMProgram(dataptr,addr,dlen);
+  err += EEPROMBlockLock(1);
+  uint32_t success = 1;
+  if(err!=success){
+	  copied += snprintf(m+copied, s-copied, "Write unsuccessful \r\n");
+	  return pdFALSE;
+  }
+  copied += snprintf(m+copied, s-copied, "Successfully wrote to 0x%x in ID Block: %08x \r\n",addr,data);
+  return pdFALSE;
+}
+
+// one-time use, has one function and takes 0 arguments
+static BaseType_t set_board_id_password(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  uint32_t pass = 0x12345678;
+  uint32_t *passptr = &pass;
+  EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
+  EEPROMBlockPasswordSet(1, passptr, 1);
+  EEPROMBlockLock(1);
+
+  copied += snprintf(m+copied, s-copied, "Block locked\r\n");
+
+  return pdFALSE;
+}
+
+static BaseType_t board_id_info(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  uint32_t wordsize = 0x0004;
+  uint32_t sn_addr = 0x0040;
+  uint32_t ff_addr = sn_addr + wordsize;
+
+  uint32_t sn = read_eeprom_single(sn_addr);	// last byte is revision, first 3 are serial number
+  uint32_t num = sn >> 16;
+  uint32_t rev = sn&0xff;
+
+  uint32_t ff = read_eeprom_single(ff_addr);
+  copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",sn);
+
+  copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);
+  copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
+  copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
+  // TODO: Figure out the best way to organize firefly information
 
   return pdFALSE;
 }
@@ -865,6 +1053,13 @@ static BaseType_t task_ctl(char *m, size_t s, const char *mm)
   return pdFALSE;
 }
 
+static BaseType_t uptime(char *m, size_t s, const char *mm)
+{
+  TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000/60; // time in minutes
+  snprintf(m,s, "%s: MCU uptime %d minutes\r\n", __func__, now);
+  return pdFALSE;
+}
+
 
 #pragma GCC diagnostic pop
 // WARNING: this command easily leads to stack overflows. It does not correctly
@@ -909,6 +1104,14 @@ BaseType_t TaskStatsCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const 
 
 static const char * const pcWelcomeMessage =
 		"FreeRTOS command server.\r\nType \"help\" to view a list of registered commands.\r\n";
+
+static
+CLI_Command_Definition_t alm_ctl_command = {
+    .pcCommand="alm",
+    .pcHelpString="alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
+    .pxCommandInterpreter = alarm_ctl,
+    -1 // variable number of commands
+};
 
 static
 CLI_Command_Definition_t i2c_set_dev_command = {
@@ -959,13 +1162,6 @@ CLI_Command_Definition_t pwr_ctl_command = {
     .pcHelpString="pwr (on|off|status)\r\n Turn on or off all power.\r\n",
     .pxCommandInterpreter = power_ctl,
     1
-};
-static
-CLI_Command_Definition_t alm_ctl_command = {
-    .pcCommand="alm",
-    .pcHelpString="alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
-    .pxCommandInterpreter = alarm_ctl,
-    -1 // variable number of commands
 };
 
 
@@ -1032,6 +1228,14 @@ CLI_Command_Definition_t sensor_summary_command = {
 };
 
 static
+CLI_Command_Definition_t uptime_command = {
+    .pcCommand = "uptime",
+    .pcHelpString="uptime in minutes\r\n",
+    .pxCommandInterpreter = uptime,
+    0
+};
+
+static
 CLI_Command_Definition_t version_command = {
     .pcCommand="version",
     .pcHelpString="version\r\n Displays information about MCU firmware\r\n",
@@ -1047,7 +1251,69 @@ CLI_Command_Definition_t bootloader_command = {
     0
 };
 
+static
+CLI_Command_Definition_t restart_command = {
+    .pcCommand="restart_mcu",
+    .pcHelpString="restart_mcu\r\n Restart mcu\r\n",
+    .pxCommandInterpreter = restart_mcu,
+    0
+};
 
+static
+CLI_Command_Definition_t fpga_reset_command = {
+    .pcCommand="fpga_reset",
+    .pcHelpString="fpga_reset (k|v)\r\n Resets either the KU15P or VU7P FPGA according to argument\r\n",
+    .pxCommandInterpreter = fpga_reset,
+    1
+};
+
+static
+CLI_Command_Definition_t eeprom_read_command = {
+    .pcCommand="eeprom_read",
+    .pcHelpString="eeprom_read <address> \r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
+    .pxCommandInterpreter = eeprom_read,
+    1
+};
+
+static
+CLI_Command_Definition_t eeprom_write_command = {
+    .pcCommand="eeprom_write",
+    .pcHelpString="eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
+    .pxCommandInterpreter = eeprom_write,
+    2
+};
+
+static
+CLI_Command_Definition_t eeprom_info_command = {
+    .pcCommand="eeprom_info",
+    .pcHelpString="eeprom_info\r\n Prints information about the EEPROM.\r\n",
+    .pxCommandInterpreter = eeprom_info,
+    0
+};
+
+static
+CLI_Command_Definition_t set_id_command = {
+    .pcCommand="set_id",
+    .pcHelpString="set_id <password> <address> <data>\r\n Allows the user to set the board id information.\r\n",
+    .pxCommandInterpreter = set_board_id,
+    3
+};
+
+static
+CLI_Command_Definition_t set_id_password_command = {
+    .pcCommand="set_id_password",
+    .pcHelpString="set_id_password \r\n One-time use: sets password for ID block.\r\n",
+    .pxCommandInterpreter = set_board_id_password,
+    0
+};
+
+static
+CLI_Command_Definition_t id_command = {
+    .pcCommand="id",
+    .pcHelpString="id \r\n Prints board ID information.\r\n",
+    .pxCommandInterpreter = board_id_info,
+    0
+};
 
 void vCommandLineTask( void *pvParameters )
 {
@@ -1067,7 +1333,12 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
   FreeRTOS_CLIRegisterCommand(&bootloader_command  );
+  FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
+  FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
+  FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
   FreeRTOS_CLIRegisterCommand(&fpga_command       );
+  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
+  FreeRTOS_CLIRegisterCommand(&id_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_command );
   FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
   FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
@@ -1077,9 +1348,13 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&monitor_command  );
   FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
+  FreeRTOS_CLIRegisterCommand(&restart_command  );
   FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
+  FreeRTOS_CLIRegisterCommand(&set_id_command);
+  FreeRTOS_CLIRegisterCommand(&set_id_password_command);
   FreeRTOS_CLIRegisterCommand(&task_stats_command );
   FreeRTOS_CLIRegisterCommand(&task_command  );
+  FreeRTOS_CLIRegisterCommand(&uptime_command);
   FreeRTOS_CLIRegisterCommand(&version_command  );
 
 

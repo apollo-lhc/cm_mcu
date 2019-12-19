@@ -44,6 +44,7 @@ struct MonitorTaskArgs_t {
   const int n_pages;
   tSMBus *smbus;
   volatile tSMBusStatus *smbus_status;
+  volatile TickType_t updateTick;
 };
 // DC-DC converter
 #define NSUPPLIES_PS (5) // 5 devices, 2 pages each

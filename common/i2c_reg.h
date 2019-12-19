@@ -17,6 +17,7 @@
 // This array helps us simplify the use of different I2C devices in the board.
 extern uint32_t I2C_BASE[];
 
+void initI2C0(const uint32_t sysclockfreq); // EEProm and I2C slave for master.
 void initI2C1(const uint32_t sysclockfreq); // power supply I2C bus
 void initI2C2(const uint32_t sysclockfreq); // clocks   I2C bus
 void initI2C3(const uint32_t sysclockfreq); // V optics I2C bus
