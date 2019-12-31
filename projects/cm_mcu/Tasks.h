@@ -16,7 +16,7 @@
 #include "queue.h"
 #include "semphr.h"
 
- #define MAX(a,b) (a)>(b)?(a):(b)
+#define MAX(a,b) (a)>(b)?(a):(b)
 
 // INIT task
 void InitTask(void *parameters);
@@ -78,12 +78,6 @@ int disable_xcvr_cdr(const char *name);
 #define FFLY_ENABLE_TRANSMITTERS  (2)
 #define FFLY_ENABLE_CDR        (3)
 #define FFLY_DISABLE_CDR       (4)
-//// control access to I2C
-//extern SemaphoreHandle_t xI2C1Mutex;
-//extern SemaphoreHandle_t xI2C2Mutex;
-//extern SemaphoreHandle_t xI2C3Mutex;
-//extern SemaphoreHandle_t xI2C4Mutex;
-//extern SemaphoreHandle_t xI2C6Mutex;
 
 // ---- version info
 const char* buildTime();
@@ -131,5 +125,11 @@ extern QueueHandle_t xEPRMQueue_out;
 uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
 void EEPROMTask(void *parameters);
 
+// Soft UART Task
+// SoftUart queue messages
+#define SOFTUART_ENABLE_TRANSMIT 0x1
+#define SOFTUART_DISABLE_TRANSMIT 0x2
+extern QueueHandle_t xSoftUartQueue;
+void SoftUartTask(void *parameters);
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

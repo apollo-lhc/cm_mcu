@@ -57,6 +57,10 @@ extern TaskHandle_t TaskNotifyADC;
 void ADCSeq0Interrupt();
 void ADCSeq1Interrupt();
 
+// soft UART
+void Timer0AIntHandler(void);
+
+
 // these are from the FreeRTOS code base.
 void xPortPendSVHandler(void);
 void vPortSVCHandler(void);

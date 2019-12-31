@@ -1156,6 +1156,29 @@ BaseType_t TaskStatsCommand( int argc, char ** argv )
   return pdFALSE;
 }
 
+static
+BaseType_t help_command_fcn(int argc, char **);
+
+static
+BaseType_t suart_ctl(int argc, char ** argv)
+{
+  int s = SCRATCH_SIZE;
+  uint32_t message;
+  if ( strncmp(argv[1], "on", 2) == 0 )
+    message = SOFTUART_ENABLE_TRANSMIT;
+  else if (strncmp(argv[1], "off", 3) == 0  )
+    message = SOFTUART_ENABLE_TRANSMIT;
+  else {
+    snprintf(m, s, "%s: message %s not understood\r\n", argv[0], argv[1]);
+    return pdFALSE;
+  }
+  snprintf(m,s, "%s: Sending message %s\r\n", argv[0], argv[1]);
+  // Send a message to the SUART task
+  xQueueSendToBack(xSoftUartQueue, &message, pdMS_TO_TICKS(10));
+  m[0] = '\0'; // no output from this command
+
+  return pdFALSE;
+}
 
 static const char * const pcWelcomeMessage =
 		"CLI based on microrl.\r\nType \"help\" to view a list of registered commands.\r\n";
@@ -1168,23 +1191,87 @@ struct command_t {
   const char * helpstr;
   const int num_args;
 };
-static
-BaseType_t help_command_fcn(int argc, char **);
 
 
 #define NUM_COMMANDS (sizeof(commands)/sizeof(commands[0]))
 static
 struct command_t commands[] = {
     {
-        "help",
-        help_command_fcn,
-        "help\r\n This help command\r\n",
+        "adc",
+        adc_ctl,
+        "adc\r\n Displays a table showing the state of ADC inputs.\r\n",
         0
     },
-    {"ff", ff_ctl, "ff\r\n firefly monitoring command\r\n", -1},
-    {"alm", alarm_ctl, "alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n", -1},
-    {"i2c_base", i2c_ctl_set_dev, "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n", 1},
-    {"i2cr", i2c_ctl_r, "i2cr <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n", 2},
+    { "alm", alarm_ctl, "alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n", -1},
+    {
+        "bootloader",
+        bl_ctl,
+        "bootloader\r\n Call the boot loader\r\n",
+        0
+    },
+    {
+        "buffer_in",
+        errbuff_in,
+        "buffer_in <data>\r\n Manual entry of 2-byte code into the eeprom buffer.\r\n",
+        1
+    },
+    {
+        "buffer_out",
+        errbuff_out,
+        "buffer_out <data>\r\n Prints last 5 entries in the eeprom buffer.\r\n",
+        1
+    },
+    {
+        "buffer_info",
+        errbuff_info,
+        "buffer_info <data>\r\n Prints information about the eeprom buffer.\r\n",
+        0
+    },
+    {
+        "buffer_reset",
+        errbuff_reset,
+        "buffer_reset <data>\r\n Resets the eeprom buffer.\r\n",
+        0
+    },
+   {
+        "eeprom_read",
+        eeprom_read,
+        "eeprom_read <address>\r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
+        1
+    },
+    {
+        "eeprom_write",
+        eeprom_write,
+        "eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
+        2
+    },
+    {
+        "eeprom_info",
+        eeprom_info,
+        "eeprom_info\r\n Prints information about the EEPROM.\r\n",
+        0
+    },
+    {
+        "fpga_reset",
+        fpga_reset,
+        "fpga_reset (k|v)\r\n Reset Kintex (k) or Virtex (V) FPGA\r\n",
+      1
+    },
+    { "ff", ff_ctl, "ff\r\n firefly monitoring command\r\n", -1},
+    {
+        "fpga",
+        fpga_ctl,
+        "fpga\r\n Displays a table showing the state of FPGAs.\r\n",
+        -1
+    },
+    {
+      "id",
+      board_id_info,
+      "id\r\n Prints board ID information.\r\n",
+      0
+    },
+    { "i2c_base", i2c_ctl_set_dev, "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n", 1},
+    { "i2cr", i2c_ctl_r, "i2cr <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n", 2},
     {
         "i2crr",
         i2c_ctl_reg_r,
@@ -1209,6 +1296,7 @@ struct command_t commands[] = {
         "i2c_scan\r\n Scan current I2C bus.\r\n",
         0,
     },
+    { "help", help_command_fcn, "help\r\n This help command\r\n", 0},
     {
         "pwr",
         power_ctl,
@@ -1222,59 +1310,10 @@ struct command_t commands[] = {
         1
     },
     {
-        "task-stats",
-        TaskStatsCommand,
-        "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n",
-        0
-    },
-    {
         "mon",
         mon_ctl,
         "mon <#>\r\n Displays a table showing the state of power supplies.\r\n",
         1
-    },
-    {
-        "adc",
-        adc_ctl,
-        "adc\r\n Displays a table showing the state of ADC inputs.\r\n",
-        0
-
-    },
-    {
-        "task",
-        task_ctl,
-        "task <name> <command>\r\n Manipulate task <name>. Options are suspend and restart.\r\n",
-        2
-    },
-    {
-        "fpga",
-        fpga_ctl,
-        "fpga\r\n Displays a table showing the state of FPGAs.\r\n",
-        -1
-    },
-    {
-        "simple_sensor",
-        sensor_summary,
-        "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
-        0
-    },
-    {
-        "uptime",
-        uptime,
-        "uptime\r\n Display uptime in minutes\r\n",
-        0
-    },
-    {
-      "version",
-      ver_ctl,
-      "version\r\n Display information about MCU firmware version\r\n",
-      0
-    },
-    {
-        "bootloader",
-        bl_ctl,
-        "bootloader\r\n Call the boot loader\r\n",
-        0
     },
     {
         "restart_mcu",
@@ -1283,34 +1322,10 @@ struct command_t commands[] = {
         0
     },
     {
-        "fpga_reset",
-        fpga_reset,
-        "fpga_reset (k|v)\r\n Reset Kintex (k) or Virtex (V) FPGA\r\n",
-      1
-    },
-    {
-        "eeprom_read",
-        eeprom_read,
-        "eeprom_read <address>\r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
-        1
-    },
-    {
-        "eeprom_write",
-        eeprom_write,
-        "eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
-        2
-    },
-    {
-        "eeprom_info",
-        eeprom_info,
-        "eeprom_info\r\n Prints information about the EEPROM.\r\n",
-        0
-    },
-    {
-      "set_id",
-      set_board_id,
-      "set_id <password> <address> <data>\r\n Allows the user to set the board id information.\r\n",
-      3
+        "set_id",
+        set_board_id,
+        "set_id <password> <address> <data>\r\n Allows the user to set the board id information.\r\n",
+        3
     },
     {
         "set_id_password",
@@ -1319,35 +1334,41 @@ struct command_t commands[] = {
         0
     },
     {
-      "id",
-      board_id_info,
-      "id\r\n Prints board ID information.\r\n",
-      0
+        "simple_sensor",
+        sensor_summary,
+        "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
+        0
     },
     {
-     "buffer_in",
-     errbuff_in,
-     "buffer_in <data>\r\n Manual entry of 2-byte code into the eeprom buffer.\r\n",
-     1
+        "suart",
+        suart_ctl,
+        "suart (on|off)\r\n Turn soft uart on/off.\r\n",
+        1,
     },
     {
-     "buffer_out",
-     errbuff_out,
-     "buffer_out <data>\r\n Prints last 5 entries in the eeprom buffer.\r\n",
-     1
+        "task-stats",
+        TaskStatsCommand,
+        "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n",
+        0
     },
     {
-     "buffer_info",
-     errbuff_info,
-     "buffer_info <data>\r\n Prints information about the eeprom buffer.\r\n",
-     0
+        "task",
+        task_ctl,
+        "task <name> <command>\r\n Manipulate task <name>. Options are suspend and restart.\r\n",
+        2
     },
-  {
-   "buffer_reset",
-   errbuff_reset,
-   "buffer_reset <data>\r\n Resets the eeprom buffer.\r\n",
-   0
-  },
+    {
+        "uptime",
+        uptime,
+        "uptime\r\n Display uptime in minutes\r\n",
+        0
+    },
+    {
+        "version",
+        ver_ctl,
+        "version\r\n Display information about MCU firmware version\r\n",
+        0
+    },
 };
 
 

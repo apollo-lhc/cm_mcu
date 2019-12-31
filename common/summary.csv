@@ -72,7 +72,7 @@ Pin#, PORT IO, Function, Directions
 117,PJ1,GPIO_PJ1, false, false,Output
 118,PP0,GPIO_PP0, false, false,Output
 119,PP1,GPIO_PP1, false, false,Input
-71,PM7,GPIO_PM7, false, true,Input
+71,PM7,GPIO_PM7, false, false,Input
 72,PM6,GPIO_PM6, false, false,Input
 73,PM5,GPIO_PM5, false, false,Input
 91,PB2,I2C0SCL, , ,

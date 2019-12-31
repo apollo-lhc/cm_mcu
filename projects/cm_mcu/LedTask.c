@@ -8,6 +8,7 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 // local includes
 #include "common/uart.h"

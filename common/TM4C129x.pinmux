@@ -11390,8 +11390,8 @@
 										"interfacePinName": "GPIO#",
 										"configurables": {
 											"pu_pd": {
-												"name": "float",
-												"displayName": "FLOAT"
+												"name": "pu",
+												"displayName": "PU/1"
 											},
 											"io": {
 												"name": "input",
@@ -13758,9 +13758,9 @@
 		}
 	},
 	"versions": {
-		"data": "2019051512",
-		"timestamp": "2019051512",
-		"tool": "4.0.1532 ",
-		"templates": "2019051512"
+		"data": "2019121915",
+		"timestamp": "2019121915",
+		"tool": "4.0.1538 ",
+		"templates": "2019121915"
 	}
 }

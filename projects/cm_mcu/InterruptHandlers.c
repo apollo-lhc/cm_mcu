@@ -23,6 +23,7 @@
 #include "common/pinsel.h"
 #include "common/smbus.h"
 #include "common/smbus.h"
+#include "common/softuart.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -35,6 +36,7 @@
 #include "driverlib/adc.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/uart.h"
+#include "driverlib/timer.h"
 #include "driverlib/interrupt.h"
 
 
@@ -300,3 +302,22 @@ void I2CSlave0Interrupt()
       use and may be called portEND_SWITCHING_ISR(). */
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
+
+// Soft UART related
+extern tSoftUART g_sUART;
+//
+// The transmit timer tick function.
+//
+void
+Timer0AIntHandler(void)
+{
+  //
+  // Clear the timer interrupt.
+  //
+  TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+  //
+  // Call the software UART transmit timer tick function.
+  //
+  SoftUARTTxTimerTick(&g_sUART);
+}
+

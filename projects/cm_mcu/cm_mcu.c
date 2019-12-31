@@ -12,6 +12,7 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 
 #include <string.h>
@@ -269,6 +270,7 @@ static struct TaskNamePair_t TaskNamePairs[] =
         {"I2CS0", 0},
         {"EPRM",  0},
         {"INIT",  0},
+        {"SUART", 0},
     };
 
 void vGetTaskHandle( const char *key, TaskHandle_t *t)
@@ -426,6 +428,7 @@ int main( void )
   xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
   xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[10].value);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[11].value);
+  xTaskCreate(SoftUartTask,  "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, &TaskNamePairs[12].value);
 
 
   // -------------------------------------------------
@@ -448,6 +451,9 @@ int main( void )
 
   xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
   configASSERT(xAlmQueue != NULL);
+
+  xSoftUartQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
+  configASSERT(xSoftUartQueue != NULL);
 
 #ifdef DEBUGxx
   vQueueAddToRegistry(xLedQueue, "LedQueue");
