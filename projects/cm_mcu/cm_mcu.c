@@ -28,6 +28,7 @@
 #include "InterruptHandlers.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
+#include "I2CSlaveTask.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -36,6 +37,7 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
+#include "driverlib/i2c.h"
 #include "driverlib/rom.h"
 #include "driverlib/adc.h"
 #include "driverlib/rom_map.h"
@@ -64,6 +66,7 @@
 #define USER_LED3_PIN  GPIO_PIN_0
 #define USER_LED3_PORT GPIO_PORTP_BASE
 
+#define I2C0_SLAVE_ADDRESS 0x40
 
 //*****************************************************************************
 //
@@ -83,13 +86,6 @@ uint32_t g_ui32SysClock = 0;
 
 // Mutex for UART -- should really have one for each UART
 static SemaphoreHandle_t xUARTMutex = NULL;
-
-// Mutex for I2C controllers
-//SemaphoreHandle_t xI2C1Mutex = NULL;
-//SemaphoreHandle_t xI2C2Mutex = NULL;
-//SemaphoreHandle_t xI2C3Mutex = NULL;
-//SemaphoreHandle_t xI2C4Mutex = NULL;
-//SemaphoreHandle_t xI2C6Mutex = NULL;
 
 
 void Print(const char* str)
@@ -184,6 +180,7 @@ void SystemInitInterrupts()
   ROM_IntEnable(INT_ADC1SS0);
 
   // Set up the I2C controllers
+  initI2C0(g_ui32SysClock); // Slave controller
   initI2C1(g_ui32SysClock); // controller for power supplies
   initI2C2(g_ui32SysClock); // controller for clocks
   initI2C3(g_ui32SysClock); // controller for V optics
@@ -200,6 +197,7 @@ void SystemInitInterrupts()
   SMBusMasterInit(&g_sMaster6, I2C6_BASE, g_ui32SysClock);
 
   // FreeRTOS insists that the priority of interrupts be set up like this.
+  ROM_IntPrioritySet( INT_I2C0, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_I2C1, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_I2C2, configKERNEL_INTERRUPT_PRIORITY );
   ROM_IntPrioritySet( INT_I2C3, configKERNEL_INTERRUPT_PRIORITY );
@@ -207,7 +205,7 @@ void SystemInitInterrupts()
   ROM_IntPrioritySet( INT_I2C6, configKERNEL_INTERRUPT_PRIORITY );
 
   //
-  // Enable master interrupts.
+  // Enable I2C master interrupts.
   //
   SMBusMasterIntEnable(&g_sMaster1);
   SMBusMasterIntEnable(&g_sMaster2);
@@ -215,6 +213,14 @@ void SystemInitInterrupts()
   SMBusMasterIntEnable(&g_sMaster4);
   SMBusMasterIntEnable(&g_sMaster6);
 
+  // I2C slave
+  ROM_I2CSlaveAddressSet(I2C0_BASE, 0, I2C0_SLAVE_ADDRESS);
+
+  ROM_IntPrioritySet( INT_I2C0, configKERNEL_INTERRUPT_PRIORITY );
+
+  // ignore I2C_SLAVE_INT_START, I2C_SLAVE_INT_STOP
+  ROM_I2CSlaveIntEnableEx(I2C0_BASE, I2C_SLAVE_INT_DATA);
+  ROM_IntEnable(INT_I2C0);
 
   //
   // Enable processor interrupts.
@@ -339,6 +345,10 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus_status = &eStatus1,
 };
 
+//struct I2CSlaveTaskArgs_t i2c0_slave_args = {
+//    .smbus = 0,//&g_sSlave0,
+//};
+
 const char* buildTime()
 {
   const char *btime = __TIME__ ", " __DATE__;
@@ -372,6 +382,7 @@ int main( void )
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
 
+
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
   // There are two buffers for the two CLIs (front panel and Zynq)
@@ -399,7 +410,8 @@ int main( void )
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
-  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[9].value);
+  xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
+  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[10].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
@@ -410,7 +422,8 @@ int main( void )
   snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FFLY");
   snprintf(TaskNamePairs[7].key,configMAX_TASK_NAME_LEN,"XIMON");
   snprintf(TaskNamePairs[8].key,configMAX_TASK_NAME_LEN,"ALARM");
-  snprintf(TaskNamePairs[9].key,configMAX_TASK_NAME_LEN,"EPRM");
+  snprintf(TaskNamePairs[9].key,configMAX_TASK_NAME_LEN,"I2CS0");
+  snprintf(TaskNamePairs[10].key,configMAX_TASK_NAME_LEN,"EPRM");
 
   // -------------------------------------------------
   // Initialize all the queues
@@ -422,7 +435,7 @@ int main( void )
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xPwrQueue != NULL);
 
-  xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
+  xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
   configASSERT(xFFlyQueue != NULL);
 
   xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queues
@@ -450,7 +463,7 @@ int main( void )
   Print("Staring Apollo CM MCU firmware " FIRMWARE_VERSION
         "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__", " __DATE__ "\r\n");
-  Print(  "----------------------------\r\n");
+  Print("----------------------------\r\n");
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
 
