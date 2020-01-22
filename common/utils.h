@@ -29,29 +29,24 @@ void setupActiveLowPins(void);
 
 // error codes
 #define RESTART 1
+#define RESET_BUFFER 2
 
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
 
 extern errbuf_handle_t ebuf;
 
-errbuf_handle_t errbuffer_init(uint8_t minblk, uint8_t maxblk);
+void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk);
 void errbuffer_reset(errbuf_handle_t ebuf);
 
-void errbuffer_put(errbuf_handle_t ebuf, uint32_t data);
+void errbuffer_put(errbuf_handle_t ebuf, uint16_t data);
 void errbuffer_getlast5(errbuf_handle_t ebuf, uint32_t (*arrptr)[5]);
 uint32_t errbuffer_entry(void);
 
 uint32_t errbuffer_capacity(errbuf_handle_t ebuf);
 uint32_t errbuffer_minaddr(errbuf_handle_t ebuf);
 uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf);
-
-// Shouldn't be using these outside of utils:
-
-//void increase_head(errbuf_handle_t ebuf);
-//void decrease_head(errbuf_handle_t ebuf);
-//uint32_t errbuffer_findhead(errbuf_handle_t ebuf);
-
+uint32_t errbuffer_head(errbuf_handle_t ebuf);
 
 
 #endif /* COMMON_UTILS_H_ */

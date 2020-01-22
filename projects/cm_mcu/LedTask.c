@@ -32,6 +32,8 @@ QueueHandle_t xLedQueue = NULL;
 // Todo: expand beyond just controlling the red LED, if needed, for the command line interface. Probably not needed.
 void LedTask(void *parameters)
 {
+  errbuffer_init(ebuf,2,2);	// Ughhhh
+
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint32_t callcnt = 0;
 

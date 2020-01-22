@@ -54,14 +54,15 @@ uint64_t read_double(uint32_t addr)
 
 void EEPROMTask(void *parameters){
 	uint64_t message_in, message_out;
+
 	// At the moment, let's do 1 byte key , 1 byte optional addr, 2 bytes data
-	// write data should be at most 1 word (32 bits)
+	// Example message:
+	// 0x 0001 0022 ffffffff
+	// Writes ffffffff to register 0x22
 
 	for(;;){
 		if(xQueueReceive(xEPRMQueue_in, &message_in, portMAX_DELAY)){
-			// Example message:
-			// 0x 0001 0022 ffffffff
-			// Corresponds to writing ffffffff to register 0x22
+
 			uint16_t message_type = (uint16_t)(message_in>>48);
 			uint16_t addr = (uint16_t)(message_in>>32);
 			uint32_t data = (uint32_t)(message_in);

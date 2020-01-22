@@ -882,8 +882,9 @@ static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
   int copied = 0;
 
   copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
-  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t r \t Free \r\n");
+  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t r \t Free. \r\n");
   copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t r \t Apollo ID Information. Password: 0x12345678 \r\n");
+  copied += snprintf(m+copied, s-copied, "Blocks 2-4 \t 0x0080-0x013c \t r \t Buffer. \r\n");
 
   return pdFALSE;
 }
@@ -983,10 +984,10 @@ static BaseType_t errbuff_in(char *m, size_t s, const char *mm)
   p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // data
   p1[p1l] = 0x00; // terminate strings
 
-  uint64_t data;
+  uint32_t data;
   data = strtoul(p1,NULL,16);
   errbuffer_put(ebuf,data);
-  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %08x \r\n",data);
+  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %04x \r\n",data);
 
   return pdFALSE;
 }
@@ -1002,7 +1003,19 @@ static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
 
   int i=0, max=5;
   while(i<max){
-	  copied += snprintf(m+copied, s-copied, "%08x \r\n",(*arrptr)[i]);
+	  uint32_t entry = (*arrptr)[i];
+	  uint16_t errcode = (uint16_t)entry;
+	  uint16_t timestamp = (uint16_t)(entry>>16);
+	  switch(errcode){
+	  case RESTART:
+		  copied += snprintf(m+copied, s-copied, "%04x \t RESTART \r\n",timestamp);
+		  break;
+	  case RESET_BUFFER:
+		  copied += snprintf(m+copied, s-copied, "%04x \t RESET BUFFER \r\n",timestamp);
+		  break;
+	  default:
+		  copied += snprintf(m+copied, s-copied, "%04x \t %04x \r\n",timestamp, errcode);
+	  }
 	  i++;
   }
   return pdFALSE;
@@ -1011,16 +1024,24 @@ static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
 static BaseType_t errbuff_info(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  uint32_t cap, minaddr, maxaddr;
+  uint32_t cap, minaddr, maxaddr, head;
 
   cap = errbuffer_capacity(ebuf);
   minaddr = errbuffer_minaddr(ebuf);
   maxaddr = errbuffer_maxaddr(ebuf);
+  head = errbuffer_head(ebuf);
 
-  copied += snprintf(m+copied, s-copied, "Capacity of EEPROM buffer: %08x \r\n",cap);
-  copied += snprintf(m+copied, s-copied, "Min address: %08x \r\n",minaddr);
-  copied += snprintf(m+copied, s-copied, "Max address: %08x \r\n",maxaddr);
+  copied += snprintf(m+copied, s-copied, "Capacity: %8x words \r\n",cap);
+  copied += snprintf(m+copied, s-copied, "Min address: %8x \r\n",minaddr);
+  copied += snprintf(m+copied, s-copied, "Max address: %8x \r\n",maxaddr);
+  copied += snprintf(m+copied, s-copied, "Head address: %8x \r\n",head);
 
+  return pdFALSE;
+}
+// Takes no arguments
+static BaseType_t errbuff_reset(char *m, size_t s, const char *mm)
+{
+  errbuffer_reset(ebuf);
   return pdFALSE;
 }
 
@@ -1365,7 +1386,7 @@ CLI_Command_Definition_t id_command = {
 static
 CLI_Command_Definition_t buffer_in_command = {
     .pcCommand="buffer_in",
-    .pcHelpString="buffer_in <data> \r\n Manual entry into the eeprom buffer.\r\n",
+    .pcHelpString="buffer_in <data> \r\n Manual entry of 2-byte code into the eeprom buffer.\r\n",
     .pxCommandInterpreter = errbuff_in,
     1
 };
@@ -1373,7 +1394,7 @@ CLI_Command_Definition_t buffer_in_command = {
 static
 CLI_Command_Definition_t buffer_out_command = {
     .pcCommand="buffer_out",
-    .pcHelpString="buffer_out <data> \r\n Prints last entry in the eeprom buffer.\r\n",
+    .pcHelpString="buffer_out <data> \r\n Prints last 5 entries in the eeprom buffer.\r\n",
     .pxCommandInterpreter = errbuff_out,
     0
 };
@@ -1383,6 +1404,13 @@ CLI_Command_Definition_t buffer_info_command = {
     .pcCommand="buffer_info",
     .pcHelpString="buffer_info <data> \r\n Prints information about the eeprom buffer.\r\n",
     .pxCommandInterpreter = errbuff_info,
+    0
+};
+static
+CLI_Command_Definition_t buffer_reset_command = {
+    .pcCommand="buffer_reset",
+    .pcHelpString="buffer_reset <data> \r\n Resets the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_reset,
     0
 };
 
@@ -1400,6 +1428,7 @@ void vCommandLineTask( void *pvParameters )
   StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
   uint32_t uart_base = args->uart_base;
 
+
   // register the commands
   FreeRTOS_CLIRegisterCommand(&adc_command      );
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
@@ -1408,6 +1437,7 @@ void vCommandLineTask( void *pvParameters )
   FreeRTOS_CLIRegisterCommand(&buffer_in_command  );
   FreeRTOS_CLIRegisterCommand(&buffer_info_command  );
   FreeRTOS_CLIRegisterCommand(&buffer_out_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_reset_command );
   FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);

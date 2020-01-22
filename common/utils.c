@@ -31,7 +31,7 @@ uint32_t read_eeprom_single(uint32_t addr)
 {
 	uint32_t data;
 	uint64_t message = EPRMMessage((uint64_t)EPRM_READ_SINGLE,addr,0);
-	xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);	// is there a good time to set this to?
+	xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 	xQueueReceive(xEPRMQueue_out, &data, portMAX_DELAY);
 	return data;
 }
@@ -107,68 +107,85 @@ struct error_buffer_t {
 	uint32_t minaddr;
 	uint32_t maxaddr;
 	uint32_t head;
-	uint32_t capacity;
+	uint32_t capacity;	// in # entries
 };
 
-void decrease_head(errbuf_handle_t ebuf){
-	(ebuf->head)-=4;
-	if(ebuf->head<ebuf->minaddr){ebuf->head=ebuf->maxaddr;}
-	return;
+error_buffer_t errbuf = {.minaddr=0,.maxaddr=0,.head=0,.capacity=0};
+errbuf_handle_t ebuf = &errbuf;
+
+
+uint32_t decrease_head(errbuf_handle_t ebuf){
+	uint32_t head = ebuf->head - 4;
+	if(head<ebuf->minaddr){head=ebuf->maxaddr;}
+	return head;
 }
-void increase_head(errbuf_handle_t ebuf){
-	(ebuf->head)+=4;	// Increment by 1 word
-	if (ebuf->head>ebuf->maxaddr){ebuf->head=ebuf->minaddr;}
-	return;
+uint32_t increase_head(errbuf_handle_t ebuf){
+	uint32_t head = ebuf->head + 4;
+	if (head>ebuf->maxaddr){head=ebuf->minaddr;}
+	return head;
 }
 
 uint32_t errbuffer_findhead(errbuf_handle_t ebuf){
-	uint32_t b1=ebuf->minaddr,b2=ebuf->minaddr+4, maddr=ebuf->maxaddr;
-	uint32_t addr = b1, entry, previous=1;
-	while(addr<=maddr){
-		entry = read_eeprom_single(addr);
-		if(entry==0&&previous==0){
-			b2 = addr;
-			b1 = addr-4;
-			break;
-		}
+	uint32_t head, ahead=ebuf->minaddr, cap=ebuf->capacity;
+	uint32_t entry, previous=1, i=0;
+	while(i<=cap){
+		ahead+=4;
+		if (ahead>ebuf->maxaddr){ahead=ebuf->minaddr;}
+
+		entry = read_eeprom_single(ahead);
+		if(entry==0&&previous==0){	break;	}
+
 		previous = entry;
-		addr+=4;
+		head = ahead;
+		i++;
 	}
-	write_eeprom(0,b1);
-	write_eeprom(0,b2);
-	return b1;
+	//write_eeprom(0,ahead);	//Shouldn't be necessary unless buffer is not set up
+	//write_eeprom(0,ahead-4);
+	return head;
 }
 
-errbuf_handle_t errbuffer_init(uint8_t minblk, uint8_t maxblk){
-	errbuf_handle_t ebuf = pvPortMalloc(sizeof(error_buffer_t));
+void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk){
 	ebuf->minaddr=EEPROMAddrFromBlock(minblk);
-	ebuf->maxaddr=EEPROMAddrFromBlock(maxblk);
-	ebuf->capacity= (uint32_t)((ebuf->maxaddr - ebuf->minaddr)>>2);
+	ebuf->maxaddr=EEPROMAddrFromBlock(maxblk+1)-4;
+	ebuf->capacity= (uint32_t)(maxblk-minblk+1)*16;
 	ebuf->head=errbuffer_findhead(ebuf);
 
 	errbuffer_put(ebuf,RESTART);
-	return ebuf;
 }
 
 void errbuffer_reset(errbuf_handle_t ebuf){
-	// TODO: set all words to FFFFFFFF except 1st and 2nd which are 00000000
-	// TODO: set head to 1st entry
+	uint32_t addr=ebuf->minaddr;
+	uint32_t maddr=ebuf->maxaddr;
+
+	write_eeprom(0,addr);
+	write_eeprom(0,addr+4);
+	addr+=0x8;
+
+	while(addr<=maddr){
+			write_eeprom(0xffffffff,addr);
+			addr+=4;
+		}
+	ebuf->head = ebuf->minaddr;
+	errbuffer_put(ebuf, RESET_BUFFER);
 	return;
 }
 
-void errbuffer_put(errbuf_handle_t ebuf, uint32_t entry){
+void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode){
+	uint16_t eprmtime = xTaskGetTickCountFromISR()*portTICK_PERIOD_MS/60000;	// Time in minutes
+	uint32_t entry = ((uint32_t)eprmtime<<16)+(uint32_t)errcode;
+
 	write_eeprom(entry,ebuf->head);
-	increase_head(ebuf);
-	write_eeprom(0,ebuf->head+4);
+	ebuf->head = increase_head(ebuf);
+	write_eeprom(0,increase_head(ebuf));
 	return;
 }
 
 void errbuffer_getlast5(errbuf_handle_t ebuf, uint32_t (*arrptr)[5]){
 	int i=0,j=0,max=5;
-	while(i<max){i++; decrease_head(ebuf);}
+	while(i<max){i++; ebuf->head = decrease_head(ebuf);}
 	while(j<max){
 		(*arrptr)[j] = read_eeprom_single(ebuf->head);
-		increase_head(ebuf);
+		ebuf->head = increase_head(ebuf);
 		j++;
 	}
 	return;
@@ -184,4 +201,6 @@ uint32_t errbuffer_minaddr(errbuf_handle_t ebuf){
 	return ebuf->minaddr; }
 uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf){
 	return ebuf->maxaddr; }
+uint32_t errbuffer_head(errbuf_handle_t ebuf){
+	return ebuf->head; }
 

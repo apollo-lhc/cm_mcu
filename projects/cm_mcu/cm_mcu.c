@@ -351,7 +351,7 @@ const char* gitVersion()
   return gitVersion;
 }
 
-errbuf_handle_t ebuf;
+//errbuf_handle_t ebuf;		//This seems to be causing a problem :(
 // 
 int main( void )
 {
@@ -425,7 +425,7 @@ int main( void )
   xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xFFlyQueue != NULL);
 
-  xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queue
+  xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queues
   configASSERT(xEPRMQueue_in != NULL);
   xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
   configASSERT(xEPRMQueue_out != NULL);
@@ -443,9 +443,6 @@ int main( void )
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.
   SystemInitInterrupts();
-
-  // initialize eeprom buffer
-  ebuf = errbuffer_init(2,4);
 
   // Say hello. The information below is only updated when the main()
   // function is recompiled.
