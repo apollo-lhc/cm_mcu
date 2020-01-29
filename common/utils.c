@@ -108,9 +108,10 @@ struct error_buffer_t {
 	uint32_t maxaddr;
 	uint32_t head;
 	uint32_t capacity;	// in # entries
+	uint32_t init;
 };
 
-error_buffer_t errbuf = {.minaddr=0,.maxaddr=0,.head=0,.capacity=0};
+error_buffer_t errbuf = {.minaddr=0,.maxaddr=0,.head=0,.capacity=0,.init=0};
 errbuf_handle_t ebuf = &errbuf;
 
 
@@ -126,7 +127,7 @@ uint32_t increase_head(errbuf_handle_t ebuf){
 }
 
 uint32_t errbuffer_findhead(errbuf_handle_t ebuf){
-	uint32_t head, ahead=ebuf->minaddr, cap=ebuf->capacity;
+	uint32_t ahead=ebuf->minaddr, head=ahead, cap=ebuf->capacity;
 	uint32_t entry, previous=1, i=0;
 	while(i<=cap){
 		ahead+=4;
@@ -139,12 +140,11 @@ uint32_t errbuffer_findhead(errbuf_handle_t ebuf){
 		head = ahead;
 		i++;
 	}
-	//write_eeprom(0,ahead);	//Shouldn't be necessary unless buffer is not set up
-	//write_eeprom(0,ahead-4);
 	return head;
 }
 
 void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk){
+	ebuf->init=1;
 	ebuf->minaddr=EEPROMAddrFromBlock(minblk);
 	ebuf->maxaddr=EEPROMAddrFromBlock(maxblk+1)-4;
 	ebuf->capacity= (uint32_t)(maxblk-minblk+1)*16;
@@ -154,6 +154,8 @@ void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk){
 }
 
 void errbuffer_reset(errbuf_handle_t ebuf){
+	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
+
 	uint32_t addr=ebuf->minaddr;
 	uint32_t maddr=ebuf->maxaddr;
 
@@ -171,6 +173,8 @@ void errbuffer_reset(errbuf_handle_t ebuf){
 }
 
 void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode){
+	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
+
 	uint16_t eprmtime = xTaskGetTickCountFromISR()*portTICK_PERIOD_MS/60000;	// Time in minutes
 	uint32_t entry = ((uint32_t)eprmtime<<16)+(uint32_t)errcode;
 
@@ -181,6 +185,8 @@ void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode){
 }
 
 void errbuffer_getlast5(errbuf_handle_t ebuf, uint32_t (*arrptr)[5]){
+	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
+
 	int i=0,j=0,max=5;
 	while(i<max){i++; ebuf->head = decrease_head(ebuf);}
 	while(j<max){
@@ -191,16 +197,16 @@ void errbuffer_getlast5(errbuf_handle_t ebuf, uint32_t (*arrptr)[5]){
 	return;
 }
 
-uint32_t errbuffer_entry(void){
-	return 0x12345678;	// just for testing
-}
-
 uint32_t errbuffer_capacity(errbuf_handle_t ebuf){
+	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
 	return ebuf->capacity; }
 uint32_t errbuffer_minaddr(errbuf_handle_t ebuf){
+	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
 	return ebuf->minaddr; }
 uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf){
+	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
 	return ebuf->maxaddr; }
 uint32_t errbuffer_head(errbuf_handle_t ebuf){
+	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
 	return ebuf->head; }
 

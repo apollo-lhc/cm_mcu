@@ -1006,15 +1006,17 @@ static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
 	  uint32_t entry = (*arrptr)[i];
 	  uint16_t errcode = (uint16_t)entry;
 	  uint16_t timestamp = (uint16_t)(entry>>16);
+	  uint16_t hours = timestamp/0x3c;
+	  uint16_t minutes = timestamp%0x3c;
 	  switch(errcode){
 	  case RESTART:
-		  copied += snprintf(m+copied, s-copied, "%04x \t RESTART \r\n",timestamp);
+		  copied += snprintf(m+copied, s-copied, "%03u:%02u \t RESTART \r\n",hours, minutes);
 		  break;
 	  case RESET_BUFFER:
-		  copied += snprintf(m+copied, s-copied, "%04x \t RESET BUFFER \r\n",timestamp);
+		  copied += snprintf(m+copied, s-copied, "%03u:%02u \t RESET BUFFER \r\n",hours, minutes);
 		  break;
 	  default:
-		  copied += snprintf(m+copied, s-copied, "%04x \t %04x \r\n",timestamp, errcode);
+		  copied += snprintf(m+copied, s-copied, "%03u:%02u \t %04x \r\n", hours, minutes, errcode);
 	  }
 	  i++;
   }
