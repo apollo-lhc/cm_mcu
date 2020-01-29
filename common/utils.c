@@ -150,7 +150,7 @@ void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk){
 	ebuf->capacity= (uint32_t)(maxblk-minblk+1)*16;
 	ebuf->head=errbuffer_findhead(ebuf);
 
-	errbuffer_put(ebuf,RESTART);
+	errbuffer_put(ebuf,errbuffer_entry(RESTART,0));
 }
 
 void errbuffer_reset(errbuf_handle_t ebuf){
@@ -168,17 +168,17 @@ void errbuffer_reset(errbuf_handle_t ebuf){
 			addr+=4;
 		}
 	ebuf->head = ebuf->minaddr;
-	errbuffer_put(ebuf, RESET_BUFFER);
+	errbuffer_put(ebuf, errbuffer_entry(RESET_BUFFER,0));
 	return;
 }
 
-void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode){
+void errbuffer_put(errbuf_handle_t ebuf, uint16_t entry){
 	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
 
 	uint16_t eprmtime = xTaskGetTickCountFromISR()*portTICK_PERIOD_MS/60000;	// Time in minutes
-	uint32_t entry = ((uint32_t)eprmtime<<16)+(uint32_t)errcode;
+	uint32_t word = ((uint32_t)eprmtime<<16)+(uint32_t)entry;
 
-	write_eeprom(entry,ebuf->head);
+	write_eeprom(word,ebuf->head);
 	ebuf->head = increase_head(ebuf);
 	write_eeprom(0,increase_head(ebuf));
 	return;
@@ -209,4 +209,9 @@ uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf){
 uint32_t errbuffer_head(errbuf_handle_t ebuf){
 	if(ebuf->init==0){ errbuffer_init(ebuf,EBUFMINBLK,EBUFMAXBLK); }
 	return ebuf->head; }
+
+uint16_t errbuffer_entry(uint16_t errcode, uint16_t errdata){
+	uint16_t entry = (errcode<<ERRCODE_OFFSET)|errdata;
+	return entry;
+}
 

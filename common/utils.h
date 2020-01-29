@@ -27,7 +27,8 @@ void setupActiveLowPins(void);
 
 // EEPROM buffer
 #define EBUFMINBLK 2
-#define EBUFMAXBLK 2
+#define EBUFMAXBLK 3
+#define ERRCODE_OFFSET 8	// Should be able to change this to alter entry structure
 
 // error codes
 #define RESTART 1
@@ -50,5 +51,6 @@ uint32_t errbuffer_minaddr(errbuf_handle_t ebuf);
 uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf);
 uint32_t errbuffer_head(errbuf_handle_t ebuf);
 
+uint16_t errbuffer_entry(uint16_t errcode, uint16_t errdata);
 
 #endif /* COMMON_UTILS_H_ */

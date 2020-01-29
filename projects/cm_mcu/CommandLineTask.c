@@ -882,9 +882,9 @@ static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
   int copied = 0;
 
   copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
-  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t r \t Free. \r\n");
-  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t r \t Apollo ID Information. Password: 0x12345678 \r\n");
-  copied += snprintf(m+copied, s-copied, "Blocks 2-4 \t 0x0080-0x013c \t r \t Buffer. \r\n");
+  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t Free. \r\n");
+  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678 \r\n");
+  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x0080-0x013c \t Error buffer. \r\n",EBUFMINBLK, EBUFMAXBLK);
 
   return pdFALSE;
 }
@@ -1003,20 +1003,24 @@ static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
 
   int i=0, max=5;
   while(i<max){
-	  uint32_t entry = (*arrptr)[i];
-	  uint16_t errcode = (uint16_t)entry;
-	  uint16_t timestamp = (uint16_t)(entry>>16);
-	  uint16_t hours = timestamp/0x3c;
+	  uint32_t word = (*arrptr)[i];
+
+	  uint16_t entry = (uint16_t)word;
+	  uint16_t errcode = entry>>ERRCODE_OFFSET;
+
+	  uint16_t timestamp = (uint16_t)(word>>16);
+	  uint16_t days = timestamp/0x5a0;
+	  uint16_t hours = (timestamp%0x5a0)/0x3c;
 	  uint16_t minutes = timestamp%0x3c;
 	  switch(errcode){
 	  case RESTART:
-		  copied += snprintf(m+copied, s-copied, "%03u:%02u \t RESTART \r\n",hours, minutes);
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t RESTART \r\n",days, hours, minutes);
 		  break;
 	  case RESET_BUFFER:
-		  copied += snprintf(m+copied, s-copied, "%03u:%02u \t RESET BUFFER \r\n",hours, minutes);
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t RESET BUFFER \r\n",days, hours, minutes);
 		  break;
 	  default:
-		  copied += snprintf(m+copied, s-copied, "%03u:%02u \t %04x \r\n", hours, minutes, errcode);
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %04x \r\n",days, hours, minutes, entry);
 	  }
 	  i++;
   }
