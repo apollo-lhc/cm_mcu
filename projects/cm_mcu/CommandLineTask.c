@@ -866,7 +866,7 @@ static BaseType_t eeprom_w(char *m, size_t s, const char *mm)
   data = strtoul(p2,NULL,16);
   addr = strtoul(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  if(block>0 && block<5){
+  if((block==1)|((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
 	  copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
 	  return pdFALSE;
   }
@@ -884,7 +884,7 @@ static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
   copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
   copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t Free. \r\n");
   copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678 \r\n");
-  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x0080-0x013c \t Error buffer. \r\n",EBUFMINBLK, EBUFMAXBLK);
+  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x0080-0x013c \t Error buffer. \r\n",EBUF_MINBLK, EBUF_MAXBLK);
 
   return pdFALSE;
 }
@@ -975,7 +975,6 @@ static BaseType_t board_id_info(char *m, size_t s, const char *mm)
 }
 
 // This command takes 1 arg, the data to be written to the buffer
-// Just tests reading and writing, not incrementation
 static BaseType_t errbuff_in(char *m, size_t s, const char *mm)
 {
   int copied = 0;
@@ -995,13 +994,13 @@ static BaseType_t errbuff_in(char *m, size_t s, const char *mm)
 static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  uint32_t arr[5];
-  uint32_t (*arrptr)[5]=&arr;
-  errbuffer_getlast5(ebuf,arrptr);
+  uint32_t arr[EBUF_NGET];
+  uint32_t (*arrptr)[EBUF_NGET]=&arr;
+  errbuffer_get(ebuf,arrptr);
 
   copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
 
-  int i=0, max=5;
+  int i=0, max=EBUF_NGET;
   while(i<max){
 	  uint32_t word = (*arrptr)[i];
 

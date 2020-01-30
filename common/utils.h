@@ -26,14 +26,14 @@ uint8_t toggle_gpio_pin(int pin);
 void setupActiveLowPins(void);
 
 // EEPROM buffer
-#define EBUFMINBLK 2
-#define EBUFMAXBLK 3
-#define ERRCODE_OFFSET 8	// Should be able to change this to alter entry structure
+#define EBUF_MINBLK 2
+#define EBUF_MAXBLK 3
+#define EBUF_NGET 5
+#define ERRCODE_OFFSET 8
 
 // error codes
 #define RESTART 1
 #define RESET_BUFFER 2
-#define ALARM_TEMP 3
 
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
@@ -44,7 +44,7 @@ void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk);
 void errbuffer_reset(errbuf_handle_t ebuf);
 
 void errbuffer_put(errbuf_handle_t ebuf, uint16_t data);
-void errbuffer_getlast5(errbuf_handle_t ebuf, uint32_t (*arrptr)[5]);
+void errbuffer_get(errbuf_handle_t ebuf, uint32_t (*arrptr)[EBUF_NGET]);
 
 uint32_t errbuffer_capacity(errbuf_handle_t ebuf);
 uint32_t errbuffer_minaddr(errbuf_handle_t ebuf);
