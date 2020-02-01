@@ -709,45 +709,74 @@ static BaseType_t ff_ctl(char *m, size_t s, const char *mm)
 // right now.
 static BaseType_t fpga_ctl(char *m, size_t s, const char *mm)
 {
-  int copied = 0;
-  static int whichfpga = 0;
-  int howmany = fpga_args.n_devices*fpga_args.n_pages;
-  if ( whichfpga == 0 ) {
-    TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000;
-    TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
-    if ( (now-last) > 60 ) {
-      int mins = (now-last)/60;
-      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
-    }
-
-    copied += snprintf(m+copied, s-copied, "FPGA monitors\r\n");
-    copied += snprintf(m+copied, s-copied, "%s\r\n", fpga_args.commands[0].name);
+  int8_t *p1;
+  BaseType_t p1l;
+  int argc = 0;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l);
+  if ( p1 != NULL ) {
+    ++argc;
+    p1[p1l] = 0x00; // terminate strings
   }
-
-  for ( ; whichfpga < howmany; ++whichfpga ) {
-    float val = fpga_args.pm_values[whichfpga];
-    int tens = val;
-    int frac = ABS((val - tens)*100.0);
-
-    copied += snprintf(m+copied, s-copied, "%5s: %02d.%02d",
-        fpga_args.devices[whichfpga].name, tens, frac);
-    if ( whichfpga%2 == 1 )
-      copied += snprintf(m+copied, s-copied, "\r\n");
-    else
-      copied += snprintf(m+copied, s-copied, "\t");
-    if ( (s-copied ) < 20 ) {
-      ++whichfpga;
-      return pdTRUE;
+  if ( argc == 1 ) {
+    if ( strncmp(p1, "done",4) == 0 ) { // print out value of done pins
+      int ku_done_ = read_gpio_pin(_K_FPGA_DONE);
+      int vu_done_ = read_gpio_pin(_V_FPGA_DONE);
+      //int copied =
+      snprintf(m, s, "KU_DONE* = %d\r\nVU_DONE* = %d\r\n", ku_done_, vu_done_);
+      return pdFALSE;
+    }
+    else {
+      snprintf(m, s, "%s: invalid command %s\r\n", __func__, p1);
+      return pdFALSE;
     }
 
   }
-  if ( whichfpga%2 ==1 ) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
+  else if (argc != 0 ) {
+    // error, invalid
+    snprintf(m,s, "%s: invalid argument count %d\r\n", __func__);
+    return pdFALSE;
   }
-  whichfpga = 0;
-  return pdFALSE;
+  else {
+    int copied = 0;
+    static int whichfpga = 0;
+    int howmany = fpga_args.n_devices*fpga_args.n_pages;
+    if ( whichfpga == 0 ) {
+      TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000;
+      TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
+      if ( (now-last) > 60 ) {
+        int mins = (now-last)/60;
+        copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", __func__, mins);
+      }
+
+      copied += snprintf(m+copied, s-copied, "FPGA monitors\r\n");
+      copied += snprintf(m+copied, s-copied, "%s\r\n", fpga_args.commands[0].name);
+    }
+
+    for ( ; whichfpga < howmany; ++whichfpga ) {
+      float val = fpga_args.pm_values[whichfpga];
+      int tens = val;
+      int frac = ABS((val - tens)*100.0);
+
+      copied += snprintf(m+copied, s-copied, "%5s: %02d.%02d",
+          fpga_args.devices[whichfpga].name, tens, frac);
+      if ( whichfpga%2 == 1 )
+        copied += snprintf(m+copied, s-copied, "\r\n");
+      else
+        copied += snprintf(m+copied, s-copied, "\t");
+      if ( (s-copied ) < 20 ) {
+        ++whichfpga;
+        return pdTRUE;
+      }
+
+    }
+    if ( whichfpga%2 ==1 ) {
+      m[copied++] = '\r';
+      m[copied++] = '\n';
+      m[copied] = '\0';
+    }
+    whichfpga = 0;
+    return pdFALSE;
+  }
 }
 
 // this command takes no arguments since there is only one command
@@ -1217,7 +1246,7 @@ CLI_Command_Definition_t fpga_command = {
     .pcCommand="fpga",
     .pcHelpString="fpga\r\n Displays a table showing the state of FPGAs.\r\n",
     .pxCommandInterpreter = fpga_ctl,
-    0
+    -1
 };
 static
 CLI_Command_Definition_t sensor_summary_command = {
