@@ -12,6 +12,7 @@ branches:
 #   - dummy
  only: # whitelist
    - master
+   - /^v(\d+\.)(\d+)$/
 
 sudo: false
 
