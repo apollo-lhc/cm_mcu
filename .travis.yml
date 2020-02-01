@@ -1,9 +1,17 @@
+# oauth token for uploads, this decrypts into a variable GITHUB_TOKEN
+# which is under pwittich username, using the Travis key
+env:
+  global:
+    secure: DZCXrTHQDKFHmFqEwyF+kGZ4JBwvkKofhi/kXcaAmokzpUnT2pnqWPMjnV2q9PxEjQ7stonk6U/D0qij74zG+X0Ys+JWKbrIA2jt7M+7WLBZZrzqfGV8PTGPJK6guDPWUmr5419GYKD0f6PwkeymQ582V0Aoa2PSfw1d8sq/fFWaEGoHryFpaOc99ZWsD7CB5jRB663tkcgXkRiH9wvPKrJpJ1n784TfLuQdlqvWIQm4T+UP5dgiubHcun7COtMmZVLQCeJrYZyTQwLQ1/6oKRnwnfsv05wLu8ha3JPZaY4/DqDvTPAwPyiA1maivrI5QZo9af/0Mkn4YmLrp1wsBigbks5ze8a2UIvf5NuHPPs3hRVvSfjNaGp9bCinkh++2PKd1a6HbFIWdt7P+mzyMsbEebs60RFd4/bwc9LOkj2Vm+irxaJgQnS6pToOr2N62mvhX/fMb7Dr7He1jBoQ4aXwSQPUBz3HbVGWlgkmDloG2OXofnmasJjNJYWNDoLa0GD8afjC1TKknP9pDds3r2t061gjt7+XPo4igrSFXInkDZgk2ZiMgSnxLK3YVS2wdx9e0jacrwoz/9gO7na6SBF3+UDKzb4pvJmTol7m8xjJvf+6VUFEyu3MkN61GVGTr4h/ymxkCvSS3va3zDAbUmJOiv9dAB8/ORLHowJ8t8U=
+
 notifications:
   email: true
 
 branches:
- except:
-   - dummy
+# except: # blacklist
+#   - dummy
+ only: # whitelist
+   - master
 
 sudo: false
 
@@ -27,14 +35,20 @@ addons:
 ## Set up git user name and tag this commit
 #   - git config --local user.name pwittich
 #   - git config --local user.email wittich@cornell.edu
+# would need a tag cmmand here
 
-#deploy:
-#  provider: releases
-#  api_key: "GITHUB OAUTH TOKEN"
-#  file: projects/project2/gcc/cm_mcu.axf
-#  skip_cleanup: true
-#  on:
-#    tags: true
+# only on tag
+deploy:
+  provider: releases
+  api_key: "$GITHUB_TOKEN"
+  file:
+    - projects/cm_mcu/gcc/cm_mcu.axf
+    - projects/cm_mcu/gcc/cm_mcu.bin
+    - boot_loader/gcc/bl_main.axf
+    - boot_loader/gcc/bl_main.bin
+  skip_cleanup: true
+  on:
+    tags: true
 
 
 install:
