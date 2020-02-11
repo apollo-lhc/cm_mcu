@@ -206,6 +206,8 @@ void ADCMonitorTask(void *parameters)
       // handle error here
       configASSERT(0);
     }
+    ROM_ADCSequenceDisable(ADC1_BASE, 0);
+
     // ADC0,first sequence
     initADC0FirstSequence();
     TaskNotifyADC = xTaskGetCurrentTaskHandle();
@@ -220,6 +222,7 @@ void ADCMonitorTask(void *parameters)
       // handle error here
       configASSERT(0);
     }
+    ROM_ADCSequenceDisable(ADC0_BASE, 1);
 
 
     // second sequence for ADC0
@@ -237,6 +240,8 @@ void ADCMonitorTask(void *parameters)
       // handle error here
       configASSERT(0);
     }
+    ROM_ADCSequenceDisable(ADC0_BASE, 1);
+
     initADC1SecondSequence();
     TaskNotifyADC = xTaskGetCurrentTaskHandle();
     ROM_ADCProcessorTrigger(ADC1_BASE, 0);
@@ -252,6 +257,7 @@ void ADCMonitorTask(void *parameters)
       // handle error here
       configASSERT(0);
     }
+    ROM_ADCSequenceDisable(ADC1_BASE, 0);
 
     // convert data to float values
     for ( int i = 0; i < ADC_CHANNEL_COUNT; ++i ) {
