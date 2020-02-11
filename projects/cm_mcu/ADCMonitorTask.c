@@ -63,27 +63,27 @@ struct ADC_Info_t {
 // channel sensor.
 static
 struct ADC_Info_t ADCs[] = {
-    {12, "VCC_12V", 6.},
-    {13, "VCC_2V5", 2.},
-    {14, "VCC_M3V3", 2.},
-    {16, "VCC_3V3", 2.},
-    { 7, "VCC_1V8", 1.},
-    {15, "VCC_M1V8", 1.},
-    { 3, "V_VCCINT", 1.},
-    { 8, "K_VCCINT", 1.},
-    { 0, "V_MGTY1_AVTT", 1.},
-    {19, "V_MGTY2_AVTT", 1.},
-    {11, "K_MGTH_AVTT", 1.},
-    { 4, "K_MGTY_AVTT", 1.},
-    { 2, "V_MGTY1_VCCAUX", 1.},
-    {17, "V_MGTY2_VCCAUX", 1.},
-    { 6, "K_MGTY_VCCAUX", 1.},
-    { 9, "K_MGTH_VCCAUX", 1.},
-    { 1, "V_MGTY1_AVCC", 1.},
-    {18, "V_MGTY2_AVCC", 1.},
-    { 5, "K_MGTY_AVCC", 1.},
-    {10, "K_MGTH_AVCC", 1.},
-    {ADC_CTL_TS, "TM4C_TEMP", 1.}, // this one is special, temp in C
+    {ADC_CTL_CH12, "VCC_12V", 6.},
+    {ADC_CTL_CH13, "VCC_2V5", 2.},
+    {ADC_CTL_CH14, "VCC_M3V3", 2.},
+    {ADC_CTL_CH16, "VCC_3V3", 2.},
+    {ADC_CTL_CH7,  "VCC_1V8", 1.},
+    {ADC_CTL_CH15, "VCC_M1V8", 1.},
+    {ADC_CTL_CH3,  "V_VCCINT", 1.},
+    {ADC_CTL_CH8,  "K_VCCINT", 1.},
+    {ADC_CTL_CH0,  "V_MGTY1_AVTT", 1.},
+    {ADC_CTL_CH19, "V_MGTY2_AVTT", 1.},
+    {ADC_CTL_CH11, "K_MGTH_AVTT", 1.},
+    {ADC_CTL_CH4,  "K_MGTY_AVTT", 1.},
+    {ADC_CTL_CH2,  "V_MGTY1_VCCAUX", 1.},
+    {ADC_CTL_CH17, "V_MGTY2_VCCAUX", 1.},
+    {ADC_CTL_CH6,  "K_MGTY_VCCAUX", 1.},
+    {ADC_CTL_CH9,  "K_MGTH_VCCAUX", 1.},
+    {ADC_CTL_CH1,  "V_MGTY1_AVCC", 1.},
+    {ADC_CTL_CH18, "V_MGTY2_AVCC", 1.},
+    {ADC_CTL_CH5,  "K_MGTY_AVCC", 1.},
+    {ADC_CTL_CH10, "K_MGTH_AVCC", 1.},
+    {ADC_CTL_TS,   "TM4C_TEMP", 1.}, // this one is special, temp in C
 };
 
 static float fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
