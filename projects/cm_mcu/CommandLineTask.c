@@ -1439,6 +1439,57 @@ CLI_Command_Definition_t id_command = {
     .pxCommandInterpreter = board_id_info,
     0
 };
+
+static
+struct command_t commands[NUM_COMMANDS] = {
+    {"help", help_command_fcn, "this help command", 0},
+    {"ff", ff_ctl, "firefly monitoring command", -1},
+    {"alm", alarm_ctl, "alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n", -1},
+    {"i2c_base", i2c_ctl_set_dev, "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n", 1},
+    {"i2cr", i2c_ctl_r, "i2cr <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n", 2},
+    {
+     "i2crr",
+     i2c_ctl_reg_r,
+    "i2crr <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n",
+    3
+    },
+    {
+     "i2cw",
+     i2c_ctl_w,
+     "i2cw <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
+    3     
+    },
+    {
+     "i2cwr",
+     i2c_ctl_reg_w,
+     "i2cwr <address> <reg> <number of bytes>\r\n Write I2C controller.\r\n",
+    4     
+    },
+    {
+     "i2c_scan",
+     "i2c_scan\r\n Scan current I2C bus.\r\n",
+     i2c_scan,
+    },
+    {
+     "pwr",
+     power_ctl,
+     "pwr (on|off|status)\r\n Turn on or off all power.\r\n",
+     1
+    },
+    {
+     "led",
+     led_ctl,
+     "led (0-4)\r\n Manipulate red LED.\r\n",
+     1
+    },
+    {
+     "task-stats",
+     TaskStatsCommand,
+     "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n",
+    0
+    },
+  };
+
 #include "microrl.h"
 
 static
@@ -1491,8 +1542,9 @@ struct command_t help_command = {
     .num_args = 0
 };
 
+#define NUM_COMMANDS 2
 static
-struct command_t commands[2] = {
+struct command_t commands[NUM_COMMANDS] = {
     {"help", help_command_fcn, "this help command", 0},
     {"ff", ff_ctl, "firefly monitoring command", -1},
 };
@@ -1501,9 +1553,11 @@ struct command_t commands[2] = {
 BaseType_t help_command_fcn(int argc, const char * const* argv)
 {
   char tmp[256];
-    snprintf(tmp, 256, "%s\r\n\t%s\r\n",p->command.commandstr,
-        p->command.helpstr);
+  for ( int i = 0; i < NUM_COMMANDS; ++i ) {
+    snprintf(tmp, 256, "%s\r\n\t%s\r\n", commands[i].commandstr,
+        commands[i].helpstr);
     Print(tmp);
+  }
   return 0;
 }
 
@@ -1512,9 +1566,14 @@ BaseType_t help_command_fcn(int argc, const char * const* argv)
 int execute (int argc, const char * const * argv)
 {
   // find the command in the list
-  struct command_list_t *p = &head;
-  if ( strncmp(p->command.commandstr, argv[0],256) == 0 ) {
-    p->command.interpreter(argc, argv);
+  for ( int i = 0; i < NUM_COMMANDS; ++i ) {
+    if ( strncmp(commands[i].commandstr, argv[0],256) == 0 ) {
+      if ( argc == commands[i].num_args || commands[i].num_args<0)
+        commands[i].interpreter(argc, argv);
+      else {
+        Print("Unknown command\r\n");
+      }
+    }
   }
 
   return 0;
@@ -1533,42 +1592,10 @@ void vCommandLineTask( void *pvParameters )
   uint32_t uart_base = args->uart_base;
 
   microrl_t rl;
-  microrl_init(&rl, Print);
+  microrl_init(&rl, Print); // TODO: this should print to the relevant UART
   microrl_set_execute_callback(&rl, execute);
 
 
-  // register the commands
-  FreeRTOS_CLIRegisterCommand(&adc_command      );
-  FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
-  FreeRTOS_CLIRegisterCommand(&ff_command       );
-  FreeRTOS_CLIRegisterCommand(&bootloader_command  );
-  FreeRTOS_CLIRegisterCommand(&buffer_in_command  );
-  FreeRTOS_CLIRegisterCommand(&buffer_info_command  );
-  FreeRTOS_CLIRegisterCommand(&buffer_out_command  );
-  FreeRTOS_CLIRegisterCommand(&buffer_reset_command );
-  FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
-  FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
-  FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);
-  FreeRTOS_CLIRegisterCommand(&fpga_command       );
-  FreeRTOS_CLIRegisterCommand(&fpga_reset_command	);
-  FreeRTOS_CLIRegisterCommand(&id_command );
-  FreeRTOS_CLIRegisterCommand(&i2c_read_command );
-  FreeRTOS_CLIRegisterCommand(&i2c_read_reg_command );
-  FreeRTOS_CLIRegisterCommand(&i2c_set_dev_command );
-  FreeRTOS_CLIRegisterCommand(&i2c_write_command);
-  FreeRTOS_CLIRegisterCommand(&i2c_write_reg_command);
-  FreeRTOS_CLIRegisterCommand(&i2c_scan_command );
-  FreeRTOS_CLIRegisterCommand(&led_ctl_command  );
-  FreeRTOS_CLIRegisterCommand(&monitor_command  );
-  FreeRTOS_CLIRegisterCommand(&pwr_ctl_command  );
-  FreeRTOS_CLIRegisterCommand(&restart_command  );
-  FreeRTOS_CLIRegisterCommand(&sensor_summary_command);
-  FreeRTOS_CLIRegisterCommand(&set_id_command);
-  FreeRTOS_CLIRegisterCommand(&set_id_password_command);
-  FreeRTOS_CLIRegisterCommand(&task_stats_command );
-  FreeRTOS_CLIRegisterCommand(&task_command  );
-  FreeRTOS_CLIRegisterCommand(&uptime_command);
-  FreeRTOS_CLIRegisterCommand(&version_command  );
 
 
   /* Send a welcome message to the user knows they are connected. */
@@ -1579,6 +1606,7 @@ void vCommandLineTask( void *pvParameters )
     /* This implementation reads a single character at a time.  Wait in the
         Blocked state until a character is received. */
     xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
+    microrl_insert_char(&rl, cRxedChar);
     UARTCharPut(uart_base, cRxedChar); // TODO this should use the Mutex
     // ugh there has to be a better way of handling this
     if ( cRxedChar == '\177') {
