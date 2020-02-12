@@ -884,7 +884,7 @@ static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
   copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
   copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t Free. \r\n");
   copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678 \r\n");
-  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x0080-0x013c \t Error buffer. \r\n",EBUF_MINBLK, EBUF_MAXBLK);
+  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x%04x-0x%04x \t Error buffer. \r\n",EBUF_MINBLK, EBUF_MAXBLK,EEPROMAddrFromBlock(EBUF_MINBLK),EEPROMAddrFromBlock(EBUF_MAXBLK+1)-4);
 
   return pdFALSE;
 }
@@ -921,8 +921,8 @@ static BaseType_t set_board_id(char *m, size_t s, const char *mm)
   uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK,block<<32,0);
   xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
 
-  if(pass==0x12345678){
-	  copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %x \r\n",block,(uint32_t)data);
+  if(pass!=0x12345678){
+	  copied += snprintf(m+copied, s-copied, "Wrong password. Type eeprom_info to get password.");
   }	// data not printing correctly?
 
   return pdFALSE;
@@ -948,23 +948,22 @@ static BaseType_t set_board_id_password(char *m, size_t s, const char *mm)
 static BaseType_t board_id_info(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  uint64_t wordsize = 0x0004;
   uint64_t sn_addr = 0x0040;
-  uint64_t ff_addr = sn_addr + wordsize;
+  uint64_t ff_addr = sn_addr + 0x4;
   uint64_t sn,ff;
 
   uint64_t sn_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(sn_addr<<32);
-  xQueueSendToBack(xEPRMQueue_in, &sn_message, portMAX_DELAY);	// is there a good time to set this to?
+  xQueueSendToBack(xEPRMQueue_in, &sn_message, portMAX_DELAY);
   xQueueReceive(xEPRMQueue_out, &sn, portMAX_DELAY);
 
   uint64_t ff_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(ff_addr<<32);
-  xQueueSendToBack(xEPRMQueue_in, &ff_message, portMAX_DELAY);	// is there a good time to set this to?
+  xQueueSendToBack(xEPRMQueue_in, &ff_message, portMAX_DELAY);
   xQueueReceive(xEPRMQueue_out, &ff, portMAX_DELAY);
 
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn)&0xff;
 
-  copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",sn);
+  copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",(uint32_t)sn);
 
   copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);
   copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
@@ -985,8 +984,8 @@ static BaseType_t errbuff_in(char *m, size_t s, const char *mm)
 
   uint32_t data;
   data = strtoul(p1,NULL,16);
-  errbuffer_put(ebuf,data);
-  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %04x \r\n",data);
+  errbuffer_put(ebuf,data,0);
+  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %x \r\n",data);
 
   return pdFALSE;
 }
@@ -1005,7 +1004,10 @@ static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
 	  uint32_t word = (*arrptr)[i];
 
 	  uint16_t entry = (uint16_t)word;
-	  uint16_t errcode = entry>>ERRCODE_OFFSET;
+	  uint16_t errcode = (entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
+	  uint16_t errdata = entry&ERRDATA_MASK;
+	  uint16_t counter = entry>>(16-COUNTER_OFFSET);
+	  uint16_t realcount = counter*4+1;
 
 	  uint16_t timestamp = (uint16_t)(word>>16);
 	  uint16_t days = timestamp/0x5a0;
@@ -1013,13 +1015,13 @@ static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
 	  uint16_t minutes = timestamp%0x3c;
 	  switch(errcode){
 	  case RESTART:
-		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t RESTART \r\n",days, hours, minutes);
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x RESTART \r\n",days, hours, minutes, counter);
 		  break;
 	  case RESET_BUFFER:
-		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t RESET BUFFER \r\n",days, hours, minutes);
-		  break;
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x RESET BUFFER \r\n",days, hours, minutes,counter);
+		 break;
 	  default:
-		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %04x \r\n",days, hours, minutes, entry);
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x %x %02x \r\n",days, hours, minutes, realcount, errcode,errdata);
 	  }
 	  i++;
   }
@@ -1030,16 +1032,21 @@ static BaseType_t errbuff_info(char *m, size_t s, const char *mm)
 {
   int copied = 0;
   uint32_t cap, minaddr, maxaddr, head;
+  uint16_t last, counter;
 
   cap = errbuffer_capacity(ebuf);
   minaddr = errbuffer_minaddr(ebuf);
   maxaddr = errbuffer_maxaddr(ebuf);
   head = errbuffer_head(ebuf);
+  last = errbuffer_last(ebuf);
+  counter = errbuffer_counter(ebuf);
 
   copied += snprintf(m+copied, s-copied, "Capacity: %8x words \r\n",cap);
   copied += snprintf(m+copied, s-copied, "Min address: %8x \r\n",minaddr);
   copied += snprintf(m+copied, s-copied, "Max address: %8x \r\n",maxaddr);
   copied += snprintf(m+copied, s-copied, "Head address: %8x \r\n",head);
+  copied += snprintf(m+copied, s-copied, "Last entry: %x \r\n",last);
+  copied += snprintf(m+copied, s-copied, "Message counter: %x \r\n",counter);
 
   return pdFALSE;
 }

@@ -108,10 +108,11 @@ struct error_buffer_t {
 	uint32_t maxaddr;
 	uint32_t head;
 	uint32_t capacity;	// in # entries
-	uint32_t init;
+	uint16_t last;		// most recent error code
+	uint16_t counter;
 };
 
-error_buffer_t errbuf = {.minaddr=0,.maxaddr=0,.head=0,.capacity=0,.init=0};
+error_buffer_t errbuf = {.minaddr=0,.maxaddr=0,.head=0,.capacity=0,.last=0,.counter=0};
 errbuf_handle_t ebuf = &errbuf;
 
 
@@ -142,17 +143,15 @@ uint32_t errbuffer_findhead(errbuf_handle_t ebuf){
 }
 
 void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk){
-	ebuf->init=1;
 	ebuf->minaddr=EEPROMAddrFromBlock(minblk);
 	ebuf->maxaddr=EEPROMAddrFromBlock(maxblk+1)-4;
 	ebuf->capacity= (uint32_t)(maxblk-minblk+1)*16;
 	ebuf->head=errbuffer_findhead(ebuf);
-
-	errbuffer_put(ebuf,errbuffer_entry(RESTART,0));
+	ebuf->last=0;
+	ebuf->counter=0;
 }
 
 void errbuffer_reset(errbuf_handle_t ebuf){
-	if(ebuf->init==0){ errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK); }
 	uint32_t addr=ebuf->minaddr;
 	uint32_t maddr=ebuf->maxaddr;
 
@@ -164,23 +163,42 @@ void errbuffer_reset(errbuf_handle_t ebuf){
 			addr+=4;
 		}
 	ebuf->head = ebuf->minaddr;
-	errbuffer_put(ebuf, errbuffer_entry(RESET_BUFFER,0));
+	ebuf->counter=0;
+	ebuf->last=0;
+	errbuffer_put(ebuf, RESET_BUFFER,0);
 	return;
 }
 
-void errbuffer_put(errbuf_handle_t ebuf, uint16_t entry){
-	if(ebuf->init==0){ errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK); }
-	uint16_t eprmtime = xTaskGetTickCountFromISR()*portTICK_PERIOD_MS/60000;	// Time in minutes
-	uint32_t word = ((uint32_t)eprmtime<<16)+(uint32_t)entry;
+void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata){
+	uint16_t oldcount=ebuf->counter;
+	// If duplicated error code...
+	if(errcode == ebuf->last){
 
-	write_eeprom(word,ebuf->head);
-	ebuf->head = increase_head(ebuf);
-	write_eeprom(0,increase_head(ebuf));
+		// if counter is not a multiple of 4, don't write new entry
+		if(oldcount%4!=0){ ebuf->counter=ebuf->counter+1; }
+
+		// if counter has already reached max value, increment head
+		if(oldcount%16==0){	//Change this to use COUNTER_OFFSET
+			ebuf->counter=0;
+			ebuf->head = increase_head(ebuf);
+			write_eeprom(0,increase_head(ebuf)); }
+
+		// if counter is multiple of 4, write entry and increment counter
+		if(oldcount%4==0){
+			ebuf->counter=ebuf->counter+1;
+			write_eeprom(errbuffer_entry(errcode,errdata),decrease_head(ebuf)); }
+	}
+	else { // If new error code...
+		ebuf->counter=0;
+		ebuf->last = errcode;
+		write_eeprom(errbuffer_entry(errcode,errdata),ebuf->head);
+		ebuf->head=increase_head(ebuf);
+		write_eeprom(0,increase_head(ebuf));
+	}
 	return;
 }
 
 void errbuffer_get(errbuf_handle_t ebuf, uint32_t (*arrptr)[EBUF_NGET]){
-	if(ebuf->init==0){ errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK); }
 	int i=0,j=0,max=EBUF_NGET;
 	while(i<max){i++; ebuf->head = decrease_head(ebuf);}
 	while(j<max){
@@ -192,20 +210,24 @@ void errbuffer_get(errbuf_handle_t ebuf, uint32_t (*arrptr)[EBUF_NGET]){
 }
 
 uint32_t errbuffer_capacity(errbuf_handle_t ebuf){
-	if(ebuf->init==0){ errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK); }
 	return ebuf->capacity; }
 uint32_t errbuffer_minaddr(errbuf_handle_t ebuf){
-	if(ebuf->init==0){ errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK); }
 	return ebuf->minaddr; }
 uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf){
-	if(ebuf->init==0){ errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK); }
 	return ebuf->maxaddr; }
 uint32_t errbuffer_head(errbuf_handle_t ebuf){
-	if(ebuf->init==0){ errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK); }
 	return ebuf->head; }
+uint16_t errbuffer_last(errbuf_handle_t ebuf){
+	return ebuf->last; }
+uint16_t errbuffer_counter(errbuf_handle_t ebuf){
+	return ebuf->counter; }
 
-uint16_t errbuffer_entry(uint16_t errcode, uint16_t errdata){
-	uint16_t entry = (errcode<<ERRCODE_OFFSET)|errdata;
+uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata){
+	uint16_t eprmtime = xTaskGetTickCountFromISR()*portTICK_PERIOD_MS/60000;	// Time in minutes
+	uint16_t count = ((ebuf->counter/4)<<(ERRCODE_OFFSET+ERRDATA_OFFSET))&COUNTER_MASK;
+	uint16_t code = (errcode<<ERRDATA_OFFSET)&ERRCODE_MASK;
+	uint16_t message = count|code|errdata;
+	uint32_t entry = ((uint32_t)eprmtime<<16)|((uint32_t)message);
 	return entry;
 }
 

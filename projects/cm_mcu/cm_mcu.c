@@ -254,7 +254,7 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-#define MAX_TASK_COUNT 10
+#define MAX_TASK_COUNT 11
 static struct TaskNamePair_t TaskNamePairs[MAX_TASK_COUNT];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
@@ -361,7 +361,6 @@ const char* gitVersion()
   return gitVersion;
 }
 
-//errbuf_handle_t ebuf;		//This seems to be causing a problem :(
 // 
 int main( void )
 {
@@ -412,6 +411,7 @@ int main( void )
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
   xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
   xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[10].value);
+  xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[11].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
@@ -424,6 +424,7 @@ int main( void )
   snprintf(TaskNamePairs[8].key,configMAX_TASK_NAME_LEN,"ALARM");
   snprintf(TaskNamePairs[9].key,configMAX_TASK_NAME_LEN,"I2CS0");
   snprintf(TaskNamePairs[10].key,configMAX_TASK_NAME_LEN,"EPRM");
+  snprintf(TaskNamePairs[11].key,configMAX_TASK_NAME_LEN,"INIT");
 
   // -------------------------------------------------
   // Initialize all the queues

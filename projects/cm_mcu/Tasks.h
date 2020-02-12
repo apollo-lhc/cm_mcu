@@ -18,6 +18,8 @@
 
  #define MAX(a,b) (a)>(b)?(a):(b)
 
+// INIT task
+void InitTask(void *parameters);
 
 // ADC task
 #define ADC_CHANNEL_COUNT 21
