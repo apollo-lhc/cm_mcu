@@ -1439,6 +1439,7 @@ CLI_Command_Definition_t id_command = {
     .pxCommandInterpreter = board_id_info,
     0
 };
+#include "microrl.h"
 
 static
 CLI_Command_Definition_t buffer_in_command = {
@@ -1472,6 +1473,64 @@ CLI_Command_Definition_t buffer_reset_command = {
 };
 
 
+struct command_t {
+  const char * commandstr;
+  BaseType_t (*interpreter)(int argc, const char * const*);
+  const char * helpstr;
+  const int num_args;
+};
+
+struct command_list_t {
+  struct command_t command;
+  struct command_list_t *next;
+};
+BaseType_t help_command_fcn(int argc, const char * const*);
+
+static
+const
+struct command_t help_command = {
+    .commandstr = "help",
+    .interpreter = help_command_fcn,
+    .helpstr = "this help command",
+    .num_args = 0
+};
+
+static
+struct command_list_t head = {
+    .command = help_command,
+    .next = NULL
+};
+
+BaseType_t help_command_fcn(int argc, const char * const* argv)
+{
+  struct command_list_t *p = &head;
+  char tmp[256];
+  while ( p != NULL ) {
+    snprintf(tmp, 256, "%s\r\n\t%s\r\n",p->command.commandstr,
+        p->command.helpstr);
+    Print(tmp);
+    p = p->next;
+  }
+  return 0;
+}
+
+void add_command_to_list(struct command_t c)
+{
+
+}
+
+
+
+int execute (int argc, const char * const * argv)
+{
+  // find the command in the list
+  struct command_list_t *p = &head;
+  if ( strncmp(p->command.commandstr, argv[0],256) == 0 ) {
+    p->command.interpreter(argc, argv);
+  }
+
+  return 0;
+}
 void vCommandLineTask( void *pvParameters )
 {
   uint8_t cRxedChar, cInputIndex = 0;
@@ -1484,6 +1543,10 @@ void vCommandLineTask( void *pvParameters )
   CommandLineTaskArgs_t *args = pvParameters;
   StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
   uint32_t uart_base = args->uart_base;
+
+  microrl_t rl;
+  microrl_init(&rl, Print);
+  microrl_set_execute_callback(&rl, execute);
 
 
   // register the commands

@@ -94,6 +94,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/FireFlyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
