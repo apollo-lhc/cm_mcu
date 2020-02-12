@@ -1480,10 +1480,6 @@ struct command_t {
   const int num_args;
 };
 
-struct command_list_t {
-  struct command_t command;
-  struct command_list_t *next;
-};
 BaseType_t help_command_fcn(int argc, const char * const*);
 
 static
@@ -1496,27 +1492,19 @@ struct command_t help_command = {
 };
 
 static
-struct command_list_t head = {
-    .command = help_command,
-    .next = NULL
+struct command_t commands[2] = {
+    {"help", help_command_fcn, "this help command", 0},
+    {"ff", ff_ctl, "firefly monitoring command", -1},
 };
+
 
 BaseType_t help_command_fcn(int argc, const char * const* argv)
 {
-  struct command_list_t *p = &head;
   char tmp[256];
-  while ( p != NULL ) {
     snprintf(tmp, 256, "%s\r\n\t%s\r\n",p->command.commandstr,
         p->command.helpstr);
     Print(tmp);
-    p = p->next;
-  }
   return 0;
-}
-
-void add_command_to_list(struct command_t c)
-{
-
 }
 
 
