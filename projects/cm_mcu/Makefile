@@ -35,9 +35,7 @@ VPATH+=../../common
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
-VPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
 # hack
-VPATH+=${FREERTOS_PLUS_ROOT}/../Demo/Common/FreeRTOS_Plus_CLI_Demos
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -46,7 +44,6 @@ IPATH+=..
 IPATH+=${ROOT}
 IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
-IPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
 
 # GIT 
 GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
@@ -105,8 +102,6 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/port.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/list.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/heap_4.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/FreeRTOS_CLI.o
-#${COMPILER}/cm_mcu.axf: ${COMPILER}/Sample-CLI-commands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/printf-stdarg.o
 ## TivaWare
 ${COMPILER}/cm_mcu.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a

@@ -257,7 +257,7 @@ struct TaskNamePair_t {
 #define MAX_TASK_COUNT 11
 static struct TaskNamePair_t TaskNamePairs[MAX_TASK_COUNT];
 
-void vGetTaskHandle( char *key, TaskHandle_t *t)
+void vGetTaskHandle( const char *key, TaskHandle_t *t)
 {
   *t = NULL;
   for (int i = 0; i < MAX_TASK_COUNT; ++i) {
@@ -401,8 +401,8 @@ int main( void )
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
-  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[1].value);
-  xTaskCreate(vCommandLineTask,"CLIZY", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
+  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
+  //xTaskCreate(vCommandLineTask,"CLIZY", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
   xTaskCreate(vCommandLineTask,"CLIFP", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
   xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
   xTaskCreate(FireFlyTask,    "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
