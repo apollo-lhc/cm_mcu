@@ -3,14 +3,23 @@ include ./makedefs
 
 
 DIRS=driverlib projects boot_loader
+DIRSCLEAN=$(addsuffix .clean,$(DIRS))
 
-all: 
-	@for d in ${DIRS}; do \
-	   ${MAKE} -C $$d ;\
-	done
+all:  $(DIRS)
 
-clean:
-	@for d in ${DIRS}; do \
-	   ${MAKE} -C $$d clean ;\
-	done
+# these rules ensure that the library exists before you try to use
+# them.
+projects: driverlib
+boot_loader: driverlib
 
+$(DIRS):
+	$(MAKE) -C $@
+
+clean: $(DIRSCLEAN)
+
+
+$(DIRSCLEAN): %.clean:
+	$(MAKE) -C $* clean
+
+
+.PHONY: all clean $(DIRS) $(DIRSCLEAN)
