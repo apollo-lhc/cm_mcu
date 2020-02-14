@@ -794,7 +794,9 @@ static BaseType_t eeprom_read(int argc, char ** argv)
   uint32_t block = EEPROMBlockFromAddr(addr);
 
   uint64_t data = read_eeprom_multi(addr);
-  copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %08x%08x \r\n",block,data);
+  copied += snprintf(m+copied, s-copied,
+		     "Data read from EEPROM block %d: %08x%08x \r\n",
+		     block,data);
 
   return pdFALSE;
 }
@@ -809,11 +811,12 @@ static BaseType_t eeprom_write(int argc, char ** argv)
   addr = strtoul(argv[1],NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
   if((block==1)|((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
-	  copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
-	  return pdFALSE;
+    copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
+    return pdFALSE;
   }
   write_eeprom(data,addr);
-  copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %08x \r\n",block,data);
+  copied += snprintf(m+copied, s-copied,
+		     "Data written to EEPROM block %d: %08x \r\n", block,data);
 
   return pdFALSE;
 }
@@ -881,7 +884,7 @@ static BaseType_t set_board_id_password(int argc, char ** argv)
 
 static BaseType_t board_id_info(int argc, char ** argv)
 {
-  int copied = 0;
+  int copied = 0, s = SCRATCH_SIZE;;
   uint64_t sn_addr = 0x0040;
   uint64_t ff_addr = sn_addr + 0x4;
   uint64_t sn,ff;
@@ -908,25 +911,21 @@ static BaseType_t board_id_info(int argc, char ** argv)
 }
 
 // This command takes 1 arg, the data to be written to the buffer
-static BaseType_t errbuff_in(char *m, size_t s, const char *mm)
+static BaseType_t errbuff_in(int argc, char **argv)
 {
-  int copied = 0;
-  int8_t *p1;
-  BaseType_t p1l;
-  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // data
-  p1[p1l] = 0x00; // terminate strings
+  int copied = 0, s = SCRATCH_SIZE;
 
   uint32_t data;
-  data = strtoul(p1,NULL,16);
+  data = strtoul(argv[1],NULL,16);
   errbuffer_put(ebuf,data,0);
   copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %x \r\n",data);
 
   return pdFALSE;
 }
 
-static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
+static BaseType_t errbuff_out(int argc, char **argv)
 {
-  int copied = 0;
+  int copied = 0, s = SCRATCH_SIZE;
   uint32_t arr[EBUF_NGET];
   uint32_t (*arrptr)[EBUF_NGET]=&arr;
   errbuffer_get(ebuf,arrptr);
@@ -934,37 +933,45 @@ static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
   copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
 
   int i=0, max=EBUF_NGET;
-  while(i<max){
-	  uint32_t word = (*arrptr)[i];
+  while (i<max) {
+    uint32_t word = (*arrptr)[i];
 
-	  uint16_t entry = (uint16_t)word;
-	  uint16_t errcode = (entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
-	  uint16_t errdata = entry&ERRDATA_MASK;
-	  uint16_t counter = entry>>(16-COUNTER_OFFSET);
-	  uint16_t realcount = counter*4+1;
+    uint16_t entry = (uint16_t)word;
+    uint16_t errcode = (entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
+    uint16_t errdata = entry&ERRDATA_MASK;
+    uint16_t counter = entry>>(16-COUNTER_OFFSET);
+    uint16_t realcount = counter*4+1;
 
-	  uint16_t timestamp = (uint16_t)(word>>16);
-	  uint16_t days = timestamp/0x5a0;
-	  uint16_t hours = (timestamp%0x5a0)/0x3c;
-	  uint16_t minutes = timestamp%0x3c;
-	  switch(errcode){
-	  case RESTART:
-		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x RESTART \r\n",days, hours, minutes, counter);
-		  break;
-	  case RESET_BUFFER:
-		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x RESET BUFFER \r\n",days, hours, minutes,counter);
-		 break;
-	  default:
-		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x %x %02x \r\n",days, hours, minutes, realcount, errcode,errdata);
-	  }
-	  i++;
+    uint16_t timestamp = (uint16_t)(word>>16);
+    uint16_t days = timestamp/0x5a0;
+    uint16_t hours = (timestamp%0x5a0)/0x3c;
+    uint16_t minutes = timestamp%0x3c;
+    switch(errcode) {
+    case RESTART:
+      copied += snprintf(m+copied, s-copied,
+			 "%02u %02u:%02u \t %x RESTART \r\n", days, hours,
+			 minutes, counter);
+      break;
+    case RESET_BUFFER:
+      copied += snprintf(m+copied, s-copied,
+			 "%02u %02u:%02u \t %x RESET BUFFER \r\n", days,
+			 hours, minutes,counter);
+      break;
+    default:
+      copied += snprintf(m+copied, s-copied,
+			 "%02u %02u:%02u \t %x %x %02x \r\n", days, hours,
+			 minutes, realcount, errcode,errdata);
+      break;
+    }
+    i++;
   }
   return pdFALSE;
 }
 
-static BaseType_t errbuff_info(char *m, size_t s, const char *mm)
+// Takes no arguments
+static BaseType_t errbuff_info(int argc, char **argv)
 {
-  int copied = 0;
+  int copied = 0, s = SCRATCH_SIZE;
   uint32_t cap, minaddr, maxaddr, head;
   uint16_t last, counter;
 
@@ -984,8 +991,9 @@ static BaseType_t errbuff_info(char *m, size_t s, const char *mm)
 
   return pdFALSE;
 }
+
 // Takes no arguments
-static BaseType_t errbuff_reset(char *m, size_t s, const char *mm)
+static BaseType_t errbuff_reset(int argc, char **argv)
 {
   errbuffer_reset(ebuf);
   return pdFALSE;

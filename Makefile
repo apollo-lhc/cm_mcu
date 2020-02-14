@@ -13,13 +13,13 @@ projects: driverlib
 boot_loader: driverlib
 
 $(DIRS):
-	$(MAKE) -C $@
+	@$(MAKE) -C $@
 
 clean: $(DIRSCLEAN)
 
 
 $(DIRSCLEAN): %.clean:
-	$(MAKE) -C $* clean
+	@$(MAKE) -C $* clean
 
 
 .PHONY: all clean $(DIRS) $(DIRSCLEAN)
