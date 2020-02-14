@@ -254,10 +254,24 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-#define MAX_TASK_COUNT 11
-static struct TaskNamePair_t TaskNamePairs[MAX_TASK_COUNT];
+#define MAX_TASK_COUNT (sizeof(TaskNamePairs)/sizeof(TaskNamePairs[0]))
+static struct TaskNamePair_t TaskNamePairs[] =
+    {
+        {"POW",   0},
+        {"LED",   0},
+        {"CLIZY", 0},
+        {"CLIFP", 0},
+        {"ADC",   0},
+        {"PSMON", 0},
+        {"FFLY",  0},
+        {"XIMON", 0},
+        {"ALARM", 0},
+        {"I2CS0", 0},
+        {"EPRM",  0},
+        {"INIT",  0},
+    };
 
-void vGetTaskHandle( char *key, TaskHandle_t *t)
+void vGetTaskHandle( const char *key, TaskHandle_t *t)
 {
   *t = NULL;
   for (int i = 0; i < MAX_TASK_COUNT; ++i) {
@@ -401,9 +415,9 @@ int main( void )
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
-  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[1].value);
-  xTaskCreate(vCommandLineTask,"CLIZY", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
-  xTaskCreate(vCommandLineTask,"CLIFP", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
+  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
+  xTaskCreate(vCommandLineTask,"CLIZY", 512,              &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
+  xTaskCreate(vCommandLineTask,"CLIFP", 512,              &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
   xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
   xTaskCreate(FireFlyTask,    "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
@@ -413,18 +427,6 @@ int main( void )
   xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[10].value);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[11].value);
 
-  snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
-  snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
-  snprintf(TaskNamePairs[2].key,configMAX_TASK_NAME_LEN,"CLIZY");
-  snprintf(TaskNamePairs[3].key,configMAX_TASK_NAME_LEN,"CLIFP");
-  snprintf(TaskNamePairs[4].key,configMAX_TASK_NAME_LEN,"ADC");
-  snprintf(TaskNamePairs[5].key,configMAX_TASK_NAME_LEN,"PSMON");
-  snprintf(TaskNamePairs[6].key,configMAX_TASK_NAME_LEN,"FFLY");
-  snprintf(TaskNamePairs[7].key,configMAX_TASK_NAME_LEN,"XIMON");
-  snprintf(TaskNamePairs[8].key,configMAX_TASK_NAME_LEN,"ALARM");
-  snprintf(TaskNamePairs[9].key,configMAX_TASK_NAME_LEN,"I2CS0");
-  snprintf(TaskNamePairs[10].key,configMAX_TASK_NAME_LEN,"EPRM");
-  snprintf(TaskNamePairs[11].key,configMAX_TASK_NAME_LEN,"INIT");
 
   // -------------------------------------------------
   // Initialize all the queues

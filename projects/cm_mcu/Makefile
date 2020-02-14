@@ -16,7 +16,6 @@ ROOT=../..
 
 # if the environment variable is not set, this is used
 FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
-FREERTOS_PLUS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS-Plus/Source
 
 #
 # Include the common make definitions.
@@ -28,16 +27,13 @@ CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 # Where to find source files that do not live in this directory.
 #
 VPATH=../drivers
-VPATH+=../../../../utils
 # board specific 
 VPATH+=../../common
 # FreeRTOS
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
-VPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
 # hack
-VPATH+=${FREERTOS_PLUS_ROOT}/../Demo/Common/FreeRTOS_Plus_CLI_Demos
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -46,7 +42,6 @@ IPATH+=..
 IPATH+=${ROOT}
 IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
-IPATH+=${FREERTOS_PLUS_ROOT}/FreeRTOS-Plus-CLI
 
 # GIT 
 GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
@@ -94,6 +89,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/FireFlyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
@@ -104,8 +100,6 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/port.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/list.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/heap_4.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/FreeRTOS_CLI.o
-#${COMPILER}/cm_mcu.axf: ${COMPILER}/Sample-CLI-commands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/printf-stdarg.o
 ## TivaWare
 ${COMPILER}/cm_mcu.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
