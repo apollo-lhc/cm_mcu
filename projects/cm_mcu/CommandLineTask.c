@@ -24,6 +24,7 @@
 #include "common/pinsel.h"
 #include "common/smbus.h"
 #include "common/utils.h"
+#include "microrl.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
@@ -85,7 +86,7 @@ char m[SCRATCH_SIZE];
 //#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma GCC diagnostic ignored "-Wformat=" // because of our mini-sprintf
 
-static BaseType_t i2c_ctl_set_dev(int argc, const char * const * argv)
+static BaseType_t i2c_ctl_set_dev(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   BaseType_t i = strtol(argv[1], NULL, 10); // device number
@@ -123,7 +124,7 @@ static BaseType_t i2c_ctl_set_dev(int argc, const char * const * argv)
   return pdFALSE;
 }
 
-static BaseType_t i2c_ctl_r(int argc, const char * const * argv)
+static BaseType_t i2c_ctl_r(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
 
@@ -156,7 +157,7 @@ static BaseType_t i2c_ctl_r(int argc, const char * const * argv)
            address, data[3], data[2], data[1], data[0]);
   return pdFALSE;
 }
-static BaseType_t i2c_ctl_reg_r(int argc, const  char * const * argv)
+static BaseType_t i2c_ctl_reg_r(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
 
@@ -193,7 +194,7 @@ static BaseType_t i2c_ctl_reg_r(int argc, const  char * const * argv)
   return pdFALSE;
 }
 
-static BaseType_t i2c_ctl_reg_w(int argc, const char * const * argv)
+static BaseType_t i2c_ctl_reg_w(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
 
@@ -236,18 +237,14 @@ static BaseType_t i2c_ctl_reg_w(int argc, const char * const * argv)
 }
 
 
-static BaseType_t i2c_ctl_w(int argc, const char * const *argv)
+static BaseType_t i2c_ctl_w(int argc, char **argv)
 {
   int s = SCRATCH_SIZE;
-//  char *argv[1], *p3, *p4;
-//  argv[1] = argv[1]; // address
-//  p3 = argv[2]; // value(s)
-//  p4 = argv[3]; // byte to write
 
   BaseType_t address, nbytes, value;
-  address = strtol(argv[1], NULL, 16); // TODO check these
-  nbytes = strtol(argv[3], NULL, 16);
-  value = strtol(argv[4], NULL, 16);
+  address = strtol(argv[1], NULL, 16);
+  nbytes = strtol(argv[2], NULL, 16);
+  value = strtol(argv[3], NULL, 16);
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i ) {
@@ -281,7 +278,7 @@ static BaseType_t i2c_ctl_w(int argc, const char * const *argv)
 extern struct gpio_pin_t oks[];
 
 // send power control commands
-static BaseType_t power_ctl(int argc, const char * const * argv)
+static BaseType_t power_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
 
@@ -339,7 +336,7 @@ static BaseType_t power_ctl(int argc, const char * const * argv)
 }
 
 // takes one argument
-static BaseType_t alarm_ctl(int argc, const char * const * argv)
+static BaseType_t alarm_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   if ( argc < 2 ) {
@@ -392,7 +389,7 @@ static BaseType_t alarm_ctl(int argc, const char * const * argv)
 
 
 
-static BaseType_t i2c_scan(int argc, const char * const * argv)
+static BaseType_t i2c_scan(int argc, char ** argv)
 {
   // takes no arguments
   int copied = 0, s = SCRATCH_SIZE;
@@ -420,7 +417,7 @@ static BaseType_t i2c_scan(int argc, const char * const * argv)
 }
 
 // send LED commands
-static BaseType_t led_ctl(int argc, const char * const * argv)
+static BaseType_t led_ctl(int argc, char ** argv)
 {
 
   BaseType_t i1 = strtol(argv[1], NULL, 10);
@@ -449,7 +446,7 @@ static BaseType_t led_ctl(int argc, const char * const * argv)
 }
 
 // dump monitor information
-static BaseType_t mon_ctl(int argc, const char * const * argv)
+static BaseType_t mon_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   BaseType_t i1 = strtol(argv[1], NULL, 10);
@@ -488,7 +485,7 @@ static BaseType_t mon_ctl(int argc, const char * const * argv)
 
 
 // this command takes no arguments
-static BaseType_t adc_ctl(int argc, const char * const * argv)
+static BaseType_t adc_ctl(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
 
@@ -511,7 +508,7 @@ static BaseType_t adc_ctl(int argc, const char * const * argv)
 }
 
 // this command takes no arguments and never returns.
-static BaseType_t bl_ctl(int argc, const char * const * argv)
+static BaseType_t bl_ctl(int argc, char ** argv)
 {
   Print("Jumping to boot loader.\r\n");
   // this code is copied from the JumpToBootLoader()
@@ -546,7 +543,7 @@ static BaseType_t bl_ctl(int argc, const char * const * argv)
 }
 
 // this command takes no arguments
-static BaseType_t ver_ctl(int argc, const char * const * argv)
+static BaseType_t ver_ctl(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
   copied += snprintf(m+copied, s-copied, "Version %s built at %s.\r\n",
@@ -556,7 +553,7 @@ static BaseType_t ver_ctl(int argc, const char * const * argv)
 
 
 // this command takes up to two arguments
-static BaseType_t ff_ctl(int argc, const char * const * argv)
+static BaseType_t ff_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   // argument handling
@@ -643,7 +640,7 @@ static BaseType_t ff_ctl(int argc, const char * const * argv)
 
 
 // this command takes up to one argument
-static BaseType_t fpga_ctl(int argc, const char * const * argv)
+static BaseType_t fpga_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   if ( argc == 2 ) {
@@ -710,7 +707,7 @@ static BaseType_t fpga_ctl(int argc, const char * const * argv)
 
 // this command takes no arguments since there is only one command
 // right now.
-static BaseType_t sensor_summary(int argc, const char * const * argv)
+static BaseType_t sensor_summary(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
   // collect all sensor information
@@ -757,7 +754,7 @@ static BaseType_t sensor_summary(int argc, const char * const * argv)
 }
 
 // This command takes no arguments
-static BaseType_t restart_mcu(int argc, const char * const * argv)
+static BaseType_t restart_mcu(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
   copied += snprintf(m+copied, s-copied, "Restarting MCU\r\n");
@@ -766,7 +763,7 @@ static BaseType_t restart_mcu(int argc, const char * const * argv)
 }
 
 // This command takes 1 argument, either k or v
-static BaseType_t fpga_reset(int argc, const char * const * argv)
+static BaseType_t fpga_reset(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
   const TickType_t delay = 1 / portTICK_PERIOD_MS;  // 1 ms delay
@@ -788,7 +785,7 @@ static BaseType_t fpga_reset(int argc, const char * const * argv)
 }
 
 // This command takes 1 arg, the address
-static BaseType_t eeprom_read(int argc, const char * const * argv)
+static BaseType_t eeprom_read(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
 
@@ -803,7 +800,7 @@ static BaseType_t eeprom_read(int argc, const char * const * argv)
 }
 
 // This command takes 2 args, the address and 4 bytes of data to be written
-static BaseType_t eeprom_write(int argc, const char * const * argv)
+static BaseType_t eeprom_write(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
 
@@ -822,7 +819,7 @@ static BaseType_t eeprom_write(int argc, const char * const * argv)
 }
 
 // Takes 0 arguments
-static BaseType_t eeprom_info(int argc, const char * const * argv)
+static BaseType_t eeprom_info(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
 
@@ -835,7 +832,7 @@ static BaseType_t eeprom_info(int argc, const char * const * argv)
 }
 
 // Takes 3 arguments
-static BaseType_t set_board_id(int argc, const char * const * argv)
+static BaseType_t set_board_id(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
 
@@ -866,7 +863,7 @@ static BaseType_t set_board_id(int argc, const char * const * argv)
 }
 
 // one-time use, has one function and takes 0 arguments
-static BaseType_t set_board_id_password(int argc, const char * const * argv)
+static BaseType_t set_board_id_password(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
   uint32_t pass = 0x12345678;
@@ -882,7 +879,7 @@ static BaseType_t set_board_id_password(int argc, const char * const * argv)
   return pdFALSE;
 }
 
-static BaseType_t board_id_info(int argc, const char * const * argv)
+static BaseType_t board_id_info(int argc, char ** argv)
 {
   int copied = 0;
   uint64_t sn_addr = 0x0040;
@@ -1057,7 +1054,7 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 void vGetTaskHandle(const char *key, TaskHandle_t  *t);
 
 // argument 1 is task, argument 2 is command
-static BaseType_t task_ctl(int argc, const char * const * argv)
+static BaseType_t task_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
 
@@ -1082,7 +1079,7 @@ static BaseType_t task_ctl(int argc, const char * const * argv)
   return pdFALSE;
 }
 
-static BaseType_t uptime(int argc, const char * const * argv)
+static BaseType_t uptime(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000/60; // time in minutes
@@ -1095,7 +1092,7 @@ static BaseType_t uptime(int argc, const char * const * argv)
 // WARNING: this command easily leads to stack overflows. It does not correctly
 // ensure that there are no overwrites to pcCommandString.
 static
-BaseType_t TaskStatsCommand( int argc, const char * const * argv )
+BaseType_t TaskStatsCommand( int argc, char ** argv )
 {
   int s = SCRATCH_SIZE;
   const char *const pcHeader = "            Time     %\r\n"
@@ -1137,18 +1134,23 @@ static const char * const pcWelcomeMessage =
 
 struct command_t {
   const char * commandstr;
-  BaseType_t (*interpreter)(int argc, const char * const*);
+  BaseType_t (*interpreter)(int argc, char **);
   const char * helpstr;
   const int num_args;
 };
 static
-BaseType_t help_command_fcn(int argc, const char * const*);
+BaseType_t help_command_fcn(int argc, char **);
 
 
 #define NUM_COMMANDS (sizeof(commands)/sizeof(commands[0]))
 static
 struct command_t commands[] = {
-    {"help", help_command_fcn, "help\r\n This help command\r\n", 0},
+    {
+        "help",
+        help_command_fcn,
+        "help\r\n This help command\r\n",
+        0
+    },
     {"ff", ff_ctl, "ff\r\n firefly monitoring command\r\n", -1},
     {"alm", alarm_ctl, "alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n", -1},
     {"i2c_base", i2c_ctl_set_dev, "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n", 1},
@@ -1318,7 +1320,6 @@ struct command_t commands[] = {
   },
 };
 
-#include "microrl.h"
 
 
 static
@@ -1326,9 +1327,18 @@ void U4Print(const char* str)
 {
   UARTPrint(UART4_BASE, str);
 }
+static
+void U1Print(const char * str)
+{
+  UARTPrint(UART1_BASE, str);
+}
+
+struct microrl_user_data_t {
+  uint32_t uart_base;
+};
 
 static
-BaseType_t help_command_fcn(int argc, const char * const* argv)
+BaseType_t help_command_fcn(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE, copied = 0;
   static int i = 0;
@@ -1344,19 +1354,21 @@ BaseType_t help_command_fcn(int argc, const char * const* argv)
 }
 
 static
-int execute (int argc, const char * const * argv)
+int execute (void * p, int argc, char ** argv)
 {
-  Print("\r\n"); // the microrl does not terminate the active command TODO check if linefeed issue
+  struct microrl_user_data_t * userdata = p;
+
+  UARTPrint(userdata->uart_base, "\r\n"); // the microrl does not terminate the active command TODO check if linefeed issue
 
   // find the command in the list
   for ( int i = 0; i < NUM_COMMANDS; ++i ) {
     if ( strncmp(commands[i].commandstr, argv[0],256) == 0 ) {
       if ( (argc == commands[i].num_args+1) || commands[i].num_args<0) {
         int retval = commands[i].interpreter(argc, argv);
-        if (m[0] != '\0') U4Print(m);
+        if (m[0] != '\0') UARTPrint(userdata->uart_base, m);
         while ( retval == pdTRUE) {
           retval = commands[i].interpreter(argc, argv);
-          if (m[0] != '\0') U4Print(m);
+          if (m[0] != '\0') UARTPrint(userdata->uart_base, m);
         }
         m[0] = '\0';
         return 0;
@@ -1365,18 +1377,19 @@ int execute (int argc, const char * const * argv)
         snprintf(m, SCRATCH_SIZE,
             "Wrong number of arguments for command %s: %d expected, got %d\r\n",
             argv[0], commands[i].num_args, argc );
-        U4Print(m);
+        UARTPrint(userdata->uart_base, m);
         return 0;
       }
     }
   }
-  U4Print("Command unknown: ");
-  U4Print(argv[0]);
-  U4Print("\r\n");
+  UARTPrint(userdata->uart_base, "Command unknown: ");
+  UARTPrint(userdata->uart_base, argv[0]);
+  UARTPrint(userdata->uart_base, "\r\n");
 
   return 0;
 }
 
+// The actual task
 void vCommandLineTask( void *pvParameters )
 {
   uint8_t cRxedChar;
@@ -1388,12 +1401,28 @@ void vCommandLineTask( void *pvParameters )
   uint32_t uart_base = args->uart_base;
 
   UARTPrint(uart_base, pcWelcomeMessage);
+  struct microrl_user_data_t rl_userdata = {
+      .uart_base = uart_base,
+  };
 
+  struct microrl_config rl_config = {
+      .print = U4Print, // default to front panel
+      // set callback for execute
+      .execute = execute,
+      .prompt_str = "% ",
+      .prompt_length = 2,
+      .userdata = &rl_userdata,
+  };
+  if ( uart_base == UART1_BASE) {
+    rl_config.print = U1Print; // switch to Zynq
+  }
   microrl_t rl;
-  microrl_init(&rl, U4Print); // TODO: this should print to the relevant UART
+  microrl_init(&rl, &rl_config);
   microrl_set_execute_callback(&rl, execute);
-  /* Send a welcome message to the user knows they are connected. */
-  //UARTPrint(uart_base, "% ");
+  microrl_insert_char(&rl, ' '); // this seems to be necessary?
+
+//  microrl_init(&rl, U4Print); // TODO: this should print to the relevant UART
+//  microrl_set_execute_callback(&rl, execute);
 
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
