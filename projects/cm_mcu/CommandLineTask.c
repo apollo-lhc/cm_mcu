@@ -41,7 +41,6 @@
 #include "driverlib/uart.h"
 
 #include "MonitorTask.h"
-
 #include "CommandLineTask.h"
 #include "Tasks.h"
 
@@ -863,7 +862,7 @@ static BaseType_t fpga_reset(char *m, size_t s, const char *mm)
 }
 
 // This command takes 1 arg, the address
-static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
+static BaseType_t eeprom_r(char *m, size_t s, const char *mm)
 {
   int copied = 0;
   int8_t *p1;
@@ -872,18 +871,17 @@ static BaseType_t eeprom_read(char *m, size_t s, const char *mm)
   p1[p1l] = 0x00; // terminate strings
 
   uint32_t addr;
-  uint64_t data;
   addr = strtol(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  data = read_eeprom_multi(addr);
 
+  uint64_t data = read_eeprom_multi(addr);
   copied += snprintf(m+copied, s-copied, "Data read from EEPROM block %d: %08x%08x \r\n",block,data);
 
   return pdFALSE;
 }
 
 // This command takes 2 args, the address and 4 bytes of data to be written
-static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
+static BaseType_t eeprom_w(char *m, size_t s, const char *mm)
 {
   int copied = 0;
   int8_t *p1, *p2;
@@ -897,7 +895,11 @@ static BaseType_t eeprom_write(char *m, size_t s, const char *mm)
   data = strtoul(p2,NULL,16);
   addr = strtoul(p1,NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  write_eeprom_single(data,addr);
+  if((block==1)|((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
+	  copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
+	  return pdFALSE;
+  }
+  write_eeprom(data,addr);
   copied += snprintf(m+copied, s-copied, "Data written to EEPROM block %d: %08x \r\n",block,data);
 
   return pdFALSE;
@@ -909,7 +911,9 @@ static BaseType_t eeprom_info(char *m, size_t s, const char *mm)
   int copied = 0;
 
   copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
-  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t r \t Apollo ID Information. Password: 0x12345678 \r\n");
+  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t Free. \r\n");
+  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678 \r\n");
+  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x%04x-0x%04x \t Error buffer. \r\n",EBUF_MINBLK, EBUF_MAXBLK,EEPROMAddrFromBlock(EBUF_MINBLK),EEPROMAddrFromBlock(EBUF_MAXBLK+1)-4);
 
   return pdFALSE;
 }
@@ -927,29 +931,29 @@ static BaseType_t set_board_id(char *m, size_t s, const char *mm)
   p2[p2l] = 0x00; // terminate strings
   p3[p3l] = 0x00; // terminate strings
 
-  uint32_t pass, addr, data;
+  uint64_t pass, addr, data;
   pass = strtoul(p1,NULL,16);
   addr = strtoul(p2,NULL,16);
   data = strtoul(p3,NULL,16);
-  uint32_t block = EEPROMBlockFromAddr(addr);
+  uint64_t block = EEPROMBlockFromAddr(addr);
   if (block!=1){
 	  copied += snprintf(m+copied, s-copied, "Please input address in Block 1\r\n");
 	  return pdFALSE;
   }
-  uint32_t *pPassword = &pass;
-  uint32_t *dataptr = &data;
-  uint32_t dlen = 4;
-  uint32_t err = 0;
 
-  err += EEPROMBlockUnlock(1, pPassword, 1);
-  err += EEPROMProgram(dataptr,addr,dlen);
-  err += EEPROMBlockLock(1);
-  uint32_t success = 1;
-  if(err!=success){
-	  copied += snprintf(m+copied, s-copied, "Write unsuccessful \r\n");
-	  return pdFALSE;
-  }
-  copied += snprintf(m+copied, s-copied, "Successfully wrote to 0x%x in ID Block: %08x \r\n",addr,data);
+  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK,block,pass);
+  xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE,addr,data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+  uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK,block<<32,0);
+  xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
+  if(pass!=0x12345678){
+	  copied += snprintf(m+copied, s-copied, "Wrong password. Type eeprom_info to get password.");
+  }	// data not printing correctly?
+
   return pdFALSE;
 }
 
@@ -959,6 +963,8 @@ static BaseType_t set_board_id_password(char *m, size_t s, const char *mm)
   int copied = 0;
   uint32_t pass = 0x12345678;
   uint32_t *passptr = &pass;
+
+  // DOES NOT GO THROUGH GATEKEEPER TASK
   EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
   EEPROMBlockPasswordSet(1, passptr, 1);
   EEPROMBlockLock(1);
@@ -971,22 +977,112 @@ static BaseType_t set_board_id_password(char *m, size_t s, const char *mm)
 static BaseType_t board_id_info(char *m, size_t s, const char *mm)
 {
   int copied = 0;
-  uint32_t wordsize = 0x0004;
-  uint32_t sn_addr = 0x0040;
-  uint32_t ff_addr = sn_addr + wordsize;
+  uint64_t sn_addr = 0x0040;
+  uint64_t ff_addr = sn_addr + 0x4;
+  uint64_t sn,ff;
 
-  uint32_t sn = read_eeprom_single(sn_addr);	// last byte is revision, first 3 are serial number
-  uint32_t num = sn >> 16;
-  uint32_t rev = sn&0xff;
+  uint64_t sn_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(sn_addr<<32);
+  xQueueSendToBack(xEPRMQueue_in, &sn_message, portMAX_DELAY);
+  xQueueReceive(xEPRMQueue_out, &sn, portMAX_DELAY);
 
-  uint32_t ff = read_eeprom_single(ff_addr);
-  copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",sn);
+  uint64_t ff_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(ff_addr<<32);
+  xQueueSendToBack(xEPRMQueue_in, &ff_message, portMAX_DELAY);
+  xQueueReceive(xEPRMQueue_out, &ff, portMAX_DELAY);
+
+  uint32_t num = (uint32_t)sn >> 16;
+  uint32_t rev = ((uint32_t)sn)&0xff;
+
+  copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",(uint32_t)sn);
 
   copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);
   copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
   copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
   // TODO: Figure out the best way to organize firefly information
 
+  return pdFALSE;
+}
+
+// This command takes 1 arg, the data to be written to the buffer
+static BaseType_t errbuff_in(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  int8_t *p1;
+  BaseType_t p1l;
+  p1 = FreeRTOS_CLIGetParameter(mm, 1, &p1l); // data
+  p1[p1l] = 0x00; // terminate strings
+
+  uint32_t data;
+  data = strtoul(p1,NULL,16);
+  errbuffer_put(ebuf,data,0);
+  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %x \r\n",data);
+
+  return pdFALSE;
+}
+
+static BaseType_t errbuff_out(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  uint32_t arr[EBUF_NGET];
+  uint32_t (*arrptr)[EBUF_NGET]=&arr;
+  errbuffer_get(ebuf,arrptr);
+
+  copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
+
+  int i=0, max=EBUF_NGET;
+  while(i<max){
+	  uint32_t word = (*arrptr)[i];
+
+	  uint16_t entry = (uint16_t)word;
+	  uint16_t errcode = (entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
+	  uint16_t errdata = entry&ERRDATA_MASK;
+	  uint16_t counter = entry>>(16-COUNTER_OFFSET);
+	  uint16_t realcount = counter*4+1;
+
+	  uint16_t timestamp = (uint16_t)(word>>16);
+	  uint16_t days = timestamp/0x5a0;
+	  uint16_t hours = (timestamp%0x5a0)/0x3c;
+	  uint16_t minutes = timestamp%0x3c;
+	  switch(errcode){
+	  case RESTART:
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x RESTART \r\n",days, hours, minutes, counter);
+		  break;
+	  case RESET_BUFFER:
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x RESET BUFFER \r\n",days, hours, minutes,counter);
+		 break;
+	  default:
+		  copied += snprintf(m+copied, s-copied, "%02u %02u:%02u \t %x %x %02x \r\n",days, hours, minutes, realcount, errcode,errdata);
+	  }
+	  i++;
+  }
+  return pdFALSE;
+}
+
+static BaseType_t errbuff_info(char *m, size_t s, const char *mm)
+{
+  int copied = 0;
+  uint32_t cap, minaddr, maxaddr, head;
+  uint16_t last, counter;
+
+  cap = errbuffer_capacity(ebuf);
+  minaddr = errbuffer_minaddr(ebuf);
+  maxaddr = errbuffer_maxaddr(ebuf);
+  head = errbuffer_head(ebuf);
+  last = errbuffer_last(ebuf);
+  counter = errbuffer_counter(ebuf);
+
+  copied += snprintf(m+copied, s-copied, "Capacity: %8x words \r\n",cap);
+  copied += snprintf(m+copied, s-copied, "Min address: %8x \r\n",minaddr);
+  copied += snprintf(m+copied, s-copied, "Max address: %8x \r\n",maxaddr);
+  copied += snprintf(m+copied, s-copied, "Head address: %8x \r\n",head);
+  copied += snprintf(m+copied, s-copied, "Last entry: %x \r\n",last);
+  copied += snprintf(m+copied, s-copied, "Message counter: %x \r\n",counter);
+
+  return pdFALSE;
+}
+// Takes no arguments
+static BaseType_t errbuff_reset(char *m, size_t s, const char *mm)
+{
+  errbuffer_reset(ebuf);
   return pdFALSE;
 }
 
@@ -1300,7 +1396,7 @@ static
 CLI_Command_Definition_t eeprom_read_command = {
     .pcCommand="eeprom_read",
     .pcHelpString="eeprom_read <address> \r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
-    .pxCommandInterpreter = eeprom_read,
+    .pxCommandInterpreter = eeprom_r,
     1
 };
 
@@ -1308,7 +1404,7 @@ static
 CLI_Command_Definition_t eeprom_write_command = {
     .pcCommand="eeprom_write",
     .pcHelpString="eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
-    .pxCommandInterpreter = eeprom_write,
+    .pxCommandInterpreter = eeprom_w,
     2
 };
 
@@ -1344,6 +1440,38 @@ CLI_Command_Definition_t id_command = {
     0
 };
 
+static
+CLI_Command_Definition_t buffer_in_command = {
+    .pcCommand="buffer_in",
+    .pcHelpString="buffer_in <data> \r\n Manual entry of 2-byte code into the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_in,
+    1
+};
+
+static
+CLI_Command_Definition_t buffer_out_command = {
+    .pcCommand="buffer_out",
+    .pcHelpString="buffer_out <data> \r\n Prints last 5 entries in the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_out,
+    0
+};
+
+static
+CLI_Command_Definition_t buffer_info_command = {
+    .pcCommand="buffer_info",
+    .pcHelpString="buffer_info <data> \r\n Prints information about the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_info,
+    0
+};
+static
+CLI_Command_Definition_t buffer_reset_command = {
+    .pcCommand="buffer_reset",
+    .pcHelpString="buffer_reset <data> \r\n Resets the eeprom buffer.\r\n",
+    .pxCommandInterpreter = errbuff_reset,
+    0
+};
+
+
 void vCommandLineTask( void *pvParameters )
 {
   uint8_t cRxedChar, cInputIndex = 0;
@@ -1357,11 +1485,16 @@ void vCommandLineTask( void *pvParameters )
   StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
   uint32_t uart_base = args->uart_base;
 
+
   // register the commands
   FreeRTOS_CLIRegisterCommand(&adc_command      );
   FreeRTOS_CLIRegisterCommand(&alm_ctl_command  );
   FreeRTOS_CLIRegisterCommand(&ff_command       );
   FreeRTOS_CLIRegisterCommand(&bootloader_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_in_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_info_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_out_command  );
+  FreeRTOS_CLIRegisterCommand(&buffer_reset_command );
   FreeRTOS_CLIRegisterCommand(&eeprom_read_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_write_command	);
   FreeRTOS_CLIRegisterCommand(&eeprom_info_command	);

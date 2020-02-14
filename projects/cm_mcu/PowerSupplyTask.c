@@ -47,6 +47,7 @@ void PowerSupplyTask(void *parameters)
   // turn on the power supply at the start of the task, if the power enable is sent by the
   // zynq
   if ( read_gpio_pin(BLADE_POWER_EN) == 1 )
+	errbuffer_put(ebuf,RESTART,0);	//Does this look okay?
     set_ps() ;
 
   // this function never returns

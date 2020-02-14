@@ -254,7 +254,7 @@ struct TaskNamePair_t {
   TaskHandle_t value;
 } ;
 
-#define MAX_TASK_COUNT 10
+#define MAX_TASK_COUNT 11
 static struct TaskNamePair_t TaskNamePairs[MAX_TASK_COUNT];
 
 void vGetTaskHandle( char *key, TaskHandle_t *t)
@@ -365,6 +365,7 @@ const char* gitVersion()
 int main( void )
 {
   SystemInit();
+
   // check if we are to include both FPGAs or not
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
@@ -398,11 +399,9 @@ int main( void )
   for (int i =0; i < fpga_args.n_values; ++i)
     fpga_args.pm_values[i] = -999.;
 
-
-
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
-  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
+  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &TaskNamePairs[1].value);
   xTaskCreate(vCommandLineTask,"CLIZY", 512,                &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
   xTaskCreate(vCommandLineTask,"CLIFP", 512,                &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
   xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
@@ -411,6 +410,8 @@ int main( void )
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
   xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
+  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[10].value);
+  xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[11].value);
 
   snprintf(TaskNamePairs[0].key,configMAX_TASK_NAME_LEN,"POW");
   snprintf(TaskNamePairs[1].key,configMAX_TASK_NAME_LEN,"LED");
@@ -422,11 +423,13 @@ int main( void )
   snprintf(TaskNamePairs[7].key,configMAX_TASK_NAME_LEN,"XIMON");
   snprintf(TaskNamePairs[8].key,configMAX_TASK_NAME_LEN,"ALARM");
   snprintf(TaskNamePairs[9].key,configMAX_TASK_NAME_LEN,"I2CS0");
+  snprintf(TaskNamePairs[10].key,configMAX_TASK_NAME_LEN,"EPRM");
+  snprintf(TaskNamePairs[11].key,configMAX_TASK_NAME_LEN,"INIT");
 
   // -------------------------------------------------
   // Initialize all the queues
   // queue for the LED
-  xLedQueue = xQueueCreate(5, // The maximum number of items the queue can hold.
+  xLedQueue = xQueueCreate(3, // The maximum number of items the queue can hold.
       sizeof( uint32_t ));    // The size of each item.
   configASSERT(xLedQueue != NULL);
 
@@ -436,12 +439,19 @@ int main( void )
   xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
   configASSERT(xFFlyQueue != NULL);
 
+  xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queues
+  configASSERT(xEPRMQueue_in != NULL);
+  xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
+  configASSERT(xEPRMQueue_out != NULL);
+
   xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
   configASSERT(xAlmQueue != NULL);
 
 #ifdef DEBUGxx
   vQueueAddToRegistry(xLedQueue, "LedQueue");
   vQueueAddToRegistry(xPwrQueue, "PwrQueue");
+  vQueueAddToRegistry(xEPRMQueue_in, "EPRMQueue_in");
+  vQueueAddToRegistry(xEPRMQueue_out, "EPRMQueue_out");
 #endif // DEBUG
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as

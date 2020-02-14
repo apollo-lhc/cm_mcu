@@ -86,6 +86,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
@@ -94,6 +95,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o

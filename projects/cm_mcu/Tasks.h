@@ -18,6 +18,8 @@
 
  #define MAX(a,b) (a)>(b)?(a):(b)
 
+// INIT task
+void InitTask(void *parameters);
 
 // ADC task
 #define ADC_CHANNEL_COUNT 21
@@ -102,5 +104,20 @@ void ADCMonitorTask(void *parameters);
 
 // I2C Slave
 void I2CSlaveTask(void *parameters);
+
+// EEPROM
+
+extern QueueHandle_t xEPRMQueue_in;
+extern QueueHandle_t xEPRMQueue_out;
+
+#define EPRM_WRITE_SINGLE 1
+#define EPRM_READ_SINGLE 2
+#define EPRM_READ_DOUBLE 3
+#define EPRM_LOCK_BLOCK 4
+#define EPRM_UNLOCK_BLOCK 5
+
+uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
+void EEPROMTask(void *parameters);
+
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

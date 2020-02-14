@@ -83,7 +83,7 @@ FreeRTOS/Source/tasks.c for limitations. */
 to exclude the API function. */
 #define INCLUDE_vTaskPrioritySet                        0
 #define INCLUDE_uxTaskPriorityGet                       0
-#define INCLUDE_vTaskDelete                             0
+#define INCLUDE_vTaskDelete                             1
 #define INCLUDE_vTaskCleanUpResources                   0
 #define INCLUDE_vTaskSuspend                            1
 #define INCLUDE_vTaskDelayUntil                         1
@@ -92,7 +92,7 @@ to exclude the API function. */
 #define INCLUDE_xTimerPendFunctionCall                  0
 #define INCLUDE_xSemaphoreGetMutexHolder                0
 #define INCLUDE_xTaskGetHandle                          0
-#define INCLUDE_xTaskGetCurrentTaskHandle               0
+#define INCLUDE_xTaskGetCurrentTaskHandle               1
 #define INCLUDE_xTaskGetIdleTaskHandle                  0
 #define INCLUDE_xTaskAbortDelay                         0
 #define INCLUDE_xTaskGetSchedulerState                  0
