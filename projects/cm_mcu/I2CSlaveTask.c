@@ -57,24 +57,26 @@ static uint8_t getSlaveData(uint8_t address)
       value = testreg;
       break;
     case 0x10U: // MCU temperature
-      value = (uint8_t) getADCvalue(20);
+      value = getADCvalue(20)+0.5; // always valid
       break;
     case 0x12U: // FPGA VU temp
       value = (uint8_t) fpga_args.pm_values[0];
+      if ( value == 0 ) value = 0xFFU; // invalid value
       break;
     case 0x14U: // FPGA KU temp
       value = (uint8_t) fpga_args.pm_values[1];
+      if ( value == 0 ) value = 0xFFU; // invalid value 
       break;
     case 0x16U: // hottest FF temp
     {
-      int8_t imax_temp = -99.0;
+      int8_t imax_temp = -55; // turn off value
       for ( int i = 0; i < NFIREFLIES; ++i ) {
         int8_t v = getFFvalue(i);
         if ( v > imax_temp )
           imax_temp = v;
       }
-      if ( imax_temp == -99 )
-        value = 0xFF;
+      if ( imax_temp < 0 )
+        value = 0xFFU; // invalid 
       else
         value = (uint8_t) imax_temp;
     }
@@ -90,10 +92,10 @@ static uint8_t getSlaveData(uint8_t address)
             max_temp = thistemp;
         }
       }
-      if ( max_temp == -99 )
-        value = 0xFFU;
+      if ( max_temp < 0  )
+        value = 0xFFU; // invalid
       else
-        value = (uint8_t) max_temp;
+        value = (uint8_t) max_temp+0.5;
     }
     break;
     default:
