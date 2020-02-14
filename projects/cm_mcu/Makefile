@@ -16,7 +16,6 @@ ROOT=../..
 
 # if the environment variable is not set, this is used
 FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
-FREERTOS_PLUS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS-Plus/Source
 
 #
 # Include the common make definitions.
@@ -28,7 +27,6 @@ CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 # Where to find source files that do not live in this directory.
 #
 VPATH=../drivers
-VPATH+=../../../../utils
 # board specific 
 VPATH+=../../common
 # FreeRTOS

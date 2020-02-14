@@ -76,14 +76,12 @@ static tSMBus *p_sMaster = &g_sMaster4;
 static tSMBusStatus * p_eStatus = &eStatus4;
 
 #define SCRATCH_SIZE 512
+static
 char m[SCRATCH_SIZE];
 
 
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
-//#pragma GCC diagnostic push
-//#pragma GCC diagnostic ignored "-Wpointer-sign"
-//#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma GCC diagnostic ignored "-Wformat=" // because of our mini-sprintf
 
 static BaseType_t i2c_ctl_set_dev(int argc, char ** argv)
@@ -120,7 +118,7 @@ static BaseType_t i2c_ctl_set_dev(int argc, char ** argv)
       return pdFALSE;
       break;
   }
-  snprintf(m, s,"Setting i2c device to %d \r\n", i);
+  snprintf(m, s,"Setting i2c device to %d\r\n", i);
   return pdFALSE;
 }
 
@@ -795,7 +793,7 @@ static BaseType_t eeprom_read(int argc, char ** argv)
 
   uint64_t data = read_eeprom_multi(addr);
   copied += snprintf(m+copied, s-copied,
-		     "Data read from EEPROM block %d: %08x%08x \r\n",
+		     "Data read from EEPROM block %d: %08x%08x\r\n",
 		     block,data);
 
   return pdFALSE;
@@ -816,7 +814,7 @@ static BaseType_t eeprom_write(int argc, char ** argv)
   }
   write_eeprom(data,addr);
   copied += snprintf(m+copied, s-copied,
-		     "Data written to EEPROM block %d: %08x \r\n", block,data);
+		     "Data written to EEPROM block %d: %08x\r\n", block,data);
 
   return pdFALSE;
 }
@@ -826,10 +824,10 @@ static BaseType_t eeprom_info(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
 
-  copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each. \r\n");
-  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t Free. \r\n");
-  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678 \r\n");
-  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x%04x-0x%04x \t Error buffer. \r\n",EBUF_MINBLK, EBUF_MAXBLK,EEPROMAddrFromBlock(EBUF_MINBLK),EEPROMAddrFromBlock(EBUF_MAXBLK+1)-4);
+  copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each.\r\n");
+  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t Free.\r\n");
+  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678\r\n");
+  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x%04x-0x%04x \t Error buffer.\r\n",EBUF_MINBLK, EBUF_MAXBLK,EEPROMAddrFromBlock(EBUF_MINBLK),EEPROMAddrFromBlock(EBUF_MAXBLK+1)-4);
 
   return pdFALSE;
 }
@@ -918,7 +916,7 @@ static BaseType_t errbuff_in(int argc, char **argv)
   uint32_t data;
   data = strtoul(argv[1],NULL,16);
   errbuffer_put(ebuf,data,0);
-  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %x \r\n",data);
+  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %x\r\n",data);
 
   return pdFALSE;
 }
@@ -949,17 +947,17 @@ static BaseType_t errbuff_out(int argc, char **argv)
     switch(errcode) {
     case RESTART:
       copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x RESTART \r\n", days, hours,
+			 "%02u %02u:%02u \t %x RESTART\r\n", days, hours,
 			 minutes, counter);
       break;
     case RESET_BUFFER:
       copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x RESET BUFFER \r\n", days,
+			 "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
 			 hours, minutes,counter);
       break;
     default:
       copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x %x %02x \r\n", days, hours,
+			 "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
 			 minutes, realcount, errcode,errdata);
       break;
     }
@@ -982,12 +980,12 @@ static BaseType_t errbuff_info(int argc, char **argv)
   last = errbuffer_last(ebuf);
   counter = errbuffer_counter(ebuf);
 
-  copied += snprintf(m+copied, s-copied, "Capacity: %8x words \r\n",cap);
-  copied += snprintf(m+copied, s-copied, "Min address: %8x \r\n",minaddr);
-  copied += snprintf(m+copied, s-copied, "Max address: %8x \r\n",maxaddr);
-  copied += snprintf(m+copied, s-copied, "Head address: %8x \r\n",head);
-  copied += snprintf(m+copied, s-copied, "Last entry: %x \r\n",last);
-  copied += snprintf(m+copied, s-copied, "Message counter: %x \r\n",counter);
+  copied += snprintf(m+copied, s-copied, "Capacity: %8x words\r\n",cap);
+  copied += snprintf(m+copied, s-copied, "Min address: %8x\r\n",minaddr);
+  copied += snprintf(m+copied, s-copied, "Max address: %8x\r\n",maxaddr);
+  copied += snprintf(m+copied, s-copied, "Head address: %8x\r\n",head);
+  copied += snprintf(m+copied, s-copied, "Last entry: %x\r\n",last);
+  copied += snprintf(m+copied, s-copied, "Message counter: %x\r\n",counter);
 
   return pdFALSE;
 }
@@ -1305,25 +1303,25 @@ struct command_t commands[] = {
     {
      "buffer_in",
      errbuff_in,
-     "buffer_in <data> \r\n Manual entry of 2-byte code into the eeprom buffer.\r\n",
+     "buffer_in <data>\r\n Manual entry of 2-byte code into the eeprom buffer.\r\n",
      1
     },
     {
      "buffer_out",
      errbuff_out,
-     "buffer_out <data> \r\n Prints last 5 entries in the eeprom buffer.\r\n",
+     "buffer_out <data>\r\n Prints last 5 entries in the eeprom buffer.\r\n",
      0
     },
     {
      "buffer_info",
      errbuff_info,
-     "buffer_info <data> \r\n Prints information about the eeprom buffer.\r\n",
+     "buffer_info <data>\r\n Prints information about the eeprom buffer.\r\n",
      0
     },
   {
    "buffer_reset",
    errbuff_reset,
-   "buffer_reset <data> \r\n Resets the eeprom buffer.\r\n",
+   "buffer_reset <data>\r\n Resets the eeprom buffer.\r\n",
    0
   },
 };
@@ -1429,14 +1427,10 @@ void vCommandLineTask( void *pvParameters )
   microrl_set_execute_callback(&rl, execute);
   microrl_insert_char(&rl, ' '); // this seems to be necessary?
 
-//  microrl_init(&rl, U4Print); // TODO: this should print to the relevant UART
-//  microrl_set_execute_callback(&rl, execute);
-
   for( ;; ) {
     /* This implementation reads a single character at a time.  Wait in the
-        Blocked state until a character is received. */
+       Blocked state until a character is received. */
     xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
-    //UARTCharPut(uart_base,cRxedChar);
     microrl_insert_char(&rl, cRxedChar);
 
   }

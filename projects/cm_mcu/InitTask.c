@@ -19,13 +19,14 @@
 #include "Tasks.h"
 
 
-void InitTask(void *parameters){
+void InitTask(void *parameters)
+{
 
-	// Initialize eeprom error buffer
-	errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK);
-	errbuffer_put(ebuf,RESTART,0);
+  // Initialize eeprom error buffer
+  errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK);
+  errbuffer_put(ebuf,RESTART,0);
 
 
-	// Delete this task
-	vTaskDelete(xTaskGetCurrentTaskHandle());
+  // Delete this task
+  vTaskDelete(xTaskGetCurrentTaskHandle());
 }
