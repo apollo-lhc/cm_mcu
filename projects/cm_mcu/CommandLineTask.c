@@ -924,13 +924,14 @@ static BaseType_t errbuff_in(int argc, char **argv)
 static BaseType_t errbuff_out(int argc, char **argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
-  uint32_t arr[EBUF_NGET];
-  uint32_t (*arrptr)[EBUF_NGET]=&arr;
-  errbuffer_get(ebuf,arrptr);
+  uint32_t num = strtoul(argv[1],NULL,10);
+  uint32_t arr[num];
+  uint32_t (*arrptr)[num]=&arr;
+  errbuffer_get(ebuf,num,arrptr);
 
   copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
 
-  int i=0, max=EBUF_NGET;
+  int i=0, max=num;
   while (i<max) {
     uint32_t word = (*arrptr)[i];
 
@@ -1310,7 +1311,7 @@ struct command_t commands[] = {
      "buffer_out",
      errbuff_out,
      "buffer_out <data>\r\n Prints last 5 entries in the eeprom buffer.\r\n",
-     0
+     1
     },
     {
      "buffer_info",

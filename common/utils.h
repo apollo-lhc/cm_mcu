@@ -55,7 +55,7 @@ void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk);
 void errbuffer_reset(errbuf_handle_t ebuf);
 
 void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata);
-void errbuffer_get(errbuf_handle_t ebuf, uint32_t (*arrptr)[EBUF_NGET]);
+void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num]);
 
 uint32_t errbuffer_capacity(errbuf_handle_t ebuf);
 uint32_t errbuffer_minaddr(errbuf_handle_t ebuf);

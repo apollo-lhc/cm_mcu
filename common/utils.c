@@ -198,8 +198,8 @@ void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata){
 	return;
 }
 
-void errbuffer_get(errbuf_handle_t ebuf, uint32_t (*arrptr)[EBUF_NGET]){
-	int i=0,j=0,max=EBUF_NGET;
+void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num]){
+	int i=0,j=0,max=num;
 	while(i<max){i++; ebuf->head = decrease_head(ebuf);}
 	while(j<max){
 		(*arrptr)[j] = read_eeprom_single(ebuf->head);
