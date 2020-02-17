@@ -188,10 +188,6 @@ void MonitorTask(void *parameters)
           while ( SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
           }
-          if (*args->smbus_status != SMBUS_OK ) {
-            snprintf(tmp, 64, "MON(%s): SMBUS ERROR: %d\r\n",args->name, *args->smbus_status);
-            DPRINT(tmp);
-          }
           if ( *args->smbus_status != SMBUS_OK ) {
             snprintf(tmp, 64, "MON(%s): Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n",
                 args->name, *args->smbus_status, ps,c,page);
