@@ -176,9 +176,9 @@ unsigned long bl_user_checkupdate_hook(void)
     return 0; // got nothing on the UART
   // look for the special signal
   if ( ui8Data[0] == 'A'  &&
-      ui8Data[0] == '5'  &&
-      ui8Data[0] == 'A'  &&
-      ui8Data[0] == '5'
+      ui8Data[1] == '5'  &&
+      ui8Data[2] == 'A'  &&
+      ui8Data[3] == '5'
       )
     return 1;
   return 0;
