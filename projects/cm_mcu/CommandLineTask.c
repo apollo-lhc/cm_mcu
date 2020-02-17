@@ -360,13 +360,14 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
         tens,frac);
     copied += snprintf(m+copied, s-copied, "Raw: 0x%08x\r\n", stat);
     copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s\r\n",
-        stat&ALM_STAT_TM4C_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD");
     copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s\r\n",
-        stat&ALM_STAT_FPGA_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD");
     copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s\r\n",
-        stat&ALM_STAT_FIREFLY_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD");
     copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s\r\n",
-        stat&ALM_STAT_DCDC_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD");
+
     return pdFALSE;
   }
   else if ( strcmp(argv[1], "settemp") == 0 ) {
@@ -657,7 +658,7 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
   }
   else if (argc != 1 ) {
     // error, invalid
-    snprintf(m,s, "%s: invalid argument count %d\r\n", argv[0]);
+    snprintf(m,s, "%s: invalid argument count %d\r\n", argv[0], argc);
     return pdFALSE;
   }
   else {
@@ -794,7 +795,7 @@ static BaseType_t eeprom_read(int argc, char ** argv)
   uint64_t data = read_eeprom_multi(addr);
   copied += snprintf(m+copied, s-copied,
 		     "Data read from EEPROM block %d: %08x%08x\r\n",
-		     block,data);
+		     block,(data>>32)&0xFFFFFFFFU, data&0xFFFFFFFFU);
 
   return pdFALSE;
 }
@@ -808,7 +809,7 @@ static BaseType_t eeprom_write(int argc, char ** argv)
   data = strtoul(argv[2],NULL,16);
   addr = strtoul(argv[1],NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  if((block==1)|((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
+  if((block==1)||((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
     copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
     return pdFALSE;
   }
@@ -1002,7 +1003,7 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 {
   TaskStatus_t *pxTaskStatusArray;
   volatile UBaseType_t uxArraySize, x;
-  uint32_t ulTotalRunTime, ulStatsAsPercentage;
+  uint32_t ulTotalRunTime;
 
   // Make sure the write buffer does not contain a string.
   *pcWriteBuffer = 0x00;
@@ -1033,7 +1034,7 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
         // What percentage of the total run time has the task used?
         // This will always be rounded down to the nearest integer.
         // ulTotalRunTimeDiv100 has already been divided by 100.
-        ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
+        uint32_t ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
 
         if( ulStatsAsPercentage > 0UL )
         {

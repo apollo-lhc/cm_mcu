@@ -233,7 +233,7 @@ static int split(microrl_t *pThis, int limit, const char **tkn_arr) {
 	int ind = 0;
 	while (1) {
 		// go to the first whitespace (zerro for us)
-		while ((pThis->cmdline[ind] == '\0') && (ind < limit)) {
+		while ((ind < limit) && (pThis->cmdline[ind] == '\0')) {
 			ind++;
 		}
 		if (!(ind < limit))
@@ -243,7 +243,7 @@ static int split(microrl_t *pThis, int limit, const char **tkn_arr) {
 			return -1;
 		}
 		// go to the first NOT whitespace (not zerro for us)
-		while ((pThis->cmdline[ind] != '\0') && (ind < limit)) {
+		while ((ind < limit) && (pThis->cmdline[ind] != '\0')  ) {
 			ind++;
 		}
 		if (!(ind < limit))
@@ -474,11 +474,10 @@ static int escape_process(microrl_t *pThis, char ch) {
 //*****************************************************************************
 // insert len char of text at cursor position
 static int microrl_insert_text(microrl_t *pThis, const char *text, int len) {
-	int i;
 	if (pThis->cmdlen + len < MICRORL_COMMAND_LINE_LEN) {
 		memmove(pThis->cmdline + pThis->cursor + len,
 				pThis->cmdline + pThis->cursor, pThis->cmdlen - pThis->cursor);
-		for (i = 0; i < len; i++) {
+		for (int i = 0; i < len; i++) {
 			pThis->cmdline[pThis->cursor + i] = text[i];
 			if (pThis->cmdline[pThis->cursor + i] == ' ') {
 				pThis->cmdline[pThis->cursor + i] = 0;
