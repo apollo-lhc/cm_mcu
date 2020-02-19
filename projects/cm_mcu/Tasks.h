@@ -129,6 +129,4 @@ uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
 void EEPROMTask(void *parameters);
 
 
-
-
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */
