@@ -367,6 +367,7 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
         (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD");
     copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s\r\n",
         (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD");
+    configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
   }
@@ -412,6 +413,8 @@ static BaseType_t i2c_scan(int argc, char ** argv)
     configASSERT(copied < s);
   }
   copied += snprintf(m+copied, s-copied,"\r\n");
+  configASSERT(copied < SCRATCH_SIZE);
+
   return pdFALSE;
 }
 
@@ -547,6 +550,8 @@ static BaseType_t ver_ctl(int argc, char ** argv)
   int copied = 0, s = SCRATCH_SIZE;
   copied += snprintf(m+copied, s-copied, "Version %s built at %s.\r\n",
       gitVersion(), buildTime()) ;
+  configASSERT(copied < SCRATCH_SIZE);
+
   return pdFALSE;
 }
 
@@ -602,7 +607,7 @@ static BaseType_t ff_ctl(int argc, char ** argv)
   }
   else { // more than one argument, check which command
     if ( argc == 2 ) {
-      copied += snprintf(m+copied, s-copied, "%s: command %s needs an argument\r\n",
+      snprintf(m+copied, s-copied, "%s: command %s needs an argument\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
@@ -625,12 +630,12 @@ static BaseType_t ff_ctl(int argc, char ** argv)
       }
     }
     else {
-      copied += snprintf(m+copied,s-copied, "%s: command %s not recognized\r\n",
+      snprintf(m+copied,s-copied, "%s: command %s not recognized\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
     xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
-    copied += snprintf(m+copied,s-copied, "%s: command %s %s sent.\r\n",
+    snprintf(m+copied,s-copied, "%s: command %s %s sent.\r\n",
         argv[0], argv[1],c);
 
   } // end commands with arguments

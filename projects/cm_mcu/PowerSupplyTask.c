@@ -88,11 +88,9 @@ void PowerSupplyTask(void *parameters)
     bool blade_power_enable = (read_gpio_pin(BLADE_POWER_EN) == 1);
     if ( ! blade_power_enable  ) {
       disable_ps();
-      newstate = PWR_OFF;
     }
     else if ( ! alarm && ! cli_powerdown_request ) { // blade_power_enable and not alarm
       set_ps();
-      newstate = PWR_ON;
     }
     // now check the actual state
     bool psgood = check_ps();
