@@ -29,15 +29,16 @@ void setupActiveLowPins(void);
 // EEPROM buffer
 #define EBUF_MINBLK 2
 #define EBUF_MAXBLK 5
-#define EBUF_NGET 5			// Number of entries returned with errbuffer_get
 
 #define ERRDATA_OFFSET 8	// Number of bits reserved for error data
 #define ERRCODE_OFFSET 4	// Number of bits reserved for error codes
 #define COUNTER_OFFSET (16-ERRDATA_OFFSET-ERRCODE_OFFSET)	// Number of bits reserved for message counter
 
-#define ERRDATA_MASK 255
-#define ERRCODE_MASK 3840
-#define COUNTER_MASK 61440
+#define ERRDATA_MASK ((1<<(ERRDATA_OFFSET))-1)		//255
+#define ERRCODE_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET))-1-ERRDATA_MASK)		//3840
+#define COUNTER_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET+COUNTER_OFFSET))-1-ERRDATA_MASK-ERRCODE_MASK)		//61440
+
+#define COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
 // error codes
 #define RESTART 1

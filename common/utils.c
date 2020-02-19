@@ -174,17 +174,17 @@ void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata){
 	// If duplicated error code...
 	if(errcode == ebuf->last){
 
-		// if counter is not a multiple of 4, don't write new entry
-		if(oldcount%4!=0){ ebuf->counter=ebuf->counter+1; }
+		// if counter is not a multiple of COUNTER_UPDATE, don't write new entry
+		if(oldcount%COUNTER_UPDATE!=0){ ebuf->counter=ebuf->counter+1; }
 
 		// if counter has already reached max value, increment head
-		if(oldcount%16==0){	//Change this to use COUNTER_OFFSET
+		if(oldcount%(1<<COUNTER_OFFSET)==0){	//Change this to use COUNTER_OFFSET
 			ebuf->counter=0;
 			ebuf->head = increase_head(ebuf);
 			write_eeprom(0,increase_head(ebuf)); }
 
-		// if counter is multiple of 4, write entry and increment counter
-		if(oldcount%4==0){
+		// if counter is multiple of COUNTER_UPDATE, write entry and increment counter
+		if(oldcount%COUNTER_UPDATE==0){
 			ebuf->counter=ebuf->counter+1;
 			write_eeprom(errbuffer_entry(errcode,errdata),decrease_head(ebuf)); }
 	}

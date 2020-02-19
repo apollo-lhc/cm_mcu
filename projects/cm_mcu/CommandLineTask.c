@@ -939,7 +939,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
     uint16_t errcode = (entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
     uint16_t errdata = entry&ERRDATA_MASK;
     uint16_t counter = entry>>(16-COUNTER_OFFSET);
-    uint16_t realcount = counter*4+1;
+    uint16_t realcount = counter*COUNTER_UPDATE+1;
 
     uint16_t timestamp = (uint16_t)(word>>16);
     uint16_t days = timestamp/0x5a0;
