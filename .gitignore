@@ -1,6 +1,7 @@
 # backup files
 *~
 \#*\#
+*.swp
 
 # Prerequisites
 *.d
@@ -52,5 +53,7 @@
 
 .DS_Store
 common/version.h
-.settings/language.settings.xml
-.settings/language.settings.xml
+.settings/*
+.cproject
+.project
+*.prefs

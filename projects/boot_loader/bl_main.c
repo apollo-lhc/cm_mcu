@@ -43,7 +43,15 @@
 
 // PW customization
 #include "common/uart.h"
+#include "boot_loader/bl_userhooks.h"
 
+#ifdef DEBUG
+void
+__error__(char *pcFilename, uint32_t ui32Line)
+{
+}
+#endif
+// end  PW
 
 //*****************************************************************************
 //
@@ -182,8 +190,10 @@ SwapWord(uint32_t x)
 //! performed if required.
 //!
 //! \return None.
+// PW Comment: this is unused in Apollo as ov v0.20
 //
 //*****************************************************************************
+#ifdef NOTDEF
 void
 ConfigureDevice(void)
 {
@@ -196,6 +206,7 @@ ConfigureDevice(void)
   // Since the crystal frequency was specified, enable the main oscillator
   // and clock the processor from it.
   //
+
 #if defined(TARGET_IS_TM4C129_RA0) ||                                         \
     defined(TARGET_IS_TM4C129_RA1) ||                                         \
     defined(TARGET_IS_TM4C129_RA2)
@@ -237,158 +248,158 @@ ConfigureDevice(void)
   }
 #else
   HWREG(SYSCTL_RCC) &= ~(SYSCTL_RCC_MOSCDIS);
-Delay(524288);
-HWREG(SYSCTL_RCC) = ((HWREG(SYSCTL_RCC) & ~(SYSCTL_RCC_OSCSRC_M)) |
-    SYSCTL_RCC_OSCSRC_MAIN);
+  Delay(524288);
+  HWREG(SYSCTL_RCC) = ((HWREG(SYSCTL_RCC) & ~(SYSCTL_RCC_OSCSRC_M)) |
+		       SYSCTL_RCC_OSCSRC_MAIN);
 #endif
 #endif
 
 #ifdef I2C_ENABLE_UPDATE
-//
-// Enable the clocks to the I2C and GPIO modules.
-//
-HWREG(SYSCTL_RCGCGPIO) |= (I2C_SCLPIN_CLOCK_ENABLE |
-    I2C_SDAPIN_CLOCK_ENABLE);
-HWREG(SYSCTL_RCGCI2C) |= I2C_CLOCK_ENABLE;
+  //
+  // Enable the clocks to the I2C and GPIO modules.
+  //
+  HWREG(SYSCTL_RCGCGPIO) |= (I2C_SCLPIN_CLOCK_ENABLE |
+			     I2C_SDAPIN_CLOCK_ENABLE);
+  HWREG(SYSCTL_RCGCI2C) |= I2C_CLOCK_ENABLE;
 
-//
-// Configure the GPIO pins for hardware control, open drain with pull-up,
-// and enable them.
-//
-HWREG(I2C_SCLPIN_BASE + GPIO_O_AFSEL) |= I2C_CLK;
-HWREG(I2C_SCLPIN_BASE + GPIO_O_PCTL) |= I2C_CLK_PCTL;
-HWREG(I2C_SCLPIN_BASE + GPIO_O_DEN) |= I2C_CLK;
-HWREG(I2C_SCLPIN_BASE + GPIO_O_ODR) &= ~(I2C_CLK);
-HWREG(I2C_SCLPIN_BASE + GPIO_O_PUR) |= I2C_CLK;
+  //
+  // Configure the GPIO pins for hardware control, open drain with pull-up,
+  // and enable them.
+  //
+  HWREG(I2C_SCLPIN_BASE + GPIO_O_AFSEL) |= I2C_CLK;
+  HWREG(I2C_SCLPIN_BASE + GPIO_O_PCTL) |= I2C_CLK_PCTL;
+  HWREG(I2C_SCLPIN_BASE + GPIO_O_DEN) |= I2C_CLK;
+  HWREG(I2C_SCLPIN_BASE + GPIO_O_ODR) &= ~(I2C_CLK);
+  HWREG(I2C_SCLPIN_BASE + GPIO_O_PUR) |= I2C_CLK;
 
-HWREG(I2C_SDAPIN_BASE + GPIO_O_AFSEL) |= I2C_DATA;
-HWREG(I2C_SDAPIN_BASE + GPIO_O_PCTL) |= I2C_DATA_PCTL;
-HWREG(I2C_SDAPIN_BASE + GPIO_O_DEN) |= I2C_DATA;
-HWREG(I2C_SDAPIN_BASE + GPIO_O_ODR) |= I2C_DATA;
-HWREG(I2C_SDAPIN_BASE + GPIO_O_PUR) |= I2C_DATA;
+  HWREG(I2C_SDAPIN_BASE + GPIO_O_AFSEL) |= I2C_DATA;
+  HWREG(I2C_SDAPIN_BASE + GPIO_O_PCTL) |= I2C_DATA_PCTL;
+  HWREG(I2C_SDAPIN_BASE + GPIO_O_DEN) |= I2C_DATA;
+  HWREG(I2C_SDAPIN_BASE + GPIO_O_ODR) |= I2C_DATA;
+  HWREG(I2C_SDAPIN_BASE + GPIO_O_PUR) |= I2C_DATA;
 
-//
-// Enable the I2C Slave Mode.
-//
-HWREG(I2Cx_BASE + I2C_O_MCR) = I2C_MCR_MFE | I2C_MCR_SFE;
+  //
+  // Enable the I2C Slave Mode.
+  //
+  HWREG(I2Cx_BASE + I2C_O_MCR) = I2C_MCR_MFE | I2C_MCR_SFE;
 
-//
-// Setup the I2C Slave Address.
-//
-HWREG(I2Cx_BASE + I2C_O_SOAR) = I2C_SLAVE_ADDR;
+  //
+  // Setup the I2C Slave Address.
+  //
+  HWREG(I2Cx_BASE + I2C_O_SOAR) = I2C_SLAVE_ADDR;
 
-//
-// Enable the I2C Slave Device on the I2C bus.
-//
-HWREG(I2Cx_BASE + I2C_O_SCSR) = I2C_SCSR_DA;
+  //
+  // Enable the I2C Slave Device on the I2C bus.
+  //
+  HWREG(I2Cx_BASE + I2C_O_SCSR) = I2C_SCSR_DA;
 #endif
 
 #ifdef SSI_ENABLE_UPDATE
-//
-// Enable the clocks to the SSI and GPIO modules.
-//
-HWREG(SYSCTL_RCGCGPIO) |= (SSI_CLKPIN_CLOCK_ENABLE |
-    SSI_FSSPIN_CLOCK_ENABLE |
-    SSI_MISOPIN_CLOCK_ENABLE |
-    SSI_MOSIPIN_CLOCK_ENABLE);
-HWREG(SYSCTL_RCGCSSI) |= SSI_CLOCK_ENABLE;
+  //
+  // Enable the clocks to the SSI and GPIO modules.
+  //
+  HWREG(SYSCTL_RCGCGPIO) |= (SSI_CLKPIN_CLOCK_ENABLE |
+			     SSI_FSSPIN_CLOCK_ENABLE |
+			     SSI_MISOPIN_CLOCK_ENABLE |
+			     SSI_MOSIPIN_CLOCK_ENABLE);
+  HWREG(SYSCTL_RCGCSSI) |= SSI_CLOCK_ENABLE;
 
-//
-// Make the pin be peripheral controlled.
-//
-HWREG(SSI_CLKPIN_BASE + GPIO_O_AFSEL) |= SSI_CLK;
-HWREG(SSI_CLKPIN_BASE + GPIO_O_PCTL) |= SSI_CLK_PCTL;
-HWREG(SSI_CLKPIN_BASE + GPIO_O_DEN) |= SSI_CLK;
-HWREG(SSI_CLKPIN_BASE + GPIO_O_ODR) &= ~(SSI_CLK);
+  //
+  // Make the pin be peripheral controlled.
+  //
+  HWREG(SSI_CLKPIN_BASE + GPIO_O_AFSEL) |= SSI_CLK;
+  HWREG(SSI_CLKPIN_BASE + GPIO_O_PCTL) |= SSI_CLK_PCTL;
+  HWREG(SSI_CLKPIN_BASE + GPIO_O_DEN) |= SSI_CLK;
+  HWREG(SSI_CLKPIN_BASE + GPIO_O_ODR) &= ~(SSI_CLK);
 
-HWREG(SSI_FSSPIN_BASE + GPIO_O_AFSEL) |= SSI_CS;
-HWREG(SSI_FSSPIN_BASE + GPIO_O_PCTL) |= SSI_CS_PCTL;
-HWREG(SSI_FSSPIN_BASE + GPIO_O_DEN) |= SSI_CS;
-HWREG(SSI_FSSPIN_BASE + GPIO_O_ODR) &= ~(SSI_CS);
+  HWREG(SSI_FSSPIN_BASE + GPIO_O_AFSEL) |= SSI_CS;
+  HWREG(SSI_FSSPIN_BASE + GPIO_O_PCTL) |= SSI_CS_PCTL;
+  HWREG(SSI_FSSPIN_BASE + GPIO_O_DEN) |= SSI_CS;
+  HWREG(SSI_FSSPIN_BASE + GPIO_O_ODR) &= ~(SSI_CS);
 
-HWREG(SSI_MISOPIN_BASE + GPIO_O_AFSEL) |= SSI_TX;
-HWREG(SSI_MISOPIN_BASE + GPIO_O_PCTL) |= SSI_TX_PCTL;
-HWREG(SSI_MISOPIN_BASE + GPIO_O_DEN) |= SSI_TX;
-HWREG(SSI_MISOPIN_BASE + GPIO_O_ODR) &= ~(SSI_TX);
+  HWREG(SSI_MISOPIN_BASE + GPIO_O_AFSEL) |= SSI_TX;
+  HWREG(SSI_MISOPIN_BASE + GPIO_O_PCTL) |= SSI_TX_PCTL;
+  HWREG(SSI_MISOPIN_BASE + GPIO_O_DEN) |= SSI_TX;
+  HWREG(SSI_MISOPIN_BASE + GPIO_O_ODR) &= ~(SSI_TX);
 
-HWREG(SSI_MOSIPIN_BASE + GPIO_O_AFSEL) |= SSI_RX;
-HWREG(SSI_MOSIPIN_BASE + GPIO_O_PCTL) |= SSI_RX_PCTL;
-HWREG(SSI_MOSIPIN_BASE + GPIO_O_DEN) |= SSI_RX;
-HWREG(SSI_MOSIPIN_BASE + GPIO_O_ODR) &= ~(SSI_RX);
+  HWREG(SSI_MOSIPIN_BASE + GPIO_O_AFSEL) |= SSI_RX;
+  HWREG(SSI_MOSIPIN_BASE + GPIO_O_PCTL) |= SSI_RX_PCTL;
+  HWREG(SSI_MOSIPIN_BASE + GPIO_O_DEN) |= SSI_RX;
+  HWREG(SSI_MOSIPIN_BASE + GPIO_O_ODR) &= ~(SSI_RX);
 
-//
-// Set the SSI protocol to Motorola with default clock high and data
-// valid on the rising edge.
-//
-HWREG(SSIx_BASE + SSI_O_CR0) = (SSI_CR0_SPH | SSI_CR0_SPO |
-    (DATA_BITS_SSI - 1));
+  //
+  // Set the SSI protocol to Motorola with default clock high and data
+  // valid on the rising edge.
+  //
+  HWREG(SSIx_BASE + SSI_O_CR0) = (SSI_CR0_SPH | SSI_CR0_SPO |
+				  (DATA_BITS_SSI - 1));
 
-//
-// Enable the SSI interface in slave mode.
-//
-HWREG(SSIx_BASE + SSI_O_CR1) = SSI_CR1_MS | SSI_CR1_SSE;
+  //
+  // Enable the SSI interface in slave mode.
+  //
+  HWREG(SSIx_BASE + SSI_O_CR1) = SSI_CR1_MS | SSI_CR1_SSE;
 #endif
 
 #ifdef UART_ENABLE_UPDATE
-//
-// Enable the the clocks to the UART and GPIO modules.
-//
-HWREG(SYSCTL_RCGCGPIO) |= (UART_RXPIN_CLOCK_ENABLE |
-    UART_TXPIN_CLOCK_ENABLE);
-HWREG(SYSCTL_RCGCUART) |= UART_CLOCK_ENABLE;
+  //
+  // Enable the the clocks to the UART and GPIO modules.
+  //
+  HWREG(SYSCTL_RCGCGPIO) |= (UART_RXPIN_CLOCK_ENABLE |
+			     UART_TXPIN_CLOCK_ENABLE);
+  HWREG(SYSCTL_RCGCUART) |= UART_CLOCK_ENABLE;
 
-//
-// Keep attempting to sync until we are successful.
-//
+  //
+  // Keep attempting to sync until we are successful.
+  //
 #ifdef UART_AUTOBAUD
-while(UARTAutoBaud(&ui32ProcRatio) < 0)
-{
-}
+  while(UARTAutoBaud(&ui32ProcRatio) < 0)
+    {
+    }
 #else
-ui32ProcRatio = UART_BAUD_RATIO(UART_FIXED_BAUDRATE);
+  ui32ProcRatio = UART_BAUD_RATIO(UART_FIXED_BAUDRATE);
 #endif
 
-//
-// Make the pin be peripheral controlled.
-//
-HWREG(UART_RXPIN_BASE + GPIO_O_AFSEL) |= UART_RX;
-HWREG(UART_RXPIN_BASE + GPIO_O_PCTL) |= UART_RX_PCTL;
-HWREG(UART_RXPIN_BASE + GPIO_O_ODR) &= ~(UART_RX);
-HWREG(UART_RXPIN_BASE + GPIO_O_DEN) |= UART_RX;
+  //
+  // Make the pin be peripheral controlled.
+  //
+  HWREG(UART_RXPIN_BASE + GPIO_O_AFSEL) |= UART_RX;
+  HWREG(UART_RXPIN_BASE + GPIO_O_PCTL) |= UART_RX_PCTL;
+  HWREG(UART_RXPIN_BASE + GPIO_O_ODR) &= ~(UART_RX);
+  HWREG(UART_RXPIN_BASE + GPIO_O_DEN) |= UART_RX;
 
-HWREG(UART_TXPIN_BASE + GPIO_O_AFSEL) |= UART_TX;
-HWREG(UART_TXPIN_BASE + GPIO_O_PCTL) |= UART_TX_PCTL;
-HWREG(UART_TXPIN_BASE + GPIO_O_ODR) &= ~(UART_TX);
-HWREG(UART_TXPIN_BASE + GPIO_O_DEN) |= UART_TX;
+  HWREG(UART_TXPIN_BASE + GPIO_O_AFSEL) |= UART_TX;
+  HWREG(UART_TXPIN_BASE + GPIO_O_PCTL) |= UART_TX_PCTL;
+  HWREG(UART_TXPIN_BASE + GPIO_O_ODR) &= ~(UART_TX);
+  HWREG(UART_TXPIN_BASE + GPIO_O_DEN) |= UART_TX;
 
-//
-// Set the baud rate.
-//
-HWREG(UARTx_BASE + UART_O_IBRD) = ui32ProcRatio >> 6;
-HWREG(UARTx_BASE + UART_O_FBRD) = ui32ProcRatio & UART_FBRD_DIVFRAC_M;
+  //
+  // Set the baud rate.
+  //
+  HWREG(UARTx_BASE + UART_O_IBRD) = ui32ProcRatio >> 6;
+  HWREG(UARTx_BASE + UART_O_FBRD) = ui32ProcRatio & UART_FBRD_DIVFRAC_M;
 
-//
-// Set data length, parity, and number of stop bits to 8-N-1.
-//
-HWREG(UARTx_BASE + UART_O_LCRH) = UART_LCRH_WLEN_8 | UART_LCRH_FEN;
+  //
+  // Set data length, parity, and number of stop bits to 8-N-1.
+  //
+  HWREG(UARTx_BASE + UART_O_LCRH) = UART_LCRH_WLEN_8 | UART_LCRH_FEN;
 
-//
-// Enable RX, TX, and the UART.
-//
-HWREG(UARTx_BASE + UART_O_CTL) = (UART_CTL_UARTEN | UART_CTL_TXE |
-    UART_CTL_RXE);
+  //
+  // Enable RX, TX, and the UART.
+  //
+  HWREG(UARTx_BASE + UART_O_CTL) = (UART_CTL_UARTEN | UART_CTL_TXE |
+				    UART_CTL_RXE);
 
 #ifdef UART_AUTOBAUD
-//
-// Need to ack in the UART case to hold it up while we get things set up.
-//
-AckPacket();
+  //
+  // Need to ack in the UART case to hold it up while we get things set up.
+  //
+  AckPacket();
 #endif
 #endif
 
 
 }
-
+#endif
 //*****************************************************************************
 //
 //! This function performs the update on the selected port.
@@ -402,8 +413,12 @@ AckPacket();
 void
 Updater(void)
 {
-  UARTPrint(UART4_BASE, "-------------------\r\nCM MCU BOOT LOADER\r\n--------------------\r\n");
-  UARTPrint(UART4_BASE, "build version " FIRMWARE_VERSION "\r\n");
+  toggleLed(red);
+
+  UARTPrint(UARTx_BASE, "\r\n-------------------\r\nCM MCU Updater\r\n--------------------\r\n");
+  UARTPrint(UARTx_BASE, "build version " FIRMWARE_VERSION "\r\n");
+  while (ROM_UARTBusy(UARTx_BASE))
+    ;
 
 
   uint32_t ui32Size, ui32Temp, ui32FlashSize;

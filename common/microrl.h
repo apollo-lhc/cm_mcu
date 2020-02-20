@@ -1,7 +1,7 @@
 #ifndef _MICRORL_H_
 #define _MICRORL_H_
 
-#include "config.h"
+#include "rl_config.h"
 
 #include <stdbool.h>
 #include <stdint.h>

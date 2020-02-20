@@ -24,7 +24,7 @@
 #include "common/pinsel.h"
 #include "common/smbus.h"
 #include "common/utils.h"
-#include "microrl.h"
+#include "common/microrl.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"

@@ -2,7 +2,7 @@
 include ./makedefs
 
 
-DIRS=driverlib projects boot_loader
+DIRS=driverlib projects 
 DIRSCLEAN=$(addsuffix .clean,$(DIRS))
 
 all:  $(DIRS)
