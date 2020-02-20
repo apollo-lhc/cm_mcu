@@ -283,9 +283,10 @@ EnterBootLoader:
 #elif defined(USB_ENABLE_UPDATE)
     .extern ConfigureUSB
     bl      ConfigureUSB
-#else
-    .extern ConfigureDevice
-    bl      ConfigureDevice
+//#else
+// Not used in Apollo as of v0.20
+//   .extern ConfigureDevice
+//    bl      ConfigureDevice
 #endif
 
     //

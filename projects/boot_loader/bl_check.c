@@ -180,10 +180,6 @@ CheckGPIOForceUpdate(void)
 uint32_t
 CheckForceUpdate(void)
 {
-#ifdef CHECK_CRC
-    uint32_t ui32Retcode;
-#endif
-
 #ifdef BL_CHECK_UPDATE_FN_HOOK
     //
     // If the update check function is hooked, call the application to determine
@@ -217,7 +213,7 @@ CheckForceUpdate(void)
     //
 #ifdef CHECK_CRC
     InitCRC32Table();
-    ui32Retcode = CheckImageCRC32(pui32App);
+    uint32_t ui32Retcode = CheckImageCRC32(pui32App);
 
     //
     // If ENFORCE_CRC is defined, we only boot the image if the CRC is
