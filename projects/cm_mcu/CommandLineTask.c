@@ -570,14 +570,14 @@ static BaseType_t ff_ctl(int argc, char ** argv)
   }
 
   if ( argc == 1 ) { // default command: temps
-
+	uint32_t ff_config = read_eeprom_single(0x44);
     if ( whichff == 0 ) {
       copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
     }
     for ( ; whichff < NFIREFLIES; ++whichff ) {
       int8_t val = getFFvalue(whichff);
       const char *name = getFFname(whichff);
-      if ( val > 0 )
+      if ( (1<<whichff)&ff_config )//val > 0 )
         copied += snprintf(m+copied, s-copied, "%17s: %2d", name, val);
       else // dummy value
         copied += snprintf(m+copied, s-copied, "%17s: %2s", name, "--");
@@ -793,8 +793,10 @@ static BaseType_t eeprom_read(int argc, char ** argv)
 
   uint64_t data = read_eeprom_multi(addr);
   copied += snprintf(m+copied, s-copied,
-		     "Data read from EEPROM block %d: %08x%08x\r\n",
-		     block,data);
+		     "Data read from EEPROM block %d: %08x %08x\r\n",
+		     block,(data>>32)&0xFFFFFFFFU,data&0xFFFFFFFFU);
+  	  	  	 //block,data);
+  	  	  	 // TODO: Figure this out
 
   return pdFALSE;
 }
@@ -808,7 +810,7 @@ static BaseType_t eeprom_write(int argc, char ** argv)
   data = strtoul(argv[2],NULL,16);
   addr = strtoul(argv[1],NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  if((block==1)|((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
+  if((block==1)||((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
     copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
     return pdFALSE;
   }
@@ -883,17 +885,9 @@ static BaseType_t set_board_id_password(int argc, char ** argv)
 static BaseType_t board_id_info(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;;
-  uint64_t sn_addr = 0x0040;
-  uint64_t ff_addr = sn_addr + 0x4;
-  uint64_t sn,ff;
 
-  uint64_t sn_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(sn_addr<<32);
-  xQueueSendToBack(xEPRMQueue_in, &sn_message, portMAX_DELAY);
-  xQueueReceive(xEPRMQueue_out, &sn, portMAX_DELAY);
-
-  uint64_t ff_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(ff_addr<<32);
-  xQueueSendToBack(xEPRMQueue_in, &ff_message, portMAX_DELAY);
-  xQueueReceive(xEPRMQueue_out, &ff, portMAX_DELAY);
+  uint32_t sn = read_eeprom_single(SN_ADDR);
+  uint32_t ff = read_eeprom_single(FF_ADDR);
 
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn)&0xff;
@@ -903,7 +897,6 @@ static BaseType_t board_id_info(int argc, char ** argv)
   copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);
   copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
   copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
-  // TODO: Figure out the best way to organize firefly information
 
   return pdFALSE;
 }
