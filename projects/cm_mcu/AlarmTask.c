@@ -27,6 +27,7 @@ enum alarm_state {ALM_UNKNOWN, ALM_GOOD, ALM_BAD};
 
 // Status of the alarm task
 static uint32_t status = 0x0;
+uint32_t oldstatus;
 
 // read-only, so no need to use queue
 uint32_t getAlarmStatus()
@@ -54,6 +55,7 @@ void AlarmTask(void *parameters)
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint32_t message; // this must be in a semi-permanent scope
+  uint16_t errbuf_data,errbuf_olddata;
   enum temp_state current_temp_state = TEMP_UNKNOWN;
   float buffer_maxtemp = INITIAL_ALARM_TEMP;
 
@@ -82,10 +84,11 @@ void AlarmTask(void *parameters)
     // microcontroller
     float tm4c_temp = getADCvalue(ADC_INFO_TEMP_ENTRY);
     if ( tm4c_temp > alarm_temp ) status |= ALM_STAT_TM4C_OVERTEMP;
-    if ((tm4c_temp-buffer_maxtemp)/5>0) buffer_maxtemp=tm4c_temp;
+    buffer_maxtemp=tm4c_temp;
     // FPGA
     float max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
     if ( max_fpga > alarm_temp) status |= ALM_STAT_FPGA_OVERTEMP;
+    if (max_fpga>buffer_maxtemp){ buffer_maxtemp=max_fpga;}
 
     // DCDC. The first command is READ_TEMPERATURE_1.
     // I am assuming it stays that way!!!!!!!!
@@ -99,6 +102,7 @@ void AlarmTask(void *parameters)
       }
     }
     if ( max_dcdc_temp > alarm_temp ) status |= ALM_STAT_DCDC_OVERTEMP;
+    if (max_dcdc_temp>buffer_maxtemp){ buffer_maxtemp=max_dcdc_temp;}
     // Fireflies. These are reported as ints but we are asked
     // to report a float.
     int8_t imax_ff_temp = -99;
@@ -108,19 +112,24 @@ void AlarmTask(void *parameters)
         imax_ff_temp = v;
     }
     if ( (float)imax_ff_temp > alarm_temp ) status |= ALM_STAT_FIREFLY_OVERTEMP;
+    if (imax_ff_temp>buffer_maxtemp){ buffer_maxtemp=imax_ff_temp;}
 
     if ( status && current_temp_state != TEMP_BAD ) {
     	// If temp goes from good to bad, turn on alarm, send error message to buffer
     	// data field takes the status bitmask plus temp divided by 4 (rounded)
-      uint16_t errbuf_data=((uint16_t)status<<4)|((uint16_t)(buffer_maxtemp+2)>>2);
-      errbuffer_put(ebuf, TEMP_HIGH,errbuf_data);
+      errbuf_data=(0x0FFFFFFFU)&(uint8_t)buffer_maxtemp;
+      if ((errbuf_data!=errbuf_olddata)||(status!=oldstatus)){
+    	  errbuffer_put(ebuf, TEMP_HIGH(status),errbuf_data);
+      	  errbuf_olddata=errbuf_data;
+      	  oldstatus=status;}
       message = TEMP_ALARM;
       xQueueSendToFront(xPwrQueue, &message, pdMS_TO_TICKS(100));
       current_temp_state = TEMP_BAD;
     }
     else if ( !status && current_temp_state == TEMP_BAD ) {
     	// If temp goes from bad to good, turn off alarm, send message to buffer
-      errbuffer_put(ebuf, TEMP_NORMAL, 0);
+      errbuf_data=(0x0FFFFFFFU&(uint8_t)buffer_maxtemp);
+      errbuffer_put(ebuf, TEMP_NORMAL, errbuf_data);
       buffer_maxtemp = INITIAL_ALARM_TEMP;
       message = TEMP_ALARM_CLEAR;
       xQueueSendToFront(xPwrQueue, &message, pdMS_TO_TICKS(100));

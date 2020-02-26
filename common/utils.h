@@ -33,22 +33,23 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_MINBLK 2
 #define EBUF_MAXBLK 5
 
-#define ERRDATA_OFFSET 8	// Number of bits reserved for error data
-#define ERRCODE_OFFSET 4	// Number of bits reserved for error codes
+#define ERRDATA_OFFSET 7	// Number of bits reserved for error data
+#define ERRCODE_OFFSET 5	// Number of bits reserved for error codes
 #define COUNTER_OFFSET (16-ERRDATA_OFFSET-ERRCODE_OFFSET)	// Number of bits reserved for message counter
 
-#define ERRDATA_MASK ((1<<(ERRDATA_OFFSET))-1)		//255
-#define ERRCODE_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET))-1-ERRDATA_MASK)		//3840
-#define COUNTER_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET+COUNTER_OFFSET))-1-ERRDATA_MASK-ERRCODE_MASK)		//61440
+#define ERRDATA_MASK ((1<<(ERRDATA_OFFSET))-1)
+#define ERRCODE_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET))-1-ERRDATA_MASK)
+#define COUNTER_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET+COUNTER_OFFSET))-1-ERRDATA_MASK-ERRCODE_MASK)
 
 #define COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
 // error codes
 #define RESTART 1
 #define RESET_BUFFER 2
-#define TEMP_HIGH 3
-#define TEMP_NORMAL 4
-#define PWR_OFF_TEMP 5 // add other pwr_off codes for different reasons
+#define PWR_OFF_TEMP 3 // add other pwr_off codes for different reasons
+
+#define TEMP_HIGH(status) ((1<<(ERRCODE_OFFSET-1))|status)
+#define TEMP_NORMAL TEMP_HIGH(0)
 
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
