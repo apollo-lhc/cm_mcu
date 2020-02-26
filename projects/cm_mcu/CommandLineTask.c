@@ -792,11 +792,11 @@ static BaseType_t eeprom_read(int argc, char ** argv)
   uint32_t block = EEPROMBlockFromAddr(addr);
 
   uint64_t data = read_eeprom_multi(addr);
+  uint32_t data2 = (uint32_t)(data>>32);
+  uint32_t data1 = (uint32_t)data;
   copied += snprintf(m+copied, s-copied,
 		     "Data read from EEPROM block %d: %08x %08x\r\n",
-		     block,(data>>32)&0xFFFFFFFFU,data&0xFFFFFFFFU);
-  	  	  	 //block,data);
-  	  	  	 // TODO: Figure this out
+		     block,data1,data2);
 
   return pdFALSE;
 }
