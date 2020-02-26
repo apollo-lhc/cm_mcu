@@ -115,13 +115,13 @@ void update_min() {
 
 const char* getFFname(const uint8_t i)
 {
-  configASSERT(i>=0&&i<NFIREFLIES);
+  configASSERT(i<NFIREFLIES);
   return ff_i2c_addrs[i].name;
 }
 
 int8_t getFFvalue(const uint8_t i)
 {
-  configASSERT(i>=0&&i<NFIREFLIES);
+  configASSERT(i<NFIREFLIES);
   return ff_temp[i];
 }
 

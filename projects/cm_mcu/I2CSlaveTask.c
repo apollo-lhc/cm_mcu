@@ -181,7 +181,6 @@ void I2CSlaveTask(void *parameters)
 #endif
     }
     else if  ( interruptStatus & I2C_SLAVE_INT_DATA )  {
-      uint8_t b;
       if ( status == I2C_SLAVE_ACT_TREQ ) { // transmission request
         switch (theState) {
         case I2C_READY: // non-register transmit request
@@ -191,14 +190,16 @@ void I2CSlaveTask(void *parameters)
           theState = I2C_READY;
           break;
         case I2C_FIRSTBYTE: // we received a byte and are now asked to transmit
+        {
           // register read
-          b = getSlaveData(addr);
+          uint8_t b = getSlaveData(addr);
 #ifdef DEBUG_I2CSLAVE
           snprintf(tmp, 64, "byte 1 sent %x\r\n",b); Print(tmp);
 #endif
           ROM_I2CSlaveDataPut(I2C0_BASE, b);
           theState = I2C_READY;
           break;
+        }
         default:
           // error ? return to I2C ready state
           theState = I2C_READY;
