@@ -35,12 +35,21 @@ extern QueueHandle_t xLedQueue;
 void LedTask(void *parameters);
 
 // this should go elsewhere
-#define RED_LED_OFF     (25)
-#define RED_LED_ON      (26)
-#define RED_LED_TOGGLE  (27)
-#define RED_LED_TOGGLE3 (28)
-#define RED_LED_TOGGLE4 (29)
-
+#define RED_LED_OFF       (25)
+#define RED_LED_ON        (26)
+#define RED_LED_TOGGLE    (27)
+#define RED_LED_TOGGLE3   (28)
+#define RED_LED_TOGGLE4   (29)
+#define BLUE_LED_OFF      (30)
+#define BLUE_LED_ON       (31)
+#define BLUE_LED_TOGGLE   (32)
+#define BLUE_LED_TOGGLE3  (33)
+#define BLUE_LED_TOGGLE4  (34)
+#define GREEN_LED_OFF     (35)
+#define GREEN_LED_ON      (36)
+#define GREEN_LED_TOGGLE  (37)
+#define GREEN_LED_TOGGLE3 (38)
+#define GREEN_LED_TOGGLE4 (39)
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task

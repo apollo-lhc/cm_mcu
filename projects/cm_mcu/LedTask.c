@@ -66,8 +66,39 @@ void LedTask(void *parameters)
       case RED_LED_TOGGLE4:
         redLedPattern = TOGGLE4;
         break;
+      case BLUE_LED_ON:
+        blueLedPattern = ON;
+        break;
+      case BLUE_LED_OFF:
+        blueLedPattern = OFF;
+        break;
+      case BLUE_LED_TOGGLE:
+        blueLedPattern = TOGGLE;
+        break;
+      case BLUE_LED_TOGGLE3:
+        blueLedPattern = TOGGLE3;
+        break;
+      case BLUE_LED_TOGGLE4:
+        blueLedPattern = TOGGLE4;
+        break;
+        // GREEN
+      case GREEN_LED_ON:
+        greenLedPattern = ON;
+        break;
+      case GREEN_LED_OFF:
+        greenLedPattern = OFF;
+        break;
+      case GREEN_LED_TOGGLE:
+        greenLedPattern = TOGGLE;
+        break;
+      case GREEN_LED_TOGGLE3:
+        greenLedPattern = TOGGLE3;
+        break;
+      case GREEN_LED_TOGGLE4:
+        greenLedPattern = TOGGLE4;
+        break;
       default:
-        toggle_gpio_pin(TM4C_LED_BLUE); // message I don't understand? Toggle blue LED
+        blueLedPattern = TOGGLE4; // message I don't understand? Toggle blue LED
         break;
       }
     }

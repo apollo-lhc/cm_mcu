@@ -360,13 +360,15 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
         tens,frac);
     copied += snprintf(m+copied, s-copied, "Raw: 0x%08x\r\n", stat);
     copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s\r\n",
-        stat&ALM_STAT_TM4C_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD");
     copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s\r\n",
-        stat&ALM_STAT_FPGA_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD");
     copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s\r\n",
-        stat&ALM_STAT_FIREFLY_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD");
     copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s\r\n",
-        stat&ALM_STAT_DCDC_OVERTEMP?"ALARM":"GOOD");
+        (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD");
+    configASSERT(copied < SCRATCH_SIZE);
+
     return pdFALSE;
   }
   else if ( strcmp(argv[1], "settemp") == 0 ) {
@@ -411,6 +413,8 @@ static BaseType_t i2c_scan(int argc, char ** argv)
     configASSERT(copied < s);
   }
   copied += snprintf(m+copied, s-copied,"\r\n");
+  configASSERT(copied < SCRATCH_SIZE);
+
   return pdFALSE;
 }
 
@@ -546,6 +550,8 @@ static BaseType_t ver_ctl(int argc, char ** argv)
   int copied = 0, s = SCRATCH_SIZE;
   copied += snprintf(m+copied, s-copied, "Version %s built at %s.\r\n",
       gitVersion(), buildTime()) ;
+  configASSERT(copied < SCRATCH_SIZE);
+
   return pdFALSE;
 }
 
@@ -601,7 +607,7 @@ static BaseType_t ff_ctl(int argc, char ** argv)
   }
   else { // more than one argument, check which command
     if ( argc == 2 ) {
-      copied += snprintf(m+copied, s-copied, "%s: command %s needs an argument\r\n",
+      snprintf(m+copied, s-copied, "%s: command %s needs an argument\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
@@ -624,12 +630,12 @@ static BaseType_t ff_ctl(int argc, char ** argv)
       }
     }
     else {
-      copied += snprintf(m+copied,s-copied, "%s: command %s not recognized\r\n",
+      snprintf(m+copied,s-copied, "%s: command %s not recognized\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
     xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
-    copied += snprintf(m+copied,s-copied, "%s: command %s %s sent.\r\n",
+    snprintf(m+copied,s-copied, "%s: command %s %s sent.\r\n",
         argv[0], argv[1],c);
 
   } // end commands with arguments
@@ -657,7 +663,7 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
   }
   else if (argc != 1 ) {
     // error, invalid
-    snprintf(m,s, "%s: invalid argument count %d\r\n", argv[0]);
+    snprintf(m,s, "%s: invalid argument count %d\r\n", argv[0], argc);
     return pdFALSE;
   }
   else {
@@ -996,7 +1002,7 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 {
   TaskStatus_t *pxTaskStatusArray;
   volatile UBaseType_t uxArraySize, x;
-  uint32_t ulTotalRunTime, ulStatsAsPercentage;
+  uint32_t ulTotalRunTime;
 
   // Make sure the write buffer does not contain a string.
   *pcWriteBuffer = 0x00;
@@ -1027,7 +1033,7 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
         // What percentage of the total run time has the task used?
         // This will always be rounded down to the nearest integer.
         // ulTotalRunTimeDiv100 has already been divided by 100.
-        ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
+        uint32_t ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
 
         if( ulStatsAsPercentage > 0UL )
         {

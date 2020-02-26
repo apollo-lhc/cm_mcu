@@ -17,7 +17,7 @@
 #include "stream_buffer.h"
 
 // Command line interface
-void vCommandLineTask(void *parameters);
+void vCommandLineTask(void *pvParameters);
 
 
 typedef struct {
