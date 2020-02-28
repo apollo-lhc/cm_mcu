@@ -116,9 +116,9 @@ void AlarmTask(void *parameters)
 
     if ( status && current_temp_state != TEMP_BAD ) {
     	// If temp goes from good to bad, turn on alarm, send error message to buffer
-    	// data field takes the status bitmask plus temp divided by 4 (rounded)
       errbuf_data=(0x0FFFFFFFU)&(uint8_t)buffer_maxtemp;
       if ((errbuf_data!=errbuf_olddata)||(status!=oldstatus)){
+    	  // only send message when status or temp have changed, to avoid filling up buffer
     	  errbuffer_put(ebuf, TEMP_HIGH(status),errbuf_data);
       	  errbuf_olddata=errbuf_data;
       	  oldstatus=status;}

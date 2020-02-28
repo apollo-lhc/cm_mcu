@@ -944,22 +944,29 @@ static BaseType_t errbuff_out(int argc, char **argv)
     uint16_t days = timestamp/0x5a0;
     uint16_t hours = (timestamp%0x5a0)/0x3c;
     uint16_t minutes = timestamp%0x3c;
-    switch(errcode) {
-    case RESTART:
-      copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x RESTART\r\n", days, hours,
-			 minutes, counter);
-      break;
-    case RESET_BUFFER:
-      copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
-			 hours, minutes,counter);
-      break;
-    default:
-      copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
-			 minutes, realcount, errcode,errdata);
-      break;
+    if(errcode&(1<<(ERRCODE_OFFSET-1))){
+    	uint8_t status = errcode&((1<<(ERRCODE_OFFSET-1))-1);
+    	copied += snprintf(m+copied, s-copied,
+    				 "%02u %02u:%02u \t %x TEMP %03u %01x\r\n", days, hours,
+    				 minutes, counter, errdata, status);
+    } else{
+		switch(errcode) {
+		case RESTART:
+		  copied += snprintf(m+copied, s-copied,
+				 "%02u %02u:%02u \t %x RESTART\r\n", days, hours,
+				 minutes, counter);
+		  break;
+		case RESET_BUFFER:
+		  copied += snprintf(m+copied, s-copied,
+				 "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
+				 hours, minutes,counter);
+		  break;
+		default:
+		  copied += snprintf(m+copied, s-copied,
+				 "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
+				 minutes, realcount, errcode,errdata);
+		  break;
+		}
     }
     i++;
   }
