@@ -104,8 +104,8 @@ extern QueueHandle_t xAlmQueue;
 
 
 void AlarmTask(void *parameters);
-float getAlarmTemperature();
-void setAlarmTemperature(const float);
+float getAlarmTemperature(uint8_t device);
+void setAlarmTemperature(uint8_t device, const float);
 uint32_t getAlarmStatus();
 
 // Monitoring using the ADC inputs

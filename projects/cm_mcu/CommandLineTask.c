@@ -333,7 +333,7 @@ static BaseType_t power_ctl(int argc, char ** argv)
   return pdFALSE;
 }
 
-// takes one argument
+// takes 1-2 arguments
 static BaseType_t alarm_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
@@ -354,35 +354,52 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
     int copied = 0;
     copied += snprintf(m+copied,s-copied, "%s: ALARM status\r\n", argv[0]);
     int32_t stat = getAlarmStatus();
-    float val = getAlarmTemperature();
-    int tens = val; int frac = ABS((tens-val))*100;
-    copied += snprintf(m+copied, s-copied, "Temperature threshold: %02d.%02d\n\r",
-        tens,frac);
+    float ff_val = getAlarmTemperature(ALM_STAT_FIREFLY_OVERTEMP);
+    float dcdc_val = getAlarmTemperature(ALM_STAT_DCDC_OVERTEMP);
+    float fpga_val = getAlarmTemperature(ALM_STAT_FPGA_OVERTEMP);
+    float tm4c_val = getAlarmTemperature(ALM_STAT_TM4C_OVERTEMP);
+    int ff_tens = ff_val; int ff_frac = ABS((ff_tens-ff_val))*100;
+    int fpga_tens = fpga_val; int fpga_frac = ABS((fpga_tens-fpga_val))*100;
+    int dcdc_tens = dcdc_val; int dcdc_frac = ABS((dcdc_tens-dcdc_val))*100;
+    int tm4c_tens = tm4c_val; int tm4c_frac = ABS((tm4c_tens-tm4c_val))*100;
+    //copied += snprintf(m+copied, s-copied, "Temperature threshold: %02d.%02d\n\r",
+    //    tens,frac);
     copied += snprintf(m+copied, s-copied, "Raw: 0x%08x\r\n", stat);
-    copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s\r\n",
-        (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD");
-    copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s\r\n",
-        (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD");
-    copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s\r\n",
-        (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD");
-    copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s\r\n",
-        (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD",tm4c_tens,tm4c_frac);
+    copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD",fpga_tens,fpga_frac);
+    copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD",ff_tens,ff_frac);
+    copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD",dcdc_tens,dcdc_frac);
     configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
   }
   else if ( strcmp(argv[1], "settemp") == 0 ) {
     char *ptr;
-    float newtemp = strtol(argv[2],&ptr,10);
-    setAlarmTemperature(newtemp);
-    snprintf(m,s, "%s: set alarm temperature to %s\r\n", argv[0], argv[2]);
-    return pdFALSE;
+    float newtemp = strtol(argv[3],&ptr,10);
+    char* device = argv[2];
+    if(!strcmp(device,"ff")){setAlarmTemperature(ALM_STAT_FIREFLY_OVERTEMP,newtemp);
+    	snprintf(m,s, "%s: set Firefly alarm temperature to %s\r\n", argv[0], argv[3]);
+        return pdFALSE; }
+    if(!strcmp(device,"fpga")){ setAlarmTemperature(ALM_STAT_FPGA_OVERTEMP,newtemp);
+		snprintf(m,s, "%s: set FPGA alarm temperature to %s\r\n", argv[0], argv[3]);
+		return pdFALSE; }
+    if(!strcmp(device,"dcdc")){ setAlarmTemperature(ALM_STAT_DCDC_OVERTEMP,newtemp);
+		snprintf(m,s, "%s: set DCDC alarm temperature to %s\r\n", argv[0], argv[3]);
+		return pdFALSE; }
+	if(!strcmp(device,"tm4c")){ setAlarmTemperature(ALM_STAT_TM4C_OVERTEMP,newtemp);
+		snprintf(m,s, "%s: set TM4C alarm temperature to %s\r\n", argv[0], argv[3]);
+		return pdFALSE; }
+	else{ snprintf(m,s, "%s is not a valid device.\r\n", argv[2]);
+		return pdFALSE; }
   }
   else {
-    snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1]);
+    snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1] );
     return pdFALSE;
   }
-
   return pdFALSE;
 }
 

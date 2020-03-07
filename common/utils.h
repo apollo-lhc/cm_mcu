@@ -46,7 +46,9 @@ uint64_t read_eeprom_multi(uint32_t addr);
 // error codes
 #define RESTART 1
 #define RESET_BUFFER 2
-#define PWR_OFF_TEMP 3 // add other pwr_off codes for different reasons
+#define POWER_OFF 3
+#define POWER_OFF_TEMP 4
+#define POWER_ON 5
 
 #define TEMP_HIGH(status) ((1<<(ERRCODE_OFFSET-1))|status)
 #define TEMP_NORMAL TEMP_HIGH(0)
