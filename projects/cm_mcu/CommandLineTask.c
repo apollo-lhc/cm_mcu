@@ -354,10 +354,10 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
     int copied = 0;
     copied += snprintf(m+copied,s-copied, "%s: ALARM status\r\n", argv[0]);
     int32_t stat = getAlarmStatus();
-    float ff_val = getAlarmTemperature(ALM_STAT_FIREFLY_OVERTEMP);
-    float dcdc_val = getAlarmTemperature(ALM_STAT_DCDC_OVERTEMP);
-    float fpga_val = getAlarmTemperature(ALM_STAT_FPGA_OVERTEMP);
-    float tm4c_val = getAlarmTemperature(ALM_STAT_TM4C_OVERTEMP);
+    float ff_val = getAlarmTemperature(FF);
+    float dcdc_val = getAlarmTemperature(DCDC);
+    float fpga_val = getAlarmTemperature(FPGA);
+    float tm4c_val = getAlarmTemperature(TM4C);
     int ff_tens = ff_val; int ff_frac = ABS((ff_tens-ff_val))*100;
     int fpga_tens = fpga_val; int fpga_frac = ABS((fpga_tens-fpga_val))*100;
     int dcdc_tens = dcdc_val; int dcdc_frac = ABS((dcdc_tens-dcdc_val))*100;
@@ -381,16 +381,16 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
     char *ptr;
     float newtemp = strtol(argv[3],&ptr,10);
     char* device = argv[2];
-    if(!strcmp(device,"ff")){setAlarmTemperature(ALM_STAT_FIREFLY_OVERTEMP,newtemp);
+    if(!strcmp(device,"ff")){setAlarmTemperature(FF,newtemp);
     	snprintf(m,s, "%s: set Firefly alarm temperature to %s\r\n", argv[0], argv[3]);
         return pdFALSE; }
-    if(!strcmp(device,"fpga")){ setAlarmTemperature(ALM_STAT_FPGA_OVERTEMP,newtemp);
+    if(!strcmp(device,"fpga")){ setAlarmTemperature(FPGA,newtemp);
 		snprintf(m,s, "%s: set FPGA alarm temperature to %s\r\n", argv[0], argv[3]);
 		return pdFALSE; }
-    if(!strcmp(device,"dcdc")){ setAlarmTemperature(ALM_STAT_DCDC_OVERTEMP,newtemp);
+    if(!strcmp(device,"dcdc")){ setAlarmTemperature(DCDC,newtemp);
 		snprintf(m,s, "%s: set DCDC alarm temperature to %s\r\n", argv[0], argv[3]);
 		return pdFALSE; }
-	if(!strcmp(device,"tm4c")){ setAlarmTemperature(ALM_STAT_TM4C_OVERTEMP,newtemp);
+	if(!strcmp(device,"tm4c")){ setAlarmTemperature(TM4C,newtemp);
 		snprintf(m,s, "%s: set TM4C alarm temperature to %s\r\n", argv[0], argv[3]);
 		return pdFALSE; }
 	else{ snprintf(m,s, "%s is not a valid device.\r\n", argv[2]);
@@ -964,25 +964,25 @@ static BaseType_t errbuff_out(int argc, char **argv)
     if(errcode&(1<<(ERRCODE_OFFSET-1))){
     	uint8_t status = errcode&((1<<(ERRCODE_OFFSET-1))-1);
     	copied += snprintf(m+copied, s-copied,
-    				 "%02u %02u:%02u \t %x TEMP %03u %01x\r\n", days, hours,
-    				 minutes, counter, errdata, status);
-    } else{
+    			"%02u %02u:%02u \t %x TEMP %03u %01x\r\n", days, hours,
+    			minutes, counter, errdata, status);
+    }
+    else{
 		switch(errcode) {
-		case RESTART:
-		  copied += snprintf(m+copied, s-copied,
-				 "%02u %02u:%02u \t %x RESTART\r\n", days, hours,
-				 minutes, counter);
-		  break;
-		case RESET_BUFFER:
-		  copied += snprintf(m+copied, s-copied,
-				 "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
-				 hours, minutes,counter);
-		  break;
+		case EBUF_RESTART:
+			copied += snprintf(m+copied, s-copied,
+				"%02u %02u:%02u \t %x RESTART\r\n", days, hours, minutes, counter);
+			break;
+		case EBUF_RESET_BUFFER:
+			copied += snprintf(m+copied, s-copied,
+				"%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
+				hours, minutes,counter);
+			break;
 		default:
-		  copied += snprintf(m+copied, s-copied,
-				 "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
-				 minutes, realcount, errcode,errdata);
-		  break;
+			copied += snprintf(m+copied, s-copied,
+				"%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
+				minutes, realcount, errcode,errdata);
+			break;
 		}
     }
     i++;

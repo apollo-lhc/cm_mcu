@@ -165,7 +165,7 @@ void errbuffer_reset(errbuf_handle_t ebuf){
 	ebuf->head = ebuf->minaddr;
 	ebuf->counter=0;
 	ebuf->last=0;
-	errbuffer_put(ebuf, RESET_BUFFER,0);
+	errbuffer_put(ebuf, EBUF_RESET_BUFFER,0);
 	return;
 }
 

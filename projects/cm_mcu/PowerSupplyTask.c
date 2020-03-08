@@ -57,7 +57,7 @@ void PowerSupplyTask(void *parameters)
     if ( xQueueReceive(xPwrQueue, &message, 0) ) { // TODO: what if I receive more than one message
       switch (message ) {
       case PS_OFF:
-    	errbuffer_put(ebuf,POWER_OFF,0);
+    	errbuffer_put(ebuf,EBUF_POWER_OFF,0);
         cli_powerdown_request = true;
         disable_ps();
         break;
@@ -69,7 +69,7 @@ void PowerSupplyTask(void *parameters)
         alarm = false;
         break;
       case PS_ON:
-      	errbuffer_put(ebuf,POWER_ON,0);
+      	errbuffer_put(ebuf,EBUF_POWER_ON,0);
         cli_powerdown_request = false;
         set_ps();
         break;

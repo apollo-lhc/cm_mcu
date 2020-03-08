@@ -102,6 +102,9 @@ extern QueueHandle_t xAlmQueue;
 #define TEMP_ALARM_CLEAR_ALL 1
 #define TEMP_ALARM_CLEAR_FPGA 2 // ...
 
+enum device {FF,DCDC,TM4C,FPGA};
+
+
 
 void AlarmTask(void *parameters);
 float getAlarmTemperature(uint8_t device);

@@ -24,7 +24,6 @@ enum temp_state {TEMP_UNKNOWN, TEMP_GOOD, TEMP_BAD};
 enum alarm_state {ALM_UNKNOWN, ALM_GOOD, ALM_BAD};
 
 
-
 // Status of the alarm task
 static uint32_t status = 0x0;
 uint32_t oldstatus;
@@ -44,26 +43,26 @@ static float alarm_temp_dcdc = INITIAL_ALARM_TEMP_DCDC;
 static float alarm_temp_tm4c = INITIAL_ALARM_TEMP_TM4C;
 static float alarm_temp_fpga = INITIAL_ALARM_TEMP_FPGA;
 
-float getAlarmTemperature(uint8_t device)
+float getAlarmTemperature(enum device device_name)
 {
-	switch(device){
-	case ALM_STAT_TM4C_OVERTEMP: return alarm_temp_tm4c;
-	case ALM_STAT_DCDC_OVERTEMP: return alarm_temp_dcdc;
-	case ALM_STAT_FPGA_OVERTEMP: return alarm_temp_fpga;
-	case ALM_STAT_FIREFLY_OVERTEMP: return alarm_temp_ff;
-	default: return 0;
+	switch(device_name){
+		case TM4C: return alarm_temp_tm4c;
+		case DCDC: return alarm_temp_dcdc;
+		case FPGA: return alarm_temp_fpga;
+		case FF: return alarm_temp_ff;
+		default: return 0;
 	}
 }
 
-void setAlarmTemperature(uint8_t device,const float newtemp)
-{	// I just used these macros because they already exist. If it is confusing I can make other ones
-	switch(device){
-		case ALM_STAT_TM4C_OVERTEMP: alarm_temp_tm4c = newtemp; return;
-		case ALM_STAT_DCDC_OVERTEMP: alarm_temp_dcdc = newtemp; return;
-		case ALM_STAT_FPGA_OVERTEMP:   alarm_temp_fpga = newtemp; return;
-		case ALM_STAT_FIREFLY_OVERTEMP: alarm_temp_ff = newtemp; return;
+void setAlarmTemperature(enum device device_name,const float newtemp)
+{
+	switch(device_name){
+		case TM4C: alarm_temp_tm4c = newtemp; return;
+		case DCDC: alarm_temp_dcdc = newtemp; return;
+		case FPGA:   alarm_temp_fpga = newtemp; return;
+		case FF: alarm_temp_ff = newtemp; return;
 		default: return;
-		}
+	}
 }
 
 
@@ -72,7 +71,7 @@ void AlarmTask(void *parameters)
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint32_t message; // this must be in a semi-permanent scope
-  uint16_t errbuf_data,errbuf_olddata;
+  uint16_t errbuf_data,errbuf_olddata=0;
   enum temp_state current_temp_state = TEMP_UNKNOWN;
   float temp_over_ff, temp_over_fpga, temp_over_tm4c, temp_over_dcdc, temp_over_max, worst_temp;
   // todo: should be able to do this w just max_temp_over and worst_temp, just to clean it up
@@ -148,7 +147,7 @@ void AlarmTask(void *parameters)
       errbuf_data=(0x0FFFFFFFU)&(uint8_t)worst_temp;
       if ((errbuf_data!=errbuf_olddata)||(status!=oldstatus)){
     	  // only send message when status or temp have changed, to avoid filling up buffer
-    	  errbuffer_put(ebuf, TEMP_HIGH(status),errbuf_data);
+    	  errbuffer_put(ebuf, EBUF_TEMP_HIGH(status),errbuf_data);
       	  errbuf_olddata=errbuf_data;
       	  oldstatus=status;}
       message = TEMP_ALARM;
@@ -158,7 +157,7 @@ void AlarmTask(void *parameters)
     else if ( !status && current_temp_state == TEMP_BAD ) {
     	// If temp goes from bad to good, turn off alarm, send message to buffer
       errbuf_data=(0x0FFFFFFFU&(uint8_t)worst_temp);
-      errbuffer_put(ebuf, TEMP_NORMAL, errbuf_data);
+      errbuffer_put(ebuf, EBUF_TEMP_NORMAL, errbuf_data);
       message = TEMP_ALARM_CLEAR;
       xQueueSendToFront(xPwrQueue, &message, pdMS_TO_TICKS(100));
       current_temp_state = TEMP_GOOD;

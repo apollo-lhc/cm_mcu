@@ -44,14 +44,14 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
 // error codes
-#define RESTART 1
-#define RESET_BUFFER 2
-#define POWER_OFF 3
-#define POWER_OFF_TEMP 4
-#define POWER_ON 5
+#define EBUF_RESTART 1
+#define EBUF_RESET_BUFFER 2
+#define EBUF_POWER_OFF 3
+#define EBUF_POWER_OFF_TEMP 4
+#define EBUF_POWER_ON 5
 
-#define TEMP_HIGH(status) ((1<<(ERRCODE_OFFSET-1))|status)
-#define TEMP_NORMAL TEMP_HIGH(0)
+#define EBUF_TEMP_HIGH(status) ((1<<(ERRCODE_OFFSET-1))|status)
+#define EBUF_TEMP_NORMAL EBUF_TEMP_HIGH(0)
 
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
