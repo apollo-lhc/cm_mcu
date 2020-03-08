@@ -165,7 +165,7 @@ void errbuffer_reset(errbuf_handle_t ebuf){
 	ebuf->head = ebuf->minaddr;
 	ebuf->counter=0;
 	ebuf->last=0;
-	errbuffer_put(ebuf, RESET_BUFFER,0);
+	errbuffer_put(ebuf, EBUF_RESET_BUFFER,0);
 	return;
 }
 
@@ -174,17 +174,17 @@ void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata){
 	// If duplicated error code...
 	if(errcode == ebuf->last){
 
-		// if counter is not a multiple of 4, don't write new entry
-		if(oldcount%4!=0){ ebuf->counter=ebuf->counter+1; }
+		// if counter is not a multiple of COUNTER_UPDATE, don't write new entry
+		if(oldcount%COUNTER_UPDATE!=0){ ebuf->counter=ebuf->counter+1; }
 
 		// if counter has already reached max value, increment head
-		if(oldcount%16==0){	//Change this to use COUNTER_OFFSET
+		if(oldcount%(1<<COUNTER_OFFSET)==0){	//Change this to use COUNTER_OFFSET
 			ebuf->counter=0;
 			ebuf->head = increase_head(ebuf);
 			write_eeprom(0,increase_head(ebuf)); }
 
-		// if counter is multiple of 4, write entry and increment counter
-		if(oldcount%4==0){
+		// if counter is multiple of COUNTER_UPDATE, write entry and increment counter
+		if(oldcount%COUNTER_UPDATE==0){
 			ebuf->counter=ebuf->counter+1;
 			write_eeprom(errbuffer_entry(errcode,errdata),decrease_head(ebuf)); }
 	}
@@ -198,8 +198,8 @@ void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata){
 	return;
 }
 
-void errbuffer_get(errbuf_handle_t ebuf, uint32_t (*arrptr)[EBUF_NGET]){
-	int i=0,j=0,max=EBUF_NGET;
+void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num]){
+	int i=0,j=0,max=num;
 	while(i<max){i++; ebuf->head = decrease_head(ebuf);}
 	while(j<max){
 		(*arrptr)[j] = read_eeprom_single(ebuf->head);

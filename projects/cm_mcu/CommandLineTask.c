@@ -333,7 +333,7 @@ static BaseType_t power_ctl(int argc, char ** argv)
   return pdFALSE;
 }
 
-// takes one argument
+// takes 1-2 arguments
 static BaseType_t alarm_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
@@ -354,35 +354,52 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
     int copied = 0;
     copied += snprintf(m+copied,s-copied, "%s: ALARM status\r\n", argv[0]);
     int32_t stat = getAlarmStatus();
-    float val = getAlarmTemperature();
-    int tens = val; int frac = ABS((tens-val))*100;
-    copied += snprintf(m+copied, s-copied, "Temperature threshold: %02d.%02d\n\r",
-        tens,frac);
+    float ff_val = getAlarmTemperature(FF);
+    float dcdc_val = getAlarmTemperature(DCDC);
+    float fpga_val = getAlarmTemperature(FPGA);
+    float tm4c_val = getAlarmTemperature(TM4C);
+    int ff_tens = ff_val; int ff_frac = ABS((ff_tens-ff_val))*100;
+    int fpga_tens = fpga_val; int fpga_frac = ABS((fpga_tens-fpga_val))*100;
+    int dcdc_tens = dcdc_val; int dcdc_frac = ABS((dcdc_tens-dcdc_val))*100;
+    int tm4c_tens = tm4c_val; int tm4c_frac = ABS((tm4c_tens-tm4c_val))*100;
+    //copied += snprintf(m+copied, s-copied, "Temperature threshold: %02d.%02d\n\r",
+    //    tens,frac);
     copied += snprintf(m+copied, s-copied, "Raw: 0x%08x\r\n", stat);
-    copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s\r\n",
-        (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD");
-    copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s\r\n",
-        (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD");
-    copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s\r\n",
-        (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD");
-    copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s\r\n",
-        (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD");
+    copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD",tm4c_tens,tm4c_frac);
+    copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD",fpga_tens,fpga_frac);
+    copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD",ff_tens,ff_frac);
+    copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
+        (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD",dcdc_tens,dcdc_frac);
     configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
   }
   else if ( strcmp(argv[1], "settemp") == 0 ) {
     char *ptr;
-    float newtemp = strtol(argv[2],&ptr,10);
-    setAlarmTemperature(newtemp);
-    snprintf(m,s, "%s: set alarm temperature to %s\r\n", argv[0], argv[2]);
-    return pdFALSE;
+    float newtemp = strtol(argv[3],&ptr,10);
+    char* device = argv[2];
+    if(!strcmp(device,"ff")){setAlarmTemperature(FF,newtemp);
+    	snprintf(m,s, "%s: set Firefly alarm temperature to %s\r\n", argv[0], argv[3]);
+        return pdFALSE; }
+    if(!strcmp(device,"fpga")){ setAlarmTemperature(FPGA,newtemp);
+		snprintf(m,s, "%s: set FPGA alarm temperature to %s\r\n", argv[0], argv[3]);
+		return pdFALSE; }
+    if(!strcmp(device,"dcdc")){ setAlarmTemperature(DCDC,newtemp);
+		snprintf(m,s, "%s: set DCDC alarm temperature to %s\r\n", argv[0], argv[3]);
+		return pdFALSE; }
+	if(!strcmp(device,"tm4c")){ setAlarmTemperature(TM4C,newtemp);
+		snprintf(m,s, "%s: set TM4C alarm temperature to %s\r\n", argv[0], argv[3]);
+		return pdFALSE; }
+	else{ snprintf(m,s, "%s is not a valid device.\r\n", argv[2]);
+		return pdFALSE; }
   }
   else {
-    snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1]);
+    snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1] );
     return pdFALSE;
   }
-
   return pdFALSE;
 }
 
@@ -576,14 +593,14 @@ static BaseType_t ff_ctl(int argc, char ** argv)
   }
 
   if ( argc == 1 ) { // default command: temps
-
+	uint32_t ff_config = read_eeprom_single(0x44);
     if ( whichff == 0 ) {
       copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
     }
     for ( ; whichff < NFIREFLIES; ++whichff ) {
       int8_t val = getFFvalue(whichff);
       const char *name = getFFname(whichff);
-      if ( val > 0 )
+      if ( (1<<whichff)&ff_config )//val > 0 )
         copied += snprintf(m+copied, s-copied, "%17s: %2d", name, val);
       else // dummy value
         copied += snprintf(m+copied, s-copied, "%17s: %2s", name, "--");
@@ -802,7 +819,7 @@ static BaseType_t eeprom_read(int argc, char ** argv)
   uint32_t data1 = (uint32_t)data;
   copied += snprintf(m+copied, s-copied,
 		     "Data read from EEPROM block %d: %08x %08x\r\n",
-		     block,data1,data2);;
+		     block,data1,data2);
 
   return pdFALSE;
 }
@@ -891,17 +908,9 @@ static BaseType_t set_board_id_password(int argc, char ** argv)
 static BaseType_t board_id_info(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;;
-  uint64_t sn_addr = 0x0040;
-  uint64_t ff_addr = sn_addr + 0x4;
-  uint64_t sn,ff;
 
-  uint64_t sn_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(sn_addr<<32);
-  xQueueSendToBack(xEPRMQueue_in, &sn_message, portMAX_DELAY);
-  xQueueReceive(xEPRMQueue_out, &sn, portMAX_DELAY);
-
-  uint64_t ff_message = ((uint64_t)EPRM_READ_SINGLE<<48)|(ff_addr<<32);
-  xQueueSendToBack(xEPRMQueue_in, &ff_message, portMAX_DELAY);
-  xQueueReceive(xEPRMQueue_out, &ff, portMAX_DELAY);
+  uint32_t sn = read_eeprom_single(SN_ADDR);
+  uint32_t ff = read_eeprom_single(FF_ADDR);
 
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn)&0xff;
@@ -911,7 +920,6 @@ static BaseType_t board_id_info(int argc, char ** argv)
   copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);
   copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
   copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
-  // TODO: Figure out the best way to organize firefly information
 
   return pdFALSE;
 }
@@ -932,13 +940,14 @@ static BaseType_t errbuff_in(int argc, char **argv)
 static BaseType_t errbuff_out(int argc, char **argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
-  uint32_t arr[EBUF_NGET];
-  uint32_t (*arrptr)[EBUF_NGET]=&arr;
-  errbuffer_get(ebuf,arrptr);
+  uint32_t num = strtoul(argv[1],NULL,10);
+  uint32_t arr[num];
+  uint32_t (*arrptr)[num]=&arr;
+  errbuffer_get(ebuf,num,arrptr);
 
   copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
 
-  int i=0, max=EBUF_NGET;
+  int i=0, max=num;
   while (i<max) {
     uint32_t word = (*arrptr)[i];
 
@@ -946,28 +955,35 @@ static BaseType_t errbuff_out(int argc, char **argv)
     uint16_t errcode = (entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
     uint16_t errdata = entry&ERRDATA_MASK;
     uint16_t counter = entry>>(16-COUNTER_OFFSET);
-    uint16_t realcount = counter*4+1;
+    uint16_t realcount = counter*COUNTER_UPDATE+1;
 
     uint16_t timestamp = (uint16_t)(word>>16);
     uint16_t days = timestamp/0x5a0;
     uint16_t hours = (timestamp%0x5a0)/0x3c;
     uint16_t minutes = timestamp%0x3c;
-    switch(errcode) {
-    case RESTART:
-      copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x RESTART\r\n", days, hours,
-			 minutes, counter);
-      break;
-    case RESET_BUFFER:
-      copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
-			 hours, minutes,counter);
-      break;
-    default:
-      copied += snprintf(m+copied, s-copied,
-			 "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
-			 minutes, realcount, errcode,errdata);
-      break;
+    if(errcode&(1<<(ERRCODE_OFFSET-1))){
+    	uint8_t status = errcode&((1<<(ERRCODE_OFFSET-1))-1);
+    	copied += snprintf(m+copied, s-copied,
+    			"%02u %02u:%02u \t %x TEMP %03u %01x\r\n", days, hours,
+    			minutes, counter, errdata, status);
+    }
+    else{
+		switch(errcode) {
+		case EBUF_RESTART:
+			copied += snprintf(m+copied, s-copied,
+				"%02u %02u:%02u \t %x RESTART\r\n", days, hours, minutes, counter);
+			break;
+		case EBUF_RESET_BUFFER:
+			copied += snprintf(m+copied, s-copied,
+				"%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
+				hours, minutes,counter);
+			break;
+		default:
+			copied += snprintf(m+copied, s-copied,
+				"%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
+				minutes, realcount, errcode,errdata);
+			break;
+		}
     }
     i++;
   }
@@ -1318,7 +1334,7 @@ struct command_t commands[] = {
      "buffer_out",
      errbuff_out,
      "buffer_out <data>\r\n Prints last 5 entries in the eeprom buffer.\r\n",
-     0
+     1
     },
     {
      "buffer_info",
