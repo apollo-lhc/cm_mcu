@@ -158,7 +158,7 @@ OBJCOPY=${PREFIX}-objcopy
 ifdef DEBUG
 CFLAGS+=-g -D DEBUG -O0
 else
-CFLAGS+=-Os
+CFLAGS+=-Os -Werror
 endif
 
 
