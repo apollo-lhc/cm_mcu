@@ -473,6 +473,10 @@ int main( void )
         "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__", " __DATE__ "\r\n");
   Print("----------------------------\r\n");
+
+  errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK);
+
+
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
 

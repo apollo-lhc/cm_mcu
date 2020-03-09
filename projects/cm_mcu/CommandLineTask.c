@@ -293,9 +293,12 @@ static BaseType_t power_ctl(int argc, char ** argv)
 //        getLowestEnabledPSPriority());
     bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-    copied += snprintf(m+copied, s-copied, "pwr_ctl:\r\nVU_ENABLE:\t%d\r\n"
+    static int i=0;
+    if (i==0){
+    	copied += snprintf(m+copied, s-copied, "pwr_ctl:\r\nVU_ENABLE:\t%d\r\n"
         "KU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
-    for ( int i = 0; i < N_PS_OKS; ++i ) {
+    }
+    for (; i < N_PS_OKS; ++i ) {
       enum ps_state j = getPSStatus(i);
       char *c;
       switch (j) {
@@ -318,8 +321,12 @@ static BaseType_t power_ctl(int argc, char ** argv)
 
       copied += snprintf(m+copied, s-copied, "%15s: %s\r\n",
           pin_names[oks[i].name],  c);
-      if ( copied >= MAX_OUTPUT_LENGTH ) break;
+      if ( (s-copied) < 20  && (i < N_PS_OKS) ) {
+    	  ++i;
+    	  return pdTRUE;
+      }
     }
+    i=0;
     return pdFALSE;
   }
   else {
@@ -378,6 +385,10 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
     return pdFALSE;
   }
   else if ( strcmp(argv[1], "settemp") == 0 ) {
+	if (argc!=4){
+		snprintf(m,s, "Invalid command \r\n");
+		return pdFALSE;
+	}
     char *ptr;
     float newtemp = strtol(argv[3],&ptr,10);
     char* device = argv[2];
@@ -892,13 +903,9 @@ static BaseType_t set_board_id(int argc, char ** argv)
 static BaseType_t set_board_id_password(int argc, char ** argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
-  uint32_t pass = 0x12345678;
-  uint32_t *passptr = &pass;
 
-  // DOES NOT GO THROUGH GATEKEEPER TASK
-  EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
-  EEPROMBlockPasswordSet(1, passptr, 1);
-  EEPROMBlockLock(1);
+  uint64_t message = EPRMMessage((uint64_t)EPRM_PASS_SET,0,0x12345678);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   copied += snprintf(m+copied, s-copied, "Block locked\r\n");
 
@@ -940,15 +947,22 @@ static BaseType_t errbuff_in(int argc, char **argv)
 static BaseType_t errbuff_out(int argc, char **argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
+
+  uint8_t max_entries=25;
   uint32_t num = strtoul(argv[1],NULL,10);
-  uint32_t arr[num];
-  uint32_t (*arrptr)[num]=&arr;
+  if (num>max_entries){
+	  copied += snprintf(m+copied, s-copied, "Please enter a number 25 or less \r\n");
+	  return pdFALSE;
+  }
+  uint32_t arr[max_entries];
+  uint32_t (*arrptr)[max_entries]=&arr;
   errbuffer_get(ebuf,num,arrptr);
 
-  copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
-
-  int i=0, max=num;
-  while (i<max) {
+  static int i=0;
+  if (i==0) {
+	  copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
+  }
+  for (; i<num; ++i) {
     uint32_t word = (*arrptr)[i];
 
     uint16_t entry = (uint16_t)word;
@@ -961,32 +975,28 @@ static BaseType_t errbuff_out(int argc, char **argv)
     uint16_t days = timestamp/0x5a0;
     uint16_t hours = (timestamp%0x5a0)/0x3c;
     uint16_t minutes = timestamp%0x3c;
-    if(errcode&(1<<(ERRCODE_OFFSET-1))){
-    	uint8_t status = errcode&((1<<(ERRCODE_OFFSET-1))-1);
-    	copied += snprintf(m+copied, s-copied,
-    			"%02u %02u:%02u \t %x TEMP %03u %01x\r\n", days, hours,
-    			minutes, counter, errdata, status);
+
+    if (errcode == EBUF_CONTINUATION){
+    	copied += snprintf(m+copied, s-copied, " %02u", errdata);
     }
     else{
-		switch(errcode) {
-		case EBUF_RESTART:
-			copied += snprintf(m+copied, s-copied,
-				"%02u %02u:%02u \t %x RESTART\r\n", days, hours, minutes, counter);
-			break;
-		case EBUF_RESET_BUFFER:
-			copied += snprintf(m+copied, s-copied,
-				"%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
-				hours, minutes,counter);
-			break;
-		default:
-			copied += snprintf(m+copied, s-copied,
-				"%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
-				minutes, realcount, errcode,errdata);
-			break;
+    	// print timestamp and error code
+    	const char* error_str = ebuf_errstrings[errcode];
+    	copied += snprintf(m+copied, s-copied,
+			"\r\n %02u %02u:%02u \t %x %s", days, hours,
+			minutes, realcount, error_str);
+		// if code comes with data, print data
+		if (errcode>=EBUF_WITH_DATA) {
+			copied += snprintf(m+copied,s-copied," %02u",errdata);
 		}
     }
-    i++;
+    if ((s-copied)<20 && (i<num)){	// this should catch when buffer is close to full
+    	++i;
+    	return pdTRUE;
+    }
   }
+  copied += snprintf(m+copied, s-copied, "\r\n");
+  i=0;
   return pdFALSE;
 }
 
@@ -995,7 +1005,7 @@ static BaseType_t errbuff_info(int argc, char **argv)
 {
   int copied = 0, s = SCRATCH_SIZE;
   uint32_t cap, minaddr, maxaddr, head;
-  uint16_t last, counter;
+  uint16_t last, counter, n_continue;
 
   cap = errbuffer_capacity(ebuf);
   minaddr = errbuffer_minaddr(ebuf);
@@ -1003,6 +1013,7 @@ static BaseType_t errbuff_info(int argc, char **argv)
   head = errbuffer_head(ebuf);
   last = errbuffer_last(ebuf);
   counter = errbuffer_counter(ebuf);
+  n_continue = errbuffer_continue(ebuf);
 
   copied += snprintf(m+copied, s-copied, "Capacity: %8x words\r\n",cap);
   copied += snprintf(m+copied, s-copied, "Min address: %8x\r\n",minaddr);
@@ -1010,6 +1021,7 @@ static BaseType_t errbuff_info(int argc, char **argv)
   copied += snprintf(m+copied, s-copied, "Head address: %8x\r\n",head);
   copied += snprintf(m+copied, s-copied, "Last entry: %x\r\n",last);
   copied += snprintf(m+copied, s-copied, "Message counter: %x\r\n",counter);
+  copied += snprintf(m+copied, s-copied, "Continue codes: %x\r\n",n_continue);
 
   return pdFALSE;
 }
@@ -1219,46 +1231,46 @@ struct command_t commands[] = {
         "bootloader\r\n Call the boot loader\r\n",
         0
     },
+	{
+	    "eeprom_info",
+	    eeprom_info,
+	    "eeprom_info\r\n Prints information about the EEPROM.\r\n",
+	    0
+	},
+	{
+		"eeprom_read",
+	    eeprom_read,
+	    "eeprom_read <address>\r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
+	    1
+	},
+	{
+	    "eeprom_write",
+	    eeprom_write,
+	    "eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
+	    2
+	},
     {
-        "buffer_in",
+        "errorlog_entry",
         errbuff_in,
-        "buffer_in <data>\r\n Manual entry of 2-byte code into the eeprom buffer.\r\n",
+        "errorlog_entry <data>\r\n Manual entry of 2-byte code into the eeprom error logger.\r\n",
         1
     },
     {
-        "buffer_out",
+        "errorlog",
         errbuff_out,
-        "buffer_out <data>\r\n Prints last 5 entries in the eeprom buffer.\r\n",
+        "errorlog <n>\r\n Prints last n entries in the eeprom error logger.\r\n",
         1
     },
     {
-        "buffer_info",
+        "errorlog_info",
         errbuff_info,
-        "buffer_info <data>\r\n Prints information about the eeprom buffer.\r\n",
+        "errorlog_info\r\n Prints information about the eeprom error logger.\r\n",
         0
     },
     {
-        "buffer_reset",
+        "errorlog_reset",
         errbuff_reset,
-        "buffer_reset <data>\r\n Resets the eeprom buffer.\r\n",
-        0
-    },
-   {
-        "eeprom_read",
-        eeprom_read,
-        "eeprom_read <address>\r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
-        1
-    },
-    {
-        "eeprom_write",
-        eeprom_write,
-        "eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
-        2
-    },
-    {
-        "eeprom_info",
-        eeprom_info,
-        "eeprom_info\r\n Prints information about the EEPROM.\r\n",
+        "errorlog_reset <data>\r\n Resets the eeprom error logger.\r\n",
         0
     },
     {
