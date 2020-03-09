@@ -43,15 +43,23 @@ uint64_t read_eeprom_multi(uint32_t addr);
 
 #define COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
-// error codes
-#define EBUF_RESTART 1
-#define EBUF_RESET_BUFFER 2
-#define EBUF_POWER_OFF 3
-#define EBUF_POWER_OFF_TEMP 4
-#define EBUF_POWER_ON 5
 
-#define EBUF_TEMP_HIGH(status) ((1<<(ERRCODE_OFFSET-1))|status)
-#define EBUF_TEMP_NORMAL EBUF_TEMP_HIGH(0)
+extern const char* ebuf_errstrings[];
+
+// error codes without data
+#define EBUF_RESTART			1
+#define EBUF_RESET_BUFFER		2
+#define EBUF_POWER_OFF			3
+#define EBUF_POWER_OFF_TEMP		4
+#define EBUF_POWER_ON			5
+#define EBUF_TEMP_NORMAL		6
+#define EBUF_ISR				7
+// error codes with data
+#define EBUF_WITH_DATA			8		// for comparison
+#define EBUF_CONTINUATION		8
+#define EBUF_PWR_FAILURE		9
+#define EBUF_TEMP_HIGH			10
+
 
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
@@ -60,8 +68,8 @@ extern errbuf_handle_t ebuf;
 
 void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk);
 void errbuffer_reset(errbuf_handle_t ebuf);
-
 void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata);
+// TODO: change get to not count continue codes as entries (append to prior entries?)
 void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num]);
 
 uint32_t errbuffer_capacity(errbuf_handle_t ebuf);
@@ -70,7 +78,11 @@ uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf);
 uint32_t errbuffer_head(errbuf_handle_t ebuf);
 uint16_t errbuffer_last(errbuf_handle_t ebuf);
 uint16_t errbuffer_counter(errbuf_handle_t ebuf);
+uint16_t errbuffer_continue(errbuf_handle_t ebuf);
 
 uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata);
+
+// specific error functions
+void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);
 
 #endif /* COMMON_UTILS_H_ */

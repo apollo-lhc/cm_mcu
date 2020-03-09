@@ -8,6 +8,7 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 // local includes
 #include "common/uart.h"
@@ -39,6 +40,7 @@ void PowerSupplyTask(void *parameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
+  TickType_t oldTime = xLastWakeTime;
   enum ps_state oldState = PWR_UNKNOWN;
   bool alarm = false;
 
@@ -63,7 +65,10 @@ void PowerSupplyTask(void *parameters)
         break;
       case TEMP_ALARM:
         alarm = true;
-        disable_ps();
+        if(oldState!=PWR_OFF){
+        	disable_ps();
+        	errbuffer_put(ebuf,EBUF_POWER_OFF_TEMP,0);
+        }
         break;
       case TEMP_ALARM_CLEAR:
         alarm = false;
@@ -91,7 +96,12 @@ void PowerSupplyTask(void *parameters)
       disable_ps();
     }
     else if ( ! alarm && ! cli_powerdown_request ) { // blade_power_enable and not alarm
-      set_ps();
+      TickType_t newTime = xTaskGetTickCount();
+      uint32_t seconds_passed = (newTime-oldTime)*portTICK_PERIOD_MS/1000;
+      if ((oldTime==0)||(abs(seconds_passed)>=SET_PS_RETRY)){  // absolute value to catch timer overflow
+    	  set_ps();
+    	  oldTime=newTime;
+      }
     }
     // now check the actual state
     bool psgood = check_ps();

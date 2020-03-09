@@ -86,6 +86,12 @@ void EEPROMTask(void *parameters){
 			case EPRM_LOCK_BLOCK:
 				EEPROMBlockLock(addr);
 				break;
+			case EPRM_PASS_SET: ;
+				uint32_t *passptr = &data;
+				EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
+				EEPROMBlockPasswordSet(1, passptr, 1);
+				EEPROMBlockLock(1);
+				break;
 			default:
 				break;
 			}

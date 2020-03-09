@@ -34,10 +34,12 @@ uint32_t getAlarmStatus()
   return status;
 }
 
-#define INITIAL_ALARM_TEMP_FF 50.0 // in Celsius duh
-#define INITIAL_ALARM_TEMP_DCDC 75.0
-#define INITIAL_ALARM_TEMP_TM4C 75.0
-#define INITIAL_ALARM_TEMP_FPGA 75.0
+#define INITIAL_ALARM_TEMP_FF 45.0 // in Celsius duh
+#define INITIAL_ALARM_TEMP_DCDC 70.0
+#define INITIAL_ALARM_TEMP_TM4C 70.0
+#define INITIAL_ALARM_TEMP_FPGA 70.0
+#define TEMP_WARNING_DIFF 5.0 // if device is 5 degrees over alarm temp, turn off power
+
 static float alarm_temp_ff = INITIAL_ALARM_TEMP_FF;
 static float alarm_temp_dcdc = INITIAL_ALARM_TEMP_DCDC;
 static float alarm_temp_tm4c = INITIAL_ALARM_TEMP_TM4C;
@@ -71,10 +73,9 @@ void AlarmTask(void *parameters)
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint32_t message; // this must be in a semi-permanent scope
-  uint16_t errbuf_data,errbuf_olddata=0;
   enum temp_state current_temp_state = TEMP_UNKNOWN;
-  float temp_over_ff, temp_over_fpga, temp_over_tm4c, temp_over_dcdc, temp_over_max, worst_temp;
-  // todo: should be able to do this w just max_temp_over and worst_temp, just to clean it up
+  float temp_over_ff, temp_over_fpga, temp_over_tm4c, temp_over_dcdc;
+  float temp_over_device=0, temp_over=0, temp_over_old=0;
 
   vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
 
@@ -97,20 +98,29 @@ void AlarmTask(void *parameters)
       // to refresh
     }
 
+    temp_over=0;
+    temp_over_device=0;
 
     // microcontroller
     float tm4c_temp = getADCvalue(ADC_INFO_TEMP_ENTRY);
-    if ( tm4c_temp > alarm_temp_tm4c ) status |= ALM_STAT_TM4C_OVERTEMP;
-    temp_over_tm4c = alarm_temp_tm4c-tm4c_temp;
-    temp_over_max = temp_over_tm4c;
-    worst_temp=tm4c_temp;
+    if ( tm4c_temp > alarm_temp_tm4c ) {
+    	status |= ALM_STAT_TM4C_OVERTEMP;
+        temp_over_tm4c = tm4c_temp-alarm_temp_tm4c;
+        temp_over_device += temp_over_tm4c;
+        temp_over += temp_over_tm4c;
+    }
+
     // FPGA
     float max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
-    if ( max_fpga > alarm_temp_fpga) status |= ALM_STAT_FPGA_OVERTEMP;
-    temp_over_fpga = alarm_temp_fpga-max_fpga;
-    if (temp_over_fpga>temp_over_max){
-    	temp_over_max = temp_over_fpga;
-    	worst_temp=max_fpga;}
+    if ( max_fpga > alarm_temp_fpga) {
+    	status |= ALM_STAT_FPGA_OVERTEMP;
+        temp_over_fpga = max_fpga-alarm_temp_fpga;
+        temp_over += temp_over_fpga;
+        if (temp_over_fpga>temp_over_device){
+        	temp_over_device = temp_over_fpga;
+        	}
+    }
+
 
     // DCDC. The first command is READ_TEMPERATURE_1.
     // I am assuming it stays that way!!!!!!!!
@@ -123,11 +133,15 @@ void AlarmTask(void *parameters)
           max_dcdc_temp = thistemp;
       }
     }
-    if ( max_dcdc_temp > alarm_temp_tm4c ) status |= ALM_STAT_DCDC_OVERTEMP;
-    temp_over_dcdc = alarm_temp_dcdc-max_dcdc_temp;
-    if (temp_over_dcdc>temp_over_max){
-    	temp_over_max = temp_over_dcdc;
-    	worst_temp=max_dcdc_temp;}
+    if ( max_dcdc_temp > alarm_temp_dcdc ) {
+    	status |= ALM_STAT_DCDC_OVERTEMP;
+    	temp_over_dcdc = max_dcdc_temp-alarm_temp_dcdc;
+    	temp_over += temp_over_dcdc;
+    	if (temp_over_dcdc>temp_over_device){
+    	    temp_over_device = temp_over_dcdc;
+    	    }
+    }
+
     // Fireflies. These are reported as ints but we are asked
     // to report a float.
     int8_t imax_ff_temp = -99;
@@ -136,28 +150,38 @@ void AlarmTask(void *parameters)
       if ( v > imax_ff_temp )
         imax_ff_temp = v;
     }
-    if ( (float)imax_ff_temp > alarm_temp_ff ) status |= ALM_STAT_FIREFLY_OVERTEMP;
-    temp_over_ff = alarm_temp_ff-imax_ff_temp;
-    if (temp_over_ff>temp_over_max){
-    	temp_over_max=temp_over_ff;
-    	worst_temp=imax_ff_temp;}
+    if ( (float)imax_ff_temp > alarm_temp_ff ) {
+    	status |= ALM_STAT_FIREFLY_OVERTEMP;
+        temp_over_ff = imax_ff_temp-alarm_temp_ff;
+        temp_over += temp_over_ff;
+        if (temp_over_ff>temp_over_device){
+        	temp_over_device=temp_over_ff;
+        	}
+    }
 
-    if ( status && current_temp_state != TEMP_BAD ) {
-    	// If temp goes from good to bad, turn on alarm, send error message to buffer
-      errbuf_data=(0x0FFFFFFFU)&(uint8_t)worst_temp;
-      if ((errbuf_data!=errbuf_olddata)||(status!=oldstatus)){
-    	  // only send message when status or temp have changed, to avoid filling up buffer
-    	  errbuffer_put(ebuf, EBUF_TEMP_HIGH(status),errbuf_data);
-      	  errbuf_olddata=errbuf_data;
-      	  oldstatus=status;}
-      message = TEMP_ALARM;
-      xQueueSendToFront(xPwrQueue, &message, pdMS_TO_TICKS(100));
+
+    // if temp is over max by TEMP_WARNING_DIFF, then turn off power
+    if (temp_over_device>TEMP_WARNING_DIFF){
+  	  message = TEMP_ALARM;
+  	  xQueueSendToFront(xPwrQueue, &message, pdMS_TO_TICKS(100));
+    }
+    // if temp returns to normal, send buffer message
+    if ((temp_over==0) && (temp_over_old>0)){
+        errbuffer_put(ebuf, EBUF_TEMP_NORMAL, 0);
+        temp_over_old = temp_over;
+    }
+    if ( status && (current_temp_state != TEMP_BAD )) {
+    	// If temp is bad, turn on alarm, send error message to buffer
+      if ((temp_over>temp_over_old)||(status!=oldstatus)){
+    	  // only send message when status has changed or temp has risen since last entry, to avoid filling up buffer
+    	  errbuffer_temp_high((uint8_t)tm4c_temp,(uint8_t)max_fpga,(uint8_t)imax_ff_temp,(uint8_t)max_dcdc_temp);
+		  oldstatus=status;
+          temp_over_old=temp_over;
+      }
       current_temp_state = TEMP_BAD;
     }
-    else if ( !status && current_temp_state == TEMP_BAD ) {
-    	// If temp goes from bad to good, turn off alarm, send message to buffer
-      errbuf_data=(0x0FFFFFFFU&(uint8_t)worst_temp);
-      errbuffer_put(ebuf, EBUF_TEMP_NORMAL, errbuf_data);
+    else if ( (!status) && (current_temp_state == TEMP_BAD )) {
+    	// If status is cleared (from cli), turn off alarm, send message to buffer
       message = TEMP_ALARM_CLEAR;
       xQueueSendToFront(xPwrQueue, &message, pdMS_TO_TICKS(100));
       current_temp_state = TEMP_GOOD;
@@ -166,7 +190,6 @@ void AlarmTask(void *parameters)
     	// If no change in temp state
       current_temp_state = TEMP_GOOD;
     }
-
   }
   return;
 }

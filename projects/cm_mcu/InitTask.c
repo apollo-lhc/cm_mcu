@@ -22,8 +22,7 @@
 void InitTask(void *parameters)
 {
 
-  // Initialize eeprom error buffer
-  errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK);
+  //errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK);	<< moved to main
   errbuffer_put(ebuf,EBUF_RESTART,0);
 
 

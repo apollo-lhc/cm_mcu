@@ -70,7 +70,8 @@ struct gpio_pin_t oks[] = {
 };
 const int num_priorities = 5;
 
-// this array states[] holds the current status of these power supplies
+// these arrays hold the current and old status of these power supplies
+static enum ps_state new_states[N_PS_OKS] = { PWR_UNKNOWN };
 static enum ps_state states[N_PS_OKS] = { PWR_UNKNOWN };
 
 // this variable holds the current lowest enabled power supply
@@ -94,6 +95,45 @@ void setPSStatus(int i, enum ps_state theState)
   states[i] = theState;
 }
 #endif
+
+bool update_failed_ps(int prio){
+
+	bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+	bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+	bool failure = false;
+
+	for ( int o = 0; o < N_PS_OKS; ++o ) {
+	   if ( oks[o].priority <= prio ) {
+	     int8_t val = read_gpio_pin(oks[o].name);
+	     if ( val == 0 ) {
+	       // if this is a VU7P supply and dip switch says ignore it, continue
+	       if (!vu_enable  && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) ) {
+	     	  new_states[o] = PWR_DISABLED;
+	          continue;
+	       }
+	       // ditto for KU15P
+	       if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) ) {
+	     	  new_states[o] = PWR_DISABLED;
+	          continue;
+	       }
+	       // remember the VCC_ supplies
+	       if ((states[o]==PWR_ON)||(states[o]==PWR_UNKNOWN)){
+	     	  new_states[o]=PWR_FAILED;
+	     	  errbuffer_put(ebuf,EBUF_PWR_FAILURE,o);
+	     	  failure=true;
+	       }
+	       else {
+	     	  new_states[o]=PWR_OFF;
+	       }
+	     }
+	     else {
+	     	new_states[o] = PWR_ON;
+	     }
+	   }
+	}
+	memcpy(states, new_states, sizeof(states));
+	return failure;
+}
 
 //
 // check the power supplies and turn them on one by one
@@ -134,31 +174,11 @@ bool set_ps()
     ShortDelay();
 
     // check power good at this level or higher priority (lower number)
-    bool all_good = true;
-    for ( int o = 0; o < N_PS_OKS; ++o ) {
-      if ( oks[o].priority <= prio ) {
-        int8_t val = read_gpio_pin(oks[o].name);
-        if ( val == 0 ) {
-          // if this is a VU7P supply and dip switch says ignore it, continue
-          if (!vu_enable  && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) ) {
-            states[o] = PWR_DISABLED;
-            continue;
-          }
-          // ditto for KU15P
-          if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) ) {
-            states[o] = PWR_DISABLED;
-            continue;
-          }
-          // remember the VCC_ supplies
-          all_good = false;
-          states[o] = PWR_OFF;
-        }
-        else {
-          states[o] = PWR_ON;
-        }
-      }
-    } // loop over 'ok' bits
-    if (  ! all_good ) {
+    bool ps_failure = update_failed_ps(prio);
+
+     // loop over 'ok' bits
+    if (  ps_failure ) {
+
       Print("set_ps: Power supply check failed. ");
       Print("Turning off all supplies at this level or lower.\r\n");
       // turn off all supplies at current priority level or lower
@@ -203,7 +223,7 @@ check_ps(void)
 
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-  enum ps_state new_states[N_PS_OKS] = {PWR_UNKNOWN};
+
   // first check all the GPIO pins for various status bits
   for ( int o = 0; o < N_PS_OKS; ++o ) {
     // if this is a VU7P supply and dip switch says ignore it, continue

@@ -53,6 +53,7 @@ void LedTask(void *parameters);
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task
+#define SET_PS_RETRY 5	// time interval between each set_ps() attempt
 void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
 
@@ -121,6 +122,7 @@ extern QueueHandle_t xEPRMQueue_out;
 #define EPRM_READ_DOUBLE 3
 #define EPRM_LOCK_BLOCK 4
 #define EPRM_UNLOCK_BLOCK 5
+#define EPRM_PASS_SET 6
 
 uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
 void EEPROMTask(void *parameters);
