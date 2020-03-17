@@ -176,9 +176,6 @@ uint32_t getAlarmStatus();
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
 
-// I2C Slave
-void I2CSlaveTask(void *parameters);
-
 // EEPROM
 
 extern QueueHandle_t xEPRMQueue_in;
@@ -218,6 +215,11 @@ uint16_t getZYNQMonTestData();
 // utility functions
 const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
+// I2C Slave
+void I2CSlaveTask(void *parameters);
+
+// I2C Master
+void I2CMasterTask(void *parameters);
 
 struct dev_i2c_addr_t; // forward reference
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
