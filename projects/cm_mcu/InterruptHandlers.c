@@ -36,6 +36,7 @@
 #include "driverlib/adc.h"
 #include "driverlib/uart.h"
 #include "driverlib/timer.h"
+#include "driverlib/i2c.h"
 #include "driverlib/interrupt.h"
 
 #include "task.h"
@@ -193,6 +194,9 @@ volatile tSMBusStatus eStatus4 = SMBUS_OK;
 volatile tSMBusStatus eStatus5 = SMBUS_OK;
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
+
+TaskHandle_t TaskNotifyMaster0 = NULL;
+
 // SMBUs specific handler for I2C
 void SMBusMasterIntHandler1(void)
 {
@@ -202,6 +206,48 @@ void SMBusMasterIntHandler1(void)
   // Process the interrupt.
   //
   eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
+
+  //
+  // Determine which interrupt made us get here.
+  //
+  uint32_t
+  ui32IntStatus = MAP_I2CMasterIntStatusEx(I2C1_BASE, true);
+  //
+  // Check for the timeout interrupt.  Since the peripheral will
+  // automatically issue a stop, just clear the interrupt and return.
+  //
+  if(ui32IntStatus & I2C_MASTER_INT_TIMEOUT)
+  {
+    //
+    // Clear all pending interrupts and wait for the bus to become
+    // free so we can issue a STOP.
+    //
+    MAP_I2CMasterIntClearEx(I2C1_BASE, I2C_MASTER_INT_TIMEOUT |
+        I2C_MASTER_INT_DATA);
+
+    // from smbus.c
+#define FLAG_TRANSFER_IN_PROGRESS       3
+
+    //
+    // Clear the transfer in progress flag.  New transactions will
+    // be aborted until the bus is free.
+    //
+    HWREGBITB(g_sMaster1.ui16Flags, FLAG_TRANSFER_IN_PROGRESS) = 0;
+
+    //
+    // Return to caller.
+    //
+    return ; //(SMBUS_TIMEOUT);
+  }
+  else
+  {
+    //
+    // Clear the data interrupt.
+    //
+    MAP_I2CMasterIntClearEx(I2C1_BASE, I2C_MASTER_INT_DATA);
+  }
+
+
   // handle errors in the returning function
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }

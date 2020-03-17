@@ -217,9 +217,6 @@ uint32_t getAlarmStatus();
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
 
-// I2C Slave
-void I2CSlaveTask(void *parameters);
-
 // EEPROM
 
 extern QueueHandle_t xEPRMQueue_in;
@@ -273,6 +270,11 @@ uint16_t getZYNQMonTestData();
 // utility functions
 const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
+// I2C Slave
+void I2CSlaveTask(void *parameters);
+
+// I2C Master
+void I2CMasterTask(void *parameters);
 
 // clock IO expander initalization
 void init_registers_clk();
