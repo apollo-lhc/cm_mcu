@@ -1112,7 +1112,7 @@ static BaseType_t task_ctl(int argc, char ** argv)
 static BaseType_t uptime(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
-  TickType_t now =  pdTICKS_TO_MS( xTaskGetTickCount())/1000/60; // time in minutes
+  TickType_t now =  xTaskGetTickCount()/(configTICK_RATE_HZ*60); // time in minutes
   snprintf(m,s, "%s: MCU uptime %d minutes\r\n", argv[0], now);
   return pdFALSE;
 }
