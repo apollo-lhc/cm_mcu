@@ -47,12 +47,11 @@ deploy:
 
 
 install:
-  - env
   - pushd .
   - cd ~ 
   - lsb_release -a
   - mkdir arm-gcc-toolchain
-  - wget -O $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
+  - travis_retry curl -L -o $HOME/arm-gcc-toolchain/gcc.tar.bz2 $GCC_URL
   - cd arm-gcc-toolchain
   - tar -jxf gcc.tar.bz2 --strip=1
   - cd $HOME
