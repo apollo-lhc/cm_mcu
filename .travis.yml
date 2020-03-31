@@ -65,4 +65,4 @@ before_script:
   - arm-none-eabi-gcc --version
 
 script:
-  - make -k -O recurse
+  - make -k 
