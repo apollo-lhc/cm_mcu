@@ -2,45 +2,40 @@
 # which is under pwittich username, using the Travis key
 env:
   global:
-    secure: DZCXrTHQDKFHmFqEwyF+kGZ4JBwvkKofhi/kXcaAmokzpUnT2pnqWPMjnV2q9PxEjQ7stonk6U/D0qij74zG+X0Ys+JWKbrIA2jt7M+7WLBZZrzqfGV8PTGPJK6guDPWUmr5419GYKD0f6PwkeymQ582V0Aoa2PSfw1d8sq/fFWaEGoHryFpaOc99ZWsD7CB5jRB663tkcgXkRiH9wvPKrJpJ1n784TfLuQdlqvWIQm4T+UP5dgiubHcun7COtMmZVLQCeJrYZyTQwLQ1/6oKRnwnfsv05wLu8ha3JPZaY4/DqDvTPAwPyiA1maivrI5QZo9af/0Mkn4YmLrp1wsBigbks5ze8a2UIvf5NuHPPs3hRVvSfjNaGp9bCinkh++2PKd1a6HbFIWdt7P+mzyMsbEebs60RFd4/bwc9LOkj2Vm+irxaJgQnS6pToOr2N62mvhX/fMb7Dr7He1jBoQ4aXwSQPUBz3HbVGWlgkmDloG2OXofnmasJjNJYWNDoLa0GD8afjC1TKknP9pDds3r2t061gjt7+XPo4igrSFXInkDZgk2ZiMgSnxLK3YVS2wdx9e0jacrwoz/9gO7na6SBF3+UDKzb4pvJmTol7m8xjJvf+6VUFEyu3MkN61GVGTr4h/ymxkCvSS3va3zDAbUmJOiv9dAB8/ORLHowJ8t8U=
-
+  - secure: DZCXrTHQDKFHmFqEwyF+kGZ4JBwvkKofhi/kXcaAmokzpUnT2pnqWPMjnV2q9PxEjQ7stonk6U/D0qij74zG+X0Ys+JWKbrIA2jt7M+7WLBZZrzqfGV8PTGPJK6guDPWUmr5419GYKD0f6PwkeymQ582V0Aoa2PSfw1d8sq/fFWaEGoHryFpaOc99ZWsD7CB5jRB663tkcgXkRiH9wvPKrJpJ1n784TfLuQdlqvWIQm4T+UP5dgiubHcun7COtMmZVLQCeJrYZyTQwLQ1/6oKRnwnfsv05wLu8ha3JPZaY4/DqDvTPAwPyiA1maivrI5QZo9af/0Mkn4YmLrp1wsBigbks5ze8a2UIvf5NuHPPs3hRVvSfjNaGp9bCinkh++2PKd1a6HbFIWdt7P+mzyMsbEebs60RFd4/bwc9LOkj2Vm+irxaJgQnS6pToOr2N62mvhX/fMb7Dr7He1jBoQ4aXwSQPUBz3HbVGWlgkmDloG2OXofnmasJjNJYWNDoLa0GD8afjC1TKknP9pDds3r2t061gjt7+XPo4igrSFXInkDZgk2ZiMgSnxLK3YVS2wdx9e0jacrwoz/9gO7na6SBF3+UDKzb4pvJmTol7m8xjJvf+6VUFEyu3MkN61GVGTr4h/ymxkCvSS3va3zDAbUmJOiv9dAB8/ORLHowJ8t8U=
+  jobs:
+  - GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2?revision=d830f9dd-cd4f-406d-8672-cca9210dd220?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Linux,8-2018-q4-major
+  - GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2019q4/gcc-arm-none-eabi-9-2019-q4-major-x86_64-linux.tar.bz2?revision=108bd959-44bd-4619-9c19-26187abf5225&la=en&hash=E788CE92E5DFD64B2A8C246BBA91A249CB8E2D2D
+  
 notifications:
-  email: true
+  email: false
 
 branches:
-# except: # blacklist
-#   - dummy
  only: # whitelist
    - master
    - /^v(\d+\.)(\d+)$/
 
 
+
+os: linux
 # Ubuntu 16.04 LTS
 dist: xenial
 
 language: c
 
-matrix:
+jobs:
   fast_finish: true
-  include:
-    - name: 8-2018-q4
-      env: GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2?revision=d830f9dd-cd4f-406d-8672-cca9210dd220?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Linux,8-2018-q4-major
 
 addons:
   apt:
     packages:
     - libc6-i386 
 
-#before_deploy:
-## Set up git user name and tag this commit
-#   - git config --local user.name pwittich
-#   - git config --local user.email wittich@cornell.edu
-# would need a tag cmmand here
 
 # only on tag
 deploy:
   provider: releases
-  api_key: "$GITHUB_TOKEN"
+  token: "$GITHUB_TOKEN"
   file:
     - projects/cm_mcu/gcc/cm_mcu.axf
     - projects/cm_mcu/gcc/cm_mcu.bin
@@ -66,11 +61,9 @@ install:
   - popd
   - export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
   - export FREERTOS_ROOT=$HOME/freertos-code/FreeRTOSv10.2.1/FreeRTOS/Source
-  - export FREERTOS_PLUS_ROOT=$HOME/freertos-code/FreeRTOSv10.2.1/FreeRTOS-Plus/Source
 
 before_script:
   - arm-none-eabi-gcc --version
 
 script:
-  - arm-none-eabi-gcc --version
   - make 
