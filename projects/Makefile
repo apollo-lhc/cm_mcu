@@ -1,5 +1,4 @@
 
-include ../makedefs
 
 DIRS=blinky uart_echo cm_mcu #i2c-sensors 
 
