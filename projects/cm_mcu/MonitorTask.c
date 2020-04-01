@@ -72,7 +72,7 @@ void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
   return;
 }
 
-
+#define TMPBUFFER_SZ 96
 void MonitorTask(void *parameters)
 {
   // initialize to the current tick time
@@ -91,11 +91,11 @@ void MonitorTask(void *parameters)
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next
     // rev of the board.
-    char tmp[64];
+    char tmp[TMPBUFFER_SZ];
     static bool good = false;
     if ( getPSStatus(5) != PWR_ON) {
       if ( good ) {
-        snprintf(tmp, 64, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
+        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
             args->name);
         SuppressedPrint(tmp, &current_error_cnt, &log);
         good = false;
@@ -114,12 +114,12 @@ void MonitorTask(void *parameters)
 
       // select the appropriate output for the mux
       data[0] = 0x1U<<args->devices[ps].mux_bit;
-      snprintf(tmp, 64, "MON(%s): Output of mux set to 0x%02x\r\n", args->name,
+      snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Output of mux set to 0x%02x\r\n", args->name,
                data[0]);
       DPRINT(tmp);
       tSMBusStatus r = SMBusMasterI2CWrite(args->smbus, args->devices[ps].mux_addr, data, 1);
       if ( r != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON(%s): I2CBus command failed  (setting mux)\r\n", args->name);
+        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): I2CBus command failed  (setting mux)\r\n", args->name);
         SuppressedPrint(tmp, &current_error_cnt, &log);
         continue;
       }
@@ -127,7 +127,7 @@ void MonitorTask(void *parameters)
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *args->smbus_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON(%s): Mux writing error %d, break out of loop (ps=%d) ...\r\n",
+        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Mux writing error %d, break out of loop (ps=%d) ...\r\n",
             args->name, *args->smbus_status, ps);
         SuppressedPrint(tmp, &current_error_cnt, &log);
         break;
@@ -136,20 +136,20 @@ void MonitorTask(void *parameters)
       data[0] = 0xAAU;
       r = SMBusMasterI2CRead(args->smbus, 0x70U, data, 1);
       if ( r != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON(%s): Read of MUX output failed\r\n", args->name);
+        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Read of MUX output failed\r\n", args->name);
         SuppressedPrint(tmp, &current_error_cnt, &log);
       }
       while ( SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
       }
       if ( *args->smbus_status != SMBUS_OK ) {
-        snprintf(tmp, 64, "MON(%s): Mux reading error %d, break out of loop (ps=%d) ...\r\n",
+        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Mux reading error %d, break out of loop (ps=%d) ...\r\n",
             args->name, *args->smbus_status, ps);
         SuppressedPrint(tmp, &current_error_cnt, &log);
         break;
       }
       else {
-        snprintf(tmp, 64, "MON(%s): read back register on mux to be %02x\r\n",
+        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): read back register on mux to be %02x\r\n",
             args->name, data[0]);
         DPRINT(tmp);
       }
@@ -166,11 +166,11 @@ void MonitorTask(void *parameters)
         }
         // this is checking the return from the interrupt
         if (*args->smbus_status != SMBUS_OK ) {
-          snprintf(tmp, 64, "MON(%s): Page SMBUS ERROR: %d\r\n",
+          snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Page SMBUS ERROR: %d\r\n",
               args->name, *args->smbus_status);
           SuppressedPrint(tmp, &current_error_cnt, &log);
         }
-        snprintf(tmp, 64, "\t\tMON(%s): Page %d\r\n", args->name, page);
+        snprintf(tmp, TMPBUFFER_SZ, "\t\tMON(%s): Page %d\r\n", args->name, page);
         DPRINT(tmp);
 
         // loop over commands
@@ -180,7 +180,7 @@ void MonitorTask(void *parameters)
           r = SMBusMasterByteWordRead(args->smbus, args->devices[ps].dev_addr,
               args->commands[c].command, data, args->commands[c].size);
           if ( r != SMBUS_OK ) {
-            snprintf(tmp, 64, "MON(%s): SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\r\n",
+            snprintf(tmp, TMPBUFFER_SZ, "MON(%s): SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\r\n",
                 args->name, ps,c,page);
             SuppressedPrint(tmp, &current_error_cnt, &log);
             continue; // abort reading this register
@@ -189,12 +189,12 @@ void MonitorTask(void *parameters)
             vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 )); // wait
           }
           if ( *args->smbus_status != SMBUS_OK ) {
-            snprintf(tmp, 64, "MON(%s): Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n",
+            snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n",
                 args->name, *args->smbus_status, ps,c,page);
         	  SuppressedPrint(tmp, &current_error_cnt, &log);
         	  break;
           }
-          snprintf(tmp, 64, "MON(%s): %d %s is 0x%02x %02x\r\n", args->name, ps,
+          snprintf(tmp, TMPBUFFER_SZ, "MON(%s): %d %s is 0x%02x %02x\r\n", args->name, ps,
                    args->commands[c].name, data[1], data[0]);
           DPRINT(tmp);
           float val;
@@ -203,7 +203,7 @@ void MonitorTask(void *parameters)
             val = linear11_to_float(ii);
             int tens = val;
             int fraction = ABS((val - tens)*100.0);
-            snprintf(tmp, 64, "\t\t%d.%02d (linear11)\r\n", tens, fraction);
+            snprintf(tmp, TMPBUFFER_SZ, "\t\t%d.%02d (linear11)\r\n", tens, fraction);
             DPRINT(tmp);
           }
           else if ( args->commands[c].type == PM_LINEAR16U ) {
@@ -211,7 +211,7 @@ void MonitorTask(void *parameters)
             val = linear16u_to_float(ii);
             int tens = val;
             int fraction = ABS((val - tens)*100.0);
-            snprintf(tmp, 64,  "\t\t%d.%02d (linear16u)\r\n", tens, fraction);
+            snprintf(tmp, TMPBUFFER_SZ,  "\t\t%d.%02d (linear16u)\r\n", tens, fraction);
             DPRINT(tmp);
           }
           else if ( args->commands[c].type == PM_STATUS ) {
