@@ -615,7 +615,9 @@ static void new_line_handler(microrl_t *pThis, bool execute) {
 }
 
 //*****************************************************************************
-
+// GCC 9 complains about the line 'if (isalnum(pThis->cmdline[pThis->cursor - 1])) {'
+// it is complaining about the cmdline array (not the cursor variable, that is an int)
+// See e.g. https://stackoverflow.com/a/60696378
 void microrl_insert_char(microrl_t *pThis, int ch) {
 #if MICRORL_USE_ESC_SEQ
 	if (pThis->escape) {
@@ -677,7 +679,7 @@ void microrl_insert_char(microrl_t *pThis, int ch) {
 		{
 			bool hit_word = false;
 			while (pThis->cursor > 0) {
-				if (isalnum(pThis->cmdline[pThis->cursor - 1])) {
+				if (isalnum((unsigned char)pThis->cmdline[pThis->cursor - 1])) {
 					hit_word = true;
 				}
 				if (pThis->cmdline[pThis->cursor - 1] == '\0' && hit_word) {

@@ -4416,6 +4416,9 @@ EMACVLANHashFilterGet(uint32_t ui32Base)
 //! \return None.
 //
 //*****************************************************************************
+// PW ADD for GCC 9
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 void
 EMACRemoteWakeUpFrameFilterSet(uint32_t ui32Base,
                                const tEMACWakeUpFrameFilter *pFilter)
@@ -4534,6 +4537,7 @@ EMACRemoteWakeUpFrameFilterGet(uint32_t ui32Base,
         pui32Data[ui32Loop] = HWREG(ui32Base + EMAC_O_RWUFF);
     }
 }
+#pragma GCC diagnostic pop
 
 //*****************************************************************************
 //
