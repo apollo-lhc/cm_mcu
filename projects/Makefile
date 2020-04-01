@@ -1,10 +1,4 @@
 
-include ../makedefs
-
-ifndef DEBUG
-CFLAGS+=-Werror
-endif
-
 
 DIRS=blinky uart_echo cm_mcu #i2c-sensors 
 
