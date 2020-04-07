@@ -78,6 +78,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/i2c_reg.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/uart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/utils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/softuart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
@@ -90,6 +91,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/SoftUartTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o

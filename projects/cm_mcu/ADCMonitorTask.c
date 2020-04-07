@@ -86,7 +86,7 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_TS,   "TM4C_TEMP", 1.}, // this one is special, temp in C
 };
 
-static float fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
+static __fp16 fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
 
 // read-only accessor functions for ADC names and values.
 

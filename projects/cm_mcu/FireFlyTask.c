@@ -28,9 +28,7 @@
 #include "common/power_ctl.h"
 #include "Tasks.h"
 
-#define NFIREFLIES_KU15P 11
-#define NFIREFLIES_VU7P 14
-#define NFIREFLIES (NFIREFLIES_KU15P+NFIREFLIES_VU7P)
+
 #define NPAGES_FF 1
 #define NCOMMANDS_FF 1
 
