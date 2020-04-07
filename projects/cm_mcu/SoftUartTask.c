@@ -7,6 +7,7 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 // to be moved
 #include "driverlib/sysctl.h"
@@ -141,7 +142,7 @@ void SoftUartTask(void *parameters)
 
   uint8_t message[4] = {0x9c,0x2c,0x2b,0x3e};
 
-  bool enable = false;
+  bool enable = true;
 
   // Loop forever
   for (;;) {
@@ -218,6 +219,35 @@ void SoftUartTask(void *parameters)
         for (int i = 0; i < 4; ++i ) {
           SoftUARTCharPut(&g_sUART, message[i]);
         }
+      }
+      // git version
+      const int offsetGIT = 118;
+#define SZ 20
+      char buff[SZ];
+      memset(buff, 0, SZ); // technically not needed
+      strncpy(buff, gitVersion(), SZ);
+      uint16_t *p = (uint16_t*)buff;
+      // each message sends two chars
+      for ( int j = 0; j < SZ/2; j++ ) {
+        format_data(j+offsetGIT, *p, message);
+        ++p;
+        for (int i = 0; i < 4; ++i ) {
+          SoftUARTCharPut(&g_sUART, message[i]);
+        }
+
+      }
+      // uptime
+      const int offsetUPTIME = 192;
+      TickType_t now =  xTaskGetTickCount()/(configTICK_RATE_HZ*60); // time in minutes
+      uint16_t now_16 = now & 0xFFFFU; // lower 16 bits
+      format_data(offsetUPTIME, now_16, message);
+      for (int i = 0; i < 4; ++i ) {
+        SoftUARTCharPut(&g_sUART, message[i]);
+      }
+      now_16 = (now>>16) & 0xFFFFU; // upper 16 bits
+      format_data(offsetUPTIME+1, now_16, message);
+      for (int i = 0; i < 4; ++i ) {
+        SoftUARTCharPut(&g_sUART, message[i]);
       }
 
 
