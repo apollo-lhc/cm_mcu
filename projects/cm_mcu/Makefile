@@ -22,6 +22,10 @@ FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
 #
 include ${ROOT}/makedefs
 
+ifndef DEBUG
+CFLAGS+=-Werror
+endif 
+
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #
 # Where to find source files that do not live in this directory.
