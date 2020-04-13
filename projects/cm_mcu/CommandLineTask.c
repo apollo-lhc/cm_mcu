@@ -1021,6 +1021,16 @@ static BaseType_t errbuff_reset(int argc, char **argv)
   return pdFALSE;
 }
 
+// takes no arguments
+static BaseType_t stack_ctl(int argc, char **argv)
+{
+  int copied = 0, s = SCRATCH_SIZE;
+  int i = SystemStackWaterHighWaterMark();
+  copied += snprintf(m+copied, s-copied, "stack: %d of %d untouched\r\n", i,
+      SYSTEM_STACK_SIZE);
+  return pdFALSE;
+}
+
 static
 void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 {
@@ -1325,19 +1335,19 @@ struct command_t commands[] = {
         "set_id",
         set_board_id,
         "set_id <password> <address> <data>\r\n Allows the user to set the board id information.\r\n",
-        3
+        3,
     },
     {
         "set_id_password",
         set_board_id_password,
         "set_id_password\r\n One-time use: sets password for ID block.\r\n",
-        0
+        0,
     },
     {
         "simple_sensor",
         sensor_summary,
         "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
-        0
+        0,
     },
     {
         "suart",
@@ -1346,9 +1356,15 @@ struct command_t commands[] = {
         1,
     },
     {
+        "stack_usage",
+        stack_ctl,
+        "stack_usage \r\n Print out system stack high water mark.\r\n",
+        0,
+    },
+    {
         "task-stats",
         TaskStatsCommand,
-        "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n",
+        "task-stats \r\n Displays a table showing the state of each FreeRTOS task\r\n",
         0
     },
     {
@@ -1395,7 +1411,6 @@ BaseType_t help_command_fcn(int argc, char ** argv)
   static int i = 0;
   for ( ; i < NUM_COMMANDS; ++i ) {
     if ( (s-copied)<strlen(commands[i].helpstr) ) {
-      ++i;
       return pdTRUE;
     }
     copied += snprintf(m+copied, s-copied, "%s", commands[i].helpstr);

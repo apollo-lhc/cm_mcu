@@ -53,7 +53,12 @@ extern int main(void);
 // Reserve space for the system stack.
 //
 //*****************************************************************************
-static uint32_t pui32Stack[64];
+static uint32_t pui32Stack[SYSTEM_STACK_SIZE];
+
+const uint32_t * getSystemStack()
+{
+  return pui32Stack;
+}
 
 //*****************************************************************************
 //
@@ -231,7 +236,6 @@ ResetISR(void)
     {
         *pui32Dest++ = *pui32Src++;
     }
-
     //
     // Zero fill the bss segment.
     //
@@ -244,6 +248,11 @@ ResetISR(void)
           "        it      lt\n"
           "        strlt   r2, [r0], #4\n"
           "        blt     zero_loop");
+    // Put a canary on the system stack
+    pui32Dest = pui32Stack;
+    for ( ; pui32Dest < (pui32Stack + sizeof(pui32Stack)/sizeof(uint32_t)); ) {
+      *pui32Dest++ = 0xDEADBEEFUL;
+    }
 
     //
     // Enable the floating-point unit.  This must be done here to handle the
@@ -345,7 +354,6 @@ static void HardFault_Handler(void)
 #endif
 }
 #pragma GCC diagnostic pop
-
 
 //*****************************************************************************
 //
