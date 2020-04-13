@@ -51,7 +51,7 @@ void stopwatch_reset(void);
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS                 0
 
 #define configUSE_MALLOC_FAILED_HOOK                            0
-#define configUSE_IDLE_HOOK                                     0
+#define configUSE_IDLE_HOOK                                     1
 #define configUSE_TICK_HOOK                                     0
 
 #define configSUPPORT_STATIC_ALLOCATION                         0
@@ -136,6 +136,9 @@ header file. */
 // non-standard, park this here for now
 #define CLI_UART UART4_BASE // Front panel
 //#define CLI_UART UART1_BASE // Zynq
+
+#define SYSTEM_STACK_SIZE 128
+
 
 #define pdTICKS_TO_MS( xTicks )    ( ( ( TickType_t ) ( xTicks ) * 1000u ) / configTICK_RATE_HZ )
 

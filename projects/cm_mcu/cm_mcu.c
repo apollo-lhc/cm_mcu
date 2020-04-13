@@ -481,6 +481,21 @@ int main( void )
 }
 
 
+ int SystemStackWaterHighWaterMark()
+ {
+   int i;
+   const uint32_t *stack = getSystemStack();
+   // we need to disable interrupts since we are looking at the system stack
+   taskENTER_CRITICAL();
+   for ( i = 0; i < SYSTEM_STACK_SIZE; ++i ) {
+     if ( stack[i] != 0xdeadbeefUL )
+       break;
+   }
+   taskEXIT_CRITICAL();
+   return i;
+ }
+
+
 /*-----------------------------------------------------------*/
 #if  (configCHECK_FOR_STACK_OVERFLOW != 0)
 void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
@@ -491,8 +506,10 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
   ( void ) pcTaskName;
   char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
-  Print(tmp);
-
+  UARTPrint(CLI_UART, tmp); // can't use Print() here -- this gets called
+  // from an ISR-like context.
+  while ( UARTBusy(CLI_UART))
+    ;
   for( ;; );
 }
 #endif
@@ -501,7 +518,27 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 #if ( configUSE_IDLE_HOOK == 1 )
 void vApplicationIdleHook( void )
 {
-  // not doing anything right now; this is just here in case I need to use it
+  // monitor the state of the system stack (MSP)
+  static int HW = 999;
+  int nHW = SystemStackWaterHighWaterMark();
+  if ( nHW < HW ) {
+    char tmp[96];
+    snprintf(tmp, 64, "Stack canary now %d\r\n", nHW);
+    Print(tmp);
+    HW = nHW;
+#ifdef DUMP_STACK
+    const uint32_t * p = getSystemStack();
+    for ( int i = 0; i < SYSTEM_STACK_SIZE; ++i ) {
+      if ( i % 4 == 0 ) {
+        snprintf(tmp, 96, "\r\n%x: ", p);
+        Print(tmp);
+      }
+      snprintf(tmp, 96, "%08x\t", *p++);
+      Print(tmp);
+    }
+    Print("\r\n");
+#endif // DUMP_STACK
+  }
 }
 #endif
 

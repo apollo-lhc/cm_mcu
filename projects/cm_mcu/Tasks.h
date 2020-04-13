@@ -132,4 +132,8 @@ void EEPROMTask(void *parameters);
 extern QueueHandle_t xSoftUartQueue;
 void SoftUartTask(void *parameters);
 
+// utility functions
+const uint32_t * getSystemStack();
+int SystemStackWaterHighWaterMark();
+
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */
