@@ -54,18 +54,6 @@
 #include "stream_buffer.h"
 #include "semphr.h"
 #include "portmacro.h"
-//*****************************************************************************
-//
-// Define pin to LED mapping.
-//
-//*****************************************************************************
-
-#define USER_LED1_PIN  GPIO_PIN_0
-#define USER_LED2_PIN  GPIO_PIN_1
-#define USER_LED12_PORT GPIO_PORTJ_BASE // same port
-
-#define USER_LED3_PIN  GPIO_PIN_0
-#define USER_LED3_PORT GPIO_PORTP_BASE
 
 #define I2C0_SLAVE_ADDRESS 0x40
 
@@ -101,39 +89,6 @@ void Print(const char* str)
 
 
 
-
-// These register locations are defined by the ARM Cortex-M4F
-// specification and do not depend on the TM4C1290NCPDT
-// ARM DWT
-#define DEMCR_TRCENA    0x01000000
-
-/* Core Debug registers */
-#define DEMCR           (*(volatile uint32_t *)0xE000EDFC)
-#define DWT_CTRL        (*(volatile uint32_t *)0xe0001000)
-#define CYCCNTENA       (1<<0)
-#define DWT_CYCCNT      ((volatile uint32_t *)0xE0001004)
-#define CPU_CYCLES      *DWT_CYCCNT
-
-static uint32_t counter, prev_count;
-
-void stopwatch_reset(void)
-{
-    /* Enable DWT */
-    DEMCR |= DEMCR_TRCENA;
-    *DWT_CYCCNT = 0;
-    /* Enable CPU cycle counter */
-    DWT_CTRL |= CYCCNTENA;
-    counter = prev_count = 0U;
-}
-
-uint32_t stopwatch_getticks()
-{
-    uint32_t curr_count =  CPU_CYCLES;
-    uint32_t diff = curr_count - prev_count;
-    prev_count = curr_count;
-    counter += diff>>12; // degrade counter a bit-- don't need this precision
-    return counter;
-}
 
 
 
@@ -239,6 +194,8 @@ return;
 
 volatile uint32_t g_ui32SysTickCount;
 
+CommandLineTaskArgs_t cli_uart1;
+CommandLineTaskArgs_t cli_uart4;
 
 
 
@@ -250,120 +207,6 @@ void ShortDelay()
 }
 
 
-struct TaskNamePair_t {
-  char key[configMAX_TASK_NAME_LEN];
-  TaskHandle_t value;
-} ;
-
-#define MAX_TASK_COUNT (sizeof(TaskNamePairs)/sizeof(TaskNamePairs[0]))
-static struct TaskNamePair_t TaskNamePairs[] =
-    {
-        {"POW",   0},
-        {"LED",   0},
-        {"CLIZY", 0},
-        {"CLIFP", 0},
-        {"ADC",   0},
-        {"PSMON", 0},
-        {"FFLY",  0},
-        {"XIMON", 0},
-        {"ALARM", 0},
-        {"I2CS0", 0},
-        {"EPRM",  0},
-        {"INIT",  0},
-        {"SUART", 0},
-    };
-
-void vGetTaskHandle( const char *key, TaskHandle_t *t)
-{
-  *t = NULL;
-  for (int i = 0; i < MAX_TASK_COUNT; ++i) {
-    if ( strncmp(key, TaskNamePairs[i].key,3) == 0)
-      *t = TaskNamePairs[i].value;
-  }
-  return ;
-}
-
-CommandLineTaskArgs_t cli_uart1;
-CommandLineTaskArgs_t cli_uart4;
-
-struct dev_i2c_addr_t fpga_addrs[] = {
-    {"VU7P", 0x70, 1, 0x36},
-    {"KU15P", 0x70, 0, 0x36},
-};
-
-struct dev_i2c_addr_t fpga_addrs_kuonly[] = {
-    {"KU15P", 0x70, 0, 0x36},
-};
-
-struct dev_i2c_addr_t fpga_addrs_vuonly[] = {
-    {"VU7P", 0x70, 1, 0x36},
-};
-
-
-
-struct pm_command_t pm_command_fpga[] = {
-    { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
-};
-
-float pm_fpga[2] = {0.0,0.0};
-
-struct MonitorTaskArgs_t fpga_args = {
-    .name = "XIMON",
-    .devices = fpga_addrs,
-    .n_devices = 2,
-    .commands = pm_command_fpga,
-    .n_commands = 1,
-    .pm_values = pm_fpga,
-    .n_values = 2,
-    .n_pages = 1,
-    .smbus = &g_sMaster6,
-    .smbus_status = &eStatus6,
-};
-
-// Supply Address | Voltages | Priority
-// ---------------+----------|-----------
-//       0x40     | 3.3 & 1.8|     2
-//       0x44     | KVCCINT  |     1
-//       0x43     | KVCCINT  |     1
-//       0x46     | VVCCINT  |     1
-//       0x45     | VVCCINT  |     1
-struct dev_i2c_addr_t pm_addrs_dcdc[] = {
-    {"3V3/1V8", 0x70, 0, 0x40},
-    {"KVCCINT1", 0x70, 1, 0x44},
-    {"KVCCINT2", 0x70, 2, 0x43},
-    {"VVCCINT1", 0x70, 3, 0x46},
-    {"VVCCINT2", 0x70, 4, 0x45},
-};
-
-
-struct pm_command_t pm_command_dcdc[] = {
-        { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
-        { 0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11 },
-        { 0x88, 2, "READ_VIN", "V", PM_LINEAR11 },
-        { 0x8B, 2, "READ_VOUT", "V", PM_LINEAR16U },
-        { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 },
-        //{ 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
-        { 0x79, 2, "STATUS_WORD", "", PM_STATUS },
-        //{ 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
-        //{ 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
-      };
-float dcdc_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
-struct MonitorTaskArgs_t dcdc_args = {
-    .name = "PSMON",
-    .devices = pm_addrs_dcdc,
-    .n_devices = NSUPPLIES_PS,
-    .commands = pm_command_dcdc,
-    .n_commands = NCOMMANDS_PS,
-    .pm_values = dcdc_values,
-    .n_values = NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS,
-    .n_pages = NPAGES_PS,
-    .smbus = &g_sMaster1,
-    .smbus_status = &eStatus1,
-};
-
-//struct I2CSlaveTaskArgs_t i2c0_slave_args = {
-//    .smbus = 0,//&g_sSlave0,
-//};
 
 const char* buildTime()
 {
@@ -382,17 +225,21 @@ int main( void )
 {
   SystemInit();
 
-  // check if we are to include both FPGAs or not
-  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-  if ( ! ku_enable ) {
-    fpga_args.devices = fpga_addrs_vuonly;
-    fpga_args.n_devices = 1;
-  }
-  else if ( ! vu_enable ) {
-    fpga_args.devices = fpga_addrs_kuonly;
-    fpga_args.n_devices = 1;
-  }
+  initFPGAMon();
+//  // check if we are to include both FPGAs or not
+//  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+//  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+//  configASSERT(ku_enable || vu_enable);
+//  if ( ! ku_enable && vu_enable ) {
+//    fpga_args.devices = fpga_addrs_vuonly;
+//    fpga_args.n_devices = 1;
+//    set_vu_index(0);
+//  }
+//  else if ( ! vu_enable && ku_enable ) {
+//    fpga_args.devices = fpga_addrs_kuonly;
+//    fpga_args.n_devices = 1;
+//    set_ku_index(0);
+//  }
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
@@ -416,19 +263,19 @@ int main( void )
     fpga_args.pm_values[i] = -999.;
 
   // start the tasks here 
-  xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[0].value);
-  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &TaskNamePairs[1].value);
-  xTaskCreate(vCommandLineTask,"CLIZY", 512,              &cli_uart1, tskIDLE_PRIORITY+1, &TaskNamePairs[2].value);
-  xTaskCreate(vCommandLineTask,"CLIFP", 512,              &cli_uart4, tskIDLE_PRIORITY+1, &TaskNamePairs[3].value);
-  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[4].value);
-  xTaskCreate(FireFlyTask,    "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[6].value);
-  xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, &TaskNamePairs[5].value);
-  xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, &TaskNamePairs[7].value);
-  xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[8].value);
-  xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[9].value);
-  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, &TaskNamePairs[10].value);
-  xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, &TaskNamePairs[11].value);
-  xTaskCreate(SoftUartTask,  "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, &TaskNamePairs[12].value);
+  xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
+  xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
+  xTaskCreate(vCommandLineTask,"CLIZY", 512,              &cli_uart1, tskIDLE_PRIORITY+1, NULL);
+  xTaskCreate(vCommandLineTask,"CLIFP", 512,              &cli_uart4, tskIDLE_PRIORITY+1, NULL);
+  xTaskCreate(ADCMonitorTask,  "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
+  xTaskCreate(FireFlyTask,    "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
+  xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, NULL);
+  xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, NULL);
+  xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
+  xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
+  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
+  xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
+  xTaskCreate(SoftUartTask,  "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, NULL);
 
 
   // -------------------------------------------------
@@ -454,13 +301,6 @@ int main( void )
 
   xSoftUartQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
   configASSERT(xSoftUartQueue != NULL);
-
-#ifdef DEBUGxx
-  vQueueAddToRegistry(xLedQueue, "LedQueue");
-  vQueueAddToRegistry(xPwrQueue, "PwrQueue");
-  vQueueAddToRegistry(xEPRMQueue_in, "EPRMQueue_in");
-  vQueueAddToRegistry(xEPRMQueue_out, "EPRMQueue_out");
-#endif // DEBUG
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.
@@ -508,13 +348,21 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
      function will automatically get called if a task overflows its stack. */
   ( void ) pxTask;
   ( void ) pcTaskName;
+  taskDISABLE_INTERRUPTS();
   char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
   UARTPrint(CLI_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
   while ( UARTBusy(CLI_UART))
     ;
+  // log the error
+  errbuffer_put_raw(ebuf, EBUF_STACKOVERFLOW,0);
+#ifdef DEBUG
+  // wait here for the debugger
   for( ;; );
+#else // DEBUG
+  ROM_SysCtlReset();
+#endif // DEBUG
 }
 #endif
 /*-----------------------------------------------------------*/

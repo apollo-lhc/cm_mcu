@@ -138,4 +138,12 @@ void SoftUartTask(void *parameters);
 const uint32_t * getSystemStack();
 int SystemStackWaterHighWaterMark();
 
+// Xilinx MonitorTask
+int get_ku_index();
+int get_vu_index();
+//void set_ku_index(int index);
+//void set_vu_index(int index);
+void initFPGAMon();
+
+
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

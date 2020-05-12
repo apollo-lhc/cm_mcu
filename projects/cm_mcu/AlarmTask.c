@@ -111,14 +111,20 @@ void AlarmTask(void *parameters)
     }
 
     // FPGA
-    float max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+    float max_fpga;
+    if ( fpga_args.n_devices == 2 ) {
+      max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+    }
+    else {
+      max_fpga = fpga_args.pm_values[0];
+    }
     if ( max_fpga > alarm_temp_fpga) {
-    	status |= ALM_STAT_FPGA_OVERTEMP;
-        temp_over_fpga = max_fpga-alarm_temp_fpga;
-        temp_over += temp_over_fpga;
-        if (temp_over_fpga>temp_over_device){
-        	temp_over_device = temp_over_fpga;
-        	}
+      status |= ALM_STAT_FPGA_OVERTEMP;
+      temp_over_fpga = max_fpga-alarm_temp_fpga;
+      temp_over += temp_over_fpga;
+      if (temp_over_fpga>temp_over_device){
+	temp_over_device = temp_over_fpga;
+      }
     }
 
 

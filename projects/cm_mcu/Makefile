@@ -98,6 +98,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/SoftUartTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/LocalTasks.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o

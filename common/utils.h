@@ -43,7 +43,6 @@ uint64_t read_eeprom_multi(uint32_t addr);
 
 #define COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
-
 extern const char* ebuf_errstrings[];
 
 // error codes without data
@@ -53,12 +52,25 @@ extern const char* ebuf_errstrings[];
 #define EBUF_POWER_OFF_TEMP		4
 #define EBUF_POWER_ON			5
 #define EBUF_TEMP_NORMAL		6
-#define EBUF_ISR				7
+#define EBUF_HARDFAULT      7
+#define EBUF_ASSERT         8
+#define EBUF_STACKOVERFLOW  9
+
 // error codes with data
-#define EBUF_WITH_DATA			8		// for comparison
-#define EBUF_CONTINUATION		8
-#define EBUF_PWR_FAILURE		9
-#define EBUF_TEMP_HIGH			10
+#define EBUF_WITH_DATA			10		// for comparison
+#define EBUF_CONTINUATION		10
+#define EBUF_PWR_FAILURE		11
+#define EBUF_TEMP_HIGH			12
+
+// Restart Reasons, values of reset cause (RESC) register,
+// at 0x5c offset in TM4C1290NCPDT
+#define EBUF_RESTART_WDOG (SYSCTL_CAUSE_WDOG1|SYSCTL_CAUSE_WDOG0)
+#define EBUF_RESTART_SW   SYSCTL_CAUSE_SW
+#define EBUF_RESTART_POR  SYSCTL_CAUSE_POR
+#define EBUF_RESTART_EXT  SYSCTL_CAUSE_EXT
+
+
+
 
 
 typedef struct error_buffer_t error_buffer_t;
@@ -72,6 +84,9 @@ void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata);
 // TODO: change get to not count continue codes as entries (append to prior entries?)
 void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num]);
 
+// this version bypasses the gatekeeper task and should only be used in ISR only
+void errbuffer_put_raw(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata);
+
 uint32_t errbuffer_capacity(errbuf_handle_t ebuf);
 uint32_t errbuffer_minaddr(errbuf_handle_t ebuf);
 uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf);
@@ -84,5 +99,8 @@ uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata);
 
 // specific error functions
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);
+// timers used for FreeRTOS accounting
+void stopwatch_reset(void);
+uint32_t stopwatch_getticks();
 
 #endif /* COMMON_UTILS_H_ */

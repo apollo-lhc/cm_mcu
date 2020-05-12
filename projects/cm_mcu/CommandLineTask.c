@@ -476,7 +476,7 @@ static BaseType_t led_ctl(int argc, char ** argv)
 }
 
 // dump monitor information
-static BaseType_t mon_ctl(int argc, char ** argv)
+static BaseType_t psmon_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   BaseType_t i1 = strtol(argv[1], NULL, 10);
@@ -761,8 +761,12 @@ static BaseType_t sensor_summary(int argc, char ** argv)
       imax_temp = v;
   }
   copied += snprintf(m+copied, s-copied, "FIREFLY %02d.0\r\n", imax_temp);
-  // FPGAs. This is gonna bite me in the @#$#@ someday
-  float max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+  // FPGAs.
+  float max_fpga;
+  if ( fpga_args.n_devices == 2 )
+    max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+  else
+    max_fpga = fpga_args.pm_values[0];
   tens = max_fpga;
   frac = ABS((tens-max_fpga))*100.;
   copied += snprintf(m+copied, s-copied, "FPGA %02d.%02d\r\n", tens, frac);
@@ -989,6 +993,49 @@ static BaseType_t errbuff_out(int argc, char **argv)
 		if (errcode>=EBUF_WITH_DATA) {
 			copied += snprintf(m+copied,s-copied," %02u",errdata);
 		}
+#if 0
+      switch(errcode) {
+      case EBUF_RESTART:
+        copied += snprintf(m+copied, s-copied,
+            "%02u %02u:%02u \t %x RESTART ", days, hours, minutes, counter);
+        if (errdata & EBUF_RESTART_SW )
+          copied += snprintf(m+copied, s-copied, "(SW)\r\n");
+        else if (errdata & EBUF_RESTART_EXT )
+          copied += snprintf(m+copied, s-copied, "(EXT)\r\n");
+        else if (errdata & EBUF_RESTART_WDOG )
+          copied += snprintf(m+copied, s-copied, "(WDOG)\r\n");
+        else if (errdata & EBUF_RESTART_POR )
+          copied += snprintf(m+copied, s-copied, "(POR)\r\n");
+        else
+          copied += snprintf(m+copied, s-copied, "\r\n");
+        break;
+      case EBUF_RESET_BUFFER:
+        copied += snprintf(m+copied, s-copied,
+            "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
+            hours, minutes, counter);
+        break;
+      case EBUF_HARDFAULT:
+        copied += snprintf(m+copied, s-copied,
+            "%02u %02u:%02u \t %x HARD FAULT: ISRNUM= 0x%x\r\n", days,
+            hours, minutes, counter, errdata);
+        break;
+      case EBUF_ASSERT:
+        copied += snprintf(m+copied, s-copied,
+            "%02u %02u:%02u \t %x ASSERT\r\n", days,
+            hours, minutes, counter);
+        break;
+      case EBUF_STACKOVERFLOW:
+        copied += snprintf(m+copied, s-copied,
+            "%02u %02u:%02u \t %x STACK OVERFLOW\r\n", days,
+            hours, minutes, counter);
+        break;
+      default: // unknown
+        copied += snprintf(m+copied, s-copied,
+            "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
+            minutes, realcount, errcode,errdata);
+        break;
+      }
+#endif       
     }
     if ((s-copied)<20 && (i<num)){	// this should catch when buffer is close to full
     	++i;
@@ -1103,33 +1150,7 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
   }
 }
 
-void vGetTaskHandle(const char *key, TaskHandle_t  *t);
 
-// argument 1 is task, argument 2 is command
-static BaseType_t task_ctl(int argc, char ** argv)
-{
-  int s = SCRATCH_SIZE;
-
-  TaskHandle_t t = 0;
-  vGetTaskHandle(argv[1],&t);
-  if ( t == NULL ) {
-    snprintf(m,s, "%s: invalid task %s requested\r\n", argv[0], argv[1]);
-    return pdFALSE;
-  }
-  if (strncmp(argv[2],  "susp", 4) == 0 ) {
-    vTaskSuspend(t);
-    snprintf(m,s, "%s: suspended task %s\r\n", argv[0], argv[1]);
-  }
-  else if ( strncmp(argv[2], "resu",4) == 0 ) {
-    vTaskResume(t);
-    snprintf(m,s, "%s: resumed task %s\r\n", argv[0], argv[1]);
-  }
-  else { // unrecognized command
-    snprintf(m,s,"%s: command %s not recognized. Valid commands are 'suspend' and 'resume'.\r\n",
-        argv[0], argv[2]);
-  }
-  return pdFALSE;
-}
 
 static BaseType_t uptime(int argc, char ** argv)
 {
@@ -1318,7 +1339,12 @@ struct command_t commands[] = {
         "i2c_scan\r\n Scan current I2C bus.\r\n",
         0,
     },
-    { "help", help_command_fcn, "help\r\n This help command\r\n", 0},
+    {
+        "help",
+        help_command_fcn,
+        "help\r\n This help command\r\n",
+        -1
+    },
     {
         "pwr",
         power_ctl,
@@ -1332,9 +1358,9 @@ struct command_t commands[] = {
         1
     },
     {
-        "mon",
-        mon_ctl,
-        "mon <#>\r\n Displays a table showing the state of power supplies.\r\n",
+        "psmon",
+        psmon_ctl,
+        "psmon <#>\r\n Displays a table showing the state of power supplies.\r\n",
         1
     },
     {
@@ -1380,12 +1406,6 @@ struct command_t commands[] = {
         0
     },
     {
-        "task",
-        task_ctl,
-        "task <name> <command>\r\n Manipulate task <name>. Options are suspend and restart.\r\n",
-        2
-    },
-    {
         "uptime",
         uptime,
         "uptime\r\n Display uptime in minutes\r\n",
@@ -1421,6 +1441,7 @@ BaseType_t help_command_fcn(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE, copied = 0;
   static int i = 0;
+  if ( argc == 1 ) {
   for ( ; i < NUM_COMMANDS; ++i ) {
     if ( (s-copied)<strlen(commands[i].helpstr) ) {
       return pdTRUE;
@@ -1428,6 +1449,17 @@ BaseType_t help_command_fcn(int argc, char ** argv)
     copied += snprintf(m+copied, s-copied, "%s", commands[i].helpstr);
   }
   i = 0;
+  return pdFALSE;
+  }
+  else { // help on a specific command
+    for (int j = 0; j < NUM_COMMANDS; ++j ) {
+      if (strncmp(commands[j].commandstr, argv[1], 10) == 0 ) {
+        copied += snprintf(m+copied, s-copied, "%s", commands[j].helpstr);
+        return pdFALSE;
+      }
+    }
+
+  }
   return pdFALSE;
 }
 

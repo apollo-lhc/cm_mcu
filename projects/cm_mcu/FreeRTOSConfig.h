@@ -6,6 +6,10 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
+#include "common/utils.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/rom.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,7 +96,7 @@ to exclude the API function. */
 #define INCLUDE_xTimerPendFunctionCall                  0
 #define INCLUDE_xSemaphoreGetMutexHolder                0
 #define INCLUDE_xTaskGetHandle                          0
-#define INCLUDE_xTaskGetCurrentTaskHandle               1
+#define INCLUDE_xTaskGetCurrentTaskHandle               0
 #define INCLUDE_xTaskGetIdleTaskHandle                  0
 #define INCLUDE_xTaskAbortDelay                         0
 #define INCLUDE_xTaskGetSchedulerState                  0
@@ -127,7 +131,38 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
-#define configASSERT( x ) if( ( x ) == 0UL ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
+
+// Various utilities for accessing pointers, etc
+// This returns the link register; it's a GCC builtin
+#define GET_LR() __builtin_return_address(0)
+// This is ARM and GCC specific syntax and returns the program counter
+#define GET_PC(_a) __asm volatile ("mov %0, pc" : "=r" (_a))
+//void apollo_log_assert(void *pc, void * lr);
+//const void *lr = GET_LR();
+
+// assert handling
+#define APOLLO_ASSERT_RECORD()     \
+    volatile void *pc;                  \
+    GET_PC(pc);                \
+    errbuffer_put_raw(ebuf, EBUF_ASSERT,0)
+
+#ifdef DEBUG
+#define APOLLO_ASSERT(exp) \
+     if (!(exp))  {  \
+       APOLLO_ASSERT_RECORD();      \
+       for (;;) ;\
+     }
+#else
+#define APOLLO_ASSERT(exp)         \
+    if (!(exp))  {  \
+      APOLLO_ASSERT_RECORD();      \
+      ROM_SysCtlReset(); \
+    }
+#endif
+
+
+//#define configASSERT( x ) if( ( x ) == 0UL ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
+#define configASSERT( x ) APOLLO_ASSERT((x))
 
 // for the CLI
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE 1

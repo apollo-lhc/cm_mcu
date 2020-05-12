@@ -328,9 +328,15 @@ of this function. */
   lr = pulFaultStackAddress[ 5 ];
   pc = pulFaultStackAddress[ 6 ];
   psr = pulFaultStackAddress[ 7 ];
+  // save the originatin interrupt
+  errbuffer_put_raw(ebuf, EBUF_HARDFAULT, (uint16_t)psr&0xfUL);
 
+#ifdef DEBUG
   /* When the following line is hit, the variables contain the register values. */
   for( ;; );
+#else
+  ROM_SysCtlReset();
+#endif // DEBUG
 }
 
 /* The fault handler implementation calls a function called
