@@ -3417,6 +3417,7 @@ SMBusMasterInit(tSMBus *psSMBus, uint32_t ui32I2CBase,
     //
     MAP_I2CMasterTimeoutSet(psSMBus->ui32I2CBase, 0x9C);
 }
+#ifdef SMBUS_SLAVE
 
 //*****************************************************************************
 //
@@ -3614,7 +3615,7 @@ SMBusSlaveIntProcess(tSMBus *psSMBus)
                 if(HWREGBITB(&psSMBus->ui16Flags, FLAG_RAW_I2C))
                 {
                     psSMBus->pui8RxBuffer[psSMBus->ui8RxIndex++] =
-                        I2CSlaveDataGet(psSMBus->ui32I2CBase);
+                        MAP_I2CSlaveDataGet(psSMBus->ui32I2CBase);
                 }
 
                 //
@@ -3623,7 +3624,7 @@ SMBusSlaveIntProcess(tSMBus *psSMBus)
                 else
                 {
                     psSMBus->ui8CurrentCommand =
-                        I2CSlaveDataGet(psSMBus->ui32I2CBase);
+                        MAP_I2CSlaveDataGet(psSMBus->ui32I2CBase);
                 }
 
                 //
@@ -3681,7 +3682,7 @@ SMBusSlaveIntProcess(tSMBus *psSMBus)
                         //
                         // Read the data into the a temporary variable.
                         //
-                        ui8DataTemp = I2CSlaveDataGet(psSMBus->ui32I2CBase);
+                        ui8DataTemp = MAP_I2CSlaveDataGet(psSMBus->ui32I2CBase);
 
                         //
                         // Check if this is a block transfer.
@@ -3836,7 +3837,7 @@ SMBusSlaveIntProcess(tSMBus *psSMBus)
                         //
                         // Read the data into the a temporary variable.
                         //
-                        ui8DataTemp = I2CSlaveDataGet(psSMBus->ui32I2CBase);
+                        ui8DataTemp = MAP_I2CSlaveDataGet(psSMBus->ui32I2CBase);
 
                         //
                         // If there is no data to receive and no PEC, nothing
@@ -3942,7 +3943,7 @@ SMBusSlaveIntProcess(tSMBus *psSMBus)
                         //
                         // Read the data into the a temporary variable.
                         //
-                        ui8DataTemp = I2CSlaveDataGet(psSMBus->ui32I2CBase);
+                        ui8DataTemp = MAP_I2CSlaveDataGet(psSMBus->ui32I2CBase);
 
                         //
                         // Compare PEC.
@@ -3972,7 +3973,7 @@ SMBusSlaveIntProcess(tSMBus *psSMBus)
                         //
                         // Read the data into the a temporary variable.
                         //
-                        ui8DataTemp = I2CSlaveDataGet(psSMBus->ui32I2CBase);
+                        ui8DataTemp = MAP_I2CSlaveDataGet(psSMBus->ui32I2CBase);
 
                         //
                         // Report an error.
@@ -5081,7 +5082,6 @@ SMBusSlaveIntEnable(tSMBus *psSMBus)
         }
     }
 }
-
 //*****************************************************************************
 //
 //! Sets the slave address for an SMBus slave peripheral.
@@ -5172,7 +5172,7 @@ SMBusSlaveInit(tSMBus *psSMBus, uint32_t ui32I2CBase)
     //
     I2CSlaveEnable(psSMBus->ui32I2CBase);
 }
-
+#endif // SMBUS_SLAVE
 //*****************************************************************************
 //
 // Close the Doxygen group.

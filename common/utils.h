@@ -22,8 +22,8 @@ void setupActiveLowPins(void);
 
 
 // EEPROM
-#define SN_ADDR 64
-#define FF_ADDR (SN_ADDR+4)
+#define EEPROM_ID_SN_ADDR 64
+#define EEPROM_ID_FF_ADDR (EEPROM_ID_SN_ADDR+4)
 
 void write_eeprom(uint32_t data, uint32_t addr);
 uint32_t read_eeprom_single(uint32_t addr);
@@ -76,24 +76,24 @@ extern const char* ebuf_errstrings[];
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
 
-extern errbuf_handle_t ebuf;
+//extern errbuf_handle_t ebuf;
 
-void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk);
-void errbuffer_reset(errbuf_handle_t ebuf);
-void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata);
+void errbuffer_init(uint8_t minblk, uint8_t maxblk);
+void errbuffer_reset();
+void errbuffer_put(uint16_t errcode, uint16_t errdata);
 // TODO: change get to not count continue codes as entries (append to prior entries?)
-void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num]);
+void errbuffer_get(uint32_t num, uint32_t (*arrptr)[num]);
 
 // this version bypasses the gatekeeper task and should only be used in ISR only
-void errbuffer_put_raw(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata);
+void errbuffer_put_raw(uint16_t errcode, uint16_t errdata);
 
-uint32_t errbuffer_capacity(errbuf_handle_t ebuf);
-uint32_t errbuffer_minaddr(errbuf_handle_t ebuf);
-uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf);
-uint32_t errbuffer_head(errbuf_handle_t ebuf);
-uint16_t errbuffer_last(errbuf_handle_t ebuf);
-uint16_t errbuffer_counter(errbuf_handle_t ebuf);
-uint16_t errbuffer_continue(errbuf_handle_t ebuf);
+uint32_t errbuffer_capacity();
+uint32_t errbuffer_minaddr();
+uint32_t errbuffer_maxaddr();
+uint32_t errbuffer_head();
+uint16_t errbuffer_last();
+uint16_t errbuffer_counter();
+uint16_t errbuffer_continue();
 
 uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata);
 

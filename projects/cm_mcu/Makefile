@@ -27,6 +27,8 @@ CFLAGS+=-Werror
 endif 
 
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
+#CFLAGS+=-fstack-protector 
+
 #
 # Where to find source files that do not live in this directory.
 #

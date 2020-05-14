@@ -28,8 +28,9 @@ void InitTask(void *parameters)
   uint16_t restart_reason = (uint16_t) 0xFFFFUL&r;
   // clear RESC register
   ROM_SysCtlResetCauseClear(r);
-  errbuffer_put(ebuf,EBUF_RESTART, restart_reason);
+  errbuffer_put(EBUF_RESTART, restart_reason);
 
+  vTaskSuspend( NULL );
 
   // Delete this task
   vTaskDelete(xTaskGetCurrentTaskHandle());

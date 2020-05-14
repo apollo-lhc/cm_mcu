@@ -281,21 +281,21 @@ static BaseType_t power_ctl(int argc, char ** argv)
   int s = SCRATCH_SIZE;
 
   uint32_t message;
-  if ( strcmp(argv[1], "on") == 0 ) {
+  if ( strncmp(argv[1], "on", 2) == 0 ) {
     message = PS_ON; // turn on power supply
   }
-  else if ( strcmp(argv[1], "off")  == 0 ) {
+  else if ( strncmp(argv[1], "off", 3)  == 0 ) {
     message = PS_OFF; // turn off power supply
   }
-  else if ( strcmp(argv[1], "status") == 0 ) { // report status to UART
+  else if ( strncmp(argv[1], "status", 5) == 0 ) { // report status to UART
     int copied = 0;
-//    copied += snprintf(m+copied, s-copied, "power_ctl:\r\nLowest ena: %d\r\n",
+//    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "power_ctl:\r\nLowest ena: %d\r\n",
 //        getLowestEnabledPSPriority());
     bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
     static int i=0;
     if (i==0){
-    	copied += snprintf(m+copied, s-copied, "pwr_ctl:\r\nVU_ENABLE:\t%d\r\n"
+    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, "pwr_ctl:\r\nVU_ENABLE:\t%d\r\n"
         "KU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
     }
     for (; i < N_PS_OKS; ++i ) {
@@ -319,9 +319,9 @@ static BaseType_t power_ctl(int argc, char ** argv)
                 break;
     }
 
-      copied += snprintf(m+copied, s-copied, "%15s: %s\r\n",
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%15s: %s\r\n",
           pin_names[oks[i].name],  c);
-      if ( (s-copied) < 20  && (i < N_PS_OKS) ) {
+      if ( (SCRATCH_SIZE-copied) < 20  && (i < N_PS_OKS) ) {
     	  ++i;
     	  return pdTRUE;
       }
@@ -350,16 +350,16 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
   }
 
   uint32_t message;
-  if ( strcmp(argv[1], "clear") == 0 ) {
+  if ( strncmp(argv[1], "clear", 4) == 0 ) {
     message = TEMP_ALARM_CLEAR_ALL; // turn on power supply
     xQueueSendToBack(xAlmQueue, &message, pdMS_TO_TICKS(10));
     m[0] = '\0'; // no output from this command
 
     return pdFALSE;
   }
-  else if ( strcmp(argv[1], "status") == 0 ) { // report status to UART
+  else if ( strncmp(argv[1], "status", 5) == 0 ) { // report status to UART
     int copied = 0;
-    copied += snprintf(m+copied,s-copied, "%s: ALARM status\r\n", argv[0]);
+    copied += snprintf(m+copied,SCRATCH_SIZE-copied, "%s: ALARM status\r\n", argv[0]);
     int32_t stat = getAlarmStatus();
     float ff_val = getAlarmTemperature(FF);
     float dcdc_val = getAlarmTemperature(DCDC);
@@ -369,16 +369,16 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
     int fpga_tens = fpga_val; int fpga_frac = ABS((fpga_tens-fpga_val))*100;
     int dcdc_tens = dcdc_val; int dcdc_frac = ABS((dcdc_tens-dcdc_val))*100;
     int tm4c_tens = tm4c_val; int tm4c_frac = ABS((tm4c_tens-tm4c_val))*100;
-    //copied += snprintf(m+copied, s-copied, "Temperature threshold: %02d.%02d\n\r",
+    //copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Temperature threshold: %02d.%02d\n\r",
     //    tens,frac);
-    copied += snprintf(m+copied, s-copied, "Raw: 0x%08x\r\n", stat);
-    copied += snprintf(m+copied, s-copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Raw: 0x%08x\r\n", stat);
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
         (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD",tm4c_tens,tm4c_frac);
-    copied += snprintf(m+copied, s-copied, "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
         (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD",fpga_tens,fpga_frac);
-    copied += snprintf(m+copied, s-copied, "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
         (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD",ff_tens,ff_frac);
-    copied += snprintf(m+copied, s-copied, "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
         (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD",dcdc_tens,dcdc_frac);
     configASSERT(copied < SCRATCH_SIZE);
 
@@ -420,13 +420,13 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
 static BaseType_t i2c_scan(int argc, char ** argv)
 {
   // takes no arguments
-  int copied = 0, s = SCRATCH_SIZE;
-  copied += snprintf(m, s, "i2c bus scan\r\n");
-  copied += snprintf(m+copied,s-copied,
+  int copied = 0;
+  copied += snprintf(m, SCRATCH_SIZE-copied, "i2c bus scan\r\n");
+  copied += snprintf(m+copied,SCRATCH_SIZE-copied,
       "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n00:         ");
   for (uint8_t i = 0x3; i < 0x78; ++i ) {
     uint8_t data;
-    if ( i%16 ==0 ) copied += snprintf(m+copied,s-copied,"\r\n%2x:", i);
+    if ( i%16 ==0 ) copied += snprintf(m+copied,SCRATCH_SIZE-copied,"\r\n%2x:", i);
     tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, i, &data, 1);
     if ( r != SMBUS_OK ) {
       Print("i2c_scan: Probe failed 1\r\n");
@@ -435,12 +435,12 @@ static BaseType_t i2c_scan(int argc, char ** argv)
       vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
     }
     if ( *p_eStatus == SMBUS_OK )
-      copied += snprintf(m+copied, s-copied, " %2x", i);
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, " %2x", i);
     else
-      copied += snprintf(m+copied, s-copied, " --");
-    configASSERT(copied < s);
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, " --");
+    configASSERT(copied < SCRATCH_SIZE);
   }
-  copied += snprintf(m+copied, s-copied,"\r\n");
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied,"\r\n");
   configASSERT(copied < SCRATCH_SIZE);
 
   return pdFALSE;
@@ -492,11 +492,11 @@ static BaseType_t psmon_ctl(int argc, char ** argv)
   int copied = 0;
   if ( (now-last) > 60 ) {
     int mins = (now-last)/60;
-    copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
   }
-  copied += snprintf(m+copied, s-copied, "%s\r\n", dcdc_args.commands[i1].name);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s\r\n", dcdc_args.commands[i1].name);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
-    copied += snprintf(m+copied, s-copied, "SUPPLY %s\r\n",
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "SUPPLY %s\r\n",
         dcdc_args.devices[ps].name);
     for (int page = 0; page < dcdc_args.n_pages; ++page ) {
       float val = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
@@ -504,9 +504,9 @@ static BaseType_t psmon_ctl(int argc, char ** argv)
       int tens = val;
       int frac = ABS((val - tens)*100.0);
 
-      copied += snprintf(m+copied, s-copied, "VALUE %02d.%02d\t", tens, frac );
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VALUE %02d.%02d\t", tens, frac );
     }
-    copied += snprintf(m+copied, s-copied, "\r\n");
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\r\n");
   }
 
 
@@ -517,18 +517,18 @@ static BaseType_t psmon_ctl(int argc, char ** argv)
 // this command takes no arguments
 static BaseType_t adc_ctl(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
   static int whichadc = 0;
   if ( whichadc == 0 ) {
-    copied += snprintf(m+copied, s-copied, "ADC outputs\r\n");
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "ADC outputs\r\n");
   }
   for ( ; whichadc < 21; ++whichadc ) {
     float val = getADCvalue(whichadc);
     int tens = val;
     int frac = ABS((val-tens)*100.);
-    copied += snprintf(m+copied, s-copied, "%14s: %02d.%02d\r\n", getADCname(whichadc), tens, frac);
-    if ( (s-copied) < 20  && (whichadc < 20)) {
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%14s: %02d.%02d\r\n", getADCname(whichadc), tens, frac);
+    if ( (SCRATCH_SIZE-copied) < 20  && (whichadc < 20)) {
       ++whichadc;
       return pdTRUE;
     }
@@ -541,6 +541,7 @@ static BaseType_t adc_ctl(int argc, char ** argv)
 static BaseType_t bl_ctl(int argc, char ** argv)
 {
   Print("Jumping to boot loader.\r\n");
+  ROM_SysCtlDelay(100000);
   // this code is copied from the JumpToBootLoader()
   // stack from the boot_demo1 application in the
   // ek-tm4c129exl part of tiva ware.
@@ -575,8 +576,8 @@ static BaseType_t bl_ctl(int argc, char ** argv)
 // this command takes no arguments
 static BaseType_t ver_ctl(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
-  copied += snprintf(m+copied, s-copied, "Version %s built at %s.\r\n",
+  int copied = 0;
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Version %s built at %s.\r\n",
       gitVersion(), buildTime()) ;
   configASSERT(copied < SCRATCH_SIZE);
 
@@ -587,7 +588,6 @@ static BaseType_t ver_ctl(int argc, char ** argv)
 // this command takes up to two arguments
 static BaseType_t ff_ctl(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE;
   // argument handling
   int copied = 0;
   static int whichff = 0;
@@ -598,29 +598,29 @@ static BaseType_t ff_ctl(int argc, char ** argv)
     TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
     if ( (now-last) > 60 ) {
       int mins = (now-last)/60;
-      copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
     }
 
   }
 
   if ( argc == 1 ) { // default command: temps
-	uint32_t ff_config = read_eeprom_single(0x44);
+    uint32_t ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
     if ( whichff == 0 ) {
-      copied += snprintf(m+copied, s-copied, "FF temperatures\r\n");
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "FF temperatures\r\n");
     }
     for ( ; whichff < NFIREFLIES; ++whichff ) {
       int8_t val = getFFvalue(whichff);
       const char *name = getFFname(whichff);
       if ( (1<<whichff)&ff_config )//val > 0 )
-        copied += snprintf(m+copied, s-copied, "%17s: %2d", name, val);
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%17s: %2d", name, val);
       else // dummy value
-        copied += snprintf(m+copied, s-copied, "%17s: %2s", name, "--");
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%17s: %2s", name, "--");
       bool isTx = (strstr(name, "Tx") != NULL);
       if ( isTx )
-        copied += snprintf(m+copied, s-copied, "\t");
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\t");
       else
-        copied += snprintf(m+copied, s-copied, "\r\n");
-      if ( (s-copied ) < 20 ) {
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\r\n");
+      if ( (SCRATCH_SIZE-copied ) < 20 ) {
         ++whichff;
         return pdTRUE;
       }
@@ -635,7 +635,7 @@ static BaseType_t ff_ctl(int argc, char ** argv)
   }
   else { // more than one argument, check which command
     if ( argc == 2 ) {
-      snprintf(m+copied, s-copied, "%s: command %s needs an argument\r\n",
+      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs an argument\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
@@ -658,12 +658,12 @@ static BaseType_t ff_ctl(int argc, char ** argv)
       }
     }
     else {
-      snprintf(m+copied,s-copied, "%s: command %s not recognized\r\n",
+      snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s not recognized\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
     xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
-    snprintf(m+copied,s-copied, "%s: command %s %s sent.\r\n",
+    snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s %s sent.\r\n",
         argv[0], argv[1],c);
 
   } // end commands with arguments
@@ -674,24 +674,23 @@ static BaseType_t ff_ctl(int argc, char ** argv)
 // this command takes up to one argument
 static BaseType_t fpga_ctl(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE;
   if ( argc == 2 ) {
     if ( strncmp(argv[1], "done",4) == 0 ) { // print out value of done pins
       int ku_done_ = read_gpio_pin(_K_FPGA_DONE);
       int vu_done_ = read_gpio_pin(_V_FPGA_DONE);
       //int copied =
-      snprintf(m, s, "KU_DONE* = %d\r\nVU_DONE* = %d\r\n", ku_done_, vu_done_);
+      snprintf(m, SCRATCH_SIZE, "KU_DONE* = %d\r\nVU_DONE* = %d\r\n", ku_done_, vu_done_);
       return pdFALSE;
     }
     else {
-      snprintf(m, s, "%s: invalid command %s\r\n", argv[0], argv[1]);
+      snprintf(m, SCRATCH_SIZE, "%s: invalid command %s\r\n", argv[0], argv[1]);
       return pdFALSE;
     }
 
   }
   else if (argc != 1 ) {
     // error, invalid
-    snprintf(m,s, "%s: invalid argument count %d\r\n", argv[0], argc);
+    snprintf(m, SCRATCH_SIZE, "%s: invalid argument count %d\r\n", argv[0], argc);
     return pdFALSE;
   }
   else {
@@ -703,11 +702,11 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
       TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
       if ( (now-last) > 60 ) {
         int mins = (now-last)/60;
-        copied += snprintf(m+copied, s-copied, "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
       }
 
-      copied += snprintf(m+copied, s-copied, "FPGA monitors\r\n");
-      copied += snprintf(m+copied, s-copied, "%s\r\n", fpga_args.commands[0].name);
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "FPGA monitors\r\n");
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s\r\n", fpga_args.commands[0].name);
     }
 
     for ( ; whichfpga < howmany; ++whichfpga ) {
@@ -715,13 +714,13 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
       int tens = val;
       int frac = ABS((val - tens)*100.0);
 
-      copied += snprintf(m+copied, s-copied, "%5s: %02d.%02d",
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%5s: %02d.%02d",
           fpga_args.devices[whichfpga].name, tens, frac);
       if ( whichfpga%2 == 1 )
-        copied += snprintf(m+copied, s-copied, "\r\n");
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\r\n");
       else
-        copied += snprintf(m+copied, s-copied, "\t");
-      if ( (s-copied ) < 20 ) {
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\t");
+      if ( (SCRATCH_SIZE-copied ) < 20 ) {
         ++whichfpga;
         return pdTRUE;
       }
@@ -741,7 +740,7 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
 // right now.
 static BaseType_t sensor_summary(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
   // collect all sensor information
   // highest temperature for each
   // Firefly
@@ -751,7 +750,7 @@ static BaseType_t sensor_summary(int argc, char ** argv)
   float tm4c_temp = getADCvalue(ADC_INFO_TEMP_ENTRY);
   int tens = tm4c_temp;
   int frac = ABS((tm4c_temp-tens))*100.;
-  copied += snprintf(m+copied, s-copied, "MCU %02d.%02d\r\n", tens, frac);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "MCU %02d.%02d\r\n", tens, frac);
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
   int8_t imax_temp = -99.0;
@@ -760,7 +759,7 @@ static BaseType_t sensor_summary(int argc, char ** argv)
     if ( v > imax_temp )
       imax_temp = v;
   }
-  copied += snprintf(m+copied, s-copied, "FIREFLY %02d.0\r\n", imax_temp);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "FIREFLY %02d.0\r\n", imax_temp);
   // FPGAs.
   float max_fpga;
   if ( fpga_args.n_devices == 2 )
@@ -769,7 +768,7 @@ static BaseType_t sensor_summary(int argc, char ** argv)
     max_fpga = fpga_args.pm_values[0];
   tens = max_fpga;
   frac = ABS((tens-max_fpga))*100.;
-  copied += snprintf(m+copied, s-copied, "FPGA %02d.%02d\r\n", tens, frac);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "FPGA %02d.%02d\r\n", tens, frac);
 
   // DCDC. The first command is READ_TEMPERATURE_1.
   // I am assuming it stays that way!!!!!!!!
@@ -784,7 +783,7 @@ static BaseType_t sensor_summary(int argc, char ** argv)
   }
   tens = max_temp;
   frac = ABS((max_temp-tens))*100.0;
-  copied += snprintf(m+copied, s-copied, "REG %02d.%02d\r\n", tens, frac);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "REG %02d.%02d\r\n", tens, frac);
 
   return pdFALSE;
 }
@@ -792,29 +791,29 @@ static BaseType_t sensor_summary(int argc, char ** argv)
 // This command takes no arguments
 static BaseType_t restart_mcu(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
-  copied += snprintf(m+copied, s-copied, "Restarting MCU\r\n");
-  SysCtlReset();	// This function does not return
+  int copied = 0;
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Restarting MCU\r\n");
+  MAP_SysCtlReset();	// This function does not return
   return pdFALSE;
 }
 
 // This command takes 1 argument, either k or v
 static BaseType_t fpga_reset(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
   const TickType_t delay = 1 / portTICK_PERIOD_MS;  // 1 ms delay
 
   if ( strcmp(argv[1], "v") == 0 ) {
     write_gpio_pin(V_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
     write_gpio_pin(V_FPGA_PROGRAM, 0x0);
-    copied += snprintf(m+copied, s-copied, "VU7P has been reset\r\n");
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VU7P has been reset\r\n");
   }
   if ( strcmp(argv[1], "k") == 0 ) {
     write_gpio_pin(K_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
     write_gpio_pin(K_FPGA_PROGRAM, 0x0);
-    copied += snprintf(m+copied, s-copied, "KU15P has been reset\r\n");
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "KU15P has been reset\r\n");
 
   }
   return pdFALSE;
@@ -823,7 +822,7 @@ static BaseType_t fpga_reset(int argc, char ** argv)
 // This command takes 1 arg, the address
 static BaseType_t eeprom_read(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
   uint32_t addr;
   addr = strtol(argv[1],NULL,16);
@@ -832,7 +831,7 @@ static BaseType_t eeprom_read(int argc, char ** argv)
   uint64_t data = read_eeprom_multi(addr);
   uint32_t data2 = (uint32_t)(data>>32);
   uint32_t data1 = (uint32_t)data;
-  copied += snprintf(m+copied, s-copied,
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied,
 		     "Data read from EEPROM block %d: %08x %08x\r\n",
 		     block,data1,data2);
 
@@ -842,18 +841,18 @@ static BaseType_t eeprom_read(int argc, char ** argv)
 // This command takes 2 args, the address and 4 bytes of data to be written
 static BaseType_t eeprom_write(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
   uint32_t data, addr;
   data = strtoul(argv[2],NULL,16);
   addr = strtoul(argv[1],NULL,16);
   uint32_t block = EEPROMBlockFromAddr(addr);
   if((block==1)||((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
-    copied += snprintf(m+copied, s-copied, "Please choose available block\r\n");
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Please choose available block\r\n");
     return pdFALSE;
   }
   write_eeprom(data,addr);
-  copied += snprintf(m+copied, s-copied,
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied,
 		     "Data written to EEPROM block %d: %08x\r\n", block,data);
 
   return pdFALSE;
@@ -862,12 +861,12 @@ static BaseType_t eeprom_write(int argc, char ** argv)
 // Takes 0 arguments
 static BaseType_t eeprom_info(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
-  copied += snprintf(m+copied, s-copied, "EEPROM has 96 blocks of 64 bytes each.\r\n");
-  copied += snprintf(m+copied, s-copied, "Block 0 \t 0x0000-0x0040 \t Free.\r\n");
-  copied += snprintf(m+copied, s-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678\r\n");
-  copied += snprintf(m+copied, s-copied, "Blocks %u-%u \t 0x%04x-0x%04x \t Error buffer.\r\n",EBUF_MINBLK, EBUF_MAXBLK,EEPROMAddrFromBlock(EBUF_MINBLK),EEPROMAddrFromBlock(EBUF_MAXBLK+1)-4);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "EEPROM has 96 blocks of 64 bytes each.\r\n");
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Block 0 \t 0x0000-0x0040 \t Free.\r\n");
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Block 1 \t 0x0040-0x007c \t Apollo ID Information. Password: 0x12345678\r\n");
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Blocks %u-%u \t 0x%04x-0x%04x \t Error buffer.\r\n",EBUF_MINBLK, EBUF_MAXBLK,EEPROMAddrFromBlock(EBUF_MINBLK),EEPROMAddrFromBlock(EBUF_MAXBLK+1)-4);
 
   return pdFALSE;
 }
@@ -875,7 +874,7 @@ static BaseType_t eeprom_info(int argc, char ** argv)
 // Takes 3 arguments
 static BaseType_t set_board_id(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
   uint64_t pass, addr, data;
   pass = strtoul(argv[1],NULL,16);
@@ -883,7 +882,7 @@ static BaseType_t set_board_id(int argc, char ** argv)
   data = strtoul(argv[3],NULL,16);
   uint64_t block = EEPROMBlockFromAddr(addr);
   if (block!=1){
-	  copied += snprintf(m+copied, s-copied, "Please input address in Block 1\r\n");
+	  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Please input address in Block 1\r\n");
 	  return pdFALSE;
   }
 
@@ -897,7 +896,7 @@ static BaseType_t set_board_id(int argc, char ** argv)
   xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
 
   if(pass!=0x12345678){
-	  copied += snprintf(m+copied, s-copied, "Wrong password. Type eeprom_info to get password.");
+	  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Wrong password. Type eeprom_info to get password.");
   }	// data not printing correctly?
 
   return pdFALSE;
@@ -906,31 +905,31 @@ static BaseType_t set_board_id(int argc, char ** argv)
 // one-time use, has one function and takes 0 arguments
 static BaseType_t set_board_id_password(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
   uint64_t message = EPRMMessage((uint64_t)EPRM_PASS_SET,0,0x12345678);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
-  copied += snprintf(m+copied, s-copied, "Block locked\r\n");
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Block locked\r\n");
 
   return pdFALSE;
 }
 
 static BaseType_t board_id_info(int argc, char ** argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;;
+  int copied = 0;;
 
-  uint32_t sn = read_eeprom_single(SN_ADDR);
-  uint32_t ff = read_eeprom_single(FF_ADDR);
+  uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
+  uint32_t ff = read_eeprom_single(EEPROM_ID_FF_ADDR);
 
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn)&0xff;
 
-  copied += snprintf(m+copied, s-copied, "ID:%08x\r\n",(uint32_t)sn);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "ID:%08x\r\n",(uint32_t)sn);
 
-  copied += snprintf(m+copied, s-copied, "Board number: %x\r\n",num);
-  copied += snprintf(m+copied, s-copied, "Revision: %x\r\n",rev);
-  copied += snprintf(m+copied, s-copied, "Firefly config: %x\r\n",ff);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Board number: %x\r\n",num);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Revision: %x\r\n",rev);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Firefly config: %x\r\n",ff);
 
   return pdFALSE;
 }
@@ -938,33 +937,33 @@ static BaseType_t board_id_info(int argc, char ** argv)
 // This command takes 1 arg, the data to be written to the buffer
 static BaseType_t errbuff_in(int argc, char **argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
   uint32_t data;
   data = strtoul(argv[1],NULL,16);
-  errbuffer_put(ebuf,data,0);
-  copied += snprintf(m+copied, s-copied, "Data written to EEPROM buffer: %x\r\n",data);
+  errbuffer_put(data,0);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Data written to EEPROM buffer: %x\r\n",data);
 
   return pdFALSE;
 }
 
 static BaseType_t errbuff_out(int argc, char **argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+  int copied = 0;
 
   uint8_t max_entries=25;
   uint32_t num = strtoul(argv[1],NULL,10);
   if (num>max_entries){
-	  copied += snprintf(m+copied, s-copied, "Please enter a number 25 or less \r\n");
+	  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Please enter a number 25 or less \r\n");
 	  return pdFALSE;
   }
   uint32_t arr[max_entries];
   uint32_t (*arrptr)[max_entries]=&arr;
-  errbuffer_get(ebuf,num,arrptr);
+  errbuffer_get(num,arrptr);
 
   static int i=0;
   if (i==0) {
-	  copied += snprintf(m+copied, s-copied, "Entries in EEPROM buffer:\r\n");
+	  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Entries in EEPROM buffer:\r\n");
   }
   for (; i<num; ++i) {
     uint32_t word = (*arrptr)[i];
@@ -981,68 +980,71 @@ static BaseType_t errbuff_out(int argc, char **argv)
     uint16_t minutes = timestamp%0x3c;
 
     if (errcode == EBUF_CONTINUATION){
-    	copied += snprintf(m+copied, s-copied, " %02u", errdata);
+    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, " %02u", errdata);
     }
     else{
     	// print timestamp and error code
+      if ( errcode > 12 ) { // HACK HACK HACK
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "error in line %d", __LINE__);
+      }
     	const char* error_str = ebuf_errstrings[errcode];
-    	copied += snprintf(m+copied, s-copied,
+    	copied += snprintf(m+copied, SCRATCH_SIZE-copied,
 			"\r\n %02u %02u:%02u \t %x %s", days, hours,
 			minutes, realcount, error_str);
 		// if code comes with data, print data
 		if (errcode>=EBUF_WITH_DATA) {
-			copied += snprintf(m+copied,s-copied," %02u",errdata);
+			copied += snprintf(m+copied,SCRATCH_SIZE-copied," %02u",errdata);
 		}
 #if 0
       switch(errcode) {
       case EBUF_RESTART:
-        copied += snprintf(m+copied, s-copied,
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
             "%02u %02u:%02u \t %x RESTART ", days, hours, minutes, counter);
         if (errdata & EBUF_RESTART_SW )
-          copied += snprintf(m+copied, s-copied, "(SW)\r\n");
+          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(SW)\r\n");
         else if (errdata & EBUF_RESTART_EXT )
-          copied += snprintf(m+copied, s-copied, "(EXT)\r\n");
+          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(EXT)\r\n");
         else if (errdata & EBUF_RESTART_WDOG )
-          copied += snprintf(m+copied, s-copied, "(WDOG)\r\n");
+          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(WDOG)\r\n");
         else if (errdata & EBUF_RESTART_POR )
-          copied += snprintf(m+copied, s-copied, "(POR)\r\n");
+          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(POR)\r\n");
         else
-          copied += snprintf(m+copied, s-copied, "\r\n");
+          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\r\n");
         break;
       case EBUF_RESET_BUFFER:
-        copied += snprintf(m+copied, s-copied,
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
             "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
             hours, minutes, counter);
         break;
       case EBUF_HARDFAULT:
-        copied += snprintf(m+copied, s-copied,
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
             "%02u %02u:%02u \t %x HARD FAULT: ISRNUM= 0x%x\r\n", days,
             hours, minutes, counter, errdata);
         break;
       case EBUF_ASSERT:
-        copied += snprintf(m+copied, s-copied,
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
             "%02u %02u:%02u \t %x ASSERT\r\n", days,
             hours, minutes, counter);
         break;
       case EBUF_STACKOVERFLOW:
-        copied += snprintf(m+copied, s-copied,
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
             "%02u %02u:%02u \t %x STACK OVERFLOW\r\n", days,
             hours, minutes, counter);
         break;
       default: // unknown
-        copied += snprintf(m+copied, s-copied,
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
             "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
             minutes, realcount, errcode,errdata);
         break;
       }
 #endif       
     }
-    if ((s-copied)<20 && (i<num)){	// this should catch when buffer is close to full
+    if ((SCRATCH_SIZE-copied)<20 && (i<num)){	// this should catch when buffer is close to full
     	++i;
     	return pdTRUE;
     }
   }
-  copied += snprintf(m+copied, s-copied, "\r\n");
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\r\n");
   i=0;
   return pdFALSE;
 }
@@ -1050,25 +1052,25 @@ static BaseType_t errbuff_out(int argc, char **argv)
 // Takes no arguments
 static BaseType_t errbuff_info(int argc, char **argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+int copied = 0;
   uint32_t cap, minaddr, maxaddr, head;
   uint16_t last, counter, n_continue;
 
-  cap = errbuffer_capacity(ebuf);
-  minaddr = errbuffer_minaddr(ebuf);
-  maxaddr = errbuffer_maxaddr(ebuf);
-  head = errbuffer_head(ebuf);
-  last = errbuffer_last(ebuf);
-  counter = errbuffer_counter(ebuf);
-  n_continue = errbuffer_continue(ebuf);
+  cap = errbuffer_capacity();
+  minaddr = errbuffer_minaddr();
+  maxaddr = errbuffer_maxaddr();
+  head = errbuffer_head();
+  last = errbuffer_last();
+  counter = errbuffer_counter();
+  n_continue = errbuffer_continue();
 
-  copied += snprintf(m+copied, s-copied, "Capacity: %8x words\r\n",cap);
-  copied += snprintf(m+copied, s-copied, "Min address: %8x\r\n",minaddr);
-  copied += snprintf(m+copied, s-copied, "Max address: %8x\r\n",maxaddr);
-  copied += snprintf(m+copied, s-copied, "Head address: %8x\r\n",head);
-  copied += snprintf(m+copied, s-copied, "Last entry: %x\r\n",last);
-  copied += snprintf(m+copied, s-copied, "Message counter: %x\r\n",counter);
-  copied += snprintf(m+copied, s-copied, "Continue codes: %x\r\n",n_continue);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Capacity: %8x words\r\n",cap);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Min address: %8x\r\n",minaddr);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Max address: %8x\r\n",maxaddr);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Head address: %8x\r\n",head);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Last entry: %x\r\n",last);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Message counter: %x\r\n",counter);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Continue codes: %x\r\n",n_continue);
 
   return pdFALSE;
 }
@@ -1076,16 +1078,16 @@ static BaseType_t errbuff_info(int argc, char **argv)
 // Takes no arguments
 static BaseType_t errbuff_reset(int argc, char **argv)
 {
-  errbuffer_reset(ebuf);
+  errbuffer_reset();
   return pdFALSE;
 }
 
 // takes no arguments
 static BaseType_t stack_ctl(int argc, char **argv)
 {
-  int copied = 0, s = SCRATCH_SIZE;
+int copied = 0;
   int i = SystemStackWaterHighWaterMark();
-  copied += snprintf(m+copied, s-copied, "stack: %d of %d untouched\r\n", i,
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "stack: %d of %d untouched\r\n", i,
       SYSTEM_STACK_SIZE);
   return pdFALSE;
 }
@@ -1190,9 +1192,9 @@ BaseType_t TaskStatsCommand( int argc, char ** argv )
     /* Ensure always terminated. */
     *mm = 0x00;
   }
-  strncpy( mm, pcHeader,s-copied );
+  strncpy( mm, pcHeader,SCRATCH_SIZE-copied );
   copied += strlen(pcHeader);
-  TaskGetRunTimeStats( mm + strlen( pcHeader ), s-copied );
+  TaskGetRunTimeStats( mm + strlen( pcHeader ), SCRATCH_SIZE-copied );
 
   /* There is no more data to return after this single string, so return
   pdFALSE. */
@@ -1439,14 +1441,14 @@ struct microrl_user_data_t {
 static
 BaseType_t help_command_fcn(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE, copied = 0;
+  int copied = 0;
   static int i = 0;
   if ( argc == 1 ) {
   for ( ; i < NUM_COMMANDS; ++i ) {
-    if ( (s-copied)<strlen(commands[i].helpstr) ) {
+    if ( (SCRATCH_SIZE-copied)<strlen(commands[i].helpstr) ) {
       return pdTRUE;
     }
-    copied += snprintf(m+copied, s-copied, "%s", commands[i].helpstr);
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s", commands[i].helpstr);
   }
   i = 0;
   return pdFALSE;
@@ -1454,7 +1456,7 @@ BaseType_t help_command_fcn(int argc, char ** argv)
   else { // help on a specific command
     for (int j = 0; j < NUM_COMMANDS; ++j ) {
       if (strncmp(commands[j].commandstr, argv[1], 10) == 0 ) {
-        copied += snprintf(m+copied, s-copied, "%s", commands[j].helpstr);
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s", commands[j].helpstr);
         return pdFALSE;
       }
     }

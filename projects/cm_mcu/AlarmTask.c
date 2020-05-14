@@ -173,7 +173,7 @@ void AlarmTask(void *parameters)
     }
     // if temp returns to normal, send buffer message
     if ((temp_over==0) && (temp_over_old>0)){
-        errbuffer_put(ebuf, EBUF_TEMP_NORMAL, 0);
+        errbuffer_put(EBUF_TEMP_NORMAL, 0);
         temp_over_old = temp_over;
     }
     if ( status && (current_temp_state != TEMP_BAD )) {

@@ -40,13 +40,13 @@ void stopwatch_reset(void);
 #define configCPU_CLOCK_HZ                                      40000000
 #define configMAX_PRIORITIES                                    ( 5 )
 #define configMINIMAL_STACK_SIZE                                ( ( unsigned short ) 256 )
-#define configTOTAL_HEAP_SIZE                                   ( ( size_t ) ( 32 * 1024 ) )
+#define configTOTAL_HEAP_SIZE                                   ( ( size_t ) ( 36 * 1024 ) )
 #define configMAX_TASK_NAME_LEN                                 ( 6 )
 #define configUSE_TRACE_FACILITY                                1
 #define configUSE_16_BIT_TICKS                                  0
 #define configIDLE_SHOULD_YIELD                                 1
 #define configUSE_MUTEXES                                       1
-#define configQUEUE_REGISTRY_SIZE                               3
+#define configQUEUE_REGISTRY_SIZE                               10
 #define configCHECK_FOR_STACK_OVERFLOW                          2
 #define configUSE_RECURSIVE_MUTEXES                             0
 #define configUSE_APPLICATION_TASK_TAG                          0
@@ -54,7 +54,7 @@ void stopwatch_reset(void);
 #define configUSE_TICKLESS_IDLE                                 1
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS                 0
 
-#define configUSE_MALLOC_FAILED_HOOK                            0
+#define configUSE_MALLOC_FAILED_HOOK                            1
 #define configUSE_IDLE_HOOK                                     1
 #define configUSE_TICK_HOOK                                     0
 
@@ -66,7 +66,7 @@ void stopwatch_reset(void);
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()                stopwatch_reset()
 #define portGET_RUN_TIME_COUNTER_VALUE()                        stopwatch_getticks()
 #define configRECORD_STACK_HIGH_ADDRESS                         1
-
+#define configUSE_HEAP_SCHEME                     4 /* either 1 (only alloc), 2 (alloc/free), 3 (malloc), 4 (coalesc blocks), 5 (multiple blocks) */
 /* This demo makes use of one or more example stats formatting functions.  These
 format the raw data provided by the uxTaskGetSystemState() function in to human
 readable ASCII form.  See the notes in the implementation of vTaskList() within
@@ -144,7 +144,7 @@ header file. */
 #define APOLLO_ASSERT_RECORD()     \
     volatile void *pc;                  \
     GET_PC(pc);                \
-    errbuffer_put_raw(ebuf, EBUF_ASSERT,0)
+    errbuffer_put_raw(EBUF_ASSERT,0)
 
 #ifdef DEBUG
 #define APOLLO_ASSERT(exp) \

@@ -48,7 +48,6 @@
 
 // FreeRTOS includes
 #include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
 #include "task.h"
 #include "queue.h"
 #include "stream_buffer.h"
@@ -219,6 +218,8 @@ const char* gitVersion()
   const char *gitVersion = FIRMWARE_VERSION;
   return gitVersion;
 }
+__attribute__((used))
+const uint8_t freeRTOSMemoryScheme = configUSE_HEAP_SCHEME;
 
 // 
 int main( void )
@@ -226,20 +227,6 @@ int main( void )
   SystemInit();
 
   initFPGAMon();
-//  // check if we are to include both FPGAs or not
-//  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-//  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-//  configASSERT(ku_enable || vu_enable);
-//  if ( ! ku_enable && vu_enable ) {
-//    fpga_args.devices = fpga_addrs_vuonly;
-//    fpga_args.n_devices = 1;
-//    set_vu_index(0);
-//  }
-//  else if ( ! vu_enable && ku_enable ) {
-//    fpga_args.devices = fpga_addrs_kuonly;
-//    fpga_args.n_devices = 1;
-//    set_ku_index(0);
-//  }
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
@@ -258,9 +245,9 @@ int main( void )
 
   // clear the various buffers
   for (int i =0; i < dcdc_args.n_values; ++i)
-    dcdc_args.pm_values[i] = -999.;
+    dcdc_args.pm_values[i] = -999.f;
   for (int i =0; i < fpga_args.n_values; ++i)
-    fpga_args.pm_values[i] = -999.;
+    fpga_args.pm_values[i] = -999.f;
 
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
@@ -302,6 +289,15 @@ int main( void )
   xSoftUartQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
   configASSERT(xSoftUartQueue != NULL);
 
+  // debug
+  vQueueAddToRegistry(xLedQueue, "LED Queue");
+  vQueueAddToRegistry(xPwrQueue, "PWR Queue");
+  vQueueAddToRegistry(xFFlyQueue, "FFLY Queue");
+  vQueueAddToRegistry(xEPRMQueue_in, "EIN Queue");
+  vQueueAddToRegistry(xEPRMQueue_out, "EOUT Queue");
+  vQueueAddToRegistry(xAlmQueue, "ALM Queue");
+  vQueueAddToRegistry(xSoftUartQueue, "sUART Queue");
+
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.
   SystemInitInterrupts();
@@ -314,7 +310,7 @@ int main( void )
   Print("Built on " __TIME__", " __DATE__ "\r\n");
   Print("----------------------------\r\n");
 
-  errbuffer_init(ebuf,EBUF_MINBLK,EBUF_MAXBLK);
+  errbuffer_init(EBUF_MINBLK,EBUF_MAXBLK);
 
 
   // start the scheduler -- this function should not return
@@ -324,6 +320,15 @@ int main( void )
   for( ;; );
 }
 
+uintptr_t __stack_chk_guard = 0xdeadbeef;
+
+void __stack_chk_fail(void)
+{
+    Print("Stack smashing detected\r\n");
+    __asm volatile("cpsid i"); /* disable interrupts */
+    __asm volatile("bkpt #0"); /* break target */
+    for (;;);
+}
 
  int SystemStackWaterHighWaterMark()
  {
@@ -353,10 +358,10 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
   UARTPrint(CLI_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
-  while ( UARTBusy(CLI_UART))
+  while ( MAP_UARTBusy(CLI_UART))
     ;
   // log the error
-  errbuffer_put_raw(ebuf, EBUF_STACKOVERFLOW,0);
+  errbuffer_put_raw( EBUF_STACKOVERFLOW,0);
 #ifdef DEBUG
   // wait here for the debugger
   for( ;; );
@@ -374,7 +379,7 @@ void vApplicationIdleHook( void )
   static int HW = 999;
   int nHW = SystemStackWaterHighWaterMark();
   if ( nHW < HW ) {
-    char tmp[96];
+    char tmp[64];
     snprintf(tmp, 64, "Stack canary now %d\r\n", nHW);
     Print(tmp);
     HW = nHW;
@@ -391,6 +396,14 @@ void vApplicationIdleHook( void )
     Print("\r\n");
 #endif // DUMP_STACK
   }
+}
+#endif
+
+#if ( configUSE_MALLOC_FAILED_HOOK == 1 )
+void vApplicationMallocFailedHook()
+{
+  for (;;)
+    ;
 }
 #endif
 

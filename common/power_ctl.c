@@ -119,7 +119,7 @@ bool update_failed_ps(int prio){
 	       // remember the VCC_ supplies
 	       if ((states[o]==PWR_ON)||(states[o]==PWR_UNKNOWN)){
 	     	  new_states[o]=PWR_FAILED;
-	     	  errbuffer_put(ebuf,EBUF_PWR_FAILURE,o);
+	     	  errbuffer_put(EBUF_PWR_FAILURE,o);
 	     	  failure=true;
 	       }
 	       else {

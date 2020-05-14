@@ -127,7 +127,7 @@ void SoftUartTask(void *parameters)
   //
   //ROM_IntPrioritySet(INT_GPIOE, 0x00);
   //ROM_IntPrioritySet(INT_TIMER0B, 0x40);
-  ROM_IntPrioritySet(INT_TIMER0A, 0x80);
+  ROM_IntPrioritySet(INT_TIMER0A, configKERNEL_INTERRUPT_PRIORITY);
   //
   // Enable the interrupts associated with the software UART.
   //

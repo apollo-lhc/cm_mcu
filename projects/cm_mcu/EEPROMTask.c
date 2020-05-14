@@ -13,6 +13,8 @@
 #include "driverlib/rom.h"
 #include "driverlib/eeprom.h"
 #include "common/utils.h"
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
 
 #include "Tasks.h"
 
@@ -27,28 +29,24 @@ uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data){
 // write single word to eeprom
 void write_single(uint32_t data, uint32_t addr)
 {
-	uint32_t dlen,*dataptr;
-	dataptr = &data;
-	dlen = 4;
-	ROM_EEPROMProgram(dataptr,addr,dlen);
+  const uint32_t dlen = 4;
+	MAP_EEPROMProgram(&data,addr,dlen);
 }
 // read single word from eeprom
 uint64_t read_single(uint32_t addr)
 {
-	uint32_t data,*dataptr;
-	uint32_t dlen = 4;
-	data = 0x0;
-	dataptr = &data;
-	ROM_EEPROMRead(dataptr,addr,dlen);
+	uint32_t data;
+	const uint32_t dlen = 4;
+	MAP_EEPROMRead(&data,addr,dlen);
 	return (uint64_t)data;
 }
 // read 2 words from eeprom
 uint64_t read_double(uint32_t addr)
 {
 	static uint32_t dataptr[2] = {0x0, 0x0};
-	uint32_t dlen = 8;
+	const uint32_t dlen = 8;
 	uint32_t *data0 = &dataptr[0];
-	ROM_EEPROMRead(data0,addr,dlen);
+	MAP_EEPROMRead(data0,addr,dlen);
 	uint64_t data = ((uint64_t)dataptr[0])|((uint64_t)dataptr[1]<<32);
 	return data;
 }
@@ -82,16 +80,16 @@ void EEPROMTask(void *parameters){
 				break;
 			case EPRM_UNLOCK_BLOCK: ;
 				uint32_t *dataptr = &data;
-				ROM_EEPROMBlockUnlock(addr, dataptr, 1);
+				MAP_EEPROMBlockUnlock(addr, dataptr, 1);
 				break;
 			case EPRM_LOCK_BLOCK:
-				ROM_EEPROMBlockLock(addr);
+				MAP_EEPROMBlockLock(addr);
 				break;
 			case EPRM_PASS_SET: ;
 				uint32_t *passptr = &data;
-				EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
-				EEPROMBlockPasswordSet(1, passptr, 1);
-				EEPROMBlockLock(1);
+				MAP_EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
+				MAP_EEPROMBlockPasswordSet(1, passptr, 1);
+				MAP_EEPROMBlockLock(1);
 				break;
 			default:
 				break;

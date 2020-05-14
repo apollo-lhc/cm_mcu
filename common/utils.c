@@ -38,18 +38,17 @@ void write_eeprom_raw(uint32_t data, uint32_t addr)
 // read single word from eeprom
 uint32_t read_eeprom_single(uint32_t addr)
 {
-  uint32_t data;
   uint64_t message = EPRMMessage((uint64_t)EPRM_READ_SINGLE, addr, 0);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-  xQueueReceive(xEPRMQueue_out, &data, portMAX_DELAY);
-  return data;
+  xQueueReceive(xEPRMQueue_out, &message, portMAX_DELAY);
+  return (uint32_t)message;
 }
 // reads single word from eeprom, bypassing the gatekeeper task
 uint32_t read_eeprom_raw(uint32_t addr)
 {
   uint32_t data, *dataptr;
   dataptr = &data;
-  EEPROMRead(dataptr, addr, 4);
+  MAP_EEPROMRead(dataptr, addr, 4);
   return data;
 }
 
@@ -122,8 +121,8 @@ void setupActiveLowPins(void)
 
 // EEPROM Buffer
 
-const char* ebuf_errstrings[] = {"", "RESTART", "BUFFER RESET", "MANUAL POWER OFF", \
-                                 "TEMP HIGH POWER OFF", "MANUAL POWER ON", "TEMP NORMAL", "ISR", "(continue)", \
+const char* ebuf_errstrings[] = {"", "RESTART", "BUFFER RESET", "MANUAL POWER OFF",
+                                 "TEMP HIGH POWER OFF", "MANUAL POWER ON", "TEMP NORMAL", "ISR", "(continue)",
                                  "POWER FAILURE", "TEMP HIGH (TM4C FPGA FF DCDC)"
                                 };
 
@@ -137,11 +136,12 @@ struct error_buffer_t {
   uint16_t n_continue;  // number of continue codes since last error code
 };
 
+static
 error_buffer_t errbuf = {.minaddr = 0, .maxaddr = 0, .head = 0, .capacity = 0, .last = 0, .counter = 0};
 errbuf_handle_t ebuf = &errbuf;
 
 
-uint32_t decrease_head(errbuf_handle_t ebuf)
+uint32_t decrease_head()
 {
   uint32_t head = ebuf->head - 4;
   if(head < ebuf->minaddr) {
@@ -149,7 +149,7 @@ uint32_t decrease_head(errbuf_handle_t ebuf)
   }
   return head;
 }
-uint32_t increase_head(errbuf_handle_t ebuf)
+uint32_t increase_head()
 {
   uint32_t head = ebuf->head + 4;
   if (head > ebuf->maxaddr) {
@@ -158,7 +158,7 @@ uint32_t increase_head(errbuf_handle_t ebuf)
   return head;
 }
 
-uint32_t errbuffer_findhead(errbuf_handle_t ebuf)
+uint32_t errbuffer_findhead()
 {
   uint32_t ahead = ebuf->minaddr, head = ahead, cap = ebuf->capacity;
   uint32_t entry, previous = 1, i = 0;
@@ -178,7 +178,7 @@ uint32_t errbuffer_findhead(errbuf_handle_t ebuf)
   return head;
 }
 
-void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk)
+void errbuffer_init(uint8_t minblk, uint8_t maxblk)
 {
   ebuf->minaddr = EEPROMAddrFromBlock(minblk);
   ebuf->maxaddr = EEPROMAddrFromBlock(maxblk + 1) - 4;
@@ -189,7 +189,7 @@ void errbuffer_init(errbuf_handle_t ebuf, uint8_t minblk, uint8_t maxblk)
   ebuf->n_continue = 0;
 }
 
-void errbuffer_reset(errbuf_handle_t ebuf)
+void errbuffer_reset()
 {
   uint32_t addr = ebuf->minaddr;
   uint32_t maddr = ebuf->maxaddr;
@@ -204,11 +204,11 @@ void errbuffer_reset(errbuf_handle_t ebuf)
   ebuf->head = ebuf->minaddr;
   ebuf->counter = 0;
   ebuf->last = 0;
-  errbuffer_put(ebuf, EBUF_RESET_BUFFER, 0);
+  errbuffer_put(EBUF_RESET_BUFFER, 0);
   return;
 }
 
-void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata)
+void errbuffer_put(uint16_t errcode, uint16_t errdata)
 {
   uint16_t oldcount = ebuf->counter;
 
@@ -261,7 +261,7 @@ void errbuffer_put(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata)
   return;
 }
 
-void errbuffer_put_raw(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata)
+void errbuffer_put_raw(uint16_t errcode, uint16_t errdata)
 {
   uint16_t oldcount = ebuf->counter;
   // If duplicated error code...
@@ -296,7 +296,7 @@ void errbuffer_put_raw(errbuf_handle_t ebuf, uint16_t errcode, uint16_t errdata)
 }
 
 
-void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num])
+void errbuffer_get(uint32_t num, uint32_t (*arrptr)[num])
 {
   int i = 0, j = 0, max = num;
   while(i < max) {
@@ -311,31 +311,31 @@ void errbuffer_get(errbuf_handle_t ebuf, uint32_t num, uint32_t (*arrptr)[num])
   return;
 }
 
-uint32_t errbuffer_capacity(errbuf_handle_t ebuf)
+uint32_t errbuffer_capacity()
 {
   return ebuf->capacity;
 }
-uint32_t errbuffer_minaddr(errbuf_handle_t ebuf)
+uint32_t errbuffer_minaddr()
 {
   return ebuf->minaddr;
 }
-uint32_t errbuffer_maxaddr(errbuf_handle_t ebuf)
+uint32_t errbuffer_maxaddr()
 {
   return ebuf->maxaddr;
 }
-uint32_t errbuffer_head(errbuf_handle_t ebuf)
+uint32_t errbuffer_head()
 {
   return ebuf->head;
 }
-uint16_t errbuffer_last(errbuf_handle_t ebuf)
+uint16_t errbuffer_last()
 {
   return ebuf->last;
 }
-uint16_t errbuffer_counter(errbuf_handle_t ebuf)
+uint16_t errbuffer_counter()
 {
   return ebuf->counter;
 }
-uint16_t errbuffer_continue(errbuf_handle_t ebuf)
+uint16_t errbuffer_continue()
 {
   return ebuf->n_continue;
 }
@@ -353,10 +353,10 @@ uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata)
 // Specific error functions using continuation codes
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc)
 {
-  errbuffer_put(ebuf, EBUF_TEMP_HIGH, tm4c);
-  errbuffer_put(ebuf, EBUF_CONTINUATION, fpga);
-  errbuffer_put(ebuf, EBUF_CONTINUATION, ffly);
-  errbuffer_put(ebuf, EBUF_CONTINUATION, dcdc);
+  errbuffer_put(EBUF_TEMP_HIGH, tm4c);
+  errbuffer_put(EBUF_CONTINUATION, fpga);
+  errbuffer_put(EBUF_CONTINUATION, ffly);
+  errbuffer_put(EBUF_CONTINUATION, dcdc);
   return;
 }
 
