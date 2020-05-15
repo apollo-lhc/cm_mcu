@@ -123,7 +123,7 @@ void AlarmTask(void *parameters)
       temp_over_fpga = max_fpga-alarm_temp_fpga;
       temp_over += temp_over_fpga;
       if (temp_over_fpga>temp_over_device){
-	temp_over_device = temp_over_fpga;
+        temp_over_device = temp_over_fpga;
       }
     }
 

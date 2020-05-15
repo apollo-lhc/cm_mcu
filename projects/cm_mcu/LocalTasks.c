@@ -36,7 +36,7 @@ struct pm_command_t pm_command_fpga[] = {
 };
 
 // only one of these might be valid
-float pm_fpga[2] = {0.0,0.0};
+float pm_fpga[2] = {0.0f,0.0f};
 
 struct MonitorTaskArgs_t fpga_args = {
     .name = "XIMON",

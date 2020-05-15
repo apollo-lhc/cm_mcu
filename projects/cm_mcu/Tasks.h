@@ -95,7 +95,7 @@ const char* gitVersion();
 // Alarm Queue
 extern QueueHandle_t xAlmQueue;
 // messages
-#define TEMP_ALARM_CLEAR_ALL 1
+#define TEMP_ALARM_CLEAR_ALL  1
 #define TEMP_ALARM_CLEAR_FPGA 2 // ...
 
 enum device {FF,DCDC,TM4C,FPGA};
@@ -103,8 +103,8 @@ enum device {FF,DCDC,TM4C,FPGA};
 
 
 void AlarmTask(void *parameters);
-float getAlarmTemperature(uint8_t device);
-void setAlarmTemperature(uint8_t device, const float);
+float getAlarmTemperature(enum device device_name);
+void  setAlarmTemperature(enum device device_name, const float newtemp);
 uint32_t getAlarmStatus();
 
 // Monitoring using the ADC inputs

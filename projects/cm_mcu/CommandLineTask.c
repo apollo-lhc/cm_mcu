@@ -389,8 +389,7 @@ static BaseType_t alarm_ctl(int argc, char ** argv)
 		snprintf(m,s, "Invalid command \r\n");
 		return pdFALSE;
 	}
-    char *ptr;
-    float newtemp = strtol(argv[3],&ptr,10);
+    float newtemp = (float)strtol(argv[3],NULL,10);
     char* device = argv[2];
     if(!strcmp(device,"ff")){setAlarmTemperature(FF,newtemp);
     	snprintf(m,s, "%s: set Firefly alarm temperature to %s\r\n", argv[0], argv[3]);
