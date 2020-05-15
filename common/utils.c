@@ -5,8 +5,6 @@
  *      Author: wittich
  */
 
-#include <stddef.h>
-#include <stdlib.h>
 #include "common/utils.h"
 #include "common/pinsel.h"
 #include "driverlib/gpio.h"
@@ -19,6 +17,9 @@
 
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
+
+// local sprintf prototype
+int snprintf( char *buf, unsigned int count, const char *format, ... );
 
 
 uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data)
@@ -131,10 +132,66 @@ void setupActiveLowPins(void)
 
 // EEPROM Buffer
 
-const char* ebuf_errstrings[] = {"", "RESTART", "BUFFER RESET", "MANUAL POWER OFF",
-                                 "TEMP HIGH POWER OFF", "MANUAL POWER ON", "TEMP NORMAL", "ISR", "(continue)",
-                                 "POWER FAILURE", "TEMP HIGH (TM4C FPGA FF DCDC)"
-                                };
+// error codes. these should correspond to the names in utils.h
+static
+const char* ebuf_errstrings[] = {
+    "",
+    "RESTART",
+    "BUFFER RESET",
+    "MANUAL POWER OFF",
+    "TEMP HIGH POWER OFF",
+    "MANUAL POWER ON",
+    "TEMP NORMAL",
+    "Hard fault",
+    "Assertion failed",
+    "Stack Overflow",
+    "(continue)",
+    "POWER FAILURE",
+    "TEMP HIGH (TM4C FPGA FF DCDC)",
+};
+#define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings)/sizeof(ebuf_errstrings[0]))
+
+// put the error string into the provided buffer and return
+// the number of chars copied into the buffer.
+int ebuf_get_errstring(const uint32_t word, char *m, size_t s )
+{
+  uint16_t errcode = EBUF_ERRCODE(word);
+  uint16_t errdata = EBUF_DATA(word);
+  uint16_t counter = EBUF_COUNTER(word);
+  uint16_t realcount = counter*EBUF_COUNTER_UPDATE+1;
+
+  uint16_t days      = EBUF_ENTRY_TIMESTAMP_DAYS(word);
+  uint16_t hours     = EBUF_ENTRY_TIMESTAMP_HOURS(word);
+  uint16_t minutes   = EBUF_ENTRY_TIMESTAMP_MINS(word);
+
+  if ( errcode > (EBUF_N_ERRSTRINGS-1)) {
+    return snprintf(m, s, "\r\n\t%s %d", " Invalid error code:", errcode);
+  }
+  int copied = snprintf(m, s, "\r\n %02u %02u:%02u \t %x %s", days, hours,
+      minutes, realcount, ebuf_errstrings[errcode]);
+  // below handle those cases where additional data is available
+  switch (errcode) {
+  case EBUF_RESTART:
+    if (errdata & EBUF_RESTART_SW )
+      copied += snprintf(m+copied, s-copied, "(SW)");
+    else if (errdata & EBUF_RESTART_EXT )
+      copied += snprintf(m+copied, s-copied, "(EXT)");
+    else if (errdata & EBUF_RESTART_WDOG )
+      copied += snprintf(m+copied, s-copied, "(WDOG)");
+    else if (errdata & EBUF_RESTART_POR )
+      copied += snprintf(m+copied, s-copied, "(POR)");
+    break;
+  case EBUF_HARDFAULT:
+    copied += snprintf(m+copied, s-copied, "(ISRNUM= 0x%x)", errdata);
+    break;
+  case EBUF_PWR_FAILURE:
+    copied += snprintf(m+copied, s-copied, "(supply %d)", errdata);
+    break;
+  default:
+    break;
+  }
+  return copied;
+}
 
 struct error_buffer_t {
   uint32_t minaddr;
@@ -224,7 +281,7 @@ void errbuffer_put(uint16_t errcode, uint16_t errdata)
 
   if (errcode == EBUF_CONTINUATION) {
     ebuf->n_continue = ebuf->n_continue + 1;
-    if((oldcount == 0) || (oldcount - 1) % COUNTER_UPDATE == 0) {
+    if((oldcount == 0) || (oldcount - 1) % EBUF_COUNTER_UPDATE == 0) {
       write_eeprom(errbuffer_entry(errcode, errdata), ebuf->head);
       ebuf->head = increase_head();
       write_eeprom(0, increase_head());
@@ -235,7 +292,7 @@ void errbuffer_put(uint16_t errcode, uint16_t errdata)
   if((errcode == ebuf->last) && (errcode != EBUF_PWR_FAILURE)) {
 
     // if counter is not a multiple of COUNTER_UPDATE, don't write new entry
-    if(oldcount % COUNTER_UPDATE != 0) {
+    if(oldcount % EBUF_COUNTER_UPDATE != 0) {
       ebuf->counter = ebuf->counter + 1;
     }
 
@@ -248,7 +305,7 @@ void errbuffer_put(uint16_t errcode, uint16_t errdata)
     }
 
     // if counter is multiple of COUNTER_UPDATE, write entry and increment counter
-    if(oldcount % COUNTER_UPDATE == 0) {
+    if(oldcount % EBUF_COUNTER_UPDATE == 0) {
       ebuf->counter = ebuf->counter + 1;
 
       int n = ebuf->n_continue;
@@ -278,7 +335,7 @@ void errbuffer_put_raw(uint16_t errcode, uint16_t errdata)
   if(errcode == ebuf->last) {
 
     // if counter is not a multiple of COUNTER_UPDATE, don't write new entry
-    if(oldcount % COUNTER_UPDATE != 0) {
+    if(oldcount % EBUF_COUNTER_UPDATE != 0) {
       ebuf->counter = ebuf->counter + 1;
     }
 
@@ -290,7 +347,7 @@ void errbuffer_put_raw(uint16_t errcode, uint16_t errdata)
     }
 
     // if counter is multiple of COUNTER_UPDATE, write entry and increment counter
-    if(oldcount % COUNTER_UPDATE == 0) {
+    if(oldcount % EBUF_COUNTER_UPDATE == 0) {
       ebuf->counter = ebuf->counter + 1;
       write_eeprom_raw(errbuffer_entry(errcode, errdata), decrease_head());
     }

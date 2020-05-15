@@ -9,6 +9,7 @@
 #define COMMON_UTILS_H_
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 
@@ -41,9 +42,8 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define ERRCODE_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET))-1-ERRDATA_MASK)
 #define COUNTER_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET+COUNTER_OFFSET))-1-ERRDATA_MASK-ERRCODE_MASK)
 
-#define COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
+#define EBUF_COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
-extern const char* ebuf_errstrings[];
 
 // error codes without data
 #define EBUF_RESTART			1
@@ -70,9 +70,16 @@ extern const char* ebuf_errstrings[];
 #define EBUF_RESTART_EXT  SYSCTL_CAUSE_EXT
 
 
+// macros for decoding error data
+#define EBUF_ENTRY(w)   (0xFFFF&(w))
+#define EBUF_ERRCODE(w) (((EBUF_ENTRY(w)&ERRCODE_MASK)>>ERRDATA_OFFSET))
+#define EBUF_DATA(w)    (EBUF_ENTRY(w)&ERRDATA_MASK)
+#define EBUF_COUNTER(w) (EBUF_ENTRY(w)>>(16-COUNTER_OFFSET))
 
-
-
+#define EBUF_ENTRY_TIMESTAMP(w)         (0xFFFF&((w)>>16)) // time in minutes
+#define EBUF_ENTRY_TIMESTAMP_DAYS(w)    (EBUF_ENTRY_TIMESTAMP(w)/1440) // 1440 minutes/day
+#define EBUF_ENTRY_TIMESTAMP_HOURS(w)   (EBUF_ENTRY_TIMESTAMP(w)/1440/60)
+#define EBUF_ENTRY_TIMESTAMP_MINS(w)    (EBUF_ENTRY_TIMESTAMP(w)%1440) // minutes in the hour
 
 
 void errbuffer_init(uint8_t minblk, uint8_t maxblk);
@@ -93,6 +100,10 @@ uint16_t errbuffer_counter();
 uint16_t errbuffer_continue();
 
 uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata);
+
+// put the error string into the provided buffer and return
+// the number of chars copied into the buffer.
+int ebuf_get_errstring(const uint32_t word, char *m, size_t s );
 
 // specific error functions
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);

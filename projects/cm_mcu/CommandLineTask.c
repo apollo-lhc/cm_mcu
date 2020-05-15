@@ -82,7 +82,8 @@ char m[SCRATCH_SIZE];
 
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
-#pragma GCC diagnostic ignored "-Wformat=" // because of our mini-sprintf
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat" // because of our mini-sprintf
 
 static BaseType_t i2c_ctl_set_dev(int argc, char ** argv)
 {
@@ -450,6 +451,7 @@ static BaseType_t led_ctl(int argc, char ** argv)
 {
 
   BaseType_t i1 = strtol(argv[1], NULL, 10);
+  configASSERT(i1 != 99);
 
   uint32_t message = HUH; // default: message not understood
   if ( i1 == 0 ) { // ToDo: make messages less clunky. break out color.
@@ -966,78 +968,28 @@ static BaseType_t errbuff_out(int argc, char **argv)
   for (; i<num; ++i) {
     uint32_t word = (*arrptr)[i];
 
-    uint16_t entry = (uint16_t)word;
-    uint16_t errcode = (entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
-    uint16_t errdata = entry&ERRDATA_MASK;
-    uint16_t counter = entry>>(16-COUNTER_OFFSET);
-    uint16_t realcount = counter*COUNTER_UPDATE+1;
-
-    uint16_t timestamp = (uint16_t)(word>>16);
-    uint16_t days = timestamp/0x5a0;
-    uint16_t hours = (timestamp%0x5a0)/0x3c;
-    uint16_t minutes = timestamp%0x3c;
-
-    if (errcode == EBUF_CONTINUATION){
+//    uint16_t o_entry = (uint16_t)word;
+//    uint16_t o_errcode = (o_entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
+//    uint16_t o_errdata = o_entry&ERRDATA_MASK;
+//    uint16_t o_counter = o_entry>>(16-COUNTER_OFFSET);
+//    uint16_t o_realcount = o_counter*COUNTER_UPDATE+1;
+//
+//    uint16_t entry   = EBUF_ENTRY(word);;
+    uint16_t errcode = EBUF_ERRCODE(word);
+//    uint16_t counter = EBUF_COUNTER(word);
+//    uint16_t realcount = counter*COUNTER_UPDATE+1;
+//
+//    uint16_t timestamp = EBUF_ENTRY_TIMESTAMP(word);
+//    uint16_t days      = EBUF_ENTRY_TIMESTAMP_DAYS(word);
+//    uint16_t hours     = EBUF_ENTRY_TIMESTAMP_HOURS(word);
+//    uint16_t minutes   = EBUF_ENTRY_TIMESTAMP_MINS(word);
+    // if this is a continuation and it's not the first entry we see
+    if (errcode == EBUF_CONTINUATION && i != 0 ){
+      uint16_t errdata = EBUF_DATA(word);
     	copied += snprintf(m+copied, SCRATCH_SIZE-copied, " %02u", errdata);
     }
     else{
-    	// print timestamp and error code
-      if ( errcode > 12 ) { // HACK HACK HACK
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-            "\r\nInvalid error code, %s line %d\r\n", __FILE__, __LINE__);
-        continue;
-      }
-    	const char* error_str = ebuf_errstrings[errcode];
-    	copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-			"\r\n %02u %02u:%02u \t %x %s", days, hours,
-			minutes, realcount, error_str);
-		// if code comes with data, print data
-		if (errcode>=EBUF_WITH_DATA) {
-			copied += snprintf(m+copied,SCRATCH_SIZE-copied," %02u",errdata);
-		}
-#if 0
-      switch(errcode) {
-      case EBUF_RESTART:
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-            "%02u %02u:%02u \t %x RESTART ", days, hours, minutes, counter);
-        if (errdata & EBUF_RESTART_SW )
-          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(SW)\r\n");
-        else if (errdata & EBUF_RESTART_EXT )
-          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(EXT)\r\n");
-        else if (errdata & EBUF_RESTART_WDOG )
-          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(WDOG)\r\n");
-        else if (errdata & EBUF_RESTART_POR )
-          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "(POR)\r\n");
-        else
-          copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\r\n");
-        break;
-      case EBUF_RESET_BUFFER:
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-            "%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
-            hours, minutes, counter);
-        break;
-      case EBUF_HARDFAULT:
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-            "%02u %02u:%02u \t %x HARD FAULT: ISRNUM= 0x%x\r\n", days,
-            hours, minutes, counter, errdata);
-        break;
-      case EBUF_ASSERT:
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-            "%02u %02u:%02u \t %x ASSERT\r\n", days,
-            hours, minutes, counter);
-        break;
-      case EBUF_STACKOVERFLOW:
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-            "%02u %02u:%02u \t %x STACK OVERFLOW\r\n", days,
-            hours, minutes, counter);
-        break;
-      default: // unknown
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-            "%02u %02u:%02u \t %x %x %02x\r\n", days, hours,
-            minutes, realcount, errcode,errdata);
-        break;
-      }
-#endif       
+      copied += ebuf_get_errstring(word, m+copied, SCRATCH_SIZE-copied);
     }
     if ((SCRATCH_SIZE-copied)<20 && (i<num)){	// this should catch when buffer is close to full
     	++i;

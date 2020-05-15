@@ -167,6 +167,84 @@ endif
 # Add the tool specific CFLAGS.
 #
 CFLAGS+=${CFLAGSgcc}
+else ifeq (${COMPILER}, clang)
+#### CLANG
+#
+# The command for calling the compiler.
+#
+PREFIX=
+CC=clang
+#
+# The command for extracting images from the linked executables.
+#
+OBJCOPY=llvm-objcopy
+
+#
+# The command for calling the library archiver.
+#
+AR=llvm-ar
+
+#
+# The command for calling the linker.
+#
+LD=ld.lld
+#
+# The size command
+#
+SIZE=llvm-size
+
+
+
+#
+# Set the compiler CPU/FPU options.
+#
+CPU=--target=armv7m-none-eabi -mcpu=cortex-m4
+FPU=-mfpu=fpv4-sp-d16 -mfloat-abi=hard #-mfp16-format=ieee
+
+CFLAGS=             \
+       ${CPU}              \
+       ${FPU}              \
+       -ffunction-sections \
+       -fdata-sections     \
+       -MD                 \
+       -std=c11            \
+       -DPART_${PART}      \
+       --sysroot=/usr/local/arm-none-eabi \
+       -Wall -pedantic \
+       -c
+
+ifdef DEBUG
+CFLAGS+=-g -D DEBUG -O0
+else
+CFLAGS+=-Os 
+endif
+
+## THESE BELOW GET CALLED FROM GCC
+#
+# Get the location of libgcc.a from the GCC front-end.
+#
+LIBGCC=${shell ${CC} ${CFLAGS} -print-libgcc-file-name}
+
+#
+# Get the location of libc.a from the GCC front-end.
+#
+LIBC=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
+
+#
+# Get the location of libm.a from the GCC front-end.
+#
+LIBM=${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
+
+
+#
+# Add the include file paths to AFLAGS and CFLAGS.
+#
+AFLAGS+=${patsubst %,-I%,${subst :, ,${IPATH}}}
+CFLAGS+=${patsubst %,-I%,${subst :, ,${IPATH}}}
+
+
+endif
+####
 
 #
 # Add the include file paths to AFLAGS and CFLAGS.
@@ -258,5 +336,5 @@ ${COMPILER}${SUFFIX}/%.axf:
 	      '${LIBM}' '${LIBC}' '${LIBGCC}'
 	@${OBJCOPY} -O binary ${@} ${@:.axf=.bin}
 	@${SIZE} ${@}
-endif
+
 

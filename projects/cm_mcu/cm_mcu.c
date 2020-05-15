@@ -218,8 +218,6 @@ const char* gitVersion()
   const char *gitVersion = FIRMWARE_VERSION;
   return gitVersion;
 }
-__attribute__((used))
-const uint8_t freeRTOSMemoryScheme = configUSE_HEAP_SCHEME;
 
 // 
 int main( void )
