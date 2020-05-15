@@ -17,6 +17,16 @@
 #include "FreeRTOS.h"
 #include "Tasks.h"
 
+typedef struct error_buffer_t error_buffer_t;
+typedef error_buffer_t* errbuf_handle_t;
+
+
+uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data)
+{
+  return ((action<<48)|(addr<<32)|data);
+}
+
+
 // write single word to eeprom
 void write_eeprom(uint32_t data, uint32_t addr)
 {
@@ -183,7 +193,7 @@ void errbuffer_init(uint8_t minblk, uint8_t maxblk)
   ebuf->minaddr = EEPROMAddrFromBlock(minblk);
   ebuf->maxaddr = EEPROMAddrFromBlock(maxblk + 1) - 4;
   ebuf->capacity = (uint32_t)(maxblk - minblk + 1) * 16;
-  ebuf->head = errbuffer_findhead(ebuf);
+  ebuf->head = errbuffer_findhead();
   ebuf->last = 0;
   ebuf->counter = 0;
   ebuf->n_continue = 0;
@@ -210,14 +220,14 @@ void errbuffer_reset()
 
 void errbuffer_put(uint16_t errcode, uint16_t errdata)
 {
-  uint16_t oldcount = ebuf->counter;
+  const uint16_t oldcount = ebuf->counter;
 
   if (errcode == EBUF_CONTINUATION) {
     ebuf->n_continue = ebuf->n_continue + 1;
     if((oldcount == 0) || (oldcount - 1) % COUNTER_UPDATE == 0) {
       write_eeprom(errbuffer_entry(errcode, errdata), ebuf->head);
-      ebuf->head = increase_head(ebuf);
-      write_eeprom(0, increase_head(ebuf));
+      ebuf->head = increase_head();
+      write_eeprom(0, increase_head());
     }
     return;
   }
@@ -233,8 +243,8 @@ void errbuffer_put(uint16_t errcode, uint16_t errdata)
     if(oldcount % (1 << COUNTER_OFFSET) == 0) {
       ebuf->counter = 0;
       ebuf->n_continue = 0;
-      ebuf->head = increase_head(ebuf);
-      write_eeprom(0, increase_head(ebuf));
+      ebuf->head = increase_head();
+      write_eeprom(0, increase_head());
     }
 
     // if counter is multiple of COUNTER_UPDATE, write entry and increment counter
@@ -244,9 +254,9 @@ void errbuffer_put(uint16_t errcode, uint16_t errdata)
       int n = ebuf->n_continue;
       while (n > 0) {
         n--;
-        ebuf->head = decrease_head(ebuf);
+        ebuf->head = decrease_head();
       }
-      write_eeprom(errbuffer_entry(errcode, errdata), decrease_head(ebuf));
+      write_eeprom(errbuffer_entry(errcode, errdata), decrease_head());
     }
     // assuming that the right # of continue codes will follow
   }
@@ -254,8 +264,8 @@ void errbuffer_put(uint16_t errcode, uint16_t errdata)
     ebuf->counter = 0;
     ebuf->last = errcode;
     write_eeprom(errbuffer_entry(errcode, errdata), ebuf->head);
-    ebuf->head = increase_head(ebuf);
-    write_eeprom(0, increase_head(ebuf));
+    ebuf->head = increase_head();
+    write_eeprom(0, increase_head());
   }
   ebuf->n_continue = 0;
   return;
@@ -275,38 +285,41 @@ void errbuffer_put_raw(uint16_t errcode, uint16_t errdata)
     // if counter has already reached max value, increment head
     if(oldcount % (1 << COUNTER_OFFSET) == 0) { //Change this to use COUNTER_OFFSET
       ebuf->counter = 0;
-      ebuf->head = increase_head(ebuf);
-      write_eeprom_raw(0, increase_head(ebuf));
+      ebuf->head = increase_head();
+      write_eeprom_raw(0, increase_head());
     }
 
     // if counter is multiple of COUNTER_UPDATE, write entry and increment counter
     if(oldcount % COUNTER_UPDATE == 0) {
       ebuf->counter = ebuf->counter + 1;
-      write_eeprom_raw(errbuffer_entry(errcode, errdata), decrease_head(ebuf));
+      write_eeprom_raw(errbuffer_entry(errcode, errdata), decrease_head());
     }
   }
   else { // If new error code...
     ebuf->counter = 0;
     ebuf->last = errcode;
     write_eeprom_raw(errbuffer_entry(errcode, errdata), ebuf->head);
-    ebuf->head = increase_head(ebuf);
-    write_eeprom_raw(0, increase_head(ebuf));
+    ebuf->head = increase_head();
+    write_eeprom_raw(0, increase_head());
   }
   return;
 }
 
 
-void errbuffer_get(uint32_t num, uint32_t (*arrptr)[num])
+void errbuffer_get(const uint32_t num, uint32_t (*arrptr)[num])
 {
-  int i = 0, j = 0, max = num;
-  while(i < max) {
+  // we wind back the head by num counts, and then
+  // advance it by num counts after reading the entries
+  int i = 0;
+  while(i < num) {
     i++;
-    ebuf->head = decrease_head(ebuf);
+    ebuf->head = decrease_head();
   }
-  while(j < max) {
-    (*arrptr)[j] = read_eeprom_single(ebuf->head);
-    ebuf->head = increase_head(ebuf);
-    j++;
+  i = 0;
+  while(i < num) {
+    (*arrptr)[i] = read_eeprom_single(ebuf->head);
+    ebuf->head = increase_head();
+    i++;
   }
   return;
 }

@@ -17,6 +17,7 @@
 #include "semphr.h"
 
 #define MAX(a,b) (a)>(b)?(a):(b)
+#define ABS(x) ((x)<0?(-(x)):(x))
 
 // INIT task
 void InitTask(void *parameters);

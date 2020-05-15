@@ -260,8 +260,8 @@ int main( void )
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, NULL);
   xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
-  xTaskCreate(EEPROMTask,    "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
-  xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
+  xTaskCreate(EEPROMTask,    "EPRM",  configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
+  xTaskCreate(InitTask,      "INIT",  configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(SoftUartTask,  "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, NULL);
 
 
@@ -288,15 +288,6 @@ int main( void )
 
   xSoftUartQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
   configASSERT(xSoftUartQueue != NULL);
-
-  // debug
-  vQueueAddToRegistry(xLedQueue, "LED Queue");
-  vQueueAddToRegistry(xPwrQueue, "PWR Queue");
-  vQueueAddToRegistry(xFFlyQueue, "FFLY Queue");
-  vQueueAddToRegistry(xEPRMQueue_in, "EIN Queue");
-  vQueueAddToRegistry(xEPRMQueue_out, "EOUT Queue");
-  vQueueAddToRegistry(xAlmQueue, "ALM Queue");
-  vQueueAddToRegistry(xSoftUartQueue, "sUART Queue");
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.

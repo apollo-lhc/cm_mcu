@@ -22,17 +22,16 @@ QueueHandle_t xEPRMQueue_in;
 QueueHandle_t xEPRMQueue_out;
 
 
-uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data){
-	return ((action<<48)|(addr<<32)|data);
-}
 
 // write single word to eeprom
+static
 void write_single(uint32_t data, uint32_t addr)
 {
   const uint32_t dlen = 4;
 	MAP_EEPROMProgram(&data,addr,dlen);
 }
 // read single word from eeprom
+static
 uint64_t read_single(uint32_t addr)
 {
 	uint32_t data;
@@ -41,6 +40,7 @@ uint64_t read_single(uint32_t addr)
 	return (uint64_t)data;
 }
 // read 2 words from eeprom
+static
 uint64_t read_double(uint32_t addr)
 {
 	static uint32_t dataptr[2] = {0x0, 0x0};
@@ -51,7 +51,8 @@ uint64_t read_double(uint32_t addr)
 	return data;
 }
 
-void EEPROMTask(void *parameters){
+void EEPROMTask(void *parameters)
+{
 	uint64_t message_in, message_out;
 
 	// At the moment, let's do 1 byte key , 1 byte optional addr, 2 bytes data
@@ -59,42 +60,39 @@ void EEPROMTask(void *parameters){
 	// 0x 0001 0022 ffffffff
 	// Writes ffffffff to register 0x22
 
-	for(;;){
-		if(xQueueReceive(xEPRMQueue_in, &message_in, portMAX_DELAY)){
+	for ( ;;) {
+	  // block forever here, waiting for a message
+		xQueueReceive(xEPRMQueue_in, &message_in, portMAX_DELAY);
 
-			uint16_t message_type = (uint16_t)(message_in>>48);
-			uint16_t addr = (uint16_t)(message_in>>32);
-			uint32_t data = (uint32_t)(message_in);
+		uint16_t message_type = (uint16_t)(message_in>>48);
+		uint16_t addr = (uint16_t)(message_in>>32);
+		uint32_t data = (uint32_t)(message_in);
 
-			switch(message_type){
-			case EPRM_WRITE_SINGLE:
-				write_single(data,addr);
-				break;
-			case EPRM_READ_SINGLE:
-				message_out = read_single(addr);
-				xQueueSendToBack(xEPRMQueue_out, &message_out, portMAX_DELAY);
-				break;
-			case EPRM_READ_DOUBLE:
-				message_out = read_double(addr);
-				xQueueSendToBack(xEPRMQueue_out, &message_out, portMAX_DELAY);
-				break;
-			case EPRM_UNLOCK_BLOCK: ;
-				uint32_t *dataptr = &data;
-				MAP_EEPROMBlockUnlock(addr, dataptr, 1);
-				break;
-			case EPRM_LOCK_BLOCK:
-				MAP_EEPROMBlockLock(addr);
-				break;
-			case EPRM_PASS_SET: ;
-				uint32_t *passptr = &data;
-				MAP_EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
-				MAP_EEPROMBlockPasswordSet(1, passptr, 1);
-				MAP_EEPROMBlockLock(1);
-				break;
-			default:
-				break;
-			}
-			continue;
+		switch(message_type){
+		case EPRM_WRITE_SINGLE:
+		  write_single(data,addr);
+		  break;
+		case EPRM_READ_SINGLE:
+		  message_out = read_single(addr);
+		  xQueueSendToBack(xEPRMQueue_out, &message_out, portMAX_DELAY);
+		  break;
+		case EPRM_READ_DOUBLE:
+		  message_out = read_double(addr);
+		  xQueueSendToBack(xEPRMQueue_out, &message_out, portMAX_DELAY);
+		  break;
+		case EPRM_UNLOCK_BLOCK:
+		  MAP_EEPROMBlockUnlock(addr, &data, 1);
+		  break;
+		case EPRM_LOCK_BLOCK:
+		  MAP_EEPROMBlockLock(addr);
+		  break;
+		case EPRM_PASS_SET:
+		  MAP_EEPROMBlockProtectSet(1, EEPROM_PROT_RW_LRO_URW);
+		  MAP_EEPROMBlockPasswordSet(1, &data, 1);
+		  MAP_EEPROMBlockLock(1);
+		  break;
+		default:
+		  break;
 		}
-	}
+	} // infinite for loop
 }

@@ -97,8 +97,8 @@ void PowerSupplyTask(void *parameters)
     }
     else if ( ! alarm && ! cli_powerdown_request ) { // blade_power_enable and not alarm
       TickType_t newTime = xTaskGetTickCount();
-      uint32_t seconds_passed = (newTime-oldTime)*portTICK_PERIOD_MS/1000;
-      if ((oldTime==0)||(abs(seconds_passed)>=SET_PS_RETRY)){  // absolute value to catch timer overflow
+      int32_t seconds_passed = (newTime-oldTime)*portTICK_PERIOD_MS/1000;
+      if ((oldTime==0)||(ABS(seconds_passed)>=SET_PS_RETRY)){  // absolute value to catch timer overflow
     	  set_ps();
     	  oldTime=newTime;
       }

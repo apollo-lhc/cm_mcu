@@ -678,7 +678,6 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
     if ( strncmp(argv[1], "done",4) == 0 ) { // print out value of done pins
       int ku_done_ = read_gpio_pin(_K_FPGA_DONE);
       int vu_done_ = read_gpio_pin(_V_FPGA_DONE);
-      //int copied =
       snprintf(m, SCRATCH_SIZE, "KU_DONE* = %d\r\nVU_DONE* = %d\r\n", ku_done_, vu_done_);
       return pdFALSE;
     }
@@ -951,7 +950,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
 {
   int copied = 0;
 
-  uint8_t max_entries=25;
+  const uint8_t max_entries=25;
   uint32_t num = strtoul(argv[1],NULL,10);
   if (num>max_entries){
 	  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Please enter a number 25 or less \r\n");
@@ -985,7 +984,9 @@ static BaseType_t errbuff_out(int argc, char **argv)
     else{
     	// print timestamp and error code
       if ( errcode > 12 ) { // HACK HACK HACK
-        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "error in line %d", __LINE__);
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied,
+            "\r\nInvalid error code, %s line %d\r\n", __FILE__, __LINE__);
+        continue;
       }
     	const char* error_str = ebuf_errstrings[errcode];
     	copied += snprintf(m+copied, SCRATCH_SIZE-copied,
@@ -1052,7 +1053,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
 // Takes no arguments
 static BaseType_t errbuff_info(int argc, char **argv)
 {
-int copied = 0;
+  int copied = 0;
   uint32_t cap, minaddr, maxaddr, head;
   uint16_t last, counter, n_continue;
 
@@ -1085,7 +1086,7 @@ static BaseType_t errbuff_reset(int argc, char **argv)
 // takes no arguments
 static BaseType_t stack_ctl(int argc, char **argv)
 {
-int copied = 0;
+  int copied = 0;
   int i = SystemStackWaterHighWaterMark();
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "stack: %d of %d untouched\r\n", i,
       SYSTEM_STACK_SIZE);

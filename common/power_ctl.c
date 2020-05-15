@@ -82,7 +82,7 @@ int getLowestEnabledPSPriority()
   return lowest_enabled_ps_prio;
 }
 
-const
+
 enum ps_state getPSStatus(int i)
 {
   if ( i < 0 || i >= N_PS_OKS) return PWR_UNKNOWN;

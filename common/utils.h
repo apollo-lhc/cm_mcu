@@ -73,16 +73,13 @@ extern const char* ebuf_errstrings[];
 
 
 
-typedef struct error_buffer_t error_buffer_t;
-typedef error_buffer_t* errbuf_handle_t;
 
-//extern errbuf_handle_t ebuf;
 
 void errbuffer_init(uint8_t minblk, uint8_t maxblk);
 void errbuffer_reset();
 void errbuffer_put(uint16_t errcode, uint16_t errdata);
 // TODO: change get to not count continue codes as entries (append to prior entries?)
-void errbuffer_get(uint32_t num, uint32_t (*arrptr)[num]);
+void errbuffer_get(const uint32_t num, uint32_t (*arrptr)[num]);
 
 // this version bypasses the gatekeeper task and should only be used in ISR only
 void errbuffer_put_raw(uint16_t errcode, uint16_t errdata);
