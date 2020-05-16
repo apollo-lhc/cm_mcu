@@ -115,7 +115,7 @@ ${COMPILER}/cm_mcu.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/cm_mcu.axf: cm_mcu.ld
 SCATTERgcc_cm_mcu=cm_mcu.ld
 ENTRY_cm_mcu=ResetISR
-CFLAGSgcc=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
+CFLAGS+=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
 
 # this rule forces the main function to be recompiled when
 # any of the dependencies are out of date, to get the
