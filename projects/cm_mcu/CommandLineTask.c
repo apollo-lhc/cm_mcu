@@ -989,7 +989,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
     	copied += snprintf(m+copied, SCRATCH_SIZE-copied, " %02u", errdata);
     }
     else{
-      copied += ebuf_get_errstring(word, m+copied, SCRATCH_SIZE-copied);
+      copied += errbuffer_get_messagestr(word, m+copied, SCRATCH_SIZE-copied);
     }
     if ((SCRATCH_SIZE-copied)<20 && (i<num)){	// this should catch when buffer is close to full
     	++i;
@@ -1164,7 +1164,7 @@ BaseType_t suart_ctl(int argc, char ** argv)
   if ( strncmp(argv[1], "on", 2) == 0 )
     message = SOFTUART_ENABLE_TRANSMIT;
   else if (strncmp(argv[1], "off", 3) == 0  )
-    message = SOFTUART_ENABLE_TRANSMIT;
+    message = SOFTUART_DISABLE_TRANSMIT;
   else {
     snprintf(m, s, "%s: message %s not understood\r\n", argv[0], argv[1]);
     return pdFALSE;

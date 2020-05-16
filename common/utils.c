@@ -153,7 +153,7 @@ const char* ebuf_errstrings[] = {
 
 // put the error string into the provided buffer and return
 // the number of chars copied into the buffer.
-int ebuf_get_errstring(const uint32_t word, char *m, size_t s )
+int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
 {
   uint16_t errcode = EBUF_ERRCODE(word);
   uint16_t errdata = EBUF_DATA(word);
