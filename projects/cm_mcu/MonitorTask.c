@@ -31,6 +31,7 @@
 #include "common/smbus_units.h"
 #include "common/power_ctl.h"
 #include "MonitorTask.h"
+#include "Tasks.h"
 
 void Print(const char* str);
 

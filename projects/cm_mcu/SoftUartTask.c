@@ -16,6 +16,7 @@
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
 #include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
 
 #include "common/softuart.h"
 
@@ -93,8 +94,8 @@ void SoftUartTask(void *parameters)
   // Enable the GPIO modules that contains the GPIO pins to be used by
   // the software UART.
   //
-  //ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-  //ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+  //MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+  //MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
   //
   // Configure the software UART module: 8 data bits, no parity, and one
   // stop bit.
@@ -112,28 +113,28 @@ void SoftUartTask(void *parameters)
   // UART.  The interface in this example is run at 38,400 baud,
   // requiring a timer tick at 38,400 Hz.
   //
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-  ROM_TimerConfigure(TIMER0_BASE,
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+  MAP_TimerConfigure(TIMER0_BASE,
                  (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC |
                   TIMER_CFG_B_PERIODIC));
-  ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, g_ulBitTime);
-  ROM_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
-  ROM_TimerEnable(TIMER0_BASE, TIMER_A);
+  MAP_TimerLoadSet(TIMER0_BASE, TIMER_A, g_ulBitTime);
+  MAP_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
+  MAP_TimerEnable(TIMER0_BASE, TIMER_A);
   //
   // Set the priorities of the interrupts associated with the software
   // UART.  The receiver is higher priority than the transmitter, and the
   // receiver edge interrupt is higher priority than the receiver timer
   // interrupt.
   //
-  //ROM_IntPrioritySet(INT_GPIOE, 0x00);
-  //ROM_IntPrioritySet(INT_TIMER0B, 0x40);
-  ROM_IntPrioritySet(INT_TIMER0A, 0x80);
+  //MAP_IntPrioritySet(INT_GPIOE, 0x00);
+  //MAP_IntPrioritySet(INT_TIMER0B, 0x40);
+  MAP_IntPrioritySet(INT_TIMER0A, configKERNEL_INTERRUPT_PRIORITY);
   //
   // Enable the interrupts associated with the software UART.
   //
-  //ROM_IntEnable(INT_GPIOE);
-  //ROM_IntEnable(INT_TIMER0A);
-  //ROM_IntEnable(INT_TIMER0B);
+  //MAP_IntEnable(INT_GPIOE);
+  //MAP_IntEnable(INT_TIMER0A);
+  //MAP_IntEnable(INT_TIMER0B);
 
   //
   // Enable the transmit FIFO half full interrupt in the software UART.
@@ -160,7 +161,7 @@ void SoftUartTask(void *parameters)
     }
     if ( enable ) {
       // Enable the interrupts during transmission
-      ROM_IntEnable(INT_TIMER0A);
+      MAP_IntEnable(INT_TIMER0A);
 
       // Fireflies
       for ( int j = 0; j < NFIREFLIES; ++j) {
@@ -258,7 +259,7 @@ void SoftUartTask(void *parameters)
       while (g_sUART.ui16TxBufferRead != g_sUART.ui16TxBufferWrite)
         vTaskDelay(pdMS_TO_TICKS(10));
 
-      ROM_IntDisable(INT_TIMER0A);
+      MAP_IntDisable(INT_TIMER0A);
     }
     // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 5000 ) );

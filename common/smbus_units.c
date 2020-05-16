@@ -13,7 +13,7 @@ float linear11_to_float(linear11_val_t t)
 
 float linear16u_to_float(uint16_t t )
 {
-  const float mantissa = -13;
+  const int mantissa = -13;
   return 1.0*t*pow(2,mantissa);
 }
 

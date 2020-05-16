@@ -8,7 +8,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include <string.h>
 
@@ -33,8 +32,8 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
-#include "driverlib/adc.h"
 #include "driverlib/rom_map.h"
+#include "driverlib/adc.h"
 #include "driverlib/uart.h"
 #include "driverlib/timer.h"
 #include "driverlib/interrupt.h"
@@ -314,7 +313,7 @@ Timer0AIntHandler(void)
   //
   // Clear the timer interrupt.
   //
-  TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+  MAP_TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
   //
   // Call the software UART transmit timer tick function.
   //

@@ -12,7 +12,6 @@
 
 
 extern float pm_values[];
-#define ABS(x) ((x)<0?(-(x)):(x))
 
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
 enum { PM_VOLTAGE, PM_NONVOLTAGE, PM_STATUS, PM_LINEAR11, PM_LINEAR16U, PM_LINEAR16S } pm_types ;

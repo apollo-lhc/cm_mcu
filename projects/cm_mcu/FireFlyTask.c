@@ -256,8 +256,8 @@ void FireFlyTask(void *parameters)
   }
 
   vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
-
-
+  // firefly config stored in on-board EEPROM
+  uint32_t ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
 
   for (;;) {
     tSMBus *smbus;
@@ -265,6 +265,8 @@ void FireFlyTask(void *parameters)
     bool good = false;
     // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
+      if ( (1<<ff)&ff_config )
+        continue;
       if ( ff < NFIREFLIES_KU15P ) {
         smbus = &g_sMaster4; p_status = &eStatus4;
       }

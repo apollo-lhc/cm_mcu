@@ -231,8 +231,8 @@ SoftUARTConfigSet(tSoftUART *psUART, uint32_t ui32Config)
         //
         // Enable the Rx pin interrupt.
         //
-        GPIOIntClear(psUART->ui32RxGPIOPort, psUART->ui8RxPin);
-        GPIOIntEnable(psUART->ui32RxGPIOPort, psUART->ui8RxPin);
+        MAP_GPIOIntClear(psUART->ui32RxGPIOPort, psUART->ui8RxPin);
+        MAP_GPIOIntEnable(psUART->ui32RxGPIOPort, psUART->ui8RxPin);
     }
 
     //

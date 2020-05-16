@@ -111,14 +111,20 @@ void AlarmTask(void *parameters)
     }
 
     // FPGA
-    float max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+    float max_fpga;
+    if ( fpga_args.n_devices == 2 ) {
+      max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+    }
+    else {
+      max_fpga = fpga_args.pm_values[0];
+    }
     if ( max_fpga > alarm_temp_fpga) {
-    	status |= ALM_STAT_FPGA_OVERTEMP;
-        temp_over_fpga = max_fpga-alarm_temp_fpga;
-        temp_over += temp_over_fpga;
-        if (temp_over_fpga>temp_over_device){
-        	temp_over_device = temp_over_fpga;
-        	}
+      status |= ALM_STAT_FPGA_OVERTEMP;
+      temp_over_fpga = max_fpga-alarm_temp_fpga;
+      temp_over += temp_over_fpga;
+      if (temp_over_fpga>temp_over_device){
+        temp_over_device = temp_over_fpga;
+      }
     }
 
 
@@ -167,16 +173,16 @@ void AlarmTask(void *parameters)
     }
     // if temp returns to normal, send buffer message
     if ((temp_over==0) && (temp_over_old>0)){
-        errbuffer_put(ebuf, EBUF_TEMP_NORMAL, 0);
+        errbuffer_put(EBUF_TEMP_NORMAL, 0);
         temp_over_old = temp_over;
     }
     if ( status && (current_temp_state != TEMP_BAD )) {
-    	// If temp is bad, turn on alarm, send error message to buffer
+      // If temp is bad, turn on alarm, send error message to buffer
       if ((temp_over>temp_over_old)||(status!=oldstatus)){
-    	  // only send message when status has changed or temp has risen since last entry, to avoid filling up buffer
-    	  errbuffer_temp_high((uint8_t)tm4c_temp,(uint8_t)max_fpga,(uint8_t)imax_ff_temp,(uint8_t)max_dcdc_temp);
-		  oldstatus=status;
-          temp_over_old=temp_over;
+        // only send message when status has changed or temp has risen since last entry, to avoid filling up buffer
+        errbuffer_temp_high((uint8_t)tm4c_temp,(uint8_t)max_fpga,(uint8_t)imax_ff_temp,(uint8_t)max_dcdc_temp);
+        oldstatus=status;
+        temp_over_old=temp_over;
       }
       current_temp_state = TEMP_BAD;
     }

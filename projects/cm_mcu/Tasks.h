@@ -17,6 +17,7 @@
 #include "semphr.h"
 
 #define MAX(a,b) (a)>(b)?(a):(b)
+#define ABS(x) ((x)<0?(-(x)):(x))
 
 // INIT task
 void InitTask(void *parameters);
@@ -94,7 +95,7 @@ const char* gitVersion();
 // Alarm Queue
 extern QueueHandle_t xAlmQueue;
 // messages
-#define TEMP_ALARM_CLEAR_ALL 1
+#define TEMP_ALARM_CLEAR_ALL  1
 #define TEMP_ALARM_CLEAR_FPGA 2 // ...
 
 enum device {FF,DCDC,TM4C,FPGA};
@@ -102,8 +103,8 @@ enum device {FF,DCDC,TM4C,FPGA};
 
 
 void AlarmTask(void *parameters);
-float getAlarmTemperature(uint8_t device);
-void setAlarmTemperature(uint8_t device, const float);
+float getAlarmTemperature(enum device device_name);
+void  setAlarmTemperature(enum device device_name, const float newtemp);
 uint32_t getAlarmStatus();
 
 // Monitoring using the ADC inputs
@@ -137,5 +138,13 @@ void SoftUartTask(void *parameters);
 // utility functions
 const uint32_t * getSystemStack();
 int SystemStackWaterHighWaterMark();
+
+// Xilinx MonitorTask
+int get_ku_index();
+int get_vu_index();
+//void set_ku_index(int index);
+//void set_vu_index(int index);
+void initFPGAMon();
+
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

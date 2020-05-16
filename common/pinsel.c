@@ -430,10 +430,10 @@ const char* const pin_names[] =
     "K_VCCINT_PG_A",// 61
     "BLADE_POWER_OK",// 62
     "VCC_M3V3",// 63
-    "Tied to GND. This function is not used.",// 64
-    "No connect",// 65
+    "NC", // "Tied to GND. This function is not used.",// 64
+    "NC",// 65
     "Tied to GND. ",// 66
-    "No connect",// 67
+    "NC",// 67
     "VCC_M3V3",// 68
     "VCC_M3V3",// 69
     "TM4C_ENABLE",// 70
@@ -454,8 +454,8 @@ const char* const pin_names[] =
     "CTRL_K_MGTY_AVCC_PWR_EN",// 85
     "CTRL_K_MGTH_AVCC_PWR_EN",// 86
     "TM4C_VDDC",// 87
-    "TIed to GND. This design uses the 16 MHz internal oscillator PIOSC.",// 88
-    "No connect",// 89
+    "NC", // "TIed to GND. This design uses the 16 MHz internal oscillator PIOSC.",// 88
+    "NC",// 89
     "VCC_M3V3",// 90
     "BLADE_MASTER_I2C_SCL",// 91
     "BLADE_MASTER_I2C_SDA",// 92
