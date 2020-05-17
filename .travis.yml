@@ -42,8 +42,8 @@ deploy:
   file:
     - projects/cm_mcu/gcc/cm_mcu.axf
     - projects/cm_mcu/gcc/cm_mcu.bin
-    - boot_loader/gcc/bl_main.axf
-    - boot_loader/gcc/bl_main.bin
+    - projects/boot_loader/gcc/bl_main.axf
+    - projects/boot_loader/gcc/bl_main.bin
   skip_cleanup: true
   on:
     tags: true

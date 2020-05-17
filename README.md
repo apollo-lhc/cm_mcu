@@ -5,6 +5,7 @@ Microcontroller source code, initially targeting the [TI Tiva TM4C1290NCPDT](htt
 The project is a makefile project; you can also use the Eclipse-based [GNU MCU Eclipse](https://gnu-mcu-eclipse.github.io) IDE which integrates well with the Segger debugger. An Eclipse project is included in the repo. Again the build proceeds via `make` even if you use the IDE.  Follow the instructions on this page, also for windows you'll need to install `make`, `echo` and `rm` (as explained on the GNU MCU web page, see below.) You will also need a command-line `git`. The windows compilation has not been extensively tested.
 ## Compiler and source code
 For the compiler use the [generic GNU ARM compiler](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm), [8-2018q4](https://launchpad.net/gcc-arm-embedded/+announcement/15181) release. Since this is a bare-metal application we are using the "arm-none-eabi" version of the tools (i.e., gcc becomes arm-none-eabi-gcc). This compiler is available as a part of the Petalinux suite but it has some weird options on how glibc is compiled so we are _not_ using it for this project.  The compiler linked above is available for Windows, Linux and MacOS. 
+There is also partial support for clang, mainly to allow use of its syntax checking and static code analysis. 
 
 To compile the source code simply type `make` at the top-level directory. To get debugging symbols type `make DEBUG=1`. To see the gory details of the build add `VERBOSE=1` to the command line.
 ```
@@ -37,9 +38,10 @@ Please try to use the below versions to avoid unnecessary issues. In particular 
 
 | Software | Release | 
 |----------|---------|
-| arm-none-eabi compiler | 8-2018q4 | 
+| arm-none-eabi compiler | 8-2018q4* | 
 | FreeRTOS | 10.2 | 
 | Tivaware | included in build|
+Also tested with the 9-2019 version, which is more aggressive in the warnings. 
 
 ## Documentation
 See the wiki page on this github for documentation.
