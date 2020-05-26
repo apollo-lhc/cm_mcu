@@ -991,7 +991,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
     else{
       copied += errbuffer_get_messagestr(word, m+copied, SCRATCH_SIZE-copied);
     }
-    if ((SCRATCH_SIZE-copied)<20 && (i<num)){	// this should catch when buffer is close to full
+    if ((SCRATCH_SIZE-copied)<30 && (i<num)){	// this should catch when buffer is close to full
     	++i;
     	return pdTRUE;
     }

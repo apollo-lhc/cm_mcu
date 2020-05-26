@@ -43,8 +43,9 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define COUNTER_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET+COUNTER_OFFSET))-1-ERRDATA_MASK-ERRCODE_MASK)
 
 #define EBUF_COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
+#define N_EBUF_CODES 32 //1<<ERRCODE_OFFSET?
 
-
+char* ebuf_strings[N_EBUF_CODES]; // I think peter made another macro for this
 // error codes without data
 #define EBUF_RESTART			1
 #define EBUF_RESET_BUFFER		2
@@ -61,6 +62,14 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_CONTINUATION		10
 #define EBUF_PWR_FAILURE		11
 #define EBUF_TEMP_HIGH			12
+
+// below solution will work but we just have to add codes above and in X macro...
+// unless you can find a way to use x macro to define each code
+#define EBUF_CODES \
+	X(EBUF_RESTART, "ebuf test A") \
+	X(EBUF_TEST_B,  "ebuf test B") \
+	X(EBUF_TEST_C, "ebuf test C")
+
 
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT
