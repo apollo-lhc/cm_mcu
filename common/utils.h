@@ -87,8 +87,8 @@ char* ebuf_strings[N_EBUF_CODES]; // I think peter made another macro for this
 
 #define EBUF_ENTRY_TIMESTAMP(w)         (0xFFFF&((w)>>16)) // time in minutes
 #define EBUF_ENTRY_TIMESTAMP_DAYS(w)    (EBUF_ENTRY_TIMESTAMP(w)/1440) // 1440 minutes/day
-#define EBUF_ENTRY_TIMESTAMP_HOURS(w)   (EBUF_ENTRY_TIMESTAMP(w)/1440/60)
-#define EBUF_ENTRY_TIMESTAMP_MINS(w)    (EBUF_ENTRY_TIMESTAMP(w)%1440) // minutes in the hour
+#define EBUF_ENTRY_TIMESTAMP_HOURS(w)   (EBUF_ENTRY_TIMESTAMP(w)/60%24)
+#define EBUF_ENTRY_TIMESTAMP_MINS(w)    (EBUF_ENTRY_TIMESTAMP(w)%60) // minutes in the hour
 
 
 void errbuffer_init(uint8_t minblk, uint8_t maxblk);
