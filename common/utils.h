@@ -63,14 +63,6 @@ char* ebuf_strings[N_EBUF_CODES]; // I think peter made another macro for this
 #define EBUF_PWR_FAILURE		11
 #define EBUF_TEMP_HIGH			12
 
-// below solution will work but we just have to add codes above and in X macro...
-// unless you can find a way to use x macro to define each code
-#define EBUF_CODES \
-	X(EBUF_RESTART, "ebuf test A") \
-	X(EBUF_TEST_B,  "ebuf test B") \
-	X(EBUF_TEST_C, "ebuf test C")
-
-
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT
 #define EBUF_RESTART_WDOG (SYSCTL_CAUSE_WDOG1|SYSCTL_CAUSE_WDOG0)
@@ -94,7 +86,6 @@ char* ebuf_strings[N_EBUF_CODES]; // I think peter made another macro for this
 void errbuffer_init(uint8_t minblk, uint8_t maxblk);
 void errbuffer_reset();
 void errbuffer_put(uint16_t errcode, uint16_t errdata);
-// TODO: change get to not count continue codes as entries (append to prior entries?)
 void errbuffer_get(const uint32_t num, uint32_t (*arrptr)[num]);
 
 // this version bypasses the gatekeeper task and should only be used in ISR only

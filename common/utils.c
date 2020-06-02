@@ -132,20 +132,15 @@ void setupActiveLowPins(void)
 
 // EEPROM Buffer
 
-char* ebuf_strings[] = {
-#define X(code, string) string,
-		EBUF_CODES
-#undef X
-};
 // error codes. these should correspond to the names in utils.h
 static
 const char* ebuf_errstrings[] = {
     "",
     "Restart",
     "Buffer Reset",
-    "Manual Power Off",
-    "Temp High - Power Off",
-    "Manual Power On",
+    "Power Off - Manual",
+    "Power Off - Temp High",
+    "Power On - Manual",
     "Temp Normal",
     "Hard fault",
     "Assertion failed",
