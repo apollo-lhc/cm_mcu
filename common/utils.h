@@ -43,9 +43,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define COUNTER_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET+COUNTER_OFFSET))-1-ERRDATA_MASK-ERRCODE_MASK)
 
 #define EBUF_COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
-#define N_EBUF_CODES 32 //1<<ERRCODE_OFFSET?
 
-char* ebuf_strings[N_EBUF_CODES]; // I think peter made another macro for this
 // error codes without data
 #define EBUF_RESTART			1
 #define EBUF_RESET_BUFFER		2
@@ -58,7 +56,7 @@ char* ebuf_strings[N_EBUF_CODES]; // I think peter made another macro for this
 #define EBUF_STACKOVERFLOW  9
 
 // error codes with data
-#define EBUF_WITH_DATA			10		// for comparison
+#define EBUF_WITH_DATA			10		// value used to determine which codes have data
 #define EBUF_CONTINUATION		10
 #define EBUF_PWR_FAILURE		11
 #define EBUF_TEMP_HIGH			12

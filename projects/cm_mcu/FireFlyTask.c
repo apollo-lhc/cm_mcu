@@ -201,13 +201,14 @@ int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
 
 
 static
-int disable_transmit(bool disable, int num_ff)
+int disable_transmit(bool disable, int num_ff) // todo: actually test this
 {
   int ret = 0, i=num_ff, imax=num_ff+1;
+  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
   uint16_t value = 0x3ff;
   if ( disable == false )
     value = 0x0;
-  if (num_ff==NFIREFLIES){ // if i==NFIREFLIES, loop over all transmitters
+  if (num_ff==NFIREFLIES){ // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
 	  i=0;
 	  imax = NFIREFLIES;
   }
@@ -225,10 +226,15 @@ int disable_transmit(bool disable, int num_ff)
 }
 
 static
-int set_xcvr_cdr(uint8_t value)
+int set_xcvr_cdr(uint8_t value, int num_ff) // todo: actually test this
 {
-  int ret = 0;
-  for ( int i = 0; i < NFIREFLIES; ++ i) {
+  int ret = 0, i=num_ff, imax=num_ff+1;
+  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
+  if (num_ff==NFIREFLIES){ // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
+	  i=0;
+	  imax = NFIREFLIES;
+  }
+  for ( ; i < imax; ++ i) {
     if ( strstr(ff_i2c_addrs[i].name, "XCVR") != NULL ) {
       //Print(ff_i2c_addrs[i].name); Print("\r\n");
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG,
@@ -270,7 +276,7 @@ void FireFlyTask(void *parameters)
     bool good = false;
     // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
-      if ( (1<<ff)&ff_config )
+      if ( !((1<<ff)&ff_config ))
         continue;
       if ( ff < NFIREFLIES_KU15P ) {
         smbus = &g_sMaster4; p_status = &eStatus4;
@@ -295,11 +301,11 @@ void FireFlyTask(void *parameters)
     	uint16_t code = (uint16_t)(message>>16);   // message divided as |16 bit code|16 bit data|
     	uint16_t data = (uint16_t)message;
         switch (code ) {
-        case FFLY_ENABLE_CDR:	// todo: add if statement here after fixing set_xcvr_cdr
-          set_xcvr_cdr(0xff);
+        case FFLY_ENABLE_CDR:
+          set_xcvr_cdr(0xff, data);
           break;
         case FFLY_DISABLE_CDR:
-          set_xcvr_cdr(0x00);
+          set_xcvr_cdr(0x00, data);
           break;
         case FFLY_DISABLE_TRANSMITTER:
           disable_transmit(true, data);
