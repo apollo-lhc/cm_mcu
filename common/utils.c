@@ -431,7 +431,7 @@ void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc)
   }
   errbuffer_put(EBUF_TEMP_HIGH, tm4c);
   errbuffer_put(EBUF_CONTINUATION, fpga);
-  errbuffer_put(EBUF_CONTINUATION, ffly); // this is being misinterpreted!!! the firefly temps are throwing it into wack
+  errbuffer_put(EBUF_CONTINUATION, ffly);
   errbuffer_put(EBUF_CONTINUATION, dcdc);
   return;
 }

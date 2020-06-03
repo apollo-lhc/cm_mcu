@@ -635,34 +635,40 @@ static BaseType_t ff_ctl(int argc, char ** argv)
     whichff = 0;
   }
   else { // more than one argument, check which command
-    if ( argc == 2 ) {
-      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs an argument\r\n",
+    if ( argc != 4) {
+      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs two arguments (xmit/cdr <ff_num>/all)\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
     char *c;
-    int message;
-    if ( strncmp(argv[1], "cdr",3) == 0 ) {
-      c = "off";
-      message = FFLY_DISABLE_CDR; // default: disable
-      if ( strncmp(argv[2], "on", 2) == 0 ) {
-        message = FFLY_ENABLE_CDR;
-        c = "on";
-      }
-    }
-    else if (strncmp(argv[1], "xmit",4) == 0 ) {
-      c = "off";
-      message = FFLY_DISABLE_TRANSMITTERS;
-      if ( strncmp(argv[2], "on", 2) == 0 ) {
-        message = FFLY_ENABLE_TRANSMITTERS;
-        c = "on";
-      }
-    }
-    else {
-      snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s not recognized\r\n",
-          argv[0], argv[1]);
-      return pdFALSE;
-    }
+    int code, data;
+	if ( strncmp(argv[1], "cdr",3) == 0 ) {
+		c = "off";
+		code = FFLY_DISABLE_CDR; // default: disable
+		if ( strncmp(argv[2], "on", 2) == 0 ) {
+			code = FFLY_ENABLE_CDR;
+			c = "on";
+		  }
+	}
+	else if (strncmp(argv[1], "xmit",4) == 0 ) {
+		c = "off";
+		code = FFLY_DISABLE_TRANSMITTER;
+		if ( strncmp(argv[2], "on", 2) == 0 ) {
+			code = FFLY_ENABLE_TRANSMITTER;
+			c = "on";
+		}
+	}
+	if (strncmp(argv[3], "all", 4)==0){
+		data = NFIREFLIES;
+	}
+	else {
+		data = atoi(argv[3]);
+		if (data>=NFIREFLIES || (data==0 && strncmp(argv[3],"0",1)!=0)){
+			snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",argv[0], NFIREFLIES);
+			return pdFALSE;
+		}
+	}
+    uint32_t message = (code<<16)|data;
     xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
     snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s %s sent.\r\n",
         argv[0], argv[1],c);

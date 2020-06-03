@@ -199,14 +199,19 @@ int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
 #define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
 #define ECU0_25G_XVCR_CDR_REG        0x62
 
+
 static
-int disable_transmit(bool disable)
+int disable_transmit(bool disable, int num_ff)
 {
-  int ret = 0;
+  int ret = 0, i=num_ff, imax=num_ff+1;
   uint16_t value = 0x3ff;
   if ( disable == false )
     value = 0x0;
-  for ( int i = 0; i < NFIREFLIES; ++ i) {
+  if (num_ff==NFIREFLIES){ // if i==NFIREFLIES, loop over all transmitters
+	  i=0;
+	  imax = NFIREFLIES;
+  }
+  for (; i < imax; ++i) {
     if ( strstr(ff_i2c_addrs[i].name, "XCVR") != NULL ) {
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG,
           value, 1);
@@ -287,18 +292,20 @@ void FireFlyTask(void *parameters)
       // check for any messages
       uint32_t message;
       if ( xQueueReceive(xFFlyQueue, &message, 0) ) { // TODO: what if I receive more than one message
-        switch (message ) {
-        case FFLY_ENABLE_CDR:
+    	uint16_t code = (uint16_t)(message>>16);   // message divided as |16 bit code|16 bit data|
+    	uint16_t data = (uint16_t)message;
+        switch (code ) {
+        case FFLY_ENABLE_CDR:	// todo: add if statement here after fixing set_xcvr_cdr
           set_xcvr_cdr(0xff);
           break;
         case FFLY_DISABLE_CDR:
           set_xcvr_cdr(0x00);
           break;
-        case FFLY_DISABLE_TRANSMITTERS:
-          disable_transmit(true);
+        case FFLY_DISABLE_TRANSMITTER:
+          disable_transmit(true, data);
           break;
-        case FFLY_ENABLE_TRANSMITTERS:
-          disable_transmit(false);
+        case FFLY_ENABLE_TRANSMITTER:
+          disable_transmit(false, data);
           break;
         default:
           message = RED_LED_TOGGLE;
