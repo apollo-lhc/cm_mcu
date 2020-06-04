@@ -636,7 +636,7 @@ static BaseType_t ff_ctl(int argc, char ** argv)
   }
   else { // more than one argument, check which command
     if ( argc != 4) {
-      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs two arguments (xmit/cdr <ff_num>/all)\r\n",
+      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs two arguments.\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
@@ -1260,7 +1260,7 @@ struct command_t commands[] = {
         "fpga_reset (k|v)\r\n Reset Kintex (k) or Virtex (V) FPGA\r\n",
       1
     },
-    { "ff", ff_ctl, "ff\r\n firefly monitoring command\r\n", -1},
+    { "ff (xmit|cdr) (on|off) (0-23|all)", ff_ctl, "ff\r\n firefly monitoring command\r\n", -1},
     {
         "fpga",
         fpga_ctl,
