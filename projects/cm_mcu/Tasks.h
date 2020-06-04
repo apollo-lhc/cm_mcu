@@ -76,8 +76,8 @@ TickType_t getFFupdateTick();
 int disable_xcvr_cdr(const char *name);
 
 // messages for FF task
-#define FFLY_DISABLE_TRANSMITTERS (1)
-#define FFLY_ENABLE_TRANSMITTERS  (2)
+#define FFLY_DISABLE_TRANSMITTER (1)
+#define FFLY_ENABLE_TRANSMITTER  (2)
 #define FFLY_ENABLE_CDR        (3)
 #define FFLY_DISABLE_CDR       (4)
 

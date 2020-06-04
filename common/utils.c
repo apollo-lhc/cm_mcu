@@ -136,18 +136,18 @@ void setupActiveLowPins(void)
 static
 const char* ebuf_errstrings[] = {
     "",
-    "RESTART",
-    "BUFFER RESET",
-    "MANUAL POWER OFF",
-    "TEMP HIGH POWER OFF",
-    "MANUAL POWER ON",
-    "TEMP NORMAL",
+    "Restart",
+    "Buffer Reset",
+    "Power Off - Manual",
+    "Power Off - Temp High",
+    "Power On - Manual",
+    "Temp Normal",
     "Hard fault",
     "Assertion failed",
     "Stack Overflow",
     "(continue)",
-    "POWER FAILURE",
-    "TEMP HIGH (TM4C FPGA FF DCDC)",
+    "Power Failure",
+    "Temp High (TM4C FPGA FF DCDC)",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings)/sizeof(ebuf_errstrings[0]))
 
@@ -167,7 +167,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
   if ( errcode > (EBUF_N_ERRSTRINGS-1)) {
     return snprintf(m, s, "\r\n\t%s %d", " Invalid error code:", errcode);
   }
-  int copied = snprintf(m, s, "\r\n %02u %02u:%02u \t %x %s", days, hours,
+  int copied = snprintf(m, s, "\r\n %02u %02u:%02u \t %x %s ", days, hours,
       minutes, realcount, ebuf_errstrings[errcode]);
   // below handle those cases where additional data is available
   switch (errcode) {
@@ -188,6 +188,9 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
     copied += snprintf(m+copied, s-copied, "(supply %d)", errdata);
     break;
   default:
+    if (errcode>EBUF_WITH_DATA){
+        copied += snprintf(m+copied, s-copied, "%d", errdata);
+    }
     break;
   }
   return copied;
@@ -415,7 +418,7 @@ uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata)
   uint16_t eprmtime = xTaskGetTickCountFromISR() * portTICK_PERIOD_MS / 60000; // Time in minutes
   uint16_t count = ((ebuf->counter / 4) << (ERRCODE_OFFSET + ERRDATA_OFFSET))&COUNTER_MASK;
   uint16_t code = (errcode << ERRDATA_OFFSET)&ERRCODE_MASK;
-  uint16_t message = count | code | errdata;
+  uint16_t message = count | code | (errdata&ERRDATA_MASK);
   uint32_t entry = ((uint32_t)eprmtime << 16) | ((uint32_t)message);
   return entry;
 }
@@ -423,6 +426,9 @@ uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata)
 // Specific error functions using continuation codes
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc)
 {
+  if (ffly==(uint8_t)(-55)) {
+	  ffly=0;
+  }
   errbuffer_put(EBUF_TEMP_HIGH, tm4c);
   errbuffer_put(EBUF_CONTINUATION, fpga);
   errbuffer_put(EBUF_CONTINUATION, ffly);

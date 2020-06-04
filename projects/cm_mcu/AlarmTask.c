@@ -180,9 +180,9 @@ void AlarmTask(void *parameters)
       // If temp is bad, turn on alarm, send error message to buffer
       if ((temp_over>temp_over_old)||(status!=oldstatus)){
         // only send message when status has changed or temp has risen since last entry, to avoid filling up buffer
-        errbuffer_temp_high((uint8_t)tm4c_temp,(uint8_t)max_fpga,(uint8_t)imax_ff_temp,(uint8_t)max_dcdc_temp);
-        oldstatus=status;
-        temp_over_old=temp_over;
+    	  errbuffer_temp_high((uint8_t)tm4c_temp,(uint8_t)max_fpga,(uint8_t)imax_ff_temp,(uint8_t)max_dcdc_temp);
+    	  oldstatus=status;
+    	  temp_over_old=temp_over;
       }
       current_temp_state = TEMP_BAD;
     }

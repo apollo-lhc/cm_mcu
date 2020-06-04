@@ -635,26 +635,26 @@ static BaseType_t ff_ctl(int argc, char ** argv)
     whichff = 0;
   }
   else { // more than one argument, check which command
-    if ( argc == 2 ) {
-      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs an argument\r\n",
+    if ( argc != 4) {
+      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs two arguments.\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
     char *c;
-    int message;
+    int code, data;
     if ( strncmp(argv[1], "cdr",3) == 0 ) {
       c = "off";
-      message = FFLY_DISABLE_CDR; // default: disable
+      code = FFLY_DISABLE_CDR; // default: disable
       if ( strncmp(argv[2], "on", 2) == 0 ) {
-        message = FFLY_ENABLE_CDR;
+        code = FFLY_ENABLE_CDR;
         c = "on";
       }
     }
     else if (strncmp(argv[1], "xmit",4) == 0 ) {
       c = "off";
-      message = FFLY_DISABLE_TRANSMITTERS;
+      code = FFLY_DISABLE_TRANSMITTER;
       if ( strncmp(argv[2], "on", 2) == 0 ) {
-        message = FFLY_ENABLE_TRANSMITTERS;
+        code = FFLY_ENABLE_TRANSMITTER;
         c = "on";
       }
     }
@@ -663,9 +663,21 @@ static BaseType_t ff_ctl(int argc, char ** argv)
           argv[0], argv[1]);
       return pdFALSE;
     }
+    if (strncmp(argv[3], "all", 4)==0){
+      data = NFIREFLIES;
+    }
+    else {
+      data = atoi(argv[3]);
+      if (data>=NFIREFLIES || (data==0 && strncmp(argv[3],"0",1)!=0)){
+        snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",
+              argv[0], NFIREFLIES);
+        return pdFALSE;
+      }
+    }
+    uint32_t message = (code<<16)|data;
     xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
     snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s %s sent.\r\n",
-        argv[0], argv[1],c);
+             argv[0], argv[1],c);
 
   } // end commands with arguments
   return pdFALSE;
@@ -991,7 +1003,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
     else{
       copied += errbuffer_get_messagestr(word, m+copied, SCRATCH_SIZE-copied);
     }
-    if ((SCRATCH_SIZE-copied)<20 && (i<num)){	// this should catch when buffer is close to full
+    if ((SCRATCH_SIZE-copied)<30 && (i<num)){	// this should catch when buffer is close to full
     	++i;
     	return pdTRUE;
     }
@@ -1254,7 +1266,7 @@ struct command_t commands[] = {
         "fpga_reset (k|v)\r\n Reset Kintex (k) or Virtex (V) FPGA\r\n",
       1
     },
-    { "ff", ff_ctl, "ff\r\n firefly monitoring command\r\n", -1},
+    { "ff", ff_ctl, "ff (xmit|cdr) (on|off) (0-23|all) \r\n Firefly monitoring command\r\n", -1},
     {
         "fpga",
         fpga_ctl,

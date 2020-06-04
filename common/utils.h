@@ -44,7 +44,6 @@ uint64_t read_eeprom_multi(uint32_t addr);
 
 #define EBUF_COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
-
 // error codes without data
 #define EBUF_RESTART			1
 #define EBUF_RESET_BUFFER		2
@@ -57,7 +56,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_STACKOVERFLOW  9
 
 // error codes with data
-#define EBUF_WITH_DATA			10		// for comparison
+#define EBUF_WITH_DATA			10		// value used to determine which codes have data
 #define EBUF_CONTINUATION		10
 #define EBUF_PWR_FAILURE		11
 #define EBUF_TEMP_HIGH			12
@@ -78,14 +77,13 @@ uint64_t read_eeprom_multi(uint32_t addr);
 
 #define EBUF_ENTRY_TIMESTAMP(w)         (0xFFFF&((w)>>16)) // time in minutes
 #define EBUF_ENTRY_TIMESTAMP_DAYS(w)    (EBUF_ENTRY_TIMESTAMP(w)/1440) // 1440 minutes/day
-#define EBUF_ENTRY_TIMESTAMP_HOURS(w)   (EBUF_ENTRY_TIMESTAMP(w)/1440/60)
-#define EBUF_ENTRY_TIMESTAMP_MINS(w)    (EBUF_ENTRY_TIMESTAMP(w)%1440) // minutes in the hour
+#define EBUF_ENTRY_TIMESTAMP_HOURS(w)   (EBUF_ENTRY_TIMESTAMP(w)/60%24)
+#define EBUF_ENTRY_TIMESTAMP_MINS(w)    (EBUF_ENTRY_TIMESTAMP(w)%60) // minutes in the hour
 
 
 void errbuffer_init(uint8_t minblk, uint8_t maxblk);
 void errbuffer_reset();
 void errbuffer_put(uint16_t errcode, uint16_t errdata);
-// TODO: change get to not count continue codes as entries (append to prior entries?)
 void errbuffer_get(const uint32_t num, uint32_t (*arrptr)[num]);
 
 // this version bypasses the gatekeeper task and should only be used in ISR only
