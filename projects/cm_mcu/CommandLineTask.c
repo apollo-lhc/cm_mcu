@@ -642,36 +642,42 @@ static BaseType_t ff_ctl(int argc, char ** argv)
     }
     char *c;
     int code, data;
-	if ( strncmp(argv[1], "cdr",3) == 0 ) {
-		c = "off";
-		code = FFLY_DISABLE_CDR; // default: disable
-		if ( strncmp(argv[2], "on", 2) == 0 ) {
-			code = FFLY_ENABLE_CDR;
-			c = "on";
-		  }
-	}
-	else if (strncmp(argv[1], "xmit",4) == 0 ) {
-		c = "off";
-		code = FFLY_DISABLE_TRANSMITTER;
-		if ( strncmp(argv[2], "on", 2) == 0 ) {
-			code = FFLY_ENABLE_TRANSMITTER;
-			c = "on";
-		}
-	}
-	if (strncmp(argv[3], "all", 4)==0){
-		data = NFIREFLIES;
-	}
-	else {
-		data = atoi(argv[3]);
-		if (data>=NFIREFLIES || (data==0 && strncmp(argv[3],"0",1)!=0)){
-			snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",argv[0], NFIREFLIES);
-			return pdFALSE;
-		}
-	}
+    if ( strncmp(argv[1], "cdr",3) == 0 ) {
+      c = "off";
+      code = FFLY_DISABLE_CDR; // default: disable
+      if ( strncmp(argv[2], "on", 2) == 0 ) {
+        code = FFLY_ENABLE_CDR;
+        c = "on";
+      }
+    }
+    else if (strncmp(argv[1], "xmit",4) == 0 ) {
+      c = "off";
+      code = FFLY_DISABLE_TRANSMITTER;
+      if ( strncmp(argv[2], "on", 2) == 0 ) {
+        code = FFLY_ENABLE_TRANSMITTER;
+        c = "on";
+      }
+    }
+    else {
+      snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s not recognized\r\n",
+          argv[0], argv[1]);
+      return pdFALSE;
+    }
+    if (strncmp(argv[3], "all", 4)==0){
+      data = NFIREFLIES;
+    }
+    else {
+      data = atoi(argv[3]);
+      if (data>=NFIREFLIES || (data==0 && strncmp(argv[3],"0",1)!=0)){
+        snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",
+              argv[0], NFIREFLIES);
+        return pdFALSE;
+      }
+    }
     uint32_t message = (code<<16)|data;
     xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
     snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s %s sent.\r\n",
-        argv[0], argv[1],c);
+             argv[0], argv[1],c);
 
   } // end commands with arguments
   return pdFALSE;
