@@ -1260,7 +1260,7 @@ struct command_t commands[] = {
         "fpga_reset (k|v)\r\n Reset Kintex (k) or Virtex (V) FPGA\r\n",
       1
     },
-    { "ff (xmit|cdr) (on|off) (0-23|all)", ff_ctl, "ff\r\n firefly monitoring command\r\n", -1},
+    { "ff", ff_ctl, "ff (xmit|cdr) (on|off) (0-23|all) \r\n Firefly monitoring command\r\n", -1},
     {
         "fpga",
         fpga_ctl,
