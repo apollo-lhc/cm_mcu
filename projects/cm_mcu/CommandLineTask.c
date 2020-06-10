@@ -603,7 +603,7 @@ static BaseType_t ff_ctl(int argc, char ** argv)
     }
 
   }
-
+  // parse command based on how many arguments it has
   if ( argc == 1 ) { // default command: temps
     uint32_t ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
     if ( whichff == 0 ) {
@@ -634,28 +634,18 @@ static BaseType_t ff_ctl(int argc, char ** argv)
     }
     whichff = 0;
   }
-  else { // more than one argument, check which command
-    if ( argc != 4) {
-      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s needs two arguments.\r\n",
-          argv[0], argv[1]);
-      return pdFALSE;
-    }
-    char *c;
+  else if (argc == 4) { // command + three arguments
     int code, data;
     if ( strncmp(argv[1], "cdr",3) == 0 ) {
-      c = "off";
       code = FFLY_DISABLE_CDR; // default: disable
       if ( strncmp(argv[2], "on", 2) == 0 ) {
         code = FFLY_ENABLE_CDR;
-        c = "on";
       }
     }
     else if (strncmp(argv[1], "xmit",4) == 0 ) {
-      c = "off";
       code = FFLY_DISABLE_TRANSMITTER;
       if ( strncmp(argv[2], "on", 2) == 0 ) {
         code = FFLY_ENABLE_TRANSMITTER;
-        c = "on";
       }
     }
     else {
@@ -663,23 +653,108 @@ static BaseType_t ff_ctl(int argc, char ** argv)
           argv[0], argv[1]);
       return pdFALSE;
     }
-    if (strncmp(argv[3], "all", 4)==0){
+    if (strncmp(argv[3], "all", 4) == 0) {
       data = NFIREFLIES;
     }
     else {
       data = atoi(argv[3]);
       if (data>=NFIREFLIES || (data==0 && strncmp(argv[3],"0",1)!=0)){
         snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",
-              argv[0], NFIREFLIES);
+            argv[0], NFIREFLIES);
         return pdFALSE;
       }
     }
-    uint32_t message = (code<<16)|data;
-    xQueueSendToBack(xFFlyQueue, &message, pdMS_TO_TICKS(10));
-    snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s %s sent.\r\n",
-             argv[0], argv[1],c);
+    uint32_t message = ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET)
+        | (data & FF_MESSAGE_DATA_MASK);
+    xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
+    snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s %s sent.\r\n",
+             argv[0], argv[1], argv[2]);
+  } // end commands with three arguments
+  else if ( argc == 5 ) { // command with four arguments
+    if (strncmp(argv[1], "regr", 4) == 0) {
+      uint8_t code = FFLY_READ_REGISTER;
+      // the additional arguments
+      // register number
+      uint8_t regnum = atoi(argv[4]);
+      uint8_t channel;
+      uint32_t data;
+      if (strncmp(argv[2], "all", 4) == 0) {
+        channel = NFIREFLIES;
+        data = channel;
+      } else {
+        channel = atoi(argv[3]);
+        if (channel >= NFIREFLIES ||
+            (channel == 0 && strncmp(argv[3], "0", 1) != 0)) {
+          snprintf(m + copied, SCRATCH_SIZE - copied,
+                   "%s: choose ff number less than %d\r\n", argv[0],
+                   NFIREFLIES);
+          return pdFALSE;
+        }
+        // pack channel and register into the data
+        data = (regnum & 0xFFU) | (channel & 0xffU) << 16;
+      }
+      uint32_t message = ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) |
+          (data & FF_MESSAGE_DATA_MASK);
+      xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s sent.\r\n",
+               argv[0], argv[1], argv[2]);
+      xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(100));
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: register read returned %x.\r\n",
+               argv[0], message&0xFFU);
 
-  } // end commands with arguments
+    } // end regr
+    else {
+      snprintf(m + copied, SCRATCH_SIZE - copied,
+               "%s: command %s not understood\r\n", argv[0], argv[1]);
+      return pdFALSE;
+    }
+
+  } // end command + 4 arguments 
+  else if (argc == 6) { // command + five arguments
+    // register read/write commands
+    if (strncmp(argv[1], "regw", 4) == 0) {
+      uint8_t code = FFLY_WRITE_REGISTER;
+      // the two additional arguments
+      // register number
+      // value to be written
+      uint8_t regnum = atoi(argv[4]);
+      uint16_t value = strtol(argv[5], NULL, 16);
+      uint8_t channel;
+      uint32_t data;
+      if (strncmp(argv[3], "all", 4) == 0) {
+        channel = NFIREFLIES;
+        data = channel;
+      }
+      else {
+        channel = atoi(argv[3]);
+        if (channel >= NFIREFLIES
+            || (channel == 0 && strncmp(argv[3], "0", 1) != 0)) {
+          snprintf(m + copied, SCRATCH_SIZE - copied,
+              "%s: choose ff number less than %d\r\n", argv[0], NFIREFLIES);
+          return pdFALSE;
+        }
+        // pack channel, register and value into the data
+        data = (regnum & 0xFFU) | (value & 0xFFU) << 8
+            | (channel & 0xffU) << 16;
+      }
+      uint32_t message = ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) |
+                          (data & FF_MESSAGE_DATA_MASK);
+      xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s sent.\r\n",
+          argv[0], argv[1], argv[2]);
+
+    } // regw
+    else {
+      snprintf(m + copied, SCRATCH_SIZE - copied,
+          "%s: command %s not understood\r\n", argv[0], argv[1]);
+      return pdFALSE;
+    }
+  }
+  else {
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+        "%s: command %s not understood\r\n", argv[0], argv[1]);
+    return pdFALSE;
+  }
   return pdFALSE;
 }
 

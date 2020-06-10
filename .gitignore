@@ -57,3 +57,5 @@ common/version.h
 .cproject
 .project
 *.prefs
+compile_commands.json
+.vscode/*

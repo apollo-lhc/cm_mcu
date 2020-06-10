@@ -76,10 +76,18 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", 0x71, 4, 0x50},
     {"V12  12 Rx GTY", 0x71, 5, 0x54},
 };
-
+// Register definitions
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
 #define FF_TEMP_COMMAND_REG 0x16
+
+// two bytes, 12 FF to be disabled
+#define ECU0_14G_TX_DISABLE_REG 0x34
+// one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
+#define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
+// one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
+#define ECU0_25G_XVCR_CDR_REG 0x62
+
 // I2C for VU7P optics
 extern tSMBus g_sMaster3;
 extern tSMBusStatus eStatus3 ;
@@ -127,6 +135,76 @@ static TickType_t ff_updateTick = 0;
 TickType_t getFFupdateTick()
 {
   return ff_updateTick;
+}
+static int read_ff_register(const char *name, uint8_t reg, uint16_t *value,
+                             int size) 
+{
+  *value = 0U;
+  configASSERT(size <= 2);
+  // find the appropriate information for this FF device
+  int ff;
+  for (ff = 0; ff < NFIREFLIES; ++ff) {
+    if (strncmp(ff_i2c_addrs[ff].name, name, 3) == 0)
+      break;
+  }
+  if (ff == NFIREFLIES) {
+    return -2; // no match found
+  }
+  // i2c base -- two i2c controllers
+  tSMBus *smbus;
+  tSMBusStatus *p_status;
+
+  if (ff < NFIREFLIES_KU15P) {
+    smbus = &g_sMaster4;
+    p_status = &eStatus4;
+  } else {
+    smbus = &g_sMaster3;
+    p_status = &eStatus3;
+  }
+  uint8_t data[3];
+  // write to the mux
+  // select the appropriate output for the mux
+
+  data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
+  if (r != SMBUS_OK) {
+    Print("write_ff_reg: I2CBus command failed  (setting mux)\r\n");
+    return 1;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  if (*p_status != SMBUS_OK) {
+    char tmp[64];
+    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__,
+             *p_status, ff_i2c_addrs[ff].name);
+    Print(tmp);
+    return 1;
+  }
+  // Write/Read from register. First word is reg address, then the data.
+  // increment size to account for the register address
+  data[0] = reg;
+  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, data, 1,
+                              &data[1], size);
+  if (r != SMBUS_OK) {
+    Print("write_ff_reg: I2CBus command failed  (FF register)\r\n");
+    return 1;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  if (*p_status != SMBUS_OK) {
+    char tmp[64];
+    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__,
+             *p_status, ff_i2c_addrs[ff].name);
+    Print(tmp);
+    return 1;
+  }
+  if ( size == 1 )
+    *value = data[1];
+  else 
+    *value = (data[2] << 8) | data[1];
+  return 0;
 }
 
 static
@@ -195,10 +273,13 @@ int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
   return 0;
 }
 
-#define ECU0_14G_TX_DISABLE_REG      0x34
-#define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
-#define ECU0_25G_XVCR_CDR_REG        0x62
 
+// static uint8_t ff_mon_register_list[] = {
+//     FF_TEMP_COMMAND_REG,
+//     ECU0_14G_TX_DISABLE_REG,
+//     ECU0_25G_XVCR_TX_DISABLE_REG,
+//     ECU0_25G_XVCR_CDR_REG,
+// };
 
 static
 int disable_transmit(bool disable, int num_ff) // todo: actually test this
@@ -244,12 +325,38 @@ int set_xcvr_cdr(uint8_t value, int num_ff) // todo: actually test this
   return ret;
 }
 
-// Todo: use semaphores to control access to these I2C controllers.
-//extern SemaphoreHandle_t xI2C3Mutex;
-//extern SemaphoreHandle_t xI2C4Mutex;
+static
+int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff) 
+{
+  int ret = 0, i = num_ff, imax = num_ff + 1;
+  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
+  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
+    i = 0;
+    imax = NFIREFLIES;
+  }
+  for (; i < imax; ++i) {
+    ret += write_ff_register(ff_i2c_addrs[i].name, regnumber, value, 1);
+  }
+  return ret;
+}
 
-QueueHandle_t xFFlyQueue = NULL;
+// read a SINGLE firefly register, one byte only 
+static 
+uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff) 
+{
+  uint16_t value;
+  uint16_t ret = read_ff_register(ff_i2c_addrs[num_ff].name, regnumber, &value, 1);
+  if ( ret == 0 ) {
+    return value;
+  }
+  else {
+    return -1;
+  }
+    
+}
 
+QueueHandle_t xFFlyQueueIn  = NULL;
+QueueHandle_t xFFlyQueueOut = NULL;
 
 // FireFly temperatures, voltages, currents, via I2C/PMBUS
 void FireFlyTask(void *parameters)
@@ -276,7 +383,7 @@ void FireFlyTask(void *parameters)
     bool good = false;
     // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
-      if ( !((1<<ff)&ff_config ))
+      if (!((1 << ff) & ff_config)) // skip the FF if it's not enabled via the FF config
         continue;
       if ( ff < NFIREFLIES_KU15P ) {
         smbus = &g_sMaster4; p_status = &eStatus4;
@@ -297,9 +404,9 @@ void FireFlyTask(void *parameters)
       }
       // check for any messages
       uint32_t message;
-      if ( xQueueReceive(xFFlyQueue, &message, 0) ) { // TODO: what if I receive more than one message
-    	uint16_t code = (uint16_t)(message>>16);   // message divided as |16 bit code|16 bit data|
-    	uint16_t data = (uint16_t)message;
+      if ( xQueueReceive(xFFlyQueueIn, &message, 0) ) { // TODO: what if I receive more than one message
+        uint8_t  code = (uint8_t) ((message >> FF_MESSAGE_CODE_OFFSET)& FF_MESSAGE_CODE_MASK);   // see Tasks.h
+        uint32_t data = (uint32_t)  message & FF_MESSAGE_DATA_MASK;
         switch (code ) {
         case FFLY_ENABLE_CDR:
           set_xcvr_cdr(0xff, data);
@@ -313,6 +420,26 @@ void FireFlyTask(void *parameters)
         case FFLY_ENABLE_TRANSMITTER:
           disable_transmit(false, data);
           break;
+        case FFLY_WRITE_REGISTER: // high two bytes of data are register, low two bytes are value
+        {
+          uint16_t theReg = (data>>FF_MESSAGE_CODE_REG_REG_OFFSET) & FF_MESSAGE_CODE_REG_REG_MASK;
+          uint8_t theValue = (data >> FF_MESSAGE_CODE_REG_DAT_OFFSET) & FF_MESSAGE_CODE_REG_DAT_MASK;
+          uint8_t theFF = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) & FF_MESSAGE_CODE_REG_FF_MASK;
+          write_arbitrary_ff_register(theReg, theValue, theFF);
+          break;
+        }
+        case FFLY_READ_REGISTER: // high two bytes of data are register, low
+                                 // two bytes are value
+        {
+          uint16_t theReg = (data >> FF_MESSAGE_CODE_REG_REG_OFFSET) &
+                            FF_MESSAGE_CODE_REG_REG_MASK;
+          uint8_t theFF = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) &
+                          FF_MESSAGE_CODE_REG_FF_MASK;
+          uint16_t regdata = read_arbitrary_ff_register(theReg, theFF);
+          message = (uint32_t)regdata;
+          xQueueSendToBack(xFFlyQueueOut, &message, pdMS_TO_TICKS(10));
+          break;
+        }
         default:
           message = RED_LED_TOGGLE;
           xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10)); // message I don't understand? Toggle red LED

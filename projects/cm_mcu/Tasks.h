@@ -67,7 +67,8 @@ void MonitorTask(void *parameters);
 #define NFIREFLIES (NFIREFLIES_KU15P+NFIREFLIES_VU7P)
 
 void FireFlyTask(void *parameters);
-extern QueueHandle_t xFFlyQueue;
+extern QueueHandle_t xFFlyQueueIn;
+extern QueueHandle_t xFFlyQueueOut;
 
 const char* getFFname(const uint8_t i);
 int8_t getFFvalue(const uint8_t i);
@@ -78,8 +79,35 @@ int disable_xcvr_cdr(const char *name);
 // messages for FF task
 #define FFLY_DISABLE_TRANSMITTER (1)
 #define FFLY_ENABLE_TRANSMITTER  (2)
-#define FFLY_ENABLE_CDR        (3)
-#define FFLY_DISABLE_CDR       (4)
+#define FFLY_ENABLE_CDR          (3)
+#define FFLY_DISABLE_CDR         (4)
+#define FFLY_WRITE_REGISTER      (5)
+#define FFLY_READ_REGISTER       (6)
+
+// FF Task message format
+// two fields, a task code and task data.
+#define FF_MESSAGE_DATA_SZ 26
+#define FF_MESSAGE_DATA_OFFSET 0
+#define FF_MESSAGE_DATA_MASK ((1<<FF_MESSAGE_DATA_SZ)-1)
+#define FF_MESSAGE_CODE_SZ 6
+#define FF_MESSAGE_CODE_OFFSET FF_MESSAGE_DATA_SZ
+#define FF_MESSAGE_CODE_MASK ((1<<FF_MESSAGE_CODE_SZ)-1)
+
+// FF register read/write task
+// the 26 bits are split into three fields
+// 11 bits of register (top two bits are page)
+// 10 bits of data 
+// 5 bits of which firefly 
+#define FF_MESSAGE_CODE_REG_REG_SZ 11
+#define FF_MESSAGE_CODE_REG_REG_OFFSET 0
+#define FF_MESSAGE_CODE_REG_DAT_SZ 10
+#define FF_MESSAGE_CODE_REG_DAT_OFFSET FF_MESSAGE_CODE_REG_REG_SZ
+#define FF_MESSAGE_CODE_REG_FF_SZ 10
+#define FF_MESSAGE_CODE_REG_FF_OFFSET (FF_MESSAGE_CODE_REG_REG_SZ+FF_MESSAGE_CODE_REG_DAT_SZ)
+// derived masks
+#define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
+#define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
+#define FF_MESSAGE_CODE_REG_FF_MASK ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
 
 // ---- version info
 const char* buildTime();
