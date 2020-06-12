@@ -136,7 +136,24 @@ TickType_t getFFupdateTick()
 {
   return ff_updateTick;
 }
-static int read_ff_register(const char *name, uint8_t reg, uint16_t *value,
+
+static
+bool isEnabledFF(int ff)
+{
+  // firefly config stored in on-board EEPROM
+  static bool configured = false;
+
+  static uint32_t ff_config;
+  if ( ! configured ) {
+    ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
+  }
+  if (!((1 << ff) & ff_config))
+    return false;
+  else
+    return true;
+}
+
+static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
                              int size) 
 {
   *value = 0U;
@@ -183,9 +200,8 @@ static int read_ff_register(const char *name, uint8_t reg, uint16_t *value,
   }
   // Write/Read from register. First word is reg address, then the data.
   // increment size to account for the register address
-  data[0] = reg;
-  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, data, 1,
-                              &data[1], size);
+  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1,
+                              data, size);
   if (r != SMBUS_OK) {
     Print("write_ff_reg: I2CBus command failed  (FF register)\r\n");
     return 1;
@@ -201,9 +217,9 @@ static int read_ff_register(const char *name, uint8_t reg, uint16_t *value,
     return 1;
   }
   if ( size == 1 )
-    *value = data[1];
+    *value = data[0];
   else 
-    *value = (data[2] << 8) | data[1];
+    *value = (data[1] << 8) | data[0];
   return 0;
 }
 
@@ -294,6 +310,8 @@ int disable_transmit(bool disable, int num_ff) // todo: actually test this
 	  imax = NFIREFLIES;
   }
   for (; i < imax; ++i) {
+    if (! isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+      continue;
     if ( strstr(ff_i2c_addrs[i].name, "XCVR") != NULL ) {
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG,
           value, 1);
@@ -316,6 +334,8 @@ int set_xcvr_cdr(uint8_t value, int num_ff) // todo: actually test this
 	  imax = NFIREFLIES;
   }
   for ( ; i < imax; ++ i) {
+    if (! isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+      continue;
     if ( strstr(ff_i2c_addrs[i].name, "XCVR") != NULL ) {
       //Print(ff_i2c_addrs[i].name); Print("\r\n");
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG,
@@ -335,6 +355,8 @@ int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff)
     imax = NFIREFLIES;
   }
   for (; i < imax; ++i) {
+    if (! isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+      continue;
     ret += write_ff_register(ff_i2c_addrs[i].name, regnumber, value, 1);
   }
   return ret;
@@ -344,6 +366,9 @@ int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff)
 static 
 uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff) 
 {
+  if ( num_ff >= NFIREFLIES ) {
+    return -2;
+  }
   uint16_t value;
   uint16_t ret = read_ff_register(ff_i2c_addrs[num_ff].name, regnumber, &value, 1);
   if ( ret == 0 ) {
@@ -354,6 +379,7 @@ uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff)
   }
     
 }
+
 
 QueueHandle_t xFFlyQueueIn  = NULL;
 QueueHandle_t xFFlyQueueOut = NULL;
@@ -374,8 +400,6 @@ void FireFlyTask(void *parameters)
   }
 
   vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
-  // firefly config stored in on-board EEPROM
-  uint32_t ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
 
   for (;;) {
     tSMBus *smbus;
@@ -383,7 +407,7 @@ void FireFlyTask(void *parameters)
     bool good = false;
     // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
-      if (!((1 << ff) & ff_config)) // skip the FF if it's not enabled via the FF config
+      if (! isEnabledFF(ff)) // skip the FF if it's not enabled via the FF config
         continue;
       if ( ff < NFIREFLIES_KU15P ) {
         smbus = &g_sMaster4; p_status = &eStatus4;

@@ -634,73 +634,96 @@ static BaseType_t ff_ctl(int argc, char ** argv)
     }
     whichff = 0;
   }
-  else if (argc == 4) { // command + three arguments
-    int code, data;
-    if ( strncmp(argv[1], "cdr",3) == 0 ) {
+  else if ( argc == 4 ) { // command + three arguments
+    bool receiveAnswer = false;
+    uint8_t code;
+    int whichFF = 0;
+    // handle the channel number first
+    if (strncmp(argv[3], "all", 4) == 0) {
+      whichFF = NFIREFLIES;
+    }
+    else {
+      whichFF = atoi(argv[3]);
+      if (whichFF>=NFIREFLIES || (whichFF==0 && strncmp(argv[3],"0",1)!=0)){
+        snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",
+            argv[0], NFIREFLIES);
+        return pdFALSE;
+      }
+    }
+    uint32_t data = 0U;
+    if ( strncmp(argv[1], "cdr", 3) == 0 ) {
       code = FFLY_DISABLE_CDR; // default: disable
       if ( strncmp(argv[2], "on", 2) == 0 ) {
         code = FFLY_ENABLE_CDR;
+        data = whichFF;
       }
     }
-    else if (strncmp(argv[1], "xmit",4) == 0 ) {
+    else if (strncmp(argv[1], "xmit", 4) == 0 ) {
       code = FFLY_DISABLE_TRANSMITTER;
       if ( strncmp(argv[2], "on", 2) == 0 ) {
         code = FFLY_ENABLE_TRANSMITTER;
+        data = whichFF;
       }
+    }
+    else if (strncmp(argv[1], "regr", 4) == 0) {
+      code = FFLY_READ_REGISTER;
+      receiveAnswer = true;
+      if ( whichFF == NFIREFLIES ) {
+        copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: cannot read all registers\r\n",
+            argv[0]);
+        return pdFALSE;
+      }
+      // register number
+      uint8_t regnum = strtol(argv[2],NULL,16);
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: reading FF %s, register 0x%x\r\n",
+          argv[0], getFFname(whichFF), regnum);
+      // pack channel and register into the data
+      data = ((regnum & FF_MESSAGE_CODE_REG_REG_MASK) << FF_MESSAGE_CODE_REG_REG_OFFSET) |
+          (whichFF & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET;
     }
     else {
       snprintf(m+copied,SCRATCH_SIZE-copied, "%s: command %s not recognized\r\n",
           argv[0], argv[1]);
       return pdFALSE;
     }
-    if (strncmp(argv[3], "all", 4) == 0) {
-      data = NFIREFLIES;
-    }
-    else {
-      data = atoi(argv[3]);
-      if (data>=NFIREFLIES || (data==0 && strncmp(argv[3],"0",1)!=0)){
-        snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",
-            argv[0], NFIREFLIES);
-        return pdFALSE;
-      }
-    }
     uint32_t message = ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET)
         | (data & FF_MESSAGE_DATA_MASK);
     xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
     snprintf(m+copied, SCRATCH_SIZE-copied, "%s: command %s %s sent.\r\n",
              argv[0], argv[1], argv[2]);
+    if ( receiveAnswer ) {
+      xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(200));
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command returned 0x%x.\r\n",
+               argv[0], message&0xFFU);
+
+    }
   } // end commands with three arguments
+#if 0
   else if ( argc == 5 ) { // command with four arguments
     if (strncmp(argv[1], "regr", 4) == 0) {
       uint8_t code = FFLY_READ_REGISTER;
       // the additional arguments
       // register number
-      uint8_t regnum = atoi(argv[4]);
-      uint8_t channel;
-      uint32_t data;
-      if (strncmp(argv[2], "all", 4) == 0) {
-        channel = NFIREFLIES;
-        data = channel;
-      } else {
-        channel = atoi(argv[3]);
-        if (channel >= NFIREFLIES ||
-            (channel == 0 && strncmp(argv[3], "0", 1) != 0)) {
-          snprintf(m + copied, SCRATCH_SIZE - copied,
-                   "%s: choose ff number less than %d\r\n", argv[0],
-                   NFIREFLIES);
-          return pdFALSE;
-        }
-        // pack channel and register into the data
-        data = (regnum & 0xFFU) | (channel & 0xffU) << 16;
+      uint8_t regnum = strtol(argv[4],NULL,16);
+      uint8_t channel = strtol(argv[3],NULL,16);
+      if (channel >= NFIREFLIES ||
+          (channel == 0 && strncmp(argv[3], "0", 1) != 0)) {
+        snprintf(m + copied, SCRATCH_SIZE - copied,
+            "%s: choose ff number less than %d\r\n", argv[0],
+            NFIREFLIES);
+        return pdFALSE;
       }
+      // pack channel and register into the data
+      uint32_t data = (regnum & 0xFFU) | (channel & 0xffU) << 16;
+
       uint32_t message = ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) |
           (data & FF_MESSAGE_DATA_MASK);
       xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
       snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s sent.\r\n",
                argv[0], argv[1], argv[2]);
       xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(100));
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: register read returned %x.\r\n",
-               argv[0], message&0xFFU);
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: register 0x%x read returned 0x%x.\r\n",
+               argv[0], regnum, message&0xFFU);
 
     } // end regr
     else {
@@ -708,8 +731,8 @@ static BaseType_t ff_ctl(int argc, char ** argv)
                "%s: command %s not understood\r\n", argv[0], argv[1]);
       return pdFALSE;
     }
-
-  } // end command + 4 arguments 
+  } // end command + 4 arguments
+#endif // 0
   else if (argc == 6) { // command + five arguments
     // register read/write commands
     if (strncmp(argv[1], "regw", 4) == 0) {
@@ -1286,31 +1309,36 @@ struct command_t commands[] = {
         "adc\r\n Displays a table showing the state of ADC inputs.\r\n",
         0
     },
-    { "alm", alarm_ctl, "alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n", -1},
+    {
+        "alm",
+        alarm_ctl,
+        "alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
+        -1
+    },
     {
         "bootloader",
         bl_ctl,
         "bootloader\r\n Call the boot loader\r\n",
         0
     },
-	{
-	    "eeprom_info",
-	    eeprom_info,
-	    "eeprom_info\r\n Prints information about the EEPROM.\r\n",
-	    0
-	},
-	{
-		"eeprom_read",
-	    eeprom_read,
-	    "eeprom_read <address>\r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
-	    1
-	},
-	{
-	    "eeprom_write",
-	    eeprom_write,
-	    "eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
-	    2
-	},
+    {
+        "eeprom_info",
+        eeprom_info,
+        "eeprom_info\r\n Prints information about the EEPROM.\r\n",
+        0
+    },
+    {
+        "eeprom_read",
+        eeprom_read,
+        "eeprom_read <address>\r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
+        1
+    },
+    {
+        "eeprom_write",
+        eeprom_write,
+        "eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be a multiple of 4.\r\n",
+        2
+    },
     {
         "errorlog_entry",
         errbuff_in,
@@ -1339,9 +1367,15 @@ struct command_t commands[] = {
         "fpga_reset",
         fpga_reset,
         "fpga_reset (k|v)\r\n Reset Kintex (k) or Virtex (V) FPGA\r\n",
-      1
+        1
     },
-    { "ff", ff_ctl, "ff (xmit|cdr) (on|off) (0-23|all) \r\n Firefly monitoring command\r\n", -1},
+    {
+        "ff",
+        ff_ctl,
+        "ff <none> |(xmit|cdr on/off (0-23|all))| regw (0-23|all) reg# val | regr (0-23) reg#\r\n"
+        " Firefly monitoring command\r\n",
+        -1
+    },
     {
         "fpga",
         fpga_ctl,
@@ -1483,23 +1517,28 @@ BaseType_t help_command_fcn(int argc, char ** argv)
   int copied = 0;
   static int i = 0;
   if ( argc == 1 ) {
-  for ( ; i < NUM_COMMANDS; ++i ) {
-    if ( (SCRATCH_SIZE-copied)<strlen(commands[i].helpstr) ) {
-      return pdTRUE;
+    for ( ; i < NUM_COMMANDS; ++i ) {
+      if ( (SCRATCH_SIZE-copied)<strlen(commands[i].helpstr) ) {
+        return pdTRUE;
+      }
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s", commands[i].helpstr);
     }
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s", commands[i].helpstr);
+    i = 0;
+    return pdFALSE;
   }
-  i = 0;
-  return pdFALSE;
-  }
-  else { // help on a specific command
+  else { // help on a specific command.
+    // help for any command that matches the entered command
     for (int j = 0; j < NUM_COMMANDS; ++j ) {
-      if (strncmp(commands[j].commandstr, argv[1], 10) == 0 ) {
+      if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0 ) {
         copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s", commands[j].helpstr);
-        return pdFALSE;
+        //return pdFALSE;
       }
     }
 
+  }
+  if ( copied == 0 ) {
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied,
+        "%s: No command starting with %s found\r\n", argv[0],  argv[1]);
   }
   return pdFALSE;
 }
@@ -1509,9 +1548,11 @@ int execute (void * p, int argc, char ** argv)
 {
   struct microrl_user_data_t * userdata = p;
 
-  UARTPrint(userdata->uart_base, "\r\n"); // the microrl does not terminate the active command TODO check if linefeed issue
+  UARTPrint(userdata->uart_base, "\r\n"); // the microrl does not terminate the active command
 
   // find the command in the list
+  // argc here includes the actual command itself, so the
+  // number of supplied arguments is argc-1
   for ( int i = 0; i < NUM_COMMANDS; ++i ) {
     if ( strncmp(commands[i].commandstr, argv[0],256) == 0 ) {
       if ( (argc == commands[i].num_args+1) || commands[i].num_args<0) {
@@ -1527,7 +1568,7 @@ int execute (void * p, int argc, char ** argv)
       else {
         snprintf(m, SCRATCH_SIZE,
             "Wrong number of arguments for command %s: %d expected, got %d\r\n",
-            argv[0], commands[i].num_args, argc );
+            argv[0], commands[i].num_args, argc-1 );
         UARTPrint(userdata->uart_base, m);
         return 0;
       }
