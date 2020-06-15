@@ -273,8 +273,10 @@ int main( void )
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xPwrQueue != NULL);
 
-  xFFlyQueue = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
-  configASSERT(xFFlyQueue != NULL);
+  xFFlyQueueIn = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
+  configASSERT(xFFlyQueueIn != NULL);
+  xFFlyQueueOut = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
+  configASSERT(xFFlyQueueOut != NULL);
 
   xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queues
   configASSERT(xEPRMQueue_in != NULL);
