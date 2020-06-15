@@ -431,25 +431,26 @@ void FireFlyTask(void *parameters)
       if ( xQueueReceive(xFFlyQueueIn, &message, 0) ) { // TODO: what if I receive more than one message
         uint8_t  code = (uint8_t) ((message >> FF_MESSAGE_CODE_OFFSET)& FF_MESSAGE_CODE_MASK);   // see Tasks.h
         uint32_t data = (uint32_t)  message & FF_MESSAGE_DATA_MASK;
+        int channel = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) & FF_MESSAGE_CODE_REG_FF_MASK;
+        if ( channel > NFIREFLIES ) channel = NFIREFLIES;
         switch (code ) {
         case FFLY_ENABLE_CDR:
-          set_xcvr_cdr(0xff, data);
+          set_xcvr_cdr(0xff, channel);
           break;
         case FFLY_DISABLE_CDR:
-          set_xcvr_cdr(0x00, data);
+          set_xcvr_cdr(0x00, channel);
           break;
         case FFLY_DISABLE_TRANSMITTER:
-          disable_transmit(true, data);
+          disable_transmit(true, channel);
           break;
         case FFLY_ENABLE_TRANSMITTER:
-          disable_transmit(false, data);
+          disable_transmit(false, channel);
           break;
         case FFLY_WRITE_REGISTER: // high two bytes of data are register, low two bytes are value
         {
           uint16_t theReg = (data>>FF_MESSAGE_CODE_REG_REG_OFFSET) & FF_MESSAGE_CODE_REG_REG_MASK;
           uint8_t theValue = (data >> FF_MESSAGE_CODE_REG_DAT_OFFSET) & FF_MESSAGE_CODE_REG_DAT_MASK;
-          uint8_t theFF = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) & FF_MESSAGE_CODE_REG_FF_MASK;
-          write_arbitrary_ff_register(theReg, theValue, theFF);
+          write_arbitrary_ff_register(theReg, theValue, channel);
           break;
         }
         case FFLY_READ_REGISTER: // high two bytes of data are register, low
@@ -457,9 +458,7 @@ void FireFlyTask(void *parameters)
         {
           uint16_t theReg = (data >> FF_MESSAGE_CODE_REG_REG_OFFSET) &
                             FF_MESSAGE_CODE_REG_REG_MASK;
-          uint8_t theFF = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) &
-                          FF_MESSAGE_CODE_REG_FF_MASK;
-          uint16_t regdata = read_arbitrary_ff_register(theReg, theFF);
+          uint16_t regdata = read_arbitrary_ff_register(theReg, channel);
           message = (uint32_t)regdata;
           xQueueSendToBack(xFFlyQueueOut, &message, pdMS_TO_TICKS(10));
           break;
