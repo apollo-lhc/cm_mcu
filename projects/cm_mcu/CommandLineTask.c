@@ -1230,24 +1230,45 @@ BaseType_t TaskStatsCommand( int argc, char ** argv )
 static
 BaseType_t help_command_fcn(int argc, char **);
 
-static
-BaseType_t suart_ctl(int argc, char ** argv)
+static BaseType_t suart_ctl(int argc, char **argv)
 {
-  int s = SCRATCH_SIZE;
-  uint32_t message;
-  if ( strncmp(argv[1], "on", 2) == 0 )
-    message = SOFTUART_ENABLE_TRANSMIT;
-  else if (strncmp(argv[1], "off", 3) == 0  )
-    message = SOFTUART_DISABLE_TRANSMIT;
+  int s = SCRATCH_SIZE, copied = 0;
+  uint32_t message = 0;
+  if ( argc == 2 ) {
+    if (strncmp(argv[1], "on", 2) == 0)
+      message = SOFTUART_ENABLE_TRANSMIT;
+    else if (strncmp(argv[1], "off", 3) == 0)
+      message = SOFTUART_DISABLE_TRANSMIT;
+    else if (strncmp(argv[1], "status", 5) == 0) {
+      uint8_t mode = getSUARTMode();
+      uint8_t sensor = getSUARTTestSensor();
+      uint16_t data = getSUARTTestData();
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: status = %d, sensor = 0x%x, data = 0x%x\r\n",
+                         argv[0], mode, sensor, data);
+    }
+  }
+  else if (argc == 4) {
+    if (strncmp(argv[1], "settest", 7) == 0) {
+      uint8_t sensor = strtol(argv[2], NULL, 16);
+      uint16_t data = strtol(argv[3], NULL, 16);
+      setSUARTTestData(sensor, data);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: set test sensor, data to 0x%x, 0x%x\r\n", argv[0],
+                         sensor, data);
+    }
+  }
   else {
     snprintf(m, s, "%s: message %s not understood\r\n", argv[0], argv[1]);
     return pdFALSE;
   }
-  snprintf(m,s, "%s: Sending message %s\r\n", argv[0], argv[1]);
-  // Send a message to the SUART task
-  xQueueSendToBack(xSoftUartQueue, &message, pdMS_TO_TICKS(10));
-  m[0] = '\0'; // no output from this command
 
+  if (message) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "%s: Sending message %s\r\n", argv[0], argv[1]);
+    // Send a message to the SUART task
+    xQueueSendToBack(xSoftUartQueue, &message, pdMS_TO_TICKS(10));
+  }
   return pdFALSE;
 }
 
@@ -1430,7 +1451,7 @@ struct command_t commands[] = {
         "suart",
         suart_ctl,
         "suart (on|off)\r\n Turn soft uart on/off.\r\n",
-        1,
+        -1,
     },
     {
         "stack_usage",

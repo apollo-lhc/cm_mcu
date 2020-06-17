@@ -49,6 +49,31 @@ void format_data(const uint8_t sensor, const uint16_t data, uint8_t message[4])
   message[3] |= data & 0x3F;
 }
 
+static uint8_t  testaddress = 0x0;
+static uint16_t testdata    = 0xaaff;
+static bool inTestMode = false;
+static uint8_t testmode = 0;
+void setSUARTTestData(uint8_t sensor, uint8_t value)
+{
+  testaddress = sensor;
+  testdata = value;  
+}
+
+uint8_t getSUARTMode()
+{
+  return testmode;
+}
+
+uint8_t getSUARTTestSensor()
+{
+  return testaddress;
+}
+
+uint16_t getSUARTTestData()
+{
+  return testdata;
+}
+
 //
 // The buffer used to hold the transmit data.
 //
@@ -145,23 +170,39 @@ void SoftUartTask(void *parameters)
 
   bool enable = true;
 
+
   // Loop forever
   for (;;) {
     uint32_t qmessage;
     // check for a new item in the queue but don't wait
     if ( xQueueReceive(xSoftUartQueue, &qmessage, 0) ) {
-      switch (qmessage ) {
+      switch (qmessage) {
       case SOFTUART_ENABLE_TRANSMIT:
         enable = true;
         break;
       case SOFTUART_DISABLE_TRANSMIT:
         enable = false;
         break;
+      case SOFTUART_TEST_SINGLE:
+        inTestMode = true;
+        break;
+      case SOFTUART_TEST_INCREMENT:
+        inTestMode = true;
+        break;
       }
     }
-    if ( enable ) {
+    if (enable) {
       // Enable the interrupts during transmission
       MAP_IntEnable(INT_TIMER0A);
+
+      if ( inTestMode ) {
+        if ( testmode == 1 ) {
+          testdata++;
+        }
+        format_data(testaddress, testdata, message);
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5000));
+        continue;
+      }
 
       // Fireflies
       for ( int j = 0; j < NFIREFLIES; ++j) {
