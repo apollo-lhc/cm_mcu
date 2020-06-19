@@ -53,13 +53,13 @@ static uint8_t  testaddress = 0x0;
 static uint16_t testdata    = 0xaaff;
 static bool inTestMode = false;
 static uint8_t testmode = 0;
-void setSUARTTestData(uint8_t sensor, uint8_t value)
+void setSUARTTestData(uint8_t sensor, uint16_t value)
 {
   testaddress = sensor;
   testdata = value;  
 }
 
-uint8_t getSUARTMode()
+uint8_t getSUARTTestMode()
 {
   return testmode;
 }
@@ -185,9 +185,14 @@ void SoftUartTask(void *parameters)
         break;
       case SOFTUART_TEST_SINGLE:
         inTestMode = true;
+	testmode = 0;
         break;
       case SOFTUART_TEST_INCREMENT:
         inTestMode = true;
+	testmode = 1;
+        break;
+      case SOFTUART_TEST_OFF:
+        inTestMode = false;
         break;
       }
     }
@@ -196,10 +201,13 @@ void SoftUartTask(void *parameters)
       MAP_IntEnable(INT_TIMER0A);
 
       if ( inTestMode ) {
-        if ( testmode == 1 ) {
-          testdata++;
+        for ( int jj = 0; jj < testmode*10+1; ++jj ) {
+          if ( testmode == 1 ) {
+            testdata++;
+            testaddress++;
+          }
+          format_data(testaddress, testdata, message);
         }
-        format_data(testaddress, testdata, message);
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5000));
         continue;
       }

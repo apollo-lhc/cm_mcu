@@ -162,12 +162,13 @@ void EEPROMTask(void *parameters);
 #define SOFTUART_DISABLE_TRANSMIT 0x2
 #define SOFTUART_TEST_SINGLE      0x3
 #define SOFTUART_TEST_INCREMENT   0x4
+#define SOFTUART_TEST_OFF         0x5
 
 extern QueueHandle_t xSoftUartQueue;
 void SoftUartTask(void *parameters);
 
-void setSUARTTestData(uint8_t sensor, uint8_t value);
-uint8_t getSUARTMode();
+void setSUARTTestData(uint8_t sensor, uint16_t value);
+uint8_t getSUARTTestMode();
 uint8_t getSUARTTestSensor();
 uint16_t getSUARTTestData();
 
