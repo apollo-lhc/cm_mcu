@@ -32,41 +32,41 @@ void Print(const char* ); // needs to be implemented in each project
 
 // if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
-  {  CTRL_K_VCCINT_PWR_EN, 1},
-  {  CTRL_V_VCCINT_PWR_EN, 1},
-  {  CTRL_VCC_1V8_PWR_EN,  2},
-  {  CTRL_VCC_3V3_PWR_EN,  2},
-  {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 3},
-  {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 3},
-  {  CTRL_K_MGTY_VCCAUX_PWR_EN,  3},
-  {  CTRL_K_MGTH_VCCAUX_PWR_EN,  3},
-  {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
-  {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
-  {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
-  {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
-  {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
-  {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
-  {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
-  {  CTRL_V_MGTY2_AVTT_PWR_EN, 5}
+    {  CTRL_K_VCCINT_PWR_EN, 1},
+    {  CTRL_V_VCCINT_PWR_EN, 1},
+    {  CTRL_VCC_1V8_PWR_EN,  2},
+    {  CTRL_VCC_3V3_PWR_EN,  2},
+    {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 3},
+    {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 3},
+    {  CTRL_K_MGTY_VCCAUX_PWR_EN,  3},
+    {  CTRL_K_MGTH_VCCAUX_PWR_EN,  3},
+    {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
+    {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
+    {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
+    {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
+    {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
+    {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
+    {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
+    {  CTRL_V_MGTY2_AVTT_PWR_EN, 5}
 };
 
 //if you update this you need to update N_PS_OKS too
 const
 struct gpio_pin_t oks[] = {
-  { K_VCCINT_PG_A, 1},
-  { K_VCCINT_PG_B, 1},
-  { V_VCCINT_PG_A, 1},
-  { V_VCCINT_PG_B, 1},
-  { VCC_1V8_PG,    2},
-  { VCC_3V3_PG,    2},
-  { V_MGTY1_AVCC_OK, 4},
-  { V_MGTY2_AVCC_OK, 4},
-  { K_MGTY_AVCC_OK,  4},
-  { K_MGTH_AVCC_OK,  4},
-  { K_MGTY_AVTT_OK,  5},
-  { K_MGTH_AVTT_OK,  5},
-  { V_MGTY1_AVTT_OK, 5},
-  { V_MGTY2_AVTT_OK, 5}
+    { K_VCCINT_PG_A, 1},
+    { K_VCCINT_PG_B, 1},
+    { V_VCCINT_PG_A, 1},
+    { V_VCCINT_PG_B, 1},
+    { VCC_1V8_PG,    2},
+    { VCC_3V3_PG,    2},
+    { V_MGTY1_AVCC_OK, 4},
+    { V_MGTY2_AVCC_OK, 4},
+    { K_MGTY_AVCC_OK,  4},
+    { K_MGTH_AVCC_OK,  4},
+    { K_MGTY_AVTT_OK,  5},
+    { K_MGTH_AVTT_OK,  5},
+    { V_MGTY1_AVTT_OK, 5},
+    { V_MGTY2_AVTT_OK, 5}
 };
 const int num_priorities = 5;
 
@@ -98,41 +98,41 @@ void setPSStatus(int i, enum ps_state theState)
 
 bool update_failed_ps(int prio){
 
-	bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-	bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-	bool failure = false;
+  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  bool failure = false;
 
-	for ( int o = 0; o < N_PS_OKS; ++o ) {
-	   if ( oks[o].priority <= prio ) {
-	     int8_t val = read_gpio_pin(oks[o].name);
-	     if ( val == 0 ) {
-	       // if this is a VU7P supply and dip switch says ignore it, continue
-	       if (!vu_enable  && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) ) {
-	     	  new_states[o] = PWR_DISABLED;
-	          continue;
-	       }
-	       // ditto for KU15P
-	       if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) ) {
-	     	  new_states[o] = PWR_DISABLED;
-	          continue;
-	       }
-	       // remember the VCC_ supplies
-	       if ((states[o]==PWR_ON)||(states[o]==PWR_UNKNOWN)){
-	     	  new_states[o]=PWR_FAILED;
-	     	  errbuffer_put(EBUF_PWR_FAILURE,o);
-	     	  failure=true;
-	       }
-	       else {
-	     	  new_states[o]=PWR_OFF;
-	       }
-	     }
-	     else {
-	     	new_states[o] = PWR_ON;
-	     }
-	   }
-	}
-	memcpy(states, new_states, sizeof(states));
-	return failure;
+  for ( int o = 0; o < N_PS_OKS; ++o ) {
+    if ( oks[o].priority <= prio ) {
+      int8_t val = read_gpio_pin(oks[o].name);
+      if ( val == 0 ) {
+        // if this is a VU7P supply and dip switch says ignore it, continue
+        if (!vu_enable  && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) ) {
+          new_states[o] = PWR_DISABLED;
+          continue;
+        }
+        // ditto for KU15P
+        if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) ) {
+          new_states[o] = PWR_DISABLED;
+          continue;
+        }
+        // remember the VCC_ supplies
+        if ((states[o]==PWR_ON)||(states[o]==PWR_UNKNOWN)){
+          new_states[o]=PWR_FAILED;
+          errbuffer_put(EBUF_PWR_FAILURE,o);
+          failure=true;
+        }
+        else {
+          new_states[o]=PWR_OFF;
+        }
+      }
+      else {
+        new_states[o] = PWR_ON;
+      }
+    }
+  }
+  memcpy(states, new_states, sizeof(states));
+  return failure;
 }
 
 //
@@ -176,7 +176,7 @@ bool set_ps()
     // check power good at this level or higher priority (lower number)
     bool ps_failure = update_failed_ps(prio);
 
-     // loop over 'ok' bits
+    // loop over 'ok' bits
     if (  ps_failure ) {
 
       Print("set_ps: Power supply check failed. ");
@@ -252,8 +252,8 @@ check_ps(void)
   for ( int o = 0; o < N_PS_OKS; ++o ) {
     if ( (new_states[o] != states[o])  &&
         (states[o] != PWR_UNKNOWN) &&
-        (states[o] != PWR_DISABLED)
-        ) {
+        (states[o] != PWR_DISABLED)) {
+      errbuffer_put(EBUF_PWR_FAILURE,o);
       char tmp[128];
       snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\r\n",
                pin_names[oks[o].name], oks[o].priority);
@@ -268,7 +268,6 @@ check_ps(void)
     if ( states[o] == PWR_OFF ) {
       if ( oks[o].priority < min_good_prio)
         min_good_prio = oks[o].priority;
-
     }
   }
   if ( ! success ) {
@@ -317,14 +316,14 @@ disable_ps(void)
     while ( ! ready_to_proceed ) {
       bool all_ready = true;
       for ( int o = 0; o < N_PS_OKS; ++o ) {
-         if ( oks[o].priority >= prio ) {
-           int8_t val = read_gpio_pin(oks[o].name);
-           if ( val == 1 ) { // all supplies are supposed to be off now
-             all_ready = false;
-             states[o] = PWR_UNKNOWN;
-           }
-         }
-       } // loop over 'ok' bits
+        if ( oks[o].priority >= prio ) {
+          int8_t val = read_gpio_pin(oks[o].name);
+          if ( val == 1 ) { // all supplies are supposed to be off now
+            all_ready = false;
+            states[o] = PWR_UNKNOWN;
+          }
+        }
+      } // loop over 'ok' bits
       if ( all_ready) ready_to_proceed = true;
     }
     lowest_enabled_ps_prio = prio;

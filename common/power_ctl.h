@@ -23,6 +23,8 @@
 #define TEMP_ALARM_CLEAR (8)
 #define CURRENT_ALARM (9)
 #define CURRENT_ALARM_CLEAR (10)
+#define PS_ANYFAIL_ALARM (11)
+#define PS_ANYFAIL_ALARM_CLEAR (12)
 
 // alarms
 

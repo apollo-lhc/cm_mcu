@@ -9,11 +9,15 @@
  *  DUE TO LIMITATIONS OF MACOS this file is called LocalTasks.c not Tasks.c, as there is a FreeRTOS
  *  file called tasks.c and MacOS default file system can't tell these apart.
  */
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "Tasks.h"
 #include "MonitorTask.h"
 #include "InterruptHandlers.h"
 
 #include "common/pinsel.h"
+#include "common/smbus_units.h"
 
 
 // FPGA arguments for monitoring task
@@ -49,6 +53,7 @@ struct MonitorTaskArgs_t fpga_args = {
     .n_pages = 1,
     .smbus = &g_sMaster6,
     .smbus_status = &eStatus6,
+    .initfcn = NULL,
 };
 
 // Power supply arguments for Monitoring task
@@ -67,17 +72,84 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"VVCCINT2", 0x70, 4, 0x45},
 };
 
+int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status,
+                    bool read, struct dev_i2c_addr_t* add,
+                    struct pm_command_t * cmd, uint8_t * value)
+{
+  // write to the I2C mux
+  uint8_t data;
+  // select the appropriate output for the mux
+  data = 0x1U << add->mux_bit;
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+  if ( r != SMBUS_OK ) {
+    return -1;
+  }
+  while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
+  }
+  if ( *smbus_status != SMBUS_OK ) {
+    return -2;
+  }
+  // read/write to the device itself
+  if ( read ) {
+    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command,
+        value, cmd->size);
+  }
+  else { // write
+    r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command,
+        value, cmd->size);
+  }
+  if ( r  != SMBUS_OK ) {
+    return -3;
+  }
+  while ( SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
+  }
+  // this is checking the return from the interrupt
+  if (*smbus_status != SMBUS_OK ) {
+    return -4;
+  }
+  // if we get here, a successful read/write command
 
+  return 0;
+}
+
+// this function is run once in the dcdc monitoring task
+static void
+dcdc_initfcn(void)
+{
+  // set up the switching frequency
+//  uint8_t data[2];
+  uint16_t freqlin11 = float_to_linear11(457.14);
+  struct pm_command_t freqcmd =
+      {0x33, 2, "FREQUENCY_SWITCH", "Hz", PM_LINEAR11};
+  int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
+      false, pm_addrs_dcdc+3,&freqcmd,  (uint8_t*)&freqlin11);
+
+  if ( r ) {
+    Print("error in dcdc_initfcn\r\n");
+  }
+
+  return;
+}
+
+
+// if you change the length of this array, you also need to change
+// NCOMMANDS_PS in MonitorTask.h
+// TODO make this fix automatic
 struct pm_command_t pm_command_dcdc[] = {
         { 0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11 },
         { 0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11 },
         { 0x88, 2, "READ_VIN", "V", PM_LINEAR11 },
         { 0x8B, 2, "READ_VOUT", "V", PM_LINEAR16U },
         { 0x8c, 2, "READ_IOUT", "A", PM_LINEAR11 },
-        //{ 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
         { 0x79, 2, "STATUS_WORD", "", PM_STATUS },
-        //{ 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
-        //{ 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
+        { 0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
+        { 0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11 },
+        { 0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
+        { 0x46, 2, "IOUT_OC_FAULT_LIMIT", "A", PM_LINEAR11},
+        { 0x44, 2, "VOUT_UV_FAULT_LIMIT", "V", PM_LINEAR16U},
+        { 0x37, 2, "INTERLEAVE", "", PM_STATUS},
       };
 float dcdc_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
 struct MonitorTaskArgs_t dcdc_args = {
@@ -91,9 +163,8 @@ struct MonitorTaskArgs_t dcdc_args = {
     .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
+    .initfcn = &dcdc_initfcn,
 };
-
-
 
 
 

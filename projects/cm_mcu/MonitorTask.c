@@ -88,6 +88,9 @@ void MonitorTask(void *parameters)
   int current_error_cnt = 0;
   args->updateTick = xLastWakeTime; // initial value
 
+  if ( args->initfcn != NULL )
+    (*args->initfcn)();
+
   for (;;) {
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next

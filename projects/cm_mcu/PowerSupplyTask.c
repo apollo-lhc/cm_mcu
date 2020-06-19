@@ -51,6 +51,7 @@ void PowerSupplyTask(void *parameters)
   if ( read_gpio_pin(BLADE_POWER_EN) == 1 )
     set_ps() ;
 
+  bool anyfailure = false;
   // this function never returns
   for ( ;; ) {
     // first check for message on the queue and act on any messages.
@@ -59,24 +60,27 @@ void PowerSupplyTask(void *parameters)
     if ( xQueueReceive(xPwrQueue, &message, 0) ) { // TODO: what if I receive more than one message
       switch (message ) {
       case PS_OFF:
-    	errbuffer_put(EBUF_POWER_OFF,0);
+        errbuffer_put(EBUF_POWER_OFF,0);
         cli_powerdown_request = true;
         disable_ps();
         break;
       case TEMP_ALARM:
         alarm = true;
         if(oldState!=PWR_OFF){
-        	disable_ps();
-        	errbuffer_put(EBUF_POWER_OFF_TEMP,0);
+          disable_ps();
+          errbuffer_put(EBUF_POWER_OFF_TEMP,0);
         }
         break;
       case TEMP_ALARM_CLEAR:
         alarm = false;
         break;
       case PS_ON:
-      	errbuffer_put(EBUF_POWER_ON,0);
+        errbuffer_put(EBUF_POWER_ON,0);
         cli_powerdown_request = false;
         set_ps();
+        break;
+      case PS_ANYFAIL_ALARM_CLEAR:
+        anyfailure = false;
         break;
       default:
         message = RED_LED_TOGGLE;
@@ -95,7 +99,7 @@ void PowerSupplyTask(void *parameters)
     if ( ! blade_power_enable  ) {
       disable_ps();
     }
-    else if ( ! alarm && ! cli_powerdown_request ) { // blade_power_enable and not alarm
+    else if ( (!alarm) && (!cli_powerdown_request) && (!anyfailure) ) { // blade_power_enable and not alarm
       TickType_t newTime = xTaskGetTickCount();
       int32_t seconds_passed = (newTime-oldTime)*portTICK_PERIOD_MS/1000;
       if ((oldTime==0)||(ABS(seconds_passed)>=SET_PS_RETRY)){  // absolute value to catch timer overflow
@@ -106,7 +110,8 @@ void PowerSupplyTask(void *parameters)
     // now check the actual state
     bool psgood = check_ps();
     newstate = psgood?PWR_ON:PWR_OFF;
-
+    if ( !psgood && !anyfailure)
+      anyfailure = true;
 
     if ( newstate == PWR_OFF  && oldState != PWR_OFF) {
       Print("\r\nPowerSupplyTask: power supplies turned off.\r\n");

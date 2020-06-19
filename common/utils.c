@@ -165,7 +165,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
   uint16_t minutes   = EBUF_ENTRY_TIMESTAMP_MINS(word);
 
   if ( errcode > (EBUF_N_ERRSTRINGS-1)) {
-    return snprintf(m, s, "\r\n\t%s %d", " Invalid error code:", errcode);
+    return snprintf(m, s, "\r\n\t%s %d (word %d)", " Invalid error code:", errcode, (int)word);
   }
   int copied = snprintf(m, s, "\r\n %02u %02u:%02u \t %x %s ", days, hours,
       minutes, realcount, ebuf_errstrings[errcode]);
