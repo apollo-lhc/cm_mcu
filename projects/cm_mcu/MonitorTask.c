@@ -88,6 +88,8 @@ void MonitorTask(void *parameters)
   int current_error_cnt = 0;
   args->updateTick = xLastWakeTime; // initial value
 
+  // wait for the power to come up
+  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
   if ( args->initfcn != NULL )
     (*args->initfcn)();
 

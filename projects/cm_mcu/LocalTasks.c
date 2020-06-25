@@ -11,6 +11,7 @@
  */
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h> // memset
 
 #include "Tasks.h"
 #include "MonitorTask.h"
@@ -114,22 +115,65 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status,
   return 0;
 }
 
+void Print(const char*);
+
 // this function is run once in the dcdc monitoring task
 static void
 dcdc_initfcn(void)
 {
   // set up the switching frequency
-//  uint8_t data[2];
-  uint16_t freqlin11 = float_to_linear11(457.14);
-  struct pm_command_t freqcmd =
-      {0x33, 2, "FREQUENCY_SWITCH", "Hz", PM_LINEAR11};
-  int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-      false, pm_addrs_dcdc+3,&freqcmd,  (uint8_t*)&freqlin11);
+  struct pm_command_t cmds[] = {
+      {0x0,  1, "PAGE", "", PM_STATUS},
+      {0x1,  1, "OPERATION", "", PM_STATUS},
+      {0x33, 2, "FREQUENCY_SWITCH", "Hz", PM_LINEAR11},
+      {0xEA, 32, "SNAPSHOP", "", PM_STATUS},
+      {0xF3, 1, "SNAPSHOP_CONTROL", "", PM_STATUS},
+  };
 
-  if ( r ) {
-    Print("error in dcdc_initfcn\r\n");
+  // read out the SNAPSHOT register
+  uint8_t snapshot[64];
+  memset(snapshot, 0xa,64);
+  //uint16_t freqlin11 = float_to_linear11(457.14);
+  uint16_t freqlin11 = float_to_linear11(800.);
+  for (uint8_t page = 0; page < 2; ++ page ) {
+    // page register
+    int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
+        false, pm_addrs_dcdc+3, &cmds[0], &page);
+    if ( r ) {
+      Print("error in dcdc_initfcn (0)\r\n");
+    }
+    // actual command -- frequency switch
+    r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
+        false, pm_addrs_dcdc+3,&cmds[2],  (uint8_t*)&freqlin11);
+    if ( r ) {
+      Print("error in dcdc_initfcn (1)\r\n");
+    }
+    // actual command -- snapshot control
+    uint8_t cmd = 0x1;
+    r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
+        false, pm_addrs_dcdc+3,&cmds[4],  &cmd);
+    if ( r ) {
+      Print("error in dcdc_initfcn (5)\r\n");
+    }
+    // actual command -- read snapshot
+    tSMBusStatus r2 = SMBusMasterBlockRead(&g_sMaster1, pm_addrs_dcdc[3].dev_addr, cmds[3].command, &snapshot[0+page*32]);
+//    r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
+//        true, pm_addrs_dcdc+3,&cmds[3],  snapshot+(page*32));
+    if ( r2 != SMBUS_OK ) {
+      Print("error setting up block read \r\n");
+    }
+    while ( (r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
+      vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
+    }
+    //r2 = SMBusStatusGet(&g_sMaster1);
+    if ( r2 != SMBUS_TRANSFER_COMPLETE ) {
+      Print("error in dcdc_initfcn(3)\r\n");
+    }
+
+    if ( r ) {
+      Print("error in dcdc_initfcn (2)\r\n");
+    }
   }
-
   return;
 }
 
@@ -164,6 +208,7 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
     .initfcn = &dcdc_initfcn,
+    //.initfcn = NULL,
 };
 
 
