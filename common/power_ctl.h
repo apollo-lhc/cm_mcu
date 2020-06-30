@@ -30,6 +30,7 @@
 
 #define HUH             (99)
 
+// power supply state
 enum ps_state { PWR_UNKNOWN, PWR_ON, PWR_OFF, PWR_DISABLED, PWR_FAILED };
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
@@ -37,6 +38,11 @@ int getLowestEnabledPSPriority();
 
 #define N_PS_ENABLES 16
 #define N_PS_OKS 14
+#define PS_OKS_MASK     ((1<<N_PS_OKS) -1)
+#define PS_OKS_KU_MASK  0x0F03U
+#define PS_OKS_VU_MASK  0x30CCU
+#define PS_OKS_GEN_MASK 0x0030U
+
 
 bool set_ps(void);
 bool check_ps(void);

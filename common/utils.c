@@ -140,7 +140,7 @@ const char* ebuf_errstrings[] = {
     "Buffer Reset",
     "Power Off - Manual",
     "Power Off - Temp High",
-    "Power On - Manual",
+    "Power On",
     "Temp Normal",
     "Hard fault",
     "Assertion failed",
@@ -148,6 +148,7 @@ const char* ebuf_errstrings[] = {
     "(continue)",
     "Power Failure",
     "Temp High (TM4C FPGA FF DCDC)",
+    "Power Failure CLEAR",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings)/sizeof(ebuf_errstrings[0]))
 
@@ -174,11 +175,11 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
   case EBUF_RESTART:
     if (errdata & EBUF_RESTART_SW )
       copied += snprintf(m+copied, s-copied, "(SW)");
-    else if (errdata & EBUF_RESTART_EXT )
+    if (errdata & EBUF_RESTART_EXT )
       copied += snprintf(m+copied, s-copied, "(EXT)");
-    else if (errdata & EBUF_RESTART_WDOG )
+    if (errdata & EBUF_RESTART_WDOG )
       copied += snprintf(m+copied, s-copied, "(WDOG)");
-    else if (errdata & EBUF_RESTART_POR )
+    if (errdata & EBUF_RESTART_POR )
       copied += snprintf(m+copied, s-copied, "(POR)");
     break;
   case EBUF_HARDFAULT:

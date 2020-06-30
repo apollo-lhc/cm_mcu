@@ -288,7 +288,10 @@ static BaseType_t power_ctl(int argc, char ** argv)
   else if ( strncmp(argv[1], "off", 3)  == 0 ) {
     message = PS_OFF; // turn off power supply
   }
-  else if ( strncmp(argv[1], "status", 5) == 0 ) { // report status to UART
+  else if (strncmp(argv[1], "clearfail", 9) == 0) {
+    message = PS_ANYFAIL_ALARM_CLEAR;
+  }
+  else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
 //    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "power_ctl:\r\nLowest ena: %d\r\n",
 //        getLowestEnabledPSPriority());
@@ -303,22 +306,25 @@ static BaseType_t power_ctl(int argc, char ** argv)
       enum ps_state j = getPSStatus(i);
       char *c;
       switch (j) {
-              case PWR_UNKNOWN:
-                c = "PWR_UNKNOWN";
-                break;
-              case PWR_ON:
-                c = "PWR_ON";
-                break;
-              case PWR_OFF:
-                c = "PWR_OFF";
-                break;
-              case PWR_DISABLED:
-                c = "PWR_DISABLED";
-                break;
-              default:
-                c = "UNKNOWN";
-                break;
-    }
+      case PWR_UNKNOWN:
+        c = "PWR_UNKNOWN";
+        break;
+      case PWR_ON:
+        c = "PWR_ON";
+        break;
+      case PWR_OFF:
+        c = "PWR_OFF";
+        break;
+      case PWR_DISABLED:
+        c = "PWR_DISABLED";
+        break;
+      case PWR_FAILED:
+        c = "PWR_FAILED";
+        break;
+      default:
+        c = "UNKNOWN";
+        break;
+      }
 
       copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%15s: %s\r\n",
           pin_names[oks[i].name],  c);
@@ -1041,22 +1047,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
   }
   for (; i<num; ++i) {
     uint32_t word = (*arrptr)[i];
-
-//    uint16_t o_entry = (uint16_t)word;
-//    uint16_t o_errcode = (o_entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
-//    uint16_t o_errdata = o_entry&ERRDATA_MASK;
-//    uint16_t o_counter = o_entry>>(16-COUNTER_OFFSET);
-//    uint16_t o_realcount = o_counter*COUNTER_UPDATE+1;
-//
-//    uint16_t entry   = EBUF_ENTRY(word);;
     uint16_t errcode = EBUF_ERRCODE(word);
-//    uint16_t counter = EBUF_COUNTER(word);
-//    uint16_t realcount = counter*COUNTER_UPDATE+1;
-//
-//    uint16_t timestamp = EBUF_ENTRY_TIMESTAMP(word);
-//    uint16_t days      = EBUF_ENTRY_TIMESTAMP_DAYS(word);
-//    uint16_t hours     = EBUF_ENTRY_TIMESTAMP_HOURS(word);
-//    uint16_t minutes   = EBUF_ENTRY_TIMESTAMP_MINS(word);
     // if this is a continuation and it's not the first entry we see
     if (errcode == EBUF_CONTINUATION && i != 0 ){
       uint16_t errdata = EBUF_DATA(word);

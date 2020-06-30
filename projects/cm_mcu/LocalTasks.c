@@ -118,8 +118,8 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status,
 void Print(const char*);
 
 // this function is run once in the dcdc monitoring task
-static void
-dcdc_initfcn(void)
+static 
+void dcdc_initfcn(void)
 {
   // set up the switching frequency
   struct pm_command_t cmds[] = {
@@ -207,8 +207,8 @@ struct MonitorTaskArgs_t dcdc_args = {
     .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
-    .initfcn = &dcdc_initfcn,
-    //.initfcn = NULL,
+    //.initfcn = &dcdc_initfcn,
+    .initfcn = NULL,
 };
 
 

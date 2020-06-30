@@ -88,13 +88,12 @@ enum ps_state getPSStatus(int i)
   if ( i < 0 || i >= N_PS_OKS) return PWR_UNKNOWN;
   return states[i];
 }
-#if 0
+
 void setPSStatus(int i, enum ps_state theState)
 {
   if ( i < 0 || i >= N_PS_OKS) return;
   states[i] = theState;
 }
-#endif
 
 bool update_failed_ps(int prio){
 

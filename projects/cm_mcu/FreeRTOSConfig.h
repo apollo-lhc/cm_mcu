@@ -172,7 +172,7 @@ header file. */
 #define CLI_UART UART4_BASE // Front panel
 //#define CLI_UART UART1_BASE // Zynq
 
-#define SYSTEM_STACK_SIZE 256
+#define SYSTEM_STACK_SIZE 128
 
 
 #define pdTICKS_TO_MS( xTicks )    ( ( ( TickType_t ) ( xTicks ) * 1000u ) / configTICK_RATE_HZ )
