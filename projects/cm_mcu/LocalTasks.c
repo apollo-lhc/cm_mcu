@@ -118,7 +118,7 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status,
 void Print(const char*);
 
 // this function is run once in the dcdc monitoring task
-static 
+ 
 void dcdc_initfcn(void)
 {
   // set up the switching frequency

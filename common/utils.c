@@ -186,7 +186,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
     copied += snprintf(m+copied, s-copied, "(ISRNUM= 0x%x)", errdata);
     break;
   case EBUF_PWR_FAILURE:
-    copied += snprintf(m+copied, s-copied, "(supply %d)", errdata);
+    copied += snprintf(m+copied, s-copied, "(supply mask 0x%x)", errdata);
     break;
   default:
     if (errcode>EBUF_WITH_DATA){

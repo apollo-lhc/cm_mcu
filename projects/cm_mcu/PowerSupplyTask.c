@@ -68,6 +68,7 @@ void PowerSupplyTask(void *parameters)
   }
 
   bool power_supply_alarm = false;
+  uint16_t failed_mask = 0x0U;
   // this loop never exits
   for (;;) {
     // first check for message on the queue and collect all messages.
@@ -90,6 +91,7 @@ void PowerSupplyTask(void *parameters)
         break;
       case PS_ANYFAIL_ALARM_CLEAR:
         power_supply_alarm = false;
+        failed_mask = 0x0U;
         break;
       default:
         break;
@@ -133,7 +135,6 @@ void PowerSupplyTask(void *parameters)
         errbuffer_put(EBUF_POWER_ON, 0);
         nextState = POWER_ON;
         supply_off = false; 
-        power_supply_alarm = false; // this is the only time this gets set programatically
       }
       else {
         nextState = POWER_OFF;
@@ -143,7 +144,7 @@ void PowerSupplyTask(void *parameters)
     case POWER_ON: {
       if (supply_off) {
         // log erroring supplies
-        uint16_t failed_mask = (~supply_bitset) & supply_mask;
+        failed_mask = (~supply_bitset) & supply_mask;
         errbuffer_put(EBUF_PWR_FAILURE, failed_mask);
         // turn off all supplies
         disable_ps();
@@ -197,12 +198,12 @@ void PowerSupplyTask(void *parameters)
     supply_bitset = check_ps_oks();
     for (size_t i = 0; i < N_PS_OKS; i++) {
       if ((1U << i) & supply_bitset) {
-        // OK bit is on
+        // OK bit is on -- PS is on
         setPSStatus(i, PWR_ON);
       }
       // OK bit is not on and ...
       else if (!((1U << i) & supply_mask)) {
-        // ... it should _not_ be on
+        // ... it should _not_ be on. Disabled intentionally
         setPSStatus(i, PWR_DISABLED);
       }
       else {
@@ -210,14 +211,22 @@ void PowerSupplyTask(void *parameters)
         switch (currentState) {
         case POWER_OFF:
         case INIT:
-          // ... but the power is off
+          // ... but the power state is "off" or 
+          // we are just initializing / turning on
           setPSStatus(i, PWR_OFF);
           break;
         case POWER_ON:
         case POWER_FAILURE:
-          // ... but the power is on or there is a failure
-          /* code */
-          setPSStatus(i, PWR_FAILED);
+          // ... but the power state is is "on," so ...
+          if ((1U << i) & failed_mask) {
+            // ... either the supply failed
+            setPSStatus(i, PWR_FAILED);
+          }
+          else {
+            // ... or it's just off because there was a power failure,
+            // but this supply is not the root cause.
+            setPSStatus(i, PWR_OFF);
+          }
           break;
         default:
           break;

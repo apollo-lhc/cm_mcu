@@ -293,8 +293,6 @@ static BaseType_t power_ctl(int argc, char ** argv)
   }
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
-//    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "power_ctl:\r\nLowest ena: %d\r\n",
-//        getLowestEnabledPSPriority());
     bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
     static int i=0;
@@ -1414,49 +1412,49 @@ struct command_t commands[] = {
     { 
       "i2c_base", 
       i2c_ctl_set_dev, 
-      "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n",
-       1
+      "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n", 
+      1
     },
     { 
-      "i2cr",
-      i2c_ctl_r,
+      "i2cr", 
+      i2c_ctl_r, 
       "i2cr <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n",
       2
     },
     {
-        "i2crr",
-        i2c_ctl_reg_r,
-        "i2crr <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n",
-        3
+      "i2crr",
+      i2c_ctl_reg_r,
+      "i2crr <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n",
+      3
     },
     {
-        "i2cw",
-        i2c_ctl_w,
-        "i2cw <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
-        3
+      "i2cw",
+      i2c_ctl_w,
+      "i2cw <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
+      3
     },
     {
-        "i2cwr",
-        i2c_ctl_reg_w,
-        "i2cwr <address> <reg> <number of bytes>\r\n Write I2C controller.\r\n",
-        4
+      "i2cwr",
+      i2c_ctl_reg_w,
+      "i2cwr <address> <reg> <number of bytes>\r\n Write I2C controller.\r\n",
+      4
     },
     {
-        "i2c_scan",
-        i2c_scan,
-        "i2c_scan\r\n Scan current I2C bus.\r\n",
-        0,
+      "i2c_scan",
+      i2c_scan,
+      "i2c_scan\r\n Scan current I2C bus.\r\n",
+      0,
     },
     {
-        "help",
-        help_command_fcn,
-        "help\r\n This help command\r\n",
-        -1
+      "help",
+      help_command_fcn,
+      "help\r\n This help command\r\n",
+      -1
     },
     {
         "pwr",
         power_ctl,
-        "pwr (on|off|status)\r\n Turn on or off all power.\r\n",
+        "pwr (on|off|status|clearfail)\r\n Turn on or off all power, get status or clear failures.\r\n",
         1
     },
     {
@@ -1509,13 +1507,13 @@ struct command_t commands[] = {
     {
         "stack_usage",
         stack_ctl,
-        "stack_usage \r\n Print out system stack high water mark.\r\n",
+        "stack_usage\r\n Print out system stack high water mark.\r\n",
         0,
     },
     {
         "task-stats",
         TaskStatsCommand,
-        "task-stats \r\n Displays a table showing the state of each FreeRTOS task\r\n",
+        "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n",
         0
     },
     {
