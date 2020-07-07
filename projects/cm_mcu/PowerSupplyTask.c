@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <assert.h>
 
 // local includes
 #include "Tasks.h"
@@ -30,10 +31,16 @@ QueueHandle_t xPwrQueue = NULL;
 extern QueueHandle_t xLedQueue;
 
 void Print(const char *str);
+// local sprintf prototype
+int snprintf( char *buf, unsigned int count, const char *format, ... );
 
-enum power_system_state { INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
 
 enum power_system_state currentState = INIT; // start in INIT state
+
+enum power_system_state getPowerControlState()
+{
+  return currentState;
+}
 
 extern const struct gpio_pin_t oks[];
 static uint16_t check_ps_oks(void)
@@ -50,6 +57,10 @@ static uint16_t check_ps_oks(void)
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
+  // compile-time sanity check
+  static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK|PS_ENS_VU_MASK|PS_ENS_KU_MASK));
+  static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK|PS_OKS_VU_MASK|PS_OKS_KU_MASK));
+
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
 
@@ -57,15 +68,34 @@ void PowerSupplyTask(void *parameters)
   bool external_alarm = false;
   // powerdown request from the CLI
   bool cli_powerdown_request = false;
-  uint16_t supply_mask = PS_OKS_GEN_MASK;
+
+  // masks to enable/check appropriate supplies
+  uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
+  uint16_t supply_en_mask = PS_ENS_GEN_MASK;
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
   if (ku_enable) {
-    supply_mask |= PS_OKS_KU_MASK;
+    supply_ok_mask |= PS_OKS_KU_MASK;
+    supply_en_mask |= PS_ENS_KU_MASK;
   }
   if (vu_enable) {
-    supply_mask |= PS_OKS_VU_MASK;
+    supply_ok_mask |= PS_OKS_VU_MASK;
+    supply_en_mask |= PS_ENS_VU_MASK;
   }
+  #ifdef APOLLO10_HACK
+  // APOLLO 10 HACK
+  supply_mask &= ~(1<<6);
+  supply_mask &= ~(1<<7);
+  supply_mask &= ~(1<<8);
+  supply_mask &= ~(1<<9);
+  supply_mask &= ~(1<<10);
+  supply_mask &= ~(1<<11);
+  supply_mask &= ~(1<<12);
+  supply_mask &= ~(1<<13);
+  char tmp[64];
+  snprintf(tmp, 64, "PowerSupplyTask: hack mask is %x\r\n", supply_mask);
+  Print(tmp);
+  #endif // APOLLO10_HACK
 
   bool power_supply_alarm = false;
   uint16_t failed_mask = 0x0U;
@@ -103,7 +133,7 @@ void PowerSupplyTask(void *parameters)
     // now check the actual state of the power supplies
     uint16_t supply_bitset = check_ps_oks();
     bool supply_off = false; // are supplies off (besides the ones that are disabled)
-    if (supply_bitset != supply_mask) {
+    if ((supply_bitset&supply_ok_mask) != supply_ok_mask) {
       supply_off = true;
     }
 
@@ -131,7 +161,7 @@ void PowerSupplyTask(void *parameters)
     case INIT: {
       // only run on first boot
       if (blade_power_enable) {
-        set_ps();
+        turn_on_ps(supply_en_mask);
         errbuffer_put(EBUF_POWER_ON, 0);
         nextState = POWER_ON;
         supply_off = false; 
@@ -144,7 +174,12 @@ void PowerSupplyTask(void *parameters)
     case POWER_ON: {
       if (supply_off) {
         // log erroring supplies
-        failed_mask = (~supply_bitset) & supply_mask;
+        failed_mask = (~supply_bitset) & supply_ok_mask;
+        char tmp[64];
+        snprintf(tmp, 64, "failure set: fail, supply_mask,bitset =  %x,%x,%x\r\n",
+                 failed_mask, supply_ok_mask, supply_bitset);
+        Print(tmp);
+
         errbuffer_put(EBUF_PWR_FAILURE, failed_mask);
         // turn off all supplies
         disable_ps();
@@ -170,7 +205,7 @@ void PowerSupplyTask(void *parameters)
     case POWER_OFF: {
       if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
           !power_supply_alarm) {
-        set_ps();
+        turn_on_ps(supply_en_mask);
         errbuffer_put(EBUF_POWER_ON,0);
         nextState = POWER_ON;
       }
@@ -202,7 +237,7 @@ void PowerSupplyTask(void *parameters)
         setPSStatus(i, PWR_ON);
       }
       // OK bit is not on and ...
-      else if (!((1U << i) & supply_mask)) {
+      else if (!((1U << i) & supply_ok_mask)) {
         // ... it should _not_ be on. Disabled intentionally
         setPSStatus(i, PWR_DISABLED);
       }
@@ -232,6 +267,12 @@ void PowerSupplyTask(void *parameters)
           break;
         }
       }
+    }
+    if (currentState != nextState) {
+      char tmp[64];
+      snprintf(tmp, 64, "PowerSupplyTask: change from state %d to %d\r\n",
+               currentState, nextState);
+      Print(tmp);
     }
     currentState = nextState;
 

@@ -297,8 +297,12 @@ static BaseType_t power_ctl(int argc, char ** argv)
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
     static int i=0;
     if (i==0){
-    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, "pwr_ctl:\r\nVU_ENABLE:\t%d\r\n"
-        "KU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s:\r\nVU_ENABLE:\t%d\r\n"
+                         "KU_ENABLE:\t%d\r\n",
+                         argv[0], vu_enable, ku_enable);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "State machine state: %d\r\n", getPowerControlState());
     }
     for (; i < N_PS_OKS; ++i ) {
       enum ps_state j = getPSStatus(i);
@@ -645,8 +649,8 @@ static BaseType_t ff_ctl(int argc, char ** argv)
       whichFF = NFIREFLIES;
     }
     else { // commands with arguments. The last argument is always which FF module.
-      whichFF = atoi(argv[argc-1]);
-      if (whichFF>=NFIREFLIES || (whichFF==0 && strncmp(argv[3],"0",1)!=0)){
+      whichFF = strtol(argv[argc-1], NULL, 10);
+      if (whichFF>=NFIREFLIES || (whichFF==0 && strncmp(argv[argc-1],"0",1)!=0)){
         snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",
             argv[0], NFIREFLIES);
         return pdFALSE;

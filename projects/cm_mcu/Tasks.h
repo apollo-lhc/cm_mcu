@@ -57,6 +57,9 @@ void LedTask(void *parameters);
 #define SET_PS_RETRY 5	// time interval between each set_ps() attempt
 void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
+enum power_system_state { INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
+enum power_system_state getPowerControlState();
+
 
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
