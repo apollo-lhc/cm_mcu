@@ -398,13 +398,15 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
     ff_temp    [i] = -55;
   }
-
+#define I2C_PULLUP_BUG2
   vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 2500 ) );
 
   for (;;) {
     tSMBus *smbus;
     tSMBusStatus *p_status;
+#ifdef I2C_PULLUP_BUG2
     bool good = false;
+#endif // I2C_PULLUP_BUG
     // loop over FireFly modules
     for ( uint8_t ff = 0; ff < NFIREFLIES; ++ ff ) {
       if (! isEnabledFF(ff)) // skip the FF if it's not enabled via the FF config
@@ -415,6 +417,7 @@ void FireFlyTask(void *parameters)
       else {
         smbus = &g_sMaster3; p_status = &eStatus3;
       }
+#ifdef I2C_PULLUP_BUG2
       if ( getPSStatus(5) != PWR_ON) {
         if ( good ) {
           Print("FIF: 3V3 died. Skipping I2C monitoring.\r\n");
@@ -426,6 +429,7 @@ void FireFlyTask(void *parameters)
       else {
         good = true;
       }
+#endif // I2C_PULLUP_BUG
       // check for any messages
       uint32_t message;
       if ( xQueueReceive(xFFlyQueueIn, &message, 0) ) { // TODO: what if I receive more than one message

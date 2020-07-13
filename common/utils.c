@@ -188,6 +188,9 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
   case EBUF_PWR_FAILURE:
     copied += snprintf(m+copied, s-copied, "(supply mask 0x%x)", errdata);
     break;
+  case EBUF_ASSERT:
+    copied += snprintf(m+copied, s-copied, "(pc 0x%x)", errdata);
+    break;
   default:
     if (errcode>EBUF_WITH_DATA){
         copied += snprintf(m+copied, s-copied, "%d", errdata);

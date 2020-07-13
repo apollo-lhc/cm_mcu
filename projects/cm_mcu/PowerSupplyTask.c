@@ -58,8 +58,8 @@ static uint16_t check_ps_oks(void)
 void PowerSupplyTask(void *parameters)
 {
   // compile-time sanity check
-  static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK|PS_ENS_VU_MASK|PS_ENS_KU_MASK));
-  static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK|PS_OKS_VU_MASK|PS_OKS_KU_MASK));
+  static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK|PS_ENS_VU_MASK|PS_ENS_KU_MASK), "mask");
+  static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK|PS_OKS_VU_MASK|PS_OKS_KU_MASK), "mask");
 
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -223,9 +223,11 @@ void PowerSupplyTask(void *parameters)
       }
       break;
     }
-    default:
-      configASSERT(1 == 0);
+    default: {
+      //configASSERT(1 == 0);
+      nextState = INIT; // shut up debugger
       break;
+    }
     }
 
     // update the ps_state variables, for external display

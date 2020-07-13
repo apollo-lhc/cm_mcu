@@ -817,6 +817,91 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
     return pdFALSE;
   }
 }
+#include "common/smbus_units.h"
+void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
+              uint8_t snapshot[32], bool reset);
+
+typedef struct __attribute__((packed)) {
+  linear11_val_t v_in;
+  uint16_t v_out;
+  linear11_val_t i_out;
+  linear11_val_t i_out_max;
+  linear11_val_t duty_cycle;
+  linear11_val_t temperature;
+  linear11_val_t unused1;
+  linear11_val_t freq;
+  uint8_t v_out_status;
+  uint8_t i_out_status;
+  uint8_t input_status;
+  uint8_t temperature_status;
+  uint8_t cml_status;
+  uint8_t mfr_status;
+  uint8_t flash_status;
+  uint8_t unused[9];
+}  snapshot_t ;
+
+extern struct dev_i2c_addr_t pm_addrs_dcdc[];
+
+static
+void float_to_ints(float val, int *tens, int * fraction)
+{
+  *tens = val;
+  *fraction = ABS((val - *tens)*100.0);
+
+  return;
+}
+static BaseType_t snapshot(int argc, char ** argv)
+{
+  _Static_assert(sizeof(snapshot_t)==32, "sizeof snapshot_t");
+  int copied = 0;
+  int page = strtol(argv[1],NULL,10); // which LGA08D
+  int which = page/10;
+  page = page%10;
+  if ( page < 0 || page > 1 ) {
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: page %d must be between 0-1\r\n",
+        argv[0], page);
+    return pdFALSE;
+  }
+  if ( which <0 || which >4 ) {
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: device %d must be between 0-4\r\n",
+        argv[0], which);
+    return pdFALSE;
+  }
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: page %d of device %s\r\n", argv[0],
+      page, pm_addrs_dcdc[which].name);
+
+  bool reset = false;
+  int ireset = strtol(argv[2],NULL, 10);
+  if ( ireset == 1 )
+    reset = true;
+
+  uint8_t sn[32];
+  snapdump(&pm_addrs_dcdc[which],page,sn,reset);
+  snapshot_t *p0 = (snapshot_t*)&sn[0];
+  int tens, fraction;
+  float_to_ints(linear11_to_float(p0->v_in), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VIN  = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear16u_to_float(p0->v_out), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VOUT = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->i_out), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "IOUT = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->i_out_max), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "IOUT MAX = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->duty_cycle), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "duty cycle = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->temperature), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->freq), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "switching freq = %d.%02d\r\n", tens, fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VOUT  STATUS: 0x%02x\r\n", p0->v_out_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "I0UT  STATUS: 0x%02x\r\n", p0->i_out_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "INPUT STATUS: 0x%02x\r\n", p0->input_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP  STATUS: 0x%02x\r\n", p0->temperature_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "CML   STATUS: 0x%02x\r\n", p0->cml_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "MFR   STATUS: 0x%02x\r\n", p0->mfr_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "flash STATUS: 0x%02x\r\n", p0->flash_status);
+  return pdFALSE;
+}
 
 // this command takes no arguments since there is only one command
 // right now.
@@ -1472,6 +1557,12 @@ struct command_t commands[] = {
         psmon_ctl,
         "psmon <#>\r\n Displays a table showing the state of power supplies.\r\n",
         1
+    },
+    {
+        "snapshot",
+        snapshot,
+        "snapshot # (0|1)\r\n Dump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide if to reset snapshot.\r\n",
+        2
     },
     {
         "restart_mcu",

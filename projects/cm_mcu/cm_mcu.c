@@ -228,6 +228,7 @@ int main( void )
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
+  xMonSem    = xSemaphoreCreateMutex();
 
 
   //  Create the stream buffers that sends data from the interrupt to the

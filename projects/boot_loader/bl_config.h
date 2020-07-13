@@ -25,7 +25,7 @@
 #ifndef __BL_CONFIG_H__
 #define __BL_CONFIG_H__
 
-#define APOLLO_BL_UART_FP // if you want front panel, otherwise zynq
+//#define APOLLO_BL_UART_FP // if you want front panel, otherwise zynq
 
 #ifdef APOLLO_BL_UART_FP
 #define SYSCTL_PERIPH_UARTx SYSCTL_PERIPH_UART4
