@@ -158,21 +158,35 @@ void EEPROMTask(void *parameters);
 
 // Soft UART Task
 // SoftUart queue messages
-#define SOFTUART_ENABLE_TRANSMIT 0x1
+//#define SUART_TEST_MODE
+
+#define SOFTUART_ENABLE_TRANSMIT  0x1
 #define SOFTUART_DISABLE_TRANSMIT 0x2
+#define SOFTUART_TEST_SINGLE      0x3
+#define SOFTUART_TEST_INCREMENT   0x4
+#define SOFTUART_TEST_OFF         0x5
+#define SOFTUART_TEST_SEND_ONE    0x6
+#define SOFTUART_TEST_RAW         0x7
+
 extern QueueHandle_t xSoftUartQueue;
 void SoftUartTask(void *parameters);
 
+#ifdef SUART_TEST_MODE
+void setSUARTTestData(uint8_t sensor, uint16_t value);
+uint8_t getSUARTTestMode();
+uint8_t getSUARTTestSensor();
+uint16_t getSUARTTestData();
+#endif // SUART_TEST_MODE
+
 // utility functions
-const uint32_t * getSystemStack();
+const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
 
 // Xilinx MonitorTask
 int get_ku_index();
 int get_vu_index();
-//void set_ku_index(int index);
-//void set_vu_index(int index);
+// void set_ku_index(int index);
+// void set_vu_index(int index);
 void initFPGAMon();
-
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

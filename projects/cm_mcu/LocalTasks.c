@@ -134,5 +134,9 @@ void initFPGAMon()
     fpga_args.n_devices = 1;
     set_ku_index(0);
   }
+  else {
+    set_vu_index(0);
+    set_ku_index(1);
+  }
 
 }

@@ -282,7 +282,6 @@ void I2CSlave0Interrupt()
 
   // clear the interrupt register
   ROM_I2CSlaveIntClear(I2C0_BASE);
-  //ROM_SysCtlDelay(100u);
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
   configASSERT( TaskNotifyI2CSlave != NULL );
@@ -305,7 +304,9 @@ void I2CSlave0Interrupt()
 // Soft UART related
 extern tSoftUART g_sUART;
 //
-// The transmit timer tick function.
+// The transmit timer tick function. This does not call
+// any FreeRTOS functions such that it can operate at a high enough
+// priority to allow the soft UART to operate reliably.
 //
 void
 Timer0AIntHandler(void)
