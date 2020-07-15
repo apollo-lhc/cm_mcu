@@ -1507,7 +1507,11 @@ struct command_t commands[] = {
     {
         "suart",
         suart_ctl,
+#ifdef SUART_TEST_MODE
         "suart (on|off|status|debug1|debug2|debugraw|normal|sendone|(settest <sensor> <val>))\r\n"
+#else
+        "suart (on|off)\r\n"
+#endif // SUART_TEST_MODE
         " Control soft uart.\r\n",
         -1,
     },

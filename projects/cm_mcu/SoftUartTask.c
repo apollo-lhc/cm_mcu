@@ -93,7 +93,7 @@ unsigned char g_pucTxBuffer[16];
 //
 unsigned long g_ulBitTime;
 
-#define TARGET_BAUD_RATE 38400
+#define TARGET_BAUD_RATE 115200
 
 tSoftUART g_sUART;
 
@@ -157,7 +157,13 @@ void SoftUartTask(void *parameters)
   //
   // MAP_IntPrioritySet(INT_GPIOE, 0x00);
   // MAP_IntPrioritySet(INT_TIMER0B, 0x40);
-  MAP_IntPrioritySet(INT_TIMER0A, configKERNEL_INTERRUPT_PRIORITY);
+  // 0x80 corresponds to 4 << (8-5)
+  // Remember that on the TM4C only 3 highest bits
+  // are used for setting interrupt priority, and numerically lower
+  // values are logically higher.
+  // this is lower that configMAX_SYSCALL_INTERRUPT_PRIORITY but the ISR
+  // does not call any FreeRTOS functions so this will work.
+  MAP_IntPrioritySet(INT_TIMER0A, 0x80); // THIS NEEDS TO BE at a HIGH PRIORITY!!!! DONOT CHANGE
   //
   // Enable the interrupts associated with the software UART.
   //
@@ -206,10 +212,10 @@ void SoftUartTask(void *parameters)
         testmode = 0;
         break;
       case SOFTUART_TEST_RAW:
-        message[0] = 0x9c;
-        message[1] = 0x2c;
-        message[2] = 0x2b;
-        message[3] = 0x3e;
+        message[0] = 0x55;
+        message[1] = 0xaa;
+        message[2] = 0x55;
+        message[3] = 0xaa;
         inTestMode = true;
         enable = true;
         testmode = 2;
