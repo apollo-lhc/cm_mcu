@@ -173,13 +173,9 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
  
 void dcdc_initfcn(void)
 {
-
-  // read out the SNAPSHOT register
-  uint8_t snapshot[64];
   // set up the switching frequency
   //uint16_t freqlin11 = float_to_linear11(457.14);
   uint16_t freqlin11 = float_to_linear11(800.);
-  memset(snapshot, 0xa5,64);
   for ( int dev = 1; dev < 4; dev += 2 ) {
     for (uint8_t page = 0; page < 2; ++ page ) {
       // page register
@@ -194,49 +190,8 @@ void dcdc_initfcn(void)
       if ( r ) {
         Print("error in dcdc_initfcn (1)\r\n");
       }
-#if 0
-      // actual command -- snapshot control copy NVRAM for reading
-      uint8_t cmd = 0x1;
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev,&extra_cmds[4],  &cmd);
-      if ( r ) {
-        Print("error in dcdc_initfcn (sc control 1)\r\n");
-      }
-      // actual command -- read snapshot
-      tSMBusStatus r2 = SMBusMasterBlockRead(&g_sMaster1, pm_addrs_dcdc[dev].dev_addr, extra_cmds[3].command, &snapshot[0+page*32]);
-      if ( r2 != SMBUS_OK ) {
-        Print("error setting up block read \r\n");
-      }
-      while ( (r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
-      }
-      //r2 = SMBusStatusGet(&g_sMaster1);
-      if ( r2 != SMBUS_TRANSFER_COMPLETE ) {
-        Print("error in dcdc_initfcn(3)\r\n");
-      }
-      // reset SNAPSHOT
-      cmd = 0x3;
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev,&extra_cmds[4],  &cmd);
-      if ( r ) {
-        Print("error in dcdc_initfcn (sc control 2)\r\n");
-      }
-#endif
     }
   }
-//  char tmp[80];
-//  // dump snapshot register
-//  snprintf(tmp, 80, "Snapshot register ");
-//  Print(tmp);
-//  for ( int i = 0; i < 64; ++i ) {
-//    if ( i%4 == 0 ) {
-//      snprintf(tmp, 80, "\r\n%d: ",i);
-//      Print(tmp);
-//    }
-//    snprintf(tmp, 80, "%02x ", snapshot[i]);
-//    Print(tmp);
-//  }
-//  Print("\r\n");
   return;
 }
 
