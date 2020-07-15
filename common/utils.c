@@ -140,7 +140,7 @@ const char* ebuf_errstrings[] = {
     "Buffer Reset",
     "Power Off - Manual",
     "Power Off - Temp High",
-    "Power On - Manual",
+    "Power On",
     "Temp Normal",
     "Hard fault",
     "Assertion failed",
@@ -148,6 +148,7 @@ const char* ebuf_errstrings[] = {
     "(continue)",
     "Power Failure",
     "Temp High (TM4C FPGA FF DCDC)",
+    "Power Failure CLEAR",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings)/sizeof(ebuf_errstrings[0]))
 
@@ -165,7 +166,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
   uint16_t minutes   = EBUF_ENTRY_TIMESTAMP_MINS(word);
 
   if ( errcode > (EBUF_N_ERRSTRINGS-1)) {
-    return snprintf(m, s, "\r\n\t%s %d", " Invalid error code:", errcode);
+    return snprintf(m, s, "\r\n\t%s %d (word %d)", " Invalid error code:", errcode, (int)word);
   }
   int copied = snprintf(m, s, "\r\n %02u %02u:%02u \t %x %s ", days, hours,
       minutes, realcount, ebuf_errstrings[errcode]);
@@ -174,18 +175,21 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
   case EBUF_RESTART:
     if (errdata & EBUF_RESTART_SW )
       copied += snprintf(m+copied, s-copied, "(SW)");
-    else if (errdata & EBUF_RESTART_EXT )
+    if (errdata & EBUF_RESTART_EXT )
       copied += snprintf(m+copied, s-copied, "(EXT)");
-    else if (errdata & EBUF_RESTART_WDOG )
+    if (errdata & EBUF_RESTART_WDOG )
       copied += snprintf(m+copied, s-copied, "(WDOG)");
-    else if (errdata & EBUF_RESTART_POR )
+    if (errdata & EBUF_RESTART_POR )
       copied += snprintf(m+copied, s-copied, "(POR)");
     break;
   case EBUF_HARDFAULT:
     copied += snprintf(m+copied, s-copied, "(ISRNUM= 0x%x)", errdata);
     break;
   case EBUF_PWR_FAILURE:
-    copied += snprintf(m+copied, s-copied, "(supply %d)", errdata);
+    copied += snprintf(m+copied, s-copied, "(supply mask 0x%x)", errdata);
+    break;
+  case EBUF_ASSERT:
+    copied += snprintf(m+copied, s-copied, "(pc 0x%x)", errdata);
     break;
   default:
     if (errcode>EBUF_WITH_DATA){

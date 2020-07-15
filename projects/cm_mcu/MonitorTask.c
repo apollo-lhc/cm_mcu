@@ -48,6 +48,8 @@ void Print(const char* str);
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
+SemaphoreHandle_t xMonSem = NULL;
+
 static
 void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
 {
@@ -88,12 +90,22 @@ void MonitorTask(void *parameters)
   int current_error_cnt = 0;
   args->updateTick = xLastWakeTime; // initial value
 
+  // wait for the power to come up
+  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
+  if ( args->initfcn != NULL )
+    (*args->initfcn)();
+
+#ifdef I2C_PULLUP_BUG
+  bool good = false;
+#endif // I2C_PULLUP_BUG
   for (;;) {
+    while (xSemaphoreTake(xMonSem, (TickType_t) 10) == pdFALSE)
+      ;
+    char tmp[TMPBUFFER_SZ];
+#ifdef I2C_PULLUP_BUG
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next
     // rev of the board.
-    char tmp[TMPBUFFER_SZ];
-    static bool good = false;
     if ( getPSStatus(5) != PWR_ON) {
       if ( good ) {
         snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
@@ -101,17 +113,21 @@ void MonitorTask(void *parameters)
         SuppressedPrint(tmp, &current_error_cnt, &log);
         good = false;
       }
+      xSemaphoreGive(xMonSem);
       vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
       continue;
     }
     else {
       good = true;
     }
+#endif // I2C_PULLUP_BUG
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
     for ( uint8_t ps = 0; ps < args->n_devices; ++ ps ) {
+#ifdef I2C_PULLUP_BUG
       if ( getPSStatus(5) != PWR_ON)
         break;
+#endif // I2C_PULLUP_BUG
 
       // select the appropriate output for the mux
       data[0] = 0x1U<<args->devices[ps].mux_bit;
@@ -229,6 +245,8 @@ void MonitorTask(void *parameters)
         } // loop over commands
       } // loop over pages
     } // loop over power supplies
+    xSemaphoreGive(xMonSem);
+
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   } // infinite loop
 

@@ -173,7 +173,7 @@ header file. */
 //#define CLI_UART UART1_BASE // Zynq
 
 #define SYSTEM_STACK_SIZE 128
-
+#define I2C_PULLUP_BUG
 
 #define pdTICKS_TO_MS( xTicks )    ( ( ( TickType_t ) ( xTicks ) * 1000u ) / configTICK_RATE_HZ )
 

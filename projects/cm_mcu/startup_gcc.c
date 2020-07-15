@@ -94,7 +94,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // UART0 Rx and Tx
     UART1IntHandler,                         // UART1 Rx and Tx -- ZYNQ UART
     IntDefaultHandler,                      // SSI0 Rx and Tx
-	I2CSlave0Interrupt,                      // I2C0 Master and Slave
+    I2CSlave0Interrupt,                      // I2C0 Master and Slave
     IntDefaultHandler,                      // PWM Fault
     IntDefaultHandler,                      // PWM Generator 0
     IntDefaultHandler,                      // PWM Generator 1

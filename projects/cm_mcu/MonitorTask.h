@@ -9,9 +9,12 @@
 #define PROJECTS_CM_MCU_MONITORTASK_H_
 
 #include "common/smbus.h"
+#include "semphr.h"
 
 
 extern float pm_values[];
+
+extern SemaphoreHandle_t xMonSem;
 
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
 enum { PM_VOLTAGE, PM_NONVOLTAGE, PM_STATUS, PM_LINEAR11, PM_LINEAR16U, PM_LINEAR16S } pm_types ;
@@ -44,10 +47,11 @@ struct MonitorTaskArgs_t {
   tSMBus *smbus;
   volatile tSMBusStatus *smbus_status;
   volatile TickType_t updateTick;
+  void (*initfcn) (void);
 };
 // DC-DC converter
 #define NSUPPLIES_PS (5) // 5 devices, 2 pages each
-#define NCOMMANDS_PS 6 // number of entries in above array
+#define NCOMMANDS_PS 13 // number of entries in dcdc_ array
 #define NPAGES_PS    2 // number of pages on the power supplies.
 
 extern struct MonitorTaskArgs_t dcdc_args;

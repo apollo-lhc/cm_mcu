@@ -288,37 +288,45 @@ static BaseType_t power_ctl(int argc, char ** argv)
   else if ( strncmp(argv[1], "off", 3)  == 0 ) {
     message = PS_OFF; // turn off power supply
   }
-  else if ( strncmp(argv[1], "status", 5) == 0 ) { // report status to UART
+  else if (strncmp(argv[1], "clearfail", 9) == 0) {
+    message = PS_ANYFAIL_ALARM_CLEAR;
+  }
+  else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
-//    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "power_ctl:\r\nLowest ena: %d\r\n",
-//        getLowestEnabledPSPriority());
     bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
     bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
     static int i=0;
     if (i==0){
-    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, "pwr_ctl:\r\nVU_ENABLE:\t%d\r\n"
-        "KU_ENABLE:\t%d\r\n", vu_enable, ku_enable);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s:\r\nVU_ENABLE:\t%d\r\n"
+                         "KU_ENABLE:\t%d\r\n",
+                         argv[0], vu_enable, ku_enable);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "State machine state: %d\r\n", getPowerControlState());
     }
     for (; i < N_PS_OKS; ++i ) {
       enum ps_state j = getPSStatus(i);
       char *c;
       switch (j) {
-              case PWR_UNKNOWN:
-                c = "PWR_UNKNOWN";
-                break;
-              case PWR_ON:
-                c = "PWR_ON";
-                break;
-              case PWR_OFF:
-                c = "PWR_OFF";
-                break;
-              case PWR_DISABLED:
-                c = "PWR_DISABLED";
-                break;
-              default:
-                c = "UNKNOWN";
-                break;
-    }
+      case PWR_UNKNOWN:
+        c = "PWR_UNKNOWN";
+        break;
+      case PWR_ON:
+        c = "PWR_ON";
+        break;
+      case PWR_OFF:
+        c = "PWR_OFF";
+        break;
+      case PWR_DISABLED:
+        c = "PWR_DISABLED";
+        break;
+      case PWR_FAILED:
+        c = "PWR_FAILED";
+        break;
+      default:
+        c = "UNKNOWN";
+        break;
+      }
 
       copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%15s: %s\r\n",
           pin_names[oks[i].name],  c);
@@ -641,8 +649,8 @@ static BaseType_t ff_ctl(int argc, char ** argv)
       whichFF = NFIREFLIES;
     }
     else { // commands with arguments. The last argument is always which FF module.
-      whichFF = atoi(argv[argc-1]);
-      if (whichFF>=NFIREFLIES || (whichFF==0 && strncmp(argv[3],"0",1)!=0)){
+      whichFF = strtol(argv[argc-1], NULL, 10);
+      if (whichFF>=NFIREFLIES || (whichFF==0 && strncmp(argv[argc-1],"0",1)!=0)){
         snprintf(m+copied, SCRATCH_SIZE-copied, "%s: choose ff number less than %d\r\n",
             argv[0], NFIREFLIES);
         return pdFALSE;
@@ -808,6 +816,91 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
     whichfpga = 0;
     return pdFALSE;
   }
+}
+#include "common/smbus_units.h"
+void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
+              uint8_t snapshot[32], bool reset);
+
+typedef struct __attribute__((packed)) {
+  linear11_val_t v_in;
+  uint16_t v_out;
+  linear11_val_t i_out;
+  linear11_val_t i_out_max;
+  linear11_val_t duty_cycle;
+  linear11_val_t temperature;
+  linear11_val_t unused1;
+  linear11_val_t freq;
+  uint8_t v_out_status;
+  uint8_t i_out_status;
+  uint8_t input_status;
+  uint8_t temperature_status;
+  uint8_t cml_status;
+  uint8_t mfr_status;
+  uint8_t flash_status;
+  uint8_t unused[9];
+}  snapshot_t ;
+
+extern struct dev_i2c_addr_t pm_addrs_dcdc[];
+
+static
+void float_to_ints(float val, int *tens, int * fraction)
+{
+  *tens = val;
+  *fraction = ABS((val - *tens)*100.0);
+
+  return;
+}
+static BaseType_t snapshot(int argc, char ** argv)
+{
+  _Static_assert(sizeof(snapshot_t)==32, "sizeof snapshot_t");
+  int copied = 0;
+  int page = strtol(argv[1],NULL,10); // which LGA08D
+  int which = page/10;
+  page = page%10;
+  if ( page < 0 || page > 1 ) {
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: page %d must be between 0-1\r\n",
+        argv[0], page);
+    return pdFALSE;
+  }
+  if ( which <0 || which >4 ) {
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: device %d must be between 0-4\r\n",
+        argv[0], which);
+    return pdFALSE;
+  }
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: page %d of device %s\r\n", argv[0],
+      page, pm_addrs_dcdc[which].name);
+
+  bool reset = false;
+  int ireset = strtol(argv[2],NULL, 10);
+  if ( ireset == 1 )
+    reset = true;
+
+  uint8_t sn[32];
+  snapdump(&pm_addrs_dcdc[which],page,sn,reset);
+  snapshot_t *p0 = (snapshot_t*)&sn[0];
+  int tens, fraction;
+  float_to_ints(linear11_to_float(p0->v_in), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VIN  = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear16u_to_float(p0->v_out), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VOUT = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->i_out), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "IOUT = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->i_out_max), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "IOUT MAX = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->duty_cycle), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "duty cycle = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->temperature), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->freq), &tens, &fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "switching freq = %d.%02d\r\n", tens, fraction);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VOUT  STATUS: 0x%02x\r\n", p0->v_out_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "I0UT  STATUS: 0x%02x\r\n", p0->i_out_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "INPUT STATUS: 0x%02x\r\n", p0->input_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP  STATUS: 0x%02x\r\n", p0->temperature_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "CML   STATUS: 0x%02x\r\n", p0->cml_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "MFR   STATUS: 0x%02x\r\n", p0->mfr_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "flash STATUS: 0x%02x\r\n", p0->flash_status);
+  return pdFALSE;
 }
 
 // this command takes no arguments since there is only one command
@@ -1041,22 +1134,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
   }
   for (; i<num; ++i) {
     uint32_t word = (*arrptr)[i];
-
-//    uint16_t o_entry = (uint16_t)word;
-//    uint16_t o_errcode = (o_entry&ERRCODE_MASK)>>ERRDATA_OFFSET;
-//    uint16_t o_errdata = o_entry&ERRDATA_MASK;
-//    uint16_t o_counter = o_entry>>(16-COUNTER_OFFSET);
-//    uint16_t o_realcount = o_counter*COUNTER_UPDATE+1;
-//
-//    uint16_t entry   = EBUF_ENTRY(word);;
     uint16_t errcode = EBUF_ERRCODE(word);
-//    uint16_t counter = EBUF_COUNTER(word);
-//    uint16_t realcount = counter*COUNTER_UPDATE+1;
-//
-//    uint16_t timestamp = EBUF_ENTRY_TIMESTAMP(word);
-//    uint16_t days      = EBUF_ENTRY_TIMESTAMP_DAYS(word);
-//    uint16_t hours     = EBUF_ENTRY_TIMESTAMP_HOURS(word);
-//    uint16_t minutes   = EBUF_ENTRY_TIMESTAMP_MINS(word);
     // if this is a continuation and it's not the first entry we see
     if (errcode == EBUF_CONTINUATION && i != 0 ){
       uint16_t errdata = EBUF_DATA(word);
@@ -1423,49 +1501,49 @@ struct command_t commands[] = {
     { 
       "i2c_base", 
       i2c_ctl_set_dev, 
-      "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n",
-       1
+      "i2c_base <device>\r\n Set I2C controller number. Value between 0-9.\r\n", 
+      1
     },
     { 
-      "i2cr",
-      i2c_ctl_r,
+      "i2cr", 
+      i2c_ctl_r, 
       "i2cr <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n",
       2
     },
     {
-        "i2crr",
-        i2c_ctl_reg_r,
-        "i2crr <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n",
-        3
+      "i2crr",
+      i2c_ctl_reg_r,
+      "i2crr <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n",
+      3
     },
     {
-        "i2cw",
-        i2c_ctl_w,
-        "i2cw <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
-        3
+      "i2cw",
+      i2c_ctl_w,
+      "i2cw <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
+      3
     },
     {
-        "i2cwr",
-        i2c_ctl_reg_w,
-        "i2cwr <address> <reg> <number of bytes>\r\n Write I2C controller.\r\n",
-        4
+      "i2cwr",
+      i2c_ctl_reg_w,
+      "i2cwr <address> <reg> <number of bytes>\r\n Write I2C controller.\r\n",
+      4
     },
     {
-        "i2c_scan",
-        i2c_scan,
-        "i2c_scan\r\n Scan current I2C bus.\r\n",
-        0,
+      "i2c_scan",
+      i2c_scan,
+      "i2c_scan\r\n Scan current I2C bus.\r\n",
+      0,
     },
     {
-        "help",
-        help_command_fcn,
-        "help\r\n This help command\r\n",
-        -1
+      "help",
+      help_command_fcn,
+      "help\r\n This help command\r\n",
+      -1
     },
     {
         "pwr",
         power_ctl,
-        "pwr (on|off|status)\r\n Turn on or off all power.\r\n",
+        "pwr (on|off|status|clearfail)\r\n Turn on or off all power, get status or clear failures.\r\n",
         1
     },
     {
@@ -1479,6 +1557,12 @@ struct command_t commands[] = {
         psmon_ctl,
         "psmon <#>\r\n Displays a table showing the state of power supplies.\r\n",
         1
+    },
+    {
+        "snapshot",
+        snapshot,
+        "snapshot # (0|1)\r\n Dump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide if to reset snapshot.\r\n",
+        2
     },
     {
         "restart_mcu",
@@ -1518,13 +1602,13 @@ struct command_t commands[] = {
     {
         "stack_usage",
         stack_ctl,
-        "stack_usage \r\n Print out system stack high water mark.\r\n",
+        "stack_usage\r\n Print out system stack high water mark.\r\n",
         0,
     },
     {
         "task-stats",
         TaskStatsCommand,
-        "task-stats \r\n Displays a table showing the state of each FreeRTOS task\r\n",
+        "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n",
         0
     },
     {

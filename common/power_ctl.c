@@ -32,48 +32,46 @@ void Print(const char* ); // needs to be implemented in each project
 
 // if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
-  {  CTRL_K_VCCINT_PWR_EN, 1},
-  {  CTRL_V_VCCINT_PWR_EN, 1},
-  {  CTRL_VCC_1V8_PWR_EN,  2},
-  {  CTRL_VCC_3V3_PWR_EN,  2},
-  {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 3},
-  {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 3},
-  {  CTRL_K_MGTY_VCCAUX_PWR_EN,  3},
-  {  CTRL_K_MGTH_VCCAUX_PWR_EN,  3},
-  {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
-  {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
-  {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
-  {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
-  {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
-  {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
-  {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
-  {  CTRL_V_MGTY2_AVTT_PWR_EN, 5}
+    {  CTRL_K_VCCINT_PWR_EN, 1},
+    {  CTRL_V_VCCINT_PWR_EN, 1},
+    {  CTRL_VCC_1V8_PWR_EN,  2},
+    {  CTRL_VCC_3V3_PWR_EN,  2},
+    {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 3},
+    {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 3},
+    {  CTRL_K_MGTY_VCCAUX_PWR_EN,  3},
+    {  CTRL_K_MGTH_VCCAUX_PWR_EN,  3},
+    {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
+    {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
+    {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
+    {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
+    {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
+    {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
+    {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
+    {  CTRL_V_MGTY2_AVTT_PWR_EN, 5}
 };
 
 //if you update this you need to update N_PS_OKS too
 const
 struct gpio_pin_t oks[] = {
-  { K_VCCINT_PG_A, 1},
-  { K_VCCINT_PG_B, 1},
-  { V_VCCINT_PG_A, 1},
-  { V_VCCINT_PG_B, 1},
-  { VCC_1V8_PG,    2},
-  { VCC_3V3_PG,    2},
-  { V_MGTY1_AVCC_OK, 4},
-  { V_MGTY2_AVCC_OK, 4},
-  { K_MGTY_AVCC_OK,  4},
-  { K_MGTH_AVCC_OK,  4},
-  { K_MGTY_AVTT_OK,  5},
-  { K_MGTH_AVTT_OK,  5},
-  { V_MGTY1_AVTT_OK, 5},
-  { V_MGTY2_AVTT_OK, 5}
+    { K_VCCINT_PG_A, 1},
+    { K_VCCINT_PG_B, 1},
+    { V_VCCINT_PG_A, 1},
+    { V_VCCINT_PG_B, 1},
+    { VCC_1V8_PG,    2},
+    { VCC_3V3_PG,    2},
+    { V_MGTY1_AVCC_OK, 4},
+    { V_MGTY2_AVCC_OK, 4},
+    { K_MGTY_AVCC_OK,  4},
+    { K_MGTH_AVCC_OK,  4},
+    { K_MGTY_AVTT_OK,  5},
+    { K_MGTH_AVTT_OK,  5},
+    { V_MGTY1_AVTT_OK, 5},
+    { V_MGTY2_AVTT_OK, 5}
 };
 const int num_priorities = 5;
 
-// these arrays hold the current and old status of these power supplies
-static enum ps_state new_states[N_PS_OKS] = { PWR_UNKNOWN };
-static enum ps_state states[N_PS_OKS] = { PWR_UNKNOWN };
-
+//static enum ps_state new_states[N_PS_OKS] = { PWR_UNKNOWN };
+#ifdef NOTDEF
 // this variable holds the current lowest enabled power supply
 static int lowest_enabled_ps_prio = 0;
 
@@ -81,67 +79,68 @@ int getLowestEnabledPSPriority()
 {
   return lowest_enabled_ps_prio;
 }
+#endif // 0 
 
-
+// these arrays hold the current and old status of these power supplies
+static enum ps_state states[N_PS_OKS] = { PWR_UNKNOWN };
 enum ps_state getPSStatus(int i)
 {
   if ( i < 0 || i >= N_PS_OKS) return PWR_UNKNOWN;
   return states[i];
 }
-#if 0
+
 void setPSStatus(int i, enum ps_state theState)
 {
   if ( i < 0 || i >= N_PS_OKS) return;
   states[i] = theState;
 }
-#endif
-
+#ifdef NOTDEF 
 bool update_failed_ps(int prio){
 
-	bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-	bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-	bool failure = false;
+  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  bool failure = false;
 
-	for ( int o = 0; o < N_PS_OKS; ++o ) {
-	   if ( oks[o].priority <= prio ) {
-	     int8_t val = read_gpio_pin(oks[o].name);
-	     if ( val == 0 ) {
-	       // if this is a VU7P supply and dip switch says ignore it, continue
-	       if (!vu_enable  && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) ) {
-	     	  new_states[o] = PWR_DISABLED;
-	          continue;
-	       }
-	       // ditto for KU15P
-	       if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) ) {
-	     	  new_states[o] = PWR_DISABLED;
-	          continue;
-	       }
-	       // remember the VCC_ supplies
-	       if ((states[o]==PWR_ON)||(states[o]==PWR_UNKNOWN)){
-	     	  new_states[o]=PWR_FAILED;
-	     	  errbuffer_put(EBUF_PWR_FAILURE,o);
-	     	  failure=true;
-	       }
-	       else {
-	     	  new_states[o]=PWR_OFF;
-	       }
-	     }
-	     else {
-	     	new_states[o] = PWR_ON;
-	     }
-	   }
-	}
-	memcpy(states, new_states, sizeof(states));
-	return failure;
+  for ( int o = 0; o < N_PS_OKS; ++o ) {
+    if ( oks[o].priority <= prio ) {
+      int8_t val = read_gpio_pin(oks[o].name);
+      if ( val == 0 ) {
+        // if this is a VU7P supply and dip switch says ignore it, continue
+        if (!vu_enable  && (strncmp(pin_names[oks[o].name], "V_", 2) == 0) ) {
+          new_states[o] = PWR_DISABLED;
+          continue;
+        }
+        // ditto for KU15P
+        if ( !ku_enable && (strncmp(pin_names[oks[o].name], "K_", 2) == 0) ) {
+          new_states[o] = PWR_DISABLED;
+          continue;
+        }
+        // remember the VCC_ supplies
+        if ((states[o]==PWR_ON)||(states[o]==PWR_UNKNOWN)){
+          new_states[o]=PWR_FAILED;
+          errbuffer_put(EBUF_PWR_FAILURE,o);
+          failure=true;
+        }
+        else {
+          new_states[o]=PWR_OFF;
+        }
+      }
+      else {
+        new_states[o] = PWR_ON;
+      }
+    }
+  }
+  memcpy(states, new_states, sizeof(states));
+  return failure;
 }
-
+#endif // 0 
+#ifdef NOTDEF
 //
 // check the power supplies and turn them on one by one
 // Assert BLADE_POWER_OK if you are successful.
 // Return immediately if BLADE_POWER_EN is not asserted by the SM.
 bool set_ps()
 {
-  bool success = true; // return value
   // read two dip switches to see if we are powering either or both FPGAs
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
@@ -150,14 +149,13 @@ bool set_ps()
   bool blade_power_en = (read_gpio_pin(BLADE_POWER_EN)==1);
   if ( ! blade_power_en ) {
     write_gpio_pin(BLADE_POWER_OK, 0x0);
-    success = false;
-    return success;
+    return false;
   }
 
   // loop over the enables
   for ( int prio = 1; prio <= num_priorities; ++prio ) {
     // enable the supplies at the relevant priority
-    lowest_enabled_ps_prio = prio;
+    //lowest_enabled_ps_prio = prio;
     for ( int e = 0; e < N_PS_ENABLES; ++e ) {
       if ( enables[e].priority == prio ) {
         // if the supply is for VU7P and dip switch says ignore it, continue
@@ -174,12 +172,12 @@ bool set_ps()
     ShortDelay();
 
     // check power good at this level or higher priority (lower number)
-    bool ps_failure = update_failed_ps(prio);
+    //bool ps_failure = update_failed_ps(prio);
 
-     // loop over 'ok' bits
+    // loop over 'ok' bits
     if (  ps_failure ) {
 
-      Print("set_ps: Power supply check failed. ");
+      Print("turn_on_ps: Power supply check failed. ");
       Print("Turning off all supplies at this level or lower.\r\n");
       // turn off all supplies at current priority level or lower
       // that is probably overkill since they should not all be
@@ -200,14 +198,10 @@ bool set_ps()
       break;
     }
   } // loop over priorities
-
-  if ( success )
-    write_gpio_pin(BLADE_POWER_OK, 0x1);
-  else
-    write_gpio_pin(BLADE_POWER_OK, 0x0);
-  return success;
-
+  write_gpio_pin(BLADE_POWER_OK, 0x1);
+  return true;
 }
+
 // check_ps(Void)
 // in this function we check the status of the supplies. The function returns
 // true if all supplies it expects to be good, are good. That means that if one
@@ -252,8 +246,8 @@ check_ps(void)
   for ( int o = 0; o < N_PS_OKS; ++o ) {
     if ( (new_states[o] != states[o])  &&
         (states[o] != PWR_UNKNOWN) &&
-        (states[o] != PWR_DISABLED)
-        ) {
+        (states[o] != PWR_DISABLED)) {
+      errbuffer_put(EBUF_PWR_FAILURE,o);
       char tmp[128];
       snprintf(tmp, 128, "check_ps: New failed supply %s (level %d)\r\n",
                pin_names[oks[o].name], oks[o].priority);
@@ -268,7 +262,6 @@ check_ps(void)
     if ( states[o] == PWR_OFF ) {
       if ( oks[o].priority < min_good_prio)
         min_good_prio = oks[o].priority;
-
     }
   }
   if ( ! success ) {
@@ -286,7 +279,7 @@ check_ps(void)
 
   return success;
 }
-
+#endif // NOTDEF
 // turn off all power supplies in the proper order
 // de-assert BLADE_POWER_OK on successful exit.
 bool
@@ -317,17 +310,17 @@ disable_ps(void)
     while ( ! ready_to_proceed ) {
       bool all_ready = true;
       for ( int o = 0; o < N_PS_OKS; ++o ) {
-         if ( oks[o].priority >= prio ) {
-           int8_t val = read_gpio_pin(oks[o].name);
-           if ( val == 1 ) { // all supplies are supposed to be off now
-             all_ready = false;
-             states[o] = PWR_UNKNOWN;
-           }
-         }
-       } // loop over 'ok' bits
+        if ( oks[o].priority >= prio ) {
+          int8_t val = read_gpio_pin(oks[o].name);
+          if ( val == 1 ) { // all supplies are supposed to be off now
+            all_ready = false;
+            states[o] = PWR_UNKNOWN;
+          }
+        }
+      } // loop over 'ok' bits
       if ( all_ready) ready_to_proceed = true;
     }
-    lowest_enabled_ps_prio = prio;
+    //lowest_enabled_ps_prio = prio;
   } // loop over priorities
 
   // turn off POWER_OK when we are done
@@ -338,3 +331,33 @@ disable_ps(void)
   return success;
 }
 
+// check the power supplies and turn them on one by one
+// Assert BLADE_POWER_OK if you are successful.
+// Return immediately if BLADE_POWER_EN is not asserted by the SM.
+// Which supplies to enable is based on the ps_en_mask (passed in),
+// which references entries in the enables[] array.
+bool turn_on_ps(uint16_t ps_en_mask)
+{
+  // if blade_power_en is false, return with failure
+  bool blade_power_en = (read_gpio_pin(BLADE_POWER_EN)==1);
+  if ( ! blade_power_en ) {
+    write_gpio_pin(BLADE_POWER_OK, 0x0);
+    return false;
+  }
+
+  // loop over the enables
+  for ( int prio = 1; prio <= num_priorities; ++prio ) {
+    // enable the supplies at the relevant priority
+    for ( int e = 0; e < N_PS_ENABLES; ++e ) {
+      if ( enables[e].priority == prio ) {
+        // check if this supply is to be enabled
+        if ( ((1U<<e) & ps_en_mask ) == 0 ) // not in mask
+          continue;
+        write_gpio_pin(enables[e].name, 0x1);
+      }
+    }
+  }
+
+  write_gpio_pin(BLADE_POWER_OK, 0x1);
+  return true;
+}
