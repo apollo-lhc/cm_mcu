@@ -137,7 +137,7 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
       false, add, &extra_cmds[0], &page);
   if ( r ) {
-    Print("error in dcdc_initfcn (0)\r\n");
+    Print("error in snapdump (0)\r\n");
   }
 
   // actual command -- snapshot control copy NVRAM for reading
@@ -271,8 +271,8 @@ struct MonitorTaskArgs_t dcdc_args = {
     .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
-    .initfcn = &dcdc_initfcn,
-    //.initfcn = NULL,
+    //.initfcn = &dcdc_initfcn,
+    .initfcn = NULL,
 };
 
 
