@@ -172,7 +172,7 @@ void EEPROMTask(void *parameters);
 #define SOFTUART_TEST_RAW         0x7
 
 extern QueueHandle_t xSoftUartQueue;
-void SoftUartTask(void *parameters);
+void ZynqMonTask(void *parameters);
 
 #ifdef SUART_TEST_MODE
 void setSUARTTestData(uint8_t sensor, uint16_t value);

@@ -261,7 +261,7 @@ int main( void )
   xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(EEPROMTask,    "EPRM",  configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
   xTaskCreate(InitTask,      "INIT",  configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
-  xTaskCreate(SoftUartTask,  "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
+  xTaskCreate(ZynqMonTask,  "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
 
 
   // -------------------------------------------------
