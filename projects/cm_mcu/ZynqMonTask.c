@@ -1,5 +1,5 @@
 /*
- * SoftUartTask.c
+ * ZynqMonTask.c
  *
  *  Created on: Jan 3, 2020
  *      Author: wittich
@@ -27,6 +27,9 @@
 
 // Data Format
 // https://github.com/apollo-lhc/SM_ZYNQ_FW/blob/develop/src/CM_interface/CM_Monitoring_data_format.txt
+//
+// Register List
+// See Google Docs, 'CM uC Sensor register map'
 
 #define SENSOR_MESSAGE_START_OF_FRAME_NIB 2
 #define SENSOR_MESSAGE_DATA_FRAME_NIB     0
@@ -101,7 +104,7 @@ extern uint32_t g_ui32SysClock;
 
 QueueHandle_t xSoftUartQueue;
 
-void SoftUartTask(void *parameters)
+void ZynqMonTask(void *parameters)
 {
   // Setup
   // initialize to the current tick time
@@ -273,28 +276,23 @@ void SoftUartTask(void *parameters)
           __fp16 f;
         } convert_16_t;
         // MonitorTask values -- power supply
-        const int offsetMonitor = 32;
-        const int num_uart_psmon_registers = 8; // ugh
-        int offset = offsetMonitor;
+        // this indirection list is required because of a mistake
+        // made when initially putting together the register list.
+        const size_t offsets[] = {32, 40, 48, 56, 160, 168, 64, 72, 80, 88};
         for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
-          for (int l = 0; l < dcdc_args.n_pages;
-               ++l) { // loop over register pages
-            for (int k = 0; k < dcdc_args.n_commands;
-                 ++k) { // loop over commands
-              // HACK -- skip status command
-              if (k == 5)
-                continue;
+          for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
+            for (int k = 0; k < 5; ++k) { // loop over FIRST FIVE commands
               int index = j * (dcdc_args.n_commands * dcdc_args.n_pages) +
                           l * dcdc_args.n_commands + k;
               convert_16_t u;
               u.f = dcdc_args.pm_values[index];
-              int reg = offset + k;
+              if ( u.f < -900.f ) u.f = __builtin_nanf("");
+              int reg = offsets[j*2+l] + k;
               format_data(reg, u.us, message);
               for (int i = 0; i < 4; ++i) {
                 SoftUARTCharPut(&g_sUART, message[i]);
               }
             }
-            offset += num_uart_psmon_registers;
           }
         }
         // ADC values
@@ -314,6 +312,7 @@ void SoftUartTask(void *parameters)
         for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
           convert_16_t u;
           u.f = fpga_args.pm_values[j];
+          if ( u.f < -900.f ) u.f = __builtin_nanf("");
           format_data(j + offsetFPGA, u.us, message);
           for (int i = 0; i < 4; ++i) {
             SoftUARTCharPut(&g_sUART, message[i]);
