@@ -158,76 +158,77 @@ void PowerSupplyTask(void *parameters)
     // instead it's in the POWER_ON state (e.g.)
     enum power_system_state nextState;
     switch (currentState) {
-    case INIT: {
-      // only run on first boot
-      if (blade_power_enable) {
-        turn_on_ps(supply_en_mask);
-        errbuffer_put(EBUF_POWER_ON, 0);
-        nextState = POWER_ON;
-        supply_off = false; 
+      case INIT: {
+        // only run on first boot
+        if (blade_power_enable) {
+          turn_on_ps(supply_en_mask);
+          errbuffer_put(EBUF_POWER_ON, 0);
+          nextState = POWER_ON;
+          supply_off = false;
+        }
+        else {
+          nextState = POWER_OFF;
+        }
+        break;
       }
-      else {
-        nextState = POWER_OFF;
-      }
-      break;
-    }
-    case POWER_ON: {
-      if (supply_off) {
-        // log erroring supplies
-        failed_mask = (~supply_bitset) & supply_ok_mask;
-        char tmp[64];
-        snprintf(tmp, 64, "failure set: fail, supply_mask,bitset =  %x,%x,%x\r\n",
-                 failed_mask, supply_ok_mask, supply_bitset);
-        Print(tmp);
+      case POWER_ON: {
+        if (supply_off) {
+          // log erroring supplies
+          failed_mask = (~supply_bitset) & supply_ok_mask;
+          char tmp[64];
+          snprintf(tmp, 64,
+                   "failure set: fail, supply_mask,bitset =  %x,%x,%x\r\n",
+                   failed_mask, supply_ok_mask, supply_bitset);
+          Print(tmp);
 
-        errbuffer_put(EBUF_PWR_FAILURE, failed_mask);
-        // turn off all supplies
-        disable_ps();
-        power_supply_alarm = true;
-        nextState = POWER_FAILURE;
-      } 
-      else if (external_alarm) {
-        errbuffer_put(EBUF_POWER_OFF_TEMP,0);
-        // turn off all supplies
-        disable_ps();
-        nextState = POWER_FAILURE;
+          errbuffer_power_fail(failed_mask);
+          // turn off all supplies
+          disable_ps();
+          power_supply_alarm = true;
+          nextState = POWER_FAILURE;
+        }
+        else if (external_alarm) {
+          errbuffer_put(EBUF_POWER_OFF_TEMP, 0);
+          // turn off all supplies
+          disable_ps();
+          nextState = POWER_FAILURE;
+        }
+        else if (!blade_power_enable || cli_powerdown_request) {
+          disable_ps();
+          errbuffer_put(EBUF_POWER_OFF, 0);
+          nextState = POWER_OFF;
+        }
+        else {
+          nextState = POWER_ON;
+        }
+        break;
       }
-      else if (!blade_power_enable || cli_powerdown_request) {
-        disable_ps();
-        errbuffer_put(EBUF_POWER_OFF, 0);
-        nextState = POWER_OFF;
+      case POWER_OFF: {
+        if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
+            !power_supply_alarm) {
+          turn_on_ps(supply_en_mask);
+          errbuffer_put(EBUF_POWER_ON, 0);
+          nextState = POWER_ON;
+        }
+        else {
+          nextState = POWER_OFF;
+        }
+        break;
       }
-      else {
-        nextState = POWER_ON;
+      case POWER_FAILURE: { // we go through POWER_OFF state before turning on.
+        if (!power_supply_alarm && !external_alarm) { // errors cleared
+          nextState = POWER_OFF;
+        }
+        else { // still in failed state
+          nextState = POWER_FAILURE;
+        }
+        break;
       }
-      break;
-    }
-    case POWER_OFF: {
-      if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
-          !power_supply_alarm) {
-        turn_on_ps(supply_en_mask);
-        errbuffer_put(EBUF_POWER_ON,0);
-        nextState = POWER_ON;
+      default: {
+        // configASSERT(1 == 0);
+        nextState = INIT; // shut up debugger
+        break;
       }
-      else {
-        nextState = POWER_OFF;
-      }
-      break;
-    }
-    case POWER_FAILURE: { // we go through POWER_OFF state before turning on.
-      if (!power_supply_alarm && !external_alarm) { // errors cleared
-        nextState = POWER_OFF;
-      }
-      else { // still in failed state
-        nextState = POWER_FAILURE;
-      }
-      break;
-    }
-    default: {
-      //configASSERT(1 == 0);
-      nextState = INIT; // shut up debugger
-      break;
-    }
     }
 
     // update the ps_state variables, for external display

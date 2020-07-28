@@ -34,9 +34,9 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_MINBLK 2
 #define EBUF_MAXBLK 5
 
-#define ERRDATA_OFFSET 7	// Number of bits reserved for error data
-#define ERRCODE_OFFSET 5	// Number of bits reserved for error codes
-#define COUNTER_OFFSET (16-ERRDATA_OFFSET-ERRCODE_OFFSET)	// Number of bits reserved for message counter
+#define ERRDATA_OFFSET 8 // Number of bits reserved for error data
+#define ERRCODE_OFFSET 5 // Number of bits reserved for error codes
+#define COUNTER_OFFSET (16 - ERRDATA_OFFSET - ERRCODE_OFFSET) // Number of bits reserved for message counter
 
 #define ERRDATA_MASK ((1<<(ERRDATA_OFFSET))-1)
 #define ERRCODE_MASK ((1<<(ERRDATA_OFFSET+ERRCODE_OFFSET))-1-ERRDATA_MASK)
@@ -45,12 +45,12 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_COUNTER_UPDATE 4	//Number of repeated entries that initiates a hardware counter update (re-write entry)
 
 // error codes without data
-#define EBUF_RESTART			1
-#define EBUF_RESET_BUFFER		2
-#define EBUF_POWER_OFF			3
-#define EBUF_POWER_OFF_TEMP		4
-#define EBUF_POWER_ON			5
-#define EBUF_TEMP_NORMAL		6
+#define EBUF_RESTART        1
+#define EBUF_RESET_BUFFER   2
+#define EBUF_POWER_OFF      3
+#define EBUF_POWER_OFF_TEMP 4
+#define EBUF_POWER_ON       5
+#define EBUF_TEMP_NORMAL    6
 #define EBUF_HARDFAULT      7
 #define EBUF_ASSERT         8
 #define EBUF_STACKOVERFLOW  9
@@ -60,6 +60,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_CONTINUATION		10
 #define EBUF_PWR_FAILURE		11
 #define EBUF_TEMP_HIGH			12
+#define EBUF_MARK               13
 
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT
@@ -105,6 +106,8 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s );
 
 // specific error functions
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);
+void errbuffer_power_fail(uint16_t failmask);
+
 // timers used for FreeRTOS accounting
 void stopwatch_reset(void);
 uint32_t stopwatch_getticks();
