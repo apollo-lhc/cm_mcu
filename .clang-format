@@ -3,3 +3,4 @@ IndentWidth: 2
 BreakBeforeBraces: Stroustrup
 AllowShortFunctionsOnASingleLine: false
 IndentCaseLabels: true
+SortIncludes: false

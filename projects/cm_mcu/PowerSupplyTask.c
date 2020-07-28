@@ -104,27 +104,26 @@ void PowerSupplyTask(void *parameters)
     // first check for message on the queue and collect all messages.
     // non-blocking call.
     uint32_t message;
-    if (xQueueReceive(xPwrQueue, &message,
-                      0)) { // TODO: what if I receive more than one message
+    if (xQueueReceive(xPwrQueue, &message, 0)) { // TODO: more than one message
       switch (message) {
-      case PS_OFF:
-        cli_powerdown_request = true;
-        break;
-      case TEMP_ALARM:
-        external_alarm = true;
-        break;
-      case TEMP_ALARM_CLEAR:
-        external_alarm = false;
-        break;
-      case PS_ON:
-        cli_powerdown_request = false;
-        break;
-      case PS_ANYFAIL_ALARM_CLEAR:
-        power_supply_alarm = false;
-        failed_mask = 0x0U;
-        break;
-      default:
-        break;
+        case PS_OFF:
+          cli_powerdown_request = true;
+          break;
+        case TEMP_ALARM:
+          external_alarm = true;
+          break;
+        case TEMP_ALARM_CLEAR:
+          external_alarm = false;
+          break;
+        case PS_ON:
+          cli_powerdown_request = false;
+          break;
+        case PS_ANYFAIL_ALARM_CLEAR:
+          power_supply_alarm = false;
+          failed_mask = 0x0U;
+          break;
+        default:
+          break;
       }
     }
     // Check the state of BLADE_POWER_EN.
