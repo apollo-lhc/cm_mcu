@@ -261,10 +261,22 @@ void ZynqMonTask(void *parameters)
 #endif // SUART_TEST_MODE
       }      // end test mode
       else { // normal mode 
+        TickType_t now = pdTICKS_TO_MS( xLastWakeTime)/1000;
 
         // Fireflies
+        TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
+        bool stale = false;
+        if ( (now-last) > 60 ) {
+          stale = true;
+        }
         for (int j = 0; j < NFIREFLIES; ++j) {
-          int16_t temperature = getFFvalue(j);
+          int16_t temperature;
+          if (stale) {
+            temperature = -55;
+          }
+          else {
+            temperature = getFFvalue(j);
+          }
           format_data(j, temperature, message);
           // send data buffer
           for (int i = 0; i < 4; ++i) {
@@ -279,14 +291,27 @@ void ZynqMonTask(void *parameters)
         // this indirection list is required because of a mistake
         // made when initially putting together the register list.
         const size_t offsets[] = {32, 40, 48, 56, 160, 168, 64, 72, 80, 88};
+        // update times, in seconds. If the data is stale, send NaN
+        last = pdTICKS_TO_MS(dcdc_args.updateTick)/1000;
+        stale = false;
+        if ( (now-last) > 60 ) {
+          stale = true;
+        }
+
         for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
           for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
             for (int k = 0; k < 5; ++k) { // loop over FIRST FIVE commands
               int index = j * (dcdc_args.n_commands * dcdc_args.n_pages) +
                           l * dcdc_args.n_commands + k;
               convert_16_t u;
-              u.f = dcdc_args.pm_values[index];
-              if ( u.f < -900.f ) u.f = __builtin_nanf("");
+              if ( stale ) {
+                u.f = __builtin_nanf("");
+              }
+              else {
+                u.f = dcdc_args.pm_values[index];
+                if ( u.f < -900.f )
+                  u.f = __builtin_nanf("");
+              }
               int reg = offsets[j*2+l] + k;
               format_data(reg, u.us, message);
               for (int i = 0; i < 4; ++i) {
@@ -309,10 +334,23 @@ void ZynqMonTask(void *parameters)
         // THIS WILL BREAK IF WE HAVE MORE THAN ONE PAGE OR IF WE HAVE
         // MORE THAN A SIMPLE SET OF COMMANDS -- NOTA BENE
         const int offsetFPGA = 128;
+        // update times, in seconds. If the data is stale, send NaN
+        now = pdTICKS_TO_MS( xLastWakeTime)/1000;
+        last = pdTICKS_TO_MS(fpga_args.updateTick)/1000;
+        stale = false;
+        if ( (now-last) > 60 ) {
+          stale = true;
+        }
+
         for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
           convert_16_t u;
-          u.f = fpga_args.pm_values[j];
-          if ( u.f < -900.f ) u.f = __builtin_nanf("");
+          if ( stale ) {
+            u.f = __builtin_nanf("");
+          }
+          else {
+            u.f = fpga_args.pm_values[j];
+            if ( u.f < -900.f ) u.f = __builtin_nanf("");
+          }
           format_data(j + offsetFPGA, u.us, message);
           for (int i = 0; i < 4; ++i) {
             SoftUARTCharPut(&g_sUART, message[i]);
@@ -334,8 +372,7 @@ void ZynqMonTask(void *parameters)
         }
         // uptime
         const int offsetUPTIME = 192;
-        TickType_t now =
-            xTaskGetTickCount() / (configTICK_RATE_HZ * 60); // time in minutes
+        now = xLastWakeTime / (configTICK_RATE_HZ * 60); // time in minutes
         uint16_t now_16 = now & 0xFFFFU;                     // lower 16 bits
         format_data(offsetUPTIME, now_16, message);
         for (int i = 0; i < 4; ++i) {
