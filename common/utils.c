@@ -183,13 +183,13 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
       copied += snprintf(m+copied, s-copied, "(POR)");
     break;
   case EBUF_HARDFAULT:
-    copied += snprintf(m+copied, s-copied, "(ISRNUM= 0x%x)", errdata);
+    copied += snprintf(m+copied, s-copied, "(ISRNUM= 0x%02x)", errdata);
     break;
   case EBUF_PWR_FAILURE:
-    copied += snprintf(m+copied, s-copied, "(supply mask 0x%x)", errdata);
+    copied += snprintf(m+copied, s-copied, "(supply mask) 0x%02x", errdata);
     break;
   case EBUF_ASSERT:
-    copied += snprintf(m+copied, s-copied, "(pc 0x%x)", errdata);
+    copied += snprintf(m+copied, s-copied, "(pc) 0x%02x", errdata);
     break;
   default:
     if (errcode>EBUF_WITH_DATA){
@@ -282,21 +282,28 @@ void errbuffer_reset()
   return;
 }
 
+// Nota Bene
+// this _put (and _put_raw below) need to be checked if
+// the writing of codes only every EBUF_COUNTER_UPDATE
+// works with continuation codes.
+// Maybe this is an unneeded complication.
 void errbuffer_put(uint16_t errcode, uint16_t errdata)
 {
   const uint16_t oldcount = ebuf->counter;
-
+  // special handling for continuation code
   if (errcode == EBUF_CONTINUATION) {
-    ebuf->n_continue = ebuf->n_continue + 1;
+    ebuf->n_continue++;
+#if 0
     if((oldcount == 0) || (oldcount - 1) % EBUF_COUNTER_UPDATE == 0) {
       write_eeprom(errbuffer_entry(errcode, errdata), ebuf->head);
       ebuf->head = increase_head();
       write_eeprom(0, increase_head());
     }
     return;
+#endif
   }
-  // If duplicated error code, and error code should use counter (excluding ps failure)
-  if((errcode == ebuf->last) && (errcode != EBUF_PWR_FAILURE)) {
+  // If duplicated error code, and error code should use counter (excluding continuation)
+  if((errcode == ebuf->last) && (errcode != EBUF_CONTINUATION)) {
 
     // if counter is not a multiple of COUNTER_UPDATE, don't write new entry
     if(oldcount % EBUF_COUNTER_UPDATE != 0) {
@@ -338,8 +345,8 @@ void errbuffer_put(uint16_t errcode, uint16_t errdata)
 void errbuffer_put_raw(uint16_t errcode, uint16_t errdata)
 {
   uint16_t oldcount = ebuf->counter;
-  // If duplicated error code...
-  if(errcode == ebuf->last) {
+  // If duplicated error code (except continuation)...
+  if(errcode == ebuf->last && errcode != EBUF_CONTINUATION) {
 
     // if counter is not a multiple of COUNTER_UPDATE, don't write new entry
     if(oldcount % EBUF_COUNTER_UPDATE != 0) {

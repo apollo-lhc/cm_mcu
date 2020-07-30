@@ -144,7 +144,10 @@ header file. */
 #define APOLLO_ASSERT_RECORD()     \
     volatile void *pc;                  \
     GET_PC(pc);                \
-    errbuffer_put_raw(EBUF_ASSERT,0)
+    errbuffer_put_raw(EBUF_ASSERT, ((uint32_t)pc>>24)&0xFFU); \
+    errbuffer_put_raw(EBUF_CONTINUATION, ((uint32_t)pc>>16)&0xFFU); \
+    errbuffer_put_raw(EBUF_CONTINUATION, ((uint32_t)pc>>8)&0xFFU); \
+    errbuffer_put_raw(EBUF_CONTINUATION, (uint32_t)pc&0xFFU)
 
 #ifdef DEBUG
 #define APOLLO_ASSERT(exp) \

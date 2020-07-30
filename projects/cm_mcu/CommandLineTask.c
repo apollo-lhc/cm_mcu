@@ -1138,7 +1138,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
     // if this is a continuation and it's not the first entry we see
     if (errcode == EBUF_CONTINUATION && i != 0) {
       uint16_t errdata = EBUF_DATA(word);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, " %02u (0x%02x)", errdata, errdata);
+    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, " 0x%02x", errdata);
     }
     else {
       copied += errbuffer_get_messagestr(word, m + copied, SCRATCH_SIZE - copied);
@@ -1168,13 +1168,13 @@ static BaseType_t errbuff_info(int argc, char **argv)
   counter = errbuffer_counter();
   n_continue = errbuffer_continue();
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Capacity: 0x%8x words\r\n", cap);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Min address: 0x%8x\r\n", minaddr);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Max address: 0x%8x\r\n", maxaddr);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Head address: 0x%8x\r\n", head);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Last entry: 0x%x\r\n", last);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Message counter: 0x%x\r\n", counter);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Continue codes: 0x%x\r\n", n_continue);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Capacity:        %d words\r\n", cap);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Min address:     0x%08x\r\n", minaddr);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Max address:     0x%08x\r\n", maxaddr);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Head address:    0x%08x\r\n", head);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Last entry:      0x%0x\r\n", last);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Message counter: %d\r\n", counter);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Continue codes:  %d\r\n", n_continue);
 
   return pdFALSE;
 }
