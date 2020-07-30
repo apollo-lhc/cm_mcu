@@ -350,80 +350,107 @@ static BaseType_t power_ctl(int argc, char ** argv)
 }
 
 // takes 1-2 arguments
-static BaseType_t alarm_ctl(int argc, char ** argv)
+static 
+BaseType_t alarm_ctl(int argc, char **argv)
 {
   int s = SCRATCH_SIZE;
-  if ( argc < 2 ) {
+  if (argc < 2) {
     snprintf(m, s, "%s: need one or more arguments\r\n", argv[0]);
     return pdFALSE;
   }
 
   uint32_t message;
-  if ( strncmp(argv[1], "clear", 4) == 0 ) {
-    message = TEMP_ALARM_CLEAR_ALL; // turn on power supply
+  if (strncmp(argv[1], "clear", 4) == 0) {
+    message = ALM_CLEAR_ALL; // clear all alarms
     xQueueSendToBack(xAlmQueue, &message, pdMS_TO_TICKS(10));
     m[0] = '\0'; // no output from this command
 
     return pdFALSE;
   }
-  else if ( strncmp(argv[1], "status", 5) == 0 ) { // report status to UART
+  else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
-    copied += snprintf(m+copied,SCRATCH_SIZE-copied, "%s: ALARM status\r\n", argv[0]);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "%s: ALARM status\r\n", argv[0]);
     int32_t stat = getAlarmStatus();
     float ff_val = getAlarmTemperature(FF);
     float dcdc_val = getAlarmTemperature(DCDC);
     float fpga_val = getAlarmTemperature(FPGA);
     float tm4c_val = getAlarmTemperature(TM4C);
-    int ff_tens = ff_val; int ff_frac = ABS((ff_tens-ff_val))*100;
-    int fpga_tens = fpga_val; int fpga_frac = ABS((fpga_tens-fpga_val))*100;
-    int dcdc_tens = dcdc_val; int dcdc_frac = ABS((dcdc_tens-dcdc_val))*100;
-    int tm4c_tens = tm4c_val; int tm4c_frac = ABS((tm4c_tens-tm4c_val))*100;
-    //copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Temperature threshold: %02d.%02d\n\r",
+    int ff_tens = ff_val;
+    int ff_frac = ABS((ff_tens - ff_val)) * 100;
+    int fpga_tens = fpga_val;
+    int fpga_frac = ABS((fpga_tens - fpga_val)) * 100;
+    int dcdc_tens = dcdc_val;
+    int dcdc_frac = ABS((dcdc_tens - dcdc_val)) * 100;
+    int tm4c_tens = tm4c_val;
+    int tm4c_frac = ABS((tm4c_tens - tm4c_val)) * 100;
+    // copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Temperature threshold:
+    // %02d.%02d\n\r",
     //    tens,frac);
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Raw: 0x%08x\r\n", stat);
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
-        (stat&ALM_STAT_TM4C_OVERTEMP)?"ALARM":"GOOD",tm4c_tens,tm4c_frac);
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
-        (stat&ALM_STAT_FPGA_OVERTEMP)?"ALARM":"GOOD",fpga_tens,fpga_frac);
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
-        (stat&ALM_STAT_FIREFLY_OVERTEMP)?"ALARM":"GOOD",ff_tens,ff_frac);
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
-        (stat&ALM_STAT_DCDC_OVERTEMP)?"ALARM":"GOOD",dcdc_tens,dcdc_frac);
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08x\r\n", stat);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
+                       (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD",
+                       tm4c_tens, tm4c_frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
+                       (stat & ALM_STAT_FPGA_OVERTEMP) ? "ALARM" : "GOOD",
+                       fpga_tens, fpga_frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
+                       (stat & ALM_STAT_FIREFLY_OVERTEMP) ? "ALARM" : "GOOD",
+                       ff_tens, ff_frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
+                       (stat & ALM_STAT_DCDC_OVERTEMP) ? "ALARM" : "GOOD",
+                       dcdc_tens, dcdc_frac);
     configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
   }
-  else if ( strcmp(argv[1], "settemp") == 0 ) {
-	if (argc!=4){
-		snprintf(m,s, "Invalid command \r\n");
-		return pdFALSE;
-	}
-    float newtemp = (float)strtol(argv[3],NULL,10);
-    char* device = argv[2];
-    if(!strcmp(device,"ff")){setAlarmTemperature(FF,newtemp);
-    	snprintf(m,s, "%s: set Firefly alarm temperature to %s\r\n", argv[0], argv[3]);
-        return pdFALSE; }
-    if(!strcmp(device,"fpga")){ setAlarmTemperature(FPGA,newtemp);
-		snprintf(m,s, "%s: set FPGA alarm temperature to %s\r\n", argv[0], argv[3]);
-		return pdFALSE; }
-    if(!strcmp(device,"dcdc")){ setAlarmTemperature(DCDC,newtemp);
-		snprintf(m,s, "%s: set DCDC alarm temperature to %s\r\n", argv[0], argv[3]);
-		return pdFALSE; }
-	if(!strcmp(device,"tm4c")){ setAlarmTemperature(TM4C,newtemp);
-		snprintf(m,s, "%s: set TM4C alarm temperature to %s\r\n", argv[0], argv[3]);
-		return pdFALSE; }
-	else{ snprintf(m,s, "%s is not a valid device.\r\n", argv[2]);
-		return pdFALSE; }
+  else if (strcmp(argv[1], "settemp") == 0) {
+    if (argc != 4) {
+      snprintf(m, s, "Invalid command\r\n");
+      return pdFALSE;
+    }
+    float newtemp = (float)strtol(argv[3], NULL, 10);
+    char *device = argv[2];
+    if (!strcmp(device, "ff")) {
+      setAlarmTemperature(FF, newtemp);
+      snprintf(m, s, "%s: set Firefly alarm temperature to %s\r\n", argv[0],
+               argv[3]);
+      return pdFALSE;
+    }
+    if (!strcmp(device, "fpga")) {
+      setAlarmTemperature(FPGA, newtemp);
+      snprintf(m, s, "%s: set FPGA alarm temperature to %s\r\n", argv[0],
+               argv[3]);
+      return pdFALSE;
+    }
+    if (!strcmp(device, "dcdc")) {
+      setAlarmTemperature(DCDC, newtemp);
+      snprintf(m, s, "%s: set DCDC alarm temperature to %s\r\n", argv[0],
+               argv[3]);
+      return pdFALSE;
+    }
+    if (!strcmp(device, "tm4c")) {
+      setAlarmTemperature(TM4C, newtemp);
+      snprintf(m, s, "%s: set TM4C alarm temperature to %s\r\n", argv[0],
+               argv[3]);
+      return pdFALSE;
+    }
+    else {
+      snprintf(m, s, "%s is not a valid device.\r\n", argv[2]);
+      return pdFALSE;
+    }
   }
   else {
-    snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1] );
+    snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1]);
     return pdFALSE;
   }
   return pdFALSE;
 }
-
-
-
 
 static BaseType_t i2c_scan(int argc, char ** argv)
 {
@@ -987,40 +1014,41 @@ static BaseType_t fpga_reset(int argc, char ** argv)
 }
 
 // This command takes 1 arg, the address
-static BaseType_t eeprom_read(int argc, char ** argv)
+static BaseType_t eeprom_read(int argc, char **argv)
 {
   int copied = 0;
 
   uint32_t addr;
-  addr = strtol(argv[1],NULL,16);
+  addr = strtol(argv[1], NULL, 16);
   uint32_t block = EEPROMBlockFromAddr(addr);
 
   uint64_t data = read_eeprom_multi(addr);
-  uint32_t data2 = (uint32_t)(data>>32);
+  uint32_t data2 = (uint32_t)(data >> 32);
   uint32_t data1 = (uint32_t)data;
-  copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-		     "Data read from EEPROM block %d: %08x %08x\r\n",
-		     block,data1,data2);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                     "Data read from EEPROM block %d: %08x %08x\r\n", block,
+                     data1, data2);
 
   return pdFALSE;
 }
 
 // This command takes 2 args, the address and 4 bytes of data to be written
-static BaseType_t eeprom_write(int argc, char ** argv)
+static BaseType_t eeprom_write(int argc, char **argv)
 {
   int copied = 0;
 
   uint32_t data, addr;
-  data = strtoul(argv[2],NULL,16);
-  addr = strtoul(argv[1],NULL,16);
+  data = strtoul(argv[2], NULL, 16);
+  addr = strtoul(argv[1], NULL, 16);
   uint32_t block = EEPROMBlockFromAddr(addr);
-  if((block==1)||((EBUF_MINBLK<=block)&&(block<=EBUF_MAXBLK))){
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Please choose available block\r\n");
+  if ((block == 1) || ((EBUF_MINBLK <= block) && (block <= EBUF_MAXBLK))) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Please choose available block\r\n");
     return pdFALSE;
   }
-  write_eeprom(data,addr);
-  copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-		     "Data written to EEPROM block %d: %08x\r\n", block,data);
+  write_eeprom(data, addr);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                     "Data written to EEPROM block %d: %08x\r\n", block, data);
 
   return pdFALSE;
 }
@@ -1049,8 +1077,9 @@ static BaseType_t set_board_id(int argc, char ** argv)
   data = strtoul(argv[3],NULL,16);
   uint64_t block = EEPROMBlockFromAddr(addr);
   if (block!=1){
-	  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Please input address in Block 1\r\n");
-	  return pdFALSE;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Please input address in Block 1\r\n");
+    return pdFALSE;
   }
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK,block,pass);
@@ -1063,7 +1092,8 @@ static BaseType_t set_board_id(int argc, char ** argv)
   xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
 
   if(pass!=0x12345678){
-	  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Wrong password. Type eeprom_info to get password.");
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Wrong password. Type eeprom_info to get password.");
   }	// data not printing correctly?
 
   return pdFALSE;
@@ -1196,8 +1226,8 @@ static BaseType_t stack_ctl(int argc, char **argv)
   return pdFALSE;
 }
 
-static
-void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
+static 
+void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
 {
   TaskStatus_t *pxTaskStatusArray;
   volatile UBaseType_t uxArraySize, x;
@@ -1212,51 +1242,49 @@ void TaskGetRunTimeStats( char *pcWriteBuffer, size_t bufferLength )
 
   // Allocate a TaskStatus_t structure for each task.  An array could be
   // allocated statically at compile time.
-  pxTaskStatusArray = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
+  pxTaskStatusArray = pvPortMalloc(uxArraySize * sizeof(TaskStatus_t));
 
-  if( pxTaskStatusArray != NULL )
-  {
+  if (pxTaskStatusArray != NULL) {
     // Generate raw status information about each task.
-    uxArraySize = uxTaskGetSystemState( pxTaskStatusArray, uxArraySize, &ulTotalRunTime );
+    uxArraySize =
+        uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, &ulTotalRunTime);
 
     // For percentage calculations.
     ulTotalRunTime /= 100UL;
 
     // Avoid divide by zero errors.
-    if( ulTotalRunTime > 0 )
-    {
+    if (ulTotalRunTime > 0) {
       // For each populated position in the pxTaskStatusArray array,
       // format the raw data as human readable ASCII data
-      for( x = 0; x < uxArraySize; x++ )
-      {
+      for (x = 0; x < uxArraySize; x++) {
         // What percentage of the total run time has the task used?
         // This will always be rounded down to the nearest integer.
         // ulTotalRunTimeDiv100 has already been divided by 100.
-        uint32_t ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
+        uint32_t ulStatsAsPercentage =
+            pxTaskStatusArray[x].ulRunTimeCounter / ulTotalRunTime;
 
-        if( ulStatsAsPercentage > 0UL )
-        {
-          snprintf( pcWriteBuffer, bufferLength, "%s\t%12u\t%2u%%\r\n",
-              pxTaskStatusArray[ x ].pcTaskName, pxTaskStatusArray[ x ].ulRunTimeCounter, ulStatsAsPercentage );
+        if (ulStatsAsPercentage > 0UL) {
+          snprintf(pcWriteBuffer, bufferLength, "%s\t%12u\t%2u%%\r\n",
+                   pxTaskStatusArray[x].pcTaskName,
+                   pxTaskStatusArray[x].ulRunTimeCounter, ulStatsAsPercentage);
         }
-        else
-        {
+        else {
           // If the percentage is zero here then the task has
           // consumed less than 1% of the total run time.
-          snprintf( pcWriteBuffer, bufferLength, "%s\t%12u\t<1%%\r\n", pxTaskStatusArray[ x ].pcTaskName, pxTaskStatusArray[ x ].ulRunTimeCounter );
+          snprintf(pcWriteBuffer, bufferLength, "%s\t%12u\t<1%%\r\n",
+                   pxTaskStatusArray[x].pcTaskName,
+                   pxTaskStatusArray[x].ulRunTimeCounter);
         }
-        size_t added = strlen( ( char * ) pcWriteBuffer );
+        size_t added = strlen((char *)pcWriteBuffer);
         pcWriteBuffer += added;
-        bufferLength  -= added;
+        bufferLength -= added;
       }
     }
 
     // The array is no longer needed, free the memory it consumes.
-    vPortFree( pxTaskStatusArray );
+    vPortFree(pxTaskStatusArray);
   }
 }
-
-
 
 static BaseType_t uptime(int argc, char ** argv)
 {
@@ -1317,12 +1345,12 @@ static BaseType_t suart_ctl(int argc, char **argv)
     if (strncmp(argv[1], "on", 2) == 0) {
       message = SOFTUART_ENABLE_TRANSMIT;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-			 "%s: transmit on\r\n", argv[0]);
+                         "%s: transmit on\r\n", argv[0]);
     }
     else if (strncmp(argv[1], "off", 3) == 0) {
       message = SOFTUART_DISABLE_TRANSMIT;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-			 "%s: transmit off\r\n", argv[0]);
+                         "%s: transmit off\r\n", argv[0]);
     }
 #ifdef SUART_TEST_MODE
     else if (strncmp(argv[1], "debug1", 6) == 0) {
@@ -1338,12 +1366,12 @@ static BaseType_t suart_ctl(int argc, char **argv)
     else if (strncmp(argv[1], "debug2", 6) == 0) {
       message = SOFTUART_TEST_INCREMENT;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-			 "%s: debug mode 2 (increment)\r\n", argv[0]);
+                         "%s: debug mode 2 (increment)\r\n", argv[0]);
     }
     else if (strncmp(argv[1], "normal", 5) == 0) {
       message = SOFTUART_TEST_OFF;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-			 "%s: regular mode\r\n", argv[0]);
+                         "%s: regular mode\r\n", argv[0]);
     }
     else if (strncmp(argv[1], "sendone", 7) == 0) {
       message = SOFTUART_TEST_SEND_ONE;
