@@ -8,12 +8,13 @@
 
 float linear11_to_float(linear11_val_t t)
 {
+  // can't use bit shifts here as mantissa is often negative
   return t.linear.base * pow(2, t.linear.mantissa);
 }
 
 float linear16u_to_float(uint16_t t )
 {
-  const int mantissa = -13;
+  const int mantissa = -13; // can't use shifts here since <0
   return 1.0*t*pow(2,mantissa);
 }
 
