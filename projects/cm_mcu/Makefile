@@ -84,6 +84,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/i2c_reg.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/uart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/utils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/clocksynth.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/softuart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o

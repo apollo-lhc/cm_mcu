@@ -44,6 +44,8 @@
 #include "CommandLineTask.h"
 #include "Tasks.h"
 
+#include "common/clocksynth.h"
+
 #ifdef DEBUG_CON
 // prototype of mutex'd print
 # define DPRINT(x) Print(x)
@@ -579,6 +581,27 @@ static BaseType_t bl_ctl(int argc, char ** argv)
 
   // the above points to a memory location in flash.
   // shut up compiler warning. This will never get called
+  return pdFALSE;
+}
+
+// this command takes one argument
+static BaseType_t clock_ctl(int argc, char ** argv)
+{
+  static int iter = 0;
+  int val = (int)strtol(argv[1], NULL, 10); // interpret argument as base-10 number
+  int copied = 0;
+  if ( iter == 0 )
+    copied = snprintf(m+copied, SCRATCH_SIZE-copied, "%s: %d passed in\r\n", argv[0], val);
+  // ... extra commands that copy its output to the m buffer
+  // ... if we need to call this function again return pdTRUE and use some sort of static variable
+  // to keep track of which entry you are in
+  for ( ; iter < 100; ++iter) {
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: example\r\n");
+    if ( SCRATCH_SIZE-copied < 20 ) {
+      return pdTRUE;
+    }
+  }
+  iter = 0; // reset iter on final exit
   return pdFALSE;
 }
 
@@ -1430,6 +1453,12 @@ struct command_t commands[] = {
         bl_ctl,
         "bootloader\r\n Call the boot loader\r\n",
         0
+    },
+    {
+        "clock",
+        clock_ctl,
+        "clock\r\n control the clock synthesizer\r\n",
+        1
     },
     {
         "eeprom_info",
