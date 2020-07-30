@@ -25,7 +25,6 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
-#define APOLLO10_HACK
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 
