@@ -440,6 +440,11 @@ void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc)
   return;
 }
 
+void errbuffer_power_fail(uint16_t failmask)
+{
+  errbuffer_put(EBUF_PWR_FAILURE, (failmask >> 8) & 0xFFU);
+  errbuffer_put(EBUF_CONTINUATION, failmask & 0xFFU);
+}
 
 // These register locations are defined by the ARM Cortex-M4F
 // specification and do not depend on the TM4C1290NCPDT
