@@ -25,10 +25,10 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
+#define APOLLO10_HACK
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 
-extern QueueHandle_t xLedQueue;
 
 void Print(const char *str);
 // local sprintf prototype
@@ -84,16 +84,19 @@ void PowerSupplyTask(void *parameters)
   }
   #ifdef APOLLO10_HACK
   // APOLLO 10 HACK
-  supply_mask &= ~(1<<6);
-  supply_mask &= ~(1<<7);
-  supply_mask &= ~(1<<8);
-  supply_mask &= ~(1<<9);
-  supply_mask &= ~(1<<10);
-  supply_mask &= ~(1<<11);
-  supply_mask &= ~(1<<12);
-  supply_mask &= ~(1<<13);
+  // this set of mask hacks enables the VU VCCINT and VCCAUX to be on
+  // but others (AVTT and AVCC) to be off
+  supply_ok_mask &= ~(1<<6);
+  supply_ok_mask &= ~(1<<7);
+  supply_ok_mask &= ~(1<<12);
+  supply_ok_mask &= ~(1<<13);
+
+  supply_en_mask &= ~(1<<8);
+  supply_en_mask &= ~(1<<9);
+  supply_en_mask &= ~(1<<14);
+  supply_en_mask &= ~(1<<15);
   char tmp[64];
-  snprintf(tmp, 64, "PowerSupplyTask: hack mask is %x\r\n", supply_mask);
+  snprintf(tmp, 64, "PowerSupplyTask: hack mask is %x\r\n", supply_ok_mask);
   Print(tmp);
   #endif // APOLLO10_HACK
 
@@ -104,7 +107,7 @@ void PowerSupplyTask(void *parameters)
     // first check for message on the queue and collect all messages.
     // non-blocking call.
     uint32_t message;
-    if (xQueueReceive(xPwrQueue, &message, 0)) { // TODO: more than one message
+    if (xQueueReceive(xPwrQueue, &message, 0)) { // TODO: what about > 1 message
       switch (message) {
         case PS_OFF:
           cli_powerdown_request = true;

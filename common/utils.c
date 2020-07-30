@@ -183,13 +183,13 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s )
       copied += snprintf(m+copied, s-copied, "(POR)");
     break;
   case EBUF_HARDFAULT:
-    copied += snprintf(m+copied, s-copied, "(ISRNUM= 0x%x)", errdata);
+    copied += snprintf(m+copied, s-copied, "(ISRNUM= 0x%02x)", errdata);
     break;
   case EBUF_PWR_FAILURE:
-    copied += snprintf(m+copied, s-copied, "(supply mask 0x%x)", errdata);
+    copied += snprintf(m+copied, s-copied, "(supply mask) 0x%02x", errdata);
     break;
   case EBUF_ASSERT:
-    copied += snprintf(m+copied, s-copied, "(pc 0x%x)", errdata);
+    copied += snprintf(m+copied, s-copied, "(pc) 0x%02x", errdata);
     break;
   default:
     if (errcode>EBUF_WITH_DATA){

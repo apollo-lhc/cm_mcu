@@ -1138,7 +1138,7 @@ static BaseType_t errbuff_out(int argc, char **argv)
     // if this is a continuation and it's not the first entry we see
     if (errcode == EBUF_CONTINUATION && i != 0) {
       uint16_t errdata = EBUF_DATA(word);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, " %02u (0x%02x)", errdata, errdata);
+    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, " 0x%02x", errdata);
     }
     else {
       copied += errbuffer_get_messagestr(word, m + copied, SCRATCH_SIZE - copied);
