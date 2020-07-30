@@ -282,6 +282,11 @@ void errbuffer_reset()
   return;
 }
 
+// Nota Bene
+// this _put (and _put_raw below) need to be checked if
+// the writing of codes only every EBUF_COUNTER_UPDATE
+// works with continuation codes.
+// Maybe this is an unneeded complication.
 void errbuffer_put(uint16_t errcode, uint16_t errdata)
 {
   const uint16_t oldcount = ebuf->counter;
