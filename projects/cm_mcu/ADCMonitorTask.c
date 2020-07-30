@@ -45,6 +45,7 @@ struct ADC_Info_t {
   int channel; // which of the 20 ADC channels on the TM4C1290NCPDT on Apollo CM v1
   const char* name; // name
   float scale; // scaling, if needed, for signals bigger than 2.5V
+  float target_value;
 };
 
 // parameters for how data is organized in the fADC arrays and how the
@@ -63,27 +64,27 @@ struct ADC_Info_t {
 // channel sensor.
 static
 struct ADC_Info_t ADCs[] = {
-    {ADC_CTL_CH12, "VCC_12V", 6.},
-    {ADC_CTL_CH13, "VCC_2V5", 2.},
-    {ADC_CTL_CH14, "VCC_M3V3", 2.},
-    {ADC_CTL_CH16, "VCC_3V3", 2.},
-    {ADC_CTL_CH7,  "VCC_1V8", 1.},
-    {ADC_CTL_CH15, "VCC_M1V8", 1.},
-    {ADC_CTL_CH3,  "V_VCCINT", 1.},
-    {ADC_CTL_CH8,  "K_VCCINT", 1.},
-    {ADC_CTL_CH0,  "V_MGTY1_AVTT", 1.},
-    {ADC_CTL_CH19, "V_MGTY2_AVTT", 1.},
-    {ADC_CTL_CH11, "K_MGTH_AVTT", 1.},
-    {ADC_CTL_CH4,  "K_MGTY_AVTT", 1.},
-    {ADC_CTL_CH2,  "V_MGTY1_VCCAUX", 1.},
-    {ADC_CTL_CH17, "V_MGTY2_VCCAUX", 1.},
-    {ADC_CTL_CH6,  "K_MGTY_VCCAUX", 1.},
-    {ADC_CTL_CH9,  "K_MGTH_VCCAUX", 1.},
-    {ADC_CTL_CH1,  "V_MGTY1_AVCC", 1.},
-    {ADC_CTL_CH18, "V_MGTY2_AVCC", 1.},
-    {ADC_CTL_CH5,  "K_MGTY_AVCC", 1.},
-    {ADC_CTL_CH10, "K_MGTH_AVCC", 1.},
-    {ADC_CTL_TS,   "TM4C_TEMP", 1.}, // this one is special, temp in C
+    {ADC_CTL_CH12, "VCC_12V", 6., 12.},
+    {ADC_CTL_CH13, "VCC_2V5", 2., 2.5},
+    {ADC_CTL_CH14, "VCC_M3V3", 2., 3.3},
+    {ADC_CTL_CH16, "VCC_3V3", 2., 3.3},
+    {ADC_CTL_CH7,  "VCC_1V8", 1., 1.8},
+    {ADC_CTL_CH15, "VCC_M1V8", 1., 1.8},
+    {ADC_CTL_CH3,  "V_VCCINT", 1., 0.85},
+    {ADC_CTL_CH8,  "K_VCCINT", 1., 0.85},
+    {ADC_CTL_CH0,  "V_MGTY1_AVTT", 1.2},
+    {ADC_CTL_CH19, "V_MGTY2_AVTT", 1.2},
+    {ADC_CTL_CH11, "K_MGTH_AVTT", 1.2},
+    {ADC_CTL_CH4,  "K_MGTY_AVTT", 1.2},
+    {ADC_CTL_CH2,  "V_MGTY1_VCCAUX", 1.8},
+    {ADC_CTL_CH17, "V_MGTY2_VCCAUX", 1.8},
+    {ADC_CTL_CH6,  "K_MGTY_VCCAUX", 1.8},
+    {ADC_CTL_CH9,  "K_MGTH_VCCAUX", 1.8},
+    {ADC_CTL_CH1,  "V_MGTY1_AVCC", 0.90},
+    {ADC_CTL_CH18, "V_MGTY2_AVCC", 0.90},
+    {ADC_CTL_CH5,  "K_MGTY_AVCC", 0.90},
+    {ADC_CTL_CH10, "K_MGTH_AVCC", 0.90},
+    {ADC_CTL_TS,   "TM4C_TEMP", 1., 0}, // this one is special, temp in C
 };
 
 static __fp16 fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
@@ -100,6 +101,12 @@ float getADCvalue(const int i)
 {
   configASSERT(i>=0&&i<ADC_CHANNEL_COUNT);
   return fADCvalues[i];
+}
+
+float getADCtargetValue(const int i)
+{
+  configASSERT(i >= 0 && i < ADC_CHANNEL_COUNT);
+  return ADCs[i].target_value;
 }
 
 
