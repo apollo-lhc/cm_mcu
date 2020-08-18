@@ -372,39 +372,36 @@ BaseType_t alarm_ctl(int argc, char **argv)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "%s: ALARM status\r\n", argv[0]);
     int32_t stat = getAlarmStatus();
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08x\r\n", stat);
+
     float ff_val = getAlarmTemperature(FF);
-    float dcdc_val = getAlarmTemperature(DCDC);
-    float fpga_val = getAlarmTemperature(FPGA);
-    float tm4c_val = getAlarmTemperature(TM4C);
-    int ff_tens = ff_val;
-    int ff_frac = ABS((ff_tens - ff_val)) * 100;
-    int fpga_tens = fpga_val;
-    int fpga_frac = ABS((fpga_tens - fpga_val)) * 100;
-    int dcdc_tens = dcdc_val;
-    int dcdc_frac = ABS((dcdc_tens - dcdc_val)) * 100;
-    int tm4c_tens = tm4c_val;
-    int tm4c_frac = ABS((tm4c_tens - tm4c_val)) * 100;
-    // copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Temperature threshold:
-    // %02d.%02d\n\r",
-    //    tens,frac);
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08x\r\n", stat);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
-                       (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD",
-                       tm4c_tens, tm4c_frac);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
-                       (stat & ALM_STAT_FPGA_OVERTEMP) ? "ALARM" : "GOOD",
-                       fpga_tens, fpga_frac);
+    int tens, frac;
+    float_to_ints(ff_val, &tens, &frac);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
                        (stat & ALM_STAT_FIREFLY_OVERTEMP) ? "ALARM" : "GOOD",
-                       ff_tens, ff_frac);
+                       tens, frac);
+
+    float fpga_val = getAlarmTemperature(FPGA);
+    float_to_ints(fpga_val, &tens, &frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
+                       (stat & ALM_STAT_FPGA_OVERTEMP) ? "ALARM" : "GOOD",
+                       tens, frac);
+
+    float dcdc_val = getAlarmTemperature(DCDC);
+    float_to_ints(dcdc_val, &tens, &frac);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
                        (stat & ALM_STAT_DCDC_OVERTEMP) ? "ALARM" : "GOOD",
-                       dcdc_tens, dcdc_frac);
+                       tens, frac);
+
+    float tm4c_val = getAlarmTemperature(TM4C);
+    float_to_ints(tm4c_val, &tens, &frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
+                       (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD",
+                       tens, frac);
     configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
@@ -537,9 +534,8 @@ static BaseType_t psmon_ctl(int argc, char ** argv)
     for (int page = 0; page < dcdc_args.n_pages; ++page ) {
       float val = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
                                       +page*dcdc_args.n_commands+i1];
-      int tens = val;
-      int frac = ABS((val - tens)*100.0);
-
+      int tens, frac;
+      float_to_ints(val, &tens, &frac);
       copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VALUE %02d.%02d\t", tens, frac );
     }
     copied += snprintf(m+copied, SCRATCH_SIZE-copied, "\r\n");
@@ -561,8 +557,8 @@ static BaseType_t adc_ctl(int argc, char ** argv)
   }
   for ( ; whichadc < 21; ++whichadc ) {
     float val = getADCvalue(whichadc);
-    int tens = val;
-    int frac = ABS((val-tens)*100.);
+    int tens, frac;
+    float_to_ints(val, &tens, &frac);
     copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%14s: %02d.%02d\r\n", getADCname(whichadc), tens, frac);
     if ( (SCRATCH_SIZE-copied) < 20  && (whichadc < 20)) {
       ++whichadc;
@@ -820,8 +816,8 @@ static BaseType_t fpga_ctl(int argc, char ** argv)
 
     for ( ; whichfpga < howmany; ++whichfpga ) {
       float val = fpga_args.pm_values[whichfpga];
-      int tens = val;
-      int frac = ABS((val - tens)*100.0);
+      int tens, frac;
+      float_to_ints(val, &tens, &frac);
 
       copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%5s: %02d.%02d",
           fpga_args.devices[whichfpga].name, tens, frac);
@@ -869,14 +865,6 @@ typedef struct __attribute__((packed)) {
 
 extern struct dev_i2c_addr_t pm_addrs_dcdc[];
 
-static
-void float_to_ints(float val, int *tens, int * fraction)
-{
-  *tens = val;
-  *fraction = ABS((val - *tens)*100.0);
-
-  return;
-}
 static BaseType_t snapshot(int argc, char ** argv)
 {
   _Static_assert(sizeof(snapshot_t)==32, "sizeof snapshot_t");
@@ -942,8 +930,8 @@ static BaseType_t sensor_summary(int argc, char ** argv)
   // DCDC
   // TM4C
   float tm4c_temp = getADCvalue(ADC_INFO_TEMP_ENTRY);
-  int tens = tm4c_temp;
-  int frac = ABS((tm4c_temp-tens))*100.;
+  int tens, frac;
+  float_to_ints(tm4c_temp, &tens, &frac);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "MCU %02d.%02d\r\n", tens, frac);
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
@@ -960,8 +948,7 @@ static BaseType_t sensor_summary(int argc, char ** argv)
     max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
   else
     max_fpga = fpga_args.pm_values[0];
-  tens = max_fpga;
-  frac = ABS((tens-max_fpga))*100.;
+  float_to_ints(max_fpga, &tens, &frac);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "FPGA %02d.%02d\r\n", tens, frac);
 
   // DCDC. The first command is READ_TEMPERATURE_1.
@@ -975,8 +962,7 @@ static BaseType_t sensor_summary(int argc, char ** argv)
         max_temp = thistemp;
     }
   }
-  tens = max_temp;
-  frac = ABS((max_temp-tens))*100.0;
+  float_to_ints(max_temp, &tens, &frac);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "REG %02d.%02d\r\n", tens, frac);
 
   return pdFALSE;

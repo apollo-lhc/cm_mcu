@@ -20,6 +20,7 @@
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 
+
 // FreeRTOS
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
@@ -218,16 +219,16 @@ void MonitorTask(void *parameters)
           if ( args->commands[c].type == PM_LINEAR11 ) {
             linear11_val_t ii; ii.raw = (data[1] << 8) | data[0];
             val = linear11_to_float(ii);
-            int tens = val;
-            int fraction = ABS((val - tens)*100.0);
+            int tens, fraction;
+            float_to_ints(val, &tens, &fraction);
             snprintf(tmp, TMPBUFFER_SZ, "\t\t%d.%02d (linear11)\r\n", tens, fraction);
             DPRINT(tmp);
           }
           else if ( args->commands[c].type == PM_LINEAR16U ) {
             uint16_t ii = (data[1] << 8) | data[0];
             val = linear16u_to_float(ii);
-            int tens = val;
-            int fraction = ABS((val - tens)*100.0);
+            int tens, fraction;
+            float_to_ints(val, &tens, &fraction);
             snprintf(tmp, TMPBUFFER_SZ,  "\t\t%d.%02d (linear16u)\r\n", tens, fraction);
             DPRINT(tmp);
           }
@@ -236,7 +237,7 @@ void MonitorTask(void *parameters)
             val = (float)((data[1] << 8) | data[0]); // ugly is my middle name
           }
           else {
-            val = -99.0; // should never get here
+            val = -99.0f; // should never get here
           }
           int index = ps*(args->n_commands*args->n_pages)+page*args->n_commands+c;
           args->pm_values[index] = val;
