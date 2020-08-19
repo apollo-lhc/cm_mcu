@@ -33,11 +33,11 @@ uint32_t getAlarmStatus()
   return status_T;
 }
 
-#define INITIAL_ALARM_TEMP_FF   45.0 // in Celsius duh
-#define INITIAL_ALARM_TEMP_DCDC 70.0
-#define INITIAL_ALARM_TEMP_TM4C 70.0
-#define INITIAL_ALARM_TEMP_FPGA 70.0
-#define ALM_OVERTEMP_THRESHOLD  5.0 // if device is this many degrees over alarm temp, turn off power
+#define INITIAL_ALARM_TEMP_FF   45.0f // in Celsius duh
+#define INITIAL_ALARM_TEMP_DCDC 70.0f
+#define INITIAL_ALARM_TEMP_TM4C 70.0f
+#define INITIAL_ALARM_TEMP_FPGA 70.0f
+#define ALM_OVERTEMP_THRESHOLD  5.0f // if device is this many degrees over alarm temp, turn off power
 
 static float alarm_temp_ff = INITIAL_ALARM_TEMP_FF;
 static float alarm_temp_dcdc = INITIAL_ALARM_TEMP_DCDC;
@@ -159,7 +159,7 @@ void AlarmTask(void *parameters)
 
     // DCDC. The first command is READ_TEMPERATURE_1.
     // I am assuming it stays that way!!!!!!!!
-    float max_dcdc_temp = -99.0;
+    float max_dcdc_temp = -99.0f;
     for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
       for (int page = 0; page < dcdc_args.n_pages; ++page) {
         size_t index = ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
@@ -207,8 +207,8 @@ void AlarmTask(void *parameters)
       // check ADC outputs 
       for (size_t i = 0; i < ADC_CHANNEL_COUNT; ++i) {
         float voltage = getADCvalue(i);
-        if ((voltage < .9 * getADCtargetValue(i)) ||
-            (voltage > 1.1 * getADCtargetValue(i))) {
+        if ((voltage < .9f * getADCtargetValue(i)) ||
+            (voltage > 1.1f * getADCtargetValue(i))) {
           alarming_voltage = true;
           status_V |= 1U<<i;
         }
