@@ -40,7 +40,7 @@ uint16_t float_to_linear11(float input_val)
     input_val = - input_val;
   }
   // extract mantissa from input value
-  int mantissa = (int)(input_val / (float)pow(2.0, INITIAL_EXPONENT));
+  int mantissa = (int)(input_val / (float)powf(2.0, INITIAL_EXPONENT));
 
   // Search for an exponent that produces
   // a valid 11-bit mantissa
