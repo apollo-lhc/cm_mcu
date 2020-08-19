@@ -18,6 +18,10 @@
 #include "math.h"
 #include "stdlib.h"
 
+#ifdef __INTELLISENSE__
+#define __fp16 float
+#endif // __INTELLISENSE 
+
 // this will suffer from the double evaluation bug 
 //#define MAX(a,b) (a)>(b)?(a):(b)
 // instead use these functions and a _generic macro
@@ -193,8 +197,6 @@ const char* gitVersion();
 #define ALM_STAT_FIREFLY_OVERTEMP 0x2
 #define ALM_STAT_FPGA_OVERTEMP    0x4
 #define ALM_STAT_DCDC_OVERTEMP    0x8
-// Alarm Queue
-extern QueueHandle_t xAlmQueue;
 // messages
 #define ALM_CLEAR_ALL      1
 #define ALM_CLEAR_TEMP     2
@@ -203,9 +205,8 @@ extern QueueHandle_t xAlmQueue;
 
 enum device {FF,DCDC,TM4C,FPGA};
 
+void GenericAlarmTask(void *parameters);
 
-
-void AlarmTask(void *parameters);
 float getAlarmTemperature(enum device device_name);
 void  setAlarmTemperature(enum device device_name, const float newtemp);
 uint32_t getAlarmStatus();

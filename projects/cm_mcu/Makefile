@@ -94,7 +94,8 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/FireFlyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/GenericAlarmTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmUtilities.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
