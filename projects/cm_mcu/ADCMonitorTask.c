@@ -37,7 +37,7 @@
 
 // On Apollo the ADC range is from 0 - 2.5V.
 // Some signals must be scaled to fit in this range.
-#define ADC_MAX_VOLTAGE_RANGE 2.5
+#define ADC_MAX_VOLTAGE_RANGE 2.5f
 
 
 // a struct to hold some information about the ADC channel.
@@ -45,6 +45,7 @@ struct ADC_Info_t {
   int channel; // which of the 20 ADC channels on the TM4C1290NCPDT on Apollo CM v1
   const char* name; // name
   float scale; // scaling, if needed, for signals bigger than 2.5V
+  float target_value;
 };
 
 // parameters for how data is organized in the fADC arrays and how the
@@ -63,27 +64,27 @@ struct ADC_Info_t {
 // channel sensor.
 static
 struct ADC_Info_t ADCs[] = {
-    {ADC_CTL_CH12, "VCC_12V", 6.},
-    {ADC_CTL_CH13, "VCC_2V5", 2.},
-    {ADC_CTL_CH14, "VCC_M3V3", 2.},
-    {ADC_CTL_CH16, "VCC_3V3", 2.},
-    {ADC_CTL_CH7,  "VCC_1V8", 1.},
-    {ADC_CTL_CH15, "VCC_M1V8", 1.},
-    {ADC_CTL_CH3,  "V_VCCINT", 1.},
-    {ADC_CTL_CH8,  "K_VCCINT", 1.},
-    {ADC_CTL_CH0,  "V_MGTY1_AVTT", 1.},
-    {ADC_CTL_CH19, "V_MGTY2_AVTT", 1.},
-    {ADC_CTL_CH11, "K_MGTH_AVTT", 1.},
-    {ADC_CTL_CH4,  "K_MGTY_AVTT", 1.},
-    {ADC_CTL_CH2,  "V_MGTY1_VCCAUX", 1.},
-    {ADC_CTL_CH17, "V_MGTY2_VCCAUX", 1.},
-    {ADC_CTL_CH6,  "K_MGTY_VCCAUX", 1.},
-    {ADC_CTL_CH9,  "K_MGTH_VCCAUX", 1.},
-    {ADC_CTL_CH1,  "V_MGTY1_AVCC", 1.},
-    {ADC_CTL_CH18, "V_MGTY2_AVCC", 1.},
-    {ADC_CTL_CH5,  "K_MGTY_AVCC", 1.},
-    {ADC_CTL_CH10, "K_MGTH_AVCC", 1.},
-    {ADC_CTL_TS,   "TM4C_TEMP", 1.}, // this one is special, temp in C
+    {ADC_CTL_CH12, "VCC_12V", 6.f, 12.f},
+    {ADC_CTL_CH13, "VCC_2V5", 2.f, 2.5f},
+    {ADC_CTL_CH14, "VCC_M3V3", 2.f, 3.3f},
+    {ADC_CTL_CH16, "VCC_3V3", 2.f, 3.3f},
+    {ADC_CTL_CH7,  "VCC_1V8", 1.f, 1.8f},
+    {ADC_CTL_CH15, "VCC_M1V8", 1.f, 1.8f},
+    {ADC_CTL_CH3,  "V_VCCINT", 1.f, 0.85f},
+    {ADC_CTL_CH8,  "K_VCCINT", 1.f, 0.85f},
+    {ADC_CTL_CH0,  "V_MGTY1_AVTT", 1.f, 1.2f},
+    {ADC_CTL_CH19, "V_MGTY2_AVTT", 1.f, 1.2f},
+    {ADC_CTL_CH11, "K_MGTH_AVTT", 1.f, 1.2f},
+    {ADC_CTL_CH4,  "K_MGTY_AVTT", 1.f, 1.2f},
+    {ADC_CTL_CH2,  "V_MGTY1_VCCAUX", 1.f, 1.8f},
+    {ADC_CTL_CH17, "V_MGTY2_VCCAUX", 1.f, 1.8f},
+    {ADC_CTL_CH6,  "K_MGTY_VCCAUX", 1.f, 1.8f},
+    {ADC_CTL_CH9,  "K_MGTH_VCCAUX", 1.f, 1.8f},
+    {ADC_CTL_CH1,  "V_MGTY1_AVCC", 1.f, 0.90f},
+    {ADC_CTL_CH18, "V_MGTY2_AVCC", 1.f, 0.90f},
+    {ADC_CTL_CH5,  "K_MGTY_AVCC", 1.f, 0.90f},
+    {ADC_CTL_CH10, "K_MGTH_AVCC", 1.f, 0.90f},
+    {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f}, // this one is special, temp in C
 };
 
 static __fp16 fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
@@ -100,6 +101,12 @@ float getADCvalue(const int i)
 {
   configASSERT(i>=0&&i<ADC_CHANNEL_COUNT);
   return fADCvalues[i];
+}
+
+float getADCtargetValue(const int i)
+{
+  configASSERT(i >= 0 && i < ADC_CHANNEL_COUNT);
+  return ADCs[i].target_value;
 }
 
 
@@ -261,11 +268,11 @@ void ADCMonitorTask(void *parameters)
 
     // convert data to float values
     for ( int i = 0; i < ADC_CHANNEL_COUNT; ++i ) {
-      fADCvalues[i] = iADCvalues[i]/4096.*ADC_MAX_VOLTAGE_RANGE * ADCs[i].scale;
+      fADCvalues[i] = iADCvalues[i]/4096.f*ADC_MAX_VOLTAGE_RANGE * ADCs[i].scale;
     }
     // special: temperature of Tiva die. Tiva manu 15.3.6, last equation.
-    fADCvalues[ADC_INFO_TEMP_ENTRY] = 147.5
-        - ( 75 * ADC_MAX_VOLTAGE_RANGE * iADCvalues[ADC_INFO_TEMP_ENTRY])/4096.;
+    fADCvalues[ADC_INFO_TEMP_ENTRY] = 147.5f
+        - ( 75.f * ADC_MAX_VOLTAGE_RANGE * iADCvalues[ADC_INFO_TEMP_ENTRY])/4096.f;
 
 
     // wait x ms for next iteration

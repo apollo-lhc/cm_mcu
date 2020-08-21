@@ -15,19 +15,92 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 #include "semphr.h"
+#include "math.h"
+#include "stdlib.h"
 
-#define MAX(a,b) (a)>(b)?(a):(b)
-#define ABS(x) ((x)<0?(-(x)):(x))
+#ifdef __INTELLISENSE__
+#define __fp16 float
+#endif // __INTELLISENSE 
+
+// this will suffer from the double evaluation bug 
+//#define MAX(a,b) (a)>(b)?(a):(b)
+// instead use these functions and a _generic macro
+// this is overkill, but I'm parking it here because I never remember this exists.
+inline int max(int const x, int const y)
+{
+  return y > x ? y : x;
+}
+
+inline unsigned maxu(unsigned const x, unsigned const y)
+{
+  return y > x ? y : x;
+}
+
+inline long maxl(long const x, long const y)
+{
+  return y > x ? y : x;
+}
+
+inline unsigned long maxul(unsigned long const x, unsigned long const y)
+{
+  return y > x ? y : x;
+}
+
+inline long long maxll(long long const x, long long const y)
+{
+  return y > x ? y : x;
+}
+
+inline unsigned long long maxull(unsigned long long const x,
+                                 unsigned long long const y)
+{
+  return y > x ? y : x;
+}
+
+// clang-format off
+#define MAX(X, Y) (_Generic((X) + (Y),   \
+    int:                max,             \
+    unsigned:           maxu,            \
+    long:               maxl,            \
+    unsigned long:      maxul,           \
+    long long:          maxll,           \
+    unsigned long long: maxull,          \
+    float:              fmaxf,           \
+    double:             fmax,            \
+    long double:        fmaxl)((X), (Y)))
+// clang-format on
+
+/* this does not work with -pedantic, it is a gcc extension 
+#define MAX(a, b)                                                              \
+   ({                                                                           \
+     __typeof__(a) _a = (a);                                                    \
+     __typeof__(b) _b = (b);                                                    \
+     _a > _b ? _a : _b;                                                         \
+  })
+*/
+// clang-format screws up the formatting of this.
+// clang-format off
+#define ABS(n)              \
+  _Generic((n),             \
+  signed char: abs(n),      \
+        short: abs(n),      \
+          int: abs(n),      \
+         long: labs(n),     \
+    long long: llabs(n),    \
+        float: fabsf(n),     \
+       double: fabs(n))
+// clang-format on
 
 // INIT task
 void InitTask(void *parameters);
 
 // ADC task
-#define ADC_CHANNEL_COUNT 21
+#define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
 const char* getADCname(const int i);
 float getADCvalue(const int i);
+float getADCtargetValue(const int i);
 
 // Holds the handle of the created queue for the LED task.
 extern QueueHandle_t xLedQueue;
@@ -66,8 +139,8 @@ void MonitorTask(void *parameters);
 
 // --- Firefly monitoring
 #define NFIREFLIES_KU15P 11
-#define NFIREFLIES_VU7P 14
-#define NFIREFLIES (NFIREFLIES_KU15P+NFIREFLIES_VU7P)
+#define NFIREFLIES_VU7P  14
+#define NFIREFLIES       (NFIREFLIES_KU15P + NFIREFLIES_VU7P)
 
 void FireFlyTask(void *parameters);
 extern QueueHandle_t xFFlyQueueIn;
@@ -89,28 +162,29 @@ int disable_xcvr_cdr(const char *name);
 
 // FF Task message format
 // two fields, a task code and task data.
-#define FF_MESSAGE_DATA_SZ 26
+#define FF_MESSAGE_DATA_SZ     26
 #define FF_MESSAGE_DATA_OFFSET 0
-#define FF_MESSAGE_DATA_MASK ((1<<FF_MESSAGE_DATA_SZ)-1)
-#define FF_MESSAGE_CODE_SZ 6
+#define FF_MESSAGE_DATA_MASK   ((1 << FF_MESSAGE_DATA_SZ) - 1)
+#define FF_MESSAGE_CODE_SZ     6
 #define FF_MESSAGE_CODE_OFFSET FF_MESSAGE_DATA_SZ
-#define FF_MESSAGE_CODE_MASK ((1<<FF_MESSAGE_CODE_SZ)-1)
+#define FF_MESSAGE_CODE_MASK   ((1 << FF_MESSAGE_CODE_SZ) - 1)
 
 // FF register read/write task
 // the 26 bits are split into three fields
 // 11 bits of register (top two bits are page)
-// 10 bits of data 
-// 5 bits of which firefly 
-#define FF_MESSAGE_CODE_REG_REG_SZ 11
+// 10 bits of data
+// 5 bits of which firefly
+#define FF_MESSAGE_CODE_REG_REG_SZ     11
 #define FF_MESSAGE_CODE_REG_REG_OFFSET 0
-#define FF_MESSAGE_CODE_REG_DAT_SZ 10
+#define FF_MESSAGE_CODE_REG_DAT_SZ     10
 #define FF_MESSAGE_CODE_REG_DAT_OFFSET FF_MESSAGE_CODE_REG_REG_SZ
-#define FF_MESSAGE_CODE_REG_FF_SZ 10
-#define FF_MESSAGE_CODE_REG_FF_OFFSET (FF_MESSAGE_CODE_REG_REG_SZ+FF_MESSAGE_CODE_REG_DAT_SZ)
+#define FF_MESSAGE_CODE_REG_FF_SZ      10
+#define FF_MESSAGE_CODE_REG_FF_OFFSET                                          \
+  (FF_MESSAGE_CODE_REG_REG_SZ + FF_MESSAGE_CODE_REG_DAT_SZ)
 // derived masks
 #define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
 #define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
-#define FF_MESSAGE_CODE_REG_FF_MASK ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
+#define FF_MESSAGE_CODE_REG_FF_MASK  ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
 
 // ---- version info
 const char* buildTime();
@@ -123,17 +197,16 @@ const char* gitVersion();
 #define ALM_STAT_FIREFLY_OVERTEMP 0x2
 #define ALM_STAT_FPGA_OVERTEMP    0x4
 #define ALM_STAT_DCDC_OVERTEMP    0x8
-// Alarm Queue
-extern QueueHandle_t xAlmQueue;
 // messages
-#define TEMP_ALARM_CLEAR_ALL  1
-#define TEMP_ALARM_CLEAR_FPGA 2 // ...
+#define ALM_CLEAR_ALL      1
+#define ALM_CLEAR_TEMP     2
+#define ALM_CLEAR_CURRENT  3
+#define ALM_CLEAR_VOLTAGE  4
 
 enum device {FF,DCDC,TM4C,FPGA};
 
+void GenericAlarmTask(void *parameters);
 
-
-void AlarmTask(void *parameters);
 float getAlarmTemperature(enum device device_name);
 void  setAlarmTemperature(enum device device_name, const float newtemp);
 uint32_t getAlarmStatus();
@@ -150,11 +223,11 @@ extern QueueHandle_t xEPRMQueue_in;
 extern QueueHandle_t xEPRMQueue_out;
 
 #define EPRM_WRITE_SINGLE 1
-#define EPRM_READ_SINGLE 2
-#define EPRM_READ_DOUBLE 3
-#define EPRM_LOCK_BLOCK 4
+#define EPRM_READ_SINGLE  2
+#define EPRM_READ_DOUBLE  3
+#define EPRM_LOCK_BLOCK   4
 #define EPRM_UNLOCK_BLOCK 5
-#define EPRM_PASS_SET 6
+#define EPRM_PASS_SET     6
 
 uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
 void EEPROMTask(void *parameters);
@@ -188,8 +261,6 @@ int SystemStackWaterHighWaterMark();
 // Xilinx MonitorTask
 int get_ku_index();
 int get_vu_index();
-// void set_ku_index(int index);
-// void set_vu_index(int index);
 void initFPGAMon();
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

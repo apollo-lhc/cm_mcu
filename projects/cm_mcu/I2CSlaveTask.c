@@ -59,7 +59,7 @@ static uint8_t getSlaveData(uint8_t address)
       value = testreg;
       break;
     case 0x10U: // MCU temperature
-      value = getADCvalue(20)+0.5; // always valid
+      value = getADCvalue(20)+0.5f; // always valid
       break;
     case 0x12U: // FPGA VU temp
       value = (uint8_t) local_fpga_vu>=0?fpga_args.pm_values[local_fpga_vu]:0U;
@@ -85,7 +85,7 @@ static uint8_t getSlaveData(uint8_t address)
     break;
     case 0x18U: // hottest regulator temp
     {
-      float max_temp = -99.0;
+      float max_temp = -99.0f;
       for (int ps = 0; ps < dcdc_args.n_devices; ++ps ) {
         for ( int page = 0; page < dcdc_args.n_pages; ++page ) {
           float thistemp = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
@@ -97,7 +97,7 @@ static uint8_t getSlaveData(uint8_t address)
       if ( max_temp < 0  )
         value = 0xFFU; // invalid
       else
-        value = (uint8_t) max_temp+0.5;
+        value = (uint8_t) max_temp+0.5f;
     }
     break;
     default:

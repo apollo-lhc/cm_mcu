@@ -52,10 +52,10 @@
 *.pdb
 
 .DS_Store
-common/version.h
 .settings/*
 .cproject
 .project
 *.prefs
 compile_commands.json
 .vscode/*
+c_cpp_properties.json
