@@ -81,6 +81,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask |= PS_OKS_VU_MASK;
     supply_en_mask |= PS_ENS_VU_MASK;
   }
+//#define APOLLO10_HACK
   #ifdef APOLLO10_HACK
   // APOLLO 10 HACK
   // this set of mask hacks enables the VU VCCINT and VCCAUX to be on

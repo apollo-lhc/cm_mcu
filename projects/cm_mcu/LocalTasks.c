@@ -126,6 +126,8 @@ struct pm_command_t extra_cmds[] = {
     {0x33, 2, "FREQUENCY_SWITCH", "Hz", PM_LINEAR11},
     {0xEA, 32, "SNAPSHOP", "", PM_STATUS},
     {0xF3, 1, "SNAPSHOP_CONTROL", "", PM_STATUS},
+    {0x28, 2, "VOUT_DROOP", "", PM_LINEAR11},
+    {0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
 };
 
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
@@ -171,12 +173,17 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
   xSemaphoreGive(xMonSem);
 }
  
+// Initialization function for the LGA80D. These settings
+// need to be called when the supply output is OFF
+// this is currently not ensured in this code.
 void dcdc_initfcn(void)
 {
+  Print("dcdc_initfcn\r\n");
   // set up the switching frequency
-  //uint16_t freqlin11 = float_to_linear11(457.14);
-  uint16_t freqlin11 = float_to_linear11(800.);
-  for ( int dev = 1; dev < 4; dev += 2 ) {
+  uint16_t freqlin11 = float_to_linear11(457.14f);
+  //uint16_t freqlin11 = float_to_linear11(800.f);
+  uint16_t drooplin11 = float_to_linear11(0.0700f);
+  for ( int dev = 1; dev < 5; dev += 1 ) {
     for (uint8_t page = 0; page < 2; ++ page ) {
       // page register
       int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
@@ -189,6 +196,19 @@ void dcdc_initfcn(void)
           false, pm_addrs_dcdc+dev,&extra_cmds[2],  (uint8_t*)&freqlin11);
       if ( r ) {
         Print("error in dcdc_initfcn (1)\r\n");
+      }
+      // actual command -- vout_droop switch
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
+          false, pm_addrs_dcdc+dev,&extra_cmds[5],  (uint8_t*)&drooplin11);
+      if ( r ) {
+        Print("error in dcdc_initfcn (2)\r\n");
+      }
+      // actual command -- multiphase_ramp_gain switch
+      uint8_t val = 0x7; // by suggestion of Artesian
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
+          false, pm_addrs_dcdc+dev,&extra_cmds[6],  &val);
+      if ( r ) {
+        Print("error in dcdc_initfcn (3)\r\n");
       }
     }
   }
@@ -213,6 +233,8 @@ struct pm_command_t pm_command_dcdc[] = {
         { 0x44, 2, "VOUT_UV_FAULT_LIMIT", "V", PM_LINEAR16U},
         { 0x37, 2, "INTERLEAVE", "", PM_STATUS},
         { 0x80, 1, "STATUS_MFR_SPECIFIC", "", PM_STATUS},
+        { 0x28, 2, "VOUT_DROOP", "", PM_LINEAR11},
+        { 0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
       };
 float dcdc_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
 struct MonitorTaskArgs_t dcdc_args = {
@@ -226,8 +248,8 @@ struct MonitorTaskArgs_t dcdc_args = {
     .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
-    //.initfcn = &dcdc_initfcn,
-    .initfcn = NULL,
+    .initfcn = &dcdc_initfcn,
+    //.initfcn = NULL,
 };
 
 

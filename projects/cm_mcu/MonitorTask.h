@@ -51,7 +51,7 @@ struct MonitorTaskArgs_t {
 };
 // DC-DC converter
 #define NSUPPLIES_PS (5) // 5 devices, 2 pages each
-#define NCOMMANDS_PS 13 // number of entries in dcdc_ array
+#define NCOMMANDS_PS 15 // number of entries in dcdc_ array
 #define NPAGES_PS    2 // number of pages on the power supplies.
 
 extern struct MonitorTaskArgs_t dcdc_args;

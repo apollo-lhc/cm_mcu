@@ -107,7 +107,7 @@ void MonitorTask(void *parameters)
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next
     // rev of the board.
-    if ( getPSStatus(5) != PWR_ON) {
+    if ( getPSStatus(5) != PWR_ON  && args->name[0] == 'X') {
       if ( good ) {
         snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
             args->name);
@@ -126,7 +126,7 @@ void MonitorTask(void *parameters)
     // loop over devices
     for ( uint8_t ps = 0; ps < args->n_devices; ++ ps ) {
 #ifdef I2C_PULLUP_BUG
-      if ( getPSStatus(5) != PWR_ON)
+      if ( getPSStatus(5) != PWR_ON && args->name[0] == 'X')
         break;
 #endif // I2C_PULLUP_BUG
 
