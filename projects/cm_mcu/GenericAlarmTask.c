@@ -31,6 +31,7 @@ enum alarm_task_state { ALM_INIT, ALM_NORMAL, ALM_WARN, ALM_ERROR };
 //        +---------------------------------+
 // once we get into the ERROR state the only way to clear an error is via a message
 // sent to the CLI.
+// 
 
 void GenericAlarmTask(void *parameters)
 {
@@ -92,6 +93,8 @@ void GenericAlarmTask(void *parameters)
         if (params->errorlog_registererror)
           params->errorlog_registererror();
         message = TEMP_ALARM;
+        // this message always goes to the power queue, for all 
+        // alarms. 
         xQueueSendToFront(xPwrQueue, &message, 100);
         nextState = ALM_ERROR;
       }
