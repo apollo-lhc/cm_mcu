@@ -59,12 +59,12 @@ void GenericAlarmTask(void *parameters)
       continue; // we break out of the loop because we want data
       // to refresh
     }
-  }
-  int status = params->checkStatus();
 
-  // state machine
-  enum alarm_task_state nextState;
-  switch (currentState) {
+    int status = params->checkStatus();
+
+    // state machine
+    enum alarm_task_state nextState;
+    switch (currentState) {
     case ALM_INIT: {
       nextState = ALM_NORMAL;
       break;
@@ -118,8 +118,8 @@ void GenericAlarmTask(void *parameters)
     default:
       nextState = ALM_ERROR;
       break;
+    }
+    currentState = nextState;
   }
-  currentState = nextState;
-
   return;
 }
