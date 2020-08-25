@@ -97,15 +97,12 @@ void MonitorTask(void *parameters)
   bool good = false;
 #endif // I2C_PULLUP_BUG
   for (;;) {
-    if ( args->xSem != NULL ) {
-      while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
-        ;
-    }
     char tmp[TMPBUFFER_SZ];
 #ifdef I2C_PULLUP_BUG
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next
     // rev of the board.
+    // HACK -- THIS TEST IS ONLY USED FOR THE XILINX TASK (name starts with 'X')
     if ( getPSStatus(5) != PWR_ON  && args->name[0] == 'X') {
       if ( good ) {
         snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
@@ -113,8 +110,6 @@ void MonitorTask(void *parameters)
         SuppressedPrint(tmp, &current_error_cnt, &log);
         good = false;
       }
-      if ( args->xSem != NULL )
-        xSemaphoreGive(args->xSem);
       vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
       continue;
     }
@@ -122,12 +117,19 @@ void MonitorTask(void *parameters)
       good = true;
     }
 #endif // I2C_PULLUP_BUG
+
+    // grab the semaphore to ensure unique access to I2C controller
+    if (args->xSem != NULL) {
+      while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
+        ;
+    }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
     for ( uint8_t ps = 0; ps < args->n_devices; ++ ps ) {
 #ifdef I2C_PULLUP_BUG
-      if ( getPSStatus(5) != PWR_ON && args->name[0] == 'X')
+      if ( getPSStatus(5) != PWR_ON && args->name[0] == 'X') {
         break;
+      }
 #endif // I2C_PULLUP_BUG
 
       // select the appropriate output for the mux
