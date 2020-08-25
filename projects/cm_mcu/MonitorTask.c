@@ -49,7 +49,6 @@ void Print(const char* str);
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
-SemaphoreHandle_t xMonSem = NULL;
 
 static
 void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
@@ -93,15 +92,15 @@ void MonitorTask(void *parameters)
 
   // wait for the power to come up
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
-  if ( args->initfcn != NULL )
-    (*args->initfcn)();
 
 #ifdef I2C_PULLUP_BUG
   bool good = false;
 #endif // I2C_PULLUP_BUG
   for (;;) {
-    while (xSemaphoreTake(xMonSem, (TickType_t) 10) == pdFALSE)
-      ;
+    if ( args->xSem != NULL ) {
+      while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
+        ;
+    }
     char tmp[TMPBUFFER_SZ];
 #ifdef I2C_PULLUP_BUG
     // check if the 3.3V is there or not. If it disappears then nothing works
@@ -114,7 +113,8 @@ void MonitorTask(void *parameters)
         SuppressedPrint(tmp, &current_error_cnt, &log);
         good = false;
       }
-      xSemaphoreGive(xMonSem);
+      if ( args->xSem != NULL )
+        xSemaphoreGive(args->xSem);
       vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
       continue;
     }
@@ -246,7 +246,8 @@ void MonitorTask(void *parameters)
         } // loop over commands
       } // loop over pages
     } // loop over power supplies
-    xSemaphoreGive(xMonSem);
+    if ( args->xSem != NULL )
+      xSemaphoreGive(args->xSem);
 
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   } // infinite loop

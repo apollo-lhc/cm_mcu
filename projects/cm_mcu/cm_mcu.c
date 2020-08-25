@@ -228,8 +228,8 @@ int main( void )
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
-  xMonSem    = xSemaphoreCreateMutex();
-
+  // mutex for I2C controller for the power supplies
+  dcdc_args.xSem = xSemaphoreCreateMutex();
 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.

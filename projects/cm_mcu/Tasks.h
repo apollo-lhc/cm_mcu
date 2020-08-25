@@ -60,6 +60,7 @@ void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
 enum power_system_state { POWER_INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
 enum power_system_state getPowerControlState();
+void LGA80D_init(void);
 
 
 // --- Semi-generic PMBUS based I2C task
