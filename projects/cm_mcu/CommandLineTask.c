@@ -625,7 +625,7 @@ static BaseType_t clock_ctl(int argc, char ** argv)
       return pdTRUE;
     }
   }
-  setup_156MHz();
+  load_clock();
   iter = 0; // reset iter on final exit
   return pdFALSE;
 }
