@@ -486,3 +486,12 @@ uint32_t stopwatch_getticks()
   return counter;
 }
 
+
+
+void float_to_ints(float val, int *tens, int *fraction)
+{
+  *tens = val;
+  *fraction = ABS((val - *tens)*100.0f+0.5f);
+
+  return;
+}

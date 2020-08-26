@@ -112,4 +112,7 @@ void errbuffer_power_fail(uint16_t failmask);
 void stopwatch_reset(void);
 uint32_t stopwatch_getticks();
 
+void float_to_ints(float val, int *tens, int *fraction);
+
+
 #endif /* COMMON_UTILS_H_ */

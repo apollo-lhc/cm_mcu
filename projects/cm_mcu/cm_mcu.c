@@ -30,6 +30,7 @@
 #include "MonitorTask.h"
 #include "Tasks.h"
 #include "I2CSlaveTask.h"
+#include "AlarmUtilities.h"
 
 // TI Includes
 #include "inc/hw_types.h"
@@ -217,8 +218,7 @@ const char* gitVersion()
 {
   const char *gitVersion = FIRMWARE_VERSION;
   return gitVersion;
-}
-
+} 
 // 
 int main( void )
 {
@@ -248,6 +248,7 @@ int main( void )
   for (int i =0; i < fpga_args.n_values; ++i)
     fpga_args.pm_values[i] = -999.f;
 
+
   // start the tasks here 
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(LedTask,         "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL);
@@ -257,12 +258,11 @@ int main( void )
   xTaskCreate(FireFlyTask,    "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
   xTaskCreate(MonitorTask,   "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY+4, NULL);
   xTaskCreate(MonitorTask,   "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY+4, NULL);
-  xTaskCreate(AlarmTask,     "ALARM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(I2CSlaveTask,  "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(EEPROMTask,    "EPRM",  configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+4, NULL);
   xTaskCreate(InitTask,      "INIT",  configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
   xTaskCreate(ZynqMonTask,  "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+5, NULL);
-
+  xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask, tskIDLE_PRIORITY + 5, NULL);
 
   // -------------------------------------------------
   // Initialize all the queues
@@ -284,8 +284,8 @@ int main( void )
   xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
   configASSERT(xEPRMQueue_out != NULL);
 
-  xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
-  configASSERT(xAlmQueue != NULL);
+  tempAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
+  configASSERT(tempAlarmTask.xAlmQueue != NULL);
 
   xSoftUartQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
   configASSERT(xSoftUartQueue != NULL);
