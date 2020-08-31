@@ -101,10 +101,17 @@ void PowerSupplyTask(void *parameters)
   #endif // APOLLO10_HACK
 
   // configure the LGA80D supplies
-  LGA80D_init();
+  char tmp[64];
+  snprintf(tmp, 64, "tick before: %d\r\n", pdTICKS_TO_MS( xTaskGetTickCount()));
+  Print(tmp);
+  //LGA80D_init();
+  vTaskDelay(pdMS_TO_TICKS(640));
+  snprintf(tmp, 64, "tick after: %d\r\n", pdTICKS_TO_MS(xTaskGetTickCount()));
+  Print(tmp);
   // waiting less than this amount of time appears to cause
   // the power-on sequence to fail. 
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(325));
+  //vTaskDelay(pdMS_TO_TICKS(1000));
 
   bool power_supply_alarm = false;
   uint16_t failed_mask = 0x0U;

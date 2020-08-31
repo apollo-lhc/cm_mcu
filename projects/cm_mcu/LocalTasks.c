@@ -183,35 +183,33 @@ void LGA80D_init(void)
   Print("LGA80D_init\r\n");
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
-  //uint16_t freqlin11 = float_to_linear11(800.f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);
-  for ( int dev = 1; dev < 5; dev += 2 ) {
+  for (int dev = 1; dev < 5; dev += 1) {
     for (uint8_t page = 0; page < 2; ++ page ) {
       // page register
       char tmp[256];
-      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev, &extra_cmds[0], &page);
+      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[0],
+                              &page);
       if ( r ) {
         snprintf(tmp, 256, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
         Print(tmp);
         Print("error in LGA80D_init (0)\r\n");
       }
       // actual command -- frequency switch
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev,&extra_cmds[2],  (uint8_t*)&freqlin11);
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[2],
+                          (uint8_t *)&freqlin11);
       if ( r ) {
         Print("error in LGA80D_init (1)\r\n");
       }
       // actual command -- vout_droop switch
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev,&extra_cmds[5],  (uint8_t*)&drooplin11);
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[5],
+                          (uint8_t *)&drooplin11);
       if ( r ) {
         Print("error in LGA80D_init (2)\r\n");
       }
       // actual command -- multiphase_ramp_gain switch
       uint8_t val = 0x7; // by suggestion of Artesian
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev,&extra_cmds[6],  &val);
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
       if ( r ) {
         Print("error in LGA80D_init (3)\r\n");
       }
@@ -240,8 +238,10 @@ struct pm_command_t pm_command_dcdc[] = {
         { 0x44, 2, "VOUT_UV_FAULT_LIMIT", "V", PM_LINEAR16U},
         { 0x37, 2, "INTERLEAVE", "", PM_STATUS},
         { 0x80, 1, "STATUS_MFR_SPECIFIC", "", PM_STATUS},
-        { 0x28, 2, "VOUT_DROOP", "", PM_LINEAR11},
+        { 0x28, 2, "VOUT_DROOP", "V/A", PM_LINEAR11},
         { 0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
+        { 0x57, 2, "VIN_UV_WARN_LIMIT", "V", PM_LINEAR11},
+        { 0x58, 2, "VIN_UV_FAULT_LIMIT", "V", PM_LINEAR11},
       };
 float dcdc_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
 
