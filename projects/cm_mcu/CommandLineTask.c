@@ -866,7 +866,7 @@ static BaseType_t snapshot(int argc, char ** argv)
   float_to_ints(linear11_to_float(p0->freq), &tens, &fraction);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "switching freq = %d.%02d\r\n", tens, fraction);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "VOUT  STATUS: 0x%02x\r\n", p0->v_out_status);
-  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "I0UT  STATUS: 0x%02x\r\n", p0->i_out_status);
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "IOUT  STATUS: 0x%02x\r\n", p0->i_out_status);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "INPUT STATUS: 0x%02x\r\n", p0->input_status);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "TEMP  STATUS: 0x%02x\r\n", p0->temperature_status);
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "CML   STATUS: 0x%02x\r\n", p0->cml_status);
