@@ -75,9 +75,9 @@ extern tSMBusStatus eStatus6;
 static tSMBus *p_sMaster = &g_sMaster4;
 static tSMBusStatus * p_eStatus = &eStatus4;
 
-//#define SCRATCH_SIZE 512
-//static
-//char m[SCRATCH_SIZE];
+#define SCRATCH_SIZE 512
+static
+char m[SCRATCH_SIZE];
 
 
 // Ugly hack for now -- I don't understand how to reconcile these
@@ -87,8 +87,9 @@ static tSMBusStatus * p_eStatus = &eStatus4;
 
 int apollo_i2c_ctl_set_dev(uint8_t base)
 {
+	int s = SCRATCH_SIZE;
   if ( ! ((base==1)||(base==2)||(base==3)||(base==4)||(base==6))) {
-    //    snprintf(m, s, "Invalid i2c device %d, only 1,2,3, 4 and 6 supported\r\n", base);
+	  snprintf(m, s, "Invalid i2c device %d, only 1,2,3, 4 and 6 supported\r\n", base);
     return -1;
   }
   switch (base) {
@@ -113,20 +114,22 @@ int apollo_i2c_ctl_set_dev(uint8_t base)
       p_eStatus = &eStatus6;
       break;
   }
-  //  snprintf(m, s,"Setting i2c device to %d\r\n", i);
+  snprintf(m, s,"Setting i2c device to %d\r\n", base);
+  Print(m);
   return 0;
 }
 
 int apollo_i2c_ctl_r(long int address, long int nbytes, uint8_t data[4])
 {
+	int s = SCRATCH_SIZE;
   const int MAX_BYTES=4;
   //  uint8_t data[MAX_BYTES];
   memset(data,0,MAX_BYTES*sizeof(data[0]));
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
 
-  //  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\r\n", nbytes, address);
-  //  DPRINT(m);
+  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\r\n", nbytes, address);
+  Print(m);
 
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
@@ -139,8 +142,9 @@ int apollo_i2c_ctl_r(long int address, long int nbytes, uint8_t data[4])
     return -2;
   }
   
-  //  snprintf(m, s, "%s: add: 0x%02x: value 0x%02x %02x %02x %02x\r\n", argv[0],
-  //           address, data[3], data[2], data[1], data[0]);
+  snprintf(m, s, "i2c_ctl_r: add: 0x%02x: value 0x%02x %02x %02x %02x\r\n",
+             address, data[3], data[2], data[1], data[0]);
+  Print(m);
   return 0;
 }
 int apollo_i2c_ctl_reg_r(long int address, uint8_t reg_address, long int nbytes, uint8_t data[4])
@@ -167,6 +171,7 @@ int apollo_i2c_ctl_reg_r(long int address, uint8_t reg_address, long int nbytes,
 int apollo_i2c_ctl_reg_w(long int address, uint8_t reg_address, long int nbytes, long int packed_data)
 {
   // first byte is the register, others are the data
+	int s = SCRATCH_SIZE;
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   data[0] = reg_address;
@@ -178,10 +183,11 @@ int apollo_i2c_ctl_reg_w(long int address, uint8_t reg_address, long int nbytes,
   nbytes++; // to account for the register address
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  //  snprintf(m, s, "%s: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes including reg addr byte)\r\n", argv[0],
-  //           packed_data, address, reg_address, nbytes);
-  //  DPRINT(m);
-  tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
+
+  snprintf(m, s, "i2c_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes including reg addr byte)\r\n",
+             packed_data, address, reg_address, nbytes);
+//   Print(m);
+   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
     return -1;
   }
@@ -192,14 +198,16 @@ int apollo_i2c_ctl_reg_w(long int address, uint8_t reg_address, long int nbytes,
     return -2;
   }
 
-  //  snprintf(m, s, "%s: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\r\n", argv[0],
-  //           address, reg_address, packed_data, nbytes-1);
+  snprintf(m, s, "i2c_ctl_reg_w: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\r\n",
+            address, reg_address, packed_data, nbytes-1);
+  Print(m);
   return 0;
 }
 
 
 int apollo_i2c_ctl_w(long int address, long int nbytes, long int value)
 {
+	int s = SCRATCH_SIZE;
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i ) {
@@ -219,8 +227,9 @@ int apollo_i2c_ctl_w(long int address, long int nbytes, long int value)
     return -2;
   }
 
-  //  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
-  //           address, value, nbytes);
+  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
+		  address, value, nbytes);
+  Print(m);
   return 0;
 }
 

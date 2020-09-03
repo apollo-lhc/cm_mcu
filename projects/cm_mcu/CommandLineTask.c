@@ -619,12 +619,12 @@ static BaseType_t clock_ctl(int argc, char ** argv)
   // ... extra commands that copy its output to the m buffer
   // ... if we need to call this function again return pdTRUE and use some sort of static variable
   // to keep track of which entry you are in
-  for ( ; iter < 100; ++iter) {
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: example\r\n");
-    if ( SCRATCH_SIZE-copied < 20 ) {
-      return pdTRUE;
-    }
-  }
+//  for ( ; iter < 100; ++iter) {
+//    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: example\r\n");
+//    if ( SCRATCH_SIZE-copied < 20 ) {
+//      return pdTRUE;
+//    }
+//  }
   load_clock();
   iter = 0; // reset iter on final exit
   return pdFALSE;

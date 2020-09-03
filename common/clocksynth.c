@@ -74,8 +74,8 @@ void initialize()
   //  apollo_pmbus_rw(&g_sMaster2, &eStatus2,
   //		  false, add,&extra_cmds[4],  &cmd);
   apollo_i2c_ctl_set_dev(2);
-  //enable 0x77 and 0x20, 0x21 via 0x70 (112)
-  apollo_i2c_ctl_w(112, 1, 103);
+  //enable 0x77 and 0x20, 0x21 via 0x70 (112): 0xc1
+  apollo_i2c_ctl_w(112, 1, 193);
     //Ping 0x20 and 0x77 to make sure they are indeed enabled
   //  apollo_i2c_ctl_r("0x70", 1);
   //  apollo_i2c_ctl_reg_r(32, 6, 1);
@@ -98,7 +98,6 @@ void write_register(int RegList[][2], int n_row){
   bool ChangePage = true;
   int HighByte = -1;
   for (int i=0;i<n_row;i++) {
-    apollo_i2c_ctl_reg_w(119, 1, 1, RegList[i][0]);
     int NewHighByte = RegList[i][0]>>8; //most significant 8 bits, 16 bits in total
     if (NewHighByte!=HighByte) {
       ChangePage = true;
@@ -108,9 +107,7 @@ void write_register(int RegList[][2], int n_row){
     HighByte = NewHighByte;
     int LowByte = RegList[i][0]-(NewHighByte<<8);
     if (ChangePage)
-      //    command = "apollo_i2cwr 0x77 0x01 1 "+RegList[i]ister[0][0:4]+""
       apollo_i2c_ctl_reg_w(119, 1, 1, NewHighByte);
-    //    command = "apollo_i2cwr 0x77 0x"+RegList[i]ister[0][4:6]+" 1 "+RegList[i]ister[1]+""
     apollo_i2c_ctl_reg_w(119, LowByte, 1, RegList[i][1]);
 
   }
@@ -119,6 +116,7 @@ void write_register(int RegList[][2], int n_row){
   
 int load_clock()
 {
+	initialize();
   int row = sizeof(PreambleList)/sizeof(PreambleList[0]);
   write_register(PreambleList,row);
   //  sleep(1); //only need 300 msec
