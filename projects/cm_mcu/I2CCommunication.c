@@ -1,8 +1,8 @@
 /*
- * CommandLineTask.c
+ * I2CCommunication.c
  *
- *  Created on: Apr 7, 2019
- *      Author: wittich
+ *  Created on: Sep 3, 2020
+ *      Author: wittich, rzou
  */
 
 
@@ -40,9 +40,9 @@
 // TivaWare includes
 #include "driverlib/uart.h"
 
-#include "MonitorTask.h"
-//#include "I2CCommunication.h"
+//#include "MonitorTask.h"
 #include "Tasks.h"
+#include "I2CCommunication.h"
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
@@ -59,7 +59,6 @@ int snprintf( char *buf, unsigned int count, const char *format, ... );
 
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   512
-
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
@@ -87,9 +86,9 @@ char m[SCRATCH_SIZE];
 
 int apollo_i2c_ctl_set_dev(uint8_t base)
 {
-	int s = SCRATCH_SIZE;
+  int s = SCRATCH_SIZE;
   if ( ! ((base==1)||(base==2)||(base==3)||(base==4)||(base==6))) {
-	  snprintf(m, s, "Invalid i2c device %d, only 1,2,3, 4 and 6 supported\r\n", base);
+    snprintf(m, s, "Invalid i2c device %d, only 1,2,3, 4 and 6 supported\r\n", base);
     return -1;
   }
   switch (base) {
@@ -113,65 +112,77 @@ int apollo_i2c_ctl_set_dev(uint8_t base)
       p_sMaster = &g_sMaster6;
       p_eStatus = &eStatus6;
       break;
+    default:
+      snprintf(m, s, "apollo_i2c_ctl_set_dev: huh? line %d\r\n",  __LINE__);
+      return -2;
+      break;
   }
   snprintf(m, s,"Setting i2c device to %d\r\n", base);
-  Print(m);
+  DPRINT(m);
   return 0;
 }
 
-int apollo_i2c_ctl_r(long int address, long int nbytes, uint8_t data[4])
+int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[4])
 {
-	int s = SCRATCH_SIZE;
+  int s = SCRATCH_SIZE;
   const int MAX_BYTES=4;
-  //  uint8_t data[MAX_BYTES];
   memset(data,0,MAX_BYTES*sizeof(data[0]));
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
 
-  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\r\n", nbytes, address);
-  Print(m);
+  snprintf(m, s, "apollo_i2c_ctl_r: Read %d bytes from I2C address 0x%x\r\n", nbytes, address);
+  DPRINT(m);
 
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_r: operation failed (1)\r\n");
     return -1;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_r: operation failed (2, value=%d)\r\n", *p_eStatus);
     return -2;
   }
   
-  snprintf(m, s, "i2c_ctl_r: add: 0x%02x: value 0x%02x %02x %02x %02x\r\n",
-             address, data[3], data[2], data[1], data[0]);
-  Print(m);
+  snprintf(m, s, "apollo_i2c_ctl_r: add: 0x%02x: value 0x%02x %02x %02x %02x\r\n",
+	   address, data[3], data[2], data[1], data[0]);
   return 0;
 }
-int apollo_i2c_ctl_reg_r(long int address, uint8_t reg_address, long int nbytes, uint8_t data[4])
+
+int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[4])
 {
+  int s = SCRATCH_SIZE;
   const int MAX_BYTES=4;
-  //  uint8_t txdata = reg_address;
   memset(data,0,MAX_BYTES*sizeof(data[0]));
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
-  //  Print(m);
+  snprintf(m, s, "apollo_i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\r\n",
+	   nbytes, address, reg_address);
+  DPRINT(m);
   tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&reg_address,1,data,nbytes);
   if (r != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_reg_r: operation failed (1)\r\n");
     return -1;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_reg_r: operation failed (2, value=%d)\r\n", *p_eStatus);
     return -2;
   }
+
+  snprintf(m, s, "apollo_i2c_ctl_reg_r: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\r\n",
+	   address, reg_address, data[3], data[2], data[1], data[0]);
   return 0;
 }
 
-int apollo_i2c_ctl_reg_w(long int address, uint8_t reg_address, long int nbytes, long int packed_data)
+int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t packed_data)
 {
   // first byte is the register, others are the data
-	int s = SCRATCH_SIZE;
+  int s = SCRATCH_SIZE;
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   data[0] = reg_address;
@@ -184,30 +195,31 @@ int apollo_i2c_ctl_reg_w(long int address, uint8_t reg_address, long int nbytes,
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
 
-  snprintf(m, s, "i2c_ctl_reg_w: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes including reg addr byte)\r\n",
-             packed_data, address, reg_address, nbytes);
-//   Print(m);
-   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
+  snprintf(m, s, "apollo_i2c_ctl_reg_w: Write 0x%08x to address 0x%02x, register 0x%02x (%d bytes including reg addr byte)\r\n",
+	   packed_data, address, reg_address, nbytes);
+  DPRINT(m);
+  tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_reg_w: operation failed (1)\r\n");
     return -1;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_reg_w: operation failed (2, value=%d)\r\n", *p_eStatus);
     return -2;
   }
 
-  snprintf(m, s, "i2c_ctl_reg_w: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\r\n",
-            address, reg_address, packed_data, nbytes-1);
-  Print(m);
+  snprintf(m, s, "apollo_i2c_ctl_reg_w: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\r\n",
+	   address, reg_address, packed_data, nbytes-1);
   return 0;
 }
 
 
-int apollo_i2c_ctl_w(long int address, long int nbytes, long int value)
+int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, uint8_t value)
 {
-	int s = SCRATCH_SIZE;
+  int s = SCRATCH_SIZE;
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i ) {
@@ -216,20 +228,24 @@ int apollo_i2c_ctl_w(long int address, long int nbytes, long int value)
   if ( nbytes > MAX_BYTES )
     nbytes = MAX_BYTES;
 
+  snprintf(m, s, "apollo_i2c_ctl_w: Write 0x%x to address 0x%x  (%d bytes)\r\n",
+	   value, address, nbytes);
+  DPRINT(m);
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_w: operation failed (1)\r\n");
     return -1;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   if ( *p_eStatus != SMBUS_OK) {
+    snprintf(m,s, "apollo_i2c_ctl_w: operation failed (2, value=%d)\r\n", *p_eStatus);
     return -2;
   }
 
-  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
-		  address, value, nbytes);
-  Print(m);
+  snprintf(m, s, "apollo_i2c_ctl_w: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
+	   address, value, nbytes);
   return 0;
 }
 

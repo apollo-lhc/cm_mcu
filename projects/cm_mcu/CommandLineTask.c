@@ -42,10 +42,11 @@
 
 #include "MonitorTask.h"
 #include "CommandLineTask.h"
+#include "I2CCommunication.h"
 #include "Tasks.h"
 #include "AlarmUtilities.h"
 
-#include "common/clocksynth.h"
+#include "clocksynth.h"
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
@@ -74,7 +75,6 @@ extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
-
 static tSMBus *p_sMaster = &g_sMaster4;
 static tSMBusStatus * p_eStatus = &eStatus4;
 
@@ -90,79 +90,25 @@ char m[SCRATCH_SIZE];
 
 static BaseType_t i2c_ctl_set_dev(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE;
   BaseType_t i = strtol(argv[1], NULL, 10); // device number
-  if ( ! ((i == 1)||(i==2)||(i==3)||(i==4)||(i==6))) {
-    snprintf(m, s, "Invalid i2c device %d (%s), only 1,2,3, 4 and 6 supported\r\n", i, argv[1]);
-    return pdFALSE;
-  }
-  switch (i) {
-    case 1:
-      p_sMaster = &g_sMaster1;
-      p_eStatus = &eStatus1;
-      break;
-    case 2:
-      p_sMaster = &g_sMaster2;
-      p_eStatus = &eStatus2;
-      break;
-    case 3:
-      p_sMaster = &g_sMaster3;
-      p_eStatus = &eStatus3;
-      break;
-    case 4:
-      p_sMaster = &g_sMaster4;
-      p_eStatus = &eStatus4;
-      break;
-    case 6:
-      p_sMaster = &g_sMaster6;
-      p_eStatus = &eStatus6;
-      break;
-    default:
-      snprintf(m, s, "%s: huh? line %d\r\n", argv[0], __LINE__);
-      return pdFALSE;
-      break;
-  }
-  snprintf(m, s,"Setting i2c device to %d\r\n", i);
+
+  apollo_i2c_ctl_set_dev(i);
   return pdFALSE;
 }
 
 static BaseType_t i2c_ctl_r(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE;
-
   BaseType_t address, nbytes;
   address = strtol(argv[1], NULL, 16);
   nbytes = strtol(argv[2], NULL, 10);
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
-  memset(data,0,MAX_BYTES*sizeof(data[0]));
-  if ( nbytes > MAX_BYTES )
-    nbytes = MAX_BYTES;
 
-  snprintf(m, s, "i2c_ctl_r: Read %d bytes from I2C address 0x%x\r\n", nbytes, address);
-  DPRINT(m);
-
-  tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
-  if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (1)\r\n", argv[0]);
-    return pdFALSE;
-  }
-  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-  if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2, value=%d)\r\n", argv[0], *p_eStatus);
-    return pdFALSE;
-  }
-
-  snprintf(m, s, "%s: add: 0x%02x: value 0x%02x %02x %02x %02x\r\n", argv[0],
-           address, data[3], data[2], data[1], data[0]);
+  apollo_i2c_ctl_r(address,nbytes,data);
   return pdFALSE;
 }
 static BaseType_t i2c_ctl_reg_r(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE;
-
   BaseType_t address, reg_address, nbytes;
   address = strtol(argv[1], NULL, 16);
   reg_address = strtol(argv[2], NULL, 16);
@@ -170,109 +116,33 @@ static BaseType_t i2c_ctl_reg_r(int argc, char ** argv)
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
   uint8_t txdata = reg_address;
-  memset(data,0,MAX_BYTES*sizeof(data[0]));
-  if ( nbytes > MAX_BYTES )
-    nbytes = MAX_BYTES;
-  snprintf(m, s, "i2c_ctl_reg_r: Read %d bytes from I2C address 0x%x, reg 0x%x\r\n",
-           nbytes, address, reg_address);
-  Print(m);
 
-  tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&txdata,1,data,nbytes);
-  if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (1)\r\n", argv[0]);
-    return pdFALSE;
-  }
-  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-  if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2, value=%d)\r\n", argv[0], *p_eStatus);
-    return pdFALSE;
-  }
-
-
-  snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\r\n",
-           address, reg_address, data[3], data[2], data[1], data[0]);
+  apollo_i2c_ctl_reg_r(address,txdata,nbytes,data);
   return pdFALSE;
 }
 
 static BaseType_t i2c_ctl_reg_w(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE;
-
   // first byte is the register, others are the data
   BaseType_t address, reg_address, nbytes, packed_data;
   address = strtol(argv[1], NULL, 16); // address
   reg_address = strtol(argv[2], NULL, 16); // register
   nbytes = strtol(argv[3], NULL, 16); // number of bytes
   packed_data = strtol(argv[4], NULL, 16); // data
-  const int MAX_BYTES=4;
-  uint8_t data[MAX_BYTES+1];
-  data[0] = reg_address;
-  // pack the bytes into the data array, offset by
-  // one due to the address
-  for (int i = 1; i < MAX_BYTES+1; ++i ) {
-    data[i] = (packed_data >> (i-1)*8) & 0xFFUL;
-  }
-  nbytes++; // to account for the register address
-  if ( nbytes > MAX_BYTES )
-    nbytes = MAX_BYTES;
-  snprintf(m, s, "%s: write 0x%08x to address 0x%02x, register 0x%02x (%d bytes including reg addr byte)\r\n", argv[0],
-           packed_data, address, reg_address, nbytes);
-  DPRINT(m);
-  tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
-  if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (1)\r\n", argv[0]);
-    return pdFALSE;
-  }
-  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-  if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: operation failed (2)\r\n", argv[0]);
-    return pdFALSE;
-  }
 
-  snprintf(m, s, "%s: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\r\n", argv[0],
-           address, reg_address, packed_data, nbytes-1);
+  apollo_i2c_ctl_reg_w(address,reg_address,nbytes,packed_data);
   return pdFALSE;
 }
 
 
 static BaseType_t i2c_ctl_w(int argc, char **argv)
 {
-  int s = SCRATCH_SIZE;
-
   BaseType_t address, nbytes, value;
   address = strtol(argv[1], NULL, 16);
   nbytes = strtol(argv[2], NULL, 16);
   value = strtol(argv[3], NULL, 16);
-  const int MAX_BYTES=4;
-  uint8_t data[MAX_BYTES];
-  for (int i = 0; i < MAX_BYTES; ++i ) {
-    data[i] = (value >> i*8) & 0xFFUL;
-  }
-  if ( nbytes > MAX_BYTES )
-    nbytes = MAX_BYTES;
-  snprintf(m, s, "%s: write 0x%x to address 0x%x  (%d bytes)\r\n", argv[0],
-           value, address, nbytes);
-  DPRINT(m);
 
-  tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
-  if (r != SMBUS_OK) {
-    snprintf(m,s, "%s: write failed (1)\r\n", argv[0]);
-    return pdFALSE;
-  }
-  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-  if ( *p_eStatus != SMBUS_OK) {
-    snprintf(m,s, "%s: write failed (2)\r\n", argv[0]);
-    return pdFALSE;
-  }
-
-  snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
-           address, value, nbytes);
+  apollo_i2c_ctl_w(address,nbytes,value);
   return pdFALSE;
 }
 
@@ -611,22 +481,18 @@ static BaseType_t bl_ctl(int argc, char ** argv)
 // this command takes one argument
 static BaseType_t clock_ctl(int argc, char ** argv)
 {
-  static int iter = 0;
-  int val = (int)strtol(argv[1], NULL, 10); // interpret argument as base-10 number
+  int s = SCRATCH_SIZE;
   int copied = 0;
-  if ( iter == 0 )
-    copied = snprintf(m+copied, SCRATCH_SIZE-copied, "%s: %d passed in\r\n", argv[0], val);
-  // ... extra commands that copy its output to the m buffer
-  // ... if we need to call this function again return pdTRUE and use some sort of static variable
-  // to keep track of which entry you are in
-//  for ( ; iter < 100; ++iter) {
-//    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: example\r\n");
-//    if ( SCRATCH_SIZE-copied < 20 ) {
-//      return pdTRUE;
-//    }
-//  }
-  load_clock();
-  iter = 0; // reset iter on final exit
+  BaseType_t i = strtol(argv[1], NULL, 10);
+  if ( ! ((i==1)||(i==2) )) {
+    snprintf(m, s, "Invalid mode %d for clock, only 1 (reset) and 2 (program) supported\r\n", i);
+    return pdFALSE;
+  }
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s mode set to %d. \r\n", argv[0], i);
+  if (i==1)
+    initialize_clock();
+  if (i==2)
+    load_clock();
   return pdFALSE;
 }
 
@@ -1473,7 +1339,7 @@ struct command_t commands[] = {
     {
         "clock",
         clock_ctl,
-        "clock\r\n control the clock synthesizer\r\n",
+        "clock\r\n Reset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n",
         1
     },
     {
