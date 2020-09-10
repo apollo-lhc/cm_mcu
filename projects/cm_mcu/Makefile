@@ -88,6 +88,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/clocksynth.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/softuart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommunication.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o

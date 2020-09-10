@@ -2,7 +2,7 @@
  * clocksynth.c
  *
  *  Created on: Jul 30, 2020
- *      Author: pw94, rzou
+ *      Author: rzou
  */
 #include "clocksynth.h"
 #include "common/utils.h"
@@ -64,10 +64,11 @@ int RegisterList[][2] = {{ 11 , 116 },
 			 { 2903 , 14 },
 			 { 2904 , 1 }};
 
-void initialize_clock()
+int initialize_clock()
 {
+  int status = -10;
   //Setting I2C baseline to 2
-  apollo_i2c_ctl_set_dev(2);
+  status = apollo_i2c_ctl_set_dev(2);
   //enable 0x77 and 0x20, 0x21 via 0x70 (112): 0xc1
   apollo_i2c_ctl_w(112, 1, 193);
   //Setting Control Registers (0x20 (32)) on U93 (TCA9555) to have all I/O ports (P0-7 (0x02),P10-17 (0x03)) set as outputs (value 0))
@@ -81,13 +82,14 @@ void initialize_clock()
   //Clear sticky flags of clock synth status monitor (0x77 (119)) (raised high after reset) (0x11=17)
   apollo_i2c_ctl_reg_w(119, 1, 1, 0);
   apollo_i2c_ctl_reg_w(119, 17, 1, 0);
-  return;
+  return status;
 }
 
 
-void write_register(int RegList[][2], int n_row){
+static int write_register(int RegList[][2], int n_row){
   bool ChangePage = true;
   int HighByte = -1;
+  int status = -10;
   for (int i=0;i<n_row;i++) {
     int NewHighByte = RegList[i][0]>>8; //most significant 8 bits, 16 bits in total
     if (NewHighByte!=HighByte) {
@@ -97,23 +99,31 @@ void write_register(int RegList[][2], int n_row){
     }
     HighByte = NewHighByte;
     int LowByte = RegList[i][0]-(NewHighByte<<8);
-    if (ChangePage)
-      apollo_i2c_ctl_reg_w(119, 1, 1, NewHighByte);
-    apollo_i2c_ctl_reg_w(119, LowByte, 1, RegList[i][1]);
+    if (ChangePage) {
+      status = apollo_i2c_ctl_reg_w(119, 1, 1, NewHighByte);
+      if (status != 0)
+	return status;
+    }
+    status = apollo_i2c_ctl_reg_w(119, LowByte, 1, RegList[i][1]);
   }
-  return;
+  return status;
 }
   
 int load_clock()
 {
   initialize_clock();
   int row = sizeof(PreambleList)/sizeof(PreambleList[0]);
-  write_register(PreambleList,row);
+  int status = -10;
+  status = write_register(PreambleList,row);
+  if (status != 0) 
+    return status;
   vTaskDelay(pdMS_TO_TICKS(1));
   row = sizeof(RegisterList)/sizeof(RegisterList[0]);
-  write_register(RegisterList,row);
+  status = write_register(RegisterList,row);
+  if (status != 0)
+    return status;
   vTaskDelay(pdMS_TO_TICKS(1));
   row = sizeof(PostambleList)/sizeof(PostambleList[0]);
-  write_register(PostambleList,row);
-  return 0;
+  status = write_register(PostambleList,row);
+  return status;
 }

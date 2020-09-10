@@ -90,25 +90,47 @@ char m[SCRATCH_SIZE];
 
 static BaseType_t i2c_ctl_set_dev(int argc, char ** argv)
 {
+  int s = SCRATCH_SIZE;
   BaseType_t i = strtol(argv[1], NULL, 10); // device number
 
-  apollo_i2c_ctl_set_dev(i);
+  int status = apollo_i2c_ctl_set_dev(i);
+  if (status == 0) {
+    snprintf(m, s,"Setting i2c device to %d\r\n", i);
+  } else if (status == -1) {
+    snprintf(m, s, "Invalid i2c device %d (%s), only 1,2,3, 4 and 6 supported\r\n", i, argv[1]);
+  } else if (status == -2) {
+    snprintf(m, s, "%s: huh? line %d\r\n", argv[0], __LINE__);
+  } else {
+    snprintf(m, s,"%s: invalid return value. line %d\r\n", argv[0], __LINE__);
+  }
   return pdFALSE;
 }
 
 static BaseType_t i2c_ctl_r(int argc, char ** argv)
 {
+  int s = SCRATCH_SIZE;
   BaseType_t address, nbytes;
   address = strtol(argv[1], NULL, 16);
   nbytes = strtol(argv[2], NULL, 10);
   const int MAX_BYTES=4;
   uint8_t data[MAX_BYTES];
 
-  apollo_i2c_ctl_r(address,nbytes,data);
+  int status = apollo_i2c_ctl_r(address,nbytes,data);
+  if (status == 0) {
+    snprintf(m, s, "%s: add: 0x%02x: value 0x%02x %02x %02x %02x\r\n", argv[0],
+	     address, data[3], data[2], data[1], data[0]);
+  } else if (status == -1) {
+    snprintf(m,s, "%s: operation failed (1)\r\n", argv[0]);
+  } else if (status == -2) {
+    snprintf(m,s, "%s: operation failed (2, value=%d)\r\n", argv[0], *p_eStatus);
+  } else {
+    snprintf(m, s,"%s: invalid return value. line %d\r\n", argv[0], __LINE__);
+  }
   return pdFALSE;
 }
 static BaseType_t i2c_ctl_reg_r(int argc, char ** argv)
 {
+  int s = SCRATCH_SIZE;
   BaseType_t address, reg_address, nbytes;
   address = strtol(argv[1], NULL, 16);
   reg_address = strtol(argv[2], NULL, 16);
@@ -117,32 +139,65 @@ static BaseType_t i2c_ctl_reg_r(int argc, char ** argv)
   uint8_t data[MAX_BYTES];
   uint8_t txdata = reg_address;
 
-  apollo_i2c_ctl_reg_r(address,txdata,nbytes,data);
+  int status = apollo_i2c_ctl_reg_r(address,txdata,nbytes,data);
+  if (status == 0) {
+    snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\r\n",
+	     address, reg_address, data[3], data[2], data[1], data[0]);
+  } else if (status == -1) {
+    snprintf(m,s, "%s: operation failed (1)\r\n", argv[0]);
+  } else if (status == -2) {
+    snprintf(m,s, "%s: operation failed (2, value=%d)\r\n", argv[0], *p_eStatus);
+  } else {
+    snprintf(m, s,"%s: invalid return value. line %d\r\n", argv[0], __LINE__);
+  }
   return pdFALSE;
 }
 
 static BaseType_t i2c_ctl_reg_w(int argc, char ** argv)
 {
+  int s = SCRATCH_SIZE;
   // first byte is the register, others are the data
   BaseType_t address, reg_address, nbytes, packed_data;
   address = strtol(argv[1], NULL, 16); // address
   reg_address = strtol(argv[2], NULL, 16); // register
   nbytes = strtol(argv[3], NULL, 16); // number of bytes
   packed_data = strtol(argv[4], NULL, 16); // data
+  
+  int status = apollo_i2c_ctl_reg_w(address,reg_address,nbytes,packed_data);
+  if (status == 0) {
+    snprintf(m, s, "%s: Wrote to address 0x%x, register 0x%x, value 0x%08x (%d bytes)\r\n", argv[0],
+	     address, reg_address, packed_data, nbytes-1);
+  } else if (status == -1) {
+    snprintf(m,s, "%s: operation failed (1)\r\n", argv[0]);
+  } else if (status == -2) {
+    snprintf(m,s, "%s: operation failed (2)\r\n", argv[0]);
+  } else {
+    snprintf(m, s,"%s: invalid return value. line %d\r\n", argv[0], __LINE__);
+  }
 
-  apollo_i2c_ctl_reg_w(address,reg_address,nbytes,packed_data);
   return pdFALSE;
 }
 
 
 static BaseType_t i2c_ctl_w(int argc, char **argv)
 {
+  int s = SCRATCH_SIZE;
   BaseType_t address, nbytes, value;
   address = strtol(argv[1], NULL, 16);
   nbytes = strtol(argv[2], NULL, 16);
   value = strtol(argv[3], NULL, 16);
 
-  apollo_i2c_ctl_w(address,nbytes,value);
+  int status = apollo_i2c_ctl_w(address,nbytes,value);
+  if (status == 0) {
+    snprintf(m, s, "i2cwr: Wrote to address 0x%x, value 0x%08x (%d bytes)\r\n",
+	     address, value, nbytes);
+  } else if (status == -1) {
+    snprintf(m,s, "%s: write failed (1)\r\n", argv[0]);
+  } else if (status == -2) {
+    snprintf(m,s, "%s: write failed (2)\r\n", argv[0]);
+  } else {
+    snprintf(m, s,"%s: invalid return value. line %d\r\n", argv[0], __LINE__);
+  }
   return pdFALSE;
 }
 
