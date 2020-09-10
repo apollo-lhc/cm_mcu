@@ -45,3 +45,6 @@ Also tested with the 9-2019 version, which is more aggressive in the warnings.
 
 ## Documentation
 See the wiki page on this github for documentation.
+
+## Windows
+For Windows users, WSL works well on command line, but we haven't figured out how to make eclipse recognize the path to its /bin/ directory. If using cygwin, set FREERTOS_PATH in the format of d:/FreeRTOSv10.2.1/FreeRTOS/Source instead /cydrive/d/FreeRTOSv10.2.1/FreeRTOS/Source. Known issue with cygwin: one has to do make clean in between make.
