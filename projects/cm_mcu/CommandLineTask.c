@@ -538,16 +538,28 @@ static BaseType_t clock_ctl(int argc, char ** argv)
 {
   int s = SCRATCH_SIZE;
   int copied = 0;
+  int status;
   BaseType_t i = strtol(argv[1], NULL, 10);
   if ( ! ((i==1)||(i==2) )) {
     snprintf(m, s, "Invalid mode %d for clock, only 1 (reset) and 2 (program) supported\r\n", i);
     return pdFALSE;
   }
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s mode set to %d. \r\n", argv[0], i);
-  if (i==1)
-    initialize_clock();
-  if (i==2)
-    load_clock();
+  if (i==1) {
+    status = initialize_clock();
+    if (status == 0)
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "clock synthesizer successfully initialized. \r\n");
+  } else if (i==2) {
+    status = load_clock();
+    if (status == 0)
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "clock synthesizer successfully programmed. \r\n"); 
+  }
+  if (status == -1)
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s operation failed (1). \r\n", argv[0]);
+  else if (status == -2)
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s operation failed (2). \r\n", argv[0]);
+  else
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s invalid return value. \r\n", argv[0]);
   return pdFALSE;
 }
 

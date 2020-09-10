@@ -67,21 +67,33 @@ int RegisterList[][2] = {{ 11 , 116 },
 int initialize_clock()
 {
   int status = -10;
-  //Setting I2C baseline to 2
-  status = apollo_i2c_ctl_set_dev(2);
-  //enable 0x77 and 0x20, 0x21 via 0x70 (112): 0xc1
-  apollo_i2c_ctl_w(112, 1, 193);
-  //Setting Control Registers (0x20 (32)) on U93 (TCA9555) to have all I/O ports (P0-7 (0x02),P10-17 (0x03)) set as outputs (value 0))
-  apollo_i2c_ctl_reg_w(32, 6, 1, 0);
-  apollo_i2c_ctl_reg_w(32, 7, 1, 0);
-  //Configuring clock muxes for xcvrs via 0x20 (32), 0x0f=15
-  apollo_i2c_ctl_reg_w(32, 2, 1, 15);
-  //Configuring Clock Synthesizer chip (enable (0x13 (19)) and reset (0x1b (27))) via 0x20
-  apollo_i2c_ctl_reg_w(32, 3, 1, 19);
-  apollo_i2c_ctl_reg_w(32, 3, 1, 27);
-  //Clear sticky flags of clock synth status monitor (0x77 (119)) (raised high after reset) (0x11=17)
-  apollo_i2c_ctl_reg_w(119, 1, 1, 0);
-  apollo_i2c_ctl_reg_w(119, 17, 1, 0);
+  status = apollo_i2c_ctl_set_dev(CLOCK_I2C_BASE);
+  if (status != 0)
+    return status;
+  //Enable clocksynth, two i/o expanders via switch
+  status = apollo_i2c_ctl_w(CLOCK_SWITCH_I2C_ADDRESS, 1, CLOCK_SWITCH_ENABLEMAP);
+  if (status != 0)
+    return status;
+  //Setting clock write expander to have all I/O ports (P0-7,P10-17) set as outputs
+  status = apollo_i2c_ctl_reg_w(CLOCK_WRITE_EXPANDER_I2C_ADDRESS, CLOCK_EXPANDER_CONFIGURATION_PORT_0, 1, CLOCK_EXPANDER_CONFIGURATION_PORT_SETASOUTPUT);
+  if (status != 0)
+    return status;
+  status = apollo_i2c_ctl_reg_w(CLOCK_WRITE_EXPANDER_I2C_ADDRESS, CLOCK_EXPANDER_CONFIGURATION_PORT_1, 1, CLOCK_EXPANDER_CONFIGURATION_PORT_SETASOUTPUT);
+  if (status != 0)
+    return status;
+  //Make clock buffer for xcvrs pick synthesized clock
+  status = apollo_i2c_ctl_reg_w(CLOCK_WRITE_EXPANDER_I2C_ADDRESS, CLOCK_EXPANDER_OUTPUT_PORT_0, 1, CLOCK_EXPANDER_CHOOSE_CLOCKSYNTH_4XCVR);
+  if (status != 0)
+    return status;
+  //Configuring Clock Synthesizer chip (enable and reset) via expander
+  status = apollo_i2c_ctl_reg_w(CLOCK_WRITE_EXPANDER_I2C_ADDRESS, CLOCK_EXPANDER_OUTPUT_PORT_1, 1, CLOCK_EXPANDER_ENABLE_CLOCKSYNTH);
+  if (status != 0)
+    return status;
+  status = apollo_i2c_ctl_reg_w(CLOCK_WRITE_EXPANDER_I2C_ADDRESS, CLOCK_EXPANDER_OUTPUT_PORT_1, 1, CLOCK_EXPANDER_RESET_CLOCKSYNTH);
+  if (status != 0)
+    return status;
+  //Clear sticky flags of clock synth status monitor (raised high after reset)
+  status = apollo_i2c_ctl_reg_w(CLOCK_SYNTH_I2C_ADDRESS, CLOCK_SYNTH_STICKY_FLAG_REGISTER, 1, 0);
   return status;
 }
 
@@ -100,11 +112,11 @@ static int write_register(int RegList[][2], int n_row){
     HighByte = NewHighByte;
     int LowByte = RegList[i][0]-(NewHighByte<<8);
     if (ChangePage) {
-      status = apollo_i2c_ctl_reg_w(119, 1, 1, NewHighByte);
+      status = apollo_i2c_ctl_reg_w(CLOCK_SWITCH_I2C_ADDRESS, 0x01, 1, NewHighByte);
       if (status != 0)
 	return status;
     }
-    status = apollo_i2c_ctl_reg_w(119, LowByte, 1, RegList[i][1]);
+    status = apollo_i2c_ctl_reg_w(CLOCK_SWITCH_I2C_ADDRESS, LowByte, 1, RegList[i][1]);
   }
   return status;
 }
