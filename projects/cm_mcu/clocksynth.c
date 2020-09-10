@@ -98,7 +98,8 @@ int initialize_clock()
 }
 
 
-static int write_register(int RegList[][2], int n_row){
+static int write_register(int RegList[][2], int n_row)
+{
   bool ChangePage = true;
   int HighByte = -1;
   int status = -10;

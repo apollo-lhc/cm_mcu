@@ -536,12 +536,11 @@ static BaseType_t bl_ctl(int argc, char ** argv)
 // this command takes one argument
 static BaseType_t clock_ctl(int argc, char ** argv)
 {
-  int s = SCRATCH_SIZE;
   int copied = 0;
   int status;
   BaseType_t i = strtol(argv[1], NULL, 10);
   if ( ! ((i==1)||(i==2) )) {
-    snprintf(m, s, "Invalid mode %d for clock, only 1 (reset) and 2 (program) supported\r\n", i);
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Invalid mode %d for clock, only 1 (reset) and 2 (program) supported\r\n", i);
     return pdFALSE;
   }
   copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s mode set to %d. \r\n", argv[0], i);
