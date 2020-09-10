@@ -2,7 +2,7 @@
  * CommandLineTask.c
  *
  *  Created on: Apr 7, 2019
- *      Author: wittich
+ *      Author: wittich, rzou
  */
 
 
@@ -558,7 +558,7 @@ static BaseType_t clock_ctl(int argc, char ** argv)
     copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s operation failed (1). \r\n", argv[0]);
   else if (status == -2)
     copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s operation failed (2). \r\n", argv[0]);
-  else
+  else if (status != 0)
     copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s invalid return value. \r\n", argv[0]);
   return pdFALSE;
 }
