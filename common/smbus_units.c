@@ -5,11 +5,17 @@
  *      Author: pw94
  */
 #include "common/smbus_units.h"
+#include "common/utils.h"
 
 float linear11_to_float(linear11_val_t t)
 {
-  // can't use bit shifts here as mantissa is often negative
-  return t.linear.base * powf(2.0f, t.linear.mantissa);
+  // this gymnastics allows us to avoid a call to powf and use
+  // bitshifts. 
+  float val = (float)(1<<ABS((signed char)t.linear.mantissa));
+  if ( t.linear.mantissa < 0.f )
+    return t.linear.base/val;
+  else 
+    return t.linear.base * val;
 }
 
 #define LIN16U_MANTISSA -13.0f

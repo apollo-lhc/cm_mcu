@@ -15,81 +15,11 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 #include "semphr.h"
-#include "math.h"
-#include "stdlib.h"
 
 #ifdef __INTELLISENSE__
 #define __fp16 float
 #endif // __INTELLISENSE 
 
-// this will suffer from the double evaluation bug 
-//#define MAX(a,b) (a)>(b)?(a):(b)
-// instead use these functions and a _generic macro
-// this is overkill, but I'm parking it here because I never remember this exists.
-inline int max(int const x, int const y)
-{
-  return y > x ? y : x;
-}
-
-inline unsigned maxu(unsigned const x, unsigned const y)
-{
-  return y > x ? y : x;
-}
-
-inline long maxl(long const x, long const y)
-{
-  return y > x ? y : x;
-}
-
-inline unsigned long maxul(unsigned long const x, unsigned long const y)
-{
-  return y > x ? y : x;
-}
-
-inline long long maxll(long long const x, long long const y)
-{
-  return y > x ? y : x;
-}
-
-inline unsigned long long maxull(unsigned long long const x,
-                                 unsigned long long const y)
-{
-  return y > x ? y : x;
-}
-
-// clang-format off
-#define MAX(X, Y) (_Generic((X) + (Y),   \
-    int:                max,             \
-    unsigned:           maxu,            \
-    long:               maxl,            \
-    unsigned long:      maxul,           \
-    long long:          maxll,           \
-    unsigned long long: maxull,          \
-    float:              fmaxf,           \
-    double:             fmax,            \
-    long double:        fmaxl)((X), (Y)))
-// clang-format on
-
-/* this does not work with -pedantic, it is a gcc extension 
-#define MAX(a, b)                                                              \
-   ({                                                                           \
-     __typeof__(a) _a = (a);                                                    \
-     __typeof__(b) _b = (b);                                                    \
-     _a > _b ? _a : _b;                                                         \
-  })
-*/
-// clang-format screws up the formatting of this.
-// clang-format off
-#define ABS(n)              \
-  _Generic((n),             \
-  signed char: abs(n),      \
-        short: abs(n),      \
-          int: abs(n),      \
-         long: labs(n),     \
-    long long: llabs(n),    \
-        float: fabsf(n),     \
-       double: fabs(n))
-// clang-format on
 
 // INIT task
 void InitTask(void *parameters);
@@ -108,7 +38,6 @@ extern QueueHandle_t xLedQueue;
 // control the LED
 void LedTask(void *parameters);
 
-// this should go elsewhere
 #define RED_LED_OFF       (25)
 #define RED_LED_ON        (26)
 #define RED_LED_TOGGLE    (27)
@@ -127,10 +56,9 @@ void LedTask(void *parameters);
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task
-#define SET_PS_RETRY 5	// time interval between each set_ps() attempt
 void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
-enum power_system_state { INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
+enum power_system_state { POWER_INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
 enum power_system_state getPowerControlState();
 
 
