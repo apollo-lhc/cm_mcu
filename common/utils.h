@@ -12,6 +12,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "math.h"
+#include "stdlib.h"
 
 // write, read or toggle GPIO pin by name
 void write_gpio_pin(int pin, uint8_t value);
@@ -113,6 +115,73 @@ void stopwatch_reset(void);
 uint32_t stopwatch_getticks();
 
 void float_to_ints(float val, int *tens, int *fraction);
+// this will suffer from the double evaluation bug
+//#define MAX(a,b) (a)>(b)?(a):(b)
+// instead use these functions and a _generic macro
+// this is overkill, but I'm parking it here because I never remember this exists.
+inline int max(int const x, int const y)
+{
+  return y > x ? y : x;
+}
+
+inline unsigned maxu(unsigned const x, unsigned const y)
+{
+  return y > x ? y : x;
+}
+
+inline long maxl(long const x, long const y)
+{
+  return y > x ? y : x;
+}
+
+inline unsigned long maxul(unsigned long const x, unsigned long const y)
+{
+  return y > x ? y : x;
+}
+
+inline long long maxll(long long const x, long long const y)
+{
+  return y > x ? y : x;
+}
+
+inline unsigned long long maxull(unsigned long long const x, unsigned long long const y)
+{
+  return y > x ? y : x;
+}
+
+// clang-format off
+#define MAX(X, Y) (_Generic((X) + (Y),   \
+    int:                max,             \
+    unsigned:           maxu,            \
+    long:               maxl,            \
+    unsigned long:      maxul,           \
+    long long:          maxll,           \
+    unsigned long long: maxull,          \
+    float:              fmaxf,           \
+    double:             fmax,            \
+    long double:        fmaxl)((X), (Y)))
+// clang-format on
+
+/* this does not work with -pedantic, it is a gcc extension
+#define MAX(a, b)                                                              \
+   ({                                                                           \
+     __typeof__(a) _a = (a);                                                    \
+     __typeof__(b) _b = (b);                                                    \
+     _a > _b ? _a : _b;                                                         \
+  })
+*/
+// clang-format screws up the formatting of this.
+// clang-format off
+#define ABS(n)           \
+  (_Generic((n),         \
+  signed char: abs,      \
+        short: abs,      \
+          int: abs,      \
+         long: labs,     \
+    long long: llabs,    \
+        float: fabsf,    \
+       double: fabs)(n))
+// clang-format on
 
 
 #endif /* COMMON_UTILS_H_ */

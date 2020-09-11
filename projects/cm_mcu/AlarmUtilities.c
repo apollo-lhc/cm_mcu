@@ -21,6 +21,8 @@ extern struct MonitorTaskArgs_t fpga_args;
 // current value of the thresholds
 static float alarmTemp[4] = {INITIAL_ALARM_TEMP_FF, INITIAL_ALARM_TEMP_DCDC,
                              INITIAL_ALARM_TEMP_TM4C, INITIAL_ALARM_TEMP_FPGA};
+// current value of temperatures
+static float currentTemp[4] = {0.f, 0.f, 0.f, 0.f};
 
 // Status flags of the temperature alarm task
 static uint32_t status_T = 0x0;
@@ -48,37 +50,37 @@ int TempStatus()
   status_T = 0x0U;
 
   // microcontroller
-  alarmTemp[TM4C] = getADCvalue(ADC_INFO_TEMP_ENTRY);
-  if (alarmTemp[TM4C] > getAlarmTemperature(TM4C)) {
+  currentTemp[TM4C] = getADCvalue(ADC_INFO_TEMP_ENTRY);
+  if (currentTemp[TM4C] > getAlarmTemperature(TM4C)) {
     status_T |= ALM_STAT_TM4C_OVERTEMP;
     retval++;
   }
 
   // FPGA
   if (fpga_args.n_devices == 2) {
-    alarmTemp[FPGA] = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+    currentTemp[FPGA] = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
   }
   else {
-    alarmTemp[FPGA] = fpga_args.pm_values[0];
+    currentTemp[FPGA] = fpga_args.pm_values[0];
   }
-  if (alarmTemp[FPGA] > getAlarmTemperature(FPGA)) {
+  if (currentTemp[FPGA] > getAlarmTemperature(FPGA)) {
     status_T |= ALM_STAT_FPGA_OVERTEMP;
     retval++;
   }
 
   // DCDC. The first command is READ_TEMPERATURE_1.
   // I am assuming it stays that way!!!!!!!!
-  alarmTemp[DCDC] = -99.0f;
+  currentTemp[DCDC] = -99.0f;
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     for (int page = 0; page < dcdc_args.n_pages; ++page) {
       size_t index =
           ps * (dcdc_args.n_commands * dcdc_args.n_pages) + page * dcdc_args.n_commands + 0;
       float thistemp = dcdc_args.pm_values[index];
-      if (thistemp > alarmTemp[DCDC])
-        alarmTemp[DCDC] = thistemp;
+      if (thistemp > currentTemp[DCDC])
+        currentTemp[DCDC] = thistemp;
     }
   }
-  if (alarmTemp[DCDC] > getAlarmTemperature(DCDC)) {
+  if (currentTemp[DCDC] > getAlarmTemperature(DCDC)) {
     status_T |= ALM_STAT_DCDC_OVERTEMP;
     retval++;
   }
@@ -91,8 +93,8 @@ int TempStatus()
     if (v > imax_ff_temp)
       imax_ff_temp = v;
   }
-  alarmTemp[FF] = (float) imax_ff_temp;
-  if (alarmTemp[FF] > getAlarmTemperature(FF)) {
+  currentTemp[FF] = (float) imax_ff_temp;
+  if (currentTemp[FF] > getAlarmTemperature(FF)) {
     status_T |= ALM_STAT_FIREFLY_OVERTEMP;
     retval++;
   }
@@ -101,8 +103,8 @@ int TempStatus()
 
 void TempErrorLog()
 {
-  errbuffer_temp_high((uint8_t)alarmTemp[TM4C], (uint8_t)alarmTemp[FPGA], (uint8_t)alarmTemp[FF],
-                      (uint8_t)alarmTemp[DCDC]);
+  errbuffer_temp_high((uint8_t)currentTemp[TM4C], (uint8_t)currentTemp[FPGA], (uint8_t)currentTemp[FF],
+                      (uint8_t)currentTemp[DCDC]);
 }
 
 void TempClearErrorLog()

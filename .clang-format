@@ -6,3 +6,5 @@ IndentCaseLabels: true
 SortIncludes: false
 AlignConsecutiveMacros: true
 ColumnLimit: 100
+UseTab: Never
+

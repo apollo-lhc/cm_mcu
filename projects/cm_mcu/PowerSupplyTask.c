@@ -34,7 +34,7 @@ void Print(const char *str);
 int snprintf( char *buf, unsigned int count, const char *format, ... );
 
 
-enum power_system_state currentState = INIT; // start in INIT state
+enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
 
 enum power_system_state getPowerControlState()
 {
@@ -139,9 +139,9 @@ void PowerSupplyTask(void *parameters)
     }
 
     // MAIN POWER SUPPLY TASK STATE MACHINE
-    // +------+
-    // | INIT +--------------------------------------------+
-    // +---+--+                                            |
+    // +------------+
+    // | POWER_INIT +--------------------------------------+
+    // +---+--------+                                      |
     //     |                                               v
     //     |          +-----------+                  +-----+-----+
     //     |          |           +----------------> |           |
@@ -159,7 +159,7 @@ void PowerSupplyTask(void *parameters)
     // instead it's in the POWER_ON state (e.g.)
     enum power_system_state nextState;
     switch (currentState) {
-      case INIT: {
+      case POWER_INIT: {
         // only run on first boot
         if (blade_power_enable) {
           turn_on_ps(supply_en_mask);
@@ -227,7 +227,7 @@ void PowerSupplyTask(void *parameters)
       }
       default: {
         // configASSERT(1 == 0);
-        nextState = INIT; // shut up debugger
+        nextState = POWER_INIT; // shut up debugger
         break;
       }
     }
@@ -249,7 +249,7 @@ void PowerSupplyTask(void *parameters)
         // ... it _should_ be on based on the mask
         switch (currentState) {
         case POWER_OFF:
-        case INIT:
+        case POWER_INIT:
           // ... but the power state is "off" or 
           // we are just initializing / turning on
           setPSStatus(i, PWR_OFF);

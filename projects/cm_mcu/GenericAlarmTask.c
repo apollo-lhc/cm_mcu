@@ -44,7 +44,7 @@ void GenericAlarmTask(void *parameters)
   uint32_t message; // this must be in a semi-permanent scope
   bool alarming;
 
-  enum alarm_task_state currentState = INIT;
+  enum alarm_task_state currentState = ALM_INIT;
   for (;;) {
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));
 
