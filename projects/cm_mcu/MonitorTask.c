@@ -103,7 +103,11 @@ void MonitorTask(void *parameters)
     // since that is the I2C pullups. This will be changed with next
     // rev of the board.
     // HACK -- THIS TEST IS ONLY USED FOR THE XILINX TASK (name starts with 'X')
-    if ( getPSStatus(5) != PWR_ON  && args->name[0] == 'X') {
+    if (getPSStatus(5) != PWR_ON
+#ifdef ECN001
+        && args->name[0] == 'X'
+#endif // NO_ECN001
+    ) {
       if ( good ) {
         snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
             args->name);

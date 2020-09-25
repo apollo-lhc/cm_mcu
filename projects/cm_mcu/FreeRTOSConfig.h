@@ -177,6 +177,9 @@ header file. */
 
 #define SYSTEM_STACK_SIZE 128
 #define I2C_PULLUP_BUG
+#ifndef NO_ECN001
+#define ECN001
+#endif // NO_ECN001 
 
 #define pdTICKS_TO_MS( xTicks )    ( ( ( TickType_t ) ( xTicks ) * 1000u ) / configTICK_RATE_HZ )
 

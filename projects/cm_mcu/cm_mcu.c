@@ -300,6 +300,9 @@ int main( void )
   Print("Staring Apollo CM MCU firmware " FIRMWARE_VERSION
         "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__", " __DATE__ "\r\n");
+#ifdef ECN001
+  Print("Includes ECN001 code mods\r\n");
+#endif // ECN001
   Print("----------------------------\r\n");
 
   errbuffer_init(EBUF_MINBLK,EBUF_MAXBLK);

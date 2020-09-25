@@ -120,8 +120,10 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_VU_MASK_L5;
   }
 
-  // // configure the LGA80D supplies
+#ifdef ECN001
+  // configure the LGA80D supplies. This call takes some time.
   LGA80D_init();
+#endif // ECN001
 
   bool power_supply_alarm = false;
   uint16_t failed_mask = 0x0U;
