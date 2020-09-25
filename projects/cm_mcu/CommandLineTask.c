@@ -229,8 +229,8 @@ static BaseType_t power_ctl(int argc, char ** argv)
                          "%s:\r\nVU_ENABLE:\t%d\r\n"
                          "KU_ENABLE:\t%d\r\n",
                          argv[0], vu_enable, ku_enable);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "State machine state: %d\r\n", getPowerControlState());
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "State machine state: %s\r\n",
+                         getPowerControlStateName(getPowerControlState()));
     }
     for (; i < N_PS_OKS; ++i ) {
       enum ps_state j = getPSStatus(i);

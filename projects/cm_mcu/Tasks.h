@@ -58,8 +58,20 @@ void LedTask(void *parameters);
 // --- Power Supply management task
 void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
-enum power_system_state { POWER_INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
+//enum power_system_state { POWER_INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
+enum power_system_state {
+  POWER_FAILURE,
+  POWER_INIT,
+  POWER_OFF,
+  POWER_L1ON,
+  POWER_L2ON,
+  POWER_L3ON,
+  POWER_L4ON,
+  POWER_L5ON,
+  POWER_ON,
+};
 enum power_system_state getPowerControlState();
+const char* getPowerControlStateName(enum power_system_state);
 void LGA80D_init(void);
 
 

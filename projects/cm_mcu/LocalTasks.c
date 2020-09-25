@@ -208,7 +208,7 @@ void LGA80D_init(void)
         Print("error in LGA80D_init (2)\r\n");
       }
       // actual command -- multiphase_ramp_gain switch
-      uint8_t val = 0x7; // by suggestion of Artesian
+      uint8_t val = 0x7U; // by suggestion of Artesian
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
       if ( r ) {
         Print("error in LGA80D_init (3)\r\n");
