@@ -537,7 +537,7 @@ static BaseType_t bl_ctl(int argc, char ** argv)
 static BaseType_t clock_ctl(int argc, char ** argv)
 {
   int copied = 0;
-  int status;
+  int status = -1; // shut up clang compiler warning
   BaseType_t i = strtol(argv[1], NULL, 10);
   if ( ! ((i==1)||(i==2) )) {
     copied += snprintf(m+copied, SCRATCH_SIZE-copied, "Invalid mode %d for clock, only 1 (reset) and 2 (program) supported\r\n", i);
