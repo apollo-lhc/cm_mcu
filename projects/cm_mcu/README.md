@@ -31,11 +31,6 @@ POW		2		<1%
 
 
 ## Next steps
-* Extend I2C to other I2C controllers
-* I2C monitoring task. Define what to store in a local memory
-* I2C slave for access from Zynq
-* PMBus implementation
-* digitize and store ADC voltages for access via CON and I2C
 
 ### Possible future extensions
 * Explore FreeRTOS-MPU for more robust OS (uses Cortex-M4 MPU facility)

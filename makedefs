@@ -162,6 +162,10 @@ else
 CFLAGS+=-Os 
 endif
 
+ifdef NO_ECN001
+CFLAGS+= -DNO_ECN001 
+endif
+
 
 #
 # Add the tool specific CFLAGS.

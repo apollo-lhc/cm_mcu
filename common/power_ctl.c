@@ -43,7 +43,7 @@ static const struct gpio_pin_t enables[] = {
     {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
     {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
     {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
-    {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  // this one is broken on S/N 001
+    {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  
     {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
     {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
     {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
@@ -51,6 +51,8 @@ static const struct gpio_pin_t enables[] = {
 };
 
 //if you update this you need to update N_PS_OKS too
+// Notice that the VCCAUX is not included here; the
+// TPS5218 supply does not have any such output
 const
 struct gpio_pin_t oks[] = {
     { K_VCCINT_PG_A, 1},
@@ -360,4 +362,34 @@ bool turn_on_ps(uint16_t ps_en_mask)
 
   write_gpio_pin(BLADE_POWER_OK, 0x1);
   return true;
+}
+
+// Enable supply at some priority. Also send in vu and ku enable.
+void turn_on_ps_at_prio(bool vu_enable, bool ku_enable, int prio)
+{
+  // loop over the enables
+  for (int e = 0; e < N_PS_ENABLES; ++e) {
+    // if this enable matches the requested priority 
+    if (enables[e].priority == prio) { 
+      // check if this supply is to be enabled
+      // current spot in mask
+      uint16_t currmask = (1U << e);
+      // should this supply be enabled?
+      // three cases -- either it's a general supply (1.8 and 3.3V),
+      // or it's a VU supply and the enable is set, or it's a KU supply
+      // and the enable is set.  
+      bool enableSupply = (currmask & PS_ENS_GEN_MASK) || // general
+                          ((currmask & PS_ENS_VU_MASK) && vu_enable) || // vu
+                          ((currmask & PS_ENS_KU_MASK) && ku_enable); // ku
+      if ( enableSupply) {
+        write_gpio_pin(enables[e].name, 0x1);
+      }
+    }
+  }
+}
+
+void blade_power_ok(bool isok)
+{
+  uint8_t val = (isok == true)? 0x1U: 0x0U;
+  write_gpio_pin(BLADE_POWER_OK, val);
 }

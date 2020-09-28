@@ -49,7 +49,6 @@ void Print(const char* str);
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
-SemaphoreHandle_t xMonSem = NULL;
 
 static
 void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
@@ -93,28 +92,28 @@ void MonitorTask(void *parameters)
 
   // wait for the power to come up
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
-  if ( args->initfcn != NULL )
-    (*args->initfcn)();
 
 #ifdef I2C_PULLUP_BUG
   bool good = false;
 #endif // I2C_PULLUP_BUG
   for (;;) {
-    while (xSemaphoreTake(xMonSem, (TickType_t) 10) == pdFALSE)
-      ;
     char tmp[TMPBUFFER_SZ];
 #ifdef I2C_PULLUP_BUG
     // check if the 3.3V is there or not. If it disappears then nothing works
     // since that is the I2C pullups. This will be changed with next
     // rev of the board.
-    if ( getPSStatus(5) != PWR_ON) {
+    // HACK -- THIS TEST IS ONLY USED FOR THE XILINX TASK (name starts with 'X')
+    if (getPSStatus(5) != PWR_ON
+#ifdef ECN001
+        && args->name[0] == 'X'
+#endif // NO_ECN001
+    ) {
       if ( good ) {
         snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n",
             args->name);
         SuppressedPrint(tmp, &current_error_cnt, &log);
         good = false;
       }
-      xSemaphoreGive(xMonSem);
       vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
       continue;
     }
@@ -122,12 +121,19 @@ void MonitorTask(void *parameters)
       good = true;
     }
 #endif // I2C_PULLUP_BUG
+
+    // grab the semaphore to ensure unique access to I2C controller
+    if (args->xSem != NULL) {
+      while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
+        ;
+    }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
     for ( uint8_t ps = 0; ps < args->n_devices; ++ ps ) {
 #ifdef I2C_PULLUP_BUG
-      if ( getPSStatus(5) != PWR_ON)
+      if ( getPSStatus(5) != PWR_ON && args->name[0] == 'X') {
         break;
+      }
 #endif // I2C_PULLUP_BUG
 
       // select the appropriate output for the mux
@@ -246,7 +252,8 @@ void MonitorTask(void *parameters)
         } // loop over commands
       } // loop over pages
     } // loop over power supplies
-    xSemaphoreGive(xMonSem);
+    if ( args->xSem != NULL )
+      xSemaphoreGive(args->xSem);
 
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
   } // infinite loop

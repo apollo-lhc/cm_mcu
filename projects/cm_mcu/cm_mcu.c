@@ -228,8 +228,8 @@ int main( void )
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
-  xMonSem    = xSemaphoreCreateMutex();
-
+  // mutex for I2C controller for the power supplies
+  dcdc_args.xSem = xSemaphoreCreateMutex();
 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
@@ -300,6 +300,9 @@ int main( void )
   Print("Staring Apollo CM MCU firmware " FIRMWARE_VERSION
         "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__", " __DATE__ "\r\n");
+#ifdef ECN001
+  Print("Includes ECN001 code mods\r\n");
+#endif // ECN001
   Print("----------------------------\r\n");
 
   errbuffer_init(EBUF_MINBLK,EBUF_MAXBLK);

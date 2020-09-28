@@ -20,11 +20,11 @@ extern SemaphoreHandle_t xMonSem;
 enum { PM_VOLTAGE, PM_NONVOLTAGE, PM_STATUS, PM_LINEAR11, PM_LINEAR16U, PM_LINEAR16S } pm_types ;
 
 struct pm_command_t {
-  unsigned char command;
-  int size;
-  char *name;
-  char *units;
-  int type;
+  unsigned char command; // I2c register address
+  int size;              // number of bytes to read
+  char *name;            // text describing command
+  char *units;           // units for pretty printing
+  int type;              // how to decode command (L11 or bitfield or ...)
 };
 
 // how to find an I2C device, with a mux infront of it.
@@ -36,22 +36,22 @@ struct dev_i2c_addr_t {
 };
 
 struct MonitorTaskArgs_t {
-  const char *name;
-  struct dev_i2c_addr_t * devices;
-  int n_devices;
-  struct pm_command_t * commands;
-  const int n_commands;
-  float *pm_values;
-  const int n_values;
-  const int n_pages;
-  tSMBus *smbus;
-  volatile tSMBusStatus *smbus_status;
-  volatile TickType_t updateTick;
-  void (*initfcn) (void);
+  const char *name;                    // name to be assigned to the task
+  struct dev_i2c_addr_t *devices;      // list of devices to query
+  int n_devices;                       // number of devices
+  struct pm_command_t *commands;       // list of commands
+  const int n_commands;                // number of commands
+  float *pm_values;                    // place to store results
+  const int n_values;                  // number of results
+  const int n_pages;                   // number of pages to loop over
+  tSMBus *smbus;                       // pointer to I2C controller
+  volatile tSMBusStatus *smbus_status; // pointer to I2C status
+  volatile TickType_t updateTick;      // last update time, in ticks
+  SemaphoreHandle_t xSem;              // semaphore for controlling access to device
 };
 // DC-DC converter
 #define NSUPPLIES_PS (5) // 5 devices, 2 pages each
-#define NCOMMANDS_PS 13 // number of entries in dcdc_ array
+#define NCOMMANDS_PS 17 // number of entries in dcdc_ array
 #define NPAGES_PS    2 // number of pages on the power supplies.
 
 extern struct MonitorTaskArgs_t dcdc_args;

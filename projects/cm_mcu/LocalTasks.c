@@ -56,7 +56,7 @@ struct MonitorTaskArgs_t fpga_args = {
     .n_pages = 1,
     .smbus = &g_sMaster6,
     .smbus_status = &eStatus6,
-    .initfcn = NULL,
+    .xSem = NULL,
 };
 
 // Power supply arguments for Monitoring task
@@ -126,12 +126,14 @@ struct pm_command_t extra_cmds[] = {
     {0x33, 2, "FREQUENCY_SWITCH", "Hz", PM_LINEAR11},
     {0xEA, 32, "SNAPSHOP", "", PM_STATUS},
     {0xF3, 1, "SNAPSHOP_CONTROL", "", PM_STATUS},
+    {0x28, 2, "VOUT_DROOP", "", PM_LINEAR11},
+    {0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
 };
 
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
               uint8_t snapshot[32], bool reset)
 {
-  while(xSemaphoreTake(xMonSem, (TickType_t) 10) == pdFALSE)
+  while(xSemaphoreTake(dcdc_args.xSem, (TickType_t) 10) == pdFALSE)
     ;
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
@@ -145,19 +147,19 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
       false, add, &extra_cmds[4], &cmd);
   if ( r ) {
-    Print("error in scdump 1\r\n");
+    Print("error in snapdump 1\r\n");
   }
   // actual command -- read snapshot
   tSMBusStatus r2 = SMBusMasterBlockRead(&g_sMaster1, add->dev_addr,
       extra_cmds[3].command, &snapshot[0]);
   if ( r2 != SMBUS_OK ) {
-    Print("error setting up block read (scdump 2)\r\n");
+    Print("error setting up block read (snapdump 2)\r\n");
   }
   while ( (r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay( pdMS_TO_TICKS( 10 )); // wait
   }
   if ( r2 != SMBUS_TRANSFER_COMPLETE ) {
-    Print("error in scdump(3)\r\n");
+    Print("error in snapdump(3)\r\n");
   }
   if ( reset ) {
     // reset SNAPSHOT. This will fail if the device is on.
@@ -165,33 +167,56 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page,
     r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
         false, add,&extra_cmds[4],  &cmd);
     if ( r ) {
-      Print("error in scdump 4\r\n");
+      Print("error in snapdump 4\r\n");
     }
   }
-  xSemaphoreGive(xMonSem);
+  xSemaphoreGive(dcdc_args.xSem);
 }
  
-void dcdc_initfcn(void)
+// Initialization function for the LGA80D. These settings
+// need to be called when the supply output is OFF
+// this is currently not ensured in this code.
+void LGA80D_init(void)
 {
+  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
+  Print("LGA80D_init\r\n");
   // set up the switching frequency
-  //uint16_t freqlin11 = float_to_linear11(457.14);
-  uint16_t freqlin11 = float_to_linear11(800.);
-  for ( int dev = 1; dev < 4; dev += 2 ) {
+  uint16_t freqlin11 = float_to_linear11(457.14f);
+  uint16_t drooplin11 = float_to_linear11(0.0700f);
+  for (int dev = 1; dev < 5; dev += 1) {
     for (uint8_t page = 0; page < 2; ++ page ) {
       // page register
-      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev, &extra_cmds[0], &page);
+      char tmp[256];
+      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[0],
+                              &page);
       if ( r ) {
-        Print("error in dcdc_initfcn (0)\r\n");
+        snprintf(tmp, 256, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
+        Print(tmp);
+        Print("error in LGA80D_init (0)\r\n");
       }
       // actual command -- frequency switch
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1,
-          false, pm_addrs_dcdc+dev,&extra_cmds[2],  (uint8_t*)&freqlin11);
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[2],
+                          (uint8_t *)&freqlin11);
       if ( r ) {
-        Print("error in dcdc_initfcn (1)\r\n");
+        Print("error in LGA80D_init (1)\r\n");
+      }
+      // actual command -- vout_droop switch
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[5],
+                          (uint8_t *)&drooplin11);
+      if ( r ) {
+        Print("error in LGA80D_init (2)\r\n");
+      }
+      // actual command -- multiphase_ramp_gain switch
+      uint8_t val = 0x7U; // by suggestion of Artesian
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
+      if ( r ) {
+        Print("error in LGA80D_init (3)\r\n");
       }
     }
   }
+  xSemaphoreGive(dcdc_args.xSem);
+
   return;
 }
 
@@ -213,8 +238,13 @@ struct pm_command_t pm_command_dcdc[] = {
         { 0x44, 2, "VOUT_UV_FAULT_LIMIT", "V", PM_LINEAR16U},
         { 0x37, 2, "INTERLEAVE", "", PM_STATUS},
         { 0x80, 1, "STATUS_MFR_SPECIFIC", "", PM_STATUS},
+        { 0x28, 2, "VOUT_DROOP", "V/A", PM_LINEAR11},
+        { 0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
+        { 0x57, 2, "VIN_UV_WARN_LIMIT", "V", PM_LINEAR11},
+        { 0x58, 2, "VIN_UV_FAULT_LIMIT", "V", PM_LINEAR11},
       };
 float dcdc_values[NSUPPLIES_PS*NPAGES_PS*NCOMMANDS_PS];
+
 struct MonitorTaskArgs_t dcdc_args = {
     .name = "PSMON",
     .devices = pm_addrs_dcdc,
@@ -226,8 +256,7 @@ struct MonitorTaskArgs_t dcdc_args = {
     .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
-    //.initfcn = &dcdc_initfcn,
-    .initfcn = NULL,
+    .xSem = NULL,
 };
 
 
