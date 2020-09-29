@@ -38,19 +38,15 @@
 #include "driverlib/timer.h"
 #include "driverlib/interrupt.h"
 
-
-
 #include "task.h"
 #include "queue.h"
 #include "semphr.h"
 #include "portmacro.h"
 
-
-
 // Stream buffers for UART communication
 StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
 
-void UART1IntHandler( void )
+void UART1IntHandler(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   //
@@ -68,16 +64,16 @@ void UART1IntHandler( void )
   //
   uint8_t bytes[8];
   int received = 0;
-  while(ROM_UARTCharsAvail(UART1_BASE)) {
+  while (ROM_UARTCharsAvail(UART1_BASE)) {
 
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART1_BASE);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
-    if ( ++received == 8 ) {
+    if (++received == 8) {
       xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
     }
   }
-  if ( received )
+  if (received)
     xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
@@ -88,10 +84,10 @@ void UART1IntHandler( void )
     xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
     variables value, and perform the context switch if necessary.  Check the
     documentation for the port in use for port specific instructions. */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void UART4IntHandler( void )
+void UART4IntHandler(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   //
@@ -109,16 +105,16 @@ void UART4IntHandler( void )
   //
   uint8_t bytes[8];
   int received = 0;
-  while(ROM_UARTCharsAvail(UART4_BASE)) {
+  while (ROM_UARTCharsAvail(UART4_BASE)) {
 
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
-    if ( ++received == 8 ) {
+    if (++received == 8) {
       xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
     }
   }
-  if ( received )
+  if (received)
     xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
@@ -129,10 +125,10 @@ void UART4IntHandler( void )
     xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
     variables value, and perform the context switch if necessary.  Check the
     documentation for the port in use for port specific instructions. */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-//tSMBus g_sSlave0;  // for I2C #0
+// tSMBus g_sSlave0;  // for I2C #0
 
 tSMBus g_sMaster1; // for I2C #1
 tSMBus g_sMaster2; // for I2C #2
@@ -146,11 +142,8 @@ volatile tSMBusStatus eStatus3 = SMBUS_OK;
 volatile tSMBusStatus eStatus4 = SMBUS_OK;
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
-
-
 // SMBUs specific handler for I2C
-void
-SMBusMasterIntHandler1(void)
+void SMBusMasterIntHandler1(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -159,11 +152,10 @@ SMBusMasterIntHandler1(void)
   //
   eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
   // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void
-SMBusMasterIntHandler2(void)
+void SMBusMasterIntHandler2(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -172,11 +164,10 @@ SMBusMasterIntHandler2(void)
   //
   eStatus2 = SMBusMasterIntProcess(&g_sMaster2);
   // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void
-SMBusMasterIntHandler3(void)
+void SMBusMasterIntHandler3(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -185,11 +176,10 @@ SMBusMasterIntHandler3(void)
   //
   eStatus3 = SMBusMasterIntProcess(&g_sMaster3);
   // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void
-SMBusMasterIntHandler4(void)
+void SMBusMasterIntHandler4(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -198,11 +188,10 @@ SMBusMasterIntHandler4(void)
   //
   eStatus4 = SMBusMasterIntProcess(&g_sMaster4);
   // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void
-SMBusMasterIntHandler6(void)
+void SMBusMasterIntHandler6(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -211,10 +200,8 @@ SMBusMasterIntHandler6(void)
   //
   eStatus6 = SMBusMasterIntProcess(&g_sMaster6);
   // handle errors in the returning function
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-
-
 
 // Stores the handle of the task that will be notified when the
 // ADC conversion is complete.
@@ -228,10 +215,10 @@ void ADCSeq0Interrupt()
 
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
-  configASSERT( TaskNotifyADC != NULL );
+  configASSERT(TaskNotifyADC != NULL);
 
   /* Notify the task that the transmission is complete. */
-  vTaskNotifyGiveFromISR( TaskNotifyADC, &xHigherPriorityTaskWoken );
+  vTaskNotifyGiveFromISR(TaskNotifyADC, &xHigherPriorityTaskWoken);
 
   /* There are no transmissions in progress, so no tasks to notify. */
   TaskNotifyADC = NULL;
@@ -240,10 +227,9 @@ void ADCSeq0Interrupt()
       should be performed to ensure the interrupt returns directly to the highest
       priority task.  The macro used for this purpose is dependent on the port in
       use and may be called portEND_SWITCHING_ISR(). */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   return;
 }
-
 
 void ADCSeq1Interrupt()
 {
@@ -253,10 +239,10 @@ void ADCSeq1Interrupt()
 
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
-  configASSERT( TaskNotifyADC != NULL );
+  configASSERT(TaskNotifyADC != NULL);
 
   /* Notify the task that the transmission is complete. */
-  vTaskNotifyGiveFromISR( TaskNotifyADC, &xHigherPriorityTaskWoken );
+  vTaskNotifyGiveFromISR(TaskNotifyADC, &xHigherPriorityTaskWoken);
 
   /* There are no transmissions in progress, so no tasks to notify. */
   TaskNotifyADC = NULL;
@@ -265,13 +251,12 @@ void ADCSeq1Interrupt()
       should be performed to ensure the interrupt returns directly to the highest
       priority task.  The macro used for this purpose is dependent on the port in
       use and may be called portEND_SWITCHING_ISR(). */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   return;
 }
 
 // -----------------------------------------
 TaskHandle_t TaskNotifyI2CSlave = NULL;
-
 
 void I2CSlave0Interrupt()
 {
@@ -284,21 +269,20 @@ void I2CSlave0Interrupt()
   ROM_I2CSlaveIntClear(I2C0_BASE);
   /* At this point xTaskToNotify should not be NULL as a transmission was
       in progress. */
-  configASSERT( TaskNotifyI2CSlave != NULL );
+  configASSERT(TaskNotifyI2CSlave != NULL);
 
   /* Notify the task that the transmission is complete. */
-  xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus,
-                     eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+  xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus, eSetValueWithOverwrite,
+                     &xHigherPriorityTaskWoken);
 
   /* There are no transmissions in progress, so no tasks to notify. */
   TaskNotifyI2CSlave = NULL;
-
 
   /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
       should be performed to ensure the interrupt returns directly to the highest
       priority task.  The macro used for this purpose is dependent on the port in
       use and may be called portEND_SWITCHING_ISR(). */
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 // Soft UART related
@@ -308,8 +292,7 @@ extern tSoftUART g_sUART;
 // any FreeRTOS functions such that it can operate at a high enough
 // priority to allow the soft UART to operate reliably.
 //
-void
-Timer0AIntHandler(void)
+void Timer0AIntHandler(void)
 {
   //
   // Clear the timer interrupt.
@@ -320,4 +303,3 @@ Timer0AIntHandler(void)
   //
   SoftUARTTxTimerTick(&g_sUART);
 }
-

@@ -31,23 +31,17 @@
 //    presumably also set via the task argument.
 // 3. Replace all instances of I2C0_BASE with the appropriate parameter
 
-
-
-
 //#define DEBUG_I2CSLAVE
 #ifdef DEBUG_I2CSLAVE
-void Print(const char* str);
+void Print(const char *str);
 #endif
-
-
 
 // IPMC register map documented here
 // https://github.com/apollo-lhc/cm_mcu/wiki/MCU-slave-documentation
 // These two functions below should be turned into a call-back function,
 // passed in via the arguments to the task, if I ever need to have more than
 // one slave.
-static
-uint8_t testreg = 0x0U;
+static uint8_t testreg = 0x0U;
 
 static int local_fpga_vu, local_fpga_ku;
 
@@ -58,48 +52,48 @@ static uint8_t getSlaveData(uint8_t address)
     case 0x0U: // reserved
       value = testreg;
       break;
-    case 0x10U: // MCU temperature
-      value = getADCvalue(20)+0.5f; // always valid
+    case 0x10U:                       // MCU temperature
+      value = getADCvalue(20) + 0.5f; // always valid
       break;
     case 0x12U: // FPGA VU temp
-      value = (uint8_t) local_fpga_vu>=0?fpga_args.pm_values[local_fpga_vu]:0U;
-      if ( value == 0 ) value = 0xFFU; // invalid value
+      value = (uint8_t)local_fpga_vu >= 0 ? fpga_args.pm_values[local_fpga_vu] : 0U;
+      if (value == 0)
+        value = 0xFFU; // invalid value
       break;
     case 0x14U: // FPGA KU temp
-      value = (uint8_t) local_fpga_ku>=0?fpga_args.pm_values[local_fpga_ku]:0U;
-      if ( value == 0 ) value = 0xFFU; // invalid value 
+      value = (uint8_t)local_fpga_ku >= 0 ? fpga_args.pm_values[local_fpga_ku] : 0U;
+      if (value == 0)
+        value = 0xFFU; // invalid value
       break;
     case 0x16U: // hottest FF temp
     {
       int8_t imax_temp = -55; // turn off value
-      for ( int i = 0; i < NFIREFLIES; ++i ) {
+      for (int i = 0; i < NFIREFLIES; ++i) {
         int8_t v = getFFvalue(i);
-        if ( v > imax_temp )
+        if (v > imax_temp)
           imax_temp = v;
       }
-      if ( imax_temp < 0 )
-        value = 0xFFU; // invalid 
+      if (imax_temp < 0)
+        value = 0xFFU; // invalid
       else
-        value = (uint8_t) imax_temp;
-    }
-    break;
+        value = (uint8_t)imax_temp;
+    } break;
     case 0x18U: // hottest regulator temp
     {
       float max_temp = -99.0f;
-      for (int ps = 0; ps < dcdc_args.n_devices; ++ps ) {
-        for ( int page = 0; page < dcdc_args.n_pages; ++page ) {
-          float thistemp = dcdc_args.pm_values[ps*(dcdc_args.n_commands*dcdc_args.n_pages)
-                                               +page*dcdc_args.n_commands+0];
-          if ( thistemp > max_temp )
+      for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
+        for (int page = 0; page < dcdc_args.n_pages; ++page) {
+          float thistemp = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
+                                               page * dcdc_args.n_commands + 0];
+          if (thistemp > max_temp)
             max_temp = thistemp;
         }
       }
-      if ( max_temp < 0  )
+      if (max_temp < 0)
         value = 0xFFU; // invalid
       else
-        value = (uint8_t) max_temp+0.5f;
-    }
-    break;
+        value = (uint8_t)max_temp + 0.5f;
+    } break;
     default:
       value = 0xFFU;
       break;
@@ -109,14 +103,12 @@ static uint8_t getSlaveData(uint8_t address)
 
 // only the test register is r/w; everything else is
 // silently ignored.
-static
-void setSlaveData(uint8_t addr, uint8_t val)
+static void setSlaveData(uint8_t addr, uint8_t val)
 {
   // ignore other addresses
-  if ( addr == 0 )
+  if (addr == 0)
     testreg = val;
 }
-
 
 void I2CSlaveTask(void *parameters)
 {
@@ -126,11 +118,16 @@ void I2CSlaveTask(void *parameters)
   local_fpga_ku = get_ku_index();
   local_fpga_vu = get_vu_index();
 
-
   ROM_I2CSlaveEnable(I2C0_BASE);
 
-  enum I2C_STATE {I2C_READY, I2C_FIRSTBYTE, I2C_RECEIVE_B0, I2C_RECEIVE_B1,
-    I2C_TRANSMIT_B0, I2C_TRANSMIT_B1 };
+  enum I2C_STATE {
+    I2C_READY,
+    I2C_FIRSTBYTE,
+    I2C_RECEIVE_B0,
+    I2C_RECEIVE_B1,
+    I2C_TRANSMIT_B0,
+    I2C_TRANSMIT_B1
+  };
 
   enum I2C_STATE theState = I2C_READY;
   uint8_t addr = 0;
@@ -151,11 +148,12 @@ void I2CSlaveTask(void *parameters)
     // we wait indefinitely between transactions, but time out after some time
     // during transactions.
     TickType_t xTicksToWait = portMAX_DELAY;
-    if ( theState != I2C_READY ) xTicksToWait = pdMS_TO_TICKS(100);
+    if (theState != I2C_READY)
+      xTicksToWait = pdMS_TO_TICKS(100);
     uint32_t interruptStatus;
-    unsigned long ulNotificationValue = xTaskNotifyWait(0UL,0xFFFFFFFFUL,
-        &interruptStatus, xTicksToWait);
-    if ( ulNotificationValue == pdFALSE ) {
+    unsigned long ulNotificationValue =
+        xTaskNotifyWait(0UL, 0xFFFFFFFFUL, &interruptStatus, xTicksToWait);
+    if (ulNotificationValue == pdFALSE) {
       theState = I2C_READY;
       addr = 0U;
       val = 0U;
@@ -180,69 +178,68 @@ void I2CSlaveTask(void *parameters)
     // I2C_SLAVE_INT_DATA  **
     // I2C_SLAVE_INT_STOP
     // I2C_SLAVE_INT_START
-    if ( interruptStatus & I2C_SLAVE_INT_STOP) {
+    if (interruptStatus & I2C_SLAVE_INT_STOP) {
 #ifdef DEBUG_I2CSLAVE
       Print("Stop interrupt received");
 #endif
     }
-    else if  ( interruptStatus & I2C_SLAVE_INT_DATA )  {
-      if ( status == I2C_SLAVE_ACT_TREQ ) { // transmission request
+    else if (interruptStatus & I2C_SLAVE_INT_DATA) {
+      if (status == I2C_SLAVE_ACT_TREQ) { // transmission request
         switch (theState) {
-        case I2C_READY: // non-register transmit request
-          // we ignore these, but to keep the TM4C happy we put something
-          // on the bus
-          ROM_I2CSlaveDataPut(I2C0_BASE, 0xFF);
-          theState = I2C_READY;
-          break;
-        case I2C_FIRSTBYTE: // we received a byte and are now asked to transmit
-        {
-          // register read
-          uint8_t b = getSlaveData(addr);
+          case I2C_READY: // non-register transmit request
+            // we ignore these, but to keep the TM4C happy we put something
+            // on the bus
+            ROM_I2CSlaveDataPut(I2C0_BASE, 0xFF);
+            theState = I2C_READY;
+            break;
+          case I2C_FIRSTBYTE: // we received a byte and are now asked to transmit
+          {
+            // register read
+            uint8_t b = getSlaveData(addr);
 #ifdef DEBUG_I2CSLAVE
-          snprintf(tmp, 64, "byte 1 sent %x\r\n",b); Print(tmp);
+            snprintf(tmp, 64, "byte 1 sent %x\r\n", b);
+            Print(tmp);
 #endif
-          ROM_I2CSlaveDataPut(I2C0_BASE, b);
-          theState = I2C_READY;
-          break;
-        }
-        default:
-          // error ? return to I2C ready state
-          theState = I2C_READY;
-          break;
+            ROM_I2CSlaveDataPut(I2C0_BASE, b);
+            theState = I2C_READY;
+            break;
+          }
+          default:
+            // error ? return to I2C ready state
+            theState = I2C_READY;
+            break;
         }
       }
       // below here, receive requests
-      else if ( status == I2C_SLAVE_ACT_RREQ_FBR ) { // first byte
+      else if (status == I2C_SLAVE_ACT_RREQ_FBR) { // first byte
         addr = ROM_I2CSlaveDataGet(I2C0_BASE);
 #ifdef DEBUG_I2CSLAVE
-        snprintf(tmp, 64, "Address %d received\r\n",addr);
+        snprintf(tmp, 64, "Address %d received\r\n", addr);
         Print(tmp);
 #endif
         theState = I2C_FIRSTBYTE;
       }
-      else if ( status == I2C_SLAVE_ACT_RREQ ) {// not first byte
-        switch ( theState) {
-        case I2C_READY: // we ignore this, but need to keep TM4C happy
-          val  = ROM_I2CSlaveDataGet(I2C0_BASE);
-          // stay in READY state
-          theState = I2C_READY;
-        break;
-        case I2C_FIRSTBYTE:
-          val = ROM_I2CSlaveDataGet(I2C0_BASE);
-          setSlaveData(addr, val);
-          theState = I2C_READY;
+      else if (status == I2C_SLAVE_ACT_RREQ) { // not first byte
+        switch (theState) {
+          case I2C_READY: // we ignore this, but need to keep TM4C happy
+            val = ROM_I2CSlaveDataGet(I2C0_BASE);
+            // stay in READY state
+            theState = I2C_READY;
+            break;
+          case I2C_FIRSTBYTE:
+            val = ROM_I2CSlaveDataGet(I2C0_BASE);
+            setSlaveData(addr, val);
+            theState = I2C_READY;
 #ifdef DEBUG_I2CSLAVE
-          Print("wrote byte 1\r\n");
+            Print("wrote byte 1\r\n");
 #endif
-          break;
-        default:
-          // error ? return to I2C ready state
-          theState = I2C_READY;
-          break;
+            break;
+          default:
+            // error ? return to I2C ready state
+            theState = I2C_READY;
+            break;
         }
       }
     } // receive request
   }
-
 }
-

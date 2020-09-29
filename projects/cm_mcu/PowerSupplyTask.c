@@ -28,11 +28,9 @@
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 
-
 void Print(const char *str);
 // local sprintf prototype
-int snprintf( char *buf, unsigned int count, const char *format, ... );
-
+int snprintf(char *buf, unsigned int count, const char *format, ...);
 
 enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
 
@@ -63,32 +61,21 @@ void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bi
 }
 #endif // DEBUG
 
-static
-char* power_system_state_names[] = 
-{
-  "FAIL",
-  "INIT",
-  "OFF",
-  "L1ON",
-  "L2ON",
-  "L3ON",
-  "L4ON",
-  "L5ON",
-  "ON",
+static char *power_system_state_names[] = {
+    "FAIL", "INIT", "OFF", "L1ON", "L2ON", "L3ON", "L4ON", "L5ON", "ON",
 };
 
-const char* getPowerControlStateName(enum power_system_state s)
+const char *getPowerControlStateName(enum power_system_state s)
 {
   return power_system_state_names[s];
 }
-
 
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
   // compile-time sanity check
-  static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK|PS_ENS_VU_MASK|PS_ENS_KU_MASK), "mask");
-  static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK|PS_OKS_VU_MASK|PS_OKS_KU_MASK), "mask");
+  static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_VU_MASK | PS_ENS_KU_MASK), "mask");
+  static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK | PS_OKS_VU_MASK | PS_OKS_KU_MASK), "mask");
 
   // alarm from outside this task
   bool external_alarm = false;
@@ -98,8 +85,8 @@ void PowerSupplyTask(void *parameters)
   // masks to enable/check appropriate supplies
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
   uint16_t supply_en_mask = PS_ENS_GEN_MASK;
-  uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, 
-           supply_ok_mask_L4 = 0U, supply_ok_mask_L5 = 0U;
+  uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
+           supply_ok_mask_L5 = 0U;
 
   bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
   bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
@@ -128,7 +115,7 @@ void PowerSupplyTask(void *parameters)
   bool power_supply_alarm = false;
   uint16_t failed_mask = 0x0U;
 
-   // initialize to the current tick time *after the initialization*
+  // initialize to the current tick time *after the initialization*
   TickType_t xLastWakeTime = xTaskGetTickCount();
   // this loop never exits
   for (;;) {
@@ -163,7 +150,7 @@ void PowerSupplyTask(void *parameters)
     // now check the actual state of the power supplies
     uint16_t supply_bitset = check_ps_oks();
     bool supply_off = false; // are supplies off (besides the ones that are disabled)
-    if ((supply_bitset&supply_ok_mask) != supply_ok_mask) {
+    if ((supply_bitset & supply_ok_mask) != supply_ok_mask) {
       supply_off = true;
     }
 
@@ -184,7 +171,7 @@ void PowerSupplyTask(void *parameters)
     //              +---------------------------------+
 
     // Nota Bene:
-    // ON3 does not have a FAIL transition because those supplies 
+    // ON3 does not have a FAIL transition because those supplies
     // do not have a PWR_GOOD in Rev 1 of the CM
 
     // the state you are in is the current state, so for instance
@@ -230,7 +217,7 @@ void PowerSupplyTask(void *parameters)
         // start power-on sequence
         if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
             !power_supply_alarm) {
-          turn_on_ps_at_prio(vu_enable,ku_enable,1);
+          turn_on_ps_at_prio(vu_enable, ku_enable, 1);
           errbuffer_put(EBUF_POWER_ON, 0);
           nextState = POWER_L1ON;
         }
@@ -240,7 +227,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L1ON: {
-        if ( (supply_bitset & supply_ok_mask_L1)  != supply_ok_mask_L1 ) {
+        if ((supply_bitset & supply_ok_mask_L1) != supply_ok_mask_L1) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L1;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L1, supply_bitset);
@@ -251,14 +238,14 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          turn_on_ps_at_prio(vu_enable,ku_enable,2);
+          turn_on_ps_at_prio(vu_enable, ku_enable, 2);
           nextState = POWER_L2ON;
         }
 
         break;
       }
       case POWER_L2ON: {
-        if ( (supply_bitset & supply_ok_mask_L2)  != supply_ok_mask_L2 ) {
+        if ((supply_bitset & supply_ok_mask_L2) != supply_ok_mask_L2) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L2;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L2, supply_bitset);
@@ -283,7 +270,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L4ON: {
-        if ( (supply_bitset & supply_ok_mask_L4)  != supply_ok_mask_L4 ) {
+        if ((supply_bitset & supply_ok_mask_L4) != supply_ok_mask_L4) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L4;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L4, supply_bitset);
@@ -295,14 +282,14 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          turn_on_ps_at_prio(vu_enable,ku_enable,5);
+          turn_on_ps_at_prio(vu_enable, ku_enable, 5);
           nextState = POWER_L5ON;
         }
 
         break;
       }
       case POWER_L5ON: {
-        if ( (supply_bitset & supply_ok_mask_L5)  != supply_ok_mask_L5 ) {
+        if ((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
@@ -352,27 +339,27 @@ void PowerSupplyTask(void *parameters)
       else {
         // ... it _should_ be on based on the mask
         switch (currentState) {
-        case POWER_OFF:
-        case POWER_INIT:
-          // ... but the power state is "off" or 
-          // we are just initializing / turning on
-          setPSStatus(i, PWR_OFF);
-          break;
-        case POWER_ON:
-        case POWER_FAILURE:
-          // ... but the power state is is "on," so ...
-          if ((1U << i) & failed_mask) {
-            // ... either the supply failed
-            setPSStatus(i, PWR_FAILED);
-          }
-          else {
-            // ... or it's just off because there was a power failure,
-            // but this supply is not the root cause.
+          case POWER_OFF:
+          case POWER_INIT:
+            // ... but the power state is "off" or
+            // we are just initializing / turning on
             setPSStatus(i, PWR_OFF);
-          }
-          break;
-        default:
-          break;
+            break;
+          case POWER_ON:
+          case POWER_FAILURE:
+            // ... but the power state is is "on," so ...
+            if ((1U << i) & failed_mask) {
+              // ... either the supply failed
+              setPSStatus(i, PWR_FAILED);
+            }
+            else {
+              // ... or it's just off because there was a power failure,
+              // but this supply is not the root cause.
+              setPSStatus(i, PWR_OFF);
+            }
+            break;
+          default:
+            break;
         }
       }
     }

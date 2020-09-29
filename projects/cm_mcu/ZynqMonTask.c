@@ -33,36 +33,36 @@
 
 #define SENSOR_MESSAGE_START_OF_FRAME_NIB 2
 #define SENSOR_MESSAGE_DATA_FRAME_NIB     0
-#define SENSOR_MESSAGE_HEADER_OFFSET 6
-#define SENSOR_SIX_BITS 0x3F
-#define SENSOR_MESSAGE_START_OF_FRAME (SENSOR_MESSAGE_START_OF_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
+#define SENSOR_MESSAGE_HEADER_OFFSET      6
+#define SENSOR_SIX_BITS                   0x3F
+#define SENSOR_MESSAGE_START_OF_FRAME                                                              \
+  (SENSOR_MESSAGE_START_OF_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 #define SENSOR_MESSAGE_DATA_FRAME (SENSOR_MESSAGE_DATA_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 
-static
-void format_data(const uint8_t sensor, const uint16_t data, uint8_t message[4])
+static void format_data(const uint8_t sensor, const uint16_t data, uint8_t message[4])
 {
   // header and start of sensor (6 bits, sensor[7:2]
-  message[0] = SENSOR_MESSAGE_START_OF_FRAME  | (( sensor >> 2 ) & SENSOR_SIX_BITS) ;
+  message[0] = SENSOR_MESSAGE_START_OF_FRAME | ((sensor >> 2) & SENSOR_SIX_BITS);
   // data frame 1, rest of sensor[1:0] (2 bits) and start of data[15:12] (4 bits)
-  message[1]  = SENSOR_MESSAGE_DATA_FRAME ;
-  message[1] |= ((sensor & 0x3 )<< 4) | ((data>>12)&0xF);
+  message[1] = SENSOR_MESSAGE_DATA_FRAME;
+  message[1] |= ((sensor & 0x3) << 4) | ((data >> 12) & 0xF);
   // data frame 2, data[11:6] (6 bits)
-  message[2]  = SENSOR_MESSAGE_DATA_FRAME;
+  message[2] = SENSOR_MESSAGE_DATA_FRAME;
   message[2] |= (data >> 6) & 0x3F;
   // // data frame 3, data[5:0] ( 6 bits )
-  message[3]  = SENSOR_MESSAGE_DATA_FRAME;
+  message[3] = SENSOR_MESSAGE_DATA_FRAME;
   message[3] |= data & 0x3F;
 }
 
 #ifdef SUART_TEST_MODE
-static uint8_t  testaddress = 0x0;
-static uint16_t testdata    = 0xaaff;
+static uint8_t testaddress = 0x0;
+static uint16_t testdata = 0xaaff;
 static bool inTestMode = true;
 static uint8_t testmode = 2;
 void setSUARTTestData(uint8_t sensor, uint16_t value)
 {
   testaddress = sensor;
-  testdata = value;  
+  testdata = value;
 }
 
 uint8_t getSUARTTestMode()
@@ -79,7 +79,7 @@ uint16_t getSUARTTestData()
 {
   return testdata;
 }
-#else //
+#else  //
 const static bool inTestMode = false;
 #endif // SUART_TEST_MODE
 //
@@ -89,7 +89,7 @@ unsigned char g_pucTxBuffer[16];
 //
 // The buffer used to hold the receive data.
 //
-//unsigned short g_pusRxBuffer[16];
+// unsigned short g_pusRxBuffer[16];
 
 // The number of processor clocks in the time period of a single bit on the
 // software UART interface.
@@ -135,8 +135,7 @@ void ZynqMonTask(void *parameters)
   //
   // this also sets the pins.
   SoftUARTConfigSet(&g_sUART,
-                    (SOFTUART_CONFIG_WLEN_8 | SOFTUART_CONFIG_PAR_NONE |
-                     SOFTUART_CONFIG_STOP_ONE));
+                    (SOFTUART_CONFIG_WLEN_8 | SOFTUART_CONFIG_PAR_NONE | SOFTUART_CONFIG_STOP_ONE));
   //
   // Compute the bit time for the chosen baud rate
   //
@@ -147,8 +146,8 @@ void ZynqMonTask(void *parameters)
   // requiring a timer tick at 38,400 Hz.
   //
   MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-  MAP_TimerConfigure(TIMER0_BASE, (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC |
-                                   TIMER_CFG_B_PERIODIC));
+  MAP_TimerConfigure(TIMER0_BASE,
+                     (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC | TIMER_CFG_B_PERIODIC));
   MAP_TimerLoadSet(TIMER0_BASE, TIMER_A, g_ulBitTime);
   MAP_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
   MAP_TimerEnable(TIMER0_BASE, TIMER_A);
@@ -189,40 +188,40 @@ void ZynqMonTask(void *parameters)
     // check for a new item in the queue but don't wait
     if (xQueueReceive(xSoftUartQueue, &qmessage, 0)) {
       switch (qmessage) {
-      case SOFTUART_ENABLE_TRANSMIT:
-        enable = true;
-        break;
-      case SOFTUART_DISABLE_TRANSMIT:
-        enable = false;
-        break;
+        case SOFTUART_ENABLE_TRANSMIT:
+          enable = true;
+          break;
+        case SOFTUART_DISABLE_TRANSMIT:
+          enable = false;
+          break;
 #ifdef SUART_TEST_MODE
-      case SOFTUART_TEST_SINGLE:
-        inTestMode = true;
-        enable = true;
-        testmode = 0;
-        break;
-      case SOFTUART_TEST_INCREMENT:
-        inTestMode = true;
-        enable = true;
-        testmode = 1;
-        break;
-      case SOFTUART_TEST_OFF:
-        inTestMode = false;
-        break;
-      case SOFTUART_TEST_SEND_ONE:
-        inTestMode = true;
-        enable = true;
-        testmode = 0;
-        break;
-      case SOFTUART_TEST_RAW:
-        message[0] = 0x55;
-        message[1] = 0xaa;
-        message[2] = 0x55;
-        message[3] = 0xaa;
-        inTestMode = true;
-        enable = true;
-        testmode = 2;
-        break;
+        case SOFTUART_TEST_SINGLE:
+          inTestMode = true;
+          enable = true;
+          testmode = 0;
+          break;
+        case SOFTUART_TEST_INCREMENT:
+          inTestMode = true;
+          enable = true;
+          testmode = 1;
+          break;
+        case SOFTUART_TEST_OFF:
+          inTestMode = false;
+          break;
+        case SOFTUART_TEST_SEND_ONE:
+          inTestMode = true;
+          enable = true;
+          testmode = 0;
+          break;
+        case SOFTUART_TEST_RAW:
+          message[0] = 0x55;
+          message[1] = 0xaa;
+          message[2] = 0x55;
+          message[3] = 0xaa;
+          inTestMode = true;
+          enable = true;
+          testmode = 2;
+          break;
 #endif // SUART_TEST_MODE
       }
     }
@@ -238,7 +237,7 @@ void ZynqMonTask(void *parameters)
           for (int i = 0; i < 4; ++i) {
             SoftUARTCharPut(&g_sUART, message[i]);
           }
-          // one shot mode -- disable 
+          // one shot mode -- disable
           if (qmessage == SOFTUART_TEST_SEND_ONE)
             enable = false;
         }
@@ -253,20 +252,20 @@ void ZynqMonTask(void *parameters)
             }
           }
         }
-        else if ( testmode == 2 ) { // test mode, no formatting
+        else if (testmode == 2) { // test mode, no formatting
           for (int i = 0; i < 4; ++i) {
             SoftUARTCharPut(&g_sUART, message[i]);
           }
         }
-#endif // SUART_TEST_MODE
+#endif       // SUART_TEST_MODE
       }      // end test mode
-      else { // normal mode 
-        TickType_t now = pdTICKS_TO_MS( xLastWakeTime)/1000;
+      else { // normal mode
+        TickType_t now = pdTICKS_TO_MS(xLastWakeTime) / 1000;
 
         // Fireflies
-        TickType_t last = pdTICKS_TO_MS(getFFupdateTick())/1000;
+        TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
         bool stale = false;
-        if ( (now-last) > 60 ) {
+        if ((now - last) > 60) {
           stale = true;
         }
         for (int j = 0; j < NFIREFLIES; ++j) {
@@ -292,27 +291,27 @@ void ZynqMonTask(void *parameters)
         // made when initially putting together the register list.
         const size_t offsets[] = {32, 40, 48, 56, 160, 168, 64, 72, 80, 88};
         // update times, in seconds. If the data is stale, send NaN
-        last = pdTICKS_TO_MS(dcdc_args.updateTick)/1000;
+        last = pdTICKS_TO_MS(dcdc_args.updateTick) / 1000;
         stale = false;
-        if ( (now-last) > 60 ) {
+        if ((now - last) > 60) {
           stale = true;
         }
 
         for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
           for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
-            for (int k = 0; k < 5; ++k) { // loop over FIRST FIVE commands
-              int index = j * (dcdc_args.n_commands * dcdc_args.n_pages) +
-                          l * dcdc_args.n_commands + k;
+            for (int k = 0; k < 5; ++k) {               // loop over FIRST FIVE commands
+              int index =
+                  j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
               convert_16_t u;
-              if ( stale ) {
+              if (stale) {
                 u.f = __builtin_nanf("");
               }
               else {
                 u.f = dcdc_args.pm_values[index];
-                if ( u.f < -900.f )
+                if (u.f < -900.f)
                   u.f = __builtin_nanf("");
               }
-              int reg = offsets[j*2+l] + k;
+              int reg = offsets[j * 2 + l] + k;
               format_data(reg, u.us, message);
               for (int i = 0; i < 4; ++i) {
                 SoftUARTCharPut(&g_sUART, message[i]);
@@ -335,21 +334,22 @@ void ZynqMonTask(void *parameters)
         // MORE THAN A SIMPLE SET OF COMMANDS -- NOTA BENE
         const int offsetFPGA = 128;
         // update times, in seconds. If the data is stale, send NaN
-        now = pdTICKS_TO_MS( xLastWakeTime)/1000;
-        last = pdTICKS_TO_MS(fpga_args.updateTick)/1000;
+        now = pdTICKS_TO_MS(xLastWakeTime) / 1000;
+        last = pdTICKS_TO_MS(fpga_args.updateTick) / 1000;
         stale = false;
-        if ( (now-last) > 60 ) {
+        if ((now - last) > 60) {
           stale = true;
         }
 
         for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
           convert_16_t u;
-          if ( stale ) {
+          if (stale) {
             u.f = __builtin_nanf("");
           }
           else {
             u.f = fpga_args.pm_values[j];
-            if ( u.f < -900.f ) u.f = __builtin_nanf("");
+            if (u.f < -900.f)
+              u.f = __builtin_nanf("");
           }
           format_data(j + offsetFPGA, u.us, message);
           for (int i = 0; i < 4; ++i) {
@@ -373,7 +373,7 @@ void ZynqMonTask(void *parameters)
         // uptime
         const int offsetUPTIME = 192;
         now = xLastWakeTime / (configTICK_RATE_HZ * 60); // time in minutes
-        uint16_t now_16 = now & 0xFFFFU;                     // lower 16 bits
+        uint16_t now_16 = now & 0xFFFFU;                 // lower 16 bits
         format_data(offsetUPTIME, now_16, message);
         for (int i = 0; i < 4; ++i) {
           SoftUARTCharPut(&g_sUART, message[i]);
@@ -383,7 +383,7 @@ void ZynqMonTask(void *parameters)
         for (int i = 0; i < 4; ++i) {
           SoftUARTCharPut(&g_sUART, message[i]);
         }
-      } // if not test mode 
+      } // if not test mode
 
       // wait for the transmission to finish
       vTaskDelay(pdMS_TO_TICKS(10));

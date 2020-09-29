@@ -15,8 +15,7 @@
 
 enum alarm_task_state { ALM_INIT, ALM_NORMAL, ALM_WARN, ALM_ERROR };
 
-
-// ALARM TASK STATE MACHINE 
+// ALARM TASK STATE MACHINE
 // +------+
 // | INIT |
 // +---+--+
@@ -31,13 +30,13 @@ enum alarm_task_state { ALM_INIT, ALM_NORMAL, ALM_WARN, ALM_ERROR };
 //        +---------------------------------+
 // once we get into the ERROR state the only way to clear an error is via a message
 // sent to the CLI.
-// 
+//
 
 void GenericAlarmTask(void *parameters)
 {
   struct GenericAlarmParams_t *params = parameters;
   QueueHandle_t xAlmQueue = params->xAlmQueue;
-  xAlmQueue = xQueueCreate(10,sizeof(uint32_t));
+  xAlmQueue = xQueueCreate(10, sizeof(uint32_t));
 
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -65,59 +64,59 @@ void GenericAlarmTask(void *parameters)
     // state machine
     enum alarm_task_state nextState;
     switch (currentState) {
-    case ALM_INIT: {
-      nextState = ALM_NORMAL;
-      break;
-    }
-    case ALM_NORMAL: {
-      if (status) {
-        params->errorlog_registererror();
-        alarming = true;
-        nextState = ALM_WARN;
-      }
-      else {
-        alarming = false;
+      case ALM_INIT: {
         nextState = ALM_NORMAL;
+        break;
       }
-      break;
-    }
-    case ALM_WARN: {
-      if (!status) {
-        // we are back to normal
-        params->errorlog_clearerror();
-        nextState = ALM_NORMAL;
-        alarming = false;
-      }
-      else if (status > 1) {
-        // log alarm, send message to turn off power and move to error state
-        if (params->errorlog_registererror)
+      case ALM_NORMAL: {
+        if (status) {
           params->errorlog_registererror();
-        message = TEMP_ALARM;
-        // this message always goes to the power queue, for all 
-        // alarms. 
-        xQueueSendToFront(xPwrQueue, &message, 100);
-        nextState = ALM_ERROR;
+          alarming = true;
+          nextState = ALM_WARN;
+        }
+        else {
+          alarming = false;
+          nextState = ALM_NORMAL;
+        }
+        break;
       }
-      else {
-        nextState = ALM_WARN;
-      }
-      break;
-    }
-    case ALM_ERROR: {
-      if (!alarming && !status) {
-        // error has cleared, log and move to normal state
-        if (params->errorlog_clearerror)
+      case ALM_WARN: {
+        if (!status) {
+          // we are back to normal
           params->errorlog_clearerror();
-        nextState = ALM_NORMAL;
+          nextState = ALM_NORMAL;
+          alarming = false;
+        }
+        else if (status > 1) {
+          // log alarm, send message to turn off power and move to error state
+          if (params->errorlog_registererror)
+            params->errorlog_registererror();
+          message = TEMP_ALARM;
+          // this message always goes to the power queue, for all
+          // alarms.
+          xQueueSendToFront(xPwrQueue, &message, 100);
+          nextState = ALM_ERROR;
+        }
+        else {
+          nextState = ALM_WARN;
+        }
+        break;
       }
-      else {
+      case ALM_ERROR: {
+        if (!alarming && !status) {
+          // error has cleared, log and move to normal state
+          if (params->errorlog_clearerror)
+            params->errorlog_clearerror();
+          nextState = ALM_NORMAL;
+        }
+        else {
+          nextState = ALM_ERROR;
+        }
+        break;
+      }
+      default:
         nextState = ALM_ERROR;
-      }
-      break;
-    }
-    default:
-      nextState = ALM_ERROR;
-      break;
+        break;
     }
     currentState = nextState;
   }
