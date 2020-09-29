@@ -19,7 +19,6 @@
 // Command line interface
 void vCommandLineTask(void *pvParameters);
 
-
 typedef struct {
   StreamBufferHandle_t UartStreamBuffer;
   uint32_t uart_base;

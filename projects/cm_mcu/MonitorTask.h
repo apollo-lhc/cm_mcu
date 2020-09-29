@@ -11,13 +11,12 @@
 #include "common/smbus.h"
 #include "semphr.h"
 
-
 extern float pm_values[];
 
 extern SemaphoreHandle_t xMonSem;
 
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
-enum { PM_VOLTAGE, PM_NONVOLTAGE, PM_STATUS, PM_LINEAR11, PM_LINEAR16U, PM_LINEAR16S } pm_types ;
+enum { PM_VOLTAGE, PM_NONVOLTAGE, PM_STATUS, PM_LINEAR11, PM_LINEAR16U, PM_LINEAR16S } pm_types;
 
 struct pm_command_t {
   unsigned char command; // I2c register address
@@ -51,12 +50,10 @@ struct MonitorTaskArgs_t {
 };
 // DC-DC converter
 #define NSUPPLIES_PS (5) // 5 devices, 2 pages each
-#define NCOMMANDS_PS 17 // number of entries in dcdc_ array
-#define NPAGES_PS    2 // number of pages on the power supplies.
+#define NCOMMANDS_PS 17  // number of entries in dcdc_ array
+#define NPAGES_PS    2   // number of pages on the power supplies.
 
 extern struct MonitorTaskArgs_t dcdc_args;
 extern struct MonitorTaskArgs_t fpga_args;
-
-
 
 #endif /* PROJECTS_CM_MCU_MONITORTASK_H_ */
