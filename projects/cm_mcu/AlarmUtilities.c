@@ -4,7 +4,7 @@
 
 ///////////////////////////////////////////////////////////
 //
-// Temperature Alarms 
+// Temperature Alarms
 //
 ///////////////////////////////////////////////////////////
 
@@ -14,7 +14,7 @@ extern struct MonitorTaskArgs_t fpga_args;
 #define INITIAL_ALARM_TEMP_DCDC 70.0f
 #define INITIAL_ALARM_TEMP_TM4C 70.0f
 #define INITIAL_ALARM_TEMP_FPGA 70.0f
-#define ALM_OVERTEMP_THRESHOLD  5.0f 
+#define ALM_OVERTEMP_THRESHOLD  5.0f
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
 // a shutdown message is sent
 
@@ -41,8 +41,8 @@ void setAlarmTemperature(enum device theDevice, float temperature)
 {
   alarmTemp[theDevice] = temperature;
 }
-//static float tm4c_temp, max_fpga, max_dcdc_temp;
-//static int8_t imax_ff_temp;
+// static float tm4c_temp, max_fpga, max_dcdc_temp;
+// static int8_t imax_ff_temp;
 
 int TempStatus()
 {
@@ -93,7 +93,7 @@ int TempStatus()
     if (v > imax_ff_temp)
       imax_ff_temp = v;
   }
-  currentTemp[FF] = (float) imax_ff_temp;
+  currentTemp[FF] = (float)imax_ff_temp;
   if (currentTemp[FF] > getAlarmTemperature(FF)) {
     status_T |= ALM_STAT_FIREFLY_OVERTEMP;
     retval++;
@@ -103,8 +103,8 @@ int TempStatus()
 
 void TempErrorLog()
 {
-  errbuffer_temp_high((uint8_t)currentTemp[TM4C], (uint8_t)currentTemp[FPGA], (uint8_t)currentTemp[FF],
-                      (uint8_t)currentTemp[DCDC]);
+  errbuffer_temp_high((uint8_t)currentTemp[TM4C], (uint8_t)currentTemp[FPGA],
+                      (uint8_t)currentTemp[FF], (uint8_t)currentTemp[DCDC]);
 }
 
 void TempClearErrorLog()
@@ -120,6 +120,3 @@ struct GenericAlarmParams_t tempAlarmTask = {
     .errorlog_registererror = &TempErrorLog,
     .errorlog_clearerror = &TempClearErrorLog,
 };
-
-
-

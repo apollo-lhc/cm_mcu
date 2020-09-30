@@ -18,8 +18,7 @@
 
 #ifdef __INTELLISENSE__
 #define __fp16 float
-#endif // __INTELLISENSE 
-
+#endif // __INTELLISENSE
 
 // INIT task
 void InitTask(void *parameters);
@@ -28,7 +27,7 @@ void InitTask(void *parameters);
 #define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
-const char* getADCname(const int i);
+const char *getADCname(const int i);
 float getADCvalue(const int i);
 float getADCtargetValue(const int i);
 
@@ -58,7 +57,6 @@ void LedTask(void *parameters);
 // --- Power Supply management task
 void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
-//enum power_system_state { POWER_INIT, POWER_ON, POWER_OFF, POWER_FAILURE };
 enum power_system_state {
   POWER_FAILURE,
   POWER_INIT,
@@ -71,9 +69,8 @@ enum power_system_state {
   POWER_ON,
 };
 enum power_system_state getPowerControlState();
-const char* getPowerControlStateName(enum power_system_state);
+const char *getPowerControlStateName(enum power_system_state);
 void LGA80D_init(void);
-
 
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
@@ -87,7 +84,7 @@ void FireFlyTask(void *parameters);
 extern QueueHandle_t xFFlyQueueIn;
 extern QueueHandle_t xFFlyQueueOut;
 
-const char* getFFname(const uint8_t i);
+const char *getFFname(const uint8_t i);
 int8_t getFFvalue(const uint8_t i);
 TickType_t getFFupdateTick();
 
@@ -120,16 +117,15 @@ int disable_xcvr_cdr(const char *name);
 #define FF_MESSAGE_CODE_REG_DAT_SZ     10
 #define FF_MESSAGE_CODE_REG_DAT_OFFSET FF_MESSAGE_CODE_REG_REG_SZ
 #define FF_MESSAGE_CODE_REG_FF_SZ      10
-#define FF_MESSAGE_CODE_REG_FF_OFFSET                                          \
-  (FF_MESSAGE_CODE_REG_REG_SZ + FF_MESSAGE_CODE_REG_DAT_SZ)
+#define FF_MESSAGE_CODE_REG_FF_OFFSET  (FF_MESSAGE_CODE_REG_REG_SZ + FF_MESSAGE_CODE_REG_DAT_SZ)
 // derived masks
 #define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
 #define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
 #define FF_MESSAGE_CODE_REG_FF_MASK  ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
 
 // ---- version info
-const char* buildTime();
-const char* gitVersion();
+const char *buildTime();
+const char *gitVersion();
 
 // ---- ALARMS
 
@@ -139,17 +135,17 @@ const char* gitVersion();
 #define ALM_STAT_FPGA_OVERTEMP    0x4
 #define ALM_STAT_DCDC_OVERTEMP    0x8
 // messages
-#define ALM_CLEAR_ALL      1
-#define ALM_CLEAR_TEMP     2
-#define ALM_CLEAR_CURRENT  3
-#define ALM_CLEAR_VOLTAGE  4
+#define ALM_CLEAR_ALL     1
+#define ALM_CLEAR_TEMP    2
+#define ALM_CLEAR_CURRENT 3
+#define ALM_CLEAR_VOLTAGE 4
 
-enum device {FF,DCDC,TM4C,FPGA};
+enum device { FF, DCDC, TM4C, FPGA };
 
 void GenericAlarmTask(void *parameters);
 
 float getAlarmTemperature(enum device device_name);
-void  setAlarmTemperature(enum device device_name, const float newtemp);
+void setAlarmTemperature(enum device device_name, const float newtemp);
 uint32_t getAlarmStatus();
 
 // Monitoring using the ADC inputs
@@ -170,7 +166,7 @@ extern QueueHandle_t xEPRMQueue_out;
 #define EPRM_UNLOCK_BLOCK 5
 #define EPRM_PASS_SET     6
 
-uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
+uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
 
 // Soft UART Task

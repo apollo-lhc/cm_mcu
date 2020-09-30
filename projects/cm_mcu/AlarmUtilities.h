@@ -25,6 +25,4 @@ void TempClearErrorLog();
 
 // voltage alarms
 
-
-
 #endif // PROJECTS_CM_MCU_ALARMUTILITIES_H_

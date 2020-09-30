@@ -5,7 +5,6 @@
  *      Author: rzou
  */
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_types.h"
@@ -32,7 +31,6 @@
 #include "stream_buffer.h"
 #include "queue.h"
 
-
 // strlen, strtol, and strncpy
 #include <string.h>
 #include <stdlib.h>
@@ -46,12 +44,12 @@
 
 #ifdef DEBUG_CON
 // prototype of mutex'd print
-# define DPRINT(x) Print(x)
+#define DPRINT(x) Print(x)
 #else // DEBUG_CON
-# define DPRINT(x)
+#define DPRINT(x)
 #endif // DEBUG_CON
 
-void Print(const char* str);
+void Print(const char *str);
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
@@ -65,7 +63,7 @@ extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
 
 static tSMBus *p_sMaster = &g_sMaster4;
-static tSMBusStatus * p_eStatus = &eStatus4;
+static tSMBusStatus *p_eStatus = &eStatus4;
 
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
@@ -74,7 +72,7 @@ static tSMBusStatus * p_eStatus = &eStatus4;
 
 int apollo_i2c_ctl_set_dev(uint8_t base)
 {
-  if ( ! ((base==1)||(base==2)||(base==3)||(base==4)||(base==6))) {
+  if (!((base == 1) || (base == 2) || (base == 3) || (base == 4) || (base == 6))) {
     return -1;
   }
   switch (base) {
@@ -107,9 +105,9 @@ int apollo_i2c_ctl_set_dev(uint8_t base)
 
 int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[4])
 {
-  const int MAX_BYTES=4;
-  memset(data,0,MAX_BYTES*sizeof(data[0]));
-  if ( nbytes > MAX_BYTES )
+  const int MAX_BYTES = 4;
+  memset(data, 0, MAX_BYTES * sizeof(data[0]));
+  if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
@@ -119,27 +117,27 @@ int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[4])
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if ( *p_eStatus != SMBUS_OK) {
+  if (*p_eStatus != SMBUS_OK) {
     return -2;
   }
-  
+
   return 0;
 }
 
 int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[4])
 {
-  const int MAX_BYTES=4;
-  memset(data,0,MAX_BYTES*sizeof(data[0]));
-  if ( nbytes > MAX_BYTES )
+  const int MAX_BYTES = 4;
+  memset(data, 0, MAX_BYTES * sizeof(data[0]));
+  if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
-  tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster,address,&reg_address,1,data,nbytes);
+  tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster, address, &reg_address, 1, data, nbytes);
   if (r != SMBUS_OK) {
     return -1;
   }
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if ( *p_eStatus != SMBUS_OK) {
+  if (*p_eStatus != SMBUS_OK) {
     return -2;
   }
 
@@ -149,16 +147,16 @@ int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, u
 int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t packed_data)
 {
   // first byte is the register, others are the data
-  const int MAX_BYTES=4;
+  const int MAX_BYTES = 4;
   uint8_t data[MAX_BYTES];
   data[0] = reg_address;
   // pack the bytes into the data array, offset by
   // one due to the address
-  for (int i = 1; i < MAX_BYTES+1; ++i ) {
-    data[i] = (packed_data >> (i-1)*8) & 0xFFUL;
+  for (int i = 1; i < MAX_BYTES + 1; ++i) {
+    data[i] = (packed_data >> (i - 1) * 8) & 0xFFUL;
   }
   nbytes++; // to account for the register address
-  if ( nbytes > MAX_BYTES )
+  if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
@@ -168,22 +166,21 @@ int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, u
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if ( *p_eStatus != SMBUS_OK) {
+  if (*p_eStatus != SMBUS_OK) {
     return -2;
   }
 
   return 0;
 }
-
 
 int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, uint8_t value)
 {
-  const int MAX_BYTES=4;
+  const int MAX_BYTES = 4;
   uint8_t data[MAX_BYTES];
-  for (int i = 0; i < MAX_BYTES; ++i ) {
-    data[i] = (value >> i*8) & 0xFFUL;
+  for (int i = 0; i < MAX_BYTES; ++i) {
+    data[i] = (value >> i * 8) & 0xFFUL;
   }
-  if ( nbytes > MAX_BYTES )
+  if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
@@ -193,10 +190,9 @@ int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, uint8_t value)
   while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if ( *p_eStatus != SMBUS_OK) {
+  if (*p_eStatus != SMBUS_OK) {
     return -2;
   }
 
   return 0;
 }
-

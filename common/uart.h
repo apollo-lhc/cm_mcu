@@ -11,11 +11,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 // Initialize UART4 and 1. Assumes pin definitions were already run.
 void UART1Init(uint32_t ui32SysClock);
 void UART4Init(uint32_t ui32SysClock);
-
 
 //*****************************************************************************
 //
@@ -23,9 +21,8 @@ void UART4Init(uint32_t ui32SysClock);
 //
 //*****************************************************************************
 
-void UART4Print(const char* str);
+void UART4Print(const char *str);
 
-void UARTPrint(uint32_t uart_base, const char* str);
-
+void UARTPrint(uint32_t uart_base, const char *str);
 
 #endif /* COMMON_UART_H_ */

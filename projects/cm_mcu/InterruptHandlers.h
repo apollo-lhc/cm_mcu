@@ -12,22 +12,20 @@
 // local include
 #include "common/smbus.h"
 
-
 // FreeRTOS includes
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "stream_buffer.h"
 #include "task.h"
 
-
 extern StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
 
 // UART
-void UART1IntHandler( void );
-void UART4IntHandler( void );
+void UART1IntHandler(void);
+void UART4IntHandler(void);
 
 // SMBUs specific handler for I2C
-//extern tSMBus g_sSlave0;  // for I2C #0
+// extern tSMBus g_sSlave0;  // for I2C #0
 
 extern tSMBus g_sMaster1; // for I2C #1
 extern tSMBus g_sMaster2; // for I2C #2
@@ -60,12 +58,9 @@ void ADCSeq1Interrupt();
 // soft UART
 void Timer0AIntHandler(void);
 
-
 // these are from the FreeRTOS code base.
 void xPortPendSVHandler(void);
 void vPortSVCHandler(void);
 void xPortSysTickHandler(void);
-
-
 
 #endif /* PROJECTS_CM_MCU_INTERRUPTHANDLERS_H_ */

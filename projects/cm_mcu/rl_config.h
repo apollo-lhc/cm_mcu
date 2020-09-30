@@ -10,7 +10,7 @@
 // Custom config
 // PW HACK
 #define MICRORL_PROMPT_DEFAULT "% "
-#define MICRORL_PROMPT_LEN      2
+#define MICRORL_PROMPT_LEN     2
 
 #define MICRORL_USE_COMPLETE 0
 
@@ -131,8 +131,8 @@
 /*
  * New line symbol
  */
-#if !defined(MICRORL_ENDL_CR) && !defined(MICRORL_ENDL_CRLF) &&                \
-	!defined(MICRORL_ENDL_LF) && !defined(MICRORL_ENDL_LFCR)
+#if !defined(MICRORL_ENDL_CR) && !defined(MICRORL_ENDL_CRLF) && !defined(MICRORL_ENDL_LF) &&       \
+    !defined(MICRORL_ENDL_LFCR)
 #define MICRORL_ENDL_CR
 #endif
 
@@ -151,8 +151,8 @@
 /********** END CONFIG SECTION ************/
 
 #if MICRORL_RING_HISTORY_LEN > 256
-#error                                                                         \
-	"This history implementation (ring buffer with 1 byte iterator) allow 256 byte buffer size maximum"
+#error                                                                                             \
+    "This history implementation (ring buffer with 1 byte iterator) allow 256 byte buffer size maximum"
 #endif
 
 #endif // MICRORL_CONFIG_H_
