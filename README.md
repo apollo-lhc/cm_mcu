@@ -15,10 +15,10 @@ Note that you should not mix builds w/ and w/o `DEBUG=1`; if you do the build wi
 
 The code uses the Tivaware driver library since this is stored in the ROM of the TM4C devices. (No install is required.)
 
-The build has been extensively tested on MacOS and Linux (SC7/RHEL7).
+The build has been extensively tested on MacOS and Linux (SC7/RHEL7).  See commments below if you want to compile in Windows.
 
 ### FreeRTOS
-We are also using [FreeRTOS](https://freertos.org) also to provide basicl multi-tasking. Install FreeRTOS from the above link somewhere and then set the environment variable as follows:
+We are also using [FreeRTOS](https://freertos.org) also to provide basic multi-tasking. Install FreeRTOS from the above link somewhere and then set the environment variable as follows:
 ```bash
 export FREERTOS_ROOT=/base/of/install/FreeRTOS/Source
 ```
@@ -41,7 +41,14 @@ Please try to use the below versions to avoid unnecessary issues. In particular 
 | arm-none-eabi compiler | 8-2018q4* | 
 | FreeRTOS | 10.2 | 
 | Tivaware | included in build|
-Also tested with the 9-2019 version, which is more aggressive in the warnings. 
+
+The code has also been tested with the 9-2019 version of the ARM gcc compiler, which is more aggressive in the warnings. 
+
+## Continuous Integration (CI)
+We use travis to do a verification of the code base during pull requests. The PR triggers a simply build of the code with warnings as errors and fails if there are compliation warnings or errors. The CI also builds binaries when new releases are created and populates the release page with these binaries, which are the authoratative ones (these binaries are built without debugging.) 
+
+## Code structure overview
+The repository contains two directors that are imported from the tivaware distribution (`inc` and `driverlib`). The `common` directory contains software that can be used across several projects. The `projects` directory contains the main program files. The main binary lives in `projects/cm_mcu`.
 
 ## Documentation
 See the wiki page on this github for documentation.
