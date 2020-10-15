@@ -83,8 +83,13 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #define ECU0_14G_TX_DISABLE_REG 0x34
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
 #define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
+// two bytes, 12 FF to be disabled
+#define ECU0_14G_RX_DISABLE_REG 0x54
+// one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
+#define ECU0_25G_XVCR_RX_DISABLE_REG 0x55
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
 #define ECU0_25G_XVCR_CDR_REG 0x62
+
 
 // I2C for VU7P optics
 extern tSMBus g_sMaster3;
@@ -316,6 +321,33 @@ static int disable_transmit(bool disable, int num_ff) // todo: actually test thi
   return ret;
 }
 
+// TODO
+// Need to verify with Peter that I wrote down the right registers and size
+// How do I test this and disable_trancieve()?
+static int disable_recievers(bool disable, int num_ff)
+{
+  int ret = 0, i = num_ff, imax = num_ff + 1;
+  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
+  uint16_t value = 0x3ff;
+  if (disable == false)
+    value = 0x0;
+  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
+    i = 0;
+    imax = NFIREFLIES;
+  }
+  for (; i < imax; ++i) {
+    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+      continue;
+    if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
+        ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
+    }
+    else if (strstr(ff_i2c_addrs[i].name, "Rx") != NULL) {
+        ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2);
+    }
+  }
+  return ret;
+}
+
 static int set_xcvr_cdr(uint8_t value, int num_ff) // todo: actually test this
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
@@ -387,6 +419,10 @@ void FireFlyTask(void *parameters)
 #define I2C_PULLUP_BUG2
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
 
+  // Disable all Firefly devices
+  disable_transmit(true, NFIREFLIES);
+  disable_recievers(true, NFIREFLIES);
+
   for (;;) {
     tSMBus *smbus;
     tSMBusStatus *p_status;
@@ -441,6 +477,12 @@ void FireFlyTask(void *parameters)
           case FFLY_ENABLE_TRANSMITTER:
             disable_transmit(false, channel);
             break;
+          case FFLY_DISABLE:
+              disable_recievers(true, channel);
+              break;
+          case FFLY_ENABLE:
+              disable_recievers(false, channel);
+              break;
           case FFLY_WRITE_REGISTER: // high two bytes of data are register, low two bytes are value
           {
             uint16_t theReg =
