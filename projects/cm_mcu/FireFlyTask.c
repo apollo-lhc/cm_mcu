@@ -99,6 +99,7 @@ extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
 
 static int8_t ff_temp[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
+static int8_t ff_status[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
 #ifdef DEBUG_FIF
 static int8_t ff_temp_max[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
 static int8_t ff_temp_min[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
@@ -324,7 +325,7 @@ static int disable_transmit(bool disable, int num_ff) // todo: actually test thi
 // TODO
 // Need to verify with Peter that I wrote down the right registers and size
 // How do I test this and disable_trancieve()?
-static int disable_recievers(bool disable, int num_ff)
+static int disable_receivers(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -421,7 +422,7 @@ void FireFlyTask(void *parameters)
 
   // Disable all Firefly devices
   disable_transmit(true, NFIREFLIES);
-  disable_recievers(true, NFIREFLIES);
+  disable_receivers(true, NFIREFLIES);
 
   for (;;) {
     tSMBus *smbus;
@@ -478,10 +479,10 @@ void FireFlyTask(void *parameters)
             disable_transmit(false, channel);
             break;
           case FFLY_DISABLE:
-              disable_recievers(true, channel);
+              disable_receivers(true, channel);
               break;
           case FFLY_ENABLE:
-              disable_recievers(false, channel);
+              disable_receivers(false, channel);
               break;
           case FFLY_WRITE_REGISTER: // high two bytes of data are register, low two bytes are value
           {
@@ -552,7 +553,7 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // loop over commands. Currently just one command.
-      for (int c = 0; c < NCOMMANDS_FF; ++c) {
+      for (int c = 0; c < NCOMMANDS_FF; ++c) { // We want to extend this to status bytes as well
 
         data[0] = 0x0U;
         data[1] = 0x0U;
