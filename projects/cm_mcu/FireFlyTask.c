@@ -77,6 +77,7 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 // Register definitions
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
+#define FF_TEMP_STATUS_REG 0x2
 #define FF_TEMP_COMMAND_REG 0x16
 
 // two bytes, 12 FF to be disabled
