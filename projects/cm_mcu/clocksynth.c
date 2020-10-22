@@ -140,12 +140,12 @@ int load_clock()
   status = write_register(PreambleList, row);
   if (status != 0)
     return status;
-  vTaskDelay(pdMS_TO_TICKS(1));
+  vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum
   row = sizeof(RegisterList) / sizeof(RegisterList[0]);
   status = write_register(RegisterList, row);
   if (status != 0)
     return status;
-  vTaskDelay(pdMS_TO_TICKS(1));
+  vTaskDelay(pdMS_TO_TICKS(330));
   row = sizeof(PostambleList) / sizeof(PostambleList[0]);
   status = write_register(PostambleList, row);
   return status;
