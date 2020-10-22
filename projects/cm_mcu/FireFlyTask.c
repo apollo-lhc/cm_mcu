@@ -98,24 +98,28 @@ extern tSMBusStatus eStatus3;
 extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
 
-static int8_t ff_temp[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
-static int8_t ff_status[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
+struct firefly_status {
+	int8_t status;
+	int8_t temp;
+};
+static struct firefly_status ff_status[NFIREFLIES * NPAGES_FF];
+
 #ifdef DEBUG_FIF
-static int8_t ff_temp_max[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
-static int8_t ff_temp_min[NFIREFLIES * NPAGES_FF * NCOMMANDS_FF];
+static int8_t ff_temp_max[NFIREFLIES * NPAGES_FF];
+static int8_t ff_temp_min[NFIREFLIES * NPAGES_FF];
 
 static void update_max()
 {
-  for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF * NCOMMANDS_FF; ++i) {
-    if (ff_temp_max[i] < ff_temp[i])
-      ff_temp_max[i] = ff_temp[i];
+  for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF; ++i) {
+    if (ff_temp_max[i] < ff_status[i].temp)
+      ff_temp_max[i] = ff_status[i].temp;
   }
 }
 static void update_min()
 {
-  for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF * NCOMMANDS_FF; ++i) {
-    if (ff_temp_min[i] > ff_temp[i])
-      ff_temp_min[i] = ff_temp[i];
+  for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF; ++i) {
+    if (ff_temp_min[i] > ff_status[i].temp)
+      ff_temp_min[i] = ff_status[i].temp;
   }
 }
 #endif // DEBUG_FIF
@@ -131,7 +135,7 @@ const char *getFFname(const uint8_t i)
 int8_t getFFvalue(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
-  return ff_temp[i];
+  return ff_status[i].temp;
 }
 
 static TickType_t ff_updateTick = 0;
@@ -410,12 +414,12 @@ void FireFlyTask(void *parameters)
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint8_t data[2];
 
-  for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF * NCOMMANDS_FF; ++i) {
+  for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF; ++i) {
 #ifdef DEBUG_FIF
     ff_temp_max[i] = -99;
     ff_temp_min[i] = +99;
 #endif // DEBUG_FIF
-    ff_temp[i] = -55;
+    ff_status[i].temp = -55;
   }
 #define I2C_PULLUP_BUG2
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
@@ -573,7 +577,7 @@ void FireFlyTask(void *parameters)
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
                    *p_status, ff, c);
           DPRINT(tmp);
-          ff_temp[ff] = -55;
+          ff_status[ff].temp = -55;
           break;
         }
 #ifdef DEBUG_FIF
@@ -586,7 +590,7 @@ void FireFlyTask(void *parameters)
         } convert_8_t;
         convert_8_t tmp1;
         tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_temp[ff] = tmp1.s;
+        ff_status[ff].temp = tmp1.s;
 
       } // loop over commands
 
