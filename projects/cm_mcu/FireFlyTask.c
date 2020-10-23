@@ -29,7 +29,7 @@
 #include "Tasks.h"
 
 #define NPAGES_FF    1
-#define NCOMMANDS_FF 1
+#define NCOMMANDS_FF 2
 
 // local prototype
 void Print(const char *str);
@@ -77,8 +77,9 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 // Register definitions
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
-#define FF_TEMP_STATUS_REG 0x2
+#define FF_STATUS_COMMAND_REG 0x2
 #define FF_TEMP_COMMAND_REG 0x16
+
 
 // two bytes, 12 FF to be disabled
 #define ECU0_14G_TX_DISABLE_REG 0x34
@@ -557,43 +558,70 @@ void FireFlyTask(void *parameters)
       }
 #endif // DEBUG_FIF
 
-      // loop over commands. Currently just one command.
-      for (int c = 0; c < NCOMMANDS_FF; ++c) { // We want to extend this to status bytes as well
+      // Read the temperature
+      data[0] = 0x0U;
+      data[1] = 0x0U;
+      uint8_t reg_addr = FF_TEMP_COMMAND_REG;
+      r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
-        data[0] = 0x0U;
-        data[1] = 0x0U;
-        uint8_t reg_addr = FF_TEMP_COMMAND_REG;
-        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
-
-        if (r != SMBUS_OK) {
-          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-                   c);
-          DPRINT(tmp);
-          continue; // abort reading this register
-        }
-        while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-        }
-        if (*p_status != SMBUS_OK) {
-          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
-                   *p_status, ff, c);
-          DPRINT(tmp);
-          ff_status[ff].temp = -55;
-          break;
-        }
+      if (r != SMBUS_OK) {
+    	  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+				1);
+    	  DPRINT(tmp);
+    	  continue; // abort reading this register
+	  }
+	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+      }
+      if (*p_status != SMBUS_OK) {
+    	  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+    			  *p_status, ff, 1);
+    	  DPRINT(tmp);
+    	  ff_status[ff].temp = -55;
+    	  break;
+	  }
 #ifdef DEBUG_FIF
-        snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
-        DPRINT(tmp);
+	  snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
+	  DPRINT(tmp);
 #endif // DEBUG_FIF
-        typedef union {
-          uint8_t us;
-          int8_t s;
-        } convert_8_t;
-        convert_8_t tmp1;
-        tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_status[ff].temp = tmp1.s;
+	  typedef union {
+		  uint8_t us;
+		  int8_t s;
+	  } convert_8_t;
+	  convert_8_t tmp1;
+	  tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+	  ff_status[ff].temp = tmp1.s;
 
-      } // loop over commands
+	  // Read the status
+	  data[0] = 0x0U;
+	  data[1] = 0x0U;
+	  reg_addr = FF_STATUS_COMMAND_REG;
+	  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
+
+	  if (r != SMBUS_OK) {
+	  	  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+	  			  2);
+	  	  DPRINT(tmp);
+	  	  continue; // abort reading this register
+	  }
+	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+	  }
+	  if (*p_status != SMBUS_OK) {
+		  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+				  *p_status, ff, 2);
+		  DPRINT(tmp);
+		  ff_status[ff].status = 0;
+		  break;
+	  }
+#ifdef DEBUG_FIF
+	  snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
+	  DPRINT(tmp);
+#endif // DEBUG_FIF
+	  convert_8_t tmp2;
+	  tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+	  ff_status[ff].status = tmp2.s;
+
 
       // clear the I2C mux
       data[0] = 0x0;
