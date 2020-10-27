@@ -13,7 +13,7 @@
 #include <string.h>
 
 #define SCRATCH_SIZE 512
-static char m[SCRATCH_SIZE];
+//static char m[SCRATCH_SIZE];
 int snprintf(char *buf, unsigned int count, const char *format, ...);
 // clang-format off
 int PreambleList[][2] = {{ 0x0B24 , 0xC0 },
