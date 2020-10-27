@@ -12,8 +12,6 @@
 #include "inc/hw_memmap.h"
 #include <string.h>
 
-#define SCRATCH_SIZE 512
-//static char m[SCRATCH_SIZE];
 int snprintf(char *buf, unsigned int count, const char *format, ...);
 // clang-format off
 int PreambleList[][2] = {{ 0x0B24 , 0xC0 },
@@ -130,14 +128,10 @@ static int write_register(int RegList[][2], int n_row)
     uint8_t LowByte = RegList[i][0] - (NewHighByte << 8);
     
     if (ChangePage) {
-      //      snprintf(m, SCRATCH_SIZE, "ChangePage: 0x%02x 0x01 1 0x%02x\r\n", CLOCK_SYNTH_I2C_ADDRESS, NewHighByte);
-      //      UARTPrint(UART1_BASE,  m);
       status = apollo_i2c_ctl_reg_w(CLOCK_SYNTH_I2C_ADDRESS, 0x01, 1, NewHighByte);
       if (status != 0)
         return status;
     }
-    //    snprintf(m, SCRATCH_SIZE, "About to write to: 0x%02x 0x%02x 1 0x%02x\r\n", CLOCK_SYNTH_I2C_ADDRESS,LowByte,RegList[i][1]);
-    //    UARTPrint(UART1_BASE, m);
     status = apollo_i2c_ctl_reg_w(CLOCK_SYNTH_I2C_ADDRESS, LowByte, 1, RegList[i][1]);
   }
   return status;
