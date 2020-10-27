@@ -144,11 +144,11 @@ int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, u
   return 0;
 }
 
+#define MAX_BYTES 4
 int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t packed_data)
 {
   // first byte is the register, others are the data
-  const int MAX_BYTES = 4;
-  uint8_t data[MAX_BYTES];
+  uint8_t data[MAX_BYTES+1];
   data[0] = reg_address;
   // pack the bytes into the data array, offset by
   // one due to the address
@@ -175,7 +175,6 @@ int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, u
 
 int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, uint8_t value)
 {
-  const int MAX_BYTES = 4;
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i) {
     data[i] = (value >> i * 8) & 0xFFUL;
