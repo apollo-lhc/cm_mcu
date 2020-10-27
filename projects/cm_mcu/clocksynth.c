@@ -119,7 +119,7 @@ static int write_register(int RegList[][2], int n_row)
   int HighByte = -1;
   int status = -10;
   for (int i = 0; i < n_row; i++) {
-    uint8_t NewHighByte = RegList[i][0] >> 8; // most significant 8 bits, 16 bits in total
+    int NewHighByte = RegList[i][0] >> 8; // most significant 8 bits, 16 bits in total
     if (NewHighByte != HighByte) {
       ChangePage = true;
     }

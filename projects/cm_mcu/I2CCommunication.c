@@ -103,9 +103,9 @@ int apollo_i2c_ctl_set_dev(uint8_t base)
   return 0;
 }
 
-int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[4])
+#define MAX_BYTES 4
+int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  const int MAX_BYTES = 4;
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
@@ -124,9 +124,8 @@ int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[4])
   return 0;
 }
 
-int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[4])
+int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  const int MAX_BYTES = 4;
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
@@ -144,8 +143,7 @@ int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, u
   return 0;
 }
 
-#define MAX_BYTES 4
-int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t packed_data)
+int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)
 {
   // first byte is the register, others are the data
   uint8_t data[MAX_BYTES+1];
@@ -173,7 +171,7 @@ int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, u
   return 0;
 }
 
-int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, uint8_t value)
+int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, int value)
 {
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i) {
