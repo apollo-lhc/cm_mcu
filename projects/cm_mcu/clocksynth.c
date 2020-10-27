@@ -130,8 +130,8 @@ static int write_register(int RegList[][2], int n_row)
     uint8_t LowByte = RegList[i][0] - (NewHighByte << 8);
     
     if (ChangePage) {
-      snprintf(m, SCRATCH_SIZE, "ChangePage: 0x%02x 0x01 1 0x%02x\r\n", CLOCK_SYNTH_I2C_ADDRESS, NewHighByte);
-      UARTPrint(UART1_BASE,  m);
+      //      snprintf(m, SCRATCH_SIZE, "ChangePage: 0x%02x 0x01 1 0x%02x\r\n", CLOCK_SYNTH_I2C_ADDRESS, NewHighByte);
+      //      UARTPrint(UART1_BASE,  m);
       status = apollo_i2c_ctl_reg_w(CLOCK_SYNTH_I2C_ADDRESS, 0x01, 1, NewHighByte);
       if (status != 0)
         return status;
