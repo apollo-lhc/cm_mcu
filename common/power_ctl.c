@@ -68,7 +68,7 @@ struct gpio_pin_t oks[] = {
     { V_MGTY2_AVTT_OK, 5}
 };
 // clang-format on
-const int num_priorities = 5;
+#define PS_NUM_PRIORITIES 5
 
 // static enum ps_state new_states[N_PS_OKS] = { PWR_UNKNOWN };
 #ifdef NOTDEF
@@ -298,7 +298,7 @@ bool disable_ps(void)
   vTaskDelay(pdMS_TO_TICKS(500));
 
   // disable in reverse order
-  for (int prio = num_priorities; prio > 0; --prio) {
+  for (int prio = PS_NUM_PRIORITIES; prio > 0; --prio) {
     // disable the supplies at the relevant priority
     for (int e = 0; e < N_PS_ENABLES; ++e) {
       if (enables[e].priority == prio) {
@@ -346,7 +346,7 @@ bool turn_on_ps(uint16_t ps_en_mask)
   }
 
   // loop over the enables
-  for (int prio = 1; prio <= num_priorities; ++prio) {
+  for (int prio = 1; prio <= PS_NUM_PRIORITIES; ++prio) {
     // enable the supplies at the relevant priority
     for (int e = 0; e < N_PS_ENABLES; ++e) {
       if (enables[e].priority == prio) {

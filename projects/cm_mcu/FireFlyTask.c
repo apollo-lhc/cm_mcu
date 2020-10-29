@@ -207,7 +207,7 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
   tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
   if (r != SMBUS_OK) {
-    Print("write_ff_reg: I2CBus command failed  (setting mux)\r\n");
+    Print("read_ff_reg: I2CBus command failed  (setting mux)\r\n");
     return 1;
   }
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
@@ -224,15 +224,15 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   // increment size to account for the register address
   r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, size);
   if (r != SMBUS_OK) {
-    Print("write_ff_reg: I2CBus command failed  (FF register)\r\n");
+    Print("write_ff_reg: I2CBus command failed (FF register)\r\n");
     return 1;
   }
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
   if (*p_status != SMBUS_OK) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+    char tmp[128];
+    snprintf(tmp, 64, "%s: FF WriteRead error %d  (ff=%s) ...\r\n", __func__, *p_status,
              ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
@@ -318,7 +318,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
 //     ECU0_25G_XVCR_CDR_REG,
 // };
 
-static int disable_transmit(bool disable, int num_ff) // todo: actually test this
+static int disable_transmit(bool disable, int num_ff) 
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -366,7 +366,7 @@ static int disable_receivers(bool disable, int num_ff)
   return ret;
 }
 
-static int set_xcvr_cdr(uint8_t value, int num_ff) // todo: actually test this
+static int set_xcvr_cdr(uint8_t value, int num_ff) 
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.

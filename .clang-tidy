@@ -1,5 +1,8 @@
 ---
 Checks: -*,
+  ,cppcoreguidelines-*,
+  ,-cppcoreguidelines-avoid-magic-numbers,
+  ,cppcoreguidelines-pro-bounds-constant-array-index,
   ,boost-use-to-string,
   ,misc-string-compare,
   ,misc-uniqueptr-reset-release,
