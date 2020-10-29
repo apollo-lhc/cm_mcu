@@ -638,6 +638,7 @@ static BaseType_t ff_ctl(int argc, char **argv)
       }
     }
     // now process various commands.
+    int hey = 0;
     if (argc == 4) { // command + three arguments
       bool receiveAnswer = false;
       uint8_t code;
@@ -656,6 +657,14 @@ static BaseType_t ff_ctl(int argc, char **argv)
           code = FFLY_ENABLE_TRANSMITTER;
         }
       }
+      else if (strncmp(argv[1], "rcvr", 4) == 0) {
+    	code = FFLY_DISABLE;
+        hey = 1;
+    	if (strncmp(argv[2], "on", 2) == 0) {
+    		code = FFLY_ENABLE;
+    	}
+      }
+      // Add here
       else if (strncmp(argv[1], "regr", 4) == 0) {
         code = FFLY_READ_REGISTER;
         receiveAnswer = true;
@@ -680,8 +689,8 @@ static BaseType_t ff_ctl(int argc, char **argv)
       uint32_t message =
           ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) | (data & FF_MESSAGE_DATA_MASK);
       xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s sent.\r\n", argv[0], argv[1],
-               argv[2]);
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s hey:%d.\r\n", argv[0], argv[1],
+               argv[2], hey);
       if (receiveAnswer) {
         BaseType_t f = xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(500));
         if (f == pdTRUE)

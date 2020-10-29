@@ -80,18 +80,16 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #define FF_STATUS_COMMAND_REG 0x2
 #define FF_TEMP_COMMAND_REG 0x16
 
-
 // two bytes, 12 FF to be disabled
 #define ECU0_14G_TX_DISABLE_REG 0x34
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
 #define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_RX_DISABLE_REG 0x54
+#define ECU0_14G_RX_DISABLE_REG 0x36
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_RX_DISABLE_REG 0x55
+#define ECU0_25G_XVCR_RX_DISABLE_REG 0x37
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
 #define ECU0_25G_XVCR_CDR_REG 0x62
-
 
 // I2C for VU7P optics
 extern tSMBus g_sMaster3;
@@ -333,6 +331,8 @@ static int disable_transmit(bool disable, int num_ff) // todo: actually test thi
 // How do I test this and disable_trancieve()?
 static int disable_receivers(bool disable, int num_ff)
 {
+  char buffer[100];
+  snprintf ( buffer, 100, "Hi again!");
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
   uint16_t value = 0x3ff;
@@ -427,8 +427,8 @@ void FireFlyTask(void *parameters)
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
 
   // Disable all Firefly devices
-  disable_transmit(true, NFIREFLIES);
-  disable_receivers(true, NFIREFLIES);
+  //disable_transmit(true, NFIREFLIES);
+  //disable_receivers(true, NFIREFLIES);
 
   for (;;) {
     tSMBus *smbus;
@@ -485,11 +485,11 @@ void FireFlyTask(void *parameters)
             disable_transmit(false, channel);
             break;
           case FFLY_DISABLE:
-              disable_receivers(true, channel);
-              break;
+        	disable_receivers(true, channel);
+            break;
           case FFLY_ENABLE:
-              disable_receivers(false, channel);
-              break;
+            disable_receivers(false, channel);
+            break;
           case FFLY_WRITE_REGISTER: // high two bytes of data are register, low two bytes are value
           {
             uint16_t theReg =
