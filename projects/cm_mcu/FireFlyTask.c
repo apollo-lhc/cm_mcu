@@ -393,7 +393,7 @@ static int set_xcvr_cdr(uint8_t value, int num_ff)
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG, value, 1);
     }
     else { // Tx/Rx
-      uint16_t value16 = value==1? 0xffffU: 0U; // hack
+      uint16_t value16 = value == 0 ? 0U : 0xffffU; // hack
       Print(ff_i2c_addrs[i].name); Print("\r\n");
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_TXRX_CDR_REG, value16, 2);
     }
