@@ -123,6 +123,9 @@ void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
 #define ECU0_25G_XVCR_RX_DISABLE_REG 0x35
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
 #define ECU0_25G_XVCR_CDR_REG 0x62
+// two bytes, 12 FF to be enabled/disabled. The byte layout 
+// is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
+#define ECU0_25G_TXRX_CDR_REG 0x4A
 
 
 struct firefly_status {
@@ -383,11 +386,16 @@ static int set_xcvr_cdr(uint8_t value, int num_ff)
     imax = NFIREFLIES;
   }
   for (; i < imax; ++i) {
-    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+    if (!isEnabledFF(i) && !(i==21||i==22)) // skip the FF if it's not enabled via the FF config
       continue;
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
       // Print(ff_i2c_addrs[i].name); Print("\r\n");
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG, value, 1);
+    }
+    else { // Tx/Rx
+      uint16_t value16 = value==1? 0xffffU: 0U; // hack
+      Print(ff_i2c_addrs[i].name); Print("\r\n");
+      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_TXRX_CDR_REG, value16, 2);
     }
   }
   return ret;
