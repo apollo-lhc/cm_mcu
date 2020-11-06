@@ -85,9 +85,9 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
 #define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_RX_DISABLE_REG 0x36
+#define ECU0_14G_RX_DISABLE_REG 0x34
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_RX_DISABLE_REG 0x37
+#define ECU0_25G_XVCR_RX_DISABLE_REG 0x35
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
 #define ECU0_25G_XVCR_CDR_REG 0x62
 
@@ -132,7 +132,13 @@ const char *getFFname(const uint8_t i)
   return ff_i2c_addrs[i].name;
 }
 
-int8_t getFFvalue(const uint8_t i)
+int8_t getFFstatus(const uint8_t i)
+{
+  configASSERT(i < NFIREFLIES);
+  return ff_status[i].status;
+}
+
+int8_t getFFvalue(const uint8_t i) //rename
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].temp;
@@ -166,7 +172,7 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   // find the appropriate information for this FF device
   int ff;
   for (ff = 0; ff < NFIREFLIES; ++ff) {
-    if (strncmp(ff_i2c_addrs[ff].name, name, 3) == 0)
+    if (strncmp(ff_i2c_addrs[ff].name, name, 10) == 0)
       break;
   }
   if (ff == NFIREFLIES) {
@@ -234,7 +240,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   // find the appropriate information for this FF device
   int ff;
   for (ff = 0; ff < NFIREFLIES; ++ff) {
-    if (strncmp(ff_i2c_addrs[ff].name, name, 3) == 0)
+    if (strncmp(ff_i2c_addrs[ff].name, name, 10) == 0)
       break;
   }
   if (ff == NFIREFLIES) {
@@ -328,11 +334,8 @@ static int disable_transmit(bool disable, int num_ff) // todo: actually test thi
 
 // TODO
 // Need to verify with Peter that I wrote down the right registers and size
-// How do I test this and disable_trancieve()?
 static int disable_receivers(bool disable, int num_ff)
 {
-  char buffer[100];
-  snprintf ( buffer, 100, "Hi again!");
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
   uint16_t value = 0x3ff;
@@ -348,7 +351,7 @@ static int disable_receivers(bool disable, int num_ff)
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
         ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
     }
-    else if (strstr(ff_i2c_addrs[i].name, "Rx") != NULL) {
+    else if (strstr(ff_i2c_addrs[i].name, "Tx") != NULL) { // change this back to rx
         ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2);
     }
   }
@@ -422,6 +425,7 @@ void FireFlyTask(void *parameters)
     ff_temp_min[i] = +99;
 #endif // DEBUG_FIF
     ff_status[i].temp = -55;
+    ff_status[i].status = 0;
   }
 #define I2C_PULLUP_BUG2
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
@@ -621,7 +625,6 @@ void FireFlyTask(void *parameters)
 	  convert_8_t tmp2;
 	  tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
 	  ff_status[ff].status = tmp2.s;
-
 
       // clear the I2C mux
       data[0] = 0x0;
