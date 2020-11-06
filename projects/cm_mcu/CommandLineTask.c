@@ -638,7 +638,6 @@ static BaseType_t ff_ctl(int argc, char **argv)
       }
     }
     // now process various commands.
-    int hey = 0;
     if (argc == 4) { // command + three arguments
       bool receiveAnswer = false;
       uint8_t code;
@@ -659,7 +658,6 @@ static BaseType_t ff_ctl(int argc, char **argv)
       }
       else if (strncmp(argv[1], "rcvr", 4) == 0) {
     	code = FFLY_DISABLE;
-        hey = 1;
     	if (strncmp(argv[2], "on", 2) == 0) {
     		code = FFLY_ENABLE;
     	}
@@ -689,8 +687,8 @@ static BaseType_t ff_ctl(int argc, char **argv)
       uint32_t message =
           ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) | (data & FF_MESSAGE_DATA_MASK);
       xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s hey:%d.\r\n", argv[0], argv[1],
-               argv[2], hey);
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s.\r\n", argv[0], argv[1],
+               argv[2]);
       if (receiveAnswer) {
         BaseType_t f = xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(500));
         if (f == pdTRUE)
@@ -911,7 +909,9 @@ static BaseType_t sensor_summary(int argc, char **argv)
     if (v > imax_temp)
       imax_temp = v;
   }
+  // Just get the status of one firefly for now. Somehow may need to expand this later
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY %02d.0\r\n", imax_temp);
+
   // FPGAs.
   float max_fpga;
   if (fpga_args.n_devices == 2)
@@ -936,6 +936,17 @@ static BaseType_t sensor_summary(int argc, char **argv)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "REG %02d.%02d\r\n", tens, frac);
 
   return pdFALSE;
+}
+
+// This command takes no arguments
+static BaseType_t ff_status(int argc, char **argv)
+{
+	int copied = 0;
+	for (int i = 0; i < NFIREFLIES; ++i) {
+		int8_t v = getFFstatus(i);
+		copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d.0\r\n", getFFname(i), v);
+	}
+	return pdFALSE;
 }
 
 // This command takes no arguments
@@ -1461,6 +1472,12 @@ static struct command_t commands[] = {
         "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
         0,
     },
+	{
+		"ff_status",
+		ff_status,
+		"ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
+		0,
+	},
     {
         "suart",
         suart_ctl,
