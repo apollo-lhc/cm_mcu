@@ -942,10 +942,23 @@ static BaseType_t sensor_summary(int argc, char **argv)
 static BaseType_t ff_status(int argc, char **argv)
 {
 	int copied = 0;
-	for (int i = 0; i < NFIREFLIES; ++i) {
-		int8_t v = getFFstatus(i);
-		copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d.0\r\n", getFFname(i), v);
+//	copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
+//	for (int i = 0; i < NFIREFLIES; ++i) {
+//		int8_t status = getFFstatus(i);
+//		const char *name = getFFname(i);
+//		copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d\r\n", name, status);
+//	}
+
+	// Try to print samtec line
+	copied += snprintf(m + copied, SCRATCH_SIZE - copied, "SAMTEC LINE:\r\n");
+	int8_t* samtec = test_read(6);
+	for (int j = 0; j<20; j++) {
+		copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%02d ", *(samtec+j));
 	}
+	copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+	copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
 	return pdFALSE;
 }
 

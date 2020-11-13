@@ -101,6 +101,7 @@ extern tSMBusStatus eStatus4;
 struct firefly_status {
 	int8_t status;
 	int8_t temp;
+	int8_t test[20];
 };
 static struct firefly_status ff_status[NFIREFLIES * NPAGES_FF];
 
@@ -142,6 +143,11 @@ int8_t getFFvalue(const uint8_t i) //rename
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].temp;
+}
+
+int8_t* test_read(const uint8_t i) {
+	configASSERT(i < NFIREFLIES);
+	return ff_status[i].test;
 }
 
 static TickType_t ff_updateTick = 0;
@@ -625,6 +631,34 @@ void FireFlyTask(void *parameters)
 	  convert_8_t tmp2;
 	  tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
 	  ff_status[ff].status = tmp2.s;
+
+	  // Read the Samtec line - testing only
+	  data[0] = 0x0U;
+	  data[1] = 0x0U;
+
+	  for (uint8_t i =148; i<164; i++) {
+		  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &i, 1, data, 1);
+
+		  if (r != SMBUS_OK) {
+			  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+					  2);
+			  DPRINT(tmp);
+			  continue; // abort reading this register
+		  }
+		  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+			  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+		  }
+		  if (*p_status != SMBUS_OK) {
+			  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+					  *p_status, ff, 2);
+			  DPRINT(tmp);
+			  ff_status[ff].test[i-148] = 0;
+			  break;
+		  }
+		  convert_8_t tmp3;
+		  tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+		  ff_status[ff].test[i-148] = tmp3.s;
+	  }
 
       // clear the I2C mux
       data[0] = 0x0;

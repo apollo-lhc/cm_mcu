@@ -85,6 +85,7 @@ extern QueueHandle_t xFFlyQueueIn;
 extern QueueHandle_t xFFlyQueueOut;
 
 const char *getFFname(const uint8_t i);
+int8_t *test_read(const uint8_t i);
 int8_t getFFvalue(const uint8_t i);
 int8_t getFFstatus(const uint8_t i);
 TickType_t getFFupdateTick();
