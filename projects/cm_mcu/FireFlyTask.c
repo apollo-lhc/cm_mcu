@@ -139,7 +139,7 @@ int8_t getFFstatus(const uint8_t i)
   return ff_status[i].status;
 }
 
-int8_t getFFvalue(const uint8_t i) //rename
+int8_t getFFtemp(const uint8_t i) //rename
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].temp;
@@ -338,8 +338,6 @@ static int disable_transmit(bool disable, int num_ff) // todo: actually test thi
   return ret;
 }
 
-// TODO
-// Need to verify with Peter that I wrote down the right registers and size
 static int disable_receivers(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
@@ -437,8 +435,8 @@ void FireFlyTask(void *parameters)
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
 
   // Disable all Firefly devices
-  //disable_transmit(true, NFIREFLIES);
-  //disable_receivers(true, NFIREFLIES);
+  disable_transmit(true, NFIREFLIES);
+  disable_receivers(true, NFIREFLIES);
 
   for (;;) {
     tSMBus *smbus;
