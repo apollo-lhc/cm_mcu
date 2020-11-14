@@ -69,7 +69,7 @@ static uint8_t getSlaveData(uint8_t address)
     {
       int8_t imax_temp = -55; // turn off value
       for (int i = 0; i < NFIREFLIES; ++i) {
-        int8_t v = getFFvalue(i);
+        int8_t v = getFFtemp(i);
         if (v > imax_temp)
           imax_temp = v;
       }
