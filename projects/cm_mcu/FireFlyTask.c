@@ -137,7 +137,8 @@ int8_t getFFstatus(const uint8_t i) {
   return ff_status[i].status;
 }
 
-int8_t getFFtemp(const uint8_t i) {
+int8_t getFFtemp(const uint8_t i) //rename
+{
   configASSERT(i < NFIREFLIES);
   return ff_status[i].temp;
 }
