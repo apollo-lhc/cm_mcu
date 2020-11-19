@@ -47,33 +47,33 @@ void Print(const char *str);
 // ECUO-T12 Tx:   0x50 7 bit I2C address
 // ECUO-R12 Rx:   0x54 7 bit I2C address
 
-struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = { { "K01  12 Tx GTH", 0x70, 0,
-    0x50 }, //
-    { "K01  12 Rx GTH", 0x70, 1, 0x54 }, //
-    { "K02  12 Tx GTH", 0x70, 2, 0x50 }, //
-    { "K02  12 Rx GTH", 0x70, 3, 0x54 }, //
-    { "K03  12 Tx GTH", 0x70, 4, 0x50 }, //
-    { "K03  12 Rx GTH", 0x70, 5, 0x54 }, //
-    { "K04 4 XCVR GTY", 0x71, 0, 0x50 }, //
-    { "K05 4 XCVR GTY", 0x71, 1, 0x50 }, //
-    { "K06 4 XCVR GTY", 0x71, 2, 0x50 }, //
-    { "K07  12 Tx GTY", 0x71, 3, 0x50 }, //
-    { "K07  12 Rx GTY", 0x71, 4, 0x54 }, //
-    { "V01 4 XCVR GTY", 0x70, 0, 0x50 }, //
-    { "V02 4 XCVR GTY", 0x70, 1, 0x50 }, //
-    { "V03 4 XCVR GTY", 0x70, 2, 0x50 }, //
-    { "V04 4 XCVR GTY", 0x70, 3, 0x50 }, //
-    { "V05 4 XCVR GTY", 0x70, 4, 0x50 }, //
-    { "V06 4 XCVR GTY", 0x70, 5, 0x50 }, //
-    { "V07 4 XCVR GTY", 0x71, 0, 0x50 }, //
-    { "V08 4 XCVR GTY", 0x71, 1, 0x50 }, //
-    { "V09 4 XCVR GTY", 0x71, 2, 0x50 }, //
-    { "V10 4 XCVR GTY", 0x71, 3, 0x50 }, //
-    { "V11  12 Tx GTY", 0x70, 6, 0x50 }, //
-    { "V11  12 Rx GTY", 0x70, 7, 0x54 }, //
-    { "V12  12 Tx GTY", 0x71, 4, 0x50 }, //
-    { "V12  12 Rx GTY", 0x71, 5, 0x54 }, //
-    };
+struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
+    {"K01  12 Tx GTH", 0x70, 0, 0x50}, //
+    {"K01  12 Rx GTH", 0x70, 1, 0x54}, //
+    {"K02  12 Tx GTH", 0x70, 2, 0x50}, //
+    {"K02  12 Rx GTH", 0x70, 3, 0x54}, //
+    {"K03  12 Tx GTH", 0x70, 4, 0x50}, //
+    {"K03  12 Rx GTH", 0x70, 5, 0x54}, //
+    {"K04 4 XCVR GTY", 0x71, 0, 0x50}, //
+    {"K05 4 XCVR GTY", 0x71, 1, 0x50}, //
+    {"K06 4 XCVR GTY", 0x71, 2, 0x50}, //
+    {"K07  12 Tx GTY", 0x71, 3, 0x50}, //
+    {"K07  12 Rx GTY", 0x71, 4, 0x54}, //
+    {"V01 4 XCVR GTY", 0x70, 0, 0x50}, //
+    {"V02 4 XCVR GTY", 0x70, 1, 0x50}, //
+    {"V03 4 XCVR GTY", 0x70, 2, 0x50}, //
+    {"V04 4 XCVR GTY", 0x70, 3, 0x50}, //
+    {"V05 4 XCVR GTY", 0x70, 4, 0x50}, //
+    {"V06 4 XCVR GTY", 0x70, 5, 0x50}, //
+    {"V07 4 XCVR GTY", 0x71, 0, 0x50}, //
+    {"V08 4 XCVR GTY", 0x71, 1, 0x50}, //
+    {"V09 4 XCVR GTY", 0x71, 2, 0x50}, //
+    {"V10 4 XCVR GTY", 0x71, 3, 0x50}, //
+    {"V11  12 Tx GTY", 0x70, 6, 0x50}, //
+    {"V11  12 Rx GTY", 0x70, 7, 0x54}, //
+    {"V12  12 Tx GTY", 0x71, 4, 0x50}, //
+    {"V12  12 Rx GTY", 0x71, 5, 0x54}, //
+};
 // Register definitions
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
@@ -101,7 +101,9 @@ extern tSMBusStatus eStatus4;
 struct firefly_status {
 	int8_t status;
 	int8_t temp;
-	int8_t test[20];
+	#ifdef DEBUG_FIF
+	int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
+	#endif
 };
 static struct firefly_status ff_status[NFIREFLIES * NPAGES_FF];
 
@@ -127,17 +129,19 @@ static void update_min()
 
 // read-only accessor functions for Firefly names and values.
 
-const char* getFFname(const uint8_t i) {
+const char *getFFname(const uint8_t i)
+{
   configASSERT(i < NFIREFLIES);
   return ff_i2c_addrs[i].name;
 }
 
-int8_t getFFstatus(const uint8_t i) {
+int8_t getFFstatus(const uint8_t i)
+{
   configASSERT(i < NFIREFLIES);
   return ff_status[i].status;
 }
 
-int8_t getFFtemp(const uint8_t i) //rename
+int8_t getFFtemp(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].temp;
@@ -149,11 +153,13 @@ int8_t* test_read(const uint8_t i) {
 }
 
 static TickType_t ff_updateTick = 0;
-TickType_t getFFupdateTick() {
+TickType_t getFFupdateTick()
+{
   return ff_updateTick;
 }
 
-static bool isEnabledFF(int ff) {
+static bool isEnabledFF(int ff)
+{
   // firefly config stored in on-board EEPROM
   static bool configured = false;
 
@@ -167,14 +173,15 @@ static bool isEnabledFF(int ff) {
     return true;
 }
 
-static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
-                            int size) {
+static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value, int size)
+{
   *value = 0U;
   configASSERT(size <= 2);
   // find the appropriate information for this FF device
   int ff;
   for (ff = 0; ff < NFIREFLIES; ++ff) {
-    if (strncmp(ff_i2c_addrs[ff].name, name, 10) == 0) break;
+    if (strncmp(ff_i2c_addrs[ff].name, name, 10) == 0)
+      break;
   }
   if (ff == NFIREFLIES) {
     return -2; // no match found
@@ -196,8 +203,7 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   // select the appropriate output for the mux
 
   data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data,
-      1);
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
   if (r != SMBUS_OK) {
     Print("write_ff_reg: I2CBus command failed  (setting mux)\r\n");
     return 1;
@@ -207,15 +213,14 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__,
-        *p_status, ff_i2c_addrs[ff].name);
+    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+             ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
   }
   // Write/Read from register. First word is reg address, then the data.
   // increment size to account for the register address
-  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1,
-      data, size);
+  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, size);
   if (r != SMBUS_OK) {
     Print("write_ff_reg: I2CBus command failed  (FF register)\r\n");
     return 1;
@@ -225,8 +230,8 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
-    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__,
-        *p_status, ff_i2c_addrs[ff].name);
+    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+             ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
   }
@@ -237,13 +242,14 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   return 0;
 }
 
-static int write_ff_register(const char *name, uint8_t reg, uint16_t value,
-                             int size) {
+static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
+{
   configASSERT(size <= 2);
   // find the appropriate information for this FF device
   int ff;
   for (ff = 0; ff < NFIREFLIES; ++ff) {
-    if (strncmp(ff_i2c_addrs[ff].name, name, 10) == 0) break;
+    if (strncmp(ff_i2c_addrs[ff].name, name, 10) == 0)
+      break;
   }
   if (ff == NFIREFLIES) {
     return -2; // no match found
@@ -265,8 +271,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value,
   // select the appropriate output for the mux
 
   data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data,
-      1);
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
   if (r != SMBUS_OK) {
     Print("write_ff_reg: I2CBus command failed  (setting mux)\r\n");
     return 1;
@@ -276,8 +281,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value,
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__,
-        *p_status, ff_i2c_addrs[ff].name);
+    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+             ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
   }
@@ -296,8 +301,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value,
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
-    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__,
-        *p_status, ff_i2c_addrs[ff].name);
+    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+             ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
   }
@@ -316,7 +321,8 @@ static int disable_transmit(bool disable, int num_ff) // todo: actually test thi
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
   uint16_t value = 0x3ff;
-  if (disable == false) value = 0x0;
+  if (disable == false)
+    value = 0x0;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
     i = 0;
     imax = NFIREFLIES;
@@ -325,22 +331,22 @@ static int disable_transmit(bool disable, int num_ff) // todo: actually test thi
     if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
       continue;
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(ff_i2c_addrs[i].name,
-          ECU0_25G_XVCR_TX_DISABLE_REG, value, 1);
+      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1);
     }
     else if (strstr(ff_i2c_addrs[i].name, "Tx") != NULL) {
-      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG,
-          value, 2);
+      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2);
     }
   }
   return ret;
 }
 
-static int disable_receivers(bool disable, int num_ff) {
+static int disable_receivers(bool disable, int num_ff)
+{
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
   uint16_t value = 0x3ff;
-  if (disable == false) value = 0x0;
+  if (disable == false)
+    value = 0x0;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
     i = 0;
     imax = NFIREFLIES;
@@ -349,12 +355,10 @@ static int disable_receivers(bool disable, int num_ff) {
     if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
       continue;
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(ff_i2c_addrs[i].name,
-          ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
+        ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
     }
     else if (strstr(ff_i2c_addrs[i].name, "Tx") != NULL) { // change this back to rx
-      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG,
-          value, 2);
+        ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2);
     }
   }
   return ret;
@@ -373,15 +377,14 @@ static int set_xcvr_cdr(uint8_t value, int num_ff) // todo: actually test this
       continue;
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
       // Print(ff_i2c_addrs[i].name); Print("\r\n");
-      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG,
-          value, 1);
+      ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG, value, 1);
     }
   }
   return ret;
 }
 
-static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value,
-                                       int num_ff) {
+static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff)
+{
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
@@ -397,13 +400,13 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value,
 }
 
 // read a SINGLE firefly register, one byte only
-static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff) {
+static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff)
+{
   if (num_ff >= NFIREFLIES) {
     return -2;
   }
   uint16_t value;
-  uint16_t ret = read_ff_register(ff_i2c_addrs[num_ff].name, regnumber, &value,
-      1);
+  uint16_t ret = read_ff_register(ff_i2c_addrs[num_ff].name, regnumber, &value, 1);
   if (ret == 0) {
     return value;
   }
@@ -416,7 +419,8 @@ QueueHandle_t xFFlyQueueIn = NULL;
 QueueHandle_t xFFlyQueueOut = NULL;
 
 // FireFly temperatures, voltages, currents, via I2C/PMBUS
-void FireFlyTask(void *parameters) {
+void FireFlyTask(void *parameters)
+{
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint8_t data[2];
@@ -469,55 +473,57 @@ void FireFlyTask(void *parameters) {
 #endif // I2C_PULLUP_BUG
       // check for any messages
       uint32_t message;
-      if (xQueueReceive(xFFlyQueueIn, &message, 0)) { // TODO: what if I receive more than one message
-        uint8_t code = (uint8_t) ((message >> FF_MESSAGE_CODE_OFFSET)
-            & FF_MESSAGE_CODE_MASK); // see Tasks.h
-        uint32_t data = (uint32_t) message & FF_MESSAGE_DATA_MASK;
-        int channel = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET)
-            & FF_MESSAGE_CODE_REG_FF_MASK;
-        if (channel > NFIREFLIES) channel = NFIREFLIES;
+      if (xQueueReceive(xFFlyQueueIn, &message,
+                        0)) { // TODO: what if I receive more than one message
+        uint8_t code =
+            (uint8_t)((message >> FF_MESSAGE_CODE_OFFSET) & FF_MESSAGE_CODE_MASK); // see Tasks.h
+        uint32_t data = (uint32_t)message & FF_MESSAGE_DATA_MASK;
+        int channel = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) & FF_MESSAGE_CODE_REG_FF_MASK;
+        if (channel > NFIREFLIES)
+          channel = NFIREFLIES;
         switch (code) {
-        case FFLY_ENABLE_CDR:
-          set_xcvr_cdr(0xff, channel);
-          break;
-        case FFLY_DISABLE_CDR:
-          set_xcvr_cdr(0x00, channel);
-          break;
-        case FFLY_DISABLE_TRANSMITTER:
-          disable_transmit(true, channel);
-          break;
-        case FFLY_ENABLE_TRANSMITTER:
-          disable_transmit(false, channel);
-          break;
-        case FFLY_DISABLE:
-          disable_receivers(true, channel);
-          break;
-        case FFLY_ENABLE:
-          disable_receivers(false, channel);
-          break;
-        case FFLY_WRITE_REGISTER: // high two bytes of data are register, low two bytes are value
-        {
-          uint16_t theReg = (data >> FF_MESSAGE_CODE_REG_REG_OFFSET)
-              & FF_MESSAGE_CODE_REG_REG_MASK;
-          uint8_t theValue = (data >> FF_MESSAGE_CODE_REG_DAT_OFFSET)
-              & FF_MESSAGE_CODE_REG_DAT_MASK;
-          write_arbitrary_ff_register(theReg, theValue, channel);
-          break;
-        }
-        case FFLY_READ_REGISTER: // high two bytes of data are register, low
-                                 // two bytes are value
-        {
-          uint16_t theReg = (data >> FF_MESSAGE_CODE_REG_REG_OFFSET)
-              & FF_MESSAGE_CODE_REG_REG_MASK;
-          uint16_t regdata = read_arbitrary_ff_register(theReg, channel);
-          message = (uint32_t) regdata;
-          xQueueSendToBack(xFFlyQueueOut, &message, pdMS_TO_TICKS(10));
-          break;
-        }
-        default:
-          message = RED_LED_TOGGLE;
-          xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10)); // message I don't understand? Toggle red LED
-          break;
+          case FFLY_ENABLE_CDR:
+            set_xcvr_cdr(0xff, channel);
+            break;
+          case FFLY_DISABLE_CDR:
+            set_xcvr_cdr(0x00, channel);
+            break;
+          case FFLY_DISABLE_TRANSMITTER:
+            disable_transmit(true, channel);
+            break;
+          case FFLY_ENABLE_TRANSMITTER:
+            disable_transmit(false, channel);
+            break;
+          case FFLY_DISABLE:
+        	disable_receivers(true, channel);
+            break;
+          case FFLY_ENABLE:
+            disable_receivers(false, channel);
+            break;
+          case FFLY_WRITE_REGISTER: // high two bytes of data are register, low two bytes are value
+          {
+            uint16_t theReg =
+                (data >> FF_MESSAGE_CODE_REG_REG_OFFSET) & FF_MESSAGE_CODE_REG_REG_MASK;
+            uint8_t theValue =
+                (data >> FF_MESSAGE_CODE_REG_DAT_OFFSET) & FF_MESSAGE_CODE_REG_DAT_MASK;
+            write_arbitrary_ff_register(theReg, theValue, channel);
+            break;
+          }
+          case FFLY_READ_REGISTER: // high two bytes of data are register, low
+                                   // two bytes are value
+          {
+            uint16_t theReg =
+                (data >> FF_MESSAGE_CODE_REG_REG_OFFSET) & FF_MESSAGE_CODE_REG_REG_MASK;
+            uint16_t regdata = read_arbitrary_ff_register(theReg, channel);
+            message = (uint32_t)regdata;
+            xQueueSendToBack(xFFlyQueueOut, &message, pdMS_TO_TICKS(10));
+            break;
+          }
+          default:
+            message = RED_LED_TOGGLE;
+            xQueueSendToBack(xLedQueue, &message,
+                             pdMS_TO_TICKS(10)); // message I don't understand? Toggle red LED
+            break;
         }
       }
       ff_updateTick = xTaskGetTickCount();
@@ -526,8 +532,7 @@ void FireFlyTask(void *parameters) {
       char tmp[64];
       snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\r\n", data[0]);
       DPRINT(tmp);
-      tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr,
-          data, 1);
+      tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
       if (r != SMBUS_OK) {
         Print("FIF: I2CBus command failed  (setting mux)\r\n");
         continue;
@@ -536,9 +541,8 @@ void FireFlyTask(void *parameters) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
       }
       if (*p_status != SMBUS_OK) {
-        snprintf(tmp, 64,
-            "FIF: Mux writing error %d, break out of loop (ps=%d) ...\r\n",
-            *p_status, ff);
+        snprintf(tmp, 64, "FIF: Mux writing error %d, break out of loop (ps=%d) ...\r\n", *p_status,
+                 ff);
         Print(tmp);
         break;
       }
@@ -568,69 +572,65 @@ void FireFlyTask(void *parameters) {
       data[0] = 0x0U;
       data[1] = 0x0U;
       uint8_t reg_addr = FF_TEMP_COMMAND_REG;
-      r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr,
-          1, data, 1);
+      r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
       if (r != SMBUS_OK) {
-        snprintf(tmp, 64,
-            "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__,
-            ff, 1);
-        DPRINT(tmp);
-        continue; // abort reading this register
-      }
-      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+    	  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+				1);
+    	  DPRINT(tmp);
+    	  continue; // abort reading this register
+	  }
+	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
       }
       if (*p_status != SMBUS_OK) {
-        snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n",
-            __func__, *p_status, ff, 1);
-        DPRINT(tmp);
-        ff_status[ff].temp = -55;
-        break;
-      }
+    	  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+    			  *p_status, ff, 1);
+    	  DPRINT(tmp);
+    	  ff_status[ff].temp = -55;
+    	  break;
+	  }
 #ifdef DEBUG_FIF
 	  snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
 	  DPRINT(tmp);
 #endif // DEBUG_FIF
-      typedef union {
-        uint8_t us;
-        int8_t s;
-      } convert_8_t;
-      convert_8_t tmp1;
-      tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-      ff_status[ff].temp = tmp1.s;
+	  typedef union {
+		  uint8_t us;
+		  int8_t s;
+	  } convert_8_t;
+	  convert_8_t tmp1;
+	  tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+	  ff_status[ff].temp = tmp1.s;
 
-      // Read the status
-      data[0] = 0x0U;
-      data[1] = 0x0U;
-      reg_addr = FF_STATUS_COMMAND_REG;
-      r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr,
-          1, data, 1);
+	  // Read the status
+	  data[0] = 0x0U;
+	  data[1] = 0x0U;
+	  reg_addr = FF_STATUS_COMMAND_REG;
+	  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
-      if (r != SMBUS_OK) {
-        snprintf(tmp, 64,
-            "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__,
-            ff, 2);
-        DPRINT(tmp);
-        continue; // abort reading this register
-      }
-      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-      }
-      if (*p_status != SMBUS_OK) {
-        snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n",
-            __func__, *p_status, ff, 2);
-        DPRINT(tmp);
-        ff_status[ff].status = 0;
-        break;
-      }
+	  if (r != SMBUS_OK) {
+	  	  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+	  			  2);
+	  	  DPRINT(tmp);
+	  	  continue; // abort reading this register
+	  }
+	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+	  }
+	  if (*p_status != SMBUS_OK) {
+		  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+				  *p_status, ff, 2);
+		  DPRINT(tmp);
+		  ff_status[ff].status = 0;
+		  break;
+	  }
 #ifdef DEBUG_FIF
 	  snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
 	  DPRINT(tmp);
 #endif // DEBUG_FIF
-      convert_8_t tmp2;
-      tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-      ff_status[ff].status = tmp2.s;
+	  convert_8_t tmp2;
+	  tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+	  ff_status[ff].status = tmp2.s;
 
 	  // Read the Samtec line - testing only
 	  data[0] = 0x0U;
@@ -662,8 +662,7 @@ void FireFlyTask(void *parameters) {
 
       // clear the I2C mux
       data[0] = 0x0;
-      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x (clear)\r\n",
-          data[0]);
+      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x (clear)\r\n", data[0]);
       DPRINT(tmp);
       r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
       if (r != SMBUS_OK) {
@@ -674,9 +673,8 @@ void FireFlyTask(void *parameters) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
       }
       if (*p_status != SMBUS_OK) {
-        snprintf(tmp, 64,
-            "FIF: Mux clearing error %d, break out of loop (ps=%d) ...\r\n",
-            *p_status, ff);
+        snprintf(tmp, 64, "FIF: Mux clearing error %d, break out of loop (ps=%d) ...\r\n",
+                 *p_status, ff);
         Print(tmp);
         break;
       }
