@@ -147,10 +147,12 @@ int8_t getFFtemp(const uint8_t i)
   return ff_status[i].temp;
 }
 
+#ifdef DEBUG_FIF
 int8_t* test_read(const uint8_t i) {
 	configASSERT(i < NFIREFLIES);
 	return ff_status[i].test;
 }
+#endif
 
 static TickType_t ff_updateTick = 0;
 TickType_t getFFupdateTick()
@@ -431,7 +433,7 @@ void FireFlyTask(void *parameters)
     ff_temp_min[i] = +99;
 #endif // DEBUG_FIF
     ff_status[i].temp = -55;
-    ff_status[i].status = 0;
+    ff_status[i].status = 1;
   }
 #define I2C_PULLUP_BUG2
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
@@ -632,6 +634,7 @@ void FireFlyTask(void *parameters)
 	  tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
 	  ff_status[ff].status = tmp2.s;
 
+#ifdef DEBUG_FIF
 	  // Read the Samtec line - testing only
 	  data[0] = 0x0U;
 	  data[1] = 0x0U;
@@ -659,6 +662,7 @@ void FireFlyTask(void *parameters)
 		  tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
 		  ff_status[ff].test[i-148] = tmp3.s;
 	  }
+#endif
 
       // clear the I2C mux
       data[0] = 0x0;
