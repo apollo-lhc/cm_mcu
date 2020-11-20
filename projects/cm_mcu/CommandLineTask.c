@@ -940,13 +940,30 @@ static BaseType_t sensor_summary(int argc, char **argv)
 static BaseType_t ff_status(int argc, char **argv)
 {
 	int copied = 0;
-	copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
-	for (int i = 0; i < NFIREFLIES; ++i) {
-		int8_t status = getFFstatus(i);
-		const char *name = getFFname(i);
-		copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d\r\n", name, status);
-	}
-	return pdFALSE;
+
+  static int whichff = 0;
+  if (whichff == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
+  }
+  for (; whichff < 25; ++whichff) {
+    int8_t status = getFFstatus(whichff);
+    const char *name = getFFname(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
+
+    bool isTx = (strstr(name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+  whichff = 0;
+  return pdFALSE;
+
 }
 
 // This command takes no arguments
