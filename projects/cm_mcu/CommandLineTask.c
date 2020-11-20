@@ -963,7 +963,6 @@ static BaseType_t ff_status(int argc, char **argv)
   }
   whichff = 0;
   return pdFALSE;
-
 }
 
 // This command takes no arguments

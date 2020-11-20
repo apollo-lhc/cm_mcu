@@ -8,7 +8,11 @@
 #include "common/utils.h"
 #include "I2CCommunication.h"
 #include "Tasks.h"
+#include "common/uart.h"
+#include "inc/hw_memmap.h"
+#include <string.h>
 
+int snprintf(char *buf, unsigned int count, const char *format, ...);
 // clang-format off
 int PreambleList[][2] = {{ 0x0B24 , 0xC0 },
                          { 0x0B25 , 0x00 },
@@ -121,7 +125,8 @@ static int write_register(int RegList[][2], int n_row)
       ChangePage = false;
     }
     HighByte = NewHighByte;
-    int LowByte = RegList[i][0] - (NewHighByte << 8);
+    uint8_t LowByte = RegList[i][0] - (NewHighByte << 8);
+    
     if (ChangePage) {
       status = apollo_i2c_ctl_reg_w(CLOCK_SYNTH_I2C_ADDRESS, 0x01, 1, NewHighByte);
       if (status != 0)
@@ -140,12 +145,12 @@ int load_clock()
   status = write_register(PreambleList, row);
   if (status != 0)
     return status;
-  vTaskDelay(pdMS_TO_TICKS(1));
+  vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum
   row = sizeof(RegisterList) / sizeof(RegisterList[0]);
   status = write_register(RegisterList, row);
   if (status != 0)
     return status;
-  vTaskDelay(pdMS_TO_TICKS(1));
+  vTaskDelay(pdMS_TO_TICKS(330));
   row = sizeof(PostambleList) / sizeof(PostambleList[0]);
   status = write_register(PostambleList, row);
   return status;
