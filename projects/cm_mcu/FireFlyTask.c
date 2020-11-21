@@ -99,11 +99,11 @@ extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
 
 struct firefly_status {
-	int8_t status;
-	int8_t temp;
-	#ifdef DEBUG_FIF
-	int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
-	#endif
+  int8_t status;
+  int8_t temp;
+#ifdef DEBUG_FIF
+  int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
+#endif
 };
 static struct firefly_status ff_status[NFIREFLIES * NPAGES_FF];
 
@@ -149,8 +149,8 @@ int8_t getFFtemp(const uint8_t i)
 
 #ifdef DEBUG_FIF
 int8_t* test_read(const uint8_t i) {
-	configASSERT(i < NFIREFLIES);
-	return ff_status[i].test;
+  configASSERT(i < NFIREFLIES);
+  return ff_status[i].test;
 }
 #endif
 
@@ -497,7 +497,7 @@ void FireFlyTask(void *parameters)
             disable_transmit(false, channel);
             break;
           case FFLY_DISABLE:
-        	disable_receivers(true, channel);
+            disable_receivers(true, channel);
             break;
           case FFLY_ENABLE:
             disable_receivers(false, channel);
@@ -577,91 +577,91 @@ void FireFlyTask(void *parameters)
       r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
       if (r != SMBUS_OK) {
-    	  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-				1);
-    	  DPRINT(tmp);
-    	  continue; // abort reading this register
-	  }
-	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+                 1);
+        DPRINT(tmp);
+        continue; // abort reading this register
+      }
+      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
       }
       if (*p_status != SMBUS_OK) {
-    	  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
-    			  *p_status, ff, 1);
-    	  DPRINT(tmp);
-    	  ff_status[ff].temp = -55;
-    	  break;
-	  }
+        snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
+                 ff, 1);
+        DPRINT(tmp);
+        ff_status[ff].temp = -55;
+        break;
+      }
 #ifdef DEBUG_FIF
-	  snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
-	  DPRINT(tmp);
+      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
+      DPRINT(tmp);
 #endif // DEBUG_FIF
-	  typedef union {
-		  uint8_t us;
-		  int8_t s;
-	  } convert_8_t;
-	  convert_8_t tmp1;
-	  tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-	  ff_status[ff].temp = tmp1.s;
+      typedef union {
+        uint8_t us;
+        int8_t s;
+      } convert_8_t;
+      convert_8_t tmp1;
+      tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+      ff_status[ff].temp = tmp1.s;
 
-	  // Read the status
-	  data[0] = 0x0U;
-	  data[1] = 0x0U;
-	  reg_addr = FF_STATUS_COMMAND_REG;
-	  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
+      // Read the status
+      data[0] = 0x0U;
+      data[1] = 0x0U;
+      reg_addr = FF_STATUS_COMMAND_REG;
+      r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
-	  if (r != SMBUS_OK) {
-	  	  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-	  			  2);
-	  	  DPRINT(tmp);
-	  	  continue; // abort reading this register
-	  }
-	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-	  }
-	  if (*p_status != SMBUS_OK) {
-		  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
-				  *p_status, ff, 2);
-		  DPRINT(tmp);
-		  ff_status[ff].status = 0;
-		  break;
-	  }
+      if (r != SMBUS_OK) {
+        snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+                 2);
+        DPRINT(tmp);
+        continue; // abort reading this register
+      }
+      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+      }
+      if (*p_status != SMBUS_OK) {
+        snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
+                 ff, 2);
+        DPRINT(tmp);
+        ff_status[ff].status = 0;
+        break;
+      }
 #ifdef DEBUG_FIF
-	  snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
-	  DPRINT(tmp);
+      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
+      DPRINT(tmp);
 #endif // DEBUG_FIF
-	  convert_8_t tmp2;
-	  tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-	  ff_status[ff].status = tmp2.s;
+      convert_8_t tmp2;
+      tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+      ff_status[ff].status = tmp2.s;
 
 #ifdef DEBUG_FIF
-	  // Read the Samtec line - testing only
-	  data[0] = 0x0U;
-	  data[1] = 0x0U;
+      // Read the Samtec line - testing only
+      data[0] = 0x0U;
+      data[1] = 0x0U;
 
-	  for (uint8_t i =148; i<164; i++) {
-		  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &i, 1, data, 1);
+      for (uint8_t i = 148; i < 164; i++) {
+        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &i, 1, data, 1);
 
-		  if (r != SMBUS_OK) {
-			  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-					  2);
-			  DPRINT(tmp);
-			  continue; // abort reading this register
-		  }
-		  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-			  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-		  }
-		  if (*p_status != SMBUS_OK) {
-			  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
-					  *p_status, ff, 2);
-			  DPRINT(tmp);
-			  ff_status[ff].test[i-148] = 0;
-			  break;
-		  }
-		  convert_8_t tmp3;
-		  tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-		  ff_status[ff].test[i-148] = tmp3.s;
-	  }
+        if (r != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+                   2);
+          DPRINT(tmp);
+          continue; // abort reading this register
+        }
+        while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        }
+        if (*p_status != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+                   *p_status, ff, 2);
+          DPRINT(tmp);
+          ff_status[ff].test[i - 148] = 0;
+          break;
+        }
+        convert_8_t tmp3;
+        tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_status[ff].test[i - 148] = tmp3.s;
+      }
 #endif
 
       // clear the I2C mux

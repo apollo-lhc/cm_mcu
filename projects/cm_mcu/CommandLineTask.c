@@ -939,7 +939,7 @@ static BaseType_t sensor_summary(int argc, char **argv)
 // This command takes no arguments
 static BaseType_t ff_status(int argc, char **argv)
 {
-	int copied = 0;
+  int copied = 0;
 
   static int whichff = 0;
   if (whichff == 0) {
@@ -1488,12 +1488,12 @@ static struct command_t commands[] = {
         "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
         0,
     },
-	{
-		"ff_status",
-		ff_status,
-		"ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
-		0,
-	},
+    {
+        "ff_status",
+        ff_status,
+        "ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
+        0,
+    },
     {
         "suart",
         suart_ctl,
