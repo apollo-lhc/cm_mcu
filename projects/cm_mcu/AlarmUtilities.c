@@ -89,7 +89,7 @@ int TempStatus()
   // to report a float.
   BaseType_t imax_ff_temp = -99;
   for (size_t i = 0; i < NFIREFLIES; ++i) {
-    int8_t v = getFFvalue(i);
+    int8_t v = getFFtemp(i);
     if (v > imax_ff_temp)
       imax_ff_temp = v;
   }

@@ -600,7 +600,7 @@ static BaseType_t ff_ctl(int argc, char **argv)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF temperatures\r\n");
     }
     for (; whichff < NFIREFLIES; ++whichff) {
-      int8_t val = getFFvalue(whichff);
+      int8_t val = getFFtemp(whichff);
       const char *name = getFFname(whichff);
       if ((1 << whichff) & ff_config) // val > 0 )
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", name, val);
@@ -656,6 +656,13 @@ static BaseType_t ff_ctl(int argc, char **argv)
           code = FFLY_ENABLE_TRANSMITTER;
         }
       }
+      else if (strncmp(argv[1], "rcvr", 4) == 0) {
+        code = FFLY_DISABLE;
+        if (strncmp(argv[2], "on", 2) == 0) {
+          code = FFLY_ENABLE;
+        }
+      }
+      // Add here
       else if (strncmp(argv[1], "regr", 4) == 0) {
         code = FFLY_READ_REGISTER;
         receiveAnswer = true;
@@ -898,7 +905,7 @@ static BaseType_t sensor_summary(int argc, char **argv)
   // to report a float.
   int8_t imax_temp = -99.0;
   for (int i = 0; i < NFIREFLIES; ++i) {
-    int8_t v = getFFvalue(i);
+    int8_t v = getFFtemp(i);
     if (v > imax_temp)
       imax_temp = v;
   }
@@ -926,6 +933,35 @@ static BaseType_t sensor_summary(int argc, char **argv)
   float_to_ints(max_temp, &tens, &frac);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "REG %02d.%02d\r\n", tens, frac);
 
+  return pdFALSE;
+}
+
+// This command takes no arguments
+static BaseType_t ff_status(int argc, char **argv)
+{
+  int copied = 0;
+
+  static int whichff = 0;
+  if (whichff == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
+  }
+  for (; whichff < 25; ++whichff) {
+    int8_t status = getFFstatus(whichff);
+    const char *name = getFFname(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
+
+    bool isTx = (strstr(name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+  whichff = 0;
   return pdFALSE;
 }
 
@@ -1450,6 +1486,12 @@ static struct command_t commands[] = {
         "simple_sensor",
         sensor_summary,
         "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
+        0,
+    },
+    {
+        "ff_status",
+        ff_status,
+        "ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
         0,
     },
     {

@@ -274,7 +274,7 @@ void ZynqMonTask(void *parameters)
             temperature = -55;
           }
           else {
-            temperature = getFFvalue(j);
+            temperature = getFFtemp(j);
           }
           format_data(j, temperature, message);
           // send data buffer

@@ -85,7 +85,9 @@ extern QueueHandle_t xFFlyQueueIn;
 extern QueueHandle_t xFFlyQueueOut;
 
 const char *getFFname(const uint8_t i);
-int8_t getFFvalue(const uint8_t i);
+int8_t *test_read(const uint8_t i);
+int8_t getFFtemp(const uint8_t i);
+int8_t getFFstatus(const uint8_t i);
 TickType_t getFFupdateTick();
 
 int disable_xcvr_cdr(const char *name);
@@ -95,8 +97,10 @@ int disable_xcvr_cdr(const char *name);
 #define FFLY_ENABLE_TRANSMITTER  (2)
 #define FFLY_ENABLE_CDR          (3)
 #define FFLY_DISABLE_CDR         (4)
-#define FFLY_WRITE_REGISTER      (5)
-#define FFLY_READ_REGISTER       (6)
+#define FFLY_DISABLE             (5)
+#define FFLY_ENABLE	             (6)
+#define FFLY_WRITE_REGISTER      (7)
+#define FFLY_READ_REGISTER       (8)
 
 // FF Task message format
 // two fields, a task code and task data.
