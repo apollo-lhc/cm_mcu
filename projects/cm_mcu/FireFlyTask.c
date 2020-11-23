@@ -44,8 +44,8 @@ void Print(const char *str);
 
 // i2c addresses
 // ECUO-B04 XCVR: 0x50 7 bit I2C address
-// ECUO-T12 Tx:   0x50 7 bit I2C address
-// ECUO-R12 Rx:   0x54 7 bit I2C address
+// ECUO-T12 Tx:   0x50 7 bit I2C address (both 14 and 25G)
+// ECUO-R12 Rx:   0x54 7 bit I2C address (both 14 and 25G)
 
 // -------------------------------------------------
 //
@@ -205,10 +205,9 @@ static bool isEnabledFF(int ff)
     return true;
 }
 
-static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value, int size)
+static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, size_t size)
 {
-  *value = 0U;
-  configASSERT(size <= 2);
+  memset(value,0,size);
   // find the appropriate information for this FF device
   int ff;
   for (ff = 0; ff < NFIREFLIES; ++ff) {
@@ -228,14 +227,22 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   // write to the mux
   // select the appropriate output for the mux
 
-  data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
+  value[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, value, 1);
   if (r != SMBUS_OK) {
     Print("read_ff_reg: I2CBus command failed  (setting mux)\r\n");
     return 1;
   }
+  int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait    
+    ++tries;
+    if (tries > 25) {
+      char tmp[64];
+      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
+      Print(tmp);
+      break;
+    }
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
@@ -244,29 +251,39 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
     Print(tmp);
     return 1;
   }
-  // Write/Read from register. First word is reg address, then the data.
-  // increment size to account for the register address
-  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, size);
+  // Write/Read from register. 
+  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
   if (r != SMBUS_OK) {
     Print("write_ff_reg: I2CBus command failed (FF register)\r\n");
     return 1;
   }
+  tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
+    ++tries;
+    if (tries > 25) {
+      char tmp[64];
+      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
+      Print(tmp);
+      break;
+    }
   }
   if (*p_status != SMBUS_OK) {
     char tmp[128];
-    snprintf(tmp, 64, "%s: FF WriteRead error %d  (ff=%s) ...\r\n", __func__, *p_status,
+    snprintf(tmp, 128, "%s: FF WriteRead error %d  (ff=%s) ...\r\n", __func__, *p_status,
              ff_i2c_addrs[ff].name);
     Print(tmp);
-    return 1;
+    return *p_status;
   }
-  if (size == 1)
-    *value = data[0];
-  else
-    *value = (data[1] << 8) | data[0];
   return 0;
 }
+
+struct firefly_registers_t
+{
+  uint8_t value[128];
+  /* data */
+};
+
 
 static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
 {
@@ -296,8 +313,16 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     Print("write_ff_reg: I2CBus command failed  (setting mux)\r\n");
     return 1;
   }
+  int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
+    ++tries;
+    if (tries > 25) {
+      char tmp[64];
+      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
+      Print(tmp);
+      break;
+    }
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
@@ -316,8 +341,16 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     Print("write_ff_reg: I2CBus command failed  (FF register)\r\n");
     return 1;
   }
+  tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
+    ++tries;
+    if (tries > 25) {
+      char tmp[64];
+      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
+      Print(tmp);
+      break;
+    }
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
@@ -418,19 +451,13 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
 }
 
 // read a SINGLE firefly register, one byte only
-static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff)
+static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t * value, uint8_t size)
 {
   if (num_ff >= NFIREFLIES) {
-    return -2;
-  }
-  uint16_t value;
-  uint16_t ret = read_ff_register(ff_i2c_addrs[num_ff].name, regnumber, &value, 1);
-  if (ret == 0) {
-    return value;
-  }
-  else {
     return -1;
   }
+  int ret = read_ff_register(ff_i2c_addrs[num_ff].name, regnumber, value, 1);
+  return ret;
 }
 
 QueueHandle_t xFFlyQueueIn = NULL;
@@ -484,10 +511,10 @@ void FireFlyTask(void *parameters)
 #endif // I2C_PULLUP_BUG
       // check for any messages
       uint32_t message;
-      if (xQueueReceive(xFFlyQueueIn, &message,
-                        0)) { // TODO: what if I receive more than one message
-        uint8_t code =
-            (uint8_t)((message >> FF_MESSAGE_CODE_OFFSET) & FF_MESSAGE_CODE_MASK); // see Tasks.h
+      // TODO: what if I receive more than one message
+      if (xQueueReceive(xFFlyQueueIn, &message, 0)) {
+        // see Tasks.h for the data format
+        uint8_t code = (uint8_t)((message >> FF_MESSAGE_CODE_OFFSET) & FF_MESSAGE_CODE_MASK);
         uint32_t data = (uint32_t)message & FF_MESSAGE_DATA_MASK;
         int channel = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) & FF_MESSAGE_CODE_REG_FF_MASK;
         if (channel > NFIREFLIES)
@@ -520,20 +547,55 @@ void FireFlyTask(void *parameters)
             write_arbitrary_ff_register(theReg, theValue, channel);
             break;
           }
-          case FFLY_READ_REGISTER: // high two bytes of data are register, low
-                                   // two bytes are value
+          case FFLY_READ_REGISTER: // incoming message: high two bytes of data are register
           {
+            // outgoing message: low byte is value; top byte is return code 
             uint16_t theReg =
                 (data >> FF_MESSAGE_CODE_REG_REG_OFFSET) & FF_MESSAGE_CODE_REG_REG_MASK;
-            uint16_t regdata = read_arbitrary_ff_register(theReg, channel);
-            message = (uint32_t)regdata;
+            uint8_t value;
+            uint16_t ret = read_arbitrary_ff_register(theReg, channel, &value, 1);
+            message = (uint32_t)value;
+            if (ret != 0) {
+              message |= (ret << 24);
+            }
             xQueueSendToBack(xFFlyQueueOut, &message, pdMS_TO_TICKS(10));
+            break;
+          }
+          case FFLY_TEST_READ: // test register read, dumped to stdout
+          {
+#define CHARLENGTH 64
+            uint8_t theReg = (data >> FF_MESSAGE_CODE_TEST_REG_OFFSET) & FF_MESSAGE_CODE_TEST_REG_MASK;
+            uint8_t theFF = (data >> FF_MESSAGE_CODE_TEST_FF_OFFSET) & FF_MESSAGE_CODE_TEST_FF_MASK;
+            uint8_t theSZ = (data >> FF_MESSAGE_CODE_TEST_SIZE_OFFSET) & FF_MESSAGE_CODE_TEST_SIZE_MASK;
+            if ( theSZ > CHARLENGTH ) {
+              theSZ = CHARLENGTH;
+            }
+            if ( theFF > NFIREFLIES ) {
+              theFF = 0;
+            }
+            char tmp[CHARLENGTH];
+            snprintf(tmp, CHARLENGTH, "FF %s (%d)\r\n", ff_i2c_addrs[theFF].name, theFF);
+            Print(tmp);
+            snprintf(tmp, CHARLENGTH, "Register %d (size %d)\r\n", theReg, theSZ);
+            Print(tmp);
+            uint8_t regdata[CHARLENGTH];
+            memset(regdata, 'x', CHARLENGTH);
+            regdata[theSZ] = '\0';
+            int ret = read_ff_register(ff_i2c_addrs[theFF].name, theReg, &regdata[0], theSZ);
+            if (ret != 0) {
+              snprintf(tmp, CHARLENGTH, "read_ff_reg failed with %d\r\n", ret);
+              Print(tmp);
+              break;
+            }
+            regdata[CHARLENGTH - 1] = '\0'; // santity check
+            Print((char*)regdata);
+            Print("\r\n");
             break;
           }
           default:
             message = RED_LED_TOGGLE;
-            xQueueSendToBack(xLedQueue, &message,
-                             pdMS_TO_TICKS(10)); // message I don't understand? Toggle red LED
+            // message I don't understand? Toggle red LED
+            xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10)); 
             break;
         }
       }
@@ -548,8 +610,15 @@ void FireFlyTask(void *parameters)
         Print("FIF: I2CBus command failed  (setting mux)\r\n");
         continue;
       }
+      int tries = 0;
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        ++tries;
+        if (tries > 25) {
+          snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
+          Print(tmp);
+          break;
+        }
       }
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: Mux writing error %d, break out of loop (ps=%d) ...\r\n", *p_status,
@@ -655,10 +724,18 @@ void FireFlyTask(void *parameters)
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
                    2);
           DPRINT(tmp);
+          ff_temp[ff] = -55;
           continue; // abort reading this register
         }
+        int tries = 0;
         while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+          ++tries;
+          if ( tries > 25 ) {
+            snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
+            Print(tmp);
+            break;
+          }
         }
         if (*p_status != SMBUS_OK) {
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
@@ -682,8 +759,15 @@ void FireFlyTask(void *parameters)
         Print("FIF: I2CBus command failed  (clearing mux)\r\n");
         continue;
       }
+      tries = 0;
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        ++tries;
+        if (tries > 25) {
+          snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
+          Print(tmp);
+          break;
+        }
       }
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: Mux clearing error %d, break out of loop (ps=%d) ...\r\n",

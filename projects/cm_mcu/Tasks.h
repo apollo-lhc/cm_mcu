@@ -109,6 +109,7 @@ int disable_xcvr_cdr(const char *name);
 #define FFLY_ENABLE	             (6)
 #define FFLY_WRITE_REGISTER      (7)
 #define FFLY_READ_REGISTER       (8)
+#define FFLY_TEST_READ           (9)
 
 // FF Task message format
 // two fields, a task code and task data.
@@ -134,6 +135,18 @@ int disable_xcvr_cdr(const char *name);
 #define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
 #define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
 #define FF_MESSAGE_CODE_REG_FF_MASK  ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
+
+// FF test register
+#define FF_MESSAGE_CODE_TEST_REG_SZ      8
+#define FF_MESSAGE_CODE_TEST_REG_OFFSET  0
+#define FF_MESSAGE_CODE_TEST_SIZE_SZ     5
+#define FF_MESSAGE_CODE_TEST_SIZE_OFFSET FF_MESSAGE_CODE_TEST_REG_SZ
+#define FF_MESSAGE_CODE_TEST_FF_SZ       5
+#define FF_MESSAGE_CODE_TEST_FF_OFFSET   (FF_MESSAGE_CODE_TEST_REG_SZ + FF_MESSAGE_CODE_TEST_REG_SZ)
+// derived masks
+#define FF_MESSAGE_CODE_TEST_REG_MASK  ((1 << FF_MESSAGE_CODE_TEST_REG_SZ) - 1)
+#define FF_MESSAGE_CODE_TEST_SIZE_MASK ((1 << FF_MESSAGE_CODE_TEST_SIZE_SZ) - 1)
+#define FF_MESSAGE_CODE_TEST_FF_MASK   ((1 << FF_MESSAGE_CODE_TEST_FF_SZ) - 1)
 
 // ---- version info
 const char *buildTime();
