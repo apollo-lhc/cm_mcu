@@ -79,6 +79,8 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 // Same address for 4 XCVR and 12 Tx/Rx devices
 #define FF_STATUS_COMMAND_REG 0x2
 #define FF_TEMP_COMMAND_REG 0x16
+#define ECU0_25G_FF_LOS_ALARM_REG 0x3
+#define ECU0_25G_FF_CDR_LOL_ALARM_REG 0x5
 
 // two bytes, 12 FF to be disabled
 #define ECU0_14G_TX_DISABLE_REG 0x34
@@ -99,11 +101,21 @@ extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
 
 struct firefly_status {
+<<<<<<< Updated upstream
   int8_t status;
   int8_t temp;
 #ifdef DEBUG_FIF
   int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
 #endif
+=======
+	int8_t status;
+	int8_t temp;
+	int8_t los_alarm;
+	int8_t cdr_lol_alarm;
+	#ifdef DEBUG_FIF
+	int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
+	#endif
+>>>>>>> Stashed changes
 };
 static struct firefly_status ff_status[NFIREFLIES * NPAGES_FF];
 
@@ -145,6 +157,18 @@ int8_t getFFtemp(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].temp;
+}
+
+int8_t getFFlos(const uint8_t i)
+{
+  configASSERT(i < NFIREFLIES);
+  return ff_status[i].los_alarm;
+}
+
+int8_t getFFlol(const uint8_t i)
+{
+  configASSERT(i < NFIREFLIES);
+  return ff_status[i].cdr_lol_alarm;
 }
 
 #ifdef DEBUG_FIF
@@ -434,6 +458,8 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
     ff_status[i].temp = -55;
     ff_status[i].status = 1;
+    ff_status[i].los_alarm = 1;
+    ff_status[i].cdr_lol_alarm = 1;
   }
 #define I2C_PULLUP_BUG2
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
@@ -626,6 +652,7 @@ void FireFlyTask(void *parameters)
         ff_status[ff].status = 0;
         break;
       }
+
 #ifdef DEBUG_FIF
       snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
       DPRINT(tmp);
@@ -633,6 +660,70 @@ void FireFlyTask(void *parameters)
       convert_8_t tmp2;
       tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
       ff_status[ff].status = tmp2.s;
+
+      // Check the loss of signal alarm
+      data[0] = 0x0U;
+      data[1] = 0x0U;
+      reg_addr = ECU0_25G_FF_LOS_ALARM_REG;
+      if (strstr(ff_i2c_addrs[ff].name, "XCVR") != NULL) {
+        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
+
+        if (r != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+              2);
+          DPRINT(tmp);
+          continue; // abort reading this register
+        }
+        while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        }
+        if (*p_status != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+              *p_status, ff, 2);
+          DPRINT(tmp);
+          ff_status[ff].los_alarm = 1;
+          break;
+        }
+#ifdef DEBUG_FIF
+snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
+DPRINT(tmp);
+#endif // DEBUG_FIF
+        convert_8_t tmp3;
+        tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_status[ff].los_alarm = tmp3.s;
+      }
+
+      // Check the CDR loss of lock alarm on the transcievers
+      data[0] = 0x0U;
+      data[1] = 0x0U;
+      reg_addr = ECU0_25G_FF_CDR_LOL_ALARM_REG;
+      if (strstr(ff_i2c_addrs[ff].name, "XCVR") != NULL) {
+        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
+
+        if (r != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+              2);
+          DPRINT(tmp);
+          continue; // abort reading this register
+        }
+        while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        }
+        if (*p_status != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+              *p_status, ff, 2);
+          DPRINT(tmp);
+          ff_status[ff].cdr_lol_alarm = 1;
+          break;
+        }
+#ifdef DEBUG_FIF
+snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
+DPRINT(tmp);
+#endif // DEBUG_FIF
+        convert_8_t tmp4;
+        tmp4.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_status[ff].cdr_lol_alarm = tmp4.s;
+      }
 
 #ifdef DEBUG_FIF
       // Read the Samtec line - testing only

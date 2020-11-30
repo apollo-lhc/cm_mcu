@@ -936,31 +936,72 @@ static BaseType_t sensor_summary(int argc, char **argv)
   return pdFALSE;
 }
 
-// This command takes no arguments
+// This command takes up to one additional argument
 static BaseType_t ff_status(int argc, char **argv)
 {
-  int copied = 0;
-
+	int copied = 0;
   static int whichff = 0;
-  if (whichff == 0) {
+
+  if (argc == 1) { // default command: status, can read data off of fireflies
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
-  }
-  for (; whichff < 25; ++whichff) {
-    int8_t status = getFFstatus(whichff);
-    const char *name = getFFname(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
+    for (; whichff < 25; ++whichff) {
+      int8_t status = getFFstatus(whichff);
+      const char *name = getFFname(whichff);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
 
-    bool isTx = (strstr(name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+      bool isTx = (strstr(name, "Tx") != NULL);
+      if (isTx)
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+      else
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
 
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
-      ++whichff;
-      return pdTRUE;
+      if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+        ++whichff;
+        return pdTRUE;
+      }
     }
   }
+
+  else if (argc==2 && strncmp(argv[argc - 1], "los", 3) == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
+    for (; whichff < 25; ++whichff) {
+      int8_t los = getFFlos(whichff);
+      const char *name = getFFname(whichff);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, los);
+
+      bool isTx = (strstr(name, "Tx") != NULL);
+      if (isTx)
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+      else
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+      if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+        ++whichff;
+        return pdTRUE;
+      }
+    }
+  }
+
+  else if (argc==2 && strncmp(argv[argc - 1], "lol", 3) == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
+    for (; whichff < 25; ++whichff) {
+      int8_t lol = getFFlol(whichff);
+      const char *name = getFFname(whichff);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, lol);
+
+      bool isTx = (strstr(name, "Tx") != NULL);
+      if (isTx)
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+      else
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+      if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+        ++whichff;
+        return pdTRUE;
+      }
+    }
+  }
+
   whichff = 0;
   return pdFALSE;
 }
@@ -1488,12 +1529,21 @@ static struct command_t commands[] = {
         "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
         0,
     },
+<<<<<<< Updated upstream
     {
         "ff_status",
         ff_status,
         "ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
         0,
     },
+=======
+	{
+		"ff_status",
+		ff_status,
+		"ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
+		-1,
+	},
+>>>>>>> Stashed changes
     {
         "suart",
         suart_ctl,
