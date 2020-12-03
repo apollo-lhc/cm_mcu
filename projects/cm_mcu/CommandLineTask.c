@@ -936,13 +936,15 @@ static BaseType_t sensor_summary(int argc, char **argv)
   return pdFALSE;
 }
 
-// This command takes up to one additional argument
+// This command takes no arguments
 static BaseType_t ff_status(int argc, char **argv)
 {
 	int copied = 0;
   static int whichff = 0;
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
+  if (whichff == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
+  }
   for (; whichff < 25; ++whichff) {
     int8_t status = getFFstatus(whichff);
     const char *name = getFFname(whichff);
