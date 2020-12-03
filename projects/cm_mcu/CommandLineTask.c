@@ -1489,21 +1489,12 @@ static struct command_t commands[] = {
         "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
         0,
     },
-<<<<<<< Updated upstream
     {
         "ff_status",
         ff_status,
         "ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
         0,
     },
-=======
-	{
-		"ff_status",
-		ff_status,
-		"ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
-		-1,
-	},
->>>>>>> Stashed changes
     {
         "suart",
         suart_ctl,
