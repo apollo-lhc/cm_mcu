@@ -79,8 +79,16 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 // Same address for 4 XCVR and 12 Tx/Rx devices
 #define FF_STATUS_COMMAND_REG 0x2
 #define FF_TEMP_COMMAND_REG 0x16
-#define ECU0_25G_FF_LOS_ALARM_REG 0x3
-#define ECU0_25G_FF_CDR_LOL_ALARM_REG 0x5
+
+// 25G_XCVR signifies the 25G x4 firefly. 25G_TX/25G_RX signifies the 25G x12 firefly.
+// What to do about 14G x12 firefly?
+#define ECU0_25G_XCVR_LOS_ALARM_REG 0x3
+#define ECU0_25G_XCVR_CDR_LOL_ALARM_REG 0x5
+
+#define ECU0_25G_TX_LOS_ALARM_REG_1 0x7
+#define ECU0_25G_TX_LOS_ALARM_REG_2 0x8
+#define ECU0_25G_RX_CDR_LOL_ALARM_REG_1 0x14
+#define ECU0_25G_RX_CDR_LOL_ALARM_REG_1 0x15
 
 // two bytes, 12 FF to be disabled
 #define ECU0_14G_TX_DISABLE_REG 0x34
@@ -664,7 +672,7 @@ void FireFlyTask(void *parameters)
       // Check the loss of signal alarm
       data[0] = 0x0U;
       data[1] = 0x0U;
-      reg_addr = ECU0_25G_FF_LOS_ALARM_REG;
+      reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") != NULL) {
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
