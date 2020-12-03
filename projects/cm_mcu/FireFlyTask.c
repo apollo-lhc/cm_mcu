@@ -88,7 +88,7 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #define ECU0_25G_TX_LOS_ALARM_REG_1 0x7
 #define ECU0_25G_TX_LOS_ALARM_REG_2 0x8
 #define ECU0_25G_RX_CDR_LOL_ALARM_REG_1 0x14
-#define ECU0_25G_RX_CDR_LOL_ALARM_REG_1 0x15
+#define ECU0_25G_RX_CDR_LOL_ALARM_REG_2 0x15
 
 // two bytes, 12 FF to be disabled
 #define ECU0_14G_TX_DISABLE_REG 0x34
@@ -109,21 +109,13 @@ extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
 
 struct firefly_status {
-<<<<<<< Updated upstream
-  int8_t status;
-  int8_t temp;
-#ifdef DEBUG_FIF
-  int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
-#endif
-=======
 	int8_t status;
 	int8_t temp;
-	int8_t los_alarm;
-	int8_t cdr_lol_alarm;
+	int8_t los_alarm[12];
+	int8_t cdr_lol_alarm[12];
 	#ifdef DEBUG_FIF
 	int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
 	#endif
->>>>>>> Stashed changes
 };
 static struct firefly_status ff_status[NFIREFLIES * NPAGES_FF];
 
@@ -672,8 +664,18 @@ void FireFlyTask(void *parameters)
       // Check the loss of signal alarm
       data[0] = 0x0U;
       data[1] = 0x0U;
-      reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
+      int n_channels;
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") != NULL) {
+        reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
+        int n_channels = 8;
+
+      }
+      else if (true) { // how do I check if the device is 25G x12?
+        reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
+        int n_channels = 12;
+      }
+      for (int i=0; i<n_channels; i++) {
+        data[0] = i;
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
         if (r != SMBUS_OK) {
@@ -698,7 +700,7 @@ DPRINT(tmp);
 #endif // DEBUG_FIF
         convert_8_t tmp3;
         tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_status[ff].los_alarm = tmp3.s;
+        ff_status[ff].los_alarm[i] = tmp3.s;
       }
 
       // Check the CDR loss of lock alarm on the transcievers
