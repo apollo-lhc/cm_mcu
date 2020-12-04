@@ -159,13 +159,13 @@ int8_t getFFtemp(const uint8_t i)
   return ff_status[i].temp;
 }
 
-int8_t getFFlos(const uint8_t i)
+int8_t* getFFlos(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].los_alarm;
 }
 
-int8_t getFFlol(const uint8_t i)
+int8_t* getFFlol(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].cdr_lol_alarm;
@@ -458,8 +458,18 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
     ff_status[i].temp = -55;
     ff_status[i].status = 1;
-    ff_status[i].los_alarm = 1;
-    ff_status[i].cdr_lol_alarm = 1;
+
+    int n_channels;
+    if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
+      n_channels=8;
+    }
+    else if (true) { // how do I check if the device is 25G x12?
+      n_channels=12;
+    }
+    for (int channel=0; channel<n_channels; i++) {
+      ff_status[i].los_alarm[channel] = 1;
+      ff_status[i].cdr_lol_alarm[channel] = 1;
+    }
   }
 #define I2C_PULLUP_BUG2
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
@@ -667,12 +677,12 @@ void FireFlyTask(void *parameters)
       int n_channels;
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") != NULL) {
         reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
-        int n_channels = 8;
+        n_channels = 8;
 
       }
       else if (true) { // how do I check if the device is 25G x12?
         reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
-        int n_channels = 12;
+        n_channels = 12;
       }
       for (int i=0; i<n_channels; i++) {
         data[0] = i;
@@ -691,7 +701,7 @@ void FireFlyTask(void *parameters)
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
               *p_status, ff, 2);
           DPRINT(tmp);
-          ff_status[ff].los_alarm = 1;
+          ff_status[ff].los_alarm[i] = 1;
           break;
         }
 #ifdef DEBUG_FIF
@@ -706,10 +716,13 @@ DPRINT(tmp);
       // Check the CDR loss of lock alarm on the transcievers
       data[0] = 0x0U;
       data[1] = 0x0U;
-      reg_addr = ECU0_25G_FF_CDR_LOL_ALARM_REG;
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") != NULL) {
-        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
-
+        reg_addr = ECU0_25G_XCVR_CDR_LOL_ALARM_REG;
+      }
+      else if (true) { // how do I check if the device is 25G x12?
+        reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
+      }
+      for (int i=0;i <n_channels; i++) {
         if (r != SMBUS_OK) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
               2);
@@ -723,7 +736,7 @@ DPRINT(tmp);
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
               *p_status, ff, 2);
           DPRINT(tmp);
-          ff_status[ff].cdr_lol_alarm = 1;
+          ff_status[ff].cdr_lol_alarm[i] = 1;
           break;
         }
 #ifdef DEBUG_FIF
@@ -732,7 +745,7 @@ DPRINT(tmp);
 #endif // DEBUG_FIF
         convert_8_t tmp4;
         tmp4.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_status[ff].cdr_lol_alarm = tmp4.s;
+        ff_status[ff].cdr_lol_alarm[i] = tmp4.s;
       }
 
 #ifdef DEBUG_FIF
