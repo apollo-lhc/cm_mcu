@@ -158,6 +158,7 @@ header file. */
 #else
 #define APOLLO_ASSERT(exp)                                                                         \
   if (!(exp)) {                                                                                    \
+    taskDISABLE_INTERRUPTS();                                                                      \
     APOLLO_ASSERT_RECORD();                                                                        \
     ROM_SysCtlReset();                                                                             \
   }
