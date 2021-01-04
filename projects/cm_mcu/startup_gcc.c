@@ -292,7 +292,8 @@ static void NmiSR(void)
 //
 // This is the code that gets called when the processor receives a fault
 // interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
+// for examination by a debugger, except in production code, where it just 
+// invokes a restart.
 //
 //*****************************************************************************
 static void
