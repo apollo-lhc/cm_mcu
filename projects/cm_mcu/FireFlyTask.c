@@ -42,6 +42,21 @@ void Print(const char *str);
 #define DPRINT(x)
 #endif // DEBUG_FIF
 
+// this needs to be a macro so that the __LINE__ will resolve to the right 
+// line (in a function call it would just resolve to the function call....)
+#define CHECKSTUCK()                                                                               \
+  {                                                                                                \
+    ++tries;                                                                                       \
+    if (tries > 25) {                                                                              \
+      char tmp[64];                                                                                \
+      snprintf(tmp, 64, "FIF: stuck at line %d (%u, %u)\r\n", __LINE__, (unsigned)ff_updateTick,   \
+               (unsigned)xLastWakeTime);                                                           \
+      Print(tmp);                                                                                  \
+      tries = 0;                                                                                   \
+      break;                                                                                       \
+    }                                                                                              \
+  }
+
 // i2c addresses
 // ECUO-B04 XCVR: 0x50 7 bit I2C address
 // ECUO-T12 Tx:   0x50 7 bit I2C address (both 14 and 25G)
@@ -127,6 +142,8 @@ void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
 // is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
 #define ECU0_25G_TXRX_CDR_REG 0x4A
 
+
+static TickType_t xLastWakeTime;
 
 struct firefly_status {
   int8_t status;
@@ -235,14 +252,8 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
   }
   int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait    
-    ++tries;
-    if (tries > 25) {
-      char tmp[64];
-      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
-      Print(tmp);
-      break;
-    }
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+    CHECKSTUCK();
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
@@ -260,13 +271,7 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
   tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
-    ++tries;
-    if (tries > 25) {
-      char tmp[64];
-      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
-      Print(tmp);
-      break;
-    }
+    CHECKSTUCK();
   }
   if (*p_status != SMBUS_OK) {
     char tmp[128];
@@ -316,13 +321,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
-    ++tries;
-    if (tries > 25) {
-      char tmp[64];
-      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
-      Print(tmp);
-      break;
-    }
+    CHECKSTUCK();
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
@@ -344,13 +343,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
-    ++tries;
-    if (tries > 25) {
-      char tmp[64];
-      snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
-      Print(tmp);
-      break;
-    }
+    CHECKSTUCK();
   }
   if (*p_status != SMBUS_OK) {
     char tmp[64];
@@ -463,11 +456,13 @@ static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8
 QueueHandle_t xFFlyQueueIn = NULL;
 QueueHandle_t xFFlyQueueOut = NULL;
 
-// FireFly temperatures, voltages, currents, via I2C/PMBUS
-void FireFlyTask(void *parameters)
+
+    // FireFly temperatures, voltages, currents, via I2C/PMBUS
+    void
+    FireFlyTask(void *parameters)
 {
   // initialize to the current tick time
-  TickType_t xLastWakeTime = xTaskGetTickCount();
+  xLastWakeTime = xTaskGetTickCount();
   uint8_t data[2];
 
   for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF; ++i) {
@@ -481,9 +476,11 @@ void FireFlyTask(void *parameters)
 #define I2C_PULLUP_BUG2
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
 
-  // Disable all Firefly devices
-  disable_transmit(true, NFIREFLIES);
-  disable_receivers(true, NFIREFLIES);
+  if (getPSStatus(5) == PWR_ON) {
+    // Disable all Firefly devices
+    disable_transmit(true, NFIREFLIES);
+    disable_receivers(true, NFIREFLIES);
+  }
 
   for (;;) {
     tSMBus *smbus;
@@ -580,7 +577,7 @@ void FireFlyTask(void *parameters)
             Print(tmp);
             uint8_t regdata[CHARLENGTH];
             memset(regdata, 'x', CHARLENGTH);
-            regdata[theSZ] = '\0';
+            regdata[theSZ - 1] = '\0';
             int ret = read_ff_register(ff_i2c_addrs[theFF].name, theReg, &regdata[0], theSZ);
             if (ret != 0) {
               snprintf(tmp, CHARLENGTH, "read_ff_reg failed with %d\r\n", ret);
@@ -613,12 +610,7 @@ void FireFlyTask(void *parameters)
       int tries = 0;
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-        ++tries;
-        if (tries > 25) {
-          snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
-          Print(tmp);
-          break;
-        }
+        CHECKSTUCK();
       }
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: Mux writing error %d, break out of loop (ps=%d) ...\r\n", *p_status,
@@ -730,12 +722,7 @@ void FireFlyTask(void *parameters)
         int tries = 0;
         while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-          ++tries;
-          if ( tries > 25 ) {
-            snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
-            Print(tmp);
-            break;
-          }
+          CHECKSTUCK();
         }
         if (*p_status != SMBUS_OK) {
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
@@ -782,4 +769,4 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
   } // infinite loop for task
-}
+  }
