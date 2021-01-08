@@ -103,14 +103,15 @@ static BaseType_t i2c_ctl_set_dev(int argc, char **argv)
   return pdFALSE;
 }
 
+#define I2C_CTL_MAX_BYTES 4
+
 static BaseType_t i2c_ctl_r(int argc, char **argv)
 {
   int s = SCRATCH_SIZE;
   BaseType_t address, nbytes;
   address = strtol(argv[1], NULL, 16);
   nbytes = strtol(argv[2], NULL, 10);
-  const int MAX_BYTES = 4;
-  uint8_t data[MAX_BYTES];
+  uint8_t data[I2C_CTL_MAX_BYTES];
 
   int status = apollo_i2c_ctl_r(address, nbytes, data);
   if (status == 0) {
@@ -135,8 +136,7 @@ static BaseType_t i2c_ctl_reg_r(int argc, char **argv)
   address = strtol(argv[1], NULL, 16);
   reg_address = strtol(argv[2], NULL, 16);
   nbytes = strtol(argv[3], NULL, 10);
-  const int MAX_BYTES = 4;
-  uint8_t data[MAX_BYTES];
+  uint8_t data[I2C_CTL_MAX_BYTES];
   uint8_t txdata = reg_address;
 
   int status = apollo_i2c_ctl_reg_r(address, txdata, nbytes, data);
@@ -1128,19 +1128,18 @@ static BaseType_t errbuff_in(int argc, char **argv)
 
   return pdFALSE;
 }
-
+#define EBUFFOUT_MAX_ENTRIES 64
 static BaseType_t errbuff_out(int argc, char **argv)
 {
   int copied = 0;
 
-  const uint8_t max_entries = 64;
   uint32_t num = strtoul(argv[1], NULL, 10);
-  if (num > max_entries) {
+  if (num > EBUFFOUT_MAX_ENTRIES) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Please enter a number 64 or less \r\n");
     return pdFALSE;
   }
-  uint32_t arr[max_entries];
-  uint32_t(*arrptr)[max_entries] = &arr;
+  uint32_t arr[EBUFFOUT_MAX_ENTRIES];
+  uint32_t(*arrptr)[EBUFFOUT_MAX_ENTRIES] = &arr;
   errbuffer_get(num, arrptr);
 
   static int i = 0;
