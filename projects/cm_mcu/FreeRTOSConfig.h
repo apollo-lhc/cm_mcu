@@ -171,8 +171,8 @@ header file. */
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE 1
 
 // non-standard, park this here for now
-#define CLI_UART UART4_BASE // Front panel
-//#define CLI_UART UART1_BASE // Zynq
+//#define CLI_UART UART4_BASE // Front panel
+#define CLI_UART UART1_BASE // Zynq
 
 #define SYSTEM_STACK_SIZE 128
 #define I2C_PULLUP_BUG
