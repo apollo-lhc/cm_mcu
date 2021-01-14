@@ -946,20 +946,27 @@ static BaseType_t ff_status(int argc, char **argv)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
   }
   for (; whichff < 25; ++whichff) {
-    int8_t status = getFFstatus(whichff);
+//    int8_t status = getFFstatus(whichff);
+//    const char *name = getFFname(whichff);
+//    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
+//
+//    bool isTx = (strstr(name, "Tx") != NULL);
+//    if (isTx)
+//      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+//    else
+//      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+//
+//    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+//      ++whichff;
+//      return pdTRUE;
+//    }
+    int8_t* serialnum = getFFserialnum(whichff);
     const char *name = getFFname(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
-
-    bool isTx = (strstr(name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
-      ++whichff;
-      return pdTRUE;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ", name);
+    for (int i = 0; i<16; i++) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d ", serialnum[i]);
     }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\n");
   }
 
   whichff = 0;
