@@ -7,6 +7,11 @@
 
 #include <parameters.h>
 
-static BaseType_t eeprom_read(int argc, char **argv);
-static BaseType_t eeprom_write(int argc, char **argv);
-static BaseType_t eeprom_info(int argc, char **argv);
+#ifndef EEPROM_COMMANDS_H_
+#define EEPROM_COMMANDS_H_
+
+static BaseType_t eeprom_read(int argc, char **argv, char m);
+static BaseType_t eeprom_write(int argc, char **argv, char m);
+static BaseType_t eeprom_info(int argc, char **argv, char m);
+
+#endif
