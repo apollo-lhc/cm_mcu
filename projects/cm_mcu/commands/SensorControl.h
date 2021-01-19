@@ -13,6 +13,7 @@
 static BaseType_t sensor_summary(int argc, char **argv, char m);
 
 // Power
+static BaseType_t psmon_ctl(int argc, char **argv, char m);
 static BaseType_t power_ctl(int argc, char **argv, char m);
 
 // Alarms
