@@ -14,8 +14,7 @@
 
 static char m[SCRATCH_SIZE];
 
-// this command takes no arguments and never returns.
-static BaseType_t bl_ctl(int argc, char **argv, char* m)
+static BaseType_t bl_ctl(int argc, char **argv, char m)
 {
   Print("Jumping to boot loader.\r\n");
   ROM_SysCtlDelay(100000);
@@ -51,7 +50,7 @@ static BaseType_t bl_ctl(int argc, char **argv, char* m)
 }
 
 // this command takes one argument
-static BaseType_t clock_ctl(int argc, char **argv, char* m)
+static BaseType_t clock_ctl(int argc, char **argv, char m)
 {
   int copied = 0;
   int status = -1; // shut up clang compiler warning
@@ -85,7 +84,7 @@ static BaseType_t clock_ctl(int argc, char **argv, char* m)
 }
 
 // this command takes no arguments
-static BaseType_t ver_ctl(int argc, char **argv, char* m)
+static BaseType_t ver_ctl(int argc, char **argv, char m)
 {
   int copied = 0;
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Version %s built at %s.\r\n", gitVersion(),
@@ -119,7 +118,7 @@ typedef struct __attribute__((packed)) {
 
 extern struct dev_i2c_addr_t pm_addrs_dcdc[];
 
-static BaseType_t snapshot(int argc, char **argv, char* m)
+static BaseType_t snapshot(int argc, char **argv, char m)
 {
   _Static_assert(sizeof(snapshot_t) == 32, "sizeof snapshot_t");
   int copied = 0;
@@ -179,7 +178,7 @@ static BaseType_t snapshot(int argc, char **argv, char* m)
 }
 
 // takes no arguments
-static BaseType_t stack_ctl(int argc, char **argv, char* m)
+static BaseType_t stack_ctl(int argc, char **argv, char m)
 {
   int copied = 0;
   int i = SystemStackWaterHighWaterMark();

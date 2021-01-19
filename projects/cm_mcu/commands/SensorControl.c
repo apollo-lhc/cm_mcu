@@ -59,6 +59,7 @@ static BaseType_t sensor_summary(int argc, char **argv, char m)
 }
 
 // send power control commands
+extern struct gpio_pin_t oks[];
 static BaseType_t power_ctl(int argc, char **argv,  char m)
 {
   int s = SCRATCH_SIZE;
