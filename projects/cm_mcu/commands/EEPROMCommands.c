@@ -8,7 +8,7 @@
 #include <EEPROMCommands.h>
 
 // This command takes 1 arg, the address
-static BaseType_t eeprom_read(int argc, char **argv, char m)
+BaseType_t eeprom_read(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -26,7 +26,7 @@ static BaseType_t eeprom_read(int argc, char **argv, char m)
 }
 
 // This command takes 2 args, the address and 4 bytes of data to be written
-static BaseType_t eeprom_write(int argc, char **argv, char m)
+BaseType_t eeprom_write(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -46,7 +46,7 @@ static BaseType_t eeprom_write(int argc, char **argv, char m)
 }
 
 // Takes 0 arguments
-static BaseType_t eeprom_info(int argc, char **argv, char m)
+BaseType_t eeprom_info(int argc, char **argv, char* m)
 {
   int copied = 0;
 

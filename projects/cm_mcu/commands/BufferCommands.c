@@ -8,7 +8,7 @@
 #include <BufferCommands.h>
 
 // This command takes 1 arg, the data to be written to the buffer
-static BaseType_t errbuff_in(int argc, char **argv, char m)
+BaseType_t errbuff_in(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -21,7 +21,7 @@ static BaseType_t errbuff_in(int argc, char **argv, char m)
   return pdFALSE;
 }
 #define EBUFFOUT_MAX_ENTRIES 64
-static BaseType_t errbuff_out(int argc, char **argv, char m)
+BaseType_t errbuff_out(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -60,7 +60,7 @@ static BaseType_t errbuff_out(int argc, char **argv, char m)
 }
 
 // Takes no arguments
-static BaseType_t errbuff_info(int argc, char **argv, char m)
+BaseType_t errbuff_info(int argc, char **argv, char* m)
 {
   int copied = 0;
   uint32_t cap, minaddr, maxaddr, head;
@@ -86,7 +86,7 @@ static BaseType_t errbuff_info(int argc, char **argv, char m)
 }
 
 // Takes no arguments
-static BaseType_t errbuff_reset(int argc, char **argv, char m)
+BaseType_t errbuff_reset(int argc, char **argv, char* m)
 {
   errbuffer_reset();
   return pdFALSE;

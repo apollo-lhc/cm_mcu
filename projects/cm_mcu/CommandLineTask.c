@@ -47,6 +47,7 @@
 #include "clocksynth.h"
 
 // Include commands
+#include "commands/BoardCommands.h"
 #include "commands/BufferCommands.h"
 #include "commands/EEPROMCommands.h"
 #include "commands/I2CCommands.h"
@@ -88,45 +89,8 @@ static char m[SCRATCH_SIZE];
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat" // because of our mini-sprintf
 
-// dump monitor information
-static BaseType_t psmon_ctl(int argc, char **argv, char m)
-{
-  int s = SCRATCH_SIZE;
-  BaseType_t i1 = strtol(argv[1], NULL, 10);
-
-  if (i1 < 0 || i1 >= dcdc_args.n_commands) {
-    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
-             dcdc_args.n_commands - 1);
-    return pdFALSE;
-  }
-  // update times, in seconds
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-  TickType_t last = pdTICKS_TO_MS(dcdc_args.updateTick) / 1000;
-  int copied = 0;
-  if ((now - last) > 60) {
-    int mins = (now - last) / 60;
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-  }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", dcdc_args.commands[i1].name);
-  for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", dcdc_args.devices[ps].name);
-    for (int page = 0; page < dcdc_args.n_pages; ++page) {
-      float val = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
-                                      page * dcdc_args.n_commands + i1];
-      int tens, frac;
-      float_to_ints(val, &tens, &frac);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE %02d.%02d\t", tens, frac);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-  }
-
-  return pdFALSE;
-}
-
 // this command takes no arguments and never returns.
-static BaseType_t bl_ctl(int argc, char **argv, char m)
+static BaseType_t bl_ctl(int argc, char **argv, char* m)
 {
   Print("Jumping to boot loader.\r\n");
   ROM_SysCtlDelay(100000);
@@ -162,7 +126,7 @@ static BaseType_t bl_ctl(int argc, char **argv, char m)
 }
 
 // this command takes one argument
-static BaseType_t clock_ctl(int argc, char **argv, char m)
+static BaseType_t clock_ctl(int argc, char **argv, char* m)
 {
   int copied = 0;
   int status = -1; // shut up clang compiler warning
@@ -196,7 +160,7 @@ static BaseType_t clock_ctl(int argc, char **argv, char m)
 }
 
 // this command takes no arguments
-static BaseType_t ver_ctl(int argc, char **argv, char m)
+static BaseType_t ver_ctl(int argc, char **argv, char* m)
 {
   int copied = 0;
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Version %s built at %s.\r\n", gitVersion(),
@@ -230,7 +194,7 @@ typedef struct __attribute__((packed)) {
 
 extern struct dev_i2c_addr_t pm_addrs_dcdc[];
 
-static BaseType_t snapshot(int argc, char **argv, char m)
+static BaseType_t snapshot(int argc, char **argv, char* m)
 {
   _Static_assert(sizeof(snapshot_t) == 32, "sizeof snapshot_t");
   int copied = 0;
@@ -290,7 +254,7 @@ static BaseType_t snapshot(int argc, char **argv, char m)
 }
 
 // takes no arguments
-static BaseType_t stack_ctl(int argc, char **argv, char m)
+static BaseType_t stack_ctl(int argc, char **argv, char* m)
 {
   int copied = 0;
   int i = SystemStackWaterHighWaterMark();
@@ -355,7 +319,7 @@ static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
   }
 }
 
-static BaseType_t uptime(int argc, char **argv)
+static BaseType_t uptime(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   TickType_t now = xTaskGetTickCount() / (configTICK_RATE_HZ * 60); // time in minutes
@@ -366,7 +330,7 @@ static BaseType_t uptime(int argc, char **argv)
 #pragma GCC diagnostic pop
 // WARNING: this command easily leads to stack overflows. It does not correctly
 // ensure that there are no overwrites to pcCommandString.
-static BaseType_t TaskStatsCommand(int argc, char **argv)
+static BaseType_t TaskStatsCommand(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   const char *const pcHeader = "            Time     %\r\n"
@@ -401,9 +365,9 @@ static BaseType_t TaskStatsCommand(int argc, char **argv)
   return pdFALSE;
 }
 
-static BaseType_t help_command_fcn(int argc, char **);
+static BaseType_t help_command_fcn(int argc, char **, char* m);
 
-static BaseType_t suart_ctl(int argc, char **argv)
+static BaseType_t suart_ctl(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE, copied = 0;
   bool understood = true;
@@ -490,7 +454,7 @@ static const char *const pcWelcomeMessage =
 
 struct command_t {
   const char *commandstr;
-  BaseType_t (*interpreter)(int argc, char **);
+  BaseType_t (*interpreter)(int argc, char **, char* m);
   const char *helpstr;
   const int num_args;
 };
@@ -618,7 +582,7 @@ struct microrl_user_data_t {
   uint32_t uart_base;
 };
 
-static BaseType_t help_command_fcn(int argc, char **argv)
+static BaseType_t help_command_fcn(int argc, char **argv, char* m)
 {
   int copied = 0;
   static int i = 0;
@@ -664,7 +628,7 @@ static int execute(void *p, int argc, char **argv)
         if (m[0] != '\0')
           UARTPrint(userdata->uart_base, m);
         while (retval == pdTRUE) {
-          retval = commands[i].interpreter(argc, argv);
+          retval = commands[i].interpreter(argc, argv, m);
           if (m[0] != '\0')
             UARTPrint(userdata->uart_base, m);
         }

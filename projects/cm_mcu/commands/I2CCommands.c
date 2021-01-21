@@ -7,7 +7,7 @@
 
 #include <I2CCommands.h>
 
-static BaseType_t i2c_ctl_set_dev(int argc, char **argv, char m)
+BaseType_t i2c_ctl_set_dev(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   BaseType_t i = strtol(argv[1], NULL, 10); // device number
@@ -28,7 +28,7 @@ static BaseType_t i2c_ctl_set_dev(int argc, char **argv, char m)
   return pdFALSE;
 }
 
-static BaseType_t i2c_ctl_r(int argc, char **argv, char m)
+BaseType_t i2c_ctl_r(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   BaseType_t address, nbytes;
@@ -53,7 +53,7 @@ static BaseType_t i2c_ctl_r(int argc, char **argv, char m)
   return pdFALSE;
 }
 
-static BaseType_t i2c_ctl_reg_r(int argc, char **argv, char m)
+BaseType_t i2c_ctl_reg_r(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   BaseType_t address, reg_address, nbytes;
@@ -80,7 +80,7 @@ static BaseType_t i2c_ctl_reg_r(int argc, char **argv, char m)
   return pdFALSE;
 }
 
-static BaseType_t i2c_ctl_reg_w(int argc, char **argv)
+BaseType_t i2c_ctl_reg_w(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   // first byte is the register, others are the data
@@ -108,7 +108,7 @@ static BaseType_t i2c_ctl_reg_w(int argc, char **argv)
   return pdFALSE;
 }
 
-static BaseType_t i2c_ctl_w(int argc, char **argv, char m)
+BaseType_t i2c_ctl_w(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   BaseType_t address, nbytes, value;
@@ -133,7 +133,7 @@ static BaseType_t i2c_ctl_w(int argc, char **argv, char m)
   return pdFALSE;
 }
 
-static BaseType_t i2c_scan(int argc, char **argv, char m)
+BaseType_t i2c_scan(int argc, char **argv, char* m)
 {
   // takes no arguments
   int copied = 0;

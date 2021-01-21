@@ -52,15 +52,15 @@ int snprintf(char *buf, unsigned int count, const char *format, ...);
 #define MAX_OUTPUT_LENGTH 512
 #define SCRATCH_SIZE 512
 
-extern tSMBus g_sMaster1;
-extern tSMBusStatus eStatus1;
-extern tSMBus g_sMaster2;
-extern tSMBusStatus eStatus2;
-extern tSMBus g_sMaster3;
-extern tSMBusStatus eStatus3;
-extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
-extern tSMBus g_sMaster6;
-extern tSMBusStatus eStatus6;
-static tSMBus *p_sMaster = &g_sMaster4;
-static tSMBusStatus *p_eStatus = &eStatus4;
+//extern tSMBus g_sMaster1;
+//extern tSMBusStatus eStatus1;
+//extern tSMBus g_sMaster2;
+//extern tSMBusStatus eStatus2;
+//extern tSMBus g_sMaster3;
+//extern tSMBusStatus eStatus3;
+//extern tSMBus g_sMaster4;
+//extern tSMBusStatus eStatus4;
+//extern tSMBus g_sMaster6;
+//extern tSMBusStatus eStatus6;
+//tSMBus *p_sMaster = &g_sMaster4;
+//tSMBusStatus *p_eStatus = &eStatus4;

@@ -10,7 +10,7 @@
 
 // this command takes no arguments since there is only one command
 // right now.
-static BaseType_t sensor_summary(int argc, char **argv, char m)
+BaseType_t sensor_summary(int argc, char **argv, char* m)
 {
   int copied = 0;
   // collect all sensor information
@@ -60,7 +60,7 @@ static BaseType_t sensor_summary(int argc, char **argv, char m)
 
 // send power control commands
 extern struct gpio_pin_t oks[];
-static BaseType_t power_ctl(int argc, char **argv,  char m)
+BaseType_t power_ctl(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
 
@@ -133,7 +133,7 @@ static BaseType_t power_ctl(int argc, char **argv,  char m)
 }
 
 // takes 1-2 arguments
-static BaseType_t alarm_ctl(int argc, char **argv, char m)
+BaseType_t alarm_ctl(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   if (argc < 2) {
@@ -223,7 +223,7 @@ static BaseType_t alarm_ctl(int argc, char **argv, char m)
 }
 
 // send LED commands
-static BaseType_t led_ctl(int argc, char **argv, char m)
+BaseType_t led_ctl(int argc, char **argv, char* m)
 {
 
   BaseType_t i1 = strtol(argv[1], NULL, 10);
@@ -253,7 +253,7 @@ static BaseType_t led_ctl(int argc, char **argv, char m)
 }
 
 // this command takes no arguments
-static BaseType_t adc_ctl(int argc, char **argv, char m)
+BaseType_t adc_ctl(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -277,7 +277,7 @@ static BaseType_t adc_ctl(int argc, char **argv, char m)
 }
 
 // this command takes up to two arguments
-static BaseType_t ff_ctl(int argc, char **argv, char m)
+BaseType_t ff_ctl(int argc, char **argv, char* m)
 {
   // argument handling
   int copied = 0;
@@ -441,7 +441,7 @@ static BaseType_t ff_ctl(int argc, char **argv, char m)
   return pdFALSE;
 }
 
-static BaseType_t ff_status(int argc, char **argv, char m)
+BaseType_t ff_status(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -469,7 +469,7 @@ static BaseType_t ff_status(int argc, char **argv, char m)
   return pdFALSE;
 }
 
-static BaseType_t fpga_ctl(int argc, char **argv, char m)
+BaseType_t fpga_ctl(int argc, char **argv, char* m)
 {
   if (argc == 2) {
     if (strncmp(argv[1], "done", 4) == 0) { // print out value of done pins
@@ -531,7 +531,7 @@ static BaseType_t fpga_ctl(int argc, char **argv, char m)
   }
 }
 
-static BaseType_t fpga_reset(int argc, char **argv, char m)
+BaseType_t fpga_reset(int argc, char **argv, char* m)
 {
   int copied = 0;
   const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay

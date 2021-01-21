@@ -8,7 +8,7 @@
 #include "BoardCommands.h"
 
 // This command takes no arguments
-static BaseType_t restart_mcu(int argc, char **argv, char m)
+BaseType_t restart_mcu(int argc, char **argv, char* m)
 {
   int copied = 0;
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Restarting MCU\r\n");
@@ -17,7 +17,7 @@ static BaseType_t restart_mcu(int argc, char **argv, char m)
 }
 
 // Takes 3 arguments
-static BaseType_t set_board_id(int argc, char **argv, char m)
+BaseType_t set_board_id(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -49,7 +49,7 @@ static BaseType_t set_board_id(int argc, char **argv, char m)
 }
 
 // one-time use, has one function and takes 0 arguments
-static BaseType_t set_board_id_password(int argc, char **argv, char m)
+BaseType_t set_board_id_password(int argc, char **argv, char* m)
 {
   int copied = 0;
 
@@ -61,7 +61,7 @@ static BaseType_t set_board_id_password(int argc, char **argv, char m)
   return pdFALSE;
 }
 
-static BaseType_t board_id_info(int argc, char **argv, char m)
+BaseType_t board_id_info(int argc, char **argv, char* m)
 {
   int copied = 0;
   ;
