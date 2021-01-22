@@ -16,14 +16,14 @@ extern float pm_values[];
 extern SemaphoreHandle_t xMonSem;
 
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
-enum pm_types { PM_VOLTAGE, PM_NONVOLTAGE, PM_STATUS, PM_LINEAR11, PM_LINEAR16U, PM_LINEAR16S };
+enum pm_type { PM_VOLTAGE, PM_NONVOLTAGE, PM_STATUS, PM_LINEAR11, PM_LINEAR16U, PM_LINEAR16S } ;
 
 struct pm_command_t {
   unsigned char command; // I2c register address
   int size;              // number of bytes to read
   char *name;            // text describing command
   char *units;           // units for pretty printing
-  int type;              // how to decode command (L11 or bitfield or ...)
+  enum pm_type type;     // how to decode command (L11 or bitfield or ...)
 };
 
 // how to find an I2C device, with a mux infront of it.
