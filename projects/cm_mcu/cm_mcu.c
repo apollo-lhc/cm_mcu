@@ -270,8 +270,8 @@ int main(void)
   tempAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
   configASSERT(tempAlarmTask.xAlmQueue != NULL);
 
-  xSoftUartQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
-  configASSERT(xSoftUartQueue != NULL);
+  xZynqMonQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
+  configASSERT(xZynqMonQueue != NULL);
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.

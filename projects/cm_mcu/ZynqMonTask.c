@@ -106,7 +106,7 @@ tSoftUART g_sUART;
 
 extern uint32_t g_ui32SysClock;
 
-QueueHandle_t xSoftUartQueue;
+QueueHandle_t xZynqMonQueue;
 
 // For REV 1
 void InitSUART()
@@ -212,7 +212,7 @@ void ZynqMonTask(void *parameters)
   for (;;) {
     uint32_t qmessage;
     // check for a new item in the queue but don't wait
-    if (xQueueReceive(xSoftUartQueue, &qmessage, 0)) {
+    if (xQueueReceive(xZynqMonQueue, &qmessage, 0)) {
       switch (qmessage) {
         case ZYNQMON_ENABLE_TRANSMIT:
           enable = true;

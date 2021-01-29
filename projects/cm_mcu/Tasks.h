@@ -184,7 +184,7 @@ void EEPROMTask(void *parameters);
 #define ZYNQMON_TEST_SEND_ONE    0x6
 #define ZYNQMON_TEST_RAW         0x7
 
-extern QueueHandle_t xSoftUartQueue;
+extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
 
 #ifdef ZYNQMON_TEST_MODE

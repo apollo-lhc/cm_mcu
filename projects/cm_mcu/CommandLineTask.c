@@ -1391,7 +1391,7 @@ static BaseType_t suart_ctl(int argc, char **argv)
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Sending message %s\r\n", argv[0], argv[1]);
     // Send a message to the SUART task
-    xQueueSendToBack(xSoftUartQueue, &message, pdMS_TO_TICKS(10));
+    xQueueSendToBack(xZynqMonQueue, &message, pdMS_TO_TICKS(10));
   }
   return pdFALSE;
 }
