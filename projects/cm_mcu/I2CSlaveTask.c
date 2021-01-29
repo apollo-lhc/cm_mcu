@@ -21,6 +21,10 @@
 #include "common/uart.h"
 #include "I2CSlaveTask.h"
 
+// Rev 2:
+// All that needs to be done is rename local_fpga_{v,k}u to 
+// f{1,2} AFAIK. 
+
 // This slave task is designed currently only for access to
 // registers, with a single byte address and a single byte data.
 // This is to respond to the IPMC needs.
