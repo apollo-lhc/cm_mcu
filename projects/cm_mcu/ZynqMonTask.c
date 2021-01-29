@@ -23,6 +23,10 @@
 #include "Tasks.h"
 #include "MonitorTask.h"
 
+
+// Rev 2
+// this needs to be split into a SoftUART version (Rev1) and a hard UART version (Rev2)
+
 #define SZ 20
 
 // Data Format
@@ -54,34 +58,34 @@ static void format_data(const uint8_t sensor, const uint16_t data, uint8_t messa
   message[3] |= data & 0x3F;
 }
 
-#ifdef SUART_TEST_MODE
+#ifdef ZYNQMON_TEST_MODE
 static uint8_t testaddress = 0x0;
 static uint16_t testdata = 0xaaff;
 static bool inTestMode = true;
 static uint8_t testmode = 2;
-void setSUARTTestData(uint8_t sensor, uint16_t value)
+void setZYNQMONTestData(uint8_t sensor, uint16_t value)
 {
   testaddress = sensor;
   testdata = value;
 }
 
-uint8_t getSUARTTestMode()
+uint8_t getZYNQMONTestMode()
 {
   return testmode;
 }
 
-uint8_t getSUARTTestSensor()
+uint8_t getZYNQMONTestSensor()
 {
   return testaddress;
 }
 
-uint16_t getSUARTTestData()
+uint16_t getZYNQMONTestData()
 {
   return testdata;
 }
 #else  //
 const static bool inTestMode = false;
-#endif // SUART_TEST_MODE
+#endif // ZYNQMON_TEST_MODE
 //
 // The buffer used to hold the transmit data.
 //
@@ -104,11 +108,9 @@ extern uint32_t g_ui32SysClock;
 
 QueueHandle_t xSoftUartQueue;
 
-void ZynqMonTask(void *parameters)
+// For REV 1
+void InitSUART()
 {
-  // Setup
-  // initialize to the current tick time
-  TickType_t xLastWakeTime = xTaskGetTickCount();
 
   // Initialize the software UART instance data.
   //
@@ -177,10 +179,34 @@ void ZynqMonTask(void *parameters)
   // Enable the transmit FIFO half full interrupt in the software UART.
   //
   SoftUARTIntEnable(&g_sUART, SOFTUART_INT_TX);
+}
+
+#ifndef REV2
+void
+ZMUartCharPut(unsigned char c)
+{
+  SoftUARTCharPut(&g_sUART, c);
+}
+
+#else // REV2
+void ZMUartCharPut(unsigned char c)
+{
+#error "invalid UART unless I'm really lucky"
+  UARTCharPut(UART7_BASE, c); // CHANGE TO ACTUAL UART USED
+}
+#endif
+
+void ZynqMonTask(void *parameters)
+{
+  // Setup
+  InitSUART(); // Rev1
+  // will be done centrally in Rev 2
 
   uint8_t message[4] = {0x9c, 0x2c, 0x2b, 0x3e};
 
   bool enable = true;
+  // initialize to the current tick time
+  TickType_t xLastWakeTime = xTaskGetTickCount();
 
   // Loop forever
   for (;;) {
@@ -188,32 +214,32 @@ void ZynqMonTask(void *parameters)
     // check for a new item in the queue but don't wait
     if (xQueueReceive(xSoftUartQueue, &qmessage, 0)) {
       switch (qmessage) {
-        case SOFTUART_ENABLE_TRANSMIT:
+        case ZYNQMON_ENABLE_TRANSMIT:
           enable = true;
           break;
-        case SOFTUART_DISABLE_TRANSMIT:
+        case ZYNQMON_DISABLE_TRANSMIT:
           enable = false;
           break;
-#ifdef SUART_TEST_MODE
-        case SOFTUART_TEST_SINGLE:
+#ifdef ZYNQMON_TEST_MODE
+        case ZYNQMON_TEST_SINGLE:
           inTestMode = true;
           enable = true;
           testmode = 0;
           break;
-        case SOFTUART_TEST_INCREMENT:
+        case ZYNQMON_TEST_INCREMENT:
           inTestMode = true;
           enable = true;
           testmode = 1;
           break;
-        case SOFTUART_TEST_OFF:
+        case ZYNQMON_TEST_OFF:
           inTestMode = false;
           break;
-        case SOFTUART_TEST_SEND_ONE:
+        case ZYNQMON_TEST_SEND_ONE:
           inTestMode = true;
           enable = true;
           testmode = 0;
           break;
-        case SOFTUART_TEST_RAW:
+        case ZYNQMON_TEST_RAW:
           message[0] = 0x55;
           message[1] = 0xaa;
           message[2] = 0x55;
@@ -222,7 +248,7 @@ void ZynqMonTask(void *parameters)
           enable = true;
           testmode = 2;
           break;
-#endif // SUART_TEST_MODE
+#endif // ZYNQMON_TEST_MODE
       }
     }
     if (enable) {
@@ -230,15 +256,15 @@ void ZynqMonTask(void *parameters)
       MAP_IntEnable(INT_TIMER0A);
 
       if (inTestMode) {
-#ifdef SUART_TEST_MODE
+#ifdef ZYNQMON_TEST_MODE
         // non-incrementing, single word
         if (testmode == 0) {
           format_data(testaddress, testdata, message);
           for (int i = 0; i < 4; ++i) {
-            SoftUARTCharPut(&g_sUART, message[i]);
+            ZMUartCharPut( message[i]);
           }
           // one shot mode -- disable
-          if (qmessage == SOFTUART_TEST_SEND_ONE)
+          if (qmessage == ZYNQMON_TEST_SEND_ONE)
             enable = false;
         }
         // increment test mode, send
@@ -248,16 +274,16 @@ void ZynqMonTask(void *parameters)
             testaddress++;
             format_data(testaddress, testdata, message);
             for (int i = 0; i < 4; ++i) {
-              SoftUARTCharPut(&g_sUART, message[i]);
+              ZMUartCharPut( message[i]);
             }
           }
         }
         else if (testmode == 2) { // test mode, no formatting
           for (int i = 0; i < 4; ++i) {
-            SoftUARTCharPut(&g_sUART, message[i]);
+            ZMUartCharPut( message[i]);
           }
         }
-#endif       // SUART_TEST_MODE
+#endif       // ZYNQMON_TEST_MODE
       }      // end test mode
       else { // normal mode
         TickType_t now = pdTICKS_TO_MS(xLastWakeTime) / 1000;
@@ -279,7 +305,7 @@ void ZynqMonTask(void *parameters)
           format_data(j, temperature, message);
           // send data buffer
           for (int i = 0; i < 4; ++i) {
-            SoftUARTCharPut(&g_sUART, message[i]);
+            ZMUartCharPut( message[i]);
           }
         }
         typedef union {
@@ -314,7 +340,7 @@ void ZynqMonTask(void *parameters)
               int reg = offsets[j * 2 + l] + k;
               format_data(reg, u.us, message);
               for (int i = 0; i < 4; ++i) {
-                SoftUARTCharPut(&g_sUART, message[i]);
+                ZMUartCharPut( message[i]);
               }
             }
           }
@@ -326,7 +352,7 @@ void ZynqMonTask(void *parameters)
           u.f = getADCvalue(j);
           format_data(j + offsetADC, u.us, message);
           for (int i = 0; i < 4; ++i) {
-            SoftUARTCharPut(&g_sUART, message[i]);
+            ZMUartCharPut( message[i]);
           }
         }
         // MonitorTask -- FPGA values
@@ -353,7 +379,7 @@ void ZynqMonTask(void *parameters)
           }
           format_data(j + offsetFPGA, u.us, message);
           for (int i = 0; i < 4; ++i) {
-            SoftUARTCharPut(&g_sUART, message[i]);
+            ZMUartCharPut( message[i]);
           }
         }
         // git version
@@ -367,7 +393,7 @@ void ZynqMonTask(void *parameters)
           format_data(j + offsetGIT, *p, message);
           ++p;
           for (int i = 0; i < 4; ++i) {
-            SoftUARTCharPut(&g_sUART, message[i]);
+            ZMUartCharPut( message[i]);
           }
         }
         // uptime
@@ -376,12 +402,12 @@ void ZynqMonTask(void *parameters)
         uint16_t now_16 = now & 0xFFFFU;                 // lower 16 bits
         format_data(offsetUPTIME, now_16, message);
         for (int i = 0; i < 4; ++i) {
-          SoftUARTCharPut(&g_sUART, message[i]);
+          ZMUartCharPut( message[i]);
         }
         now_16 = (now >> 16) & 0xFFFFU; // upper 16 bits
         format_data(offsetUPTIME + 1, now_16, message);
         for (int i = 0; i < 4; ++i) {
-          SoftUARTCharPut(&g_sUART, message[i]);
+          ZMUartCharPut( message[i]);
         }
       } // if not test mode
 

@@ -173,27 +173,26 @@ extern QueueHandle_t xEPRMQueue_out;
 uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
 
-// Soft UART Task
-// SoftUart queue messages
-//#define SUART_TEST_MODE
-
-#define SOFTUART_ENABLE_TRANSMIT  0x1
-#define SOFTUART_DISABLE_TRANSMIT 0x2
-#define SOFTUART_TEST_SINGLE      0x3
-#define SOFTUART_TEST_INCREMENT   0x4
-#define SOFTUART_TEST_OFF         0x5
-#define SOFTUART_TEST_SEND_ONE    0x6
-#define SOFTUART_TEST_RAW         0x7
+// ZynqMon
+#define ZYNQMON_TEST_MODE
+// ZynqMon queue messages
+#define ZYNQMON_ENABLE_TRANSMIT   0x1
+#define ZYNQMON_DISABLE_TRANSMIT 0x2
+#define ZYNQMON_TEST_SINGLE      0x3
+#define ZYNQMON_TEST_INCREMENT   0x4
+#define ZYNQMON_TEST_OFF         0x5
+#define ZYNQMON_TEST_SEND_ONE    0x6
+#define ZYNQMON_TEST_RAW         0x7
 
 extern QueueHandle_t xSoftUartQueue;
 void ZynqMonTask(void *parameters);
 
-#ifdef SUART_TEST_MODE
-void setSUARTTestData(uint8_t sensor, uint16_t value);
-uint8_t getSUARTTestMode();
-uint8_t getSUARTTestSensor();
-uint16_t getSUARTTestData();
-#endif // SUART_TEST_MODE
+#ifdef ZYNQMON_TEST_MODE
+void setZYNQMONTestData(uint8_t sensor, uint16_t value);
+uint8_t getZYNQMONTestMode();
+uint8_t getZYNQMONTestSensor();
+uint16_t getZYNQMONTestData();
+#endif // ZYNQMON_TEST_MODE
 
 // utility functions
 const uint32_t *getSystemStack();
