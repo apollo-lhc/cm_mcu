@@ -57,6 +57,13 @@ struct ADC_Info_t {
 #define ADCs_ADC0_ENTRIES           8
 #define ADCs_ADC0_FIRST_SEQ_LENGTH  4
 #define ADCs_ADC0_SECOND_SEQ_LENGTH 4
+
+// -------------------------------------------------
+//
+// REV 1
+//
+// -------------------------------------------------
+
 // This array holds the list of ADCs with the AIN channels on the TM4C1290NCPDT
 // on Apollo CM v1, and whatever scaling is needed to get the value correct.
 // We also read out the internal temperature sensor, which has a special
@@ -87,6 +94,13 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f}, // this one is special, temp in C
 };
 // clang-format on
+
+// -------------------------------------------------
+//
+// REV 2
+//
+// -------------------------------------------------
+// To be added here 
 
 static __fp16 fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
 
