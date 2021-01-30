@@ -6,7 +6,7 @@
  */
 
 
-#include <SensorControl.h>
+#include "SensorControl.h"
 
 // this command takes no arguments since there is only one command
 // right now.
@@ -54,6 +54,43 @@ BaseType_t sensor_summary(int argc, char **argv, char* m)
   }
   float_to_ints(max_temp, &tens, &frac);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "REG %02d.%02d\r\n", tens, frac);
+
+  return pdFALSE;
+}
+
+// dump monitor information
+BaseType_t psmon_ctl(int argc, char **argv, char* m)
+{
+  int s = SCRATCH_SIZE;
+  BaseType_t i1 = strtol(argv[1], NULL, 10);
+
+  if (i1 < 0 || i1 >= dcdc_args.n_commands) {
+    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
+             dcdc_args.n_commands - 1);
+    return pdFALSE;
+  }
+  // update times, in seconds
+  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+  TickType_t last = pdTICKS_TO_MS(dcdc_args.updateTick) / 1000;
+  int copied = 0;
+  if ((now - last) > 60) {
+    int mins = (now - last) / 60;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+  }
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", dcdc_args.commands[i1].name);
+  for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", dcdc_args.devices[ps].name);
+    for (int page = 0; page < dcdc_args.n_pages; ++page) {
+      float val = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
+                                      page * dcdc_args.n_commands + i1];
+      int tens, frac;
+      float_to_ints(val, &tens, &frac);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE %02d.%02d\t", tens, frac);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  }
 
   return pdFALSE;
 }

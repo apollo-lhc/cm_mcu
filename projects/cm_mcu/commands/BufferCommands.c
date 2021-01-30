@@ -5,18 +5,18 @@
  *      Author: fatimayousuf
  */
 
-#include <BufferCommands.h>
+#include "BufferCommands.h"
 
 // This command takes 1 arg, the data to be written to the buffer
 BaseType_t errbuff_in(int argc, char **argv, char* m)
 {
-  int copied = 0;
-
-  uint32_t data;
-  data = strtoul(argv[1], NULL, 16);
-  errbuffer_put(data, 0);
-  copied +=
-      snprintf(m + copied, SCRATCH_SIZE - copied, "Data written to EEPROM buffer: %x\r\n", data);
+//  int copied = 0;
+//
+//  uint32_t data;
+//  data = strtoul(argv[1], NULL, 16);
+//  errbuffer_put(data, 0);
+//  copied +=
+//      snprintf(m + copied, SCRATCH_SIZE - copied, "Data written to EEPROM buffer: %x\r\n", data);
 
   return pdFALSE;
 }
@@ -63,21 +63,21 @@ BaseType_t errbuff_out(int argc, char **argv, char* m)
 BaseType_t errbuff_info(int argc, char **argv, char* m)
 {
   int copied = 0;
-  uint32_t cap, minaddr, maxaddr, head;
+  //uint32_t cap, minaddr, maxaddr, head;
   uint16_t last, counter, n_continue;
 
-  cap = errbuffer_capacity();
-  minaddr = errbuffer_minaddr();
-  maxaddr = errbuffer_maxaddr();
-  head = errbuffer_head();
+//  cap = errbuffer_capacity();
+//  minaddr = errbuffer_minaddr();
+//  maxaddr = errbuffer_maxaddr();
+//  head = errbuffer_head();
   last = errbuffer_last();
   counter = errbuffer_counter();
   n_continue = errbuffer_continue();
-
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Capacity:        %d words\r\n", cap);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Min address:     0x%08x\r\n", minaddr);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Max address:     0x%08x\r\n", maxaddr);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Head address:    0x%08x\r\n", head);
+//
+//  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Capacity:        %d words\r\n", cap);
+//  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Min address:     0x%08x\r\n", minaddr);
+//  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Max address:     0x%08x\r\n", maxaddr);
+//  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Head address:    0x%08x\r\n", head);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Last entry:      0x%0x\r\n", last);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Message counter: %d\r\n", counter);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Continue codes:  %d\r\n", n_continue);

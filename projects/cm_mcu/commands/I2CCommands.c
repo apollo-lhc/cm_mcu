@@ -5,7 +5,10 @@
  *      Author: fatimayousuf
  */
 
-#include <I2CCommands.h>
+#include "I2CCommands.h"
+
+static tSMBus *p_sMaster = &g_sMaster4;
+static tSMBusStatus *p_eStatus = &eStatus4;
 
 BaseType_t i2c_ctl_set_dev(int argc, char **argv, char* m)
 {
