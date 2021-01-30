@@ -46,21 +46,32 @@
 
 #include "clocksynth.h"
 
+#ifdef DEBUG_CON
+// prototype of mutex'd print
+#define DPRINT(x) Print(x)
+#else // DEBUG_CON
+#define DPRINT(x)
+#endif // DEBUG_CON
+
+void Print(const char *str);
+
+// local sprintf prototype
 int snprintf(char *buf, unsigned int count, const char *format, ...);
 
 #define MAX_INPUT_LENGTH  50
 #define MAX_OUTPUT_LENGTH 512
 #define SCRATCH_SIZE 512
 
-//extern tSMBus g_sMaster1;
-//extern tSMBusStatus eStatus1;
-//extern tSMBus g_sMaster2;
-//extern tSMBusStatus eStatus2;
-//extern tSMBus g_sMaster3;
-//extern tSMBusStatus eStatus3;
-//extern tSMBus g_sMaster4;
-//extern tSMBusStatus eStatus4;
-//extern tSMBus g_sMaster6;
-//extern tSMBusStatus eStatus6;
-//tSMBus *p_sMaster = &g_sMaster4;
-//tSMBusStatus *p_eStatus = &eStatus4;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat" // because of our mini-sprintf
+
+extern tSMBus g_sMaster1;
+extern tSMBusStatus eStatus1;
+extern tSMBus g_sMaster2;
+extern tSMBusStatus eStatus2;
+extern tSMBus g_sMaster3;
+extern tSMBusStatus eStatus3;
+extern tSMBus g_sMaster4;
+extern tSMBusStatus eStatus4;
+extern tSMBus g_sMaster6;
+extern tSMBusStatus eStatus6;
