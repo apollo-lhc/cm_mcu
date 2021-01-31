@@ -1352,9 +1352,9 @@ static BaseType_t suart_ctl(int argc, char **argv)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: send one\r\n", argv[0]);
     }
     else if (strncmp(argv[1], "status", 5) == 0) {
-      uint8_t mode = getZYNQMONTestMode();
-      uint8_t sensor = getZYNQMONTestSensor();
-      uint16_t data = getZYNQMONTestData();
+      uint8_t mode = getZYNQMonTestMode();
+      uint8_t sensor = getZYNQMonTestSensor();
+      uint16_t data = getZYNQMonTestData();
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "%s: test mode = %s, sensor = 0x%x, data = 0x%x\r\n", argv[0],
                          mode == 0 ? "single" : "increment", sensor, data);
@@ -1369,7 +1369,7 @@ static BaseType_t suart_ctl(int argc, char **argv)
     if (strncmp(argv[1], "settest", 7) == 0) {
       uint8_t sensor = strtol(argv[2], NULL, 16);
       uint16_t data = strtol(argv[3], NULL, 16);
-      setZYNQMONTestData(sensor, data);
+      setZYNQMonTestData(sensor, data);
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "%s: set test sensor, data to 0x%x, 0x%x\r\n", argv[0], sensor, data);
     }

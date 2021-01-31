@@ -76,9 +76,18 @@ void LGA80D_init(void);
 void MonitorTask(void *parameters);
 
 // --- Firefly monitoring
+// REV1
+#ifndef REV2
 #define NFIREFLIES_KU15P 11
 #define NFIREFLIES_VU7P  14
 #define NFIREFLIES       (NFIREFLIES_KU15P + NFIREFLIES_VU7P)
+#else // REV2
+// REV 2 
+#define NFIREFLIES_F1    99
+#define NFIREFLIES_F2    99 // Placeholders
+#error "Fix placeholder values"
+#define NFIREFLIES       (NFIREFLIES_KU15P + NFIREFLIES_VU7P)
+#endif // REV 2 
 
 void FireFlyTask(void *parameters);
 extern QueueHandle_t xFFlyQueueIn;
@@ -176,7 +185,7 @@ void EEPROMTask(void *parameters);
 // ZynqMon
 #define ZYNQMON_TEST_MODE
 // ZynqMon queue messages
-#define ZYNQMON_ENABLE_TRANSMIT   0x1
+#define ZYNQMON_ENABLE_TRANSMIT  0x1
 #define ZYNQMON_DISABLE_TRANSMIT 0x2
 #define ZYNQMON_TEST_SINGLE      0x3
 #define ZYNQMON_TEST_INCREMENT   0x4
@@ -188,10 +197,10 @@ extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
 
 #ifdef ZYNQMON_TEST_MODE
-void setZYNQMONTestData(uint8_t sensor, uint16_t value);
-uint8_t getZYNQMONTestMode();
-uint8_t getZYNQMONTestSensor();
-uint16_t getZYNQMONTestData();
+void setZYNQMonTestData(uint8_t sensor, uint16_t value);
+uint8_t getZYNQMonTestMode();
+uint8_t getZYNQMonTestSensor();
+uint16_t getZYNQMonTestData();
 #endif // ZYNQMON_TEST_MODE
 
 // utility functions

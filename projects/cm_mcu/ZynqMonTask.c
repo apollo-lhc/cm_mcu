@@ -63,23 +63,23 @@ static uint8_t testaddress = 0x0;
 static uint16_t testdata = 0xaaff;
 static bool inTestMode = true;
 static uint8_t testmode = 2;
-void setZYNQMONTestData(uint8_t sensor, uint16_t value)
+void setZYNQMonTestData(uint8_t sensor, uint16_t value)
 {
   testaddress = sensor;
   testdata = value;
 }
 
-uint8_t getZYNQMONTestMode()
+uint8_t getZYNQMonTestMode()
 {
   return testmode;
 }
 
-uint8_t getZYNQMONTestSensor()
+uint8_t getZYNQMonTestSensor()
 {
   return testaddress;
 }
 
-uint16_t getZYNQMONTestData()
+uint16_t getZYNQMonTestData()
 {
   return testdata;
 }
