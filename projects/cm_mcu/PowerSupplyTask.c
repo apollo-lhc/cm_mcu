@@ -73,6 +73,13 @@ const char *getPowerControlStateName(enum power_system_state s)
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
+
+  // -------------------------------------------------
+  //
+  // REV 1
+  //
+  // -------------------------------------------------
+
   // compile-time sanity check
   static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_VU_MASK | PS_ENS_KU_MASK), "mask");
   static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK | PS_OKS_VU_MASK | PS_OKS_KU_MASK), "mask");
@@ -106,7 +113,12 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_VU_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_VU_MASK_L5;
   }
-
+  // -------------------------------------------------
+  //
+  // REV 2
+  //
+  // -------------------------------------------------
+  // add REV2 here 
 #ifdef ECN001
   // configure the LGA80D supplies. This call takes some time.
   LGA80D_init();

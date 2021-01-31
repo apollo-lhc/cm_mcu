@@ -36,6 +36,11 @@ enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
 int getLowestEnabledPSPriority();
 
+// -----------------------------------------------------
+//
+// Rev 1
+//
+// -----------------------------------------------------
 // Number of enable and power good/OK pins
 #define N_PS_ENABLES 16
 #define N_PS_OKS     14
@@ -62,6 +67,13 @@ int getLowestEnabledPSPriority();
 #define PS_OKS_VU_MASK_L2 PS_OKS_KU_MASK_L2
 #define PS_OKS_VU_MASK_L4 0x00C0U
 #define PS_OKS_VU_MASK_L5 0x3000U
+
+// -----------------------------------------------------
+//
+// Rev 2
+//
+// -----------------------------------------------------
+// to be added here 
 
 bool turn_on_ps(uint16_t);
 bool check_ps(void);
