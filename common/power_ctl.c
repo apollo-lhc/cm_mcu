@@ -28,6 +28,11 @@ void Print(const char *); // needs to be implemented in each project
 
 // clang-format off
 // if you update this you need to update N_PS_ENABLES
+// ------------------------------------------
+//
+// REV 1 
+//
+// ------------------------------------------
 static const struct gpio_pin_t enables[] = {
     {  CTRL_K_VCCINT_PWR_EN, 1},
     {  CTRL_V_VCCINT_PWR_EN, 1},
@@ -70,7 +75,12 @@ struct gpio_pin_t oks[] = {
 // clang-format on
 #define PS_NUM_PRIORITIES 5
 
-
+// ------------------------------------------
+//
+// REV 2
+//
+// ------------------------------------------
+// add here 
 
 // these arrays hold the current and old status of these power supplies
 static enum ps_state states[N_PS_OKS] = {PWR_UNKNOWN};
@@ -171,7 +181,7 @@ bool turn_on_ps(uint16_t ps_en_mask)
 }
 
 // Enable supply at some priority. Also send in vu and ku enable.
-void turn_on_ps_at_prio(bool vu_enable, bool ku_enable, int prio)
+void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio)
 {
   // loop over the enables
   for (int e = 0; e < N_PS_ENABLES; ++e) {
@@ -185,8 +195,8 @@ void turn_on_ps_at_prio(bool vu_enable, bool ku_enable, int prio)
       // or it's a VU supply and the enable is set, or it's a KU supply
       // and the enable is set.
       bool enableSupply = (currmask & PS_ENS_GEN_MASK) ||               // general
-                          ((currmask & PS_ENS_VU_MASK) && vu_enable) || // vu
-                          ((currmask & PS_ENS_KU_MASK) && ku_enable);   // ku
+                          ((currmask & PS_ENS_F2_MASK) && f2_enable) || // f2
+                          ((currmask & PS_ENS_F1_MASK) && f1_enable);   // f1
       if (enableSupply) {
         write_gpio_pin(enables[e].name, 0x1);
       }

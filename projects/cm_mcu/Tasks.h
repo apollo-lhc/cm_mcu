@@ -78,15 +78,15 @@ void MonitorTask(void *parameters);
 // --- Firefly monitoring
 // REV1
 #ifndef REV2
-#define NFIREFLIES_KU15P 11
-#define NFIREFLIES_VU7P  14
-#define NFIREFLIES       (NFIREFLIES_KU15P + NFIREFLIES_VU7P)
+#define NFIREFLIES_F1 11
+#define NFIREFLIES_F2 14
+#define NFIREFLIES    (NFIREFLIES_F1 + NFIREFLIES_F2)
 #else // REV2
-// REV 2 
+// REV 2
 #define NFIREFLIES_F1    99
 #define NFIREFLIES_F2    99 // Placeholders
 #error "Fix placeholder values"
-#define NFIREFLIES       (NFIREFLIES_KU15P + NFIREFLIES_VU7P)
+#define NFIREFLIES       (NFIREFLIES_F1 + NFIREFLIES_F2)
 #endif // REV 2 
 
 void FireFlyTask(void *parameters);
@@ -208,8 +208,8 @@ const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
 
 // Xilinx MonitorTask
-int get_ku_index();
-int get_vu_index();
+int get_f1_index();
+int get_f2_index();
 void initFPGAMon();
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

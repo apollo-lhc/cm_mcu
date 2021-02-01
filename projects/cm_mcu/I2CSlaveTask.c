@@ -47,7 +47,7 @@ void Print(const char *str);
 // one slave.
 static uint8_t testreg = 0x0U;
 
-static int local_fpga_vu, local_fpga_ku;
+static int local_fpga_f2, local_fpga_f1;
 
 static uint8_t getSlaveData(uint8_t address)
 {
@@ -60,12 +60,12 @@ static uint8_t getSlaveData(uint8_t address)
       value = getADCvalue(20) + 0.5f; // always valid
       break;
     case 0x12U: // FPGA VU temp
-      value = (uint8_t)local_fpga_vu >= 0 ? fpga_args.pm_values[local_fpga_vu] : 0U;
+      value = (uint8_t)local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U;
       if (value == 0)
         value = 0xFFU; // invalid value
       break;
     case 0x14U: // FPGA KU temp
-      value = (uint8_t)local_fpga_ku >= 0 ? fpga_args.pm_values[local_fpga_ku] : 0U;
+      value = (uint8_t)local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U;
       if (value == 0)
         value = 0xFFU; // invalid value
       break;
@@ -119,8 +119,8 @@ void I2CSlaveTask(void *parameters)
   TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
   // struct I2CSlaveTaskArgs_t * args = parameters;
 
-  local_fpga_ku = get_ku_index();
-  local_fpga_vu = get_vu_index();
+  local_fpga_f1 = get_f1_index();
+  local_fpga_f2 = get_f2_index();
 
   ROM_I2CSlaveEnable(I2C0_BASE);
 

@@ -228,14 +228,14 @@ static BaseType_t power_ctl(int argc, char **argv)
   }
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
-    bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-    bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+    bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+    bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
     static int i = 0;
     if (i == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s:\r\nVU_ENABLE:\t%d\r\n"
-                         "KU_ENABLE:\t%d\r\n",
-                         argv[0], vu_enable, ku_enable);
+                         "%s:\r\nF2_ENABLE:\t%d\r\n"
+                         "F1_ENABLE:\t%d\r\n",
+                         argv[0], f2_enable, f1_enable);
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "State machine state: %s\r\n",
                          getPowerControlStateName(getPowerControlState()));
     }
@@ -746,9 +746,9 @@ static BaseType_t fpga_ctl(int argc, char **argv)
 {
   if (argc == 2) {
     if (strncmp(argv[1], "done", 4) == 0) { // print out value of done pins
-      int ku_done_ = read_gpio_pin(_K_FPGA_DONE);
-      int vu_done_ = read_gpio_pin(_V_FPGA_DONE);
-      snprintf(m, SCRATCH_SIZE, "KU_DONE* = %d\r\nVU_DONE* = %d\r\n", ku_done_, vu_done_);
+      int f1_done_ = read_gpio_pin(_K_FPGA_DONE);
+      int f2_done_ = read_gpio_pin(_V_FPGA_DONE);
+      snprintf(m, SCRATCH_SIZE, "F1_DONE* = %d\r\nF2_DONE* = %d\r\n", f1_done_, f2_done_);
       return pdFALSE;
     }
     else {

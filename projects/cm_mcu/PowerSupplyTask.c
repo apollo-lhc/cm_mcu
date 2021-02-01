@@ -81,8 +81,8 @@ void PowerSupplyTask(void *parameters)
   // -------------------------------------------------
 
   // compile-time sanity check
-  static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_VU_MASK | PS_ENS_KU_MASK), "mask");
-  static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK | PS_OKS_VU_MASK | PS_OKS_KU_MASK), "mask");
+  static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_F2_MASK | PS_ENS_F1_MASK), "mask");
+  static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK | PS_OKS_F2_MASK | PS_OKS_F1_MASK), "mask");
 
   // alarm from outside this task
   bool external_alarm = false;
@@ -95,23 +95,23 @@ void PowerSupplyTask(void *parameters)
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
            supply_ok_mask_L5 = 0U;
 
-  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-  if (ku_enable) {
-    supply_ok_mask |= PS_OKS_KU_MASK;
-    supply_en_mask |= PS_ENS_KU_MASK;
-    supply_ok_mask_L1 = PS_OKS_KU_MASK_L1;
-    supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_KU_MASK_L2;
-    supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_KU_MASK_L4;
-    supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_KU_MASK_L5;
+  bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  if (f1_enable) {
+    supply_ok_mask |= PS_OKS_F1_MASK;
+    supply_en_mask |= PS_ENS_F1_MASK;
+    supply_ok_mask_L1 = PS_OKS_F1_MASK_L1;
+    supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_F1_MASK_L2;
+    supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
+    supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_F1_MASK_L5;
   }
-  if (vu_enable) {
-    supply_ok_mask |= PS_OKS_VU_MASK;
-    supply_en_mask |= PS_ENS_VU_MASK;
-    supply_ok_mask_L1 |= PS_OKS_VU_MASK_L1;
-    supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_VU_MASK_L2;
-    supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_VU_MASK_L4;
-    supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_VU_MASK_L5;
+  if (f2_enable) {
+    supply_ok_mask |= PS_OKS_F2_MASK;
+    supply_en_mask |= PS_ENS_F2_MASK;
+    supply_ok_mask_L1 |= PS_OKS_F2_MASK_L1;
+    supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_F2_MASK_L2;
+    supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
+    supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
   }
   // -------------------------------------------------
   //
@@ -229,7 +229,7 @@ void PowerSupplyTask(void *parameters)
         // start power-on sequence
         if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
             !power_supply_alarm) {
-          turn_on_ps_at_prio(vu_enable, ku_enable, 1);
+          turn_on_ps_at_prio(f2_enable, f1_enable, 1);
           errbuffer_put(EBUF_POWER_ON, 0);
           nextState = POWER_L1ON;
         }
@@ -250,7 +250,7 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          turn_on_ps_at_prio(vu_enable, ku_enable, 2);
+          turn_on_ps_at_prio(f2_enable, f1_enable, 2);
           nextState = POWER_L2ON;
         }
 
@@ -268,7 +268,7 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          turn_on_ps_at_prio(vu_enable, ku_enable, 3);
+          turn_on_ps_at_prio(f2_enable, f1_enable, 3);
           nextState = POWER_L3ON;
         }
 
@@ -276,7 +276,7 @@ void PowerSupplyTask(void *parameters)
       }
       case POWER_L3ON: {
         // NO ENABLES AT L3. We always go to L4.
-        turn_on_ps_at_prio(vu_enable, ku_enable, 4);
+        turn_on_ps_at_prio(f2_enable, f1_enable, 4);
         nextState = POWER_L4ON;
 
         break;
@@ -294,7 +294,7 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          turn_on_ps_at_prio(vu_enable, ku_enable, 5);
+          turn_on_ps_at_prio(f2_enable, f1_enable, 5);
           nextState = POWER_L5ON;
         }
 

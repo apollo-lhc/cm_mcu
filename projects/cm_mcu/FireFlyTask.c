@@ -90,7 +90,7 @@ extern tSMBusStatus eStatus4;
 
 void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
 {
-  if (ff < NFIREFLIES_KU15P) {
+  if (ff < NFIREFLIES_F1) {
     *smbus = &g_sMaster4;
     *status = &eStatus4;
   }
