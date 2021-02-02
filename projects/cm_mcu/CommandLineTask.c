@@ -1317,7 +1317,7 @@ static BaseType_t TaskStatsCommand(int argc, char **argv)
 
 static BaseType_t help_command_fcn(int argc, char **);
 
-static BaseType_t suart_ctl(int argc, char **argv)
+static BaseType_t zmon_ctl(int argc, char **argv)
 {
   int s = SCRATCH_SIZE, copied = 0;
   bool understood = true;
@@ -1393,7 +1393,7 @@ static BaseType_t suart_ctl(int argc, char **argv)
   if (message) {
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Sending message %s\r\n", argv[0], argv[1]);
-    // Send a message to the SUART task
+    // Send a message to the zmon task
     xQueueSendToBack(xZynqMonQueue, &message, pdMS_TO_TICKS(10));
   }
   return pdFALSE;
@@ -1497,14 +1497,14 @@ static struct command_t commands[] = {
         0,
     },
     {
-        "suart",
-        suart_ctl,
+        "zmon",
+        zmon_ctl,
 #ifdef ZYNQMON_TEST_MODE
-        "suart (on|off|status|debug1|debug2|debugraw|normal|sendone|(settest <sensor> <val>))\r\n"
+        "zmon (on|off|status|debug1|debug2|debugraw|normal|sendone|(settest <sensor> <val>))\r\n"
 #else
-        "suart (on|off)\r\n"
+        "zmon (on|off)\r\n"
 #endif // ZYNQMON_TEST_MODE
-        " Control soft uart.\r\n",
+        " Control ZynqMon task.\r\n",
         -1,
     },
     {
