@@ -28,6 +28,7 @@ void Print(const char *); // needs to be implemented in each project
 
 // clang-format off
 // if you update this you need to update N_PS_ENABLES
+#ifndef REV2
 // ------------------------------------------
 //
 // REV 1 
@@ -72,15 +73,18 @@ struct gpio_pin_t oks[] = {
     { V_MGTY1_AVTT_OK, 5},
     { V_MGTY2_AVTT_OK, 5}
 };
-// clang-format on
-#define PS_NUM_PRIORITIES 5
-
+#else // REV2
 // ------------------------------------------
 //
 // REV 2
 //
 // ------------------------------------------
-// add here 
+// add here
+#error "Missing power control definitions for Rev 2"
+#endif // REV2 
+
+// clang-format on
+#define PS_NUM_PRIORITIES 5
 
 // these arrays hold the current and old status of these power supplies
 static enum ps_state states[N_PS_OKS] = {PWR_UNKNOWN};

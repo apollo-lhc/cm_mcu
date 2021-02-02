@@ -233,9 +233,9 @@ static BaseType_t power_ctl(int argc, char **argv)
     static int i = 0;
     if (i == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s:\r\nF2_ENABLE:\t%d\r\n"
-                         "F1_ENABLE:\t%d\r\n",
-                         argv[0], f2_enable, f1_enable);
+                         "%s:\r\nF1_ENABLE:\t%d\r\n"
+                         "F2_ENABLE:\t%d\r\n",
+                         argv[0], f1_enable, f2_enable);
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "State machine state: %s\r\n",
                          getPowerControlStateName(getPowerControlState()));
     }
@@ -974,6 +974,9 @@ static BaseType_t restart_mcu(int argc, char **argv)
   return pdFALSE;
 }
 
+#ifdef REV2
+#error "this function needs updating"
+#endif // REV2 
 // This command takes 1 argument, either k or v
 static BaseType_t fpga_reset(int argc, char **argv)
 {

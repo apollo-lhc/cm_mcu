@@ -80,14 +80,13 @@ void MonitorTask(void *parameters);
 #ifndef REV2
 #define NFIREFLIES_F1 11
 #define NFIREFLIES_F2 14
-#define NFIREFLIES    (NFIREFLIES_F1 + NFIREFLIES_F2)
 #else // REV2
 // REV 2
 #define NFIREFLIES_F1    99
 #define NFIREFLIES_F2    99 // Placeholders
 #error "Fix placeholder values"
-#define NFIREFLIES       (NFIREFLIES_F1 + NFIREFLIES_F2)
-#endif // REV 2 
+#endif // REV 2
+#define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 void FireFlyTask(void *parameters);
 extern QueueHandle_t xFFlyQueueIn;
@@ -183,7 +182,7 @@ uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
 
 // ZynqMon
-#define ZYNQMON_TEST_MODE
+//#define ZYNQMON_TEST_MODE
 // ZynqMon queue messages
 #define ZYNQMON_ENABLE_TRANSMIT  0x1
 #define ZYNQMON_DISABLE_TRANSMIT 0x2

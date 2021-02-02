@@ -34,8 +34,9 @@
 enum ps_state { PWR_UNKNOWN, PWR_ON, PWR_OFF, PWR_DISABLED, PWR_FAILED };
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
-int getLowestEnabledPSPriority();
+//int getLowestEnabledPSPriority();
 
+#ifndef REV2 
 // -----------------------------------------------------
 //
 // Rev 1
@@ -68,12 +69,15 @@ int getLowestEnabledPSPriority();
 #define PS_OKS_F2_MASK_L4 0x00C0U
 #define PS_OKS_F2_MASK_L5 0x3000U
 
+#else // Rev 2
 // -----------------------------------------------------
 //
 // Rev 2
 //
 // -----------------------------------------------------
 // to be added here 
+#error "Missing Rev 2 PS masks"
+#endif // REV 2 
 
 bool turn_on_ps(uint16_t);
 bool check_ps(void);
