@@ -34,8 +34,14 @@
 enum ps_state { PWR_UNKNOWN, PWR_ON, PWR_OFF, PWR_DISABLED, PWR_FAILED };
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
-int getLowestEnabledPSPriority();
+//int getLowestEnabledPSPriority();
 
+#ifndef REV2 
+// -----------------------------------------------------
+//
+// Rev 1
+//
+// -----------------------------------------------------
 // Number of enable and power good/OK pins
 #define N_PS_ENABLES 16
 #define N_PS_OKS     14
@@ -43,30 +49,40 @@ int getLowestEnabledPSPriority();
 // bits, for the pins defined in the enables[]
 // and oks[] arrays.
 #define PS_OKS_MASK     ((1U << N_PS_OKS) - 1)
-#define PS_OKS_KU_MASK  0x0F03U
-#define PS_OKS_VU_MASK  0x30CCU
+#define PS_OKS_F1_MASK  0x0F03U
+#define PS_OKS_F2_MASK  0x30CCU
 #define PS_OKS_GEN_MASK 0x0030U
 #define PS_ENS_MASK     ((1U << N_PS_ENABLES) - 1)
 #define PS_ENS_GEN_MASK 0x000CU
-#define PS_ENS_VU_MASK  0xC332U
-#define PS_ENS_KU_MASK  0x3CC1U
+#define PS_ENS_F2_MASK  0xC332U
+#define PS_ENS_F1_MASK  0x3CC1U
 
 // OK masks for various stages of the turn-on.
 // these are indices into the oks[] array
 // L1-L5, note NO L3!!! no PG on the L3 supplies
-#define PS_OKS_KU_MASK_L1 0x0003U
-#define PS_OKS_KU_MASK_L2 0x0030U // these are common to VU and KU
-#define PS_OKS_KU_MASK_L4 0x0300U
-#define PS_OKS_KU_MASK_L5 0x0C00U
-#define PS_OKS_VU_MASK_L1 0x000CU
-#define PS_OKS_VU_MASK_L2 PS_OKS_KU_MASK_L2
-#define PS_OKS_VU_MASK_L4 0x00C0U
-#define PS_OKS_VU_MASK_L5 0x3000U
+#define PS_OKS_F1_MASK_L1 0x0003U
+#define PS_OKS_F1_MASK_L2 0x0030U // these are common to VU and KU
+#define PS_OKS_F1_MASK_L4 0x0300U
+#define PS_OKS_F1_MASK_L5 0x0C00U
+#define PS_OKS_F2_MASK_L1 0x000CU
+#define PS_OKS_F2_MASK_L2 PS_OKS_F1_MASK_L2
+#define PS_OKS_F2_MASK_L4 0x00C0U
+#define PS_OKS_F2_MASK_L5 0x3000U
+
+#else // Rev 2
+// -----------------------------------------------------
+//
+// Rev 2
+//
+// -----------------------------------------------------
+// to be added here 
+#error "Missing Rev 2 PS masks"
+#endif // REV 2 
 
 bool turn_on_ps(uint16_t);
 bool check_ps(void);
 bool disable_ps(void);
-void turn_on_ps_at_prio(bool vu_enable, bool ku_enable, int prio);
+void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio);
 void blade_power_ok(bool isok);
 
 #endif /* COMMON_POWER_CTL_H_ */

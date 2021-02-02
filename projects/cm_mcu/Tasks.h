@@ -76,9 +76,17 @@ void LGA80D_init(void);
 void MonitorTask(void *parameters);
 
 // --- Firefly monitoring
-#define NFIREFLIES_KU15P 11
-#define NFIREFLIES_VU7P  14
-#define NFIREFLIES       (NFIREFLIES_KU15P + NFIREFLIES_VU7P)
+// REV1
+#ifndef REV2
+#define NFIREFLIES_F1 11
+#define NFIREFLIES_F2 14
+#else // REV2
+// REV 2
+#define NFIREFLIES_F1    99
+#define NFIREFLIES_F2    99 // Placeholders
+#error "Fix placeholder values"
+#endif // REV 2
+#define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 void FireFlyTask(void *parameters);
 extern QueueHandle_t xFFlyQueueIn;
@@ -173,35 +181,34 @@ extern QueueHandle_t xEPRMQueue_out;
 uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
 
-// Soft UART Task
-// SoftUart queue messages
-//#define SUART_TEST_MODE
+// ZynqMon
+//#define ZYNQMON_TEST_MODE
+// ZynqMon queue messages
+#define ZYNQMON_ENABLE_TRANSMIT  0x1
+#define ZYNQMON_DISABLE_TRANSMIT 0x2
+#define ZYNQMON_TEST_SINGLE      0x3
+#define ZYNQMON_TEST_INCREMENT   0x4
+#define ZYNQMON_TEST_OFF         0x5
+#define ZYNQMON_TEST_SEND_ONE    0x6
+#define ZYNQMON_TEST_RAW         0x7
 
-#define SOFTUART_ENABLE_TRANSMIT  0x1
-#define SOFTUART_DISABLE_TRANSMIT 0x2
-#define SOFTUART_TEST_SINGLE      0x3
-#define SOFTUART_TEST_INCREMENT   0x4
-#define SOFTUART_TEST_OFF         0x5
-#define SOFTUART_TEST_SEND_ONE    0x6
-#define SOFTUART_TEST_RAW         0x7
-
-extern QueueHandle_t xSoftUartQueue;
+extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
 
-#ifdef SUART_TEST_MODE
-void setSUARTTestData(uint8_t sensor, uint16_t value);
-uint8_t getSUARTTestMode();
-uint8_t getSUARTTestSensor();
-uint16_t getSUARTTestData();
-#endif // SUART_TEST_MODE
+#ifdef ZYNQMON_TEST_MODE
+void setZYNQMonTestData(uint8_t sensor, uint16_t value);
+uint8_t getZYNQMonTestMode();
+uint8_t getZYNQMonTestSensor();
+uint16_t getZYNQMonTestData();
+#endif // ZYNQMON_TEST_MODE
 
 // utility functions
 const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
 
 // Xilinx MonitorTask
-int get_ku_index();
-int get_vu_index();
+int get_f1_index();
+int get_f2_index();
 void initFPGAMon();
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */
