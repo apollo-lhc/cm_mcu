@@ -33,6 +33,7 @@ CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 # Where to find source files that do not live in this directory.
 #
 VPATH=../drivers
+VPATH+=commands
 # board specific 
 VPATH+=../../common
 # FreeRTOS
@@ -104,6 +105,11 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LocalTasks.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/BoardCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/BufferCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/SensorControl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o
