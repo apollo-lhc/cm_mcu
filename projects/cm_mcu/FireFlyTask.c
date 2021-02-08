@@ -224,7 +224,7 @@ static bool isEnabledFF(int ff)
 
 static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, size_t size)
 {
-  memset(value,0,size);
+  memset(value, 0, size);
   // find the appropriate information for this FF device
   int ff;
   for (ff = 0; ff < NFIREFLIES; ++ff) {
@@ -240,7 +240,6 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
 
   get_smbus_vars(ff, &smbus, &p_status);
 
-  uint8_t data[3];
   // write to the mux
   // select the appropriate output for the mux
 
@@ -282,13 +281,6 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
   }
   return 0;
 }
-
-struct firefly_registers_t
-{
-  uint8_t value[128];
-  /* data */
-};
-
 
 static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
 {
@@ -412,7 +404,11 @@ static int set_xcvr_cdr(uint8_t value, int num_ff)
     imax = NFIREFLIES;
   }
   for (; i < imax; ++i) {
-    if (!isEnabledFF(i) && !(i==21||i==22)) // skip the FF if it's not enabled via the FF config
+    if (!isEnabledFF(i) // skip the FF if it's not enabled via the FF config
+#ifdef TEST_FF12CHANNEL25G
+        && !(i == 21 || i == 22)
+#endif // TEST_FF12CHANNEL25G
+    )
       continue;
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
       // Print(ff_i2c_addrs[i].name); Print("\r\n");

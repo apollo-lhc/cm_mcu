@@ -142,8 +142,6 @@ static BaseType_t ff_ctl(int argc, char **argv)
     }
     whichff = 0;
   } // argc == 1
-  else if ( argc == 2 ) { // test register read
-  } // argc==2
   else {
     int whichFF = 0;
     // handle the channel number first
