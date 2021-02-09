@@ -31,6 +31,10 @@
 #define NPAGES_FF    1
 #define NCOMMANDS_FF 2
 
+#ifndef REV2
+#define I2C_PULLUP_BUG2
+#endif // REV2 
+
 // local prototype
 void Print(const char *str);
 
@@ -50,7 +54,7 @@ void Print(const char *str);
     if (tries > 25) {                                                                              \
       char tmp[64];                                                                                \
       snprintf(tmp, 64, "FIF: stuck at line %d (%u, %u)\r\n", __LINE__, (unsigned)ff_updateTick,   \
-               (unsigned)xLastWakeTime);                                                           \
+               (unsigned)ff_updateTick);                                                           \
       Print(tmp);                                                                                  \
       tries = 0;                                                                                   \
       break;                                                                                       \
@@ -126,24 +130,24 @@ void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
 #define FF_STATUS_COMMAND_REG 0x2
-#define FF_TEMP_COMMAND_REG 0x16
+#define FF_TEMP_COMMAND_REG   0x16
 
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_TX_DISABLE_REG 0x34
+#define ECU0_14G_TX_DISABLE_REG      0x34
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
 #define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_RX_DISABLE_REG 0x34
+#define ECU0_14G_RX_DISABLE_REG      0x34
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
 #define ECU0_25G_XVCR_RX_DISABLE_REG 0x35
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
-#define ECU0_25G_XVCR_CDR_REG 0x62
+#define ECU0_25G_XVCR_CDR_REG        0x62
 // two bytes, 12 FF to be enabled/disabled. The byte layout 
 // is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
-#define ECU0_25G_TXRX_CDR_REG 0x4A
+#define ECU0_25G_TXRX_CDR_REG        0x4A
 
 
-static TickType_t xLastWakeTime;
+static TickType_t ff_updateTick;
 
 struct firefly_status {
   int8_t status;
@@ -201,7 +205,6 @@ int8_t* test_read(const uint8_t i) {
 }
 #endif
 
-static TickType_t ff_updateTick = 0;
 TickType_t getFFupdateTick()
 {
   return ff_updateTick;
@@ -452,13 +455,11 @@ static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8
 QueueHandle_t xFFlyQueueIn = NULL;
 QueueHandle_t xFFlyQueueOut = NULL;
 
-
-    // FireFly temperatures, voltages, currents, via I2C/PMBUS
-    void
-    FireFlyTask(void *parameters)
+// FireFly temperatures, voltages, currents, via I2C/PMBUS
+void FireFlyTask(void *parameters)
 {
   // initialize to the current tick time
-  xLastWakeTime = xTaskGetTickCount();
+  ff_updateTick = xTaskGetTickCount();
   uint8_t data[2];
 
   for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF; ++i) {
@@ -469,8 +470,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
     ff_status[i].temp = -55;
     ff_status[i].status = 1;
   }
-#define I2C_PULLUP_BUG2
-  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
+  vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
 
   if (getPSStatus(5) == PWR_ON) {
     // Disable all Firefly devices
@@ -478,6 +478,8 @@ QueueHandle_t xFFlyQueueOut = NULL;
     disable_receivers(true, NFIREFLIES);
   }
 
+  // reset the wake time to account for the time spent in any work in i2c tasks
+  ff_updateTick = xTaskGetTickCount();
   for (;;) {
     tSMBus *smbus;
     tSMBusStatus *p_status;
@@ -495,7 +497,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
           Print("FIF: 3V3 died. Skipping I2C monitoring.\r\n");
           good = false;
         }
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
+        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(500));
         continue;
       }
       else {
@@ -605,7 +607,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
       }
       int tries = 0;
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
         CHECKSTUCK();
       }
       if (*p_status != SMBUS_OK) {
@@ -622,7 +624,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
         Print("FIF: Read of MUX output failed\r\n");
       }
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
       }
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: Mux read error %d, break out of loop (ps=%d) ...\r\n", *p_status,
@@ -649,7 +651,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
         continue; // abort reading this register
       }
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
       }
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
@@ -683,7 +685,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
         continue; // abort reading this register
       }
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
       }
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
@@ -717,7 +719,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
         }
         int tries = 0;
         while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+          vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
           CHECKSTUCK();
         }
         if (*p_status != SMBUS_OK) {
@@ -744,7 +746,7 @@ QueueHandle_t xFFlyQueueOut = NULL;
       }
       tries = 0;
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
         ++tries;
         if (tries > 25) {
           snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
@@ -763,6 +765,6 @@ QueueHandle_t xFFlyQueueOut = NULL;
     update_max();
     update_min();
 #endif // DEBUG_FIF
-    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
+    vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(250));
   } // infinite loop for task
-  }
+}
