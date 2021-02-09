@@ -379,8 +379,6 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
       bool receiveAnswer = false;
       uint8_t code;
       uint32_t data = (whichFF & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET;
-      ;
-      ;
       if (strncmp(argv[1], "cdr", 3) == 0) {
         code = FFLY_DISABLE_CDR; // default: disable
         if (strncmp(argv[2], "on", 2) == 0) {
@@ -428,11 +426,14 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
                argv[2]);
       if (receiveAnswer) {
         BaseType_t f = xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(500));
-        if (f == pdTRUE)
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command returned 0x%x.\r\n", argv[0],
-                   message & 0xFFU);
+        if (f == pdTRUE) {
+          uint8_t retcode = (message>>24) & 0xFFU;
+          uint8_t value = message & 0xFFU;
+          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command returned 0x%x (ret %d).\r\n", argv[0],
+                   value, retcode);
+        }
         else
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command failed.\r\n", argv[0]);
+          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command failed (queue).\r\n", argv[0]);
       }
     }                     // argc == 4
     else if (argc == 5) { // command + five arguments
@@ -461,8 +462,26 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "%s: write val 0x%x to register 0x%x, FF %d.\r\n", argv[0], value, regnum,
                  channel);
-
+        whichFF = 0;
       } // end regw
+      else if (strncmp(argv[1], "test", 4) == 0) { // test code
+        uint8_t code = FFLY_TEST_READ;
+        if (whichFF == NFIREFLIES) {
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                             "%s: cannot test read all registers\r\n", argv[0]);
+          return pdFALSE;
+        }
+        uint8_t regnum = strtol(argv[2], NULL, 16);   // which register
+        uint8_t charsize = strtol(argv[3], NULL, 10); // how big
+        uint32_t message =
+            ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) |
+            (((regnum & FF_MESSAGE_CODE_TEST_REG_MASK) << FF_MESSAGE_CODE_TEST_REG_OFFSET) |
+             ((charsize & FF_MESSAGE_CODE_TEST_SIZE_MASK) << FF_MESSAGE_CODE_TEST_SIZE_OFFSET) |
+             ((whichFF & FF_MESSAGE_CODE_TEST_FF_MASK) << FF_MESSAGE_CODE_TEST_FF_OFFSET));
+        xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
+        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s sent.\r\n", argv[0], argv[1]);
+        whichFF = 0;
+      }
       else {
         snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s not understood\r\n", argv[0],
                  argv[1]);

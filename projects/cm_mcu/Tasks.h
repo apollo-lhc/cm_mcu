@@ -219,6 +219,9 @@ uint16_t getZYNQMonTestData();
 const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
 
+struct dev_i2c_addr_t; // forward reference
+void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
+
 // Xilinx MonitorTask
 int get_f1_index();
 int get_f2_index();
