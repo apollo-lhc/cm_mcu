@@ -11,6 +11,7 @@
 #include "commands/EEPROMCommands.h"
 #include "commands/I2CCommands.h"
 #include "commands/SensorControl.h"
+#include "common/smbus_units.h"
 
 static char m[SCRATCH_SIZE];
 
@@ -94,9 +95,6 @@ static BaseType_t ver_ctl(int argc, char **argv, char* m)
 
   return pdFALSE;
 }
-
-#include "common/smbus_units.h"
-void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
 
 typedef struct __attribute__((packed)) {
   linear11_val_t v_in;
