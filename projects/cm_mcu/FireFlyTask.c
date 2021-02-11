@@ -47,6 +47,12 @@ void Print(const char *str);
 // ECUO-T12 Tx:   0x50 7 bit I2C address
 // ECUO-R12 Rx:   0x54 7 bit I2C address
 
+// -------------------------------------------------
+//
+// REV 1
+//
+// -------------------------------------------------
+
 struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"K01  12 Tx GTH", 0x70, 0, 0x50}, //
     {"K01  12 Rx GTH", 0x70, 1, 0x54}, //
@@ -74,6 +80,33 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", 0x71, 4, 0x50}, //
     {"V12  12 Rx GTY", 0x71, 5, 0x54}, //
 };
+
+// I2C for VU7P optics
+extern tSMBus g_sMaster3;
+extern tSMBusStatus eStatus3;
+// I2C for KU15P optics
+extern tSMBus g_sMaster4;
+extern tSMBusStatus eStatus4;
+
+void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
+{
+  if (ff < NFIREFLIES_F1) {
+    *smbus = &g_sMaster4;
+    *status = &eStatus4;
+  }
+  else {
+    *smbus = &g_sMaster3;
+    *status = &eStatus3;
+  }
+}
+
+// -------------------------------------------------
+//
+// REV 2
+//
+// -------------------------------------------------
+// to be added here
+
 // Register definitions
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
@@ -101,12 +134,6 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
 #define ECU0_25G_XVCR_CDR_REG 0x62
 
-// I2C for VU7P optics
-extern tSMBus g_sMaster3;
-extern tSMBusStatus eStatus3;
-// I2C for KU15P optics
-extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
 
 struct firefly_status {
 	int8_t status;
@@ -219,18 +246,12 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   if (ff == NFIREFLIES) {
     return -2; // no match found
   }
-  // i2c base -- two i2c controllers
+  // i2c base 
   tSMBus *smbus;
   tSMBusStatus *p_status;
 
-  if (ff < NFIREFLIES_KU15P) {
-    smbus = &g_sMaster4;
-    p_status = &eStatus4;
-  }
-  else {
-    smbus = &g_sMaster3;
-    p_status = &eStatus3;
-  }
+  get_smbus_vars(ff, &smbus, &p_status);
+
   uint8_t data[3];
   // write to the mux
   // select the appropriate output for the mux
@@ -238,7 +259,7 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
   tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
   if (r != SMBUS_OK) {
-    Print("write_ff_reg: I2CBus command failed  (setting mux)\r\n");
+    Print("read_ff_reg: I2CBus command failed  (setting mux)\r\n");
     return 1;
   }
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
@@ -255,15 +276,15 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint16_t *value,
   // increment size to account for the register address
   r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, size);
   if (r != SMBUS_OK) {
-    Print("write_ff_reg: I2CBus command failed  (FF register)\r\n");
+    Print("write_ff_reg: I2CBus command failed (FF register)\r\n");
     return 1;
   }
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
   if (*p_status != SMBUS_OK) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+    char tmp[128];
+    snprintf(tmp, 64, "%s: FF WriteRead error %d  (ff=%s) ...\r\n", __func__, *p_status,
              ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
@@ -291,14 +312,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   tSMBus *smbus;
   tSMBusStatus *p_status;
 
-  if (ff < NFIREFLIES_KU15P) {
-    smbus = &g_sMaster4;
-    p_status = &eStatus4;
-  }
-  else {
-    smbus = &g_sMaster3;
-    p_status = &eStatus3;
-  }
+  get_smbus_vars(ff, &smbus, &p_status);
+
   uint8_t data[3];
   // write to the mux
   // select the appropriate output for the mux
@@ -342,14 +357,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   return 0;
 }
 
-// static uint8_t ff_mon_register_list[] = {
-//     FF_TEMP_COMMAND_REG,
-//     ECU0_14G_TX_DISABLE_REG,
-//     ECU0_25G_XVCR_TX_DISABLE_REG,
-//     ECU0_25G_XVCR_CDR_REG,
-// };
-
-static int disable_transmit(bool disable, int num_ff) // todo: actually test this
+static int disable_transmit(bool disable, int num_ff) 
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -397,7 +405,7 @@ static int disable_receivers(bool disable, int num_ff)
   return ret;
 }
 
-static int set_xcvr_cdr(uint8_t value, int num_ff) // todo: actually test this
+static int set_xcvr_cdr(uint8_t value, int num_ff) 
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -495,14 +503,7 @@ void FireFlyTask(void *parameters)
     for (uint8_t ff = 0; ff < NFIREFLIES; ++ff) {
       if (!isEnabledFF(ff)) // skip the FF if it's not enabled via the FF config
         continue;
-      if (ff < NFIREFLIES_KU15P) {
-        smbus = &g_sMaster4;
-        p_status = &eStatus4;
-      }
-      else {
-        smbus = &g_sMaster3;
-        p_status = &eStatus3;
-      }
+      get_smbus_vars(ff, &smbus, &p_status);
 #ifdef I2C_PULLUP_BUG2
       if (getPSStatus(5) != PWR_ON) {
         if (good) {

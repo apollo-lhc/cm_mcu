@@ -640,6 +640,22 @@ Delay:
     bx      lr
 
 //*****************************************************************************
+// Updated loop: turn on RED LED before going into an infinite loop
+// address of GPIO pin data register for the RED LED 
+// we use address bits a[9:2] to mask which bits are written (here only bit position 1)
+// see TM4C1290NCPDT data sheet section 10.3.1.2 "Data Register Operation" 
+//*****************************************************************************
+#define RED_LED_GPIO_WHICH_BIT 0x2 // (0x1<<1) // pin 1 
+#define GPIO_PORTP_DATA_BITS_R 0x40065000
+#define RED_LED_GPIO_DATA_BITS (GPIO_PORTP_DATA_BITS_R | (RED_LED_GPIO_WHICH_BIT<<2))
+    .thumb_func
+IntDefHandler2:
+    ldr r4, =RED_LED_GPIO_DATA_BITS // register address 
+    ldr r5, =RED_LED_GPIO_WHICH_BIT // which bit to turn on 
+    str r5, [r4] // toggle bit on
+    b       . // loop forever 
+
+//*****************************************************************************
 //
 // This is the end of the file.
 //

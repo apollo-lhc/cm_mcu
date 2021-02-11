@@ -243,7 +243,7 @@ int main(void)
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(ZynqMonTask, "SUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
 
@@ -270,8 +270,8 @@ int main(void)
   tempAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
   configASSERT(tempAlarmTask.xAlmQueue != NULL);
 
-  xSoftUartQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
-  configASSERT(xSoftUartQueue != NULL);
+  xZynqMonQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
+  configASSERT(xZynqMonQueue != NULL);
 
   // Set up the hardware ready to run the firmware. Don't do this earlier as
   // the interrupts call some FreeRTOS tasks that need to be set up first.

@@ -28,11 +28,11 @@ struct dev_i2c_addr_t fpga_addrs[] = {
     {"KU15P", 0x70, 0, 0x36}, // KU15P FPGA
 };
 
-struct dev_i2c_addr_t fpga_addrs_kuonly[] = {
+struct dev_i2c_addr_t fpga_addrs_f1only[] = {
     {"KU15P", 0x70, 0, 0x36},
 };
 
-struct dev_i2c_addr_t fpga_addrs_vuonly[] = {
+struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"VU7P", 0x70, 1, 0x36},
 };
 
@@ -249,45 +249,45 @@ struct MonitorTaskArgs_t dcdc_args = {
     .xSem = NULL,
 };
 
-static int fpga_ku = -1;
-static int fpga_vu = -1;
-int get_ku_index()
+static int fpga_f1 = -1;
+static int fpga_f2 = -1;
+int get_f1_index()
 {
-  return fpga_ku;
+  return fpga_f1;
 }
-int get_vu_index()
+int get_f2_index()
 {
-  return fpga_vu;
+  return fpga_f2;
 }
-void set_ku_index(int index)
+void set_f1_index(int index)
 {
-  fpga_ku = index;
+  fpga_f1 = index;
   return;
 }
-void set_vu_index(int index)
+void set_f2_index(int index)
 {
-  fpga_vu = index;
+  fpga_f2 = index;
   return;
 }
 
 void initFPGAMon()
 {
   // check if we are to include both FPGAs or not
-  bool ku_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-  bool vu_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
-  configASSERT(ku_enable || vu_enable);
-  if (!ku_enable && vu_enable) {
-    fpga_args.devices = fpga_addrs_vuonly;
+  bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
+  bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  configASSERT(f1_enable || f2_enable);
+  if (!f1_enable && f2_enable) {
+    fpga_args.devices = fpga_addrs_f2only;
     fpga_args.n_devices = 1;
-    set_vu_index(0);
+    set_f2_index(0);
   }
-  else if (!vu_enable && ku_enable) {
-    fpga_args.devices = fpga_addrs_kuonly;
+  else if (!f2_enable && f1_enable) {
+    fpga_args.devices = fpga_addrs_f1only;
     fpga_args.n_devices = 1;
-    set_ku_index(0);
+    set_f1_index(0);
   }
   else {
-    set_vu_index(0);
-    set_ku_index(1);
+    set_f2_index(0);
+    set_f1_index(1);
   }
 }
