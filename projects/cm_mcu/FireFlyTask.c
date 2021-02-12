@@ -152,6 +152,7 @@ static TickType_t ff_updateTick;
 struct firefly_status {
   int8_t status;
   int8_t temp;
+  int8_t serial_num[16];
 #ifdef DEBUG_FIF
   int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
 #endif
@@ -196,6 +197,11 @@ int8_t getFFtemp(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].temp;
+}
+
+int8_t* getFFserialnum(const uint8_t i){
+  configASSERT(i < NFIREFLIES);
+  return ff_status[i].serial_num;
 }
 
 #ifdef DEBUG_FIF
@@ -469,6 +475,9 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
     ff_status[i].temp = -55;
     ff_status[i].status = 1;
+    for (int j = 0; j<16; j++){
+    	ff_status[i].serial_num[j] = j;
+    }
   }
   vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
 
@@ -701,6 +710,33 @@ void FireFlyTask(void *parameters)
       convert_8_t tmp2;
       tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
       ff_status[ff].status = tmp2.s;
+
+      // Read the serial number
+      data[0] = 0x0U;
+      data[1] = 0x0U;
+      for (uint8_t i = 171; i < 186; i++) {// change from 171-185 to 189-198 or 189-204 or 196-211
+    	  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &i, 1, data, 1);
+
+    	  if (r != SMBUS_OK) {
+    		  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+    				  2);
+    		  DPRINT(tmp);
+    		  continue; // abort reading this register
+    	  }
+    	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    		  vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
+    	  }
+    	  if (*p_status != SMBUS_OK) {
+    		  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+    				  *p_status, ff, 2);
+    		  DPRINT(tmp);
+    		  ff_status[ff].serial_num[i - 196] = 3;
+    		  break;
+    	  }
+    	  convert_8_t tmp5;
+    	  tmp5.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+    	  ff_status[ff].serial_num[i - 196] = tmp5.s;
+      }
 
 #ifdef DEBUG_FIF
       // Read the Samtec line - testing only

@@ -96,6 +96,7 @@ const char *getFFname(const uint8_t i);
 int8_t *test_read(const uint8_t i);
 int8_t getFFtemp(const uint8_t i);
 int8_t getFFstatus(const uint8_t i);
+int8_t *getFFserialnum(const uint8_t i);
 TickType_t getFFupdateTick();
 
 int disable_xcvr_cdr(const char *name);

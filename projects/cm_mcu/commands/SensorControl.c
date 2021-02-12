@@ -508,7 +508,11 @@ BaseType_t ff_status(int argc, char **argv, char* m)
   for (; whichff < 25; ++whichff) {
     int8_t status = getFFstatus(whichff);
     const char *name = getFFname(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
+    int8_t* serial_num = getFFserialnum(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d ", name, status);
+    for (size_t i = 0; i<16; i++) {
+    	copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", serial_num[i]);
+    }
 
     bool isTx = (strstr(name, "Tx") != NULL);
     if (isTx)
