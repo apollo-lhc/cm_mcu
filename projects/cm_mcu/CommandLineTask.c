@@ -470,6 +470,24 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_serial_num",
+        ff_serial_num,
+        "ff_serial_num\r\n Displays a table showing the serial numbers of the fireflies.\r\n",
+        0,
+    },
+    {
+        "ff_los_alarm",
+        ff_los_alarm,
+        "ff_los_alarm\r\n Displays a table showing the loss of signal alarms of the fireflies.\r\n",
+        0,
+    },
+    {
+        "ff_cdr_lol_alarm",
+        ff_cdr_lol_alarm,
+        "ff_cd_lol_alarm\r\n Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
+        0,
+    },
+    {
         "zmon",
         zmon_ctl,
 #ifdef ZYNQMON_TEST_MODE
