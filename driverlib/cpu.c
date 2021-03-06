@@ -47,7 +47,7 @@
 // on entry.
 //
 //*****************************************************************************
-#if defined(codered) || defined(gcc) || defined(sourcerygxx)
+#if defined(codered) || defined(gcc) || defined(sourcerygxx) 
 uint32_t __attribute__((naked))
 CPUcpsid(void)
 {
@@ -68,6 +68,19 @@ CPUcpsid(void)
     // naked attribute).
     //
     return(ui32Ret);
+}
+#endif
+#if defined(clang)
+uint32_t __attribute__((naked)) CPUcpsid(void)
+{
+
+  //
+  // Read PRIMASK and disable interrupts.
+  //
+  __asm("    mrs     r0, PRIMASK\n"
+        "    cpsid   i\n"
+        "    bx      lr\n");
+// TODO: does this return the right value?
 }
 #endif
 #if defined(ewarm)
@@ -207,7 +220,7 @@ CPUprimask(void)
 // on entry.
 //
 //*****************************************************************************
-#if defined(codered) || defined(gcc) || defined(sourcerygxx)
+#if defined(codered) || defined(gcc) || defined(sourcerygxx) 
 uint32_t __attribute__((naked))
 CPUcpsie(void)
 {
@@ -228,6 +241,18 @@ CPUcpsie(void)
     // naked attribute).
     //
     return(ui32Ret);
+}
+#endif
+#if defined(clang)
+uint32_t __attribute__((naked)) CPUcpsie(void)
+{
+
+  //
+  // Read PRIMASK and enable interrupts.
+  //
+  __asm("    mrs     r0, PRIMASK\n"
+        "    cpsie   i\n"
+        "    bx      lr\n");
 }
 #endif
 #if defined(ewarm)
@@ -288,7 +313,7 @@ CPUcpsie(void)
 // Wrapper function for the WFI instruction.
 //
 //*****************************************************************************
-#if defined(codered) || defined(gcc) || defined(sourcerygxx)
+#if defined(codered) || defined(gcc) || defined(sourcerygxx) || defined(clang)
 void __attribute__((naked))
 CPUwfi(void)
 {
@@ -336,7 +361,7 @@ CPUwfi(void)
 // Wrapper function for writing the BASEPRI register.
 //
 //*****************************************************************************
-#if defined(codered) || defined(gcc) || defined(sourcerygxx)
+#if defined(codered) || defined(gcc) || defined(sourcerygxx) || defined(clang)
 void __attribute__((naked))
 CPUbasepriSet(uint32_t ui32NewBasepri)
 {
@@ -404,6 +429,16 @@ CPUbasepriGet(void)
     // naked attribute).
     //
     return(ui32Ret);
+}
+#endif
+#if defined(clang)
+uint32_t __attribute__((naked)) CPUbasepriGet(void)
+{
+  //
+  // Read BASEPRI
+  //
+  __asm("    mrs     r0, BASEPRI\n"
+        "    bx      lr\n");
 }
 #endif
 #if defined(ewarm)
