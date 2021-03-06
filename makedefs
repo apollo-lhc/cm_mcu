@@ -205,39 +205,49 @@ SIZE=llvm-size
 CPU=--target=armv7m-none-eabi -mcpu=cortex-m4
 FPU=-mfpu=fpv4-sp-d16 -mfloat-abi=hard #-mfp16-format=ieee
 
-CFLAGS=             \
-       ${CPU}              \
-       ${FPU}              \
-       -ffunction-sections \
-       -fdata-sections     \
-       -MD                 \
-       -std=c11            \
-       -DPART_${PART}      \
-       --sysroot=/usr/local/arm-none-eabi \
-       -Wall -pedantic \
+## THESE BELOW GET CALLED FROM GCC
+##
+GCC=arm-none-eabi-gcc
+# tell CLANG where the appropriate header files are 
+SYSROOT=${shell ${GCC} --print-sysroot}
+
+CFLAGS=                     \
+       ${CPU}               \
+       ${FPU}               \
+       -ffunction-sections  \
+       -fdata-sections      \
+       -MD                  \
+       -std=c11             \
+       -DPART_${PART}       \
+       --sysroot=${SYSROOT} \
+       -Wall                \
+	   -pedantic            \
        -c
 
 ifdef DEBUG
 CFLAGS+=-g -D DEBUG -O0
 else
-CFLAGS+=-Os 
+CFLAGS+=-Oz 
 endif
 
 ## THESE BELOW GET CALLED FROM GCC
+##
+GCC=arm-none-eabi-gcc
+GCC_CFLAGS=
 #
 # Get the location of libgcc.a from the GCC front-end.
 #
-LIBGCC=${shell ${CC} ${CFLAGS} -print-libgcc-file-name}
+LIBGCC=${shell ${GCC} ${GCC_CFLAGS} -print-libgcc-file-name}
 
 #
 # Get the location of libc.a from the GCC front-end.
 #
-LIBC=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
+LIBC=${shell ${GCC} ${GCC_CFLAGS} -print-file-name=libc.a}
 
 #
 # Get the location of libm.a from the GCC front-end.
 #
-LIBM=${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
+LIBM=${shell ${GCC} ${GCC_CFLAGS} -print-file-name=libm.a}
 
 
 #
@@ -331,7 +341,7 @@ ${COMPILER}${SUFFIX}/%.axf:
 	          ${LDFLAGSgcc_${notdir ${@:.axf=}}}                          \
 	          ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})                  \
 	          '${LIBM}' '${LIBC}' '${LIBGCC}';                            \
-	     echo ${SIZE} ${@} ;                                                 \
+	     echo ${SIZE} ${@} ;                                              \
 	 fi;                                                                  \
 	${LD} -T $${ldname}                                                   \
 	      --entry ${ENTRY_${notdir ${@:.axf=}}}                           \
