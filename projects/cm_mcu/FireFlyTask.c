@@ -211,21 +211,47 @@ int8_t getFFtemp(const uint8_t i)
   return ff_status[i].temp;
 }
 
-int8_t* getFFlos(const uint8_t i)
-{
-  configASSERT(i < NFIREFLIES);
-  return ff_status[i].los_alarm;
-}
-
- int8_t* getFFlol(const uint8_t i)
-{
-  configASSERT(i < NFIREFLIES);
-  return ff_status[i].cdr_lol_alarm;
-}
-
 int8_t* getFFserialnum(const uint8_t i){
   configASSERT(i < NFIREFLIES);
   return ff_status[i].serial_num;
+}
+
+bool getFFlos(int i, int channel){
+	configASSERT(i < NFIREFLIES);
+	configASSERT(channel < 12);
+	int8_t* los_alarms = ff_status[i].los_alarm;
+
+	if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL && channel>8) {
+		if (!(1<<(channel-8) & los_alarms[1])){
+			return false;
+		}
+		return true;
+	}
+	else{
+		if (!(1 << channel & los_alarms[0])){
+			return false;
+		}
+		return true;
+	}
+}
+
+bool getFFlol(int i, int channel){
+	configASSERT(i < NFIREFLIES);
+	configASSERT(channel < 12);
+	int8_t* cdr_lol_alarms = ff_status[i].cdr_lol_alarm;
+
+	if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL && channel>8) {
+		if (!(1<<(channel-8) & cdr_lol_alarms[1])){
+			return false;
+		}
+		return true;
+	}
+	else{
+		if (!(1 << channel & cdr_lol_alarms[0])){
+			return false;
+		}
+		return true;
+	}
 }
 
 #ifdef DEBUG_FIF

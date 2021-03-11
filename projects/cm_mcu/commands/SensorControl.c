@@ -564,10 +564,10 @@ BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
   }
   for (; whichff < 25; ++whichff) {
     const char *name = getFFname(whichff);
-    int8_t* los_alarms = getFFlos(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
     for (size_t i = 0; i<12; i++) {
-      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", los_alarms[i]);
+      int alarm = getFFlos(whichff, i)? 1:0;
+      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
     }
 
     bool isTx = (strstr(name, "Tx") != NULL);
@@ -590,14 +590,14 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m) {
 
   static int whichff = 0;
   if (whichff == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY CDR LOL ALARM:\r\n");
   }
   for (; whichff < 25; ++whichff) {
     const char *name = getFFname(whichff);
-    int8_t* lol_alarms = getFFlol(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
     for (size_t i = 0; i<12; i++) {
-      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", lol_alarms[i]);
+      int alarm = getFFlol(whichff, i)? 1:0;
+      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
     }
 
     bool isTx = (strstr(name, "Tx") != NULL);
