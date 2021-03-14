@@ -29,6 +29,12 @@ endif
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #CFLAGS+=-fstack-protector 
 
+ifeq (${COMPILER}, clang)
+## for clang complaining about FreeRTOS code
+## this is not the right way to solve this
+#CFLAGS+=-Wno-int-in-bool-context
+endif
+
 #
 # Where to find source files that do not live in this directory.
 #

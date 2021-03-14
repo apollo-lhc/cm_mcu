@@ -205,6 +205,13 @@ SIZE=llvm-size
 CPU=--target=armv7m-none-eabi -mcpu=cortex-m4
 FPU=-mfpu=fpv4-sp-d16 -mfloat-abi=hard #-mfp16-format=ieee
 
+#
+# The flags passed to the assembler.
+#
+AFLAGS=-mthumb \
+       ${CPU}  \
+       ${FPU}  \
+       -MD
 ## THESE BELOW GET CALLED FROM GCC
 ##
 GCC=arm-none-eabi-gcc
