@@ -367,7 +367,8 @@ void ZynqMonTask(void *parameters)
           stale = true;
         }
 
-        for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
+        for (int j = 0; j < 2; ++j) { // HACK FIXME
+//        for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
           convert_16_t u;
           if (stale) {
             u.f = __builtin_nanf("");

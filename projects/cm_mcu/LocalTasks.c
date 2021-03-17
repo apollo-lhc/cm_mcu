@@ -34,8 +34,8 @@ int snprintf(char *buf, unsigned int count, const char *format, ...);
 // FPGA arguments for monitoring task
 struct dev_i2c_addr_t fpga_addrs[] = {
     {"VU7P", 0x70, 1, 0x36},     // VU7P FPGA
-    {"VU7P SL1", 0x70, 1, 0x34}, // VU7P FPGA
     {"KU15P", 0x70, 0, 0x36},    // KU15P FPGA
+    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA
 };
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
@@ -44,6 +44,7 @@ struct dev_i2c_addr_t fpga_addrs_f1only[] = {
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"VU7P", 0x70, 1, 0x36},
+    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA
 };
 
 struct pm_command_t pm_command_fpga[] = {
@@ -288,7 +289,7 @@ void initFPGAMon()
   configASSERT(f1_enable || f2_enable);
   if (!f1_enable && f2_enable) {
     fpga_args.devices = fpga_addrs_f2only;
-    fpga_args.n_devices = 1;
+    fpga_args.n_devices = 2;
     set_f2_index(0);
   }
   else if (!f2_enable && f1_enable) {
