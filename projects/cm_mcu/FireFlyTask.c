@@ -38,7 +38,7 @@
 // local prototype
 void Print(const char *str);
 
-#define DEBUG_FIF
+//#define DEBUG_FIF
 #ifdef DEBUG_FIF
 // prototype of mutex'd print
 #define DPRINT(x) Print(x)
@@ -151,11 +151,8 @@ void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
 
 #define ECU0_25G_TX_LOS_ALARM_REG_1 0x7
 #define ECU0_25G_TX_LOS_ALARM_REG_2 0x8
-#define ECU0_25G_RX_CDR_LOL_ALARM_REG_1 0x14
-#define ECU0_25G_RX_CDR_LOL_ALARM_REG_2 0x15
-
-#define ECU0_14G_RX_LOS_ALARM_REG_1 0x7
-#define ECU0_14G_RX_LOS_ALARM_REG_2 0x8
+#define ECU0_25G_CDR_LOL_ALARM_REG_1 0x14
+#define ECU0_25G_CDR_LOL_ALARM_REG_2 0x15
 
 static TickType_t ff_updateTick;
 
@@ -804,7 +801,7 @@ void FireFlyTask(void *parameters)
 
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL) {
 
-        reg_addr = ECU0_14G_RX_LOS_ALARM_REG_2;
+        reg_addr = ECU0_25G_TX_LOS_ALARM_REG_2;
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
         if (r != SMBUS_OK) {
@@ -825,7 +822,7 @@ void FireFlyTask(void *parameters)
         }
         ff_status[ff].los_alarm[0] = data[0];
 
-        reg_addr = ECU0_14G_RX_LOS_ALARM_REG_1;
+        reg_addr = ECU0_25G_TX_LOS_ALARM_REG_1;
         data[0] = 0x0U;
         data[1] = 0x0U;
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
@@ -878,7 +875,7 @@ void FireFlyTask(void *parameters)
 
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL) {
 
-        reg_addr = ECU0_25G_RX_CDR_LOL_ALARM_REG_2;
+        reg_addr = ECU0_25G_CDR_LOL_ALARM_REG_2;
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
         if (r != SMBUS_OK) {
@@ -899,7 +896,7 @@ void FireFlyTask(void *parameters)
         }
         ff_status[ff].cdr_lol_alarm[0] = data[0];
 
-        reg_addr = ECU0_25G_RX_CDR_LOL_ALARM_REG_1;
+        reg_addr = ECU0_25G_CDR_LOL_ALARM_REG_1;
         data[0] = 0;
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
