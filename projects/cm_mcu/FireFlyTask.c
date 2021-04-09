@@ -869,7 +869,7 @@ void FireFlyTask(void *parameters)
         ff_status[ff].los_alarm[0] = data[0];
       }
 
-      // Check the CDR loss of lock alarm on the transcievers
+      // Check the CDR loss of lock alarm
       data[0] = 0x0U;
       data[1] = 0x0U;
 
