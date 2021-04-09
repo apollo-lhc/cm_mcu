@@ -99,7 +99,6 @@ int8_t getFFtemp(const uint8_t i);
 int8_t getFFstatus(const uint8_t i);
 bool getFFlos(int i, int channel);
 bool getFFlol(int i, int channel);
-//int8_t *getFFserialnum(const uint8_t i);
 TickType_t getFFupdateTick();
 
 int disable_xcvr_cdr(const char *name);

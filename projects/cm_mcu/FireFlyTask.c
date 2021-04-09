@@ -38,7 +38,7 @@
 // local prototype
 void Print(const char *str);
 
-// #define DEBUG_FIF
+#define DEBUG_FIF
 #ifdef DEBUG_FIF
 // prototype of mutex'd print
 #define DPRINT(x) Print(x)

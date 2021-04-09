@@ -28,7 +28,6 @@ BaseType_t adc_ctl(int argc, char **argv, char* m);
 // Fireflies
 BaseType_t ff_ctl(int argc, char **argv, char* m);
 BaseType_t ff_status(int argc, char **argv, char* m);
-BaseType_t ff_serial_num(int argc, char **argv, char* m);
 BaseType_t ff_los_alarm(int argc, char **argv, char* m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m);
 

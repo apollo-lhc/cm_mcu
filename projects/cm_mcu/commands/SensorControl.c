@@ -525,36 +525,6 @@ BaseType_t ff_status(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-//BaseType_t ff_serial_num(int argc, char **argv, char* m) {
-//  int copied = 0;
-//
-//  static int whichff = 0;
-//  if (whichff == 0) {
-//    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY SERIAL NUMS:\r\n");
-//  }
-//  for (; whichff < 25; ++whichff) {
-//    const char *name = getFFname(whichff);
-//    int8_t* serial_num = getFFserialnum(whichff);
-//    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
-//    for (size_t i = 0; i<16; i++) {
-//      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", serial_num[i]);
-//    }
-//
-//    bool isTx = (strstr(name, "Tx") != NULL);
-//    if (isTx)
-//      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-//    else
-//      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-//
-//    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
-//      ++whichff;
-//      return pdTRUE;
-//    }
-//  }
-//  whichff = 0;
-//  return pdFALSE;
-//}
-
 BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
   int copied = 0;
 
