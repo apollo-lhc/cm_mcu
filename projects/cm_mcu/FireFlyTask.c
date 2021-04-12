@@ -267,7 +267,7 @@ TickType_t getFFupdateTick()
   return ff_updateTick;
 }
 
-static bool isEnabledFF(int ff)
+bool isEnabledFF(int ff)
 {
   // firefly config stored in on-board EEPROM
   static bool configured = false;
