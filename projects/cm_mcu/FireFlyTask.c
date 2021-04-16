@@ -803,6 +803,8 @@ void FireFlyTask(void *parameters)
 
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL) {
         for (int n = 0; n < 2; n++) {
+          data[0] = 0x0U;
+          data[1] = 0x0U;
           if (n == 0) {
             reg_addr = ECU0_25G_TX_LOS_ALARM_REG_2;
           }
@@ -855,9 +857,11 @@ void FireFlyTask(void *parameters)
       // Check the CDR loss of lock alarm
       data[0] = 0x0U;
       data[1] = 0x0U;
-
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL) {
         for (int n = 0; n < 2; n++) {
+          data[0] = 0x0U;
+          data[1] = 0x0U;
+
           if (n == 0) {
             reg_addr = ECU0_25G_CDR_LOL_ALARM_REG_2;
           }
@@ -886,8 +890,9 @@ void FireFlyTask(void *parameters)
       }
       else {
 
+        data[0] = 0x0U;
+        data[1] = 0x0U;
         reg_addr = ECU0_25G_XCVR_LOS_ALARM_REG;
-        data[0] = 0;
         r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
         if (r != SMBUS_OK) {
@@ -903,7 +908,7 @@ void FireFlyTask(void *parameters)
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
               *p_status, ff, 2);
           DPRINT(tmp);
-          ff_status[ff].cdr_lol_alarm[0] = 1;
+          ff_status[ff].cdr_lol_alarm[0] = 255;
           break;
         }
         ff_status[ff].cdr_lol_alarm[0] = data[0];
