@@ -146,11 +146,11 @@ void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
 // is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
 #define ECU0_25G_TXRX_CDR_REG        0x4A
 
-#define ECU0_25G_XCVR_LOS_ALARM_REG 0x3
+#define ECU0_25G_XCVR_LOS_ALARM_REG     0x3
 #define ECU0_25G_XCVR_CDR_LOL_ALARM_REG 0x5
 
-#define ECU0_25G_TX_LOS_ALARM_REG_1 0x7
-#define ECU0_25G_TX_LOS_ALARM_REG_2 0x8
+#define ECU0_25G_TX_LOS_ALARM_REG_1  0x7
+#define ECU0_25G_TX_LOS_ALARM_REG_2  0x8
 #define ECU0_25G_CDR_LOL_ALARM_REG_1 0x14
 #define ECU0_25G_CDR_LOL_ALARM_REG_2 0x15
 
@@ -215,42 +215,44 @@ int8_t* getFFserialnum(const uint8_t i){
 }
 #endif
 
-bool getFFlos(int i, int channel){
-	configASSERT(i < NFIREFLIES);
-	configASSERT(channel < 12);
-	uint8_t* los_alarms = ff_status[i].los_alarm;
+bool getFFlos(int i, int channel)
+{
+  configASSERT(i < NFIREFLIES);
+  configASSERT(channel < 12);
+  uint8_t *los_alarms = ff_status[i].los_alarm;
 
-	if (channel>=8) {
-		if (!((1 << (channel-8)) & los_alarms[1])){
-			return false;
-		}
-		return true;
-	}
-	else{
-		if (!((1 << channel) & los_alarms[0])){
-			return false;
-		}
-		return true;
-	}
+  if (channel >= 8) {
+    if (!((1 << (channel - 8)) & los_alarms[1])) {
+      return false;
+    }
+    return true;
+  }
+  else {
+    if (!((1 << channel) & los_alarms[0])) {
+      return false;
+    }
+    return true;
+  }
 }
 
-bool getFFlol(int i, int channel){
-	configASSERT(i < NFIREFLIES);
-	configASSERT(channel < 12);
-	uint8_t* cdr_lol_alarms = ff_status[i].cdr_lol_alarm;
+bool getFFlol(int i, int channel)
+{
+  configASSERT(i < NFIREFLIES);
+  configASSERT(channel < 12);
+  uint8_t *cdr_lol_alarms = ff_status[i].cdr_lol_alarm;
 
-	if (strstr(ff_i2c_addrs[i].name, "XCVR") == NULL && channel>=8) {
-		if (!((1<<(channel-8)) & cdr_lol_alarms[1])){
-			return false;
-		}
-		return true;
-	}
-	else{
-		if (!((1 << channel) & cdr_lol_alarms[0])){
-			return false;
-		}
-		return true;
-	}
+  if (strstr(ff_i2c_addrs[i].name, "XCVR") == NULL && channel >= 8) {
+    if (!((1 << (channel - 8)) & cdr_lol_alarms[1])) {
+      return false;
+    }
+    return true;
+  }
+  else {
+    if (!((1 << channel) & cdr_lol_alarms[0])) {
+      return false;
+    }
+    return true;
+  }
 }
 
 #ifdef DEBUG_FIF
