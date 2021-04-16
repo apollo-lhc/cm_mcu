@@ -27,6 +27,7 @@
 #include "MonitorTask.h"
 #include "common/power_ctl.h"
 #include "Tasks.h"
+#include "I2CCommunication.h"
 
 #define NPAGES_FF    1
 #define NCOMMANDS_FF 2
@@ -638,44 +639,40 @@ void FireFlyTask(void *parameters)
       }
 #endif // DEBUG_FIF
 
-      // Read the temperature
-      data[0] = 0x0U;
-      data[1] = 0x0U;
-      uint8_t reg_addr = FF_TEMP_COMMAND_REG;
-      r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
+      typedef union {
+        uint8_t us;
+        int8_t s;
+      } convert_8_t;
 
-      if (r != SMBUS_OK) {
+      // Read the temperature
+      int res = apollo_i2c_ctl_reg_r(ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
+      if (res == -1) {
         snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-                 1);
+                         1);
         DPRINT(tmp);
         continue; // abort reading this register
       }
-      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
-      }
-      if (*p_status != SMBUS_OK) {
+      else if (res==-2){
         snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
-                 ff, 1);
+                         ff, 1);
         DPRINT(tmp);
         ff_status[ff].temp = -55;
         break;
+      }
+      else{
+        convert_8_t tmp1;
+        tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_status[ff].temp = tmp1.s;
       }
 #ifdef DEBUG_FIF
       snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
       DPRINT(tmp);
 #endif // DEBUG_FIF
-      typedef union {
-        uint8_t us;
-        int8_t s;
-      } convert_8_t;
-      convert_8_t tmp1;
-      tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-      ff_status[ff].temp = tmp1.s;
 
       // Read the status
       data[0] = 0x0U;
       data[1] = 0x0U;
-      reg_addr = FF_STATUS_COMMAND_REG;
+      uint8_t reg_addr = FF_STATUS_COMMAND_REG;
       r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
 
       if (r != SMBUS_OK) {
