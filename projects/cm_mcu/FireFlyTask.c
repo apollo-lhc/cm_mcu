@@ -645,7 +645,7 @@ void FireFlyTask(void *parameters)
       } convert_8_t;
 
       // Read the temperature
-      int res = apollo_i2c_ctl_reg_r(ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
+      int res = apollo_i2c_ctl_reg_r(&smbus, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
       if (res == -1) {
         snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
                          1);
