@@ -27,6 +27,7 @@
 
 // local includes
 #include "common/i2c_reg.h"
+#include "common/utils.h"
 #include "common/smbus.h"
 #include "common/smbus_units.h"
 #include "common/power_ctl.h"
@@ -197,6 +198,8 @@ void MonitorTask(void *parameters)
 
         // loop over commands
         for (int c = 0; c < args->n_commands; ++c) {
+          int index = ps * (args->n_commands * args->n_pages) + page * args->n_commands + c;
+          args->pm_values[index] = __builtin_nanf("");
 
           data[0] = 0x0U;
           data[1] = 0x0U;
@@ -217,6 +220,8 @@ void MonitorTask(void *parameters)
                      "MON(%s): Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
                      *args->smbus_status, ps, c, page);
             SuppressedPrint(tmp, &current_error_cnt, &log);
+            // abort reading this device
+            errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
             break;
           }
           snprintf(tmp, TMPBUFFER_SZ, "MON(%s): %d %s is 0x%02x %02x\r\n", args->name, ps,
@@ -247,7 +252,6 @@ void MonitorTask(void *parameters)
           else {
             val = -99.0f; // should never get here
           }
-          int index = ps * (args->n_commands * args->n_pages) + page * args->n_commands + c;
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));

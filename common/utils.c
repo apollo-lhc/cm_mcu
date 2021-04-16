@@ -146,6 +146,8 @@ static const char *ebuf_errstrings[] = {
     "Power Failure",
     "Temp High (TM4C FPGA FF DCDC)",
     "Power Failure CLEAR",
+    "MARK",
+    "I2C error"
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -187,6 +189,9 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
       break;
     case EBUF_ASSERT:
       copied += snprintf(m + copied, s - copied, "(pc) 0x%02x", errdata);
+      break;
+    case EBUF_I2C:
+      copied += snprintf(m + copied, s - copied, " (dev = %d)", errdata);
       break;
     default:
       if (errcode > EBUF_WITH_DATA) {
