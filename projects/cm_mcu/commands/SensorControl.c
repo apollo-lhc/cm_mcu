@@ -332,14 +332,13 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
   }
   // parse command based on how many arguments it has
   if (argc == 1) { // default command: temps
-    uint32_t ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
     if (whichff == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF temperatures\r\n");
     }
     for (; whichff < NFIREFLIES; ++whichff) {
       int8_t val = getFFtemp(whichff);
       const char *name = getFFname(whichff);
-      if ((1 << whichff) & ff_config) // val > 0 )
+      if (isEnabledFF(whichff)) // val > 0 )
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", name, val);
       else // dummy value
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", name, "--");
