@@ -33,9 +33,9 @@ int snprintf(char *buf, unsigned int count, const char *format, ...);
 
 // FPGA arguments for monitoring task
 struct dev_i2c_addr_t fpga_addrs[] = {
-    {"VU7P", 0x70, 1, 0x36},     // VU7P FPGA
-    {"KU15P", 0x70, 0, 0x36},    // KU15P FPGA
-    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA
+    {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
+    {"KU15P", 0x70, 0, 0x36},   // KU15P FPGA
+    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
@@ -43,8 +43,8 @@ struct dev_i2c_addr_t fpga_addrs_f1only[] = {
 };
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
-    {"VU7P", 0x70, 1, 0x36},
-    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA
+    {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
+    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
 
 struct pm_command_t pm_command_fpga[] = {
