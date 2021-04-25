@@ -12,19 +12,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: fiam/arm-none-eabi-gcc@v1
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
+      id:   cache-toolchain
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-toolchain-9-2020-q2
       with:
-        release: '9-2019-q4' # The arm-none-eabi-gcc release to use.
-#    - name: CLANG build
-#    uses: egor-tensin/setup-clang@v1
-#    with:
-#      # Target platform
-#      platform: # optional, default is x64
-#      # Set up cc/c++ executables
-#      cc: # optional, default is 1
-#      run: clang --version && make COMPILER=clang
-#    - name: make with CLANG
-#    - run: make COMPILER=clang
-#    - name: make with GCC
-    - run: make 
+        path: ${{ runner.temp }}/arm-none-eabi
+        key:  ${{ runner.os }}-build-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}
+
+    - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
+      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      uses: fiam/arm-none-eabi-gcc@v1.0.2
+      with:
+      # GNU Embedded Toolchain for Arm release name, in the V-YYYY-qZ format (e.g. "9-2019-q4")
+        release: 9-2020-q2
+        # Directory to unpack GCC to. Defaults to a temporary directory.
+        directory: ${{ runner.temp }}/arm-none-eabi    
+    - name: CLANG compiler setup
+      uses: egor-tensin/setup-clang@v1
+    - name: make with CLANG
+      run: make COMPILER=clang
+    - name: make with GCC
+      run: make 
