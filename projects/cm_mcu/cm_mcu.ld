@@ -55,4 +55,12 @@ SECTIONS
         *(COMMON)
         _ebss = .;
     } > SRAM
+    /* Stuff that isn't needed for an embedded system */
+    /DISCARD/ :
+    {
+        *(.init*)
+        *(.fini*)
+        *(.ARM.exidx)
+    }
+
 }
