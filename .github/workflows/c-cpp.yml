@@ -16,15 +16,15 @@ jobs:
     - uses: fiam/arm-none-eabi-gcc@v1
       with:
         release: '9-2019-q4' # The arm-none-eabi-gcc release to use.
-    - name: CLANG build
-    uses: egor-tensin/setup-clang@v1
-    with:
-      # Target platform
-      platform: # optional, default is x64
-      # Set up cc/c++ executables
-      cc: # optional, default is 1
-      run: clang --version && make COMPILER=clang
-    - name: make with CLANG
-    - run: make COMPILER=clang
-    - name: make with GCC
+#    - name: CLANG build
+#    uses: egor-tensin/setup-clang@v1
+#    with:
+#      # Target platform
+#      platform: # optional, default is x64
+#      # Set up cc/c++ executables
+#      cc: # optional, default is 1
+#      run: clang --version && make COMPILER=clang
+#    - name: make with CLANG
+#    - run: make COMPILER=clang
+#    - name: make with GCC
     - run: make 
