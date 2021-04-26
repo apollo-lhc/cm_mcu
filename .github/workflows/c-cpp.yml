@@ -37,21 +37,27 @@ jobs:
 #    #  env:
 #    #   cache-name: cache-freertos-ltos-20201201
 #    #  with: 
+    - name: Check cache for FreeRTOS
+      id:   cache-freertos
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-toolchain-ltos-20201201
+      with:
+        path: ${{ runner.temp }}/freertos-lts
+        key:  ${{ runner.os }}-build-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}
     - name: FreeRTOS download
       run: |
+         cd 
          mkdir freertos-lts
          cd freertos-lts
          curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
-         unzip -q   freertos_code.zip  -d freertos-code
+         unzip -q freertos_code.zip -d freertos-code
          echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
          echo $FREERTOS_ROOT
-         ls
          pwd
     - name: test
-      run: |
-        echo $FREERTOS_ROOT
-        which arm-none-eabi-gcc
-        arm-none-eabi-gcc --version 
+      run: echo $FREERTOS_ROOT
 #    - name: CLANG compiler setup
 #      uses: egor-tensin/setup-clang@v1
 #    - name: make with CLANG
