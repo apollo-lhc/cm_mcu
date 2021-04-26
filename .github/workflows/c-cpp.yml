@@ -64,6 +64,7 @@ jobs:
     - name: make with GCC
       run: |
         echo $FREERTOS_ROOT
+        ls $FREERTOS_ROOT
         which arm-none-eabi-gcc
         arm-none-eabi-gcc --version
-        make -k  
+        make -k VERBOSE=1
