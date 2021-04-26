@@ -54,8 +54,7 @@ jobs:
          echo $FREERTOS_ROOT
          pwd
     - name: test
-      run: |
-        echo $FREERTOS_ROOT
+      run: echo $FREERTOS_ROOT; echo $PATH; ls -d ~/work/*
     - name: make with GCC
       run: |
         echo $FREERTOS_ROOT
