@@ -37,13 +37,14 @@ jobs:
 #    #  env:
 #    #   cache-name: cache-freertos-ltos-20201201
 #    #  with: 
-   - name: FreeRTOS download
-     run: |
+    - name: FreeRTOS download
+      run: |
          mkdir freertos-lts
          cd freertos-lts
-         curl -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
-         unzip -q   freertos-code.zip  -d freertos-code
-         
+         curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
+         unzip -q   freertos_code.zip  -d freertos-code
+         echo "{FREERTOS_ROOT}={`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel}" >> $GITHUB_ENV
+         echo echo ${{ env.FREERTOS_ROOT }}
 #    - name: CLANG compiler setup
 #      uses: egor-tensin/setup-clang@v1
 #    - name: make with CLANG
