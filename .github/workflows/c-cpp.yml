@@ -54,6 +54,7 @@ jobs:
          export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
          echo $FREERTOS_ROOT
          pwd
+         ls -R
     - name: test
       run: |
         echo $FREERTOS_ROOT
