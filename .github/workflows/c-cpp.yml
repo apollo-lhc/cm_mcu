@@ -60,7 +60,7 @@ jobs:
       run: |
         echo $FREERTOS_ROOT
         cd
-        ls arm-none-eabi/
+        find . -name arm-none-eabi-gcc -print 
         echo "PATH=${PATH}:`pwd`/arm-none-eabi/bin" >> $GITHUB_ENV
 #    - name: CLANG compiler setup
 #      uses: egor-tensin/setup-clang@v1
