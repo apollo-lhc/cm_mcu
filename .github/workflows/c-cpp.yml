@@ -18,7 +18,7 @@ jobs:
       id:   cache-toolchain
       uses: actions/cache@v2
       env:
-        cache-name: cache-toolchain-9-2019-q4
+        cache-name: cache-toolchain-10-2020-q4
       with:
         path: ${{ runner.temp }}/arm-none-eabi
         key:  ${{ runner.os }}-build-${{ env.cache-name }}
@@ -26,14 +26,9 @@ jobs:
 
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
       if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
-      run: |
-        mkdir arm-gcc-toolchain
-        cd arm-gcc-toolchain
-        curl -L -o gcc.tar.bz2 https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2019q4/gcc-arm-none-eabi-9-2019-q4-major-x86_64-linux.tar.bz2
-        tar -jxf gcc.tar.bz2 --strip=1
-        THEPATH=`pwd`
-        echo "PATH=$THEPATH/arm-none-eabi/bin:$PATH" >> $GITHUB_ENV
-        echo $THEPATH
+      uses: fiam/arm-none-eabi-gcc@v1
+      with:
+        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
 #    #- name: FreeRTOS cache check 
 #    #  uses: actions/cache@v2
 #    #  env:
@@ -56,6 +51,7 @@ jobs:
          curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
          unzip -q freertos_code.zip -d freertos-code
          echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
+         export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
          echo $FREERTOS_ROOT
          pwd
     - name: test
@@ -66,5 +62,4 @@ jobs:
 #    - name: make with CLANG
 #      run: make COMPILER=clang
     - name: make with GCC
-      run: |
-        make -k  
+      run: make -k  
