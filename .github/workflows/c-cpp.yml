@@ -58,6 +58,7 @@ jobs:
     - name: make with GCC
       run: |
         echo $FREERTOS_ROOT
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         ls -d $FREERTOS_ROOT
         arm-none-eabi-gcc --version
         make -k 
