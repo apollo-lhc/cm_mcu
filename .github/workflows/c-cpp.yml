@@ -62,4 +62,8 @@ jobs:
 #    - name: make with CLANG
 #      run: make COMPILER=clang
     - name: make with GCC
-      run: make -k  
+      run: |
+        echo $FREERTOS_ROOT
+        which arm-none-eabi-gcc
+        arm-none-eabi-gcc --version
+        make -k  
