@@ -43,13 +43,13 @@ jobs:
          cd freertos-lts
          curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
          unzip -q   freertos_code.zip  -d freertos-code
-         echo "{FREERTOS_ROOT}={`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel}" >> $GITHUB_ENV
-         echo ${{ env.FREERTOS_ROOT }}
+         echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
+         echo $FREERTOS_ROOT
          ls
          pwd
     - name: test
       run: |
-        echo ${{env.FREERTOS_ROOT}}
+        echo $FREERTOS_ROOT
         which arm-none-eabi-gcc
         arm-none-eabi-gcc --version 
 #    - name: CLANG compiler setup
@@ -57,4 +57,4 @@ jobs:
 #    - name: make with CLANG
 #      run: make COMPILER=clang
     - name: make with GCC
-      run: echo make -k  
+      run: make -k  
