@@ -25,25 +25,26 @@ jobs:
         restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
 
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-#      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
       uses: fiam/arm-none-eabi-gcc@v1.0.4
       with:
         release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
         # Directory to unpack GCC to. Defaults to a temporary directory.
         directory: ${{ runner.temp }}/arm-none-eabi
 
-    - name: Check cache for FreeRTOS
-      id:   cache-freertos
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-toolchain-ltos-20201201
-      with:
-        path: ~/freertos-lts
-        key:  ${{ runner.os }}-build-${{ env.cache-name }}
-        restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}
+    # - name: Check cache for FreeRTOS
+    #   id:   cache-freertos
+    #   uses: actions/cache@v2
+    #   env:
+    #     cache-name: cache-ltos-20201201
+    #   with:
+    #     path: ~/freertos-lts
+    #     key:  ${{ runner.os }}-build-${{ env.cache-name }}
+    #     restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}
     - name: FreeRTOS download
-      if:   steps.cache-freertos.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      # if:   steps.cache-freertos.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
       run: |
+         cd ${{runner.temp}}
          mkdir freertos-lts
          cd freertos-lts
          curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
@@ -55,15 +56,10 @@ jobs:
     - name: test
       run: |
         echo $FREERTOS_ROOT
-#    - name: CLANG compiler setup
-#      uses: egor-tensin/setup-clang@v1
-#    - name: make with CLANG
-#      run: make COMPILER=clang
     - name: make with GCC
       run: |
         echo $FREERTOS_ROOT
-        ls $FREERTOS_ROOT
-        which arm-none-eabi-gcc
+        ls -d $FREERTOS_ROOT
         arm-none-eabi-gcc --version
         make -k 
 
@@ -79,7 +75,6 @@ jobs:
        version: "11.0"
        directory: ${{ runner.temp }}/llvm
     - name: FreeRTOS download
-      if:   steps.cache-freertos.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
       run: |
          mkdir freertos-lts
          cd freertos-lts
@@ -90,4 +85,5 @@ jobs:
          echo $FREERTOS_ROOT
          pwd
     - name: make with CLANG
-      run: make COMPILER=clang
+      run: |
+         make COMPILER=clang
