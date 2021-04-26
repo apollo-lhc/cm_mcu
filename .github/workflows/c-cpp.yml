@@ -40,12 +40,12 @@ jobs:
       env:
         cache-name: cache-toolchain-ltos-20201201
       with:
-        path: ${{ runner.temp }}/freertos-lts
+        path: ~/freertos-lts
         key:  ${{ runner.os }}-build-${{ env.cache-name }}
         restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}
     - name: FreeRTOS download
+      if:   steps.cache-freertos.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
       run: |
-         cd 
          mkdir freertos-lts
          cd freertos-lts
          curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
@@ -54,7 +54,6 @@ jobs:
          export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
          echo $FREERTOS_ROOT
          pwd
-         ls -R
     - name: test
       run: |
         echo $FREERTOS_ROOT
