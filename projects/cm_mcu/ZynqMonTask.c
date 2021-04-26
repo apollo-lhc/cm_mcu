@@ -367,6 +367,7 @@ void ZynqMonTask(void *parameters)
           stale = true;
         }
 
+        // loop over FPGA arguments 
         for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
           convert_16_t u;
           if (stale) {

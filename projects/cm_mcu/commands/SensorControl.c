@@ -639,10 +639,11 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
     if (whichfpga == 0) {
       TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
       TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
-      if ((now - last) > 60) {
+      if ((now > last) && (now - last) > 60) {
         int mins = (now - last) / 60;
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                           "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+                           "%s: stale data, last update %d minutes ago (%x, %x)\r\n", argv[0], mins,
+                           now, last);
       }
 
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA monitors\r\n");

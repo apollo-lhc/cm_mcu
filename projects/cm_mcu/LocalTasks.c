@@ -19,13 +19,23 @@
 
 #include "common/pinsel.h"
 #include "common/smbus_units.h"
+
+#define FPGA_MON_NDEVICES_PER_FPGA  2
+#define FPGA_MON_NFPGA              2
+//#define FPGA_MON_NDEVICES           (FPGA_MON_NDEVICES_PER_FPGA * FPGA_MON_NFPGA)
+#define FPGA_MON_NDEVICES           3
+#define FPGA_MON_NCOMMANDS          1
+#define FPGA_MON_NVALUES_PER_DEVICE 1
+#define FPGA_MON_NVALUES            (FPGA_MON_NCOMMANDS * FPGA_MON_NDEVICES * FPGA_MON_NVALUES_PER_DEVICE)
+
 // local sprintf prototype
 int snprintf(char *buf, unsigned int count, const char *format, ...);
 
 // FPGA arguments for monitoring task
 struct dev_i2c_addr_t fpga_addrs[] = {
-    {"VU7P", 0x70, 1, 0x36},  // VU7P FPGA
-    {"KU15P", 0x70, 0, 0x36}, // KU15P FPGA
+    {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
+    {"KU15P", 0x70, 0, 0x36},   // KU15P FPGA
+    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
@@ -33,7 +43,8 @@ struct dev_i2c_addr_t fpga_addrs_f1only[] = {
 };
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
-    {"VU7P", 0x70, 1, 0x36},
+    {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
+    {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
 
 struct pm_command_t pm_command_fpga[] = {
@@ -41,16 +52,16 @@ struct pm_command_t pm_command_fpga[] = {
 };
 
 // only one of these might be valid
-float pm_fpga[2] = {0.0f, 0.0f};
+float pm_fpga[FPGA_MON_NVALUES] = {0};
 
 struct MonitorTaskArgs_t fpga_args = {
     .name = "XIMON",
     .devices = fpga_addrs,
-    .n_devices = 2,
+    .n_devices = FPGA_MON_NDEVICES,
     .commands = pm_command_fpga,
-    .n_commands = 1,
+    .n_commands = FPGA_MON_NCOMMANDS,
     .pm_values = pm_fpga,
-    .n_values = 2,
+    .n_values = FPGA_MON_NVALUES,
     .n_pages = 1,
     .smbus = &g_sMaster6,
     .smbus_status = &eStatus6,
@@ -278,7 +289,7 @@ void initFPGAMon()
   configASSERT(f1_enable || f2_enable);
   if (!f1_enable && f2_enable) {
     fpga_args.devices = fpga_addrs_f2only;
-    fpga_args.n_devices = 1;
+    fpga_args.n_devices = 2;
     set_f2_index(0);
   }
   else if (!f2_enable && f1_enable) {
