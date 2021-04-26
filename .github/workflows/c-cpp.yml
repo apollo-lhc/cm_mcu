@@ -26,12 +26,12 @@ jobs:
 
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
       if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
-      uses: fiam/arm-none-eabi-gcc@v1.0.4
-      with:
-      # GNU Embedded Toolchain for Arm release name, in the V-YYYY-qZ format (e.g. "9-2019-q4")
-        release: 9-2020-q2
-        # Directory to unpack GCC to. Defaults to a temporary directory.
-        directory: ${{ runner.temp }}/arm-none-eabi
+      run: |
+      curl -L -o $HOME/arm-gcc-toolchain/gcc.tar.bz2 https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2019q4/gcc-arm-none-eabi-9-2019-q4-major-x86_64-linux.tar.bz2?revision=108bd959-44bd-4619-9c19-26187abf5225%26la=en%26hash=E788CE92E5DFD64B2A8C246BBA91A249CB8E2D2D
+      cd arm-gcc-toolchain
+      tar -jxf gcc.tar.bz2 --strip=1
+      cd $HOME
+      
 #    #- name: FreeRTOS cache check 
 #    #  uses: actions/cache@v2
 #    #  env:
@@ -67,4 +67,6 @@ jobs:
 #    - name: make with CLANG
 #      run: make COMPILER=clang
     - name: make with GCC
-      run: make -k  
+      run: |
+        export PATH=$HOME/arm-gcc-toolchain/bin:$PATH
+        make -k  
