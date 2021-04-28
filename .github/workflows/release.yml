@@ -43,6 +43,8 @@ jobs:
        run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make 
+     - name: test
+       run: pwd; ls -R ~/work/; find . -type f -name '*.axf' -print
      - uses: "marvinpinto/action-automatic-releases@latest"
        with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
