@@ -48,7 +48,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            - ~/work/cm_mcu/cm_mcu/projects/cm_mcu/gcc/cm_mcu*.axf
-            - ~/work/cm_mcu/cm_mcu/projects/cm_mcu/gcc/cm_mcu*.bin
-            - ~/work/cm_mcu/cm_mcu/projects/boot_loader/gcc/bl_main.axf
-            - ~/work/cm_mcu/cm_mcu/projects/boot_loader/gcc/bl_main.bin
+            - work/**/cm_mcu*.axf
+            - work/cm_mcu/cm_mcu/projects/cm_mcu/gcc/cm_mcu*.bin
+            - **/bl_main.axf
+            - **/bl_main.bin
