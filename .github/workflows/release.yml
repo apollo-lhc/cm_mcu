@@ -42,15 +42,21 @@ jobs:
      - name: make with GCC
        run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-        make 
+        make -k NO_ECN001=1 
+        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001.axf
+        make clean
+        make -k
      - name: test
-       run: pwd; ls -R ~/work/; find . -type f -name '*.axf' -print
+       run: pwd; ls -R ; find . -type f -name '*.axf' -print
      - uses: "marvinpinto/action-automatic-releases@latest"
        with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            - work/**/cm_mcu*.axf
-            - work/cm_mcu/cm_mcu/projects/cm_mcu/gcc/cm_mcu*.bin
-            - **/bl_main.axf
-            - **/bl_main.bin
+            - ./projects/cm_mcu/gcc/cm_mcu.axf
+            - ./projects/cm_mcu/gcc/cm_mcu.bin
+            - ./projects/boot_loader/gcc/bl_main.axf
+            - /home/runner/work/cm_mcu/cm_mcu/projects/cm_mcu/gcc/cm_mcu.o
+            - cm_mcu_noecn001.axf
+            - cm_mcu_noecn001.bin
