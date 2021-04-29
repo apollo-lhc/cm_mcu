@@ -49,18 +49,13 @@ jobs:
         make -k
      - name: test
        run: pwd; ls -R ; find . -type f -name '*.axf' -print
-     - uses: actions/upload-artifact@v2
-       with:
-          name: my-artifact
-          path: ./**/*.axf
-     - uses: "marvinpinto/action-automatic-releases@v1.1.1"
+     - uses: "marvinpinto/action-automatic-releases@vlatest"
        with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            ${{runner.workspace}}/**/*.axf
-            ${{runner.workspace}}/cm_mcu/projects/cm_mcu/gcc/cm_mcu.bin
-            ${{runner.workspace}}/cm_mcu/projects/boot_loader/gcc/bl_main.bin
-            ${{runner.workspace}}/cm_mcu/projects/cm_mcu/gcc/cm_mcu.axf
-            ${{runner.workspace}}/cm_mcu/projects/boot_loader/gcc/bl_main.axf
-            ${{runner.workspace}}/cm_mcu*.*
+            ./projects/cm_mcu/gcc/cm_mcu.bin
+            ./projects/boot_loader/gcc/bl_main.bin
+            ./projects/cm_mcu/gcc/cm_mcu.axf
+            ./projects/boot_loader/gcc/bl_main.axf
+            ./cm_mcu*.*
