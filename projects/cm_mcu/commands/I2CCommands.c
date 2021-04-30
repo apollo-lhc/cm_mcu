@@ -66,7 +66,7 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char* m)
   uint8_t data[I2C_CTL_MAX_BYTES];
   uint8_t txdata = reg_address;
 
-  int status = apollo_i2c_ctl_reg_r(&p_sMaster, address, txdata, nbytes, data);
+  int status = apollo_i2c_ctl_reg_r(p_sMaster, p_eStatus, address, txdata, nbytes, data);
   if (status == 0) {
     snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\r\n", address,
              reg_address, data[3], data[2], data[1], data[0]);

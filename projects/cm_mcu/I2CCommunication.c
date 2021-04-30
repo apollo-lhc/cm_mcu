@@ -124,19 +124,19 @@ int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
   return 0;
 }
 
-int apollo_i2c_ctl_reg_r(tSMBus **smbus, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
+int apollo_i2c_ctl_reg_r(tSMBus *smbus, tSMBusStatus *p_status, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
-  tSMBusStatus r = SMBusMasterI2CWriteRead(*smbus, address, &reg_address, 1, data, nbytes);
+  tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, &reg_address, 1, data, nbytes);
   if (r != SMBUS_OK) {
     return -1;
   }
-  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if (*p_eStatus != SMBUS_OK) {
+  if (*p_status != SMBUS_OK) {
     return -2;
   }
 
