@@ -670,34 +670,25 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // Read the status
-      data[0] = 0x0U;
-      data[1] = 0x0U;
-      uint8_t reg_addr = FF_STATUS_COMMAND_REG;
-      r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
-
-      if (r != SMBUS_OK) {
+      res = apollo_i2c_ctl_reg_r(smbus, p_status, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 1, data);
+      if (res == -1) {
         snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-                 2);
+            1);
         DPRINT(tmp);
         continue; // abort reading this register
       }
-      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
-      }
-      if (*p_status != SMBUS_OK) {
+      else if (res==-2){
         snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
-                 ff, 2);
+            ff, 1);
         DPRINT(tmp);
-        ff_status[ff].status = 0;
+        ff_status[ff].status = 1;
         break;
       }
-#ifdef DEBUG_FIF
-      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
-      DPRINT(tmp);
-#endif // DEBUG_FIF
-      convert_8_t tmp2;
-      tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-      ff_status[ff].status = tmp2.s;
+      else{
+        convert_8_t tmp2;
+        tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_status[ff].status = tmp2.s;
+      }
 
 #ifdef DEBUG_FIF
       // Read the Samtec line - testing only
