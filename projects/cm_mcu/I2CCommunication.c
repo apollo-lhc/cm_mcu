@@ -136,11 +136,11 @@ int apollo_i2c_ctl_reg_r(tSMBus *smbus, tSMBusStatus *p_status, uint8_t address,
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if (*p_status != SMBUS_OK) {
-    return -2;
-  }
-
-  return 0;
+//  if (*p_status != SMBUS_OK) {
+//    return -2;
+//  }
+  return *p_status;
+  //return 0;
 }
 
 int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)

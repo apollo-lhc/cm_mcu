@@ -725,7 +725,7 @@ void FireFlyTask(void *parameters)
         ff_status[ff].temp = -55;
         break;
       }
-      else{
+      else if (res==0){
         convert_8_t tmp1;
         tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
         ff_status[ff].temp = tmp1.s;
@@ -750,7 +750,7 @@ void FireFlyTask(void *parameters)
         ff_status[ff].status = 1;
         break;
       }
-      else{
+      else if (res==0){
         convert_8_t tmp2;
         tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
         ff_status[ff].status = tmp2.s;
@@ -773,7 +773,7 @@ void FireFlyTask(void *parameters)
           ff_status[ff].serial_num[i - 196] = 0;
           break;
         }
-        else{
+        else if (res==0){
           convert_8_t tmp3;
           tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
           ff_status[ff].serial_num[i - 196] = tmp3.s;
@@ -808,7 +808,7 @@ void FireFlyTask(void *parameters)
           ff_status[ff].los_alarm[reg_i] = 255;
           break;
         }
-        else{
+        else if (res==0){
           ff_status[ff].los_alarm[reg_i] = data[0];
         }
         reg_i+=1;
@@ -841,7 +841,7 @@ void FireFlyTask(void *parameters)
           ff_status[ff].cdr_lol_alarm[reg_i] = 255;
           break;
         }
-        else{
+        else if(res==0){
           ff_status[ff].cdr_lol_alarm[reg_i] = data[0];
         }
         reg_i+=1;
@@ -853,30 +853,25 @@ void FireFlyTask(void *parameters)
       data[1] = 0x0U;
 
       for (uint8_t i = 148; i < 164; i++) {
-        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &i, 1, data, 1);
-
-        if (r != SMBUS_OK) {
+        res = apollo_i2c_ctl_reg_r(smbus, p_status, ff_i2c_addrs[ff].dev_addr, i, 1, data);
+        if (res == -1) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-                   2);
+              1);
           DPRINT(tmp);
-          ff_temp[ff] = -55;
           continue; // abort reading this register
         }
-        int tries = 0;
-        while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-          vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
-          CHECKSTUCK();
-        }
-        if (*p_status != SMBUS_OK) {
-          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
-                   *p_status, ff, 2);
+        else if (res==-2){
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
+              ff, 1);
           DPRINT(tmp);
           ff_status[ff].test[i - 148] = 0;
           break;
         }
-        convert_8_t tmp3;
-        tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_status[ff].test[i - 148] = tmp3.s;
+        else if(res==0){
+          convert_8_t tmp4;
+          tmp4.us = data[0];
+          ff_status[ff].test[i - 148] = tmp4.s;
+        }
       }
 #endif
 
