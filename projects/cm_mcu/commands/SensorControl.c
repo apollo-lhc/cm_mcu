@@ -505,9 +505,15 @@ BaseType_t ff_status(int argc, char **argv, char* m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
   }
   for (; whichff < 25; ++whichff) {
-    int8_t status = getFFstatus(whichff);
+
     const char *name = getFFname(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d ", name, status);
+    if (!isEnabledFF(whichff)){
+      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%s -", name);
+    }
+    else {
+      int8_t status = getFFstatus(whichff);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %01d ", name, status);
+    }
 
     bool isTx = (strstr(name, "Tx") != NULL);
     if (isTx)
