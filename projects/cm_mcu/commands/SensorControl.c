@@ -332,14 +332,13 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
   }
   // parse command based on how many arguments it has
   if (argc == 1) { // default command: temps
-    uint32_t ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
     if (whichff == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF temperatures\r\n");
     }
     for (; whichff < NFIREFLIES; ++whichff) {
       int8_t val = getFFtemp(whichff);
       const char *name = getFFname(whichff);
-      if ((1 << whichff) & ff_config) // val > 0 )
+      if (isEnabledFF(whichff)) // val > 0 )
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", name, val);
       else // dummy value
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", name, "--");
@@ -508,7 +507,96 @@ BaseType_t ff_status(int argc, char **argv, char* m)
   for (; whichff < 25; ++whichff) {
     int8_t status = getFFstatus(whichff);
     const char *name = getFFname(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d", name, status);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %02d ", name, status);
+
+    bool isTx = (strstr(name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+  whichff = 0;
+  return pdFALSE;
+}
+
+BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
+  int copied = 0;
+
+  static int whichff = 0;
+  if (whichff == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
+  }
+  for (; whichff < 25; ++whichff) {
+    const char *name = getFFname(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
+    if (!isEnabledFF(whichff)){
+      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
+    }
+    else{
+      for (size_t i = 0; i<8; i++) {
+        int alarm = getFFlos(whichff, i)? 1:0;
+        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+      }
+      if (strstr(name, "XCVR") == NULL) {
+        for (size_t i = 8; i<12; i++) {
+          int alarm = getFFlos(whichff, i)? 1:0;
+          copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+      else{
+        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
+      }
+
+    }
+
+    bool isTx = (strstr(name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+  whichff = 0;
+  return pdFALSE;
+}
+
+BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m) {
+  int copied = 0;
+
+  static int whichff = 0;
+  if (whichff == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY CDR LOL ALARM:\r\n");
+  }
+  for (; whichff < 25; ++whichff) {
+    const char *name = getFFname(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
+    if (!isEnabledFF(whichff)){
+      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
+    }
+    else{
+      for (size_t i = 0; i<8; i++) {
+        int alarm = getFFlol(whichff, i)? 1:0;
+        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+      }
+      if (strstr(name, "XCVR") == NULL) {
+        for (size_t i = 8; i<12; i++) {
+          int alarm = getFFlol(whichff, i)? 1:0;
+          copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+      else{
+        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
+      }
+    }
 
     bool isTx = (strstr(name, "Tx") != NULL);
     if (isTx)
@@ -551,10 +639,11 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
     if (whichfpga == 0) {
       TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
       TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
-      if ((now - last) > 60) {
+      if ((now > last) && (now - last) > 60) {
         int mins = (now - last) / 60;
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                           "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+                           "%s: stale data, last update %d minutes ago (%x, %x)\r\n", argv[0], mins,
+                           now, last);
       }
 
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA monitors\r\n");

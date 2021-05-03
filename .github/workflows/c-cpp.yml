@@ -1,0 +1,112 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master pw-patch-1 ]
+  pull_request:
+    branches: [ master ]
+
+#  note that I need to manually set the path for the arm-none-eabi-gcc exe
+#  after it comes out of the cache. I don't understand why I need to do that.
+
+jobs:
+  build-gcc:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Code checkout
+      uses: actions/checkout@v2
+    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
+      id:   cache-toolchain
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-toolchain-10-2020-q4
+      with:
+        path: ${{ runner.temp }}/arm-none-eabi
+        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
+
+    - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
+      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      with:
+        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        # Directory to unpack GCC to. Defaults to a temporary directory.
+        directory: ${{ runner.temp }}/arm-none-eabi
+
+    # - name: Check cache for FreeRTOS
+    #   id:   cache-freertos
+    #   uses: actions/cache@v2
+    #   env:
+    #     cache-name: cache-ltos-20201201
+    #   with:
+    #     path: ~/freertos-lts
+    #     key:  ${{ runner.os }}-build-${{ env.cache-name }}
+    #     restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}
+    - name: FreeRTOS download
+      # if:   steps.cache-freertos.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      run: |
+         cd ${{runner.temp}}
+         mkdir freertos-lts
+         cd freertos-lts
+         curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
+         unzip -q freertos_code.zip 
+         echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
+         export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
+         echo $FREERTOS_ROOT
+         pwd
+    - name: test
+      run: echo $FREERTOS_ROOT; echo $PATH; ls -d ~/work/_temp/*
+    - name: make with GCC
+      run: |
+        echo $FREERTOS_ROOT
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        ls -d $FREERTOS_ROOT
+        arm-none-eabi-gcc --version
+        make -k 
+
+  build-clang: 
+# this build also needs arm-none-eabi-gcc as some of the clang sysroot stuff depends on it.
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Code checkout
+      uses: actions/checkout@v2
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+       version: "11.0"
+       directory: ${{ runner.temp }}/llvm
+    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
+      id:   cache-toolchain
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-toolchain-10-2020-q4
+      with:
+        path: ${{ runner.temp }}/arm-none-eabi
+        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
+
+    - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
+      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      with:
+        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        # Directory to unpack GCC to. Defaults to a temporary directory.
+        directory: ${{ runner.temp }}/arm-none-eabi
+
+    - name: FreeRTOS download
+      run: |
+         mkdir freertos-lts
+         cd freertos-lts
+         curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
+         unzip -q freertos_code.zip 
+         echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
+         export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
+         echo $FREERTOS_ROOT
+         pwd
+    - name: make with CLANG
+      run: |
+         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+         make COMPILER=clang

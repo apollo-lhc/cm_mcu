@@ -48,4 +48,12 @@ SECTIONS
         *(COMMON)
         _ebss = .;
     }
+    /* Stuff that isn't needed for an embedded system */
+    /DISCARD/ :
+    {
+        *(.init*)
+        *(.fini*)
+        *(.ARM.exidx)
+    }
+
 }

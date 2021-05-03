@@ -159,7 +159,7 @@ uint8_t *g_pui8DataBuffer;
 #include <intrinsics.h>
 #define SwapWord(x)             __REV(x)
 #endif
-#if defined(codered) || defined(gcc) || defined(sourcerygxx)
+#if defined(codered) || defined(gcc) || defined(sourcerygxx) || defined(clang)
 #define SwapWord(x) __extension__                                             \
     ({                                                                    \
   register uint32_t __ret, __inp = x;                              \

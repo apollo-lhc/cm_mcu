@@ -147,13 +147,23 @@ void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
 // is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
 #define ECU0_25G_TXRX_CDR_REG        0x4A
 
+#define ECU0_25G_XCVR_LOS_ALARM_REG     0x3
+#define ECU0_25G_XCVR_CDR_LOL_ALARM_REG 0x5
+
+#define ECU0_25G_TX_LOS_ALARM_REG_1  0x7
+#define ECU0_25G_TX_LOS_ALARM_REG_2  0x8
+#define ECU0_25G_CDR_LOL_ALARM_REG_1 0x14
+#define ECU0_25G_CDR_LOL_ALARM_REG_2 0x15
 
 static TickType_t ff_updateTick;
 
 struct firefly_status {
   int8_t status;
   int8_t temp;
+  uint8_t los_alarm[2];
+  uint8_t cdr_lol_alarm[2];
 #ifdef DEBUG_FIF
+  int8_t serial_num[16];
   int8_t test[20]; // Used for reading "Samtec Inc.    " for testing purposes
 #endif
 };
@@ -199,6 +209,53 @@ int8_t getFFtemp(const uint8_t i)
   return ff_status[i].temp;
 }
 
+#ifdef DEBUG
+int8_t* getFFserialnum(const uint8_t i){
+  configASSERT(i < NFIREFLIES);
+  return ff_status[i].serial_num;
+}
+#endif
+
+bool getFFlos(int i, int channel)
+{
+  configASSERT(i < NFIREFLIES);
+  configASSERT(channel < 12);
+  uint8_t *los_alarms = ff_status[i].los_alarm;
+
+  if (channel >= 8) {
+    if (!((1 << (channel - 8)) & los_alarms[1])) {
+      return false;
+    }
+    return true;
+  }
+  else {
+    if (!((1 << channel) & los_alarms[0])) {
+      return false;
+    }
+    return true;
+  }
+}
+
+bool getFFlol(int i, int channel)
+{
+  configASSERT(i < NFIREFLIES);
+  configASSERT(channel < 12);
+  uint8_t *cdr_lol_alarms = ff_status[i].cdr_lol_alarm;
+
+  if (strstr(ff_i2c_addrs[i].name, "XCVR") == NULL && channel >= 8) {
+    if (!((1 << (channel - 8)) & cdr_lol_alarms[1])) {
+      return false;
+    }
+    return true;
+  }
+  else {
+    if (!((1 << channel) & cdr_lol_alarms[0])) {
+      return false;
+    }
+    return true;
+  }
+}
+
 #ifdef DEBUG_FIF
 int8_t* test_read(const uint8_t i) {
   configASSERT(i < NFIREFLIES);
@@ -211,7 +268,7 @@ TickType_t getFFupdateTick()
   return ff_updateTick;
 }
 
-static bool isEnabledFF(int ff)
+bool isEnabledFF(int ff)
 {
   // firefly config stored in on-board EEPROM
   static bool configured = false;
@@ -470,6 +527,15 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
     ff_status[i].temp = -55;
     ff_status[i].status = 1;
+#ifdef DEBUG
+    for (int j = 0; j<16; j++){
+    	ff_status[i].serial_num[j] = 0;
+    }
+#endif
+    for (int channel=0; channel<2; channel++) {
+      ff_status[i].los_alarm[channel] = 255;
+      ff_status[i].cdr_lol_alarm[channel] = 255;
+    }
   }
   vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
 
@@ -688,6 +754,111 @@ void FireFlyTask(void *parameters)
         convert_8_t tmp2;
         tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
         ff_status[ff].status = tmp2.s;
+      }
+
+      // Read the serial number
+#ifdef DEBUG
+      data[0] = 0x0U;
+      data[1] = 0x0U;
+      for (uint8_t i = 189; i < 205; i++) {// change from 171-185 to 189-198 or 189-204 or 196-211
+    	  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &i, 1, data, 1);
+
+    	  if (r != SMBUS_OK) {
+    		  snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+    				  2);
+    		  DPRINT(tmp);
+    		  continue; // abort reading this register
+    	  }
+    	  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    		  vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
+    	  }
+    	  if (*p_status != SMBUS_OK) {
+    		  snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+    				  *p_status, ff, 2);
+    		  DPRINT(tmp);
+    		  ff_status[ff].serial_num[i - 196] = 3;
+    		  break;
+    	  }
+    	  convert_8_t tmp5;
+    	  tmp5.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+    	  ff_status[ff].serial_num[i - 196] = tmp5.s;
+      }
+#endif
+
+      // Check the loss of signal alarm
+      int los_regs[2];
+      if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL)  {
+        los_regs[0] = ECU0_25G_TX_LOS_ALARM_REG_2;
+        los_regs[1] = ECU0_25G_TX_LOS_ALARM_REG_1;
+      }
+      else{
+        los_regs[0] = ECU0_25G_XCVR_LOS_ALARM_REG;
+        los_regs[1] = 0;
+      }
+
+      int reg_i=0;
+      while(reg_i<2 && los_regs[reg_i] != 0){
+        data[0] = 0x0U;
+        data[1] = 0x0U;
+        reg_addr = los_regs[reg_i];
+
+        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
+        if (r != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+              2);
+          DPRINT(tmp);
+          continue; // abort reading this register
+        }
+        while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+          vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
+        }
+        if (*p_status != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+              *p_status, ff, 2);
+          DPRINT(tmp);
+          ff_status[ff].los_alarm[reg_i] = 255;
+          break;
+        }
+        ff_status[ff].los_alarm[reg_i] = data[0];
+        reg_i+=1;
+      }
+
+      // Check the CDR loss of lock alarm
+      int cdr_lol_regs[2];
+      if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL)  {
+        cdr_lol_regs[0] = ECU0_25G_CDR_LOL_ALARM_REG_2;
+        cdr_lol_regs[1] = ECU0_25G_CDR_LOL_ALARM_REG_1;
+      }
+      else{
+        cdr_lol_regs[0] = ECU0_25G_XCVR_CDR_LOL_ALARM_REG;
+        cdr_lol_regs[1] = 0;
+      }
+
+      reg_i=0;
+      while(reg_i<2 && cdr_lol_regs[reg_i] != 0){
+        data[0] = 0x0U;
+        data[1] = 0x0U;
+        reg_addr = cdr_lol_regs[reg_i];
+
+        r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, data, 1);
+        if (r != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
+              2);
+          DPRINT(tmp);
+          continue; // abort reading this register
+        }
+        while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+          vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
+        }
+        if (*p_status != SMBUS_OK) {
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
+              *p_status, ff, 2);
+          DPRINT(tmp);
+          ff_status[ff].cdr_lol_alarm[reg_i] = 255;
+          break;
+        }
+        ff_status[ff].cdr_lol_alarm[reg_i] = data[0];
+        reg_i+=1;
       }
 
 #ifdef DEBUG_FIF

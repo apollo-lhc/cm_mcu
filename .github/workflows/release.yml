@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags: 
+      - 'v*'
+
+jobs:
+   tagged_release:
+     runs-on: ubuntu-latest
+     steps:
+     - name: Code checkout
+       uses: actions/checkout@v2
+     - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
+       id:   cache-toolchain
+       uses: actions/cache@v2
+       env:
+         cache-name: cache-toolchain-10-2020-q4
+       with:
+        path: ${{ runner.temp }}/arm-none-eabi
+        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
+
+     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
+       if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+       uses: fiam/arm-none-eabi-gcc@v1.0.4
+       with:
+        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        # Directory to unpack GCC to. Defaults to a temporary directory.
+        directory: ${{ runner.temp }}/arm-none-eabi
+     - name: FreeRTOS download
+       run: |
+         cd ${{runner.temp}}
+         mkdir freertos-lts
+         cd freertos-lts
+         curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
+         unzip -q freertos_code.zip 
+         echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
+         export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
+         echo $FREERTOS_ROOT
+         pwd
+     - name: make with GCC
+       run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make -k NO_ECN001=1 
+        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001.axf
+        make clean
+        make -k
+     - name: test
+       run: pwd; ls -R ; find . -type f -name '*.axf' -print
+     - uses: "marvinpinto/action-automatic-releases@latest"
+       with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            ./projects/cm_mcu/gcc/cm_mcu.bin
+            ./projects/boot_loader/gcc/bl_main.bin
+            ./projects/cm_mcu/gcc/cm_mcu.axf
+            ./projects/boot_loader/gcc/bl_main.axf
+            ./cm_mcu*.*
