@@ -34,18 +34,7 @@ jobs:
         release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
         # Directory to unpack GCC to. Defaults to a temporary directory.
         directory: ${{ runner.temp }}/arm-none-eabi
-
-    # - name: Check cache for FreeRTOS
-    #   id:   cache-freertos
-    #   uses: actions/cache@v2
-    #   env:
-    #     cache-name: cache-ltos-20201201
-    #   with:
-    #     path: ~/freertos-lts
-    #     key:  ${{ runner.os }}-build-${{ env.cache-name }}
-    #     restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}
     - name: FreeRTOS download
-      # if:   steps.cache-freertos.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
       run: |
          cd ${{runner.temp}}
          mkdir freertos-lts
@@ -58,11 +47,14 @@ jobs:
          pwd
     - name: test
       run: echo $FREERTOS_ROOT; echo $PATH; ls -d ~/work/_temp/*
+    - name: make with GCC, debug build
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make -k DEBUG=1
     - name: make with GCC
       run: |
-        echo $FREERTOS_ROOT
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-        ls -d $FREERTOS_ROOT
+        make clean
         arm-none-eabi-gcc --version
         make -k 
 
