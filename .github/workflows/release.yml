@@ -39,10 +39,6 @@ jobs:
          export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
          echo $FREERTOS_ROOT
          pwd
-     - name: make with GCC, debug build
-       run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-        make -k DEBUG=1
      - name: make with GCC
        run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
