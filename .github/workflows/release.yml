@@ -42,6 +42,7 @@ jobs:
      - name: make with GCC
        run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make clean
         make -k NO_ECN001=1 
         cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001.bin
         cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001.axf

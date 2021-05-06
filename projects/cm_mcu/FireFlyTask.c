@@ -209,12 +209,12 @@ int8_t getFFtemp(const uint8_t i)
   return ff_status[i].temp;
 }
 
-#ifdef DEBUG
+#ifdef DEBUG_FIF
 int8_t* getFFserialnum(const uint8_t i){
   configASSERT(i < NFIREFLIES);
   return ff_status[i].serial_num;
 }
-#endif
+#endif // DEBUG_FIF
 
 bool getFFlos(int i, int channel)
 {
@@ -527,11 +527,11 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
     ff_status[i].temp = -55;
     ff_status[i].status = 1;
-#ifdef DEBUG
+#ifdef DEBUG_FIF
     for (int j = 0; j<16; j++){
     	ff_status[i].serial_num[j] = 0;
     }
-#endif
+#endif // DEBUG_FIF
     for (int channel=0; channel<2; channel++) {
       ff_status[i].los_alarm[channel] = 255;
       ff_status[i].cdr_lol_alarm[channel] = 255;
@@ -765,7 +765,9 @@ void FireFlyTask(void *parameters)
       }
 
       // Read the serial number
-#ifdef DEBUG
+#ifdef DEBUG_FIF
+      data[0] = 0x0U;
+      data[1] = 0x0U;
       for (uint8_t i = 189; i < 205; i++) {// change from 171-185 to 189-198 or 189-204 or 196-211
         res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, &i, 1, data);
         if (res == -1) {
@@ -787,7 +789,7 @@ void FireFlyTask(void *parameters)
           ff_status[ff].serial_num[i - 196] = tmp3.s;
         }
       }
-#endif
+#endif // DEBUG_FIF
 
       // Check the loss of signal alarm
       int los_regs[2];
