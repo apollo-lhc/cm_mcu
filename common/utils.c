@@ -142,12 +142,12 @@ static const char *ebuf_errstrings[] = {
     "Hard fault",
     "Assertion failed",
     "Stack Overflow",
-    "(continue)",
+    "(continue)",  // item 10 
     "Power Failure",
     "Temp High (TM4C FPGA FF DCDC)",
-    "Power Failure CLEAR",
     "MARK",
-    "I2C error"
+    "I2C error",
+    "Power Failure CLEAR",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -191,7 +191,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
       copied += snprintf(m + copied, s - copied, "(pc) 0x%02x", errdata);
       break;
     case EBUF_I2C:
-      copied += snprintf(m + copied, s - copied, " (dev = %d)", errdata);
+      copied += snprintf(m + copied, s - copied, " (dev = %c)", (char)errdata);
       break;
     default:
       if (errcode > EBUF_WITH_DATA) {
@@ -451,6 +451,11 @@ void errbuffer_power_fail(uint16_t failmask)
 {
   errbuffer_put(EBUF_PWR_FAILURE, (failmask >> 8) & 0xFFU);
   errbuffer_put(EBUF_CONTINUATION, failmask & 0xFFU);
+}
+
+void errbuffer_power_fail_clear()
+{
+  errbuffer_put(EBUF_PWR_FAILURE_CLR, 0);
 }
 
 // These register locations are defined by the ARM Cortex-M4F

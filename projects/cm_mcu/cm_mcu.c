@@ -56,17 +56,6 @@
 
 #define I2C0_SLAVE_ADDRESS 0x40
 
-//*****************************************************************************
-//
-// The error routine that is called if the driver library encounters an error.
-//
-//*****************************************************************************
-#ifdef DEBUG
-void __error__(char *pcFilename, uint32_t ui32Line)
-{
-}
-#endif
-
 uint32_t g_ui32SysClock = 0;
 
 // Mutex for UART -- should really have one for each UART
@@ -81,6 +70,20 @@ void Print(const char *str)
   xSemaphoreGive(xUARTMutex);
   return;
 }
+
+//*****************************************************************************
+//
+// The error routine that is called if the driver library encounters an error.
+//
+//*****************************************************************************
+#ifdef DEBUG
+void __error__(char *pcFilename, uint32_t ui32Line)
+{
+  char errstr[64];
+  snprintf(errstr, 64, "driverlib error in %s:%u\r\n", pcFilename, (unsigned)ui32Line);
+  Print(errstr);
+}
+#endif
 
 void SystemInit()
 {
@@ -193,9 +196,15 @@ const char *buildTime()
   return btime;
 }
 
+
 const char *gitVersion()
 {
-  const char *gitVersion = FIRMWARE_VERSION;
+#ifdef DEBUG
+#define BUILD_TYPE " DEBUG build"
+#else
+#define BUILD_TYPE " regular build"
+#endif 
+  const char * gitVersion = FIRMWARE_VERSION BUILD_TYPE;
   return gitVersion;
 }
 //
@@ -280,8 +289,9 @@ int main(void)
   // Say hello. The information below is only updated when the main()
   // function is recompiled.
   Print("\r\n----------------------------\r\n");
-  Print("Staring Apollo CM MCU firmware " FIRMWARE_VERSION
-        "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
+  Print("Staring Apollo CM MCU firmware ");
+  Print(gitVersion());
+  Print("\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__ ", " __DATE__ "\r\n");
 #ifdef ECN001
   Print("Includes ECN001 code mods\r\n");

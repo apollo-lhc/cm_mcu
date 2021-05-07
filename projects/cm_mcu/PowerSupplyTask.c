@@ -322,6 +322,7 @@ void PowerSupplyTask(void *parameters)
       case POWER_FAILURE: { // we go through POWER_OFF state before turning on.
         if (!power_supply_alarm && !external_alarm) { // errors cleared
           nextState = POWER_OFF;
+          errbuffer_power_fail_clear();
         }
         else { // still in failed state
           nextState = POWER_FAILURE;
