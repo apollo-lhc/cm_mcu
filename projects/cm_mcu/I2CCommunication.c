@@ -124,8 +124,18 @@ int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
   return 0;
 }
 
-int apollo_i2c_ctl_reg_r(tSMBus *smbus, tSMBusStatus *p_status, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
+int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
+  tSMBus* smbus;
+  tSMBusStatus* p_status;
+  if (device < NFIREFLIES_F1) {
+    smbus = &g_sMaster4;
+    p_status = &eStatus4;
+  }
+  else {
+    smbus = &g_sMaster3;
+    p_status = &eStatus3;
+  }
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
