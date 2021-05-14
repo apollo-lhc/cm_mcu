@@ -705,13 +705,21 @@ void FireFlyTask(void *parameters)
       }
 #endif // DEBUG_FIF
 
+      int i2c_device;
+      if (ff < NFIREFLIES_F1) {
+        i2c_device = 4;
+      }
+      else {
+        i2c_device = 3;
+      }
+
       typedef union {
         uint8_t us;
         int8_t s;
       } convert_8_t;
 
       // Read the temperature
-      int res = apollo_i2c_ctl_reg_r(ff, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
+      int res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
       if (res == -1) {
         snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
                          1);
@@ -736,7 +744,7 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // Read the status
-      res = apollo_i2c_ctl_reg_r(ff, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 1, data);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 1, data);
       if (res == -1) {
         snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
             1);
@@ -759,7 +767,7 @@ void FireFlyTask(void *parameters)
       // Read the serial number
 #ifdef DEBUG
       for (uint8_t i = 189; i < 205; i++) {// change from 171-185 to 189-198 or 189-204 or 196-211
-        res = apollo_i2c_ctl_reg_r(smbus, p_status, ff_i2c_addrs[ff].dev_addr, &i, 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, &i, 1, data);
         if (res == -1) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
               1);
@@ -794,7 +802,7 @@ void FireFlyTask(void *parameters)
 
       int reg_i=0;
       while(reg_i<2 && los_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(ff, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
         if (res == -1) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
               1);
@@ -827,7 +835,7 @@ void FireFlyTask(void *parameters)
 
       reg_i=0;
       while(reg_i<2 && cdr_lol_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(ff, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
         if (res == -1) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
               1);
@@ -853,7 +861,7 @@ void FireFlyTask(void *parameters)
       data[1] = 0x0U;
 
       for (uint8_t i = 148; i < 164; i++) {
-        res = apollo_i2c_ctl_reg_r(smbus, p_status, ff_i2c_addrs[ff].dev_addr, i, 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, i, 1, data);
         if (res == -1) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
               1);

@@ -19,6 +19,7 @@
 
 #include "common/pinsel.h"
 #include "common/smbus_units.h"
+#include "I2CCommunication.h"
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2
@@ -83,45 +84,6 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"VVCCINT1", 0x70, 3, 0x46}, // first vccint, VU7P
     {"VVCCINT2", 0x70, 4, 0x45}, // second vccint, VU7P
 };
-
-int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
-                    struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
-{
-  // write to the I2C mux
-  uint8_t data;
-  // select the appropriate output for the mux
-  data = 0x1U << add->mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
-  if (r != SMBUS_OK) {
-    return -1;
-  }
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-  }
-  if (*smbus_status != SMBUS_OK) {
-    return -2;
-  }
-  // read/write to the device itself
-  if (read) {
-    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
-  }
-  else { // write
-    r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
-  }
-  if (r != SMBUS_OK) {
-    return -3;
-  }
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-  }
-  // this is checking the return from the interrupt
-  if (*smbus_status != SMBUS_OK) {
-    return -4;
-  }
-  // if we get here, a successful read/write command
-
-  return 0;
-}
 
 void Print(const char *);
 

@@ -70,6 +70,9 @@ static tSMBusStatus *p_eStatus = &eStatus4;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat" // because of our mini-sprintf
 
+tSMBus* pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, NULL, &g_sMaster6, NULL, NULL, NULL};
+tSMBusStatus* eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, NULL, &eStatus6, NULL, NULL, NULL};
+
 int apollo_i2c_ctl_set_dev(uint8_t base)
 {
   if (!((base == 1) || (base == 2) || (base == 3) || (base == 4) || (base == 6))) {
@@ -126,16 +129,12 @@ int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 
 int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  tSMBus* smbus;
-  tSMBusStatus* p_status;
-  if (device < NFIREFLIES_F1) {
-    smbus = &g_sMaster4;
-    p_status = &eStatus4;
+  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
+    return -1;
   }
-  else {
-    smbus = &g_sMaster3;
-    p_status = &eStatus3;
-  }
+  tSMBus* smbus = pSMBus[device];
+  tSMBusStatus* p_status = eStatus[device];
+
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
@@ -196,6 +195,45 @@ int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, int value)
   if (*p_eStatus != SMBUS_OK) {
     return -2;
   }
+
+  return 0;
+}
+
+int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
+                    struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
+{
+  // write to the I2C mux
+  uint8_t data;
+  // select the appropriate output for the mux
+  data = 0x1U << add->mux_bit;
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+  if (r != SMBUS_OK) {
+    return -1;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  if (*smbus_status != SMBUS_OK) {
+    return -2;
+  }
+  // read/write to the device itself
+  if (read) {
+    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
+  }
+  else { // write
+    r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
+  }
+  if (r != SMBUS_OK) {
+    return -3;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  // this is checking the return from the interrupt
+  if (*smbus_status != SMBUS_OK) {
+    return -4;
+  }
+  // if we get here, a successful read/write command
 
   return 0;
 }
