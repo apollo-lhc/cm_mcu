@@ -62,8 +62,8 @@ extern tSMBusStatus eStatus4;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
 
-static tSMBus *p_sMaster = &g_sMaster4;
-static tSMBusStatus *p_eStatus = &eStatus4;
+//static tSMBus *p_sMaster = &g_sMaster4;
+//static tSMBusStatus *p_eStatus = &eStatus4;
 
 // Ugly hack for now -- I don't understand how to reconcile these
 // two parts of the FreeRTOS-Plus code w/o casts-o-plenty
@@ -73,42 +73,15 @@ static tSMBusStatus *p_eStatus = &eStatus4;
 tSMBus* pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, NULL, &g_sMaster6, NULL, NULL, NULL};
 tSMBusStatus* eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, NULL, &eStatus6, NULL, NULL, NULL};
 
-int apollo_i2c_ctl_set_dev(uint8_t base)
+#define MAX_BYTES 4
+int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  if (!((base == 1) || (base == 2) || (base == 3) || (base == 4) || (base == 6))) {
+  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
     return -1;
   }
-  switch (base) {
-    case 1:
-      p_sMaster = &g_sMaster1;
-      p_eStatus = &eStatus1;
-      break;
-    case 2:
-      p_sMaster = &g_sMaster2;
-      p_eStatus = &eStatus2;
-      break;
-    case 3:
-      p_sMaster = &g_sMaster3;
-      p_eStatus = &eStatus3;
-      break;
-    case 4:
-      p_sMaster = &g_sMaster4;
-      p_eStatus = &eStatus4;
-      break;
-    case 6:
-      p_sMaster = &g_sMaster6;
-      p_eStatus = &eStatus6;
-      break;
-    default:
-      return -2;
-      break;
-  }
-  return 0;
-}
+  tSMBus* p_sMaster = pSMBus[device];
+  tSMBusStatus* p_eStatus = eStatus[device];
 
-#define MAX_BYTES 4
-int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
-{
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
@@ -148,8 +121,13 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, u
   return *p_status;
 }
 
-int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)
+int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)
 {
+  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
+    return -1;
+  }
+  tSMBus* p_sMaster = pSMBus[device];
+  tSMBusStatus* p_eStatus = eStatus[device];
   // first byte is the register, others are the data
   uint8_t data[MAX_BYTES+1];
   data[0] = reg_address;
@@ -176,8 +154,13 @@ int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, i
   return 0;
 }
 
-int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, int value)
+int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
 {
+  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
+    return -1;
+  }
+  tSMBus* p_sMaster = pSMBus[device];
+  tSMBusStatus* p_eStatus = eStatus[device];
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i) {
     data[i] = (value >> i * 8) & 0xFFUL;
