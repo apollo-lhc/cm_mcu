@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 
 #include <string.h>
 
@@ -244,7 +243,8 @@ int main(void)
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart1, tskIDLE_PRIORITY + 1, NULL);
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+              NULL);
   xTaskCreate(MonitorTask, "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
@@ -255,6 +255,7 @@ int main(void)
   xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------
   // Initialize all the queues
