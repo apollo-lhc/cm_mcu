@@ -48,10 +48,11 @@ void Print(const char *str);
 
 // this needs to be a macro so that the __LINE__ will resolve to the right 
 // line (in a function call it would just resolve to the function call....)
+#define CHECKSTUCK_COUNT 30
 #define CHECKSTUCK()                                                                               \
   {                                                                                                \
     ++tries;                                                                                       \
-    if (tries > 25) {                                                                              \
+    if (tries > CHECKSTUCK_COUNT) {                                                                \
       char tmp[64];                                                                                \
       snprintf(tmp, 64, "FIF: stuck at line %d (%u, %u)\r\n", __LINE__, (unsigned)ff_updateTick,   \
                (unsigned)ff_updateTick);                                                           \
@@ -519,6 +520,9 @@ void FireFlyTask(void *parameters)
   ff_updateTick = xTaskGetTickCount();
   uint8_t data[2];
 
+  // watchdog info
+  task_watchdog_register_task(kWatchdogTaskID_FireFly);
+  
   for (uint8_t i = 0; i < NFIREFLIES * NPAGES_FF; ++i) {
 #ifdef DEBUG_FIF
     ff_temp_max[i] = -99;
@@ -722,7 +726,7 @@ void FireFlyTask(void *parameters)
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
                  ff, 1);
-        DPRINT(tmp);
+        Print(tmp);
         ff_status[ff].temp = -55;
         break;
       }
@@ -764,9 +768,8 @@ void FireFlyTask(void *parameters)
       snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
       DPRINT(tmp);
 #endif // DEBUG_FIF
-      convert_8_t tmp2;
-      tmp2.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-      ff_status[ff].status = tmp2.s;
+      tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+      ff_status[ff].status = tmp1.s;
 
       // Read the serial number
 #ifdef DEBUG_FIF
@@ -791,9 +794,8 @@ void FireFlyTask(void *parameters)
     		  ff_status[ff].serial_num[i - 196] = 3;
     		  break;
     	  }
-    	  convert_8_t tmp5;
-    	  tmp5.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-    	  ff_status[ff].serial_num[i - 196] = tmp5.s;
+    	  tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+    	  ff_status[ff].serial_num[i - 196] = tmp1.s;
       }
 #endif // DEBUG_FIF
 
@@ -865,7 +867,7 @@ void FireFlyTask(void *parameters)
         if (*p_status != SMBUS_OK) {
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__,
               *p_status, ff, 2);
-          DPRINT(tmp);
+          Print(tmp);
           ff_status[ff].cdr_lol_alarm[reg_i] = 255;
           break;
         }
@@ -900,9 +902,8 @@ void FireFlyTask(void *parameters)
           ff_status[ff].test[i - 148] = 0;
           break;
         }
-        convert_8_t tmp3;
-        tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_status[ff].test[i - 148] = tmp3.s;
+        tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        ff_status[ff].test[i - 148] = tmp1.s;
       }
 #endif
 
@@ -918,12 +919,7 @@ void FireFlyTask(void *parameters)
       tries = 0;
       while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
-        ++tries;
-        if (tries > 25) {
-          snprintf(tmp, 64, "FIF: stuck at line %d (%d)\r\n", __LINE__, SMBusStatusGet(smbus));
-          Print(tmp);
-          break;
-        }
+        CHECKSTUCK();
       }
       if (*p_status != SMBUS_OK) {
         snprintf(tmp, 64, "FIF: Mux clearing error %d, break out of loop (ps=%d) ...\r\n",
@@ -936,6 +932,7 @@ void FireFlyTask(void *parameters)
     update_max();
     update_min();
 #endif // DEBUG_FIF
+    task_watchdog_feed_task(kWatchdogTaskID_FireFly);
     vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(250));
   } // infinite loop for task
 }

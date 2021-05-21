@@ -171,8 +171,8 @@ header file. */
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE 1
 
 // non-standard, park this here for now
-//#define CLI_UART UART4_BASE // Front panel
-#define CLI_UART UART1_BASE // Zynq
+#define CLI_UART UART4_BASE // Front panel
+//#define CLI_UART UART1_BASE // Zynq
 
 #define SYSTEM_STACK_SIZE 128
 #define I2C_PULLUP_BUG
@@ -181,6 +181,7 @@ header file. */
 #endif // NO_ECN001
 
 #define pdTICKS_TO_MS(xTicks) (((TickType_t)(xTicks)*1000u) / configTICK_RATE_HZ)
+#define pdTICKS_TO_S(xTicks) ((TickType_t)(xTicks) / configTICK_RATE_HZ)
 
 #ifdef __cplusplus
 }
