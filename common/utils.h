@@ -116,6 +116,9 @@ void errbuffer_power_fail_clear();
 void stopwatch_reset(void);
 uint32_t stopwatch_getticks();
 
+// freertos tick compare including rollover
+bool checkStale(int oldTime, int newTime);
+
 void float_to_ints(float val, int *tens, int *fraction);
 // this will suffer from the double evaluation bug
 //#define MAX(a,b) (a)>(b)?(a):(b)

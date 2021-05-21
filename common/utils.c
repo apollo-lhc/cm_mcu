@@ -498,3 +498,9 @@ void float_to_ints(float val, int *tens, int *fraction)
 
   return;
 }
+
+
+bool checkStale(int oldTime, int newTime) 
+{
+  return ((oldTime>newTime) && (newTime-oldTime)>60);
+}
