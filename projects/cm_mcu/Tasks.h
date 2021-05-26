@@ -231,13 +231,15 @@ int get_f2_index();
 void initFPGAMon();
 
 // Watchdog Task
-#define NUM_WATCHDOG_TASKS 1
 void WatchdogTask(void* parameters);
 enum WatchdogTaskLabel {
   kWatchdogTaskID_FireFly,
+  kWatchdogTaskID_XiMon,
+  kWatchdogTaskID_PSMon,
 };
-void task_watchdog_register_task(uint32_t task_id);
-void task_watchdog_unregister_task(uint32_t task_id);
-void task_watchdog_feed_task(uint32_t task_id);
+void task_watchdog_register_task(uint16_t task_id);
+void task_watchdog_unregister_task(uint16_t task_id);
+void task_watchdog_feed_task(uint16_t task_id);
+uint16_t task_watchdog_get_status();
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */
