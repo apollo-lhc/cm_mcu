@@ -64,7 +64,8 @@ void Print(const char *str)
 {
   xSemaphoreTake(xUARTMutex, portMAX_DELAY);
   {
-    UARTPrint(CLI_UART, str);
+    UARTPrint(FP_UART, str);
+    UARTPrint(ZQ_UART, str);
   }
   xSemaphoreGive(xUARTMutex);
   return;
@@ -226,9 +227,9 @@ int main(void)
   xUART1StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
-  cli_uart1.uart_base = UART1_BASE;
+  cli_uart1.uart_base = ZQ_UART;
   cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
-  cli_uart4.uart_base = UART4_BASE;
+  cli_uart4.uart_base = FP_UART;
   cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
 
   // clear the various buffers
@@ -345,9 +346,9 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
   taskDISABLE_INTERRUPTS();
   char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
-  UARTPrint(CLI_UART, tmp); // can't use Print() here -- this gets called
+  UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
-  while (MAP_UARTBusy(CLI_UART))
+  while (MAP_UARTBusy(ZQ_UART))
     ;
   // log the error
   errbuffer_put_raw(EBUF_STACKOVERFLOW, 0);

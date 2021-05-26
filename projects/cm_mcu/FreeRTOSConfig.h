@@ -164,15 +164,17 @@ header file. */
   }
 #endif
 
-//#define configASSERT( x ) if( ( x ) == 0UL ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
 #define configASSERT(x) APOLLO_ASSERT((x))
 
-// for the CLI
-#define configCOMMAND_INT_MAX_OUTPUT_SIZE 1
 
 // non-standard, park this here for now
-#define CLI_UART UART4_BASE // Front panel
-//#define CLI_UART UART1_BASE // Zynq
+#ifndef REV2
+#define FP_UART UART4_BASE // Front panel UART
+#define ZQ_UART UART1_BASE // Zynq-facing UART 
+#else
+#error "need to define UART for FP"
+#endif
+
 
 #define SYSTEM_STACK_SIZE 128
 #define I2C_PULLUP_BUG
