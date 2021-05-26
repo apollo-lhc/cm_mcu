@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 
 #include <string.h>
 
@@ -56,17 +55,6 @@
 
 #define I2C0_SLAVE_ADDRESS 0x40
 
-//*****************************************************************************
-//
-// The error routine that is called if the driver library encounters an error.
-//
-//*****************************************************************************
-#ifdef DEBUG
-void __error__(char *pcFilename, uint32_t ui32Line)
-{
-}
-#endif
-
 uint32_t g_ui32SysClock = 0;
 
 // Mutex for UART -- should really have one for each UART
@@ -76,11 +64,26 @@ void Print(const char *str)
 {
   xSemaphoreTake(xUARTMutex, portMAX_DELAY);
   {
-    UARTPrint(CLI_UART, str);
+    UARTPrint(FP_UART, str);
+    UARTPrint(ZQ_UART, str);
   }
   xSemaphoreGive(xUARTMutex);
   return;
 }
+
+//*****************************************************************************
+//
+// The error routine that is called if the driver library encounters an error.
+//
+//*****************************************************************************
+#ifdef DEBUG
+void __error__(char *pcFilename, uint32_t ui32Line)
+{
+  char errstr[64];
+  snprintf(errstr, 64, "driverlib error in %s:%u\r\n", pcFilename, (unsigned)ui32Line);
+  Print(errstr);
+}
+#endif
 
 void SystemInit()
 {
@@ -193,9 +196,15 @@ const char *buildTime()
   return btime;
 }
 
+
 const char *gitVersion()
 {
-  const char *gitVersion = FIRMWARE_VERSION;
+#ifdef DEBUG
+#define BUILD_TYPE " DEBUG build"
+#else
+#define BUILD_TYPE " regular build"
+#endif 
+  const char * gitVersion = FIRMWARE_VERSION BUILD_TYPE;
   return gitVersion;
 }
 //
@@ -218,9 +227,9 @@ int main(void)
   xUART1StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
-  cli_uart1.uart_base = UART1_BASE;
+  cli_uart1.uart_base = ZQ_UART;
   cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
-  cli_uart4.uart_base = UART4_BASE;
+  cli_uart4.uart_base = FP_UART;
   cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
 
   // clear the various buffers
@@ -235,7 +244,8 @@ int main(void)
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart1, tskIDLE_PRIORITY + 1, NULL);
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+              NULL);
   xTaskCreate(MonitorTask, "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
@@ -246,6 +256,7 @@ int main(void)
   xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------
   // Initialize all the queues
@@ -280,8 +291,9 @@ int main(void)
   // Say hello. The information below is only updated when the main()
   // function is recompiled.
   Print("\r\n----------------------------\r\n");
-  Print("Staring Apollo CM MCU firmware " FIRMWARE_VERSION
-        "\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
+  Print("Staring Apollo CM MCU firmware ");
+  Print(gitVersion());
+  Print("\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__ ", " __DATE__ "\r\n");
 #ifdef ECN001
   Print("Includes ECN001 code mods\r\n");
@@ -334,9 +346,9 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
   taskDISABLE_INTERRUPTS();
   char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
-  UARTPrint(CLI_UART, tmp); // can't use Print() here -- this gets called
+  UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
-  while (MAP_UARTBusy(CLI_UART))
+  while (MAP_UARTBusy(ZQ_UART))
     ;
   // log the error
   errbuffer_put_raw(EBUF_STACKOVERFLOW, 0);

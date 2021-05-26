@@ -288,9 +288,17 @@ static BaseType_t TaskStatsCommand(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-static BaseType_t help_command_fcn(int argc, char **, char* m);
+static BaseType_t help_command_fcn(int argc, char **, char *m);
 
-static BaseType_t zmon_ctl(int argc, char **argv, char* m)
+static BaseType_t watchdog_ctl(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  uint16_t stat = task_watchdog_get_status();
+  copied = snprintf(m + copied, SCRATCH_SIZE - copied, "%s: status 0x%08x\r\n", argv[0], stat);
+  return pdFALSE;
+}
+
+static BaseType_t zmon_ctl(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE, copied = 0;
   bool understood = true;
@@ -412,6 +420,24 @@ static struct command_t commands[] = {
      "ff <none> |(xmit|cdr on/off (0-23|all))| regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
      " Firefly monitoring command\r\n",
      -1},
+    {
+        "ff_status",
+        ff_status,
+        "ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
+        0,
+    },
+    {
+        "ff_los",
+        ff_los_alarm,
+        "ff_los\r\n Displays a table showing the loss of signal alarms of the fireflies.\r\n",
+        0,
+    },
+    {
+        "ff_cdr_lol",
+        ff_cdr_lol_alarm,
+        "ff_cd_lol\r\n Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
+        0,
+    },
     {"fpga", fpga_ctl, "fpga (<none>|done)\r\n Displays a table showing the state of FPGAs.\r\n",
      -1},
     {"id", board_id_info, "id\r\n Prints board ID information.\r\n", 0},
@@ -462,23 +488,16 @@ static struct command_t commands[] = {
         0,
     },
     {
-        "ff_status",
-        ff_status,
-        "ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
+        "stack_usage",
+        stack_ctl,
+        "stack_usage\r\n Print out system stack high water mark.\r\n",
         0,
     },
-    {
-        "ff_los",
-        ff_los_alarm,
-        "ff_los_alarm\r\n Displays a table showing the loss of signal alarms of the fireflies.\r\n",
-        0,
-    },
-    {
-        "ff_cdr_lol",
-        ff_cdr_lol_alarm,
-        "ff_cd_lol_alarm\r\n Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
-        0,
-    },
+    {"task-stats", TaskStatsCommand,
+     "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n", 0},
+    {"uptime", uptime, "uptime\r\n Display uptime in minutes\r\n", 0},
+    {"version", ver_ctl, "version\r\n Display information about MCU firmware version\r\n", 0},
+    {"watchdog", watchdog_ctl, "watchdog\r\n Display status of the watchdog task\r\n", 0},
     {
         "zmon",
         zmon_ctl,
@@ -490,16 +509,7 @@ static struct command_t commands[] = {
         " Control ZynqMon task.\r\n",
         -1,
     },
-    {
-        "stack_usage",
-        stack_ctl,
-        "stack_usage\r\n Print out system stack high water mark.\r\n",
-        0,
-    },
-    {"task-stats", TaskStatsCommand,
-     "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n", 0},
-    {"uptime", uptime, "uptime\r\n Display uptime in minutes\r\n", 0},
-    {"version", ver_ctl, "version\r\n Display information about MCU firmware version\r\n", 0},
+
 };
 
 static void U4Print(const char *str)

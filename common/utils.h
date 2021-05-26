@@ -44,8 +44,8 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define COUNTER_MASK                                                                               \
   ((1 << (ERRDATA_OFFSET + ERRCODE_OFFSET + COUNTER_OFFSET)) - 1 - ERRDATA_MASK - ERRCODE_MASK)
 
-#define EBUF_COUNTER_UPDATE                                                                        \
-  4 // Number of repeated entries that initiates a hardware counter update (re-write entry)
+// Number of repeated entries that initiates a hardware counter update (re-write entry)
+#define EBUF_COUNTER_UPDATE 19
 
 // error codes without data
 #define EBUF_RESTART        1
@@ -59,12 +59,13 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_STACKOVERFLOW  9
 
 // error codes with data
-#define EBUF_WITH_DATA    10 // value used to determine which codes have data
-#define EBUF_CONTINUATION 10
-#define EBUF_PWR_FAILURE  11
-#define EBUF_TEMP_HIGH    12
-#define EBUF_MARK         13
-#define EBUF_I2C          14
+#define EBUF_WITH_DATA       10 // value used to determine which codes have data
+#define EBUF_CONTINUATION    10
+#define EBUF_PWR_FAILURE     11
+#define EBUF_TEMP_HIGH       12
+#define EBUF_MARK            13
+#define EBUF_I2C             14
+#define EBUF_PWR_FAILURE_CLR 15
 
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT
@@ -109,10 +110,14 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s);
 // specific error functions
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);
 void errbuffer_power_fail(uint16_t failmask);
+void errbuffer_power_fail_clear();
 
 // timers used for FreeRTOS accounting
 void stopwatch_reset(void);
 uint32_t stopwatch_getticks();
+
+// freertos tick compare including rollover
+bool checkStale(int oldTime, int newTime);
 
 void float_to_ints(float val, int *tens, int *fraction);
 // this will suffer from the double evaluation bug
