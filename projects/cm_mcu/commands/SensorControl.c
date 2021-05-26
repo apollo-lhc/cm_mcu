@@ -73,7 +73,7 @@ BaseType_t psmon_ctl(int argc, char **argv, char* m)
   TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
   TickType_t last = pdTICKS_TO_MS(dcdc_args.updateTick) / 1000;
   int copied = 0;
-  if ((now - last) > 60) {
+  if (checkStale(last, now)) {
     int mins = (now - last) / 60;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
@@ -324,7 +324,7 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
     // check for stale data
     TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
     TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
-    if ((now - last) > 60) {
+    if (checkStale(last, now)) {
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
@@ -639,7 +639,7 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
     if (whichfpga == 0) {
       TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
       TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
-      if ((now > last) && (now - last) > 60) {
+      if (checkStale(last, now)) {
         int mins = (now - last) / 60;
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                            "%s: stale data, last update %d minutes ago (%x, %x)\r\n", argv[0], mins,

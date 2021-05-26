@@ -110,6 +110,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/WatchdogTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LocalTasks.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/BoardCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/BufferCommands.o

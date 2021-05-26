@@ -101,4 +101,4 @@ jobs:
     - name: make with CLANG
       run: |
          export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-         make COMPILER=clang
+         make -k COMPILER=clang

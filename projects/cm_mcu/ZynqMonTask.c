@@ -286,18 +286,15 @@ void ZynqMonTask(void *parameters)
 #endif       // ZYNQMON_TEST_MODE
       }      // end test mode
       else { // normal mode
-        TickType_t now = pdTICKS_TO_MS(xLastWakeTime) / 1000;
+        TickType_t now = pdTICKS_TO_S(xLastWakeTime) ;
 
         // Fireflies
-        TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
-        bool stale = false;
-        if ((now - last) > 60) {
-          stale = true;
-        }
+        TickType_t last = pdTICKS_TO_S(getFFupdateTick()) ;
+        bool stale = checkStale(last, now);
         for (int j = 0; j < NFIREFLIES; ++j) {
           int16_t temperature;
           if (stale) {
-            temperature = -55;
+            temperature = -56;
           }
           else {
             temperature = getFFtemp(j);
@@ -317,11 +314,8 @@ void ZynqMonTask(void *parameters)
         // made when initially putting together the register list.
         const size_t offsets[] = {32, 40, 48, 56, 160, 168, 64, 72, 80, 88};
         // update times, in seconds. If the data is stale, send NaN
-        last = pdTICKS_TO_MS(dcdc_args.updateTick) / 1000;
-        stale = false;
-        if ((now - last) > 60) {
-          stale = true;
-        }
+        last = pdTICKS_TO_S(dcdc_args.updateTick);
+        stale = checkStale(last, now);
 
         for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
           for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
@@ -360,12 +354,9 @@ void ZynqMonTask(void *parameters)
         // MORE THAN A SIMPLE SET OF COMMANDS -- NOTA BENE
         const int offsetFPGA = 128;
         // update times, in seconds. If the data is stale, send NaN
-        now = pdTICKS_TO_MS(xLastWakeTime) / 1000;
-        last = pdTICKS_TO_MS(fpga_args.updateTick) / 1000;
-        stale = false;
-        if ((now - last) > 60) {
-          stale = true;
-        }
+        now = pdTICKS_TO_S(xLastWakeTime);
+        last = pdTICKS_TO_S(fpga_args.updateTick);
+        stale = checkStale(last, now);
 
         // loop over FPGA arguments 
         for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {

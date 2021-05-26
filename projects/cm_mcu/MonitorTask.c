@@ -49,6 +49,7 @@ void Print(const char *str);
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
+// FIXME: the current_error_count never goes down, only goes up.
 static void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
 {
   const int error_max = 25;
@@ -221,7 +222,8 @@ void MonitorTask(void *parameters)
                      *args->smbus_status, ps, c, page);
             SuppressedPrint(tmp, &current_error_cnt, &log);
             // abort reading this device
-            errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
+            if ( log )
+              errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
             break;
           }
           snprintf(tmp, TMPBUFFER_SZ, "MON(%s): %d %s is 0x%02x %02x\r\n", args->name, ps,
