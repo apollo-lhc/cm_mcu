@@ -435,7 +435,7 @@ static struct command_t commands[] = {
     {
         "ff_cdr_lol",
         ff_cdr_lol_alarm,
-        "ff_cd_lol\r\n Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
+        "ff_cdr_lol\r\n Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
         0,
     },
     {"fpga", fpga_ctl, "fpga (<none>|done)\r\n Displays a table showing the state of FPGAs.\r\n",
