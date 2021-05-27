@@ -552,16 +552,19 @@ void FireFlyTask(void *parameters)
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
   for (;;) {
-    tSMBus *smbus;
-    tSMBusStatus *p_status;
+    // tSMBus *smbus;
+    // tSMBusStatus *p_status;
 #ifdef I2C_PULLUP_BUG2
     bool good = false;
 #endif // I2C_PULLUP_BUG
+
+    // -------------------------------
     // loop over FireFly modules
+    // -------------------------------
     for (uint8_t ff = 0; ff < NFIREFLIES; ++ff) {
       if (!isEnabledFF(ff)) // skip the FF if it's not enabled via the FF config
         continue;
-      get_smbus_vars(ff, &smbus, &p_status);
+ //     get_smbus_vars(ff, &smbus, &p_status);
 #ifdef I2C_PULLUP_BUG2
       if (getPSStatus(5) != PWR_ON) {
         if (good) {
@@ -575,7 +578,10 @@ void FireFlyTask(void *parameters)
         good = true;
       }
 #endif // I2C_PULLUP_BUG
-      // check for any messages
+
+      // -------------------------------
+      // check for any messages.
+      // -------------------------------
       uint32_t message;
       // TODO: what if I receive more than one message
       if (xQueueReceive(xFFlyQueueIn, &message, 0)) {
@@ -665,25 +671,26 @@ void FireFlyTask(void *parameters)
             break;
         }
       }
+      // -------------------------------
+      // continue loop over FF modules 
+      // -------------------------------
       ff_updateTick = xTaskGetTickCount();
+      int i2c_device;
+      if (ff < NFIREFLIES_F1) {
+        i2c_device = 4;
+      }
+      else {
+        i2c_device = 3;
+      }
+
       // select the appropriate output for the mux
       data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
       char tmp[64];
       snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\r\n", data[0]);
       DPRINT(tmp);
-      tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
-      if (r != SMBUS_OK) {
-        Print("FIF: I2CBus command failed  (setting mux)\r\n");
-        continue;
-      }
-      int tries = 0;
-      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
-        CHECKSTUCK();
-      }
-      if (*p_status != SMBUS_OK) {
-        snprintf(tmp, 64, "FIF: Mux writing error %d, break out of loop (ps=%d) ...\r\n", *p_status,
-                 ff);
+      int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
+      if ( res != 0 ) {
+        snprintf(tmp, 64, "FIF: mux writing error %d, break out of loop (ff=%d)\r\n", res, ff);
         Print(tmp);
         break;
       }
@@ -709,13 +716,6 @@ void FireFlyTask(void *parameters)
       }
 #endif // DEBUG_FIF
 
-      int i2c_device;
-      if (ff < NFIREFLIES_F1) {
-        i2c_device = 4;
-      }
-      else {
-        i2c_device = 3;
-      }
 
       typedef union {
         uint8_t us;
@@ -723,41 +723,26 @@ void FireFlyTask(void *parameters)
       } convert_8_t;
       convert_8_t tmp1;
 
+#define ERRSTR "FIF: %s: Error %d, break loop (ff=%d,c=%d) ...\r\n"
       // Read the temperature
-      int res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
-      if (res == -1) {
-        snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-                         1);
-        DPRINT(tmp);
-        continue; // abort reading this register
-      }
-      else if (res==-2){
-        snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
-                 ff, 1);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
+      if (res != 0) {
+        snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
-        ff_status[ff].temp = -55;
+        ff_status[ff].temp = -54;
         break;
       }
-      else if (res==0){
-        tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        ff_status[ff].temp = tmp1.s;
-      }
+      tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+      ff_status[ff].temp = tmp1.s;
 #ifdef DEBUG_FIF
       snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
       DPRINT(tmp);
 #endif // DEBUG_FIF
 
-      // Read the status
+      // Read the status register
       res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 1, data);
-      if (res == -1) {
-        snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-            1);
-        DPRINT(tmp);
-        continue; // abort reading this register
-      }
-      else if (res==-2){
-        snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
-            ff, 1);
+      if (res != 0) {
+        snprintf(tmp, 64, ERRSTR, __func__, res, ff, 2);
         DPRINT(tmp);
         ff_status[ff].status = 1;
         break;
@@ -797,7 +782,7 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // Check the loss of signal alarm
-      int los_regs[2];
+      uint8_t los_regs[2];
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL)  {
         los_regs[0] = ECU0_25G_TX_LOS_ALARM_REG_2;
         los_regs[1] = ECU0_25G_TX_LOS_ALARM_REG_1;
@@ -807,20 +792,14 @@ void FireFlyTask(void *parameters)
         los_regs[1] = 0;
       }
 
+      // TODO: single multi-byte read rather than multiple reads 
       int reg_i=0;
       while(reg_i<2 && los_regs[reg_i] != 0){
         res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
-        if (res == -1) {
-          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-              1);
+        if (res != 0) {
+          snprintf(tmp, 64, ERRSTR, __func__, res, ff, 3);
           DPRINT(tmp);
-          continue; // abort reading this register
-        }
-        else if (res==-2){
-          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
-              ff, 1);
-          DPRINT(tmp);
-          ff_status[ff].los_alarm[reg_i] = 255;
+          ff_status[ff].los_alarm[reg_i] = 0xff;
           break;
         }
         else if (res==0){
@@ -843,17 +822,10 @@ void FireFlyTask(void *parameters)
       reg_i=0;
       while(reg_i<2 && cdr_lol_regs[reg_i] != 0){
         res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
-        if (res == -1) {
-          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-              1);
+        if (res != 0) {
+          snprintf(tmp, 64, ERRSTR, __func__, res, ff, 5);
           DPRINT(tmp);
-          continue; // abort reading this register
-        }
-        else if (res==-2){
-          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
-              ff, 1);
-          DPRINT(tmp);
-          ff_status[ff].cdr_lol_alarm[reg_i] = 255;
+          ff_status[ff].cdr_lol_alarm[reg_i] = 0xff;
           break;
         }
         else if(res==0){
@@ -889,24 +861,14 @@ void FireFlyTask(void *parameters)
 
       // clear the I2C mux
       data[0] = 0x0;
-      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x (clear)\r\n", data[0]);
+      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\r\n", data[0]);
       DPRINT(tmp);
-      r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
-      if (r != SMBUS_OK) {
-        Print("FIF: I2CBus command failed  (clearing mux)\r\n");
-        continue;
-      }
-      tries = 0;
-      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
-        CHECKSTUCK();
-      }
-      if (*p_status != SMBUS_OK) {
-        snprintf(tmp, 64, "FIF: Mux clearing error %d, break out of loop (ps=%d) ...\r\n",
-                 *p_status, ff);
+      res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
+      if (res != 0) {
+        snprintf(tmp, 64, "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
         Print(tmp);
-        break;
       }
+
     } // loop over firefly modules
 #ifdef DEBUG_FIF
     update_max();
