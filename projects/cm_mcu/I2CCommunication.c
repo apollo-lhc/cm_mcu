@@ -62,25 +62,16 @@ extern tSMBusStatus eStatus4;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
 
-//static tSMBus *p_sMaster = &g_sMaster4;
-//static tSMBusStatus *p_eStatus = &eStatus4;
-
-// Ugly hack for now -- I don't understand how to reconcile these
-// two parts of the FreeRTOS-Plus code w/o casts-o-plenty
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat" // because of our mini-sprintf
-
 tSMBus* pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, NULL, &g_sMaster6, NULL, NULL, NULL};
 tSMBusStatus* eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, NULL, &eStatus6, NULL, NULL, NULL};
 
 #define MAX_BYTES 4
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
-    return -1;
-  }
   tSMBus* p_sMaster = pSMBus[device];
   tSMBusStatus* p_eStatus = eStatus[device];
+
+  configASSERT(p_sMaster != NULL);
 
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
@@ -102,11 +93,10 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
 
 int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
-    return -1;
-  }
   tSMBus* smbus = pSMBus[device];
   tSMBusStatus* p_status = eStatus[device];
+
+  configASSERT(smbus != NULL);
 
   memset(data, 0, MAX_BYTES * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
@@ -123,11 +113,11 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, u
 
 int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)
 {
-  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
-    return -1;
-  }
   tSMBus* p_sMaster = pSMBus[device];
   tSMBusStatus* p_eStatus = eStatus[device];
+
+  configASSERT(p_sMaster != NULL);
+
   // first byte is the register, others are the data
   uint8_t data[MAX_BYTES+1];
   data[0] = reg_address;
@@ -156,11 +146,10 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t reg_address, u
 
 int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
 {
-  if (!((device == 1) || (device == 2) || (device == 3) || (device == 4) || (device == 6))) {
-    return -1;
-  }
   tSMBus* p_sMaster = pSMBus[device];
   tSMBusStatus* p_eStatus = eStatus[device];
+  configASSERT(p_sMaster != NULL);
+  
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i) {
     data[i] = (value >> i * 8) & 0xFFUL;
