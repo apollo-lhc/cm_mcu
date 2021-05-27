@@ -73,7 +73,7 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
 
   configASSERT(p_sMaster != NULL);
 
-  memset(data, 0, MAX_BYTES * sizeof(data[0]));
+  memset(data, 0, nbytes * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
@@ -98,7 +98,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, u
 
   configASSERT(smbus != NULL);
 
-  memset(data, 0, MAX_BYTES * sizeof(data[0]));
+  memset(data, 0, nbytes * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
   tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, &reg_address, 1, data, nbytes);
@@ -170,7 +170,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
 
   return 0;
 }
-
+// for PMBUS commands 
 int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
                     struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
 {

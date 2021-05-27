@@ -252,7 +252,7 @@ void MonitorTask(void *parameters)
             val = (float)((data[1] << 8) | data[0]); // ugly is my middle name
           }
           else {
-            val = -99.0f; // should never get here
+            val = -98.0f; // should never get here
           }
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.

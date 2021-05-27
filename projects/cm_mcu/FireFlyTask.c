@@ -22,8 +22,6 @@
 
 // local includes
 #include "common/i2c_reg.h"
-#include "common/smbus.h"
-#include "common/smbus_units.h"
 #include "MonitorTask.h"
 #include "common/power_ctl.h"
 #include "Tasks.h"
@@ -35,6 +33,9 @@
 #ifndef REV2
 #define I2C_PULLUP_BUG2
 #endif // REV2 
+
+#define I2C_DEVICE_F1 4
+#define I2C_DEVICE_F2 3
 
 // local prototype
 void Print(const char *str);
@@ -552,8 +553,6 @@ void FireFlyTask(void *parameters)
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
   for (;;) {
-    // tSMBus *smbus;
-    // tSMBusStatus *p_status;
 #ifdef I2C_PULLUP_BUG2
     bool good = false;
 #endif // I2C_PULLUP_BUG
@@ -564,7 +563,6 @@ void FireFlyTask(void *parameters)
     for (uint8_t ff = 0; ff < NFIREFLIES; ++ff) {
       if (!isEnabledFF(ff)) // skip the FF if it's not enabled via the FF config
         continue;
- //     get_smbus_vars(ff, &smbus, &p_status);
 #ifdef I2C_PULLUP_BUG2
       if (getPSStatus(5) != PWR_ON) {
         if (good) {
@@ -677,10 +675,10 @@ void FireFlyTask(void *parameters)
       ff_updateTick = xTaskGetTickCount();
       int i2c_device;
       if (ff < NFIREFLIES_F1) {
-        i2c_device = 4;
+        i2c_device = I2C_DEVICE_F1; // I2C_DEVICE_F1
       }
       else {
-        i2c_device = 3;
+        i2c_device = I2C_DEVICE_F2; // I2C_DEVICE_F2
       }
 
       // select the appropriate output for the mux
@@ -694,28 +692,6 @@ void FireFlyTask(void *parameters)
         Print(tmp);
         break;
       }
-
-#ifdef DEBUG_FIF
-      data[0] = 0xAAU;
-      r = SMBusMasterI2CRead(smbus, ff_i2c_addrs[index].mux_addr, data, 1);
-      if (r != SMBUS_OK) {
-        Print("FIF: Read of MUX output failed\r\n");
-      }
-      while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10)); // wait
-      }
-      if (*p_status != SMBUS_OK) {
-        snprintf(tmp, 64, "FIF: Mux read error %d, break out of loop (ps=%d) ...\r\n", *p_status,
-                 index);
-        Print(tmp);
-        break;
-      }
-      else {
-        snprintf(tmp, 64, "FIF: read back register on mux to be %02x\r\n", data[0]);
-        DPRINT(tmp);
-      }
-#endif // DEBUG_FIF
-
 
       typedef union {
         uint8_t us;
@@ -735,20 +711,7 @@ void FireFlyTask(void *parameters)
       tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
       ff_status[ff].temp = tmp1.s;
 #ifdef DEBUG_FIF
-      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
-      DPRINT(tmp);
-#endif // DEBUG_FIF
-
-      // Read the status register
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 1, data);
-      if (res != 0) {
-        snprintf(tmp, 64, ERRSTR, __func__, res, ff, 2);
-        DPRINT(tmp);
-        ff_status[ff].status = 1;
-        break;
-      }
-#ifdef DEBUG_FIF
-      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", index, ff_i2c_addrs[index].name, data[0]);
+      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", ff, ff_i2c_addrs[ff].name, data[0]);
       DPRINT(tmp);
 #endif // DEBUG_FIF
       tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
