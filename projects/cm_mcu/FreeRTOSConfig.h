@@ -151,6 +151,7 @@ header file. */
 #ifdef DEBUG
 #define APOLLO_ASSERT(exp)                                                                         \
   if (!(exp)) {                                                                                    \
+    taskDISABLE_INTERRUPTS();                                                                      \
     APOLLO_ASSERT_RECORD();                                                                        \
     for (;;)                                                                                       \
       ;                                                                                            \
