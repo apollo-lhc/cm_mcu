@@ -127,7 +127,7 @@ void MonitorTask(void *parameters)
     }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
-    for (uint8_t ps = 0; ps < args->n_devices; ++ps) {
+    for (int ps = 0; ps < args->n_devices; ++ps) {
 #ifdef I2C_PULLUP_BUG
       if (getPSStatus(5) != PWR_ON && args->name[0] == 'X') {
         break;
