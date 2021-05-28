@@ -123,7 +123,7 @@ static const int pins[] = {
 
 void setupActiveLowPins(void)
 {
-  for (int8_t i = 0; i < NPINS; ++i) {
+  for (int i = 0; i < NPINS; ++i) {
     write_gpio_pin(pins[i], 0x1);
   }
 }

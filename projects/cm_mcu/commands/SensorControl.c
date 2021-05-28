@@ -508,11 +508,11 @@ BaseType_t ff_status(int argc, char **argv, char* m)
 
     const char *name = getFFname(whichff);
     if (!isEnabledFF(whichff)){
-      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%s -", name);
+      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%17s   --", name);
     }
     else {
-      int8_t status = getFFstatus(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s %01d ", name, status);
+      uint8_t status = getFFstatus(whichff);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s 0x%02x ", name, status);
     }
 
     bool isTx = (strstr(name, "Tx") != NULL);
