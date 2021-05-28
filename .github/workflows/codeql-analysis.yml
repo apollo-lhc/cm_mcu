@@ -50,22 +50,41 @@ jobs:
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
+    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
+      id:   cache-toolchain
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-toolchain-10-2020-q4
+      with:
+        path: ${{ runner.temp }}/arm-none-eabi
+        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
 
-    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+    - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
+      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      with:
+        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        # Directory to unpack GCC to. Defaults to a temporary directory.
+        directory: ${{ runner.temp }}/arm-none-eabi
+    - name: FreeRTOS download
+      run: |
+         cd ${{runner.temp}}
+         mkdir freertos-lts
+         cd freertos-lts
+         curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
+         unzip -q freertos_code.zip 
+         echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
+         export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
+         echo $FREERTOS_ROOT
+         pwd
+    - name: make with GCC
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make clean
+        arm-none-eabi-gcc --version
+        make -k -w VERBOSE=1
 
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 https://git.io/JvXDl
-
-    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
-    #    and modify them (or add more) to build your code if your project
-    #    uses a compiled language
-
-    #- run: |
-    #   make bootstrap
-    #   make release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
