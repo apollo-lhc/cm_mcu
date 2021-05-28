@@ -34,8 +34,14 @@
 #define I2C_PULLUP_BUG2
 #endif // REV2 
 
+// I2C information -- which device on the MCU is for the FF for each FPGA
+// this is what corresponds to I2C_BASE variables in the MCU
+#ifndef REV2
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
+#else
+#error "define firefly i2c devices for Rev2"
+#endif
 
 // local prototype
 void Print(const char *str);
@@ -103,24 +109,6 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"V12  12 Rx GTY", 0x71, 5, 0x54}, //
 };
 
-// I2C for VU7P optics
-extern tSMBus g_sMaster3;
-extern tSMBusStatus eStatus3;
-// I2C for KU15P optics
-extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
-
-void get_smbus_vars(int ff, tSMBus **smbus, tSMBusStatus **status)
-{
-  if (ff < NFIREFLIES_F1) {
-    *smbus = &g_sMaster4;
-    *status = &eStatus4;
-  }
-  else {
-    *smbus = &g_sMaster3;
-    *status = &eStatus3;
-  }
-}
 
 // -------------------------------------------------
 //
@@ -297,50 +285,37 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
   if (ff == NFIREFLIES) {
     return -2; // no match found
   }
-  // i2c base 
-  tSMBus *smbus;
-  tSMBusStatus *p_status;
 
-  get_smbus_vars(ff, &smbus, &p_status);
+  int i2c_device;
+  if (ff < NFIREFLIES_F1) {
+    i2c_device = I2C_DEVICE_F1; // I2C_DEVICE_F1
+  }
+  else {
+    i2c_device = I2C_DEVICE_F2; // I2C_DEVICE_F2
+  }
 
   // write to the mux
   // select the appropriate output for the mux
-
-  value[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, value, 1);
-  if (r != SMBUS_OK) {
-    Print("read_ff_reg: I2CBus command failed  (setting mux)\r\n");
-    return 1;
-  }
-  int tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-    CHECKSTUCK();
-  }
-  if (*p_status != SMBUS_OK) {
+  uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
+  int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
+  if ( res != 0 ) {
     char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
              ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
   }
-  // Write/Read from register. 
-  r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
-  if (r != SMBUS_OK) {
-    Print("write_ff_reg: I2CBus command failed (FF register)\r\n");
-    return 1;
-  }
-  tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-    CHECKSTUCK();
-  }
-  if (*p_status != SMBUS_OK) {
+
+  // Read from register.
+  res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, reg_addr, size, value);
+
+  //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
+  if (res != 0) {
     char tmp[128];
-    snprintf(tmp, 128, "%s: FF WriteRead error %d  (ff=%s) ...\r\n", __func__, *p_status,
+    snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
              ff_i2c_addrs[ff].name);
     Print(tmp);
-    return *p_status;
+    return res;
   }
   return 0;
 }
@@ -357,56 +332,39 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   if (ff == NFIREFLIES) {
     return -2; // no match found
   }
-  // i2c base -- two i2c controllers
-  tSMBus *smbus;
-  tSMBusStatus *p_status;
+  int i2c_device;
+  if (ff < NFIREFLIES_F1) {
+    i2c_device = I2C_DEVICE_F1; // I2C_DEVICE_F1
+  }
+  else {
+    i2c_device = I2C_DEVICE_F2; // I2C_DEVICE_F2
+  }
 
-  get_smbus_vars(ff, &smbus, &p_status);
-
-  uint8_t data[3];
   // write to the mux
   // select the appropriate output for the mux
-
-  data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].mux_addr, data, 1);
-  if (r != SMBUS_OK) {
-    Print("write_ff_reg: I2CBus command failed  (setting mux)\r\n");
-    return 1;
-  }
-  int tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-    CHECKSTUCK();
-  }
-  if (*p_status != SMBUS_OK) {
+  uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
+  int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
+  if ( res != 0 ) {
     char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
              ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
   }
+
+
   // write to register. First word is reg address, then the data.
   // increment size to account for the register address
-  data[0] = reg;
-  data[1] = value & 0xFFU;
-  data[2] = (value & 0xFF00U) >> 8;
-  r = SMBusMasterI2CWrite(smbus, ff_i2c_addrs[ff].dev_addr, data, size + 1);
-  if (r != SMBUS_OK) {
-    Print("write_ff_reg: I2CBus command failed  (FF register)\r\n");
-    return 1;
-  }
-  tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-    CHECKSTUCK();
-  }
-  if (*p_status != SMBUS_OK) {
+  res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, reg, size, (int)value);
+  if (res != 0) {
     char tmp[64];
-    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, *p_status,
+    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
              ff_i2c_addrs[ff].name);
     Print(tmp);
     return 1;
   }
+
+
   return 0;
 }
 
@@ -804,13 +762,7 @@ void FireFlyTask(void *parameters)
 
       for (uint8_t i = 148; i < 164; i++) {
         res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, i, 1, data);
-        if (res == -1) {
-          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-              1);
-          DPRINT(tmp);
-          continue; // abort reading this register
-        }
-        else if (res==-2){
+        if (res != 0){
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
               ff, 1);
           DPRINT(tmp);
