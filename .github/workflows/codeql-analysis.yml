@@ -13,7 +13,7 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ master codeql-ci ]
+    branches: [ master ]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
@@ -81,10 +81,8 @@ jobs:
     - name: make with GCC
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-        make clean
         arm-none-eabi-gcc --version
         make -k -w VERBOSE=1
-
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
