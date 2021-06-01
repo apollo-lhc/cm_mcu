@@ -24,6 +24,7 @@
 #include "common/pinout.h"
 #include "common/pinsel.h"
 #include "common/smbus.h"
+#include "common/log.h"
 #include "CommandLineTask.h"
 #include "InterruptHandlers.h"
 #include "MonitorTask.h"
@@ -207,12 +208,17 @@ const char *gitVersion()
   const char * gitVersion = FIRMWARE_VERSION BUILD_TYPE;
   return gitVersion;
 }
+
 //
 int main(void)
 {
   SystemInit();
 
   initFPGAMon();
+
+  int uart = FP_UART;
+  log_add_callback(ApolloLog, &uart, LOG_INFO);
+  log_info("here I am version %s\r\n", gitVersion());
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
