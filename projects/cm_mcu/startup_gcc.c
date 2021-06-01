@@ -39,7 +39,7 @@ static void IntDefaultHandler(void);
 
 /* The prototype shows it is a naked function - in effect this is just an
 assembly function. */
-static void HardFault_Handler(void) __attribute__((naked));
+static void HardFault_Handler(void) __attribute__((naked, aligned(8)));
 //*****************************************************************************
 //
 // The entry point for the application.
@@ -337,7 +337,6 @@ of this function. */
 prvGetRegistersFromStack(). */
 static void HardFault_Handler(void)
 {
-#ifdef DEBUG
   __asm volatile(" tst lr, #4                                                \n"
                  " ite eq                                                    \n"
                  " mrseq r0, msp                                             \n"
@@ -346,10 +345,6 @@ static void HardFault_Handler(void)
                  " ldr r2, handler2_address_const                            \n"
                  " bx r2                                                     \n"
                  " handler2_address_const: .word prvGetRegistersFromStack    \n");
-#else
-  for (;;)
-    ;
-#endif
 }
 #pragma GCC diagnostic pop
 
