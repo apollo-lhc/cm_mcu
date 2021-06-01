@@ -296,12 +296,12 @@ static void NmiSR(void)
 // invokes a restart.
 //
 //*****************************************************************************
-static void
-prvGetRegistersFromStack(uint32_t *pulFaultStackAddress) // @suppress("Unused static function")
+void
+GetRegistersFromStack(uint32_t *pulFaultStackAddress) //
 {
   /* These are volatile to try and prevent the compiler/linker optimizing them
 away as the variables never actually get used.  If the debugger won't show the
-values of the variables, make them global my moving their declaration outside
+values of the variables, make them global by moving their declaration outside
 of this function. */
   volatile uint32_t r0;
   volatile uint32_t r1;
@@ -333,8 +333,10 @@ of this function. */
 #endif // DEBUG
 }
 
-/* The fault handler implementation calls a function called
-prvGetRegistersFromStack(). */
+/*
+ * The fault handler implementation calls a function called
+ * GetRegistersFromStack().
+ */
 static void HardFault_Handler(void)
 {
   __asm volatile(" tst lr, #4                                                \n"
@@ -344,7 +346,7 @@ static void HardFault_Handler(void)
                  " ldr r1, [r0, #24]                                         \n"
                  " ldr r2, handler2_address_const                            \n"
                  " bx r2                                                     \n"
-                 " handler2_address_const: .word prvGetRegistersFromStack    \n");
+                 " handler2_address_const: .word GetRegistersFromStack    \n");
 }
 #pragma GCC diagnostic pop
 
