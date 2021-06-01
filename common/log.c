@@ -22,30 +22,27 @@
 
 #include "log.h"
 
-#define MAX_CALLBACKS 32
+#define MAX_CALLBACKS 8
 
 typedef struct {
   log_LogFn fn;
   void *udata;
   int level;
-} Callback;
+} log_Callback;
 
 static struct {
   void *udata;
   log_LockFn lock;
   int level;
   bool quiet;
-  Callback callbacks[MAX_CALLBACKS];
+  log_Callback callbacks[MAX_CALLBACKS];
 } L;
 
-
-static const char *level_strings[] = {
-  "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
-};
+static const char *level_strings[] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE",};
 
 #ifdef LOG_USE_COLOR
-static const char *level_colors[] = {
-  "\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"
+static const char *level_colors[] = { //
+    "\x1b[35m", "\x1b[31m", "\x1b[33m", "\x1b[32m", "\x1b[36m", "\x1b[94m" //
 };
 #endif
 
@@ -122,7 +119,7 @@ void log_set_quiet(bool enable) {
 int log_add_callback(log_LogFn fn, void *udata, int level) {
   for (int i = 0; i < MAX_CALLBACKS; i++) {
     if (!L.callbacks[i].fn) {
-      L.callbacks[i] = (Callback) { fn, udata, level };
+      L.callbacks[i] = (log_Callback) { fn, udata, level };
       return 0;
     }
   }
@@ -155,20 +152,15 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 
   lock();
 
-  if (!L.quiet && level >= L.level) {
-    init_event(&ev, stderr);
-    va_start(ev.ap, fmt);
-    stdout_callback(&ev);
-    va_end(ev.ap);
-  }
-
-  for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
-    Callback *cb = &L.callbacks[i];
-    if (level >= cb->level) {
-      init_event(&ev, cb->udata);
-      va_start(ev.ap, fmt);
-      cb->fn(&ev);
-      va_end(ev.ap);
+  if (!L.quiet) {
+    for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
+      log_Callback *cb = &L.callbacks[i];
+      if (level >= cb->level) {
+        init_event(&ev, cb->udata);
+        va_start(ev.ap, fmt);
+        cb->fn(&ev);
+        va_end(ev.ap);
+      }
     }
   }
 
