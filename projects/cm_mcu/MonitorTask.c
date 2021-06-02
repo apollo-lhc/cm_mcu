@@ -29,6 +29,8 @@
 #include "common/i2c_reg.h"
 #include "common/utils.h"
 #include "common/smbus.h"
+#include "common/log.h"
+#include "common/printf.h"
 #include "common/smbus_units.h"
 #include "common/power_ctl.h"
 #include "MonitorTask.h"
@@ -59,8 +61,10 @@ static void SuppressedPrint(const char *str, int *current_error_cnt, bool *loggi
     if (*logging == true) {
       Print(str);
       ++(*current_error_cnt);
-      if (*current_error_cnt == error_max)
+      if (*current_error_cnt == error_max) {
         Print("\t--> suppressing further errors for now\r\n");
+        log_warn("suppressing further errors for now\r\n");
+      }
     }
     else { // not logging
       if (*current_error_cnt <= error_restart_threshold)
@@ -110,6 +114,7 @@ void MonitorTask(void *parameters)
       if (good) {
         snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
         SuppressedPrint(tmp, &current_error_cnt, &log);
+        log_warn("%s: 3V3 died. Skipping I2C monitoring.\r\n", args->name);
         good = false;
       }
       vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));

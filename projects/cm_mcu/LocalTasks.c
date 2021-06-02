@@ -20,6 +20,8 @@
 #include "common/pinsel.h"
 #include "common/smbus_units.h"
 #include "I2CCommunication.h"
+#include "common/log.h"
+#include "common/printf.h"
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2
@@ -29,8 +31,6 @@
 #define FPGA_MON_NVALUES_PER_DEVICE 1
 #define FPGA_MON_NVALUES            (FPGA_MON_NCOMMANDS * FPGA_MON_NDEVICES * FPGA_MON_NVALUES_PER_DEVICE)
 
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
 
 // FPGA arguments for monitoring task
 struct dev_i2c_addr_t fpga_addrs[] = {
@@ -144,7 +144,7 @@ void LGA80D_init(void)
 {
   while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
     ;
-  Print("LGA80D_init\r\n");
+  log_info("LGA80D_init\r\n");
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);

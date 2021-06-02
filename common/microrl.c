@@ -13,6 +13,7 @@ BUGS and TODO:
 #include <stdio.h>
 #endif
 #include <stdbool.h>
+#include "printf.h"
 
 /*******************************************************************************
  * Key codes

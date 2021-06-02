@@ -13,6 +13,7 @@
 #define MICRORL_PROMPT_LEN     2
 
 #define MICRORL_USE_COMPLETE 0
+#define MICRORL_USE_LIBC_STDIO 0
 
 #define MICRORL_USE_CTRL_C 0
 // end PW HACK

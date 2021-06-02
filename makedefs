@@ -141,7 +141,6 @@ LIBGCC:=${shell ${CC} ${CFLAGS} -print-libgcc-file-name}
 # Get the location of libc.a from the GCC front-end.
 #
 LIBC:=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
-
 #
 # Get the location of libm.a from the GCC front-end.
 #
@@ -347,14 +346,14 @@ ${COMPILER}${SUFFIX}/%.axf:
 	          --entry ${ENTRY_${notdir ${@:.axf=}}}                       \
 	          ${LDFLAGSgcc_${notdir ${@:.axf=}}}                          \
 	          ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})                  \
-	          '${LIBM}' '${LIBC}' '${LIBGCC}';                            \
+	          '${LIBM}' '${LIBC}'  '${LIBGCC}'; \
 	     echo ${SIZE} ${@} ;                                              \
 	 fi;                                                                  \
 	${LD} -T $${ldname}                                                   \
 	      --entry ${ENTRY_${notdir ${@:.axf=}}}                           \
 	      ${LDFLAGSgcc_${notdir ${@:.axf=}}}                              \
 	      ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})                      \
-	      '${LIBM}' '${LIBC}' '${LIBGCC}'
+	      '${LIBM}' '${LIBC}'  '${LIBGCC}' 
 	@${OBJCOPY} -O binary ${@} ${@:.axf=.bin}
 	@${SIZE} ${@}
 
