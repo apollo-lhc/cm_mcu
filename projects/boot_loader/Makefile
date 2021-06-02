@@ -76,7 +76,7 @@ ${COMPILER}/bl_main.axf: ${COMPILER}/bl_flash.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_userhooks.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/uart.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/microrl.o
-${COMPILER}/bl_main.axf: ${COMPILER}/printf-stdarg.o
+${COMPILER}/bl_main.axf: ${COMPILER}/printf.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_startup_${COMPILER}.o
 # TIVAWARE
 ${COMPILER}/bl_main.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a

@@ -21,6 +21,8 @@
  */
 
 #include "log.h"
+#include "task.h"
+#include "printf.h"
 
 #define MAX_CALLBACKS 8
 
@@ -78,10 +80,18 @@ static void file_callback(log_Event *ev) {
 }
 #endif
 
+void Print(const char* str);
+
 void ApolloLog(log_Event *ev)
 {
   char tmp[256];
-  snprintf(tmp, "%s %-5s %s:%d: ", level_strings[ev->level], ev->file, ev->line);
+  int r = 0;
+#ifdef LOG_USE_COLOR
+  r = snprintf(tmp, 256, "%s", level_colors[ev->level]);
+#endif // LOG_USE_COLOR
+  r += snprintf(tmp+r, 256-r, "%d %-5s %s:%u:", ev->time, level_strings[ev->level], ev->file, ev->line);
+  r += vsnprintf(tmp+r, 256-r, ev->fmt, ev->ap);
+  snprintf(tmp+r, 256-r, "%s", "\033[0m");
   Print(tmp);
 }
 
@@ -134,10 +144,7 @@ int log_add_fp(FILE *fp, int level) {
 
 
 static void init_event(log_Event *ev, void *udata) {
-  if (!ev->time) {
-    time_t t = time(NULL);
-    ev->time = localtime(&t);
-  }
+  ev->time = xTaskGetTickCount();
   ev->udata = udata;
 }
 
@@ -152,10 +159,11 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 
   lock();
 
+
   if (!L.quiet) {
     for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
       log_Callback *cb = &L.callbacks[i];
-      if (level >= cb->level) {
+      if (level <= cb->level) {
         init_event(&ev, cb->udata);
         va_start(ev.ap, fmt);
         cb->fn(&ev);

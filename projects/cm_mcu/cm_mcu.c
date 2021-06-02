@@ -232,6 +232,7 @@ const char *gitVersion()
   const char * gitVersion = FIRMWARE_VERSION BUILD_TYPE;
   return gitVersion;
 }
+void ApolloLog(log_Event *ev);
 
 //
 int main(void)
@@ -241,8 +242,7 @@ int main(void)
   initFPGAMon();
 
   int uart = FP_UART;
-  log_add_callback(ApolloLog, &uart, LOG_INFO);
-  log_info("here I am version %s\r\n", gitVersion());
+  log_add_callback(ApolloLog, &uart, LOG_DEBUG);
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
@@ -278,7 +278,7 @@ int main(void)
     fpga_args.pm_values[i] = -999.f;
 
   // start the tasks here
-  xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(PowerSupplyTask, "POW", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(LedTask, "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 1, NULL);
 #ifdef REV1
@@ -347,6 +347,7 @@ int main(void)
   Print("----------------------------\r\n");
 
   errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
+  //log_info("here I am version %d\r\n", 666);
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
@@ -387,14 +388,15 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */
-  (void)pxTask;
-  (void)pcTaskName;
   taskDISABLE_INTERRUPTS();
   char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
   UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
+  UARTPrint(FP_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
   while (MAP_UARTBusy(ZQ_UART))
+    ;
+  while (MAP_UARTBusy(FP_UART))
     ;
   // log the error
   errbuffer_put_raw(EBUF_STACKOVERFLOW, 0);
@@ -416,9 +418,10 @@ void vApplicationIdleHook(void)
   static int HW = 999;
   int nHW = SystemStackWaterHighWaterMark();
   if (nHW < HW) {
-    char tmp[64];
-    snprintf(tmp, 64, "Stack canary now %d\r\n", nHW);
-    Print(tmp);
+//    char tmp[64];
+//    snprintf(tmp, 64, "Stack canary now %d\r\n", nHW);
+//    Print(tmp);
+    log_info("Stack canary now %d\r\n", nHW);
     HW = nHW;
 #ifdef DUMP_STACK
     const uint32_t *p = getSystemStack();

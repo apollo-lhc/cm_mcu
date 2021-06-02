@@ -11,6 +11,9 @@
 //#include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h"
+#include "printf.h"
 //#include <time.h>
 
 #define LOG_VERSION "0.1.0_pw"
@@ -19,7 +22,7 @@ typedef struct {
   va_list ap;
   const char *fmt;
   const char *file;
-  TickType time;
+  TickType_t time;
   void *udata;
   int line;
   int level;

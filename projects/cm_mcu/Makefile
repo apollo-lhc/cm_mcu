@@ -32,6 +32,8 @@ endif
 ifdef REV1
 CFLAGS += -DREV1
 endif 
+CFLAGS+=-DPRINTF_INCLUDE_CONFIG_H
+CFLAGS += -DLOG_USE_COLOR
 
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #CFLAGS+=-fstack-protector 
@@ -138,7 +140,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/port.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/list.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/heap_4.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/printf-stdarg.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/printf.o
 ## TivaWare
 ${COMPILER}/cm_mcu.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/cm_mcu.axf: cm_mcu.ld

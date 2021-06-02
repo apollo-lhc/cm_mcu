@@ -24,6 +24,7 @@
 #include "common/i2c_reg.h"
 #include "MonitorTask.h"
 #include "common/power_ctl.h"
+#include "common/log.h"
 #include "Tasks.h"
 #include "I2CCommunication.h"
 
@@ -58,10 +59,7 @@ void Print(const char *str);
   {                                                                                                \
     ++tries;                                                                                       \
     if (tries > CHECKSTUCK_COUNT) {                                                                \
-      char tmp[64];                                                                                \
-      snprintf(tmp, 64, "FIF: stuck at line %d (%u, %u)\r\n", __LINE__, (unsigned)ff_updateTick,   \
-               (unsigned)ff_updateTick);                                                           \
-      Print(tmp);                                                                                  \
+      log_warn("stuck (%u, %u)\r\n", (unsigned)ff_updateTick, (unsigned)ff_updateTick);            \
       tries = 0;                                                                                   \
       break;                                                                                       \
     }                                                                                              \
