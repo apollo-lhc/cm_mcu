@@ -130,45 +130,6 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
 #endif // REV1
 void Print(const char *);
 
-int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
-                    struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
-{
-  // write to the I2C mux
-  uint8_t data;
-  // select the appropriate output for the mux
-  data = 0x1U << add->mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
-  if (r != SMBUS_OK) {
-    return -1;
-  }
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-  }
-  if (*smbus_status != SMBUS_OK) {
-    return -2;
-  }
-  // read/write to the device itself
-  if (read) {
-    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
-  }
-  else { // write
-    r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
-  }
-  if (r != SMBUS_OK) {
-    return -3;
-  }
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-  }
-  // this is checking the return from the interrupt
-  if (*smbus_status != SMBUS_OK) {
-    return -4;
-  }
-  // if we get here, a successful read/write command
-
-  return 0;
-}
-
 // this function is run once in the dcdc monitoring task
 struct pm_command_t extra_cmds[] = {
     {0x0, 1, "PAGE", "", PM_STATUS},
@@ -187,26 +148,26 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
-    log_error("error page\r\n");
+    log_error("page\r\n");
   }
 
   // actual command -- snapshot control copy NVRAM for reading
   uint8_t cmd = 0x1;
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
   if (r) {
-    log_error("error ctrl\r\n");
+    log_error("ctrl\r\n");
   }
   // actual command -- read snapshot
   tSMBusStatus r2 =
       SMBusMasterBlockRead(&g_sMaster1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
   if (r2 != SMBUS_OK) {
-    log_error("error block\r\n");
+    log_error("block %d\r\n", r2);
   }
   while ((r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
   if (r2 != SMBUS_TRANSFER_COMPLETE) {
-    log_error("error\r\n");
+    log_error("SMBUS %d\r\n", r2);
   }
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
