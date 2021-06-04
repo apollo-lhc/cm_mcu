@@ -127,7 +127,7 @@ void MonitorTask(void *parameters)
     }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
-    for (uint8_t ps = 0; ps < args->n_devices; ++ps) {
+    for (int ps = 0; ps < args->n_devices; ++ps) {
 #ifdef I2C_PULLUP_BUG
       if (getPSStatus(5) != PWR_ON && args->name[0] == 'X') {
         break;
@@ -252,7 +252,7 @@ void MonitorTask(void *parameters)
             val = (float)((data[1] << 8) | data[0]); // ugly is my middle name
           }
           else {
-            val = -99.0f; // should never get here
+            val = -98.0f; // should never get here
           }
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.

@@ -62,51 +62,18 @@ extern tSMBusStatus eStatus4;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
 
-static tSMBus *p_sMaster = &g_sMaster4;
-static tSMBusStatus *p_eStatus = &eStatus4;
-
-// Ugly hack for now -- I don't understand how to reconcile these
-// two parts of the FreeRTOS-Plus code w/o casts-o-plenty
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat" // because of our mini-sprintf
-
-int apollo_i2c_ctl_set_dev(uint8_t base)
-{
-  if (!((base == 1) || (base == 2) || (base == 3) || (base == 4) || (base == 6))) {
-    return -1;
-  }
-  switch (base) {
-    case 1:
-      p_sMaster = &g_sMaster1;
-      p_eStatus = &eStatus1;
-      break;
-    case 2:
-      p_sMaster = &g_sMaster2;
-      p_eStatus = &eStatus2;
-      break;
-    case 3:
-      p_sMaster = &g_sMaster3;
-      p_eStatus = &eStatus3;
-      break;
-    case 4:
-      p_sMaster = &g_sMaster4;
-      p_eStatus = &eStatus4;
-      break;
-    case 6:
-      p_sMaster = &g_sMaster6;
-      p_eStatus = &eStatus6;
-      break;
-    default:
-      return -2;
-      break;
-  }
-  return 0;
-}
+tSMBus* pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, NULL, &g_sMaster6, NULL, NULL, NULL};
+tSMBusStatus* eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, NULL, &eStatus6, NULL, NULL, NULL};
 
 #define MAX_BYTES 4
-int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
+int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  memset(data, 0, MAX_BYTES * sizeof(data[0]));
+  tSMBus* p_sMaster = pSMBus[device];
+  tSMBusStatus* p_eStatus = eStatus[device];
+
+  configASSERT(p_sMaster != NULL);
+
+  memset(data, 0, nbytes * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
@@ -124,27 +91,33 @@ int apollo_i2c_ctl_r(uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
   return 0;
 }
 
-int apollo_i2c_ctl_reg_r(uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
+int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
-  memset(data, 0, MAX_BYTES * sizeof(data[0]));
+  tSMBus* smbus = pSMBus[device];
+  tSMBusStatus* p_status = eStatus[device];
+
+  configASSERT(smbus != NULL);
+
+  memset(data, 0, nbytes * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
-  tSMBusStatus r = SMBusMasterI2CWriteRead(p_sMaster, address, &reg_address, 1, data, nbytes);
+  tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, &reg_address, 1, data, nbytes);
   if (r != SMBUS_OK) {
     return -1;
   }
-  while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
-  if (*p_eStatus != SMBUS_OK) {
-    return -2;
-  }
-
-  return 0;
+  return *p_status;
 }
 
-int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)
+int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)
 {
+  tSMBus* p_sMaster = pSMBus[device];
+  tSMBusStatus* p_eStatus = eStatus[device];
+
+  configASSERT(p_sMaster != NULL);
+
   // first byte is the register, others are the data
   uint8_t data[MAX_BYTES+1];
   data[0] = reg_address;
@@ -171,8 +144,12 @@ int apollo_i2c_ctl_reg_w(uint8_t address, uint8_t reg_address, uint8_t nbytes, i
   return 0;
 }
 
-int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, int value)
+int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
 {
+  tSMBus* p_sMaster = pSMBus[device];
+  tSMBusStatus* p_eStatus = eStatus[device];
+  configASSERT(p_sMaster != NULL);
+  
   uint8_t data[MAX_BYTES];
   for (int i = 0; i < MAX_BYTES; ++i) {
     data[i] = (value >> i * 8) & 0xFFUL;
@@ -190,6 +167,45 @@ int apollo_i2c_ctl_w(uint8_t address, uint8_t nbytes, int value)
   if (*p_eStatus != SMBUS_OK) {
     return -2;
   }
+
+  return 0;
+}
+// for PMBUS commands 
+int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
+                    struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
+{
+  // write to the I2C mux
+  uint8_t data;
+  // select the appropriate output for the mux
+  data = 0x1U << add->mux_bit;
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+  if (r != SMBUS_OK) {
+    return -1;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  if (*smbus_status != SMBUS_OK) {
+    return -2;
+  }
+  // read/write to the device itself
+  if (read) {
+    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
+  }
+  else { // write
+    r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
+  }
+  if (r != SMBUS_OK) {
+    return -3;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  // this is checking the return from the interrupt
+  if (*smbus_status != SMBUS_OK) {
+    return -4;
+  }
+  // if we get here, a successful read/write command
 
   return 0;
 }
