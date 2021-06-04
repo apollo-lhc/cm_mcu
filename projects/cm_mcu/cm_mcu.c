@@ -56,6 +56,8 @@
 
 #define I2C0_SLAVE_ADDRESS 0x40
 
+#define LOG_FACILITY LOG_SERVICE
+
 uint32_t g_ui32SysClock = 0;
 
 // Mutex for UART -- should really have one for each UART
@@ -217,8 +219,7 @@ int main(void)
 
   initFPGAMon();
 
-  int uart = FP_UART;
-  log_add_callback(ApolloLog, &uart, LOG_DEBUG);
+  log_set_level(LOG_INFO);
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();

@@ -42,15 +42,6 @@
 #include "Tasks.h"
 #include "I2CCommunication.h"
 
-#ifdef DEBUG_CON
-// prototype of mutex'd print
-#define DPRINT(x) Print(x)
-#else // DEBUG_CON
-#define DPRINT(x)
-#endif // DEBUG_CON
-
-void Print(const char *str);
-
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
 extern tSMBus g_sMaster2;

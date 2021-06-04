@@ -26,6 +26,8 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
+#define LOG_FACILITY LOG_PWRCTL
+
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 

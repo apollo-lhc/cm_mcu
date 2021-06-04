@@ -7,6 +7,7 @@
 
 #include "common/utils.h"
 #include "common/pinsel.h"
+#include "common/printf.h"
 #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
@@ -18,8 +19,6 @@
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t *errbuf_handle_t;
 
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
 
 uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data)
 {

@@ -19,12 +19,6 @@
 #include "task.h"
 #endif // USE_FREERTOS
 
-void ShortDelay(); // needs to be implemented in each project
-
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
-
-void Print(const char *); // needs to be implemented in each project
 
 // clang-format off
 // if you update this you need to update N_PS_ENABLES

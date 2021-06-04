@@ -31,6 +31,7 @@
 #define FPGA_MON_NVALUES_PER_DEVICE 1
 #define FPGA_MON_NVALUES            (FPGA_MON_NCOMMANDS * FPGA_MON_NDEVICES * FPGA_MON_NVALUES_PER_DEVICE)
 
+#define LOG_FACILITY LOG_SERVICE
 
 // FPGA arguments for monitoring task
 struct dev_i2c_addr_t fpga_addrs[] = {
@@ -85,7 +86,44 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"VVCCINT2", 0x70, 4, 0x45}, // second vccint, VU7P
 };
 
-void Print(const char *);
+int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
+                    struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
+{
+  // write to the I2C mux
+  uint8_t data;
+  // select the appropriate output for the mux
+  data = 0x1U << add->mux_bit;
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+  if (r != SMBUS_OK) {
+    return -1;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  if (*smbus_status != SMBUS_OK) {
+    return -2;
+  }
+  // read/write to the device itself
+  if (read) {
+    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
+  }
+  else { // write
+    r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
+  }
+  if (r != SMBUS_OK) {
+    return -3;
+  }
+  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+  }
+  // this is checking the return from the interrupt
+  if (*smbus_status != SMBUS_OK) {
+    return -4;
+  }
+  // if we get here, a successful read/write command
+
+  return 0;
+}
 
 // this function is run once in the dcdc monitoring task
 struct pm_command_t extra_cmds[] = {
@@ -105,33 +143,33 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
-    Print("error in snapdump (0)\r\n");
+    log_error("error page\r\n");
   }
 
   // actual command -- snapshot control copy NVRAM for reading
   uint8_t cmd = 0x1;
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
   if (r) {
-    Print("error in snapdump 1\r\n");
+    log_error("error ctrl\r\n");
   }
   // actual command -- read snapshot
   tSMBusStatus r2 =
       SMBusMasterBlockRead(&g_sMaster1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
   if (r2 != SMBUS_OK) {
-    Print("error setting up block read (snapdump 2)\r\n");
+    log_error("error block\r\n");
   }
   while ((r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
   if (r2 != SMBUS_TRANSFER_COMPLETE) {
-    Print("error in snapdump(3)\r\n");
+    log_error("error\r\n");
   }
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
     cmd = 0x3;
     r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
     if (r) {
-      Print("error in snapdump 4\r\n");
+      log_error("error reset\r\n");
     }
   }
   xSemaphoreGive(dcdc_args.xSem);
@@ -151,31 +189,29 @@ void LGA80D_init(void)
   for (int dev = 1; dev < 5; dev += 1) {
     for (uint8_t page = 0; page < 2; ++page) {
       // page register
-      char tmp[256];
       int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[0],
                               &page);
       if (r) {
-        snprintf(tmp, 256, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
-        Print(tmp);
-        Print("error in LGA80D_init (0)\r\n");
+        log_debug("dev = %d, page = %d, r= %d\r\n", dev, page, r);
+        log_error("error(0)\r\n");
       }
       // actual command -- frequency switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[2],
                           (uint8_t *)&freqlin11);
       if (r) {
-        Print("error in LGA80D_init (1)\r\n");
+        log_error("error(1)\r\n");
       }
       // actual command -- vout_droop switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[5],
                           (uint8_t *)&drooplin11);
       if (r) {
-        Print("error in LGA80D_init (2)\r\n");
+        log_error("error(2)\r\n");
       }
       // actual command -- multiphase_ramp_gain switch
       uint8_t val = 0x7U; // by suggestion of Artesian
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
       if (r) {
-        Print("error in LGA80D_init (3)\r\n");
+        log_error("error(3)\r\n");
       }
     }
   }

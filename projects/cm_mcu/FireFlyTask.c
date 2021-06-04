@@ -43,6 +43,7 @@
 #else
 #error "define firefly i2c devices for Rev2"
 #endif
+#define LOG_FACILITY LOG_FFLY
 
 // local prototype
 void Print(const char *str);

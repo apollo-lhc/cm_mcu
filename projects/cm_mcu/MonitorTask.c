@@ -38,6 +38,9 @@
 
 void Print(const char *str);
 
+#define LOG_FACILITY LOG_MONTSK
+
+
 //#define DEBUG_MON
 #ifdef DEBUG_MON
 // prototype of mutex'd print

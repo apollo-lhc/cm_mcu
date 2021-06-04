@@ -20,6 +20,9 @@
 #include "common/log.h"
 #include "Tasks.h"
 
+#define LOG_FACILITY LOG_SERVICE
+
+
 void InitTask(void *parameters)
 {
 

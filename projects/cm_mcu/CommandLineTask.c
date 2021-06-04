@@ -6,12 +6,17 @@
  */
 
 // Include commands
+
+#include <strings.h>
+
 #include "commands/BoardCommands.h"
 #include "commands/BufferCommands.h"
 #include "commands/EEPROMCommands.h"
 #include "commands/I2CCommands.h"
 #include "commands/SensorControl.h"
 #include "common/smbus_units.h"
+#include "common/printf.h"
+#include "common/log.h"
 
 static char m[SCRATCH_SIZE];
 
@@ -250,7 +255,6 @@ static BaseType_t uptime(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-#pragma GCC diagnostic pop
 // WARNING: this command easily leads to stack overflows. It does not correctly
 // ensure that there are no overwrites to pcCommandString.
 static BaseType_t TaskStatsCommand(int argc, char **argv, char* m)
@@ -300,7 +304,7 @@ static BaseType_t watchdog_ctl(int argc, char **argv, char *m)
 
 static BaseType_t zmon_ctl(int argc, char **argv, char *m)
 {
-  int s = SCRATCH_SIZE, copied = 0;
+  int copied = 0;
   bool understood = true;
   uint32_t message = 0;
   if (argc == 2) {
@@ -367,7 +371,7 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
   }
 
   if (!understood) {
-    snprintf(m, s, "%s: message %s not understood\r\n", argv[0], argv[1]);
+    snprintf(m, SCRATCH_SIZE, "%s: message %s not understood\r\n", argv[0], argv[1]);
     return pdFALSE;
   }
 
@@ -377,6 +381,45 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
     // Send a message to the zmon task
     xQueueSendToBack(xZynqMonQueue, &message, pdMS_TO_TICKS(10));
   }
+  return pdFALSE;
+}
+
+
+// this command takes one arguments
+static BaseType_t log_ctl(int argc, char **argv, char* m)
+{
+
+  if ( strncmp(argv[argc - 1], "toggle", 6) == 0 ) {
+    bool newval = !log_get_quiet();
+    log_set_quiet(newval);
+    snprintf(m, SCRATCH_SIZE, "%s: quiet set to %d\r\n", argv[0], newval);
+  }
+  else if ( strncmp(argv[argc - 1], "status", 6) == 0 ) {
+    int level = log_get_current_level();
+    snprintf(m, SCRATCH_SIZE, "%s: current level is %s\r\n", argv[0],
+             log_level_string(level));
+  }
+  else {
+    size_t len = strlen(argv[1]);
+    int i = 0;
+    for (; i < NUM_LOG_LEVELS; ++i) {
+      if (strncasecmp(argv[1], log_level_string(i), len) == 0 ) {
+        log_set_level(i);
+        break;
+      }
+    }
+    if ( i != NUM_LOG_LEVELS ) {
+      snprintf(m, SCRATCH_SIZE, "%s: set logging level to %s\r\n", argv[0],
+          log_level_string(i));
+    }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: log argument %s not understood\r\n", argv[0],
+          argv[1]);
+    }
+  }
+
+
+
   return pdFALSE;
 }
 
@@ -456,10 +499,19 @@ static struct command_t commands[] = {
         1,
     },
     {"help", help_command_fcn, "help\r\n This help command\r\n", -1},
-    {"pwr", power_ctl,
-     "pwr (on|off|status|clearfail)\r\n Turn on or off all power, get status or clear "
-     "failures.\r\n",
-     1},
+    {
+        "log",
+        log_ctl,
+        "log (debug|toggle|info|warn|fatal|trace)\r\n Manipulate logger levels\r\n",
+        1,
+    },
+    {
+        "pwr",
+        power_ctl,
+        "pwr (on|off|status|clearfail)\r\n Turn on or off all power, get status or clear "
+        "failures.\r\n",
+        1,
+    },
     {"led", led_ctl, "led (0-4)\r\n Manipulate red LED.\r\n", 1},
     {"psmon", psmon_ctl, "psmon <#>\r\n Displays a table showing the state of power supplies.\r\n",
      1},
@@ -593,6 +645,7 @@ static int execute(void *p, int argc, char **argv)
 
   return 0;
 }
+
 
 // The actual task
 void vCommandLineTask(void *pvParameters)
