@@ -25,6 +25,7 @@
 #include "printf.h"
 
 #define MAX_CALLBACKS 8
+#define stdout_callback ApolloLog
 
 typedef struct {
   log_LogFn fn;
@@ -125,6 +126,16 @@ void log_set_quiet(bool enable) {
   L.quiet = enable;
 }
 
+bool log_get_quiet()
+{
+  return L.quiet;
+}
+
+int log_get_current_level()
+{
+  return L.level;
+}
+
 
 int log_add_callback(log_LogFn fn, void *udata, int level) {
   for (int i = 0; i < MAX_CALLBACKS; i++) {
@@ -149,7 +160,9 @@ static void init_event(log_Event *ev, void *udata) {
 }
 
 
-void log_log(int level, const char *file, int line, const char *fmt, ...) {
+void log_log(int level, const char *file, int line, enum log_facility_t facility,
+             const char *fmt, ...)
+{
   log_Event ev = {
     .fmt   = fmt,
     .file  = file,
@@ -159,11 +172,18 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 
   lock();
 
+  if (!L.quiet && level <= L.level) {
+    init_event(&ev, NULL);
+    va_start(ev.ap, fmt);
+    stdout_callback(&ev);
+    va_end(ev.ap);
+  }
+
 
   if (!L.quiet) {
     for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
       log_Callback *cb = &L.callbacks[i];
-      if (level <= cb->level) {
+      if (level <= L.level ) {
         init_event(&ev, cb->udata);
         va_start(ev.ap, fmt);
         cb->fn(&ev);

@@ -40,6 +40,7 @@
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
 #endif
+#define LOG_FACILITY LOG_FFLY
 
 // local prototype
 void Print(const char *str);
