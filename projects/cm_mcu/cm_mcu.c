@@ -300,8 +300,8 @@ int main(void)
   Print("\r\n----------------------------\r\n");
   Print("Staring Apollo CM MCU firmware ");
   Print(gitVersion());
-  Print("\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
-  Print("Built on " __TIME__ ", " __DATE__ "\r\n");
+  Print("\r\nBuilt on " __TIME__ ", " __DATE__ "\r\n");
+  Print("\t\t (FreeRTOS scheduler about to start)\r\n");
 #ifdef ECN001
   Print("Includes ECN001 code mods\r\n");
 #endif // ECN001
@@ -322,7 +322,7 @@ uintptr_t __stack_chk_guard = 0xdeadbeef;
 
 void __stack_chk_fail(void)
 {
-  Print("Stack smashing detected\r\n");
+  log_fatal("Stack smashing detected\r\n");
   __asm volatile("cpsid i"); /* disable interrupts */
   __asm volatile("bkpt #0"); /* break target */
   for (;;)
@@ -379,9 +379,6 @@ void vApplicationIdleHook(void)
   static int HW = 999;
   int nHW = SystemStackWaterHighWaterMark();
   if (nHW < HW) {
-//    char tmp[64];
-//    snprintf(tmp, 64, "Stack canary now %d\r\n", nHW);
-//    Print(tmp);
     log_info("Stack canary now %d\r\n", nHW);
     HW = nHW;
 #ifdef DUMP_STACK
