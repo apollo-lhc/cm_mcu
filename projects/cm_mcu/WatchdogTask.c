@@ -22,8 +22,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-// local prototype
-void Print(const char *str);
+#include "common/log.h"
+
+#define LOG_FACILITY LOG_SERVICE
 
 static uint16_t s_registered_tasks = 0;
 static uint16_t s_fed_tasks = 0;
@@ -43,9 +44,7 @@ static void prv_task_watchdog_check(void)
     s_fed_tasks = 0;
   }
   else {
-    char tmpstr[64];
-    snprintf(tmpstr, 64, "%s: watchdog failed mask: 0x%x\r\n", __func__, s_registered_tasks);
-    Print(tmpstr);
+    log_trace("%s: watchdog failed mask: 0x%x\r\n", __func__, s_registered_tasks);
   }
 }
 
