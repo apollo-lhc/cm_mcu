@@ -703,11 +703,15 @@ void FireFlyTask(void *parameters)
         if (good) {
           Print("FIF: 3V3 died. Skipping I2C monitoring.\r\n");
           good = false;
+          task_watchdog_unregister_task(kWatchdogTaskID_FireFly);
         }
         vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(500));
         continue;
       }
-      else {
+      else { // power is on, and ...
+        if ( ! good ) { // ... was not good, but is now good
+          task_watchdog_register_task(kWatchdogTaskID_FireFly);
+        }
         good = true;
       }
       ff_updateTick = xTaskGetTickCount();

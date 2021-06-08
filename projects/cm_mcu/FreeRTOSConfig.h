@@ -99,7 +99,7 @@ to exclude the API function. */
 #define INCLUDE_xTaskAbortDelay             0
 #define INCLUDE_xTaskGetSchedulerState      0
 #define INCLUDE_xTaskGetIdleTaskHandle      0
-#define INCLUDE_uxTaskGetStackHighWaterMark 0
+#define INCLUDE_uxTaskGetStackHighWaterMark 1
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS

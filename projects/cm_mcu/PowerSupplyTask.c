@@ -53,7 +53,7 @@ static uint16_t check_ps_oks(void)
 
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
 {
-  log_error("failure set: fail, supply_mask, bitset =  %x,%x,%x\r\n", failed_mask,
+  log_error("psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n", failed_mask,
       supply_ok_mask, supply_bitset);
 }
 
@@ -212,12 +212,14 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else if (external_alarm) {
+          log_info("external alarm power down\r\n");
           errbuffer_put(EBUF_POWER_OFF_TEMP, 0);
           // turn off all supplies
           disable_ps();
           nextState = POWER_FAILURE;
         }
         else if (!blade_power_enable || cli_powerdown_request) {
+          log_info("power-down requested\r\n");
           disable_ps();
           errbuffer_put(EBUF_POWER_OFF, 0);
           nextState = POWER_OFF;
@@ -231,6 +233,7 @@ void PowerSupplyTask(void *parameters)
         // start power-on sequence
         if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
             !power_supply_alarm) {
+          log_info("power-up requested\r\n");
           turn_on_ps_at_prio(f2_enable, f1_enable, 1);
           errbuffer_put(EBUF_POWER_ON, 0);
           nextState = POWER_L1ON;
