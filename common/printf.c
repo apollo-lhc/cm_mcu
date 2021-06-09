@@ -35,11 +35,17 @@
 
 #include "printf.h"
 
+#ifdef __clang__
+void _putchar(char a)
+{
+  (void)a;
+}
 void _sbrk(int *a)
 {
   (void)a;
-  return ;
+  return;
 }
+#endif //__clang__
 
 
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the

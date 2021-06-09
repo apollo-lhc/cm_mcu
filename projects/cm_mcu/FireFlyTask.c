@@ -40,7 +40,6 @@
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
 #endif
-#define LOG_FACILITY LOG_FFLY
 
 // local prototype
 void Print(const char *str);
@@ -60,7 +59,7 @@ void Print(const char *str);
   {                                                                                                \
     ++tries;                                                                                       \
     if (tries > CHECKSTUCK_COUNT) {                                                                \
-      log_warn("stuck (%u, %u)\r\n", (unsigned)ff_updateTick, (unsigned)ff_updateTick);            \
+      log_warn(LOG_FFLY, "stuck (%u, %u)\r\n", (unsigned)ff_updateTick, (unsigned)ff_updateTick);            \
       tries = 0;                                                                                   \
       break;                                                                                       \
     }                                                                                              \

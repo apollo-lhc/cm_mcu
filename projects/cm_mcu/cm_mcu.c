@@ -56,8 +56,6 @@
 
 #define I2C0_SLAVE_ADDRESS 0x40
 
-#define LOG_FACILITY LOG_SERVICE
-
 uint32_t g_ui32SysClock = 0;
 
 // Mutex for UART -- should really have one for each UART
@@ -242,7 +240,10 @@ int main(void)
 
   initFPGAMon();
 
-  log_set_level(LOG_INFO);
+  // all facilities start at INFO
+  for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
+    log_set_level(LOG_INFO, i);
+  }
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
@@ -347,7 +348,6 @@ int main(void)
   Print("----------------------------\r\n");
 
   errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
-  //log_info("here I am version %d\r\n", 666);
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
@@ -361,7 +361,7 @@ uintptr_t __stack_chk_guard = 0xdeadbeef;
 
 void __stack_chk_fail(void)
 {
-  log_fatal("Stack smashing detected\r\n");
+  log_fatal(LOG_SERVICE, "Stack smashing detected\r\n");
   __asm volatile("cpsid i"); /* disable interrupts */
   __asm volatile("bkpt #0"); /* break target */
   for (;;)
@@ -418,7 +418,7 @@ void vApplicationIdleHook(void)
   static int HW = 999;
   int nHW = SystemStackWaterHighWaterMark();
   if (nHW < HW) {
-    log_info("Stack canary now %d\r\n", nHW);
+    log_info(LOG_SERVICE, "Stack canary now %d\r\n", nHW);
     HW = nHW;
 #ifdef DUMP_STACK
     const uint32_t *p = getSystemStack();

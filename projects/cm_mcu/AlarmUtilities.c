@@ -4,7 +4,6 @@
 
 #include "common/log.h"
 
-#define LOG_FACILITY LOG_ALM
 
 ///////////////////////////////////////////////////////////
 //
@@ -107,7 +106,7 @@ int TempStatus()
 
 void TempErrorLog()
 {
-  log_warn("Temperature high: status: 0x%04x MCU: %d F: %d FF:%d PS:%d\r\n",
+  log_warn(LOG_ALM, "Temperature high: status: 0x%04x MCU: %d F: %d FF:%d PS:%d\r\n",
       status_T, (int)currentTemp[TM4C], (int)currentTemp[FPGA],
       (int)currentTemp[FF], (int)currentTemp[DCDC]);
   errbuffer_temp_high((uint8_t)currentTemp[TM4C], (uint8_t)currentTemp[FPGA],
@@ -116,7 +115,7 @@ void TempErrorLog()
 
 void TempClearErrorLog()
 {
-  log_info("Temperature normal\r\n");
+  log_info(LOG_ALM, "Temperature normal\r\n");
   errbuffer_put(EBUF_TEMP_NORMAL, 0);
 }
 

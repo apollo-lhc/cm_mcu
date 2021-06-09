@@ -36,12 +36,15 @@ typedef struct {
 static struct {
   void *udata;
   log_LockFn lock;
-  int level;
+  int level[NUM_LOG_FACILITIES];
   bool quiet;
   log_Callback callbacks[MAX_CALLBACKS];
 } L;
 
 static const char *level_strings[] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE",};
+
+static const char *facility_strings[] = { "UNK", "SERVICE", "MON", "FFLY", "PWRCTL", "I2C", "ALM", "CLI", 
+};
 
 #ifdef LOG_USE_COLOR
 static const char *level_colors[] = { //
@@ -90,26 +93,43 @@ void ApolloLog(log_Event *ev)
 #ifdef LOG_USE_COLOR
   r = snprintf(tmp, 256, "%s", level_colors[ev->level]);
 #endif // LOG_USE_COLOR
-  r += snprintf(tmp+r, 256-r, "%d %-5s %s:%u:", ev->time, level_strings[ev->level], ev->file, ev->line);
+  r += snprintf(tmp + r, 256 - r, "%d %-5s %-5s %s:%u:", ev->time, facility_strings[ev->fac], level_strings[ev->level],
+                ev->file, ev->line);
   r += vsnprintf(tmp+r, 256-r, ev->fmt, ev->ap);
-  snprintf(tmp+r, 256-r, "%s", "\033[0m");
+#ifdef LOG_USE_COLOR
+  snprintf(tmp + r, 256 - r, "%s", "\033[0m");
+#endif
   Print(tmp);
 }
 
 static void lock(void)   {
-  if (L.lock) { L.lock(true, L.udata); }
+  if (L.lock) {
+    L.lock(true, L.udata);
+  }
 }
 
 
 static void unlock(void) {
-  if (L.lock) { L.lock(false, L.udata); }
+  if (L.lock) {
+    L.lock(false, L.udata);
+  }
 }
 
 
 const char* log_level_string(int level) {
+  if (level >= NUM_LOG_LEVELS ) {
+    return "UNKN";
+  }
   return level_strings[level];
 }
 
+const char *log_facility_string(int facility)
+{
+  if (facility >= NUM_LOG_FACILITIES) {
+    facility = 0;
+  }
+  return facility_strings[facility];
+}
 
 void log_set_lock(log_LockFn fn, void *udata) {
   L.lock = fn;
@@ -117,8 +137,11 @@ void log_set_lock(log_LockFn fn, void *udata) {
 }
 
 
-void log_set_level(int level) {
-  L.level = level;
+void log_set_level(int level, int facility) {
+  if ( facility >= NUM_LOG_FACILITIES) {
+    return ;
+  }
+  L.level[facility] = level;
 }
 
 
@@ -131,9 +154,12 @@ bool log_get_quiet()
   return L.quiet;
 }
 
-int log_get_current_level()
+int log_get_current_level(int facility)
 {
-  return L.level;
+  if ( facility >= NUM_LOG_FACILITIES ) {
+    return -1;
+  }
+  return L.level[facility];
 }
 
 
@@ -168,11 +194,15 @@ void log_log(int level, const char *file, int line, enum log_facility_t facility
     .file  = file,
     .line  = line,
     .level = level,
+    .fac = facility,
   };
 
   lock();
+  if (facility >= NUM_LOG_FACILITIES ) {
+    facility = LOG_DEFAULT; //
+  }
 
-  if (!L.quiet && level <= L.level) {
+  if (!L.quiet && level <= L.level[facility]) {
     init_event(&ev, NULL);
     va_start(ev.ap, fmt);
     stdout_callback(&ev);
@@ -183,7 +213,7 @@ void log_log(int level, const char *file, int line, enum log_facility_t facility
   if (!L.quiet) {
     for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
       log_Callback *cb = &L.callbacks[i];
-      if (level <= L.level ) {
+      if (level <= L.level[facility] ) {
         init_event(&ev, cb->udata);
         va_start(ev.ap, fmt);
         cb->fn(&ev);

@@ -391,40 +391,50 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
 }
 
 
-// this command takes one arguments
+// this command takes up to two arguments
 static BaseType_t log_ctl(int argc, char **argv, char* m)
 {
-
-  if ( strncmp(argv[argc - 1], "toggle", 6) == 0 ) {
-    bool newval = !log_get_quiet();
-    log_set_quiet(newval);
-    snprintf(m, SCRATCH_SIZE, "%s: quiet set to %d\r\n", argv[0], newval);
+  int copied = 0;
+  if (argc == 2) {
+    if (strncmp(argv[argc - 1], "toggle", 6) == 0) {
+      bool newval = !log_get_quiet();
+      log_set_quiet(newval);
+      snprintf(m, SCRATCH_SIZE, "%s: quiet set to %d\r\n", argv[0], newval);
+    }
+    else if (strncmp(argv[argc - 1], "status", 6) == 0) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: status\r\n", argv[0]);
+      for ( enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i ) {
+        int level = log_get_current_level(i);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s = %s\r\n", argv[0], log_facility_string(i),
+                           log_level_string(level));
+      }
+    }
   }
-  else if ( strncmp(argv[argc - 1], "status", 6) == 0 ) {
-    int level = log_get_current_level();
-    snprintf(m, SCRATCH_SIZE, "%s: current level is %s\r\n", argv[0],
-             log_level_string(level));
-  }
-  else {
+  else if (argc == 3) {
+    int facility = strtol(argv[2], NULL, 10);
+    if ( facility >= NUM_LOG_FACILITIES) {
+      facility = LOG_DEFAULT;
+    }
     size_t len = strlen(argv[1]);
     int i = 0;
     for (; i < NUM_LOG_LEVELS; ++i) {
       if (strncasecmp(argv[1], log_level_string(i), len) == 0 ) {
-        log_set_level(i);
+        log_set_level(i, facility);
         break;
       }
     }
     if ( i != NUM_LOG_LEVELS ) {
-      snprintf(m, SCRATCH_SIZE, "%s: set logging level to %s\r\n", argv[0],
-          log_level_string(i));
-    }
-    else {
-      snprintf(m, SCRATCH_SIZE, "%s: log argument %s not understood\r\n", argv[0],
-          argv[1]);
+      snprintf(m, SCRATCH_SIZE, "%s: set logging level for facility %s to %s\r\n", argv[0], log_facility_string(i),
+               log_level_string(i));
     }
   }
-
-
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: argument(s)", argv[0]);
+    for ( int i = 1; i < argc; ++i) {
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s ", argv[i]);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "not understood\r\n");
+  }
 
   return pdFALSE;
 }
