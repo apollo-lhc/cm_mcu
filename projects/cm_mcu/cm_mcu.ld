@@ -61,6 +61,7 @@ SECTIONS
         *(.init*)
         *(.fini*)
         *(.ARM.exidx)
+        *(.ARM.extab)
     }
 
 }

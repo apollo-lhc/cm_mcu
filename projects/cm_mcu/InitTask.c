@@ -20,8 +20,6 @@
 #include "common/log.h"
 #include "Tasks.h"
 
-#define LOG_FACILITY LOG_SERVICE
-
 
 void InitTask(void *parameters)
 {
@@ -32,7 +30,7 @@ void InitTask(void *parameters)
   // clear RESC register
   ROM_SysCtlResetCauseClear(r);
   errbuffer_put(EBUF_RESTART, restart_reason);
-  log_info("InitTask, REC register=0x%08x\r\n", restart_reason);
+  log_info(LOG_SERVICE, "InitTask, REC register=0x%08x\r\n", restart_reason);
   vTaskSuspend(NULL);
 
   // Delete this task

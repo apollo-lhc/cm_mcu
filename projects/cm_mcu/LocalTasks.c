@@ -104,33 +104,33 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
-    log_error("page\r\n");
+    log_error(LOG_SERVICE, "page\r\n");
   }
 
   // actual command -- snapshot control copy NVRAM for reading
   uint8_t cmd = 0x1;
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
   if (r) {
-    log_error("ctrl\r\n");
+    log_error(LOG_SERVICE, "ctrl\r\n");
   }
   // actual command -- read snapshot
   tSMBusStatus r2 =
       SMBusMasterBlockRead(&g_sMaster1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
   if (r2 != SMBUS_OK) {
-    log_error("block %d\r\n", r2);
+    log_error(LOG_SERVICE, "block %d\r\n", r2);
   }
   while ((r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
   if (r2 != SMBUS_TRANSFER_COMPLETE) {
-    log_error("SMBUS %d\r\n", r2);
+    log_error(LOG_SERVICE, "SMBUS %d\r\n", r2);
   }
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
     cmd = 0x3;
     r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
     if (r) {
-      log_error("error reset\r\n");
+      log_error(LOG_SERVICE, "error reset\r\n");
     }
   }
   xSemaphoreGive(dcdc_args.xSem);
@@ -143,7 +143,7 @@ void LGA80D_init(void)
 {
   while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
     ;
-  log_info("LGA80D_init\r\n");
+  log_info(LOG_SERVICE, "LGA80D_init\r\n");
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);
@@ -153,26 +153,26 @@ void LGA80D_init(void)
       int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[0],
                               &page);
       if (r) {
-        log_debug("dev = %d, page = %d, r= %d\r\n", dev, page, r);
-        log_error("error(0)\r\n");
+        log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
+        log_error(LOG_SERVICE, "error(0)\r\n");
       }
       // actual command -- frequency switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[2],
                           (uint8_t *)&freqlin11);
       if (r) {
-        log_error("error(1)\r\n");
+        log_error(LOG_SERVICE, "error(1)\r\n");
       }
       // actual command -- vout_droop switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[5],
                           (uint8_t *)&drooplin11);
       if (r) {
-        log_error("error(2)\r\n");
+        log_error(LOG_SERVICE, "error(2)\r\n");
       }
       // actual command -- multiphase_ramp_gain switch
       uint8_t val = 0x7U; // by suggestion of Artesian
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
       if (r) {
-        log_error("error(3)\r\n");
+        log_error(LOG_SERVICE, "error(3)\r\n");
       }
     }
   }
