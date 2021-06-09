@@ -6,6 +6,7 @@
 #define FREERTOS_CONFIG_H
 
 #include "common/utils.h"
+#include "common/printf.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/rom.h"
 
