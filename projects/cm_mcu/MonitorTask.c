@@ -145,7 +145,7 @@ void MonitorTask(void *parameters)
 
       // select the appropriate output for the mux
       data[0] = 0x1U << args->devices[ps].mux_bit;
-      log_trace(LOG_MON, "MON(%s): Output of mux set to 0x%02x\r\n", args->name, data[0]);
+      log_trace(LOG_MON, "%s: mux to 0x%02x\r\n", args->name, data[0]);
       tSMBusStatus r = SMBusMasterI2CWrite(args->smbus, args->devices[ps].mux_addr, data, 1);
       if (r != SMBUS_OK) {
         snprintf(tmp, TMPBUFFER_SZ, "MON(%s): I2CBus command failed  (setting mux)\r\n",
@@ -161,7 +161,7 @@ void MonitorTask(void *parameters)
                  "MON(%s): Mux writing error %d, break out of loop (ps=%d) ...\r\n", args->name,
                  *args->smbus_status, ps);
         SuppressedPrint(tmp, &current_error_cnt, &log);
-        log_trace(LOG_MON, "%s:Mux writing error %d, break out of loop (ps=%d) ...\r\n", args->name, *args->smbus_status,
+        log_trace(LOG_MON, "%s:Mux w error %d, break (ps=%d)\r\n", args->name, *args->smbus_status,
                   ps);
         break;
       }
