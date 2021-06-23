@@ -401,28 +401,42 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: status\r\n", argv[0]);
       for ( enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i ) {
         int level = log_get_current_level(i);
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s = %s\r\n", argv[0], log_facility_string(i),
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %-7s = %s\r\n", argv[0], log_facility_string(i),
                            log_level_string(level));
       }
     }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: command %s not understood\r\n", argv[0], argv[1]);
+    }
   }
   else if (argc == 3) {
-    int facility = strtol(argv[2], NULL, 10);
-    if ( facility >= NUM_LOG_FACILITIES) {
-      facility = LOG_DEFAULT;
-    }
+    int j =0;
     size_t len = strlen(argv[1]);
-    int i = 0;
-    for (; i < NUM_LOG_LEVELS; ++i) {
-      if (strncasecmp(argv[1], log_level_string(i), len) == 0 ) {
-        log_set_level(i, facility);
+    bool success = false;
+    const char *f, *l;
+    for (; j < NUM_LOG_FACILITIES; ++j) {
+      f = log_facility_string(j);
+      if (strncasecmp(argv[1], f, len) == 0 ) {
         break;
       }
     }
-    if ( i != NUM_LOG_LEVELS ) {
-      snprintf(m, SCRATCH_SIZE, "%s: set logging level for facility %s to %s\r\n", argv[0], log_facility_string(i),
-               log_level_string(i));
+    len = strlen(argv[2]);
+    int i = 0;
+    for (; i < NUM_LOG_LEVELS && j < NUM_LOG_FACILITIES; ++i) {
+      l = log_level_string(i);
+      if (strncasecmp(argv[2], l, len) == 0 ) {
+        log_set_level(i, j);
+        success=true;
+        break;
+      }
     }
+    if (success) {
+      snprintf(m, SCRATCH_SIZE, "%s: set logging level for facility %s to %s\r\n", argv[0], f, l);
+    }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: facility %s not recognized\r\n", argv[0], argv[1]);
+    }
+
   }
   else {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: argument(s)", argv[0]);
@@ -592,9 +606,10 @@ static struct command_t commands[] = {
     {
         "log",
         log_ctl,
-        "args: (debug|toggle|info|warn|fatal|trace)\r\nManipulate logger levels\r\n",
-        1,
+        "args: (<fac> debug|toggle|info|warn|fatal|trace)(status|quiet)\r\nManipulate logger levels\r\n",
+        -1,
     },
+    {"led", led_ctl, "Manipulate red LED.\r\n", 1},
     {
         "pwr",
         power_ctl,
@@ -602,7 +617,6 @@ static struct command_t commands[] = {
         "failures.\r\n",
         1,
     },
-    {"led", led_ctl, "Manipulate red LED.\r\n", 1},
     {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n",
      1},
      {"restart_mcu", restart_mcu, "Restart the microcontroller\r\n", 0},
