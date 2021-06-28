@@ -17,6 +17,8 @@
 #define MICRORL_USE_CTRL_C 0
 #define MICRORL_COMMAND_LINE_LEN 20
 #define MICRORL_USE_HISTORY 0
+#define MICRORL_USE_LIBC_STDIO 0
+
 // end PW HACK
 
 /******************************* CONFIG SECTION *******************************/
