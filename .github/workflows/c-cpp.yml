@@ -8,7 +8,7 @@ on:
   schedule:
     - cron: '30 4 * * 1'
   workflow_dispatch:
-    branches: [ master logger ]
+    branches: [ master ]
 
 #  note that I need to manually set the path for the arm-none-eabi-gcc exe
 #  after it comes out of the cache. I don't understand why I need to do that.
