@@ -191,6 +191,13 @@ static BaseType_t stack_ctl(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
+static BaseType_t mem_ctl(int argc, char **argv, char* m)
+{
+  size_t heapSize = xPortGetFreeHeapSize();
+  int copied = snprintf(m + copied, SCRATCH_SIZE - copied, "heap: %d bytes\r\n", heapSize);
+  return pdFALSE;
+}
+
 static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
 {
   TaskStatus_t *pxTaskStatusArray;
@@ -617,6 +624,7 @@ static struct command_t commands[] = {
         -1,
     },
     {"led", led_ctl, "Manipulate red LED.\r\n", 1},
+    {"mem", mem_ctl, "Size of heap.\r\n", 0},
     {
         "pwr",
         power_ctl,
