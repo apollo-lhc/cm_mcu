@@ -64,7 +64,9 @@ void Print(const char *str)
 {
   xSemaphoreTake(xUARTMutex, portMAX_DELAY);
   {
+#ifdef REV1
     UARTPrint(FP_UART, str);
+#endif // REV1
     UARTPrint(ZQ_UART, str);
   }
   xSemaphoreGive(xUARTMutex);
@@ -221,16 +223,18 @@ int main(void)
 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
+#ifdef REV1
   // There are two buffers for the two CLIs (front panel and Zynq)
   xUART4StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
+  cli_uart4.uart_base = FP_UART;
+  cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
+#endif // REV1
   xUART1StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
   cli_uart1.uart_base = ZQ_UART;
   cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
-  cli_uart4.uart_base = FP_UART;
-  cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
 
   // clear the various buffers
   for (int i = 0; i < dcdc_args.n_values; ++i)
@@ -242,7 +246,9 @@ int main(void)
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(LedTask, "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart1, tskIDLE_PRIORITY + 1, NULL);
+#ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
+#endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               NULL);

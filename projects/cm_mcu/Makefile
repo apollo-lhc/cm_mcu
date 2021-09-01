@@ -26,6 +26,13 @@ ifndef DEBUG
 CFLAGS+=-Werror
 endif 
 
+ifdef REV2
+CFLAGS += -DREV2
+endif 
+ifdef REV1
+CFLAGS += -DREV1
+endif 
+
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #CFLAGS+=-fstack-protector 
 

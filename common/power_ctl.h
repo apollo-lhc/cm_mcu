@@ -36,7 +36,7 @@ enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
 //int getLowestEnabledPSPriority();
 
-#ifndef REV2 
+#ifdef REV1
 // -----------------------------------------------------
 //
 // Rev 1
@@ -69,7 +69,7 @@ void setPSStatus(int i, enum ps_state theState);
 #define PS_OKS_F2_MASK_L4 0x00C0U
 #define PS_OKS_F2_MASK_L5 0x3000U
 
-#else // Rev 2
+#elif defined(REV2) // Rev 2
 // -----------------------------------------------------
 //
 // Rev 2
@@ -77,6 +77,8 @@ void setPSStatus(int i, enum ps_state theState);
 // -----------------------------------------------------
 // to be added here 
 #error "Missing Rev 2 PS masks"
+#else
+#error "Must define either Rev1 or Rev2"
 #endif // REV 2 
 
 bool turn_on_ps(uint16_t);
