@@ -116,8 +116,8 @@ static const int pins[] = {
     _FPGA_I2C_RESET,     //
     _PWR_I2C_RESET,      //
     _CLOCKS_I2C_RESET,   //
-    _V_OPTICS_I2C_RESET, //
-    _K_OPTICS_I2C_RESET, //
+    _F2_OPTICS_I2C_RESET, //
+    _F1_OPTICS_I2C_RESET, //
 };
 #define NPINS (sizeof(pins) / pins[0])
 

@@ -151,40 +151,40 @@ struct gpio_pin_t {
 };
 
 struct gpio_pin_t enables[] = {
-  {  CTRL_K_VCCINT_PWR_EN, 1},
-  {  CTRL_V_VCCINT_PWR_EN, 1},
+  {  CTRL_F1_VCCINT_PWR_EN, 1},
+  {  CTRL_F2_VCCINT_PWR_EN, 1},
   {  CTRL_VCC_1V8_PWR_EN,  2},
   {  CTRL_VCC_3V3_PWR_EN,  3},
-  {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 4},
-  {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 4},
-  {  CTRL_K_MGTY_VCCAUX_PWR_EN,  4},
-  {  CTRL_K_MGTH_VCCAUX_PWR_EN,  4},
-  {  CTRL_V_MGTY1_AVCC_PWR_EN, 5},
-  {  CTRL_V_MGTY2_AVCC_PWR_EN, 5},
-  {  CTRL_K_MGTY_AVCC_PWR_EN,  5},
-  {  CTRL_K_MGTH_AVCC_PWR_EN,  5},
-  {  CTRL_K_MGTY_AVTT_PWR_EN,  6},
-  {  CTRL_K_MGTH_AVTT_PWR_EN,  6},
-  {  CTRL_V_MGTY1_AVTT_PWR_EN, 6},
-  {  CTRL_V_MGTY2_AVTT_PWR_EN, 6}
+  {  CTRL_F2_MGTY1_VCCAUX_PWR_EN, 4},
+  {  CTRL_F2_MGTY2_VCCAUX_PWR_EN, 4},
+  {  CTRL_F1_MGTY_VCCAUX_PWR_EN,  4},
+  {  CTRL_F1_MGTH_VCCAUX_PWR_EN,  4},
+  {  CTRL_F2_MGTY1_AVCC_PWR_EN, 5},
+  {  CTRL_F2_MGTY2_AVCC_PWR_EN, 5},
+  {  CTRL_F1_MGTY_AVCC_PWR_EN,  5},
+  {  CTRL_F1_MGTH_AVCC_PWR_EN,  5},
+  {  CTRL_F1_MGTY_AVTT_PWR_EN,  6},
+  {  CTRL_F1_MGTH_AVTT_PWR_EN,  6},
+  {  CTRL_F2_MGTY1_AVTT_PWR_EN, 6},
+  {  CTRL_F2_MGTY2_AVTT_PWR_EN, 6}
 };
 const int nenables = sizeof(enables)/sizeof(enables[0]);
 
 struct gpio_pin_t oks[] = {
-  { K_VCCINT_PG_A, 1},
-  { K_VCCINT_PG_B, 1},
-  { V_VCCINT_PG_A, 1},
-  { V_VCCINT_PG_B, 1},
+  { F1_VCCINT_PG_A, 1},
+  { F1_VCCINT_PG_B, 1},
+  { F2_VCCINT_PG_A, 1},
+  { F2_VCCINT_PG_B, 1},
   { VCC_1V8_PG,    2},
   { VCC_3V3_PG,    3},
-  { V_MGTY1_AVCC_OK, 5},
-  { V_MGTY2_AVCC_OK, 5},
-  { K_MGTY_AVCC_OK,  5},
-  { K_MGTH_AVCC_OK,  5},
-  { K_MGTY_AVTT_OK,  6},
-  { K_MGTH_AVTT_OK,  6},
-  { V_MGTY1_AVTT_OK, 6},
-  { V_MGTY2_AVTT_OK, 6}
+  { F2_MGTY1_AVCC_OK, 5},
+  { F2_MGTY2_AVCC_OK, 5},
+  { F1_MGTY_AVCC_OK,  5},
+  { F1_MGTH_AVCC_OK,  5},
+  { F1_MGTY_AVTT_OK,  6},
+  { F1_MGTH_AVTT_OK,  6},
+  { F2_MGTY1_AVTT_OK, 6},
+  { F2_MGTY2_AVTT_OK, 6}
 };
 const int noks = sizeof(oks)/sizeof(oks[0]);
 const int num_priorities = 6;

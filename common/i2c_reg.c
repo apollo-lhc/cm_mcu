@@ -146,7 +146,7 @@ void initI2C2(const uint32_t sysclockfreq)
   write_gpio_pin(_CLOCKS_I2C_RESET, 0x1); // active low
 }
 
-// I2C controller 3 is for V_OPTICS on the CM
+// I2C controller 3 is for V_OPTICS on the CM Rev 1
 void initI2C3(const uint32_t sysclockfreq)
 {
   // enable I2C module 3
@@ -181,13 +181,13 @@ void initI2C3(const uint32_t sysclockfreq)
   MAP_I2CTxFIFOFlush(I2C3_BASE);
 
   // toggle relevant reset
-  write_gpio_pin(_V_OPTICS_I2C_RESET, 0x0); // active low
+  write_gpio_pin(_F2_OPTICS_I2C_RESET, 0x0); // active low
   MAP_SysCtlDelay(sysclockfreq / 10);
   ;
-  write_gpio_pin(_V_OPTICS_I2C_RESET, 0x1); // active low
+  write_gpio_pin(_F2_OPTICS_I2C_RESET, 0x1); // active low
 }
 
-// I2C controller 4 is for K_OPTICS on the CM
+// I2C controller 4 is for F1_OPTICS on the CM
 void initI2C4(const uint32_t sysclockfreq)
 {
   // enable I2C module 3
@@ -222,10 +222,10 @@ void initI2C4(const uint32_t sysclockfreq)
   MAP_I2CTxFIFOFlush(I2C4_BASE);
 
   // toggle relevant reset
-  write_gpio_pin(_K_OPTICS_I2C_RESET, 0x0); // active low
+  write_gpio_pin(_F1_OPTICS_I2C_RESET, 0x0); // active low
   MAP_SysCtlDelay(sysclockfreq / 10);
   ;
-  write_gpio_pin(_K_OPTICS_I2C_RESET, 0x1); // active low
+  write_gpio_pin(_F1_OPTICS_I2C_RESET, 0x1); // active low
 }
 
 // I2C controller 6 is for FPGAs on the CM

@@ -623,8 +623,8 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
 {
   if (argc == 2) {
     if (strncmp(argv[1], "done", 4) == 0) { // print out value of done pins
-      int f1_done_ = read_gpio_pin(_K_FPGA_DONE);
-      int f2_done_ = read_gpio_pin(_V_FPGA_DONE);
+      int f1_done_ = read_gpio_pin(_F1_FPGA_DONE);
+      int f2_done_ = read_gpio_pin(_F2_FPGA_DONE);
       snprintf(m, SCRATCH_SIZE, "F1_DONE* = %d\r\nF2_DONE* = %d\r\n", f1_done_, f2_done_);
       return pdFALSE;
     }
@@ -692,15 +692,15 @@ BaseType_t fpga_reset(int argc, char **argv, char* m)
   const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
 
   if (strcmp(argv[1], "v") == 0) {
-    write_gpio_pin(V_FPGA_PROGRAM, 0x1);
+    write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
-    write_gpio_pin(V_FPGA_PROGRAM, 0x0);
+    write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VU7P has been reset\r\n");
   }
   if (strcmp(argv[1], "k") == 0) {
-    write_gpio_pin(K_FPGA_PROGRAM, 0x1);
+    write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
-    write_gpio_pin(K_FPGA_PROGRAM, 0x0);
+    write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "KU15P has been reset\r\n");
   }
   return pdFALSE;
