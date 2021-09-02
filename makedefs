@@ -288,9 +288,9 @@ ${COMPILER}${SUFFIX}/%.o: %.c
 	 then                                                 \
 	     echo "  CC    ${<}";                             \
 	 else                                                 \
-	     echo ${CC} ${CFLAGS} -D${COMPILER} -o ${@} ${<}; \
+	     echo ${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<}); \
 	 fi
-	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} ${<}
+	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<})
 ifneq ($(findstring CYGWIN, ${os}), )
 	@if [ -e ${@:.o=.d} ];                                   \
 	then                                                     \
