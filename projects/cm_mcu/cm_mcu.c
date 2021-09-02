@@ -184,7 +184,9 @@ void SystemInitInterrupts()
 
 volatile uint32_t g_ui32SysTickCount;
 
+#ifdef REV1
 CommandLineTaskArgs_t cli_uart1;
+#endif // REV1
 CommandLineTaskArgs_t cli_uart4;
 
 void ShortDelay()

@@ -105,7 +105,7 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH5,  "F1_VCCINT", 1.f, 0.85f},
     {ADC_CTL_CH6,  "F1_AVCC", 1.f, 0.90f},
     {ADC_CTL_CH7, "F1_AVTT", 1.f, 1.2f},
-	{ADC_CTL_CH8,  "F1_VCCAUX", 1.f, 1.8f},
+	  {ADC_CTL_CH8,  "F1_VCCAUX", 1.f, 1.8f},
     {ADC_CTL_CH9,  "F2_VCCINT", 1.f, 0.85f},
     {ADC_CTL_CH10,  "F2_AVCC", 1.f, 0.90f},
     {ADC_CTL_CH11,  "F2_AVTT", 1.f, 1.2f},
@@ -116,15 +116,7 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
     {ADC_CTL_CH17, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
     {ADC_CTL_CH18, "F1_TEMP", (1.004f/1.026f)/0.004f, 35.f}, // degrees K
-    {ADC_CTL_CH19, "F2_TEMP", (1.004f/1.026f)/0.004f, 35.f}, // degrees C
-    //{ADC_CTL_CH13, "VCC_2V5", 2.f, 2.5f},
-    //{ADC_CTL_CH15, "VCC_M1V8", 1.f, 1.8f},
-    //{ADC_CTL_CH19, "F2_MGTY2_AVTT", 1.f, 1.2f},
-    //{ADC_CTL_CH4,  "F1_MGTY_AVTT", 1.f, 1.2f},
-    //{ADC_CTL_CH17, "F2_MGTY2_VCCAUX", 1.f, 1.8f},
-    //{ADC_CTL_CH9,  "F1_MGTH_VCCAUX", 1.f, 1.8f},
-    //{ADC_CTL_CH18, "F2_MGTY2_AVCC", 1.f, 0.90f},
-    //{ADC_CTL_CH10, "F1_MGTH_AVCC", 1.f, 0.90f},
+    {ADC_CTL_CH19, "F2_TEMP", (1.004f/1.026f)/0.004f, 35.f}, // degrees K
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f}, // this one is special, temp in C
 };
 #error need ADC input mapping
