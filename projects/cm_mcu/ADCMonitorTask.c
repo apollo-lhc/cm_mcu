@@ -100,7 +100,7 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH0, "VCC_12V", 6.f, 12.f},
     {ADC_CTL_CH1, "VCC_M3V3", 2.f, 3.3f},
     {ADC_CTL_CH2, "VCC_3V3", 2.f, 3.3f},
-    {ADC_CTL_CH3, "VCC_4V0", 2.f, 4.0f}, // TODO: SF WRONG
+    {ADC_CTL_CH3, "VCC_4V0", 2.f, 4.0f},
     {ADC_CTL_CH4,  "VCC_1V8", 1.f, 1.8f},
     {ADC_CTL_CH5,  "F1_VCCINT", 1.f, 0.85f},
     {ADC_CTL_CH6,  "F1_AVCC", 1.f, 0.90f},
@@ -115,8 +115,8 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 2.5f}, // TODO: sf
     {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
     {ADC_CTL_CH17, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
-    {ADC_CTL_CH18, "F1_TEMP", 1.f, 1.2f}, // TODO: SF
-    {ADC_CTL_CH19, "F2_TEMP", 1.f, 1.2f}, // TODO: SF
+    {ADC_CTL_CH18, "F1_TEMP", (1.004f/1.026f)/0.004f, 35.f}, // degrees K
+    {ADC_CTL_CH19, "F2_TEMP", (1.004f/1.026f)/0.004f, 35.f}, // degrees C
     //{ADC_CTL_CH13, "VCC_2V5", 2.f, 2.5f},
     //{ADC_CTL_CH15, "VCC_M1V8", 1.f, 1.8f},
     //{ADC_CTL_CH19, "F2_MGTY2_AVTT", 1.f, 1.2f},
