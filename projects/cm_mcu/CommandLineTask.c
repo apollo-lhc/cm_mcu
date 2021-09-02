@@ -194,7 +194,7 @@ static BaseType_t stack_ctl(int argc, char **argv, char* m)
 static BaseType_t mem_ctl(int argc, char **argv, char* m)
 {
   size_t heapSize = xPortGetFreeHeapSize();
-  int copied = snprintf(m + copied, SCRATCH_SIZE - copied, "heap: %d bytes\r\n", heapSize);
+  snprintf(m, SCRATCH_SIZE, "heap: %d bytes\r\n", heapSize);
   return pdFALSE;
 }
 
