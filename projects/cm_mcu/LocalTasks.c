@@ -68,7 +68,7 @@ struct MonitorTaskArgs_t fpga_args = {
     .smbus_status = &eStatus6,
     .xSem = NULL,
 };
-
+#ifdef REV1
 // Power supply arguments for Monitoring task
 // Supply Address | Voltages | Priority
 // ---------------+----------|-----------
@@ -84,7 +84,27 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"VVCCINT1", 0x70, 3, 0x46}, // first vccint, VU7P
     {"VVCCINT2", 0x70, 4, 0x45}, // second vccint, VU7P
 };
-
+#elif defined (REV2) // REV1
+// Power supply arguments for Monitoring task
+// Supply Address | Voltages  | Priority
+// ---------------+-----------|-----------
+//       0x40     | 3.3 & 1.8 |     2
+//       0x44     | F1VCCINT  |     1
+//       0x43     | F1VCCINT  |     1
+//       0x46     | F2VCCINT  |     1
+//       0x45     | F2VCCINT  |     1
+struct dev_i2c_addr_t pm_addrs_dcdc[] = {
+    {"3V3/1V8", 0x70, 0, 0x40},   // Dual supply 1.8 / 3.3 V
+    {"F1VCCINT1", 0x70, 1, 0x44}, // first vccint, F1
+    {"F1VCCINT2", 0x70, 2, 0x43}, // second vccint, F1
+    {"F2VCCINT1", 0x70, 3, 0x44}, // first vccint, F2
+    {"F2VCCINT2", 0x70, 4, 0x43}, // second vccint, F2
+    {"F1AVCC/TT", 0x70, 5, 0x40}, // AVCC/AVTT for F1
+    {"F1AVCC/TT", 0x70, 6, 0x40}, // AVCC/AVTT for F2
+};
+#else
+#error "need to define either Rev1 or Rev2"
+#endif // REV1
 void Print(const char *);
 
 // this function is run once in the dcdc monitoring task
