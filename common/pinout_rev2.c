@@ -35,7 +35,7 @@
 //
 //*****************************************************************************
 
-// This file was automatically generated on 9/2/2021 at 10:06:10 PM
+// This file was automatically generated on 9/7/2021 at 4:35:13 PM
 // by TI PinMux version 1.9.0+2015
 //
 //*****************************************************************************
@@ -219,19 +219,19 @@ PinoutSet(void)
     // Configure the GPIO Pin Mux for PQ0
 	// for GPIO_PQ0
     //
-	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTQ_BASE, GPIO_PIN_0);
+	MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTQ_BASE, GPIO_PIN_0);
 
     //
     // Configure the GPIO Pin Mux for PQ1
 	// for GPIO_PQ1
     //
-	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTQ_BASE, GPIO_PIN_1);
+	MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTQ_BASE, GPIO_PIN_1);
 
     //
     // Configure the GPIO Pin Mux for PQ2
 	// for GPIO_PQ2
     //
-	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTQ_BASE, GPIO_PIN_2);
+	MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTQ_BASE, GPIO_PIN_2);
 
     //
     // Configure the GPIO Pin Mux for PC7
@@ -249,13 +249,13 @@ PinoutSet(void)
     // Configure the GPIO Pin Mux for PQ3
 	// for GPIO_PQ3
     //
-	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTQ_BASE, GPIO_PIN_3);
+	MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTQ_BASE, GPIO_PIN_3);
 
     //
     // Configure the GPIO Pin Mux for PH0
 	// for GPIO_PH0
     //
-	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTH_BASE, GPIO_PIN_0);
+	MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTH_BASE, GPIO_PIN_0);
 
     //
     // Configure the GPIO Pin Mux for PH1
