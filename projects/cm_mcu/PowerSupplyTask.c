@@ -95,8 +95,8 @@ void PowerSupplyTask(void *parameters)
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
            supply_ok_mask_L5 = 0U;
 
-  bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-  bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  bool f1_enable = isFPGAF1_PRESENT();
+  bool f2_enable = isFPGAF2_PRESENT();
   if (f1_enable) {
     supply_ok_mask |= PS_OKS_F1_MASK;
     supply_en_mask |= PS_ENS_F1_MASK;

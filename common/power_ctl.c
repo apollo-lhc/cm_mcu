@@ -23,13 +23,13 @@
 
 
 // clang-format off
-// if you update this you need to update N_PS_ENABLES
-#ifndef REV2
+#if defined(REV1) 
 // ------------------------------------------
 //
 // REV 1 
 //
 // ------------------------------------------
+// if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
     {  CTRL_F1_VCCINT_PWR_EN, 1},
     {  CTRL_F2_VCCINT_PWR_EN, 1},
@@ -69,14 +69,47 @@ struct gpio_pin_t oks[] = {
     { F2_MGTY1_AVTT_OK, 5},
     { F2_MGTY2_AVTT_OK, 5}
 };
-#else // REV2
+#elif defined(REV2) // REV2
 // ------------------------------------------
 //
 // REV 2
 //
 // ------------------------------------------
 // add here
+// if you update this you need to update N_PS_ENABLES
+static const struct gpio_pin_t enables[] = {
+    {  EN_F1_INT, 1},
+    {  EN_F2_INT, 1},
+    {  EN_1V8,  2},
+    {  EN_3V3,  2},
+    {  EN_F1_VCCAUX, 3},
+    {  EN_F2_VCCAUX,  3},
+    {  EN_F1_AVCC, 4},
+    {  EN_F2_AVCC, 4},
+    {  EN_F1_AVTT,  5},
+    {  EN_F2_AVTT,  5},
+};
+
+//if you update this you need to update N_PS_OKS too
+// Notice that the VCCAUX is not included here; the
+// TPS5218 supply does not have any such output
+const
+struct gpio_pin_t oks[] = {
+    { PG_F1_INT_A, 1},
+    { PG_F1_INT_B, 1},
+    { PG_F2_INT_A, 1},
+    { PG_F2_INT_B, 1},
+    { PG_1V8,    2},
+    { PG_3V3,    2},
+    { PG_F1_AVCC,  4},
+    { PG_F2_AVCC,  4},
+    { PG_F1_AVTT,  5},
+    { PG_F2_AVTT,  5},
+};
+
 #error "Missing power control definitions for Rev 2"
+#else
+#error "Unknown board revision"
 #endif // REV2 
 
 // clang-format on

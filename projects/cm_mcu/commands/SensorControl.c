@@ -113,8 +113,8 @@ BaseType_t power_ctl(int argc, char **argv, char* m)
   }
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
-    bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-    bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+    bool f1_enable = (isFPGAF1_PRESENT());
+    bool f2_enable = (isFPGAF2_PRESENT());
     static int i = 0;
     if (i == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
@@ -682,22 +682,19 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
   }
 }
 
-#ifdef REV2
-#error "this function needs updating"
-#endif // REV2
 // This command takes 1 argument, either k or v
 BaseType_t fpga_reset(int argc, char **argv, char* m)
 {
   int copied = 0;
   const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
 
-  if (strcmp(argv[1], "v") == 0) {
+  if (strcmp(argv[1], "f2") == 0) {
     write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
     write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VU7P has been reset\r\n");
   }
-  if (strcmp(argv[1], "k") == 0) {
+  if (strcmp(argv[1], "f1") == 0) {
     write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);

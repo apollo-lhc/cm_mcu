@@ -18,7 +18,11 @@
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 
+#ifdef REV1
 #include "common/softuart.h"
+#elif defined(REV2)
+#include "driverlib/uart.h"
+#endif 
 
 #include "Tasks.h"
 #include "MonitorTask.h"
@@ -102,11 +106,12 @@ unsigned long g_ulBitTime;
 
 #define TARGET_BAUD_RATE 115200
 
-tSoftUART g_sUART;
-
 extern uint32_t g_ui32SysClock;
 
 QueueHandle_t xZynqMonQueue;
+
+#ifdef REV1
+tSoftUART g_sUART;
 
 // For REV 1
 void InitSUART()
@@ -181,25 +186,27 @@ void InitSUART()
   SoftUARTIntEnable(&g_sUART, SOFTUART_INT_TX);
 }
 
-#ifndef REV2
 void
 ZMUartCharPut(unsigned char c)
 {
   SoftUARTCharPut(&g_sUART, c);
 }
 
-#else // REV2
+#elif defined(REV2)
 void ZMUartCharPut(unsigned char c)
 {
-#error "invalid UART unless I'm really lucky"
-  UARTCharPut(UART7_BASE, c); // CHANGE TO ACTUAL UART USED
+  UARTCharPut(UART4_BASE, c); // CHANGE TO ACTUAL UART USED
 }
+#else
+#error "Unknown board revision"
 #endif
 
 void ZynqMonTask(void *parameters)
 {
   // Setup
+#ifdef REV1
   InitSUART(); // Rev1
+#endif
   // will be done centrally in Rev 2
 
   uint8_t message[4] = {0x9c, 0x2c, 0x2b, 0x3e};
@@ -403,6 +410,7 @@ void ZynqMonTask(void *parameters)
         }
       } // if not test mode
 
+#ifdef REV1
       // wait for the transmission to finish
       vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -411,6 +419,7 @@ void ZynqMonTask(void *parameters)
         vTaskDelay(pdMS_TO_TICKS(10));
 
       MAP_IntDisable(INT_TIMER0A);
+#endif // REV1
     } // if ( enabled)
     // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5000));

@@ -1,6 +1,12 @@
 
 include ./makedefs
 
+ifdef REV1
+ifdef REV2
+$(error "REV1 and REV2 are mutually exclusive")
+endif
+endif
+
 
 DIRS=driverlib projects 
 DIRSCLEAN=$(addsuffix .clean,$(DIRS))

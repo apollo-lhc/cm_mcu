@@ -75,7 +75,10 @@ void setPSStatus(int i, enum ps_state theState);
 // Rev 2
 //
 // -----------------------------------------------------
-// to be added here 
+// Number of enable and power good/OK pins
+#define N_PS_ENABLES 10
+#define N_PS_OKS     10
+
 #error "Missing Rev 2 PS masks"
 #else
 #error "Must define either Rev1 or Rev2"

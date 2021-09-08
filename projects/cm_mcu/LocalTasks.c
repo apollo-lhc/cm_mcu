@@ -266,8 +266,8 @@ void set_f2_index(int index)
 void initFPGAMon()
 {
   // check if we are to include both FPGAs or not
-  bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-  bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  bool f1_enable = isFPGAF1_PRESENT();
+  bool f2_enable = isFPGAF2_PRESENT();
   configASSERT(f1_enable || f2_enable);
   if (!f1_enable && f2_enable) {
     fpga_args.devices = fpga_addrs_f2only;

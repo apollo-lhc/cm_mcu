@@ -107,9 +107,9 @@ main(void)
   UART4Print("\nProject0 Starting\n");
 #endif // USE_UART
   // turn off all the LEDs
-  write_gpio_pin(TM4C_LED_RED,   0x0);
-  write_gpio_pin(TM4C_LED_BLUE,  0x0);
-  write_gpio_pin(TM4C_LED_GREEN, 0x0);
+  write_gpio_pin(MCU_LED_RED,   0x0);
+  write_gpio_pin(MCU_LED_BLUE,  0x0);
+  write_gpio_pin(MCU_LED_GREEN, 0x0);
   write_gpio_pin(BLADE_POWER_OK, 0x0);
 
 
@@ -145,7 +145,7 @@ main(void)
 #ifdef USE_UART
     	UART4Print("check_ps failed!\n");
 #endif // USE_UART
-    	toggle_gpio_pin(TM4C_LED_RED);
+    	toggle_gpio_pin(MCU_LED_RED);
     	write_gpio_pin(BLADE_POWER_OK, 0x0);
 
     	ps_good = false;
