@@ -169,10 +169,10 @@ header file. */
 
 
 // non-standard, park this here for now
-#ifndef REV2
+#ifdef REV1
 #define FP_UART UART4_BASE // Front panel UART
-#define ZQ_UART UART1_BASE // Zynq-facing UART 
-#else
+#define ZQ_UART UART1_BASE // Zynq-facing UART
+#elif defined(REV2)
 #define ZQ_UART UART0_BASE // single UART in Rev 2
 #endif
 

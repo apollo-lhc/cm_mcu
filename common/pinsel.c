@@ -911,3 +911,4 @@ const char *const pin_names[] = {
 #else // no valid revision defined
 #error "No board defined"
 #endif
+
