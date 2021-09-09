@@ -50,13 +50,13 @@ jobs:
     - name: make with GCC, debug build
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-        make -k DEBUG=1
+        make -k DEBUG=1 REV1=1
     - name: make with GCC
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make clean
         arm-none-eabi-gcc --version
-        make -k 
+        make -k REV1=1 
 
   build-clang: 
 # this build also needs arm-none-eabi-gcc as some of the clang sysroot stuff depends on it.
@@ -101,4 +101,4 @@ jobs:
     - name: make with CLANG
       run: |
          export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-         make -k COMPILER=clang
+         make -k COMPILER=clang REV1=1
