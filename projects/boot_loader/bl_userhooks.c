@@ -34,6 +34,23 @@
 #define LONG_DELAY 2500000
 
 
+#ifdef REV1
+#define RED_LED_BASE   GPIO_PORTP_BASE
+#define RED_LED_PIN    GPIO_PIN_0
+#define BLUE_LED_BASE  GPIO_PORTJ_BASE
+#define BLUE_LED_PIN   GPIO_PIN_0
+#define GREEN_LED_BASE GPIO_PORTJ_BASE
+#define GREEN_LED_PIN  GPIO_PIN_1
+#elif defined(REV2)
+#define LED_BASE       GPIO_PORTP_BASE
+#define RED_LED_BASE   LED_BASE
+#define GREEN_LED_BASE LED_BASE
+#define BLUE_LED_BASE  LED_BASE
+#define RED_LED_PIN    GPIO_PIN_3
+#define GREEN_LED_PIN  GPIO_PIN_4
+#define BLUE_LED_PIN   GPIO_PIN_5
+#endif
+
 //*****************************************************************************
 //
 // A prototype for the function (in the startup code) for a predictable length
@@ -48,17 +65,17 @@ void toggleLed(enum color rgb)
   int gpio_port, gpio_pin;
   switch (rgb) {
   case red: // red
-    gpio_port = GPIO_PORTP_BASE;
-    gpio_pin  = GPIO_PIN_0;
+    gpio_port = RED_LED_BASE;
+    gpio_pin  = RED_LED_PIN;
     break;
   case green: // green
-    gpio_port = GPIO_PORTJ_BASE;
-    gpio_pin  = GPIO_PIN_1;
+    gpio_port = GREEN_LED_BASE;
+    gpio_pin  = GREEN_LED_PIN;
     break;
   case blue: // blue
   default:
-    gpio_port = GPIO_PORTJ_BASE;
-    gpio_pin  = GPIO_PIN_0;
+    gpio_port = BLUE_LED_BASE;
+    gpio_pin  = BLUE_LED_PIN;
     break;
   }
 
@@ -67,14 +84,19 @@ void toggleLed(enum color rgb)
   if ( val ) 
     MAP_GPIOPinWrite(gpio_port,gpio_pin, 0);
   else
-    MAP_GPIOPinWrite(gpio_port,gpio_pin, 1);
+    MAP_GPIOPinWrite(gpio_port,gpio_pin, gpio_pin);
   return;
 }
+
+
+
+
 
 #ifdef BL_HW_INIT_FN_HOOK
 void
 bl_user_init_hw_fn(void)
 {
+#ifdef REV1
   // LEDs
   //
   MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
@@ -95,7 +117,27 @@ bl_user_init_hw_fn(void)
   // for GPIO_PP0
   //
   MAP_GPIOPinTypeGPIOOutput(GPIO_PORTP_BASE, GPIO_PIN_0);
+#elif defined(REV2)
+  // LEDs
+  //
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
 
+  // Configure the GPIO Pin Mux for PP3
+  // for GPIO_PP3
+  //
+  MAP_GPIOPinTypeGPIOOutput(GPIO_PORTP_BASE, GPIO_PIN_3);
+
+  //
+  // Configure the GPIO Pin Mux for PP4
+  // for GPIO_PP4
+  //
+  MAP_GPIOPinTypeGPIOOutput(GPIO_PORTP_BASE, GPIO_PIN_4);
+  // Red LED
+  // Configure the GPIO Pin Mux for PP0
+  // for GPIO_PP5
+  //
+  MAP_GPIOPinTypeGPIOOutput(GPIO_PORTP_BASE, GPIO_PIN_5);
+#endif // LEDs for Rev1
 
   // CLOCK
   // Run from the PLL, internal oscillator, at the defined clock speed 
@@ -163,6 +205,32 @@ bl_user_init_hw_fn(void)
   MAP_UARTConfigSetExpClk(UART1_BASE, ui32SysClock, 115200,
                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                           UART_CONFIG_PAR_NONE));
+#elif UARTx_BASE == UART0_BASE
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+  //
+  // Configure the GPIO Pin Mux for PA0
+  // for U0RX
+  //
+  MAP_GPIOPinConfigure(GPIO_PA0_U0RX);
+  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0);
+
+  //
+  // Configure the GPIO Pin Mux for PA1
+  // for U0TX
+  //
+  MAP_GPIOPinConfigure(GPIO_PA1_U0TX);
+  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_1);
+
+  // Turn on the UART peripheral
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+  while (!ROM_SysCtlPeripheralReady(SYSCTL_PERIPH_UART0))
+    ;
+
+  //
+  // Configure the UART for 115,200, 8-N-1 operation.
+  //
+  ROM_UARTConfigSetExpClk(UART0_BASE, ui32SysClock, 115200,
+                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 #else
 #error "Not supported UART"
 #endif
@@ -174,15 +242,16 @@ bl_user_init_hw_fn(void)
 #ifdef BL_END_FN_HOOK
 
 // Flash green LED 3 times
+
 void bl_user_end_hook()
 {
-  MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 1);
+  MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, RED_LED_PIN);
   Delay(LONG_DELAY);
-  MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 0);
+  MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, 0);
   Delay(LONG_DELAY);
-  MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 1);
+  MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, RED_LED_PIN);
   Delay(LONG_DELAY);
-  MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 0);
+  MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, 0);
   return;
 }
 #endif // BL_END_FN_HOOK
@@ -192,7 +261,7 @@ void bl_user_end_hook()
 void bl_user_progress_hook(unsigned long ulCompleted, unsigned long ulTotal)
 {
   int tens = (10*ulCompleted/ulTotal);
-  MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_0, tens%2);
+  MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, tens%2);
   return;
 }
 #endif // BL_PROGRESS_FN_HOOK

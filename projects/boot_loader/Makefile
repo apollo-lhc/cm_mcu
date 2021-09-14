@@ -19,6 +19,14 @@ ROOT=../..
 #
 include ${ROOT}/makedefs
 
+ifdef REV2
+CFLAGS += -DREV2
+endif 
+ifdef REV1
+CFLAGS += -DREV1
+endif 
+
+
 #
 # Where to find header files that do not live in the source directory.
 #

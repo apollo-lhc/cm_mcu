@@ -26,11 +26,14 @@
 #define __BL_CONFIG_H__
 
 //#define APOLLO_BL_UART_FP // if you want front panel, otherwise zynq
-
+#ifdef REV1
 #ifdef APOLLO_BL_UART_FP
 #define SYSCTL_PERIPH_UARTx SYSCTL_PERIPH_UART4
 #else
 #define SYSCTL_PERIPH_UARTx SYSCTL_PERIPH_UART1
+#endif
+#elif defined(REV2)
+#define SYSCTL_PERIPH_UARTx SYSCTL_PERIPH_UART0
 #endif
 //*****************************************************************************
 //
@@ -366,10 +369,14 @@
 // Requires: UARTx_BASE
 //
 //*****************************************************************************
+#ifdef REV1
 #ifdef APOLLO_BL_UART_FP
 #define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R4
 #else
 #define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R1
+#endif
+#elif defined(REV2)
+#define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R0
 #endif
 //*****************************************************************************
 //
@@ -380,10 +387,14 @@
 // Requires: UART_CLOCK_ENABLE
 //
 //*****************************************************************************
+#ifdef REV1
 #ifdef APOLLO_BL_UART_FP
 #define UARTx_BASE                UART4_BASE
 #else
 #define UARTx_BASE                UART1_BASE
+#endif
+#elif defined(REV2)
+#define UARTx_BASE                UART0_BASE
 #endif
 //*****************************************************************************
 //
@@ -408,6 +419,7 @@
 // Requires: UART_RXPIN_CLOCK_ENABLE, UART_RXPIN_PCTL and UART_RXPIN_POS
 //
 //*****************************************************************************
+// correct for REV1 and REV2
 #define UART_RXPIN_BASE         GPIO_PORTA_BASE
 
 //*****************************************************************************
