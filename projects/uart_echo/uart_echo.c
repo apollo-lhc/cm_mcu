@@ -37,9 +37,16 @@
 #include "driverlib/uart.h"
 
 #ifdef REV2
-#define UART_FRONTPANEL      UART1_BASE
-#define UARTx_BASE           UART1_BASE
+#define UART_FRONTPANEL      UART0_BASE
+#define UARTx_BASE           UART0_BASE
+#define LED_PERIPH           SYSCTL_PERIPH_GPIOP
+#define LED_BASE             GPIO_PORTP_BASE
+#define LED_PIN              GPIO_PIN_3
 #else
+#define LED_PERIPH SYSCTL_PERIPH_GPIOJ
+#define LED_BASE GPIO_PORTJ_BASE
+#define LED_PIN GPIO_PIN_1
+
 #define UART_FRONTPANEL      UART4_BASE
 #define UARTx_BASE           UART4_BASE
 #endif
@@ -108,7 +115,7 @@ UARTIntHandler(void)
       //
       // Blink the LED to show a character transfer is occurring.
       //
-      ROM_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, GPIO_PIN_1);
+      ROM_GPIOPinWrite(LED_BASE, LED_PIN, LED_PIN);
 
       //
       // Delay for 1 millisecond.  Each SysCtlDelay is about 3 clocks.
@@ -118,7 +125,7 @@ UARTIntHandler(void)
       //
       // Turn off the LED
       //
-      ROM_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 0x0);
+      ROM_GPIOPinWrite(LED_BASE, LED_PIN, 0x0);
       
     }
 }
@@ -159,12 +166,12 @@ main(void)
   //
   // Enable the GPIO port that is used for the on-board LED.
   //
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);
+  ROM_SysCtlPeripheralEnable(LED_PERIPH);
 
   //
   // Enable the GPIO pins for the LED (PJ1).
   //
-  ROM_GPIOPinTypeGPIOOutput(GPIO_PORTJ_BASE, GPIO_PIN_1);
+  ROM_GPIOPinTypeGPIOOutput(LED_BASE, LED_PIN);
 
   //
   // Enable the peripherals used by this example.
@@ -222,6 +229,32 @@ main(void)
   //
   ROM_UARTConfigSetExpClk(UART1_BASE, g_ui32SysClock, 115200,
                           (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+#elif UARTx_BASE == UART0_BASE
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+  //
+  // Configure the GPIO Pin Mux for PA0
+  // for U0RX
+  //
+  MAP_GPIOPinConfigure(GPIO_PA0_U0RX);
+  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0);
+
+  //
+  // Configure the GPIO Pin Mux for PA1
+  // for U0TX
+  //
+  MAP_GPIOPinConfigure(GPIO_PA1_U0TX);
+  MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_1);
+
+  // Turn on the UART peripheral
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+  while (!ROM_SysCtlPeripheralReady(SYSCTL_PERIPH_UART0))
+    ;
+
+  //
+  // Configure the UART for 115,200, 8-N-1 operation.
+  //
+  ROM_UARTConfigSetExpClk(UART0_BASE, g_ui32SysClock, 115200,
+                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 #else
 #error "Not supported UART"
 #endif
@@ -232,6 +265,7 @@ main(void)
   //
   ROM_IntMasterEnable();
 
+#ifdef REV1
   //
   // Set relevant GPIO pins as UART pins.
   //
@@ -254,13 +288,18 @@ main(void)
   //
   ROM_UARTConfigSetExpClk(UART_FRONTPANEL, g_ui32SysClock, 115200,
                           (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
-
   //
   // Enable the UART interrupt.
   //
   ROM_IntEnable(INT_UART4);
   ROM_UARTIntEnable(UART_FRONTPANEL, UART_INT_RX | UART_INT_RT);
-
+#else // REV2
+  //
+  // Enable the UART interrupt.
+  //
+  ROM_IntEnable(INT_UART0);
+  ROM_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
+#endif
   //
   // Prompt for text to be entered.
   //
