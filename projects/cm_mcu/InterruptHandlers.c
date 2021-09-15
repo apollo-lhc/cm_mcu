@@ -43,9 +43,57 @@
 #include "semphr.h"
 #include "portmacro.h"
 
+#if defined(REV1)
 // Stream buffers for UART communication
 StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
+#elif defined(REV2)
+StreamBufferHandle_t xUART0StreamBuffer;
+#endif // Revision
 
+#if defined(REV2)
+void UART0IntHandler(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  //
+  // Get the interrupt status.
+  //
+  uint32_t ui32Status = ROM_UARTIntStatus(UART0_BASE, true);
+
+  //
+  // Clear the asserted interrupts.
+  //
+  ROM_UARTIntClear(UART0_BASE, ui32Status);
+
+  //
+  // Loop while there are characters in the receive FIFO.
+  //
+  uint8_t bytes[8];
+  int received = 0;
+  while (ROM_UARTCharsAvail(UART0_BASE)) {
+
+    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART0_BASE);
+    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    if (++received == 8) {
+      xStreamBufferSendFromISR(xUART0StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      received = 0;
+    }
+  }
+  if (received)
+    xStreamBufferSendFromISR(xUART0StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+
+  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
+    xStreamBufferReceiveFromISR() then a task that has a priority above the
+    priority of the currently executing task was unblocked and a context
+    switch should be performed to ensure the ISR returns to the unblocked
+    task.  In most FreeRTOS ports this is done by simply passing
+    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
+    variables value, and perform the context switch if necessary.  Check the
+    documentation for the port in use for port specific instructions. */
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+#endif
+
+#if defined(REV1)
 void UART1IntHandler(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -127,6 +175,7 @@ void UART4IntHandler(void)
     documentation for the port in use for port specific instructions. */
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+#endif // REV1
 
 // tSMBus g_sSlave0;  // for I2C #0
 
@@ -134,12 +183,14 @@ tSMBus g_sMaster1; // for I2C #1
 tSMBus g_sMaster2; // for I2C #2
 tSMBus g_sMaster3; // for I2C #3
 tSMBus g_sMaster4; // for I2C #4
+tSMBus g_sMaster5; // for I2C #5
 tSMBus g_sMaster6; // for I2C #6
 
 volatile tSMBusStatus eStatus1 = SMBUS_OK;
 volatile tSMBusStatus eStatus2 = SMBUS_OK;
 volatile tSMBusStatus eStatus3 = SMBUS_OK;
 volatile tSMBusStatus eStatus4 = SMBUS_OK;
+volatile tSMBusStatus eStatus5 = SMBUS_OK;
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
 // SMBUs specific handler for I2C
@@ -190,6 +241,19 @@ void SMBusMasterIntHandler4(void)
   // handle errors in the returning function
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+void SMBusMasterIntHandler5(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  //
+  // Process the interrupt.
+  //
+  eStatus5 = SMBusMasterIntProcess(&g_sMaster5);
+  // handle errors in the returning function
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
 
 void SMBusMasterIntHandler6(void)
 {
@@ -284,8 +348,8 @@ void I2CSlave0Interrupt()
       use and may be called portEND_SWITCHING_ISR(). */
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-
-// Soft UART related
+#ifdef REV1
+// Soft UART related, used in Rev1
 extern tSoftUART g_sUART;
 //
 // The transmit timer tick function. This does not call
@@ -303,3 +367,4 @@ void Timer0AIntHandler(void)
   //
   SoftUARTTxTimerTick(&g_sUART);
 }
+#endif // REV1

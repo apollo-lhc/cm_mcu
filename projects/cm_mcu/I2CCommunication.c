@@ -59,11 +59,13 @@ extern tSMBus g_sMaster3;
 extern tSMBusStatus eStatus3;
 extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
+extern tSMBus g_sMaster5;
+extern tSMBusStatus eStatus5;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
 
-tSMBus* pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, NULL, &g_sMaster6, NULL, NULL, NULL};
-tSMBusStatus* eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, NULL, &eStatus6, NULL, NULL, NULL};
+tSMBus* pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
+tSMBusStatus* eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
 
 #define MAX_BYTES 4
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])

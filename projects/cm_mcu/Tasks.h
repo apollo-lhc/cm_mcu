@@ -82,9 +82,9 @@ void MonitorTask(void *parameters);
 #define NFIREFLIES_F2 14
 #else // REV2
 // REV 2
-#define NFIREFLIES_F1    99
-#define NFIREFLIES_F2    99 // Placeholders
-#error "Fix placeholder values"
+#define NFIREFLIES_F1    10
+#define NFIREFLIES_F2    10 // Placeholders
+//#error "Fix placeholder values"
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 

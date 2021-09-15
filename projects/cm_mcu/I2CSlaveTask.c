@@ -35,6 +35,10 @@
 //    presumably also set via the task argument.
 // 3. Replace all instances of I2C0_BASE with the appropriate parameter
 
+#if defined(REV1) || defined(REV2)
+#define SLAVE_I2C_BASE I2C0_BASE
+#endif
+
 //#define DEBUG_I2CSLAVE
 #ifdef DEBUG_I2CSLAVE
 void Print(const char *str);
@@ -121,7 +125,8 @@ void I2CSlaveTask(void *parameters)
   local_fpga_f1 = get_f1_index();
   local_fpga_f2 = get_f2_index();
 
-  ROM_I2CSlaveEnable(I2C0_BASE);
+
+  ROM_I2CSlaveEnable(SLAVE_I2C_BASE);
 
   enum I2C_STATE {
     I2C_READY,
@@ -169,7 +174,7 @@ void I2CSlaveTask(void *parameters)
     Print(tmp);
 #endif
     // read the I2C slave status register I2CSCSR
-    uint32_t status = ROM_I2CSlaveStatus(I2C0_BASE);
+    uint32_t status = ROM_I2CSlaveStatus(SLAVE_I2C_BASE);
 #ifdef DEBUG_I2CSLAVE
     snprintf(tmp, 64, "Slave status is 0x%08x\r\n", status);
     Print(tmp);
@@ -192,7 +197,7 @@ void I2CSlaveTask(void *parameters)
           case I2C_READY: // non-register transmit request
             // we ignore these, but to keep the TM4C happy we put something
             // on the bus
-            ROM_I2CSlaveDataPut(I2C0_BASE, 0xFF);
+            ROM_I2CSlaveDataPut(SLAVE_I2C_BASE, 0xFF);
             theState = I2C_READY;
             break;
           case I2C_FIRSTBYTE: // we received a byte and are now asked to transmit
@@ -203,7 +208,7 @@ void I2CSlaveTask(void *parameters)
             snprintf(tmp, 64, "byte 1 sent %x\r\n", b);
             Print(tmp);
 #endif
-            ROM_I2CSlaveDataPut(I2C0_BASE, b);
+            ROM_I2CSlaveDataPut(SLAVE_I2C_BASE, b);
             theState = I2C_READY;
             break;
           }
@@ -215,7 +220,7 @@ void I2CSlaveTask(void *parameters)
       }
       // below here, receive requests
       else if (status == I2C_SLAVE_ACT_RREQ_FBR) { // first byte
-        addr = ROM_I2CSlaveDataGet(I2C0_BASE);
+        addr = ROM_I2CSlaveDataGet(SLAVE_I2C_BASE);
 #ifdef DEBUG_I2CSLAVE
         snprintf(tmp, 64, "Address %d received\r\n", addr);
         Print(tmp);
@@ -225,12 +230,12 @@ void I2CSlaveTask(void *parameters)
       else if (status == I2C_SLAVE_ACT_RREQ) { // not first byte
         switch (theState) {
           case I2C_READY: // we ignore this, but need to keep TM4C happy
-            val = ROM_I2CSlaveDataGet(I2C0_BASE);
+            val = ROM_I2CSlaveDataGet(SLAVE_I2C_BASE);
             // stay in READY state
             theState = I2C_READY;
             break;
           case I2C_FIRSTBYTE:
-            val = ROM_I2CSlaveDataGet(I2C0_BASE);
+            val = ROM_I2CSlaveDataGet(SLAVE_I2C_BASE);
             setSlaveData(addr, val);
             theState = I2C_READY;
 #ifdef DEBUG_I2CSLAVE

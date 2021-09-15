@@ -76,10 +76,33 @@ void setPSStatus(int i, enum ps_state theState);
 //
 // -----------------------------------------------------
 // Number of enable and power good/OK pins
-#define N_PS_ENABLES 10
-#define N_PS_OKS     10
 
-#error "Missing Rev 2 PS masks"
+#define N_PS_ENABLES    10
+#define N_PS_OKS        12
+#define PS_OKS_MASK     ((1U << N_PS_OKS) - 1)
+#define PS_OKS_F1_MASK  0x543U
+#define PS_OKS_F2_MASK  0xA8CU
+#define PS_OKS_GEN_MASK 0x030U
+#define PS_ENS_MASK     ((1U << N_PS_ENABLES) - 1)
+#define PS_ENS_GEN_MASK 0x00CU
+#define PS_ENS_F1_MASK  0x151U
+#define PS_ENS_F2_MASK  0x2A2U
+
+// OK masks for various stages of the turn-on.
+// these are indices into the oks[] array
+// L1-L5, note NO L3!!! no PG on the L3 supplies
+#define PS_OKS_F1_MASK_L1 0x0003U
+#define PS_OKS_F1_MASK_L2 0x0030U // these are common to VU and KU
+#define PS_OKS_F1_MASK_L4 0x0300U
+#define PS_OKS_F1_MASK_L5 0x0C00U
+#define PS_OKS_F2_MASK_L1 0x000CU
+#define PS_OKS_F2_MASK_L2 PS_OKS_F1_MASK_L2
+#define PS_OKS_F2_MASK_L4 0x00C0U
+#define PS_OKS_F2_MASK_L5 0x3000U
+
+
+
+//#error "Missing Rev 2 PS masks"
 #else
 #error "Must define either Rev1 or Rev2"
 #endif // REV 2 

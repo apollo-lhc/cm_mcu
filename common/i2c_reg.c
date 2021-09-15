@@ -228,6 +228,49 @@ void initI2C4(const uint32_t sysclockfreq)
   write_gpio_pin(_F1_OPTICS_I2C_RESET, 0x1); // active low
 }
 
+
+#ifdef REV2
+// I2C controller 5 is for FPGAs on the CM
+void initI2C5(const uint32_t sysclockfreq)
+{
+  // enable I2C module 5
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C5);
+  //
+  // Wait for the I2C5 module to be ready.
+  //
+  while (!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C5)) {
+  }
+
+  // Stop the Clock, Reset and Enable I2C Module
+  // in Master Function
+  //
+  MAP_SysCtlPeripheralDisable(SYSCTL_PERIPH_I2C5);
+  MAP_SysCtlPeripheralReset(SYSCTL_PERIPH_I2C5);
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C5);
+
+  while (!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C5))
+    ;
+
+  // Enable and initialize the I2C master module.  Use the system clock for
+  // the I2C5 module.  The last parameter sets the I2C data transfer rate.
+  // If false the data rate is set to 100kbps and if true the data rate will
+  // be set to 400kbps.
+  MAP_I2CMasterInitExpClk(I2C5_BASE, sysclockfreq, false);
+  while (!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C5))
+    ;
+
+  // clear I2C FIFOs
+  // HWREG(I2C5_BASE + I2C_0_FIFOCTL) = 80008000;
+  MAP_I2CRxFIFOFlush(I2C5_BASE);
+  MAP_I2CTxFIFOFlush(I2C5_BASE);
+
+  // toggle relevant reset
+  write_gpio_pin(_FPGA_I2C_RESET, 0x0); // active low
+  MAP_SysCtlDelay(sysclockfreq / 10);
+  ;
+  write_gpio_pin(_FPGA_I2C_RESET, 0x1); // active low
+}
+#elif defined (REV1)
 // I2C controller 6 is for FPGAs on the CM
 void initI2C6(const uint32_t sysclockfreq)
 {
@@ -268,6 +311,9 @@ void initI2C6(const uint32_t sysclockfreq)
   ;
   write_gpio_pin(_FPGA_I2C_RESET, 0x1); // active low
 }
+#endif
+
+
 #if 0  // obsolete
 
 // ---------------------------------------------------------------------

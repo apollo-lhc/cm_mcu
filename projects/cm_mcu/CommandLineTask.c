@@ -512,6 +512,7 @@ static struct command_t commands[] = {
 
 };
 
+#ifdef REV1
 static void U4Print(const char *str)
 {
   UARTPrint(UART4_BASE, str);
@@ -520,6 +521,12 @@ static void U1Print(const char *str)
 {
   UARTPrint(UART1_BASE, str);
 }
+#elif defined(REV2) // REV1
+static void U0Print(const char *str)
+{
+  UARTPrint(UART0_BASE, str);
+}
+#endif
 
 struct microrl_user_data_t {
   uint32_t uart_base;
@@ -610,21 +617,31 @@ void vCommandLineTask(void *pvParameters)
       .uart_base = uart_base,
   };
 
+#ifdef REV1
+  void *(*printer)(const char*) = U4Print;
+#elif defined(REV2)
+  void (*printer)(const char*) = U0Print;
+#endif
+
   struct microrl_config rl_config = {
-      .print = U4Print, // default to front panel
+      .print = printer, // default to front panel
       // set callback for execute
       .execute = execute,
       .prompt_str = "% ",
       .prompt_length = 2,
       .userdata = &rl_userdata,
   };
+#ifdef REV1
+  //this is a hack
   if (uart_base == UART1_BASE) {
     rl_config.print = U1Print; // switch to Zynq
   }
+#endif // REV1
   microrl_t rl;
   microrl_init(&rl, &rl_config);
   microrl_set_execute_callback(&rl, execute);
   microrl_insert_char(&rl, ' '); // this seems to be necessary?
+
 
   for (;;) {
     /* This implementation reads a single character at a time.  Wait in the

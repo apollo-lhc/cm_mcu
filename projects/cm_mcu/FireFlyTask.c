@@ -36,11 +36,12 @@
 
 // I2C information -- which device on the MCU is for the FF for each FPGA
 // this is what corresponds to I2C_BASE variables in the MCU
-#ifndef REV2
+#ifdef REV1
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
-#else
-#error "define firefly i2c devices for Rev2"
+#elif defined(REV2)
+#define I2C_DEVICE_F1 4
+#define I2C_DEVICE_F2 3
 #endif
 
 // local prototype
@@ -74,7 +75,7 @@ void Print(const char *str);
 // ECUO-B04 XCVR: 0x50 7 bit I2C address
 // ECUO-T12 Tx:   0x50 7 bit I2C address (both 14 and 25G)
 // ECUO-R12 Rx:   0x54 7 bit I2C address (both 14 and 25G)
-
+#ifdef REV1
 // -------------------------------------------------
 //
 // REV 1
@@ -108,15 +109,38 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", 0x71, 4, 0x50}, //
     {"V12  12 Rx GTY", 0x71, 5, 0x54}, //
 };
-
-
+#elif defined (REV2)
 // -------------------------------------------------
 //
 // REV 2
 //
 // -------------------------------------------------
-// to be added here
+struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
+    {"K01  12 Tx GTH", 0x70, 0, 0x50}, //
+    {"K01  12 Rx GTH", 0x70, 1, 0x54}, //
+    {"K02  12 Tx GTH", 0x70, 2, 0x50}, //
+    {"K02  12 Rx GTH", 0x70, 3, 0x54}, //
+    {"K03  12 Tx GTH", 0x70, 4, 0x50}, //
+    {"K03  12 Rx GTH", 0x70, 5, 0x54}, //
+    {"K04 4 XCVR GTY", 0x71, 0, 0x50}, //
+    {"K05 4 XCVR GTY", 0x71, 1, 0x50}, //
+    {"K06 4 XCVR GTY", 0x71, 2, 0x50}, //
+    {"K07  12 Tx GTY", 0x71, 3, 0x50}, //
+    {"K07  12 Rx GTY", 0x71, 4, 0x54}, //
+    {"V01 4 XCVR GTY", 0x70, 0, 0x50}, //
+    {"V02 4 XCVR GTY", 0x70, 1, 0x50}, //
+    {"V03 4 XCVR GTY", 0x70, 2, 0x50}, //
+    {"V04 4 XCVR GTY", 0x70, 3, 0x50}, //
+    {"V05 4 XCVR GTY", 0x70, 4, 0x50}, //
+    {"V06 4 XCVR GTY", 0x70, 5, 0x50}, //
+    {"V07 4 XCVR GTY", 0x71, 0, 0x50}, //
+    {"V08 4 XCVR GTY", 0x71, 1, 0x50}, //
+    {"V09 4 XCVR GTY", 0x71, 2, 0x50}, //
+};
 
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 // Register definitions
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices

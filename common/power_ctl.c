@@ -91,23 +91,22 @@ static const struct gpio_pin_t enables[] = {
 };
 
 //if you update this you need to update N_PS_OKS too
-// Notice that the VCCAUX is not included here; the
-// TPS5218 supply does not have any such output
 const
-struct gpio_pin_t oks[] = {
+struct gpio_pin_t oks[N_PS_OKS] = {
     { PG_F1_INT_A, 1},
     { PG_F1_INT_B, 1},
     { PG_F2_INT_A, 1},
     { PG_F2_INT_B, 1},
     { PG_1V8,    2},
     { PG_3V3,    2},
+    { PG_F1_VCCAUX, 3},
+    { PG_F2_VCCAUX, 3},
     { PG_F1_AVCC,  4},
     { PG_F2_AVCC,  4},
     { PG_F1_AVTT,  5},
     { PG_F2_AVTT,  5},
 };
 
-#error "Missing power control definitions for Rev 2"
 #else
 #error "Unknown board revision"
 #endif // REV2 

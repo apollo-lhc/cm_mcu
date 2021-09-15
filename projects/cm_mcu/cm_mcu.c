@@ -104,8 +104,12 @@ void SystemInitInterrupts()
 {
   // Set up the UARTs for the CLI
   // this also sets up the interrupts
+#if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
   UART4Init(g_ui32SysClock); // front panel UART
+#elif defined(REV2)
+  UART0Init(g_ui32SysClock); // ZYNQ UART
+#endif
 
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
@@ -128,13 +132,19 @@ void SystemInitInterrupts()
   ROM_IntEnable(INT_ADC0SS1);
   ROM_IntEnable(INT_ADC1SS0);
 
+#if defined(REV1)|| defined(REV2)
   // Set up the I2C controllers
   initI2C0(g_ui32SysClock); // Slave controller
   initI2C1(g_ui32SysClock); // controller for power supplies
   initI2C2(g_ui32SysClock); // controller for clocks
-  initI2C3(g_ui32SysClock); // controller for V optics
-  initI2C4(g_ui32SysClock); // controller for K optics
+  initI2C3(g_ui32SysClock); // controller for V (F2) optics
+  initI2C4(g_ui32SysClock); // controller for K (F1) optics
+#endif
+#if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
+#elif defined(REV2)
+  initI2C5(g_ui32SysClock); // controller for FPGAs
+#endif
 
   // smbus
   // Initialize the master SMBus port.
@@ -143,16 +153,22 @@ void SystemInitInterrupts()
   SMBusMasterInit(&g_sMaster2, I2C2_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster3, I2C3_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
+#if defined(REV1)
   SMBusMasterInit(&g_sMaster6, I2C6_BASE, g_ui32SysClock);
-
+#elif defined(REV2)
+  SMBusMasterInit(&g_sMaster5, I2C5_BASE, g_ui32SysClock);
+#endif
   // FreeRTOS insists that the priority of interrupts be set up like this.
   ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C1, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C2, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C3, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C4, configKERNEL_INTERRUPT_PRIORITY);
+#if defined(REV1)
   ROM_IntPrioritySet(INT_I2C6, configKERNEL_INTERRUPT_PRIORITY);
-
+#elif defined(REV2)
+  ROM_IntPrioritySet(INT_I2C5, configKERNEL_INTERRUPT_PRIORITY);
+#endif
   //
   // Enable I2C master interrupts.
   //
@@ -160,7 +176,11 @@ void SystemInitInterrupts()
   SMBusMasterIntEnable(&g_sMaster2);
   SMBusMasterIntEnable(&g_sMaster3);
   SMBusMasterIntEnable(&g_sMaster4);
+#if defined(REV1)
   SMBusMasterIntEnable(&g_sMaster6);
+#elif defined(REV2)
+  SMBusMasterIntEnable(&g_sMaster5);
+#endif
 
   // I2C slave
   ROM_I2CSlaveAddressSet(I2C0_BASE, 0, I2C0_SLAVE_ADDRESS);
@@ -231,12 +251,19 @@ int main(void)
                                            1);  // number of items before a trigger is sent
   cli_uart4.uart_base = FP_UART;
   cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
-#endif // REV1
   xUART1StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
+                                           1);  // number of items before a trigger is sent
+  cli_uart1.uart_base = ZQ_UART;
+  cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
+#elif defined(REV2)
+  // There are two buffers for the CLI (shared front panel and Zynq)
+  xUART0StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
   cli_uart1.uart_base = ZQ_UART;
-  cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
+  cli_uart1.UartStreamBuffer = xUART0StreamBuffer;
+#endif // REV1
+
 
   // clear the various buffers
   for (int i = 0; i < dcdc_args.n_values; ++i)
@@ -252,19 +279,19 @@ int main(void)
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
-              NULL);
+//  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+//              NULL);
   xTaskCreate(MonitorTask, "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTask, "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+//  xTaskCreate(MonitorTask, "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
+//              NULL);
+//  xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+//  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+//  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------
   // Initialize all the queues
@@ -301,7 +328,12 @@ int main(void)
   Print("\r\n----------------------------\r\n");
   Print("Staring Apollo CM MCU firmware ");
   Print(gitVersion());
-  Print("\r\n\t\t (FreeRTOS scheduler about to start)\r\n");
+#ifdef REV1
+  Print("\r\nRev1 build\r\n");
+#elif defined(REV2)
+  Print("\r\nRev2 build\r\n");
+#endif
+  Print("\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__ ", " __DATE__ "\r\n");
 #ifdef ECN001
   Print("Includes ECN001 code mods\r\n");

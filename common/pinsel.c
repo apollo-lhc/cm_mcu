@@ -524,7 +524,7 @@ void pinsel(int pin, uint32_t *x_gpio_port, uint8_t *x_gpio_pin)
       gpio_pin = GPIO_PIN_7;
       break;
     }
-    case F2_CFG_START: {
+    case F2_FPGA_PROGRAM: {
       gpio_port = GPIO_PORTC_BASE;
       gpio_pin = GPIO_PIN_6;
       break;
@@ -694,7 +694,7 @@ void pinsel(int pin, uint32_t *x_gpio_port, uint8_t *x_gpio_pin)
       gpio_pin = GPIO_PIN_4;
       break;
     }
-    case F1_CFG_START: {
+    case F1_FPGA_PROGRAM: {
       gpio_port = GPIO_PORTP_BASE;
       gpio_pin = GPIO_PIN_2;
       break;
@@ -772,9 +772,10 @@ void pinsel(int pin, uint32_t *x_gpio_port, uint8_t *x_gpio_pin)
 #endif // DEBUG
       break;
     }
-      *x_gpio_port = gpio_port;
-      *x_gpio_pin = gpio_pin;
   }
+  *x_gpio_port = gpio_port;
+  *x_gpio_pin = gpio_pin;
+
 }
 const char *const pin_names[] = {
     "CUR_V_4V0",            // 1

@@ -268,7 +268,9 @@ void initFPGAMon()
   // check if we are to include both FPGAs or not
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
+#ifndef DEBUG
   configASSERT(f1_enable || f2_enable);
+#endif // DEBUG
   if (!f1_enable && f2_enable) {
     fpga_args.devices = fpga_addrs_f2only;
     fpga_args.n_devices = 2;

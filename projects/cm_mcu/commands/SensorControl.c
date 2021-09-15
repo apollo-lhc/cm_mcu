@@ -149,7 +149,7 @@ BaseType_t power_ctl(int argc, char **argv, char* m)
       }
 
       copied +=
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%15s: %s\r\n", pin_names[oks[i].name], c);
+          snprintf(m + copied, SCRATCH_SIZE - copied, "%16s: %s\r\n", pin_names[oks[i].name], c);
       if ((SCRATCH_SIZE - copied) < 20 && (i < N_PS_OKS)) {
         ++i;
         return pdTRUE;

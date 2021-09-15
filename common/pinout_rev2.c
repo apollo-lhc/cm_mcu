@@ -262,6 +262,7 @@ PinoutSet(void)
 	// for GPIO_PH1
     //
 	MAP_GPIOPinTypeGPIOInput(GPIO_PORTH_BASE, GPIO_PIN_1);
+  MAP_GPIOPadConfigSet(GPIO_PORTH_BASE, GPIO_PIN_1, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
 
     //
     // Configure the GPIO Pin Mux for PH2
