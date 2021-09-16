@@ -129,9 +129,9 @@ static BaseType_t snapshot(int argc, char **argv, char* m)
                        argv[0], page);
     return pdFALSE;
   }
-  if (which < 0 || which > 4) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-4\r\n",
-                       argv[0], which);
+  if (which < 0 || which > (NSUPPLIES_PS-1)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+                       argv[0], which, (NSUPPLIES_PS-1));
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
@@ -618,7 +618,7 @@ void vCommandLineTask(void *pvParameters)
   };
 
 #ifdef REV1
-  void *(*printer)(const char*) = U4Print;
+  void (*printer)(const char*) = U4Print;
 #elif defined(REV2)
   void (*printer)(const char*) = U0Print;
 #endif
