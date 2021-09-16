@@ -291,9 +291,11 @@ void initFPGAMon()
   // check if we are to include both FPGAs or not
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
+#ifndef REV1
   write_gpio_pin(JTAG_FROM_SM, 0);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);
+#endif // not REV1
 #ifndef DEBUG // todo: just log this
   configASSERT(f1_enable || f2_enable);
 #endif // DEBUG
