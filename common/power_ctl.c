@@ -215,6 +215,12 @@ bool turn_on_ps(uint16_t ps_en_mask)
 // Enable supply at some priority. Also send in vu and ku enable.
 void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio)
 {
+  // in the special case where neither f1 or f2 are enabled (no FPGAs),
+  // enable both of them (commissioning of new PCB
+  if ( ! f1_enable && ! f2_enable ) {
+    f1_enable = true;
+    f2_enable = true;
+  }
   // loop over the enables
   for (int e = 0; e < N_PS_ENABLES; ++e) {
     // if this enable matches the requested priority

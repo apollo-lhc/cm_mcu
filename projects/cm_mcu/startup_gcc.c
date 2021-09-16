@@ -170,7 +170,7 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     0,                      // Reserved
     0,                      // Reserved
     SMBusMasterIntHandler4, // I2C4 Master and Slave
-    IntDefaultHandler,      // I2C5 Master and Slave
+    SMBusMasterIntHandler5, // I2C5 Master and Slave
     IntDefaultHandler,      // GPIO Port M
     IntDefaultHandler,      // GPIO Port N
     0,                      // Reserved

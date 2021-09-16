@@ -33,6 +33,7 @@
 int snprintf(char *buf, unsigned int count, const char *format, ...);
 
 // FPGA arguments for monitoring task
+#ifdef REV1
 struct dev_i2c_addr_t fpga_addrs[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
     {"KU15P", 0x70, 0, 0x36},   // KU15P FPGA
@@ -47,6 +48,22 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
+#elif defined(REV2)
+struct dev_i2c_addr_t fpga_addrs[] = {
+    {"F1", 0x70, 3, 0x36},   // F1
+    {"F2", 0x70, 1, 0x36},    // F2
+    {"F2SL1", 0x70, 1, 0x34}, // F2 FPGA SL1
+};
+
+struct dev_i2c_addr_t fpga_addrs_f1only[] = {
+    {"F1", 0x70, 3, 0x3e},   // F1
+};
+
+struct dev_i2c_addr_t fpga_addrs_f2only[] = {
+    {"F2", 0x70, 1, 0x36},    // F2
+    {"F2SL1", 0x70, 1, 0x34}, // F2 FPGA SL1
+};
+#endif
 
 struct pm_command_t pm_command_fpga[] = {
     {0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11},
@@ -64,8 +81,13 @@ struct MonitorTaskArgs_t fpga_args = {
     .pm_values = pm_fpga,
     .n_values = FPGA_MON_NVALUES,
     .n_pages = 1,
+#ifdef REV1
     .smbus = &g_sMaster6,
     .smbus_status = &eStatus6,
+#elif defined(REV2)
+    .smbus = &g_sMaster5,
+    .smbus_status = &eStatus5,
+#endif
     .xSem = NULL,
 };
 #ifdef REV1
@@ -100,7 +122,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"F2VCCINT1", 0x70, 3, 0x44}, // first vccint, F2
     {"F2VCCINT2", 0x70, 4, 0x43}, // second vccint, F2
     {"F1AVCC/TT", 0x70, 5, 0x40}, // AVCC/AVTT for F1
-    {"F1AVCC/TT", 0x70, 6, 0x40}, // AVCC/AVTT for F2
+    {"F2AVCC/TT", 0x70, 6, 0x40}, // AVCC/AVTT for F2
 };
 #else
 #error "need to define either Rev1 or Rev2"
@@ -168,7 +190,8 @@ void LGA80D_init(void)
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);
-  for (int dev = 1; dev < 5; dev += 1) {
+  // we do the same for all devices except the 0th one, which is the 1.8/3.3V device
+  for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
     for (uint8_t page = 0; page < 2; ++page) {
       // page register
       char tmp[256];
@@ -268,21 +291,36 @@ void initFPGAMon()
   // check if we are to include both FPGAs or not
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
-#ifndef DEBUG
+  write_gpio_pin(JTAG_FROM_SM, 0);
+  write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
+  write_gpio_pin(F1_FPGA_PROGRAM, 0);
+#ifndef DEBUG // todo: just log this
   configASSERT(f1_enable || f2_enable);
 #endif // DEBUG
   if (!f1_enable && f2_enable) {
     fpga_args.devices = fpga_addrs_f2only;
     fpga_args.n_devices = 2;
     set_f2_index(0);
+#ifndef REV1
+    write_gpio_pin(_F1_JTAG_BYPASS, 0);
+    write_gpio_pin(_F2_JTAG_BYPASS, 1);
+#endif // REV1
   }
   else if (!f2_enable && f1_enable) {
     fpga_args.devices = fpga_addrs_f1only;
     fpga_args.n_devices = 1;
     set_f1_index(0);
+#ifndef REV1
+    write_gpio_pin(_F1_JTAG_BYPASS, 1);
+    write_gpio_pin(_F2_JTAG_BYPASS, 0);
+#endif // REV1
   }
   else {
     set_f2_index(0);
     set_f1_index(1);
+#ifndef REV1
+    write_gpio_pin(_F1_JTAG_BYPASS, 1);
+    write_gpio_pin(_F2_JTAG_BYPASS, 1);
+#endif // REV1
   }
 }

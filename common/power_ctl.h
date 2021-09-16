@@ -91,14 +91,16 @@ void setPSStatus(int i, enum ps_state theState);
 // OK masks for various stages of the turn-on.
 // these are indices into the oks[] array
 // L1-L5, note NO L3!!! no PG on the L3 supplies
-#define PS_OKS_F1_MASK_L1 0x0003U
-#define PS_OKS_F1_MASK_L2 0x0030U // these are common to VU and KU
-#define PS_OKS_F1_MASK_L4 0x0300U
-#define PS_OKS_F1_MASK_L5 0x0C00U
-#define PS_OKS_F2_MASK_L1 0x000CU
+#define PS_OKS_F1_MASK_L1 0x001U
+#define PS_OKS_F1_MASK_L2 0x030U // these are common to F1 and F2
+#define PS_OKS_F1_MASK_L3 0x040U
+#define PS_OKS_F1_MASK_L4 0x100U
+#define PS_OKS_F1_MASK_L5 0x400U
+#define PS_OKS_F2_MASK_L1 0x002U
 #define PS_OKS_F2_MASK_L2 PS_OKS_F1_MASK_L2
-#define PS_OKS_F2_MASK_L4 0x00C0U
-#define PS_OKS_F2_MASK_L5 0x3000U
+#define PS_OKS_F2_MASK_L3 0x080U
+#define PS_OKS_F2_MASK_L4 0x200U
+#define PS_OKS_F2_MASK_L5 0x800U
 
 
 

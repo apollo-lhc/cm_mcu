@@ -49,7 +49,11 @@ struct MonitorTaskArgs_t {
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
 };
 // DC-DC converter
+#ifdef REV1
 #define NSUPPLIES_PS (5) // 5 devices, 2 pages each
+#elif defined(REV2)
+#define NSUPPLIES_PS (7) // 7 devices, 2 pages each
+#endif
 #define NCOMMANDS_PS 17  // number of entries in dcdc_ array
 #define NPAGES_PS    2   // number of pages on the power supplies.
 
