@@ -7,6 +7,12 @@ $(error "REV1 and REV2 are mutually exclusive")
 endif
 endif
 
+ifndef REV1
+ifndef REV2
+$(error "Must define either REV1 or REV2")
+endif
+endif
+
 
 DIRS=driverlib projects 
 DIRSCLEAN=$(addsuffix .clean,$(DIRS))
