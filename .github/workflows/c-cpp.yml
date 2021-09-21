@@ -54,7 +54,7 @@ jobs:
     - name: make with GCC
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-        make clean
+        make REV1=1 clean
         arm-none-eabi-gcc --version
         make -k REV1=1 
 
