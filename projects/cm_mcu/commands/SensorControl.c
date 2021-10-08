@@ -78,7 +78,8 @@ BaseType_t psmon_ctl(int argc, char **argv, char* m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
   }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", dcdc_args.commands[i1].name);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
+      dcdc_args.commands[i1].name, dcdc_args.commands[i1].command);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", dcdc_args.devices[ps].name);
@@ -702,3 +703,57 @@ BaseType_t fpga_reset(int argc, char **argv, char* m)
   }
   return pdFALSE;
 }
+
+extern struct MonitorTaskArgs_t dcdc_args;
+extern struct dev_i2c_addr_t pm_addrs_dcdc[];
+extern struct pm_command_t extra_cmds[]; // LocalTasks.c
+
+// Read out registers from LGA80D
+BaseType_t psmon_reg(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  int page = strtol(argv[1], NULL, 10); // which supply within the LGA08D
+  int which = page / 10;
+  page = page % 10;
+  if (page < 0 || page > 1) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
+                       argv[0], page);
+    return pdFALSE;
+  }
+  if (which < 0 || which > (NSUPPLIES_PS-1)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+                       argv[0], which, (NSUPPLIES_PS-1));
+    return pdFALSE;
+  }
+  BaseType_t regAddress  = strtol(argv[2], NULL, 16);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s, reg 0x%02x\r\n", argv[0],
+                     page, pm_addrs_dcdc[which].name, regAddress);
+
+
+
+  // acquire the semaphore
+  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
+  uint8_t ui8page = page;
+  // page register
+  int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which], &extra_cmds[0], &ui8page);
+  if (r) {
+    Print("error in psmon_reg (page)\r\n");
+  }
+  // read register, 2 bytes
+  uint8_t thevalue[2] = {0,0};
+  struct pm_command_t thecmd = {regAddress, 2, "dummy", "", PM_STATUS};
+  r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[which], &thecmd, thevalue);
+  if (r) {
+    Print("error in psmon_reg (regr)\r\n");
+  }
+  uint16_t vv = (thevalue[0] | (thevalue[1]<<8));
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
+      argv[0], vv);
+
+  // release the semaphore
+  xSemaphoreGive(dcdc_args.xSem);
+  return pdFALSE;
+
+}
+

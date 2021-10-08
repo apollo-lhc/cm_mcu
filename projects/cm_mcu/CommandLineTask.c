@@ -463,6 +463,9 @@ static struct command_t commands[] = {
     {"led", led_ctl, "led (0-4)\r\n Manipulate red LED.\r\n", 1},
     {"psmon", psmon_ctl, "psmon <#>\r\n Displays a table showing the state of power supplies.\r\n",
      1},
+     {
+       "psreg", psmon_reg, "psreg <which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
+     },
     {"snapshot", snapshot,
      "snapshot # (0|1)\r\n Dump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
      "if to reset snapshot.\r\n",
