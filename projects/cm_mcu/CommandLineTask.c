@@ -444,7 +444,7 @@ static struct command_t commands[] = {
     {"i2cr", i2c_ctl_r,
      "i2cr <dev> <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n", 3},
     {"i2crr", i2c_ctl_reg_r,
-     "i2crr <dev> <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n", 3},
+     "i2crr <dev> <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n", 4},
     {"i2cw", i2c_ctl_w, "i2cw <dev> <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
      4},
     {"i2cwr", i2c_ctl_reg_w,
