@@ -116,26 +116,27 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 //
 // -------------------------------------------------
 struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
-    {"K01  12 Tx GTH", 0x70, 0, 0x50}, //
-    {"K01  12 Rx GTH", 0x70, 1, 0x54}, //
-    {"K02  12 Tx GTH", 0x70, 2, 0x50}, //
-    {"K02  12 Rx GTH", 0x70, 3, 0x54}, //
-    {"K03  12 Tx GTH", 0x70, 4, 0x50}, //
-    {"K03  12 Rx GTH", 0x70, 5, 0x54}, //
-    {"K04 4 XCVR GTY", 0x71, 0, 0x50}, //
-    {"K05 4 XCVR GTY", 0x71, 1, 0x50}, //
-    {"K06 4 XCVR GTY", 0x71, 2, 0x50}, //
-    {"K07  12 Tx GTY", 0x71, 3, 0x50}, //
-    {"K07  12 Rx GTY", 0x71, 4, 0x54}, //
-    {"V01 4 XCVR GTY", 0x70, 0, 0x50}, //
-    {"V02 4 XCVR GTY", 0x70, 1, 0x50}, //
-    {"V03 4 XCVR GTY", 0x70, 2, 0x50}, //
-    {"V04 4 XCVR GTY", 0x70, 3, 0x50}, //
-    {"V05 4 XCVR GTY", 0x70, 4, 0x50}, //
-    {"V06 4 XCVR GTY", 0x70, 5, 0x50}, //
-    {"V07 4 XCVR GTY", 0x71, 0, 0x50}, //
-    {"V08 4 XCVR GTY", 0x71, 1, 0x50}, //
-    {"V09 4 XCVR GTY", 0x71, 2, 0x50}, //
+    {"F1_1  12 Tx", 0x70, 0, 0x50}, //
+    {"F1_1  12 Rx", 0x70, 1, 0x54}, //
+    {"F1_2  12 Tx", 0x70, 3, 0x50}, //
+    {"F1_2  12 Rx", 0x70, 4, 0x54}, //
+    {"F1_3  12 Tx", 0x71, 3, 0x50}, //
+    {"F1_3  12 Rx", 0x71, 4, 0x54}, //
+    {"F1_4 4 XCVR", 0x70, 2, 0x50}, //
+    {"F1_5 4 XCVR", 0x71, 0, 0x50}, //
+    {"F1_6 4 XCVR", 0x71, 1, 0x50}, //
+    {"F1_7 4 XCVR", 0x71, 2, 0x50}, //
+    {"F2_1  12 Tx", 0x70, 0, 0x50}, //
+    {"F2_1  12 Rx", 0x70, 1, 0x54}, //
+    {"F2_2  12 Tx", 0x70, 3, 0x50}, //
+    {"F2_2  12 Rx", 0x70, 4, 0x54}, //
+    {"F2_3  12 Tx", 0x71, 3, 0x50}, //
+    {"F2_3  12 Rx", 0x71, 4, 0x54}, //
+    {"F2_4 4 XCVR", 0x70, 2, 0x50}, //
+    {"F2_5 4 XCVR", 0x71, 0, 0x50}, //
+    {"F2_6 4 XCVR", 0x71, 1, 0x50}, //
+    {"F2_7 4 XCVR", 0x71, 2, 0x50}, //
+
 };
 
 #else
@@ -145,7 +146,7 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
 #define FF_STATUS_COMMAND_REG      0x2
-#define FF_STATUS_COMMAND_REG_MASK 0x03U
+#define FF_STATUS_COMMAND_REG_MASK 0xFFU
 #define FF_TEMP_COMMAND_REG        0x16
 
 // two bytes, 12 FF to be disabled
@@ -680,7 +681,7 @@ void FireFlyTask(void *parameters)
 
 #define ERRSTR "FIF: %s: Error %d, break loop (ff=%d,c=%d) ...\r\n"
       // Read the temperature
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 2, data);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
@@ -695,7 +696,7 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // read the status register
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 1, data);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 2, data);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
