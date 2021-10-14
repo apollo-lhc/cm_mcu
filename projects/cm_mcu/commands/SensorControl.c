@@ -505,7 +505,7 @@ BaseType_t ff_status(int argc, char **argv, char* m)
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
   }
-  for (; whichff < 25; ++whichff) {
+  for (; whichff < NFIREFLIES; ++whichff) {
 
     const char *name = getFFname(whichff);
     if (!isEnabledFF(whichff)){
@@ -538,7 +538,7 @@ BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
   }
-  for (; whichff < 25; ++whichff) {
+  for (; whichff < NFIREFLIES; ++whichff) {
     const char *name = getFFname(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
     if (!isEnabledFF(whichff)){
@@ -583,7 +583,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m) {
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY CDR LOL ALARM:\r\n");
   }
-  for (; whichff < 25; ++whichff) {
+  for (; whichff < NFIREFLIES; ++whichff) {
     const char *name = getFFname(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
     if (!isEnabledFF(whichff)){
