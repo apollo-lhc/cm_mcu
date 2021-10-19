@@ -54,7 +54,7 @@ struct MonitorTaskArgs_t {
 #elif defined(REV2)
 #define NSUPPLIES_PS (7) // 7 devices, 2 pages each
 #endif
-#define NCOMMANDS_PS 17  // number of entries in dcdc_ array
+#define NCOMMANDS_PS 20  // number of entries in dcdc_ array
 #define NPAGES_PS    2   // number of pages on the power supplies.
 
 extern struct MonitorTaskArgs_t dcdc_args;

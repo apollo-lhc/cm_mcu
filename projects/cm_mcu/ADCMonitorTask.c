@@ -115,8 +115,9 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 2.5f}, // TODO: sf
     {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
     {ADC_CTL_CH17, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
-    {ADC_CTL_CH18, "F1_TEMP", (1.004f/1.026f)/0.004f, 35.f}, // degrees K
-    {ADC_CTL_CH19, "F2_TEMP", (1.004f/1.026f)/0.004f, 35.f}, // degrees K
+    //{ADC_CTL_CH18, "F1_TEMP", (1.026f/1.004f)/0.004f, 35.f}, // degrees K
+    {ADC_CTL_CH18, "F1_TEMP", 1.f, 35.f}, // degrees K
+    {ADC_CTL_CH19, "F2_TEMP", (1.026f/1.004f)/0.004f, 35.f}, // degrees K
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f}, // this one is special, temp in C
 };
 #else

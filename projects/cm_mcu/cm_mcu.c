@@ -204,7 +204,7 @@ void SystemInitInterrupts()
 
 volatile uint32_t g_ui32SysTickCount;
 
-CommandLineTaskArgs_t cli_uart1;
+CommandLineTaskArgs_t cli_uart;
 #ifdef REV1
 CommandLineTaskArgs_t cli_uart4;
 #endif // REV1
@@ -253,15 +253,15 @@ int main(void)
   cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
   xUART1StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
-  cli_uart1.uart_base = ZQ_UART;
-  cli_uart1.UartStreamBuffer = xUART1StreamBuffer;
+  cli_uart.uart_base = ZQ_UART;
+  cli_uart.UartStreamBuffer = xUART1StreamBuffer;
 #elif defined(REV2)
-  // There are two buffers for the CLI (shared front panel and Zynq)
+  // There is one buffer for the CLI (shared front panel and Zynq)
   xUART0StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
 
-  cli_uart1.uart_base = ZQ_UART;
-  cli_uart1.UartStreamBuffer = xUART0StreamBuffer;
+  cli_uart.uart_base = ZQ_UART;
+  cli_uart.UartStreamBuffer = xUART0StreamBuffer;
 #endif // REV1
 
 
@@ -274,13 +274,13 @@ int main(void)
   // start the tasks here
   xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(LedTask, "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
-  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart1, tskIDLE_PRIORITY + 1, NULL);
+  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 1, NULL);
 #ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-//  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
-//              NULL);
+  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+              NULL);
   xTaskCreate(MonitorTask, "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,

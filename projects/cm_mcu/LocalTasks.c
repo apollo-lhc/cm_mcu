@@ -56,7 +56,7 @@ struct dev_i2c_addr_t fpga_addrs[] = {
 };
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
-    {"F1", 0x70, 3, 0x3e},   // F1
+    {"F1", 0x70, 3, 0x36},   // F1
 };
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
@@ -248,6 +248,9 @@ struct pm_command_t pm_command_dcdc[] = {
     {0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
     {0x57, 2, "VIN_UV_WARN_LIMIT", "V", PM_LINEAR11},
     {0x58, 2, "VIN_UV_FAULT_LIMIT", "V", PM_LINEAR11},
+    {0xD1, 2, "USER_CONFIG", "", PM_STATUS},
+    {0x01, 2, "OPERATION", "", PM_STATUS},
+    {0x02, 2, "ON_OFF_CONFIG", "", PM_STATUS},
 };
 float dcdc_values[NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS];
 
@@ -291,7 +294,7 @@ void initFPGAMon()
   // check if we are to include both FPGAs or not
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
-#ifndef REV1
+#ifndef REV1 // FIXME REMOVE THESE
   write_gpio_pin(JTAG_FROM_SM, 0);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);

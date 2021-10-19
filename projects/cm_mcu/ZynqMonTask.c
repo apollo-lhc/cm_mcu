@@ -106,11 +106,11 @@ unsigned long g_ulBitTime;
 
 #define TARGET_BAUD_RATE 115200
 
-extern uint32_t g_ui32SysClock;
 
 QueueHandle_t xZynqMonQueue;
 
 #ifdef REV1
+extern uint32_t g_ui32SysClock;
 tSoftUART g_sUART;
 
 // For REV 1

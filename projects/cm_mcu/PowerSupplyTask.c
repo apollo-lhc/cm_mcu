@@ -163,7 +163,7 @@ void PowerSupplyTask(void *parameters)
           break;
       }
     }
-    bool ignorefail =true;
+    bool ignorefail =true; // HACK THIS NEEDS TO BE FIXED TODO FIXME
     // Check the state of BLADE_POWER_EN.
     bool blade_power_enable = (read_gpio_pin(BLADE_POWER_EN) == 1);
 
@@ -282,7 +282,7 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
-      case POWER_L3ON: {
+      case POWER_L3ON: { // FIXME allow this transition to fail on Rev2
         // NO ENABLES AT L3. We always go to L4.
         turn_on_ps_at_prio(f2_enable, f1_enable, 4);
         nextState = POWER_L4ON;

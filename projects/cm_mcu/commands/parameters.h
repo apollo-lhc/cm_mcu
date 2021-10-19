@@ -4,6 +4,7 @@
  *  Created on: Jan 13, 2021
  *      Author: fatimayousuf
  */
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
