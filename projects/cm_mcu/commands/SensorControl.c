@@ -360,6 +360,23 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
     }
     whichff = 0;
   } // argc == 1
+  else if ( argc == 2 ) {
+    uint8_t code;
+    if (strncmp(argv[1], "suspend", 4) == 0) {
+     code = FFLY_SUSPEND;
+    }
+    else if (strncmp(argv[1], "resume", 4) == 0) {
+      code = FFLY_RESUME;
+    }
+    else {
+      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: %s not understood", argv[0], argv[1]);
+      return pdFALSE;
+    }
+    uint32_t message = (code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET;
+    xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s  sent.\r\n", argv[0], argv[1]);
+
+  }
   else {
     int whichFF = 0;
     // handle the channel number first

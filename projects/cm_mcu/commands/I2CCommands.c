@@ -119,3 +119,4 @@ BaseType_t i2c_scan(int argc, char **argv, char* m)
 
   return pdFALSE;
 }
+
