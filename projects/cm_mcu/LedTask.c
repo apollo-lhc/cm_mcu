@@ -106,25 +106,25 @@ void LedTask(void *parameters)
     }
     // Greed LED
     if (greenLedPattern == OFF)
-      write_gpio_pin(TM4C_LED_GREEN, 0x0);
+      write_gpio_pin(MCU_LED_GREEN, 0x0);
     else if (greenLedPattern == ON)
-      write_gpio_pin(TM4C_LED_GREEN, 0x1);
+      write_gpio_pin(MCU_LED_GREEN, 0x1);
     else if (callcnt % greenLedPattern == 0) // toggle patterns
-      toggle_gpio_pin(TM4C_LED_GREEN);
+      toggle_gpio_pin(MCU_LED_GREEN);
     // Red LED
     if (redLedPattern == OFF)
-      write_gpio_pin(TM4C_LED_RED, 0x0);
+      write_gpio_pin(MCU_LED_RED, 0x0);
     else if (redLedPattern == ON)
-      write_gpio_pin(TM4C_LED_RED, 0x1);
+      write_gpio_pin(MCU_LED_RED, 0x1);
     else if (callcnt % redLedPattern == 0) // toggle patterns
-      toggle_gpio_pin(TM4C_LED_RED);
+      toggle_gpio_pin(MCU_LED_RED);
     // Blue LED
     if (blueLedPattern == OFF)
-      write_gpio_pin(TM4C_LED_BLUE, 0x0);
+      write_gpio_pin(MCU_LED_BLUE, 0x0);
     else if (blueLedPattern == ON)
-      write_gpio_pin(TM4C_LED_BLUE, 0x1);
+      write_gpio_pin(MCU_LED_BLUE, 0x1);
     else if (callcnt % blueLedPattern == 0) // toggle patterns
-      toggle_gpio_pin(TM4C_LED_BLUE);
+      toggle_gpio_pin(MCU_LED_BLUE);
     ++callcnt;
     // wait for next check
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));

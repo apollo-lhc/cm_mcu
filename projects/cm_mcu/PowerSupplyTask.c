@@ -28,10 +28,6 @@
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 
-void Print(const char *str);
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
-
 enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
 
 enum power_system_state getPowerControlState()
@@ -52,6 +48,10 @@ static uint16_t check_ps_oks(void)
 }
 
 #ifdef DEBUG
+void Print(const char *str);
+// local sprintf prototype
+int snprintf(char *buf, unsigned int count, const char *format, ...);
+
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
 {
   char tmp[64];
@@ -95,8 +95,15 @@ void PowerSupplyTask(void *parameters)
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
            supply_ok_mask_L5 = 0U;
 
-  bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-  bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+  bool f1_enable = isFPGAF1_PRESENT();
+  bool f2_enable = isFPGAF2_PRESENT();
+  // HACK
+  // setting the enables both to true for debugging blank bo
+  if ( ! f1_enable && ! f2_enable ) {
+    f1_enable = true;
+    f2_enable = true;
+  }
+  // end HACK
   if (f1_enable) {
     supply_ok_mask |= PS_OKS_F1_MASK;
     supply_en_mask |= PS_ENS_F1_MASK;
@@ -156,6 +163,7 @@ void PowerSupplyTask(void *parameters)
           break;
       }
     }
+    bool ignorefail =true; // HACK THIS NEEDS TO BE FIXED TODO FIXME
     // Check the state of BLADE_POWER_EN.
     bool blade_power_enable = (read_gpio_pin(BLADE_POWER_EN) == 1);
 
@@ -197,7 +205,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_ON: {
-        if (supply_off) {
+        if (supply_off && !ignorefail) {
           // log erroring supplies
           failed_mask = (~supply_bitset) & supply_ok_mask;
 #ifdef DEBUG
@@ -239,7 +247,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L1ON: {
-        if ((supply_bitset & supply_ok_mask_L1) != supply_ok_mask_L1) {
+        if (((supply_bitset & supply_ok_mask_L1) != supply_ok_mask_L1) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L1;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L1, supply_bitset);
@@ -257,7 +265,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L2ON: {
-        if ((supply_bitset & supply_ok_mask_L2) != supply_ok_mask_L2) {
+        if (((supply_bitset & supply_ok_mask_L2) != supply_ok_mask_L2) && !ignorefail){
           failed_mask = (~supply_bitset) & supply_ok_mask_L2;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L2, supply_bitset);
@@ -274,7 +282,7 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
-      case POWER_L3ON: {
+      case POWER_L3ON: { // FIXME allow this transition to fail on Rev2
         // NO ENABLES AT L3. We always go to L4.
         turn_on_ps_at_prio(f2_enable, f1_enable, 4);
         nextState = POWER_L4ON;
@@ -282,7 +290,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L4ON: {
-        if ((supply_bitset & supply_ok_mask_L4) != supply_ok_mask_L4) {
+        if (((supply_bitset & supply_ok_mask_L4) != supply_ok_mask_L4) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L4;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L4, supply_bitset);
@@ -301,7 +309,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L5ON: {
-        if ((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) {
+        if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5)&& !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
 #ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);

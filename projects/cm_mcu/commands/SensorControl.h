@@ -16,6 +16,9 @@ BaseType_t sensor_summary(int argc, char **argv, char* m);
 BaseType_t psmon_ctl(int argc, char **argv, char* m);
 BaseType_t power_ctl(int argc, char **argv, char* m);
 
+// Power registers
+BaseType_t psmon_reg(int argc, char **argv, char *m);
+
 // Alarms
 BaseType_t alarm_ctl(int argc, char **argv, char* m);
 

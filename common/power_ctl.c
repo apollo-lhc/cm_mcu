@@ -19,38 +19,34 @@
 #include "task.h"
 #endif // USE_FREERTOS
 
-void ShortDelay(); // needs to be implemented in each project
 
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
 
-void Print(const char *); // needs to be implemented in each project
 
 // clang-format off
-// if you update this you need to update N_PS_ENABLES
-#ifndef REV2
+#if defined(REV1) 
 // ------------------------------------------
 //
 // REV 1 
 //
 // ------------------------------------------
+// if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
-    {  CTRL_K_VCCINT_PWR_EN, 1},
-    {  CTRL_V_VCCINT_PWR_EN, 1},
+    {  CTRL_F1_VCCINT_PWR_EN, 1},
+    {  CTRL_F2_VCCINT_PWR_EN, 1},
     {  CTRL_VCC_1V8_PWR_EN,  2},
     {  CTRL_VCC_3V3_PWR_EN,  2},
-    {  CTRL_V_MGTY1_VCCAUX_PWR_EN, 3},
-    {  CTRL_V_MGTY2_VCCAUX_PWR_EN, 3},
-    {  CTRL_K_MGTY_VCCAUX_PWR_EN,  3},
-    {  CTRL_K_MGTH_VCCAUX_PWR_EN,  3},
-    {  CTRL_V_MGTY1_AVCC_PWR_EN, 4},
-    {  CTRL_V_MGTY2_AVCC_PWR_EN, 4},
-    {  CTRL_K_MGTY_AVCC_PWR_EN,  4},
-    {  CTRL_K_MGTH_AVCC_PWR_EN,  4},  
-    {  CTRL_K_MGTY_AVTT_PWR_EN,  5},
-    {  CTRL_K_MGTH_AVTT_PWR_EN,  5},
-    {  CTRL_V_MGTY1_AVTT_PWR_EN, 5},
-    {  CTRL_V_MGTY2_AVTT_PWR_EN, 5}
+    {  CTRL_F2_MGTY1_VCCAUX_PWR_EN, 3},
+    {  CTRL_F2_MGTY2_VCCAUX_PWR_EN, 3},
+    {  CTRL_F1_MGTY_VCCAUX_PWR_EN,  3},
+    {  CTRL_F1_MGTH_VCCAUX_PWR_EN,  3},
+    {  CTRL_F2_MGTY1_AVCC_PWR_EN, 4},
+    {  CTRL_F2_MGTY2_AVCC_PWR_EN, 4},
+    {  CTRL_F1_MGTY_AVCC_PWR_EN,  4},
+    {  CTRL_F1_MGTH_AVCC_PWR_EN,  4},  
+    {  CTRL_F1_MGTY_AVTT_PWR_EN,  5},
+    {  CTRL_F1_MGTH_AVTT_PWR_EN,  5},
+    {  CTRL_F2_MGTY1_AVTT_PWR_EN, 5},
+    {  CTRL_F2_MGTY2_AVTT_PWR_EN, 5}
 };
 
 //if you update this you need to update N_PS_OKS too
@@ -58,29 +54,61 @@ static const struct gpio_pin_t enables[] = {
 // TPS5218 supply does not have any such output
 const
 struct gpio_pin_t oks[] = {
-    { K_VCCINT_PG_A, 1},
-    { K_VCCINT_PG_B, 1},
-    { V_VCCINT_PG_A, 1},
-    { V_VCCINT_PG_B, 1},
+    { F1_VCCINT_PG_A, 1},
+    { F1_VCCINT_PG_B, 1},
+    { F2_VCCINT_PG_A, 1},
+    { F2_VCCINT_PG_B, 1},
     { VCC_1V8_PG,    2},
     { VCC_3V3_PG,    2},
-    { V_MGTY1_AVCC_OK, 4},
-    { V_MGTY2_AVCC_OK, 4},
-    { K_MGTY_AVCC_OK,  4},
-    { K_MGTH_AVCC_OK,  4},
-    { K_MGTY_AVTT_OK,  5},
-    { K_MGTH_AVTT_OK,  5},
-    { V_MGTY1_AVTT_OK, 5},
-    { V_MGTY2_AVTT_OK, 5}
+    { F2_MGTY1_AVCC_OK, 4},
+    { F2_MGTY2_AVCC_OK, 4},
+    { F1_MGTY_AVCC_OK,  4},
+    { F1_MGTH_AVCC_OK,  4},
+    { F1_MGTY_AVTT_OK,  5},
+    { F1_MGTH_AVTT_OK,  5},
+    { F2_MGTY1_AVTT_OK, 5},
+    { F2_MGTY2_AVTT_OK, 5}
 };
-#else // REV2
+#elif defined(REV2) // REV2
 // ------------------------------------------
 //
 // REV 2
 //
 // ------------------------------------------
 // add here
-#error "Missing power control definitions for Rev 2"
+// if you update this you need to update N_PS_ENABLES
+static const struct gpio_pin_t enables[] = {
+    {  EN_F1_INT, 1},
+    {  EN_F2_INT, 1},
+    {  EN_1V8,  2},
+    {  EN_3V3,  2},
+    {  EN_F1_VCCAUX, 3},
+    {  EN_F2_VCCAUX,  3},
+    {  EN_F1_AVCC, 4},
+    {  EN_F2_AVCC, 4},
+    {  EN_F1_AVTT,  5},
+    {  EN_F2_AVTT,  5},
+};
+
+//if you update this you need to update N_PS_OKS too
+const
+struct gpio_pin_t oks[N_PS_OKS] = {
+    { PG_F1_INT_A, 1},
+    { PG_F1_INT_B, 1},
+    { PG_F2_INT_A, 1},
+    { PG_F2_INT_B, 1},
+    { PG_1V8,    2},
+    { PG_3V3,    2},
+    { PG_F1_VCCAUX, 3},
+    { PG_F2_VCCAUX, 3},
+    { PG_F1_AVCC,  4},
+    { PG_F2_AVCC,  4},
+    { PG_F1_AVTT,  5},
+    { PG_F2_AVTT,  5},
+};
+
+#else
+#error "Unknown board revision"
 #endif // REV2 
 
 // clang-format on
@@ -187,6 +215,12 @@ bool turn_on_ps(uint16_t ps_en_mask)
 // Enable supply at some priority. Also send in vu and ku enable.
 void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio)
 {
+  // in the special case where neither f1 or f2 are enabled (no FPGAs),
+  // enable both of them (commissioning of new PCB
+  if ( ! f1_enable && ! f2_enable ) {
+    f1_enable = true;
+    f2_enable = true;
+  }
   // loop over the enables
   for (int e = 0; e < N_PS_ENABLES; ++e) {
     // if this enable matches the requested priority

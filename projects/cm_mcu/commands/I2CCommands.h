@@ -18,6 +18,7 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char* m);
 BaseType_t i2c_ctl_reg_w(int argc, char **argv, char* m);
 BaseType_t i2c_ctl_w(int argc, char **argv, char* m);
 BaseType_t i2c_scan(int argc, char **argv, char* m);
-BaseType_t i2c_scan(int argc, char **argv, char* m);
+
+
 
 #endif

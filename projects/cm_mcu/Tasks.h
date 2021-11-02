@@ -75,6 +75,7 @@ void LGA80D_init(void);
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
 
+// Firefly task
 // --- Firefly monitoring
 // REV1
 #ifndef REV2
@@ -82,15 +83,16 @@ void MonitorTask(void *parameters);
 #define NFIREFLIES_F2 14
 #else // REV2
 // REV 2
-#define NFIREFLIES_F1    99
-#define NFIREFLIES_F2    99 // Placeholders
-#error "Fix placeholder values"
+#define NFIREFLIES_F1    10
+#define NFIREFLIES_F2    10 // Placeholders
+//#error "Fix placeholder values"
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 void FireFlyTask(void *parameters);
 extern QueueHandle_t xFFlyQueueIn;
 extern QueueHandle_t xFFlyQueueOut;
+SemaphoreHandle_t getFFMutex();
 
 const char *getFFname(const uint8_t i);
 int8_t *test_read(const uint8_t i);
@@ -113,6 +115,8 @@ int disable_xcvr_cdr(const char *name);
 #define FFLY_WRITE_REGISTER      (7)
 #define FFLY_READ_REGISTER       (8)
 #define FFLY_TEST_READ           (9)
+#define FFLY_SUSPEND             (10)
+#define FFLY_RESUME              (11)
 
 // FF Task message format
 // two fields, a task code and task data.

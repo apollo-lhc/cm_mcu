@@ -26,6 +26,13 @@ ifndef DEBUG
 CFLAGS+=-Werror
 endif 
 
+ifdef REV2
+CFLAGS += -DREV2
+endif 
+ifdef REV1
+CFLAGS += -DREV1
+endif 
+
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #CFLAGS+=-fstack-protector 
 
@@ -85,7 +92,12 @@ ${COMPILER}:
 # Rules for building the project
 # 
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/cm_mcu.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout.o
+ifdef REV1
+${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev1.o
+endif
+ifdef REV2
+${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev2.o
+endif 
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinsel.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/i2c_reg.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/uart.o

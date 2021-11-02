@@ -129,9 +129,9 @@ static BaseType_t snapshot(int argc, char **argv, char* m)
                        argv[0], page);
     return pdFALSE;
   }
-  if (which < 0 || which > 4) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-4\r\n",
-                       argv[0], which);
+  if (which < 0 || which > (NSUPPLIES_PS-1)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+                       argv[0], which, (NSUPPLIES_PS-1));
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
@@ -444,7 +444,7 @@ static struct command_t commands[] = {
     {"i2cr", i2c_ctl_r,
      "i2cr <dev> <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n", 3},
     {"i2crr", i2c_ctl_reg_r,
-     "i2crr <dev> <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n", 3},
+     "i2crr <dev> <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n", 4},
     {"i2cw", i2c_ctl_w, "i2cw <dev> <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
      4},
     {"i2cwr", i2c_ctl_reg_w,
@@ -463,6 +463,9 @@ static struct command_t commands[] = {
     {"led", led_ctl, "led (0-4)\r\n Manipulate red LED.\r\n", 1},
     {"psmon", psmon_ctl, "psmon <#>\r\n Displays a table showing the state of power supplies.\r\n",
      1},
+     {
+       "psreg", psmon_reg, "psreg <which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
+     },
     {"snapshot", snapshot,
      "snapshot # (0|1)\r\n Dump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
      "if to reset snapshot.\r\n",
@@ -512,6 +515,7 @@ static struct command_t commands[] = {
 
 };
 
+#ifdef REV1
 static void U4Print(const char *str)
 {
   UARTPrint(UART4_BASE, str);
@@ -520,6 +524,12 @@ static void U1Print(const char *str)
 {
   UARTPrint(UART1_BASE, str);
 }
+#elif defined(REV2) // REV1
+static void U0Print(const char *str)
+{
+  UARTPrint(UART0_BASE, str);
+}
+#endif
 
 struct microrl_user_data_t {
   uint32_t uart_base;
@@ -610,21 +620,31 @@ void vCommandLineTask(void *pvParameters)
       .uart_base = uart_base,
   };
 
+#ifdef REV1
+  void (*printer)(const char*) = U4Print;
+#elif defined(REV2)
+  void (*printer)(const char*) = U0Print;
+#endif
+
   struct microrl_config rl_config = {
-      .print = U4Print, // default to front panel
+      .print = printer, // default to front panel
       // set callback for execute
       .execute = execute,
       .prompt_str = "% ",
       .prompt_length = 2,
       .userdata = &rl_userdata,
   };
+#ifdef REV1
+  //this is a hack
   if (uart_base == UART1_BASE) {
     rl_config.print = U1Print; // switch to Zynq
   }
+#endif // REV1
   microrl_t rl;
   microrl_init(&rl, &rl_config);
   microrl_set_execute_callback(&rl, execute);
   microrl_insert_char(&rl, ' '); // this seems to be necessary?
+
 
   for (;;) {
     /* This implementation reads a single character at a time.  Wait in the

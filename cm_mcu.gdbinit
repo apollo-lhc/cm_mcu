@@ -20,7 +20,7 @@ end
    # to investigate origin of fault
    set $exc_frame = ($lr & 0x4) ? $psp : $msp
    set $stacked_xpsr = ((uint32_t *)$exc_frame)[7]
-   set $exc_frame_len = 32 + ((($stacked_xpsr & (1 << 9)) ? 0x4 : 0x0) + (($lr & 0x10) ? 0 : 72) 
+   set $exc_frame_len = 32 + ((($stacked_xpsr & (1 << 9)) ? 0x4 : 0x0) + (($lr & 0x10) ? 0 : 72)) 
    set $sp=($exc_frame + $exc_frame_len)
    set $lr=((uint32_t *)$exc_frame)[5]
    set $pc=((uint32_t *)$exc_frame)[6]

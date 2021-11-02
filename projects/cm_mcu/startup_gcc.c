@@ -88,8 +88,16 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler,      // GPIO Port C
     IntDefaultHandler,      // GPIO Port D
     IntDefaultHandler,      // GPIO Port E
+#ifdef REV2
+    UART0IntHandler,        // UART0 Rx and Tx
+#else
     IntDefaultHandler,      // UART0 Rx and Tx
+#endif
+#ifdef REV1
     UART1IntHandler,        // UART1 Rx and Tx -- ZYNQ UART
+#else
+    IntDefaultHandler,      // UART1 Rx and Tx
+#endif
     IntDefaultHandler,      // SSI0 Rx and Tx
     I2CSlave0Interrupt,     // I2C0 Master and Slave
     IntDefaultHandler,      // PWM Fault
@@ -102,7 +110,11 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler,      // ADC Sequence 2
     IntDefaultHandler,      // ADC Sequence 3
     IntDefaultHandler,      // Watchdog timer
+#ifdef REV1
     Timer0AIntHandler,      // Timer 0 subtimer A
+#else // not REV1
+    IntDefaultHandler,      // Timer 0 subtimer A
+#endif
     IntDefaultHandler,      // Timer 0 subtimer B
     IntDefaultHandler,      // Timer 1 subtimer A
     IntDefaultHandler,      // Timer 1 subtimer B
@@ -140,7 +152,11 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler,      // SSI2 Rx and Tx
     IntDefaultHandler,      // SSI3 Rx and Tx
     IntDefaultHandler,      // UART3 Rx and Tx
+#ifdef REV1
     UART4IntHandler,        // UART4 Rx and Tx -- FRONT PANEL
+#else
+    IntDefaultHandler,      // UART4 Rx and Tx
+#endif
     IntDefaultHandler,      // UART5 Rx and Tx
     IntDefaultHandler,      // UART6 Rx and Tx
     IntDefaultHandler,      // UART7 Rx and Tx
@@ -154,7 +170,7 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     0,                      // Reserved
     0,                      // Reserved
     SMBusMasterIntHandler4, // I2C4 Master and Slave
-    IntDefaultHandler,      // I2C5 Master and Slave
+    SMBusMasterIntHandler5, // I2C5 Master and Slave
     IntDefaultHandler,      // GPIO Port M
     IntDefaultHandler,      // GPIO Port N
     0,                      // Reserved

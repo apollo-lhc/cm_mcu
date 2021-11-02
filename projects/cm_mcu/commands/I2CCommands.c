@@ -31,14 +31,14 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char* m)
 BaseType_t i2c_ctl_reg_r(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
-  BaseType_t address, reg_address, nbytes;
-  address = strtol(argv[1], NULL, 16);
-  reg_address = strtol(argv[2], NULL, 16);
-  nbytes = strtol(argv[3], NULL, 10);
+  BaseType_t device, address, reg_address, nbytes;
+  device = strtol(argv[1], NULL, 16);      // i2c device
+  address = strtol(argv[2], NULL, 16);
+  reg_address = strtol(argv[3], NULL, 16);
+  nbytes = strtol(argv[4], NULL, 10);
   uint8_t data[I2C_CTL_MAX_BYTES];
-  uint8_t txdata = reg_address;
 
-  int status = apollo_i2c_ctl_reg_r(address, reg_address, txdata, nbytes, data);
+  int status = apollo_i2c_ctl_reg_r(device, address, reg_address, nbytes, data);
   if (status == 0) {
     snprintf(m, s, "i2cr: add: 0x%02x, reg 0x%02x: value 0x%02x %02x %02x %02x\r\n", address,
              reg_address, data[3], data[2], data[1], data[0]);
@@ -119,3 +119,4 @@ BaseType_t i2c_scan(int argc, char **argv, char* m)
 
   return pdFALSE;
 }
+

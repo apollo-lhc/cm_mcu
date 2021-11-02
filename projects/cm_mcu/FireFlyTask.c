@@ -36,11 +36,12 @@
 
 // I2C information -- which device on the MCU is for the FF for each FPGA
 // this is what corresponds to I2C_BASE variables in the MCU
-#ifndef REV2
+#ifdef REV1
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
-#else
-#error "define firefly i2c devices for Rev2"
+#elif defined(REV2)
+#define I2C_DEVICE_F1 4
+#define I2C_DEVICE_F2 3
 #endif
 
 // local prototype
@@ -74,7 +75,7 @@ void Print(const char *str);
 // ECUO-B04 XCVR: 0x50 7 bit I2C address
 // ECUO-T12 Tx:   0x50 7 bit I2C address (both 14 and 25G)
 // ECUO-R12 Rx:   0x54 7 bit I2C address (both 14 and 25G)
-
+#ifdef REV1
 // -------------------------------------------------
 //
 // REV 1
@@ -108,20 +109,44 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", 0x71, 4, 0x50}, //
     {"V12  12 Rx GTY", 0x71, 5, 0x54}, //
 };
-
-
+#elif defined (REV2)
 // -------------------------------------------------
 //
 // REV 2
 //
 // -------------------------------------------------
-// to be added here
+struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
+    {"F1_1  12 Tx", 0x70, 0, 0x50}, //
+    {"F1_1  12 Rx", 0x70, 1, 0x54}, //
+    {"F1_2  12 Tx", 0x70, 3, 0x50}, //
+    {"F1_2  12 Rx", 0x70, 4, 0x54}, //
+    {"F1_3  12 Tx", 0x71, 3, 0x50}, //
+    {"F1_3  12 Rx", 0x71, 4, 0x54}, //
+    {"F1_4 4 XCVR", 0x70, 2, 0x50}, //
+    {"F1_5 4 XCVR", 0x71, 0, 0x50}, //
+    {"F1_6 4 XCVR", 0x71, 1, 0x50}, //
+    {"F1_7 4 XCVR", 0x71, 2, 0x50}, //
+    {"F2_1  12 Tx", 0x70, 0, 0x50}, //
+    {"F2_1  12 Rx", 0x70, 1, 0x54}, //
+    {"F2_2  12 Tx", 0x70, 3, 0x50}, //
+    {"F2_2  12 Rx", 0x70, 4, 0x54}, //
+    {"F2_3  12 Tx", 0x71, 3, 0x50}, //
+    {"F2_3  12 Rx", 0x71, 4, 0x54}, //
+    {"F2_4 4 XCVR", 0x70, 2, 0x50}, //
+    {"F2_5 4 XCVR", 0x71, 0, 0x50}, //
+    {"F2_6 4 XCVR", 0x71, 1, 0x50}, //
+    {"F2_7 4 XCVR", 0x71, 2, 0x50}, //
 
+};
+
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 // Register definitions
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
 #define FF_STATUS_COMMAND_REG      0x2
-#define FF_STATUS_COMMAND_REG_MASK 0x03U
+#define FF_STATUS_COMMAND_REG_MASK 0xFFU
 #define FF_TEMP_COMMAND_REG        0x16
 
 // two bytes, 12 FF to be disabled
@@ -145,6 +170,14 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #define ECU0_25G_TX_LOS_ALARM_REG_2  0x8
 #define ECU0_25G_CDR_LOL_ALARM_REG_1 0x14
 #define ECU0_25G_CDR_LOL_ALARM_REG_2 0x15
+
+static SemaphoreHandle_t xFFMutex = NULL;
+
+SemaphoreHandle_t getFFMutex()
+{
+  return xFFMutex;
+}
+
 
 static TickType_t ff_updateTick;
 
@@ -294,31 +327,36 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
   else {
     i2c_device = I2C_DEVICE_F2; // I2C_DEVICE_F2
   }
+  int res;
+  //xSemaphoreTake(xFFMutex, portMAX_DELAY);
+  {
+    // write to the mux
+    // select the appropriate output for the mux
+    uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
+    res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
+    if ( res != 0 ) {
+      char tmp[64];
+      snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
+               ff_i2c_addrs[ff].name);
+      Print(tmp);
+    }
 
-  // write to the mux
-  // select the appropriate output for the mux
-  uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
-  if ( res != 0 ) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return 1;
+    if (! res ) {
+    // Read from register.
+    res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, reg_addr, size, value);
+
+    //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
+    if (res != 0) {
+      char tmp[128];
+      snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
+               ff_i2c_addrs[ff].name);
+      Print(tmp);
+    }
+    }
   }
+  //xSemaphoreGive(xFFMutex);
 
-  // Read from register.
-  res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, reg_addr, size, value);
-
-  //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
-  if (res != 0) {
-    char tmp[128];
-    snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return res;
-  }
-  return 0;
+  return res;
 }
 
 static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
@@ -340,33 +378,37 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   else {
     i2c_device = I2C_DEVICE_F2; // I2C_DEVICE_F2
   }
+  int res;
+  //xSemaphoreTake(xFFMutex, portMAX_DELAY);
+  {
+    // write to the mux
+    // select the appropriate output for the mux
+    uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
+    res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
+    if ( res != 0 ) {
+      char tmp[64];
+      snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
+               ff_i2c_addrs[ff].name);
+      Print(tmp);
+    }
 
-  // write to the mux
-  // select the appropriate output for the mux
-  uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
-  if ( res != 0 ) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return 1;
+
+    // write to register. First word is reg address, then the data.
+    // increment size to account for the register address
+    if ( ! res ) {
+      res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, reg, size, (int)value);
+      if (res != 0) {
+        char tmp[64];
+        snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
+                 ff_i2c_addrs[ff].name);
+        Print(tmp);
+      }
+    }
   }
+  //xSemaphoreGive(xFFMutex);
 
 
-  // write to register. First word is reg address, then the data.
-  // increment size to account for the register address
-  res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, reg, size, (int)value);
-  if (res != 0) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return 1;
-  }
-
-
-  return 0;
+  return res;
 }
 
 static int disable_transmit(bool disable, int num_ff) 
@@ -481,6 +523,11 @@ void FireFlyTask(void *parameters)
   ff_updateTick = xTaskGetTickCount();
   uint8_t data[2];
 
+  // create firefly mutex
+  xFFMutex = xSemaphoreCreateMutex();
+  configASSERT(xFFMutex != 0);
+
+
   // watchdog info
   task_watchdog_register_task(kWatchdogTaskID_FireFly);
   
@@ -508,6 +555,7 @@ void FireFlyTask(void *parameters)
     disable_transmit(true, NFIREFLIES);
     disable_receivers(true, NFIREFLIES);
   }
+  bool suspended = true;
 
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
@@ -601,6 +649,12 @@ void FireFlyTask(void *parameters)
         Print("\r\n");
         break;
       }
+      case FFLY_SUSPEND:
+        suspended = true;
+        break;
+      case FFLY_RESUME:
+        suspended = false;
+        break;
       default:
         message = RED_LED_TOGGLE;
         // message I don't understand? Toggle red LED
@@ -608,6 +662,12 @@ void FireFlyTask(void *parameters)
         break;
       }
     }
+    // check if the task is suspended
+    if ( suspended ) {
+      vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(250));
+      continue;
+    }
+
     // -------------------------------
     // loop over FireFly modules
     // -------------------------------
@@ -656,7 +716,7 @@ void FireFlyTask(void *parameters)
 
 #define ERRSTR "FIF: %s: Error %d, break loop (ff=%d,c=%d) ...\r\n"
       // Read the temperature
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 1, data);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 2, data);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
@@ -671,7 +731,7 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // read the status register
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 1, data);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 2, data);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
@@ -751,7 +811,7 @@ void FireFlyTask(void *parameters)
 
       reg_i=0;
       while(reg_i<2 && cdr_lol_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, cdr_lol_regs[reg_i], 1, data);
         if (res != 0) {
           snprintf(tmp, 64, ERRSTR, __func__, res, ff, 5);
           DPRINT(tmp);

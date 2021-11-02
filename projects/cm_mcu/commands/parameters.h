@@ -4,6 +4,7 @@
  *  Created on: Jan 13, 2021
  *      Author: fatimayousuf
  */
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -73,5 +74,7 @@ extern tSMBus g_sMaster3;
 extern tSMBusStatus eStatus3;
 extern tSMBus g_sMaster4;
 extern tSMBusStatus eStatus4;
+extern tSMBus g_sMaster5;
+extern tSMBusStatus eStatus5;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;

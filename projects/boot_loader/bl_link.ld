@@ -37,6 +37,7 @@ SECTIONS
     {
         _data = .;
         *(.data*)
+        *(vtable)
         _edata = .;
     }
 

@@ -78,7 +78,8 @@ BaseType_t psmon_ctl(int argc, char **argv, char* m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
   }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", dcdc_args.commands[i1].name);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
+      dcdc_args.commands[i1].name, dcdc_args.commands[i1].command);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", dcdc_args.devices[ps].name);
@@ -113,8 +114,8 @@ BaseType_t power_ctl(int argc, char **argv, char* m)
   }
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
-    bool f1_enable = (read_gpio_pin(TM4C_DIP_SW_1) == 1);
-    bool f2_enable = (read_gpio_pin(TM4C_DIP_SW_2) == 1);
+    bool f1_enable = (isFPGAF1_PRESENT());
+    bool f2_enable = (isFPGAF2_PRESENT());
     static int i = 0;
     if (i == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
@@ -149,7 +150,7 @@ BaseType_t power_ctl(int argc, char **argv, char* m)
       }
 
       copied +=
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%15s: %s\r\n", pin_names[oks[i].name], c);
+          snprintf(m + copied, SCRATCH_SIZE - copied, "%16s: %s\r\n", pin_names[oks[i].name], c);
       if ((SCRATCH_SIZE - copied) < 20 && (i < N_PS_OKS)) {
         ++i;
         return pdTRUE;
@@ -359,6 +360,23 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
     }
     whichff = 0;
   } // argc == 1
+  else if ( argc == 2 ) {
+    uint8_t code;
+    if (strncmp(argv[1], "suspend", 4) == 0) {
+     code = FFLY_SUSPEND;
+    }
+    else if (strncmp(argv[1], "resume", 4) == 0) {
+      code = FFLY_RESUME;
+    }
+    else {
+      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: %s not understood", argv[0], argv[1]);
+      return pdFALSE;
+    }
+    uint32_t message = (code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET;
+    xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s  sent.\r\n", argv[0], argv[1]);
+
+  }
   else {
     int whichFF = 0;
     // handle the channel number first
@@ -504,7 +522,7 @@ BaseType_t ff_status(int argc, char **argv, char* m)
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
   }
-  for (; whichff < 25; ++whichff) {
+  for (; whichff < NFIREFLIES; ++whichff) {
 
     const char *name = getFFname(whichff);
     if (!isEnabledFF(whichff)){
@@ -537,7 +555,7 @@ BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
   }
-  for (; whichff < 25; ++whichff) {
+  for (; whichff < NFIREFLIES; ++whichff) {
     const char *name = getFFname(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
     if (!isEnabledFF(whichff)){
@@ -582,7 +600,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m) {
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY CDR LOL ALARM:\r\n");
   }
-  for (; whichff < 25; ++whichff) {
+  for (; whichff < NFIREFLIES; ++whichff) {
     const char *name = getFFname(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
     if (!isEnabledFF(whichff)){
@@ -623,8 +641,8 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
 {
   if (argc == 2) {
     if (strncmp(argv[1], "done", 4) == 0) { // print out value of done pins
-      int f1_done_ = read_gpio_pin(_K_FPGA_DONE);
-      int f2_done_ = read_gpio_pin(_V_FPGA_DONE);
+      int f1_done_ = read_gpio_pin(_F1_FPGA_DONE);
+      int f2_done_ = read_gpio_pin(_F2_FPGA_DONE);
       snprintf(m, SCRATCH_SIZE, "F1_DONE* = %d\r\nF2_DONE* = %d\r\n", f1_done_, f2_done_);
       return pdFALSE;
     }
@@ -682,26 +700,77 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
   }
 }
 
-#ifdef REV2
-#error "this function needs updating"
-#endif // REV2
 // This command takes 1 argument, either k or v
 BaseType_t fpga_reset(int argc, char **argv, char* m)
 {
   int copied = 0;
   const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
 
-  if (strcmp(argv[1], "v") == 0) {
-    write_gpio_pin(V_FPGA_PROGRAM, 0x1);
+  if (strcmp(argv[1], "f2") == 0) {
+    write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
-    write_gpio_pin(V_FPGA_PROGRAM, 0x0);
+    write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VU7P has been reset\r\n");
   }
-  if (strcmp(argv[1], "k") == 0) {
-    write_gpio_pin(K_FPGA_PROGRAM, 0x1);
+  if (strcmp(argv[1], "f1") == 0) {
+    write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
-    write_gpio_pin(K_FPGA_PROGRAM, 0x0);
+    write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "KU15P has been reset\r\n");
   }
   return pdFALSE;
 }
+
+extern struct MonitorTaskArgs_t dcdc_args;
+extern struct dev_i2c_addr_t pm_addrs_dcdc[];
+extern struct pm_command_t extra_cmds[]; // LocalTasks.c
+
+// Read out registers from LGA80D
+BaseType_t psmon_reg(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  int page = strtol(argv[1], NULL, 10); // which supply within the LGA08D
+  int which = page / 10;
+  page = page % 10;
+  if (page < 0 || page > 1) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
+                       argv[0], page);
+    return pdFALSE;
+  }
+  if (which < 0 || which > (NSUPPLIES_PS-1)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+                       argv[0], which, (NSUPPLIES_PS-1));
+    return pdFALSE;
+  }
+  BaseType_t regAddress  = strtol(argv[2], NULL, 16);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s, reg 0x%02x\r\n", argv[0],
+                     page, pm_addrs_dcdc[which].name, regAddress);
+
+
+
+  // acquire the semaphore
+  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
+  uint8_t ui8page = page;
+  // page register
+  int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which], &extra_cmds[0], &ui8page);
+  if (r) {
+    Print("error in psmon_reg (page)\r\n");
+  }
+  // read register, 2 bytes
+  uint8_t thevalue[2] = {0,0};
+  struct pm_command_t thecmd = {regAddress, 2, "dummy", "", PM_STATUS};
+  r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[which], &thecmd, thevalue);
+  if (r) {
+    Print("error in psmon_reg (regr)\r\n");
+  }
+  uint16_t vv = (thevalue[0] | (thevalue[1]<<8));
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
+      argv[0], vv);
+
+  // release the semaphore
+  xSemaphoreGive(dcdc_args.xSem);
+  return pdFALSE;
+
+}
+
