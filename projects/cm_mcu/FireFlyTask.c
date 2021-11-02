@@ -171,6 +171,14 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #define ECU0_25G_CDR_LOL_ALARM_REG_1 0x14
 #define ECU0_25G_CDR_LOL_ALARM_REG_2 0x15
 
+static SemaphoreHandle_t xFFMutex = NULL;
+
+SemaphoreHandle_t getFFMutex()
+{
+  return xFFMutex;
+}
+
+
 static TickType_t ff_updateTick;
 
 struct firefly_status_t {
@@ -319,31 +327,36 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
   else {
     i2c_device = I2C_DEVICE_F2; // I2C_DEVICE_F2
   }
+  int res;
+  //xSemaphoreTake(xFFMutex, portMAX_DELAY);
+  {
+    // write to the mux
+    // select the appropriate output for the mux
+    uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
+    res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
+    if ( res != 0 ) {
+      char tmp[64];
+      snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
+               ff_i2c_addrs[ff].name);
+      Print(tmp);
+    }
 
-  // write to the mux
-  // select the appropriate output for the mux
-  uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
-  if ( res != 0 ) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return 1;
+    if (! res ) {
+    // Read from register.
+    res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, reg_addr, size, value);
+
+    //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
+    if (res != 0) {
+      char tmp[128];
+      snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
+               ff_i2c_addrs[ff].name);
+      Print(tmp);
+    }
+    }
   }
+  //xSemaphoreGive(xFFMutex);
 
-  // Read from register.
-  res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, reg_addr, size, value);
-
-  //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
-  if (res != 0) {
-    char tmp[128];
-    snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return res;
-  }
-  return 0;
+  return res;
 }
 
 static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size)
@@ -365,33 +378,37 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   else {
     i2c_device = I2C_DEVICE_F2; // I2C_DEVICE_F2
   }
+  int res;
+  //xSemaphoreTake(xFFMutex, portMAX_DELAY);
+  {
+    // write to the mux
+    // select the appropriate output for the mux
+    uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
+    res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
+    if ( res != 0 ) {
+      char tmp[64];
+      snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
+               ff_i2c_addrs[ff].name);
+      Print(tmp);
+    }
 
-  // write to the mux
-  // select the appropriate output for the mux
-  uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
-  int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
-  if ( res != 0 ) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return 1;
+
+    // write to register. First word is reg address, then the data.
+    // increment size to account for the register address
+    if ( ! res ) {
+      res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, reg, size, (int)value);
+      if (res != 0) {
+        char tmp[64];
+        snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
+                 ff_i2c_addrs[ff].name);
+        Print(tmp);
+      }
+    }
   }
+  //xSemaphoreGive(xFFMutex);
 
 
-  // write to register. First word is reg address, then the data.
-  // increment size to account for the register address
-  res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, reg, size, (int)value);
-  if (res != 0) {
-    char tmp[64];
-    snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
-             ff_i2c_addrs[ff].name);
-    Print(tmp);
-    return 1;
-  }
-
-
-  return 0;
+  return res;
 }
 
 static int disable_transmit(bool disable, int num_ff) 
@@ -506,6 +523,11 @@ void FireFlyTask(void *parameters)
   ff_updateTick = xTaskGetTickCount();
   uint8_t data[2];
 
+  // create firefly mutex
+  xFFMutex = xSemaphoreCreateMutex();
+  configASSERT(xFFMutex != 0);
+
+
   // watchdog info
   task_watchdog_register_task(kWatchdogTaskID_FireFly);
   
@@ -533,6 +555,7 @@ void FireFlyTask(void *parameters)
     disable_transmit(true, NFIREFLIES);
     disable_receivers(true, NFIREFLIES);
   }
+  bool suspended = true;
 
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
@@ -626,6 +649,12 @@ void FireFlyTask(void *parameters)
         Print("\r\n");
         break;
       }
+      case FFLY_SUSPEND:
+        suspended = true;
+        break;
+      case FFLY_RESUME:
+        suspended = false;
+        break;
       default:
         message = RED_LED_TOGGLE;
         // message I don't understand? Toggle red LED
@@ -633,6 +662,12 @@ void FireFlyTask(void *parameters)
         break;
       }
     }
+    // check if the task is suspended
+    if ( suspended ) {
+      vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(250));
+      continue;
+    }
+
     // -------------------------------
     // loop over FireFly modules
     // -------------------------------
@@ -776,7 +811,7 @@ void FireFlyTask(void *parameters)
 
       reg_i=0;
       while(reg_i<2 && cdr_lol_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, cdr_lol_regs[reg_i], 1, data);
         if (res != 0) {
           snprintf(tmp, 64, ERRSTR, __func__, res, ff, 5);
           DPRINT(tmp);
