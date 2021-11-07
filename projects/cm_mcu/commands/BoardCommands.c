@@ -6,6 +6,7 @@
  */
 
 #include "BoardCommands.h"
+#include "common/pinsel.h"
 
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char* m)
@@ -80,3 +81,20 @@ BaseType_t board_id_info(int argc, char **argv, char* m)
 
   return pdFALSE;
 }
+#if defined(REV2)
+BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  if (strncmp(argv[1], "on", 2) == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "JTAG from SM enabled\r\n");
+    write_gpio_pin(JTAG_FROM_SM, 1);
+  }
+  else if (strncmp(argv[1], "off", 3) == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "JTAG from SM disabled\r\n");
+    write_gpio_pin(JTAG_FROM_SM, 0);
+  } else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "JTAG from SM: %d\r\n", read_gpio_pin(JTAG_FROM_SM));
+  }
+  return pdFALSE;
+}
+#endif

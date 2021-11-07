@@ -455,6 +455,9 @@ static struct command_t commands[] = {
         "i2c_scan\r\n Scan current I2C bus.\r\n",
         1,
     },
+    {
+      "jtag_sm", jtag_sm_ctl, "jtag_sm\r\n (on|off) set the JTAG from SM or not\r\n", -1,
+    },
     {"help", help_command_fcn, "help\r\n This help command\r\n", -1},
     {"pwr", power_ctl,
      "pwr (on|off|status|clearfail)\r\n Turn on or off all power, get status or clear "
