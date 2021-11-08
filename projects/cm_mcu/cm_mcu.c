@@ -106,10 +106,10 @@ void SystemInitInterrupts()
   // this also sets up the interrupts
 #if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
-  UART4Init(g_ui32SysClock); // front panel UART
 #elif defined(REV2)
   UART0Init(g_ui32SysClock); // ZYNQ UART
 #endif
+  UART4Init(g_ui32SysClock); // front panel UART in Rev1 and Zynq comms in Rev2
 
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);

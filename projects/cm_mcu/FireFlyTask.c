@@ -555,7 +555,7 @@ void FireFlyTask(void *parameters)
     disable_transmit(true, NFIREFLIES);
     disable_receivers(true, NFIREFLIES);
   }
-  bool suspended = true;
+  bool suspended = false;
 
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();

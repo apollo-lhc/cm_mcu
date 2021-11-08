@@ -295,7 +295,7 @@ void initFPGAMon()
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
 #ifndef REV1 // FIXME REMOVE THESE
-  write_gpio_pin(JTAG_FROM_SM, 0);
+  write_gpio_pin(JTAG_FROM_SM, 1);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);
 #endif // not REV1

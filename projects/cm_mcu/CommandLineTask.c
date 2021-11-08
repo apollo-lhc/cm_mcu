@@ -367,7 +367,11 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
   }
 
   if (!understood) {
-    snprintf(m, s, "%s: message %s not understood\r\n", argv[0], argv[1]);
+    copied += snprintf(m+copied, s-copied, "%s: message not understood >", argv[0]);
+    for ( int i = 0; i < argc; ++i ) {
+    	copied += snprintf(m+copied, s-copied, "%s ", argv[i]);
+    }
+    snprintf(m+copied, s-copied, "<\r\n");
     return pdFALSE;
   }
 

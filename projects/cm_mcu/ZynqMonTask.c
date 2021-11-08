@@ -195,7 +195,7 @@ ZMUartCharPut(unsigned char c)
 #elif defined(REV2)
 void ZMUartCharPut(unsigned char c)
 {
-  UARTCharPut(UART4_BASE, c); // CHANGE TO ACTUAL UART USED
+  UARTCharPut(UART4_BASE, c);
 }
 #else
 #error "Unknown board revision"

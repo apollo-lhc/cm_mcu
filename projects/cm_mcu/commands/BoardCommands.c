@@ -98,8 +98,32 @@ BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Usage: jtag_sm_ctl on/off (got %s)\r\n", argv[1]);
     }
   }
+  else if ( argc == 3) {
+	  BaseType_t pin = -1;
+	  if (strncmp(argv[1], "f1", 2) == 0) {
+		  pin = _F1_JTAG_BYPASS;
+	  }
+	  else if (strncmp(argv[1], "f2", 2) == 0) {
+		  pin = _F2_JTAG_BYPASS;
+	  }
+	  else {
+		  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: did not understand argument %s\r\n",
+				  argv[0], argv[1]);
+		  return pdFALSE;
+	  }
+	  BaseType_t val = 1;
+	  if (strncmp(argv[2], "on", 2) == 0) {
+		  val = 1;
+	  }
+	  else if (strncmp(argv[2], "off", 3) == 0) {
+		  val = 0;
+	  }
+	  write_gpio_pin(pin, val);
+  }
   else { // all other cases
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "JTAG from SM: %d\r\n", read_gpio_pin(JTAG_FROM_SM));
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F1 BYPASS*: %d\r\n", read_gpio_pin(_F1_JTAG_BYPASS));
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F2 BYPASS*: %d\r\n", read_gpio_pin(_F2_JTAG_BYPASS));
   }
   return pdFALSE;
 }
