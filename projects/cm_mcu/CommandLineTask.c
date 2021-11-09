@@ -633,9 +633,11 @@ static struct command_t commands[] = {
         1,
     },
     {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n",
-     1},
+    {
+      "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
+    },
      {
-       "psreg", psmon_reg, "psreg <which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
+       "psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
      },
      {"restart_mcu", restart_mcu, "Restart the microcontroller\r\n", 0},
     {"snapshot", snapshot,
