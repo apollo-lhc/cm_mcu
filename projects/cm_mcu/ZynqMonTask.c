@@ -324,7 +324,7 @@ void ZynqMonTask(void *parameters)
         last = pdTICKS_TO_S(dcdc_args.updateTick);
         stale = checkStale(last, now);
 
-        for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
+        for (int j = 0; j < 5; ++j) { // loop over supplies FIXME hardcoded value
           for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
             for (int k = 0; k < 5; ++k) {               // loop over FIRST FIVE commands
               int index =
