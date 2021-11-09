@@ -392,11 +392,8 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
   char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
   UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
-  UARTPrint(FP_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
   while (MAP_UARTBusy(ZQ_UART))
-    ;
-  while (MAP_UARTBusy(FP_UART))
     ;
   // log the error
   errbuffer_put_raw(EBUF_STACKOVERFLOW, 0);
