@@ -380,11 +380,11 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
   }
 
   if (!understood) {
-    copied += snprintf(m+copied, s-copied, "%s: message not understood >", argv[0]);
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: message not understood >", argv[0]);
     for ( int i = 0; i < argc; ++i ) {
-    	copied += snprintf(m+copied, s-copied, "%s ", argv[i]);
+    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s ", argv[i]);
     }
-    snprintf(m+copied, s-copied, "<\r\n");
+    snprintf(m+copied, SCRATCH_SIZE-copied, "<\r\n");
     return pdFALSE;
   }
 
@@ -632,10 +632,12 @@ static struct command_t commands[] = {
         "failures.\r\n",
         1,
     },
-    {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n",
+    {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n"},
+#ifdef REV2
     {
       "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
     },
+#endif // REV2
      {
        "psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
      },
