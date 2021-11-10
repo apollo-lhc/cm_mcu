@@ -30,10 +30,6 @@
 #define NPAGES_FF    1
 #define NCOMMANDS_FF 2
 
-#ifndef REV2
-#define I2C_PULLUP_BUG2
-#endif // REV2 
-
 // I2C information -- which device on the MCU is for the FF for each FPGA
 // this is what corresponds to I2C_BASE variables in the MCU
 #ifdef REV1
@@ -138,6 +134,38 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
     {"F2_7 4 XCVR", 0x71, 2, 0x50}, //
 
 };
+
+// information for registers
+// Temperature
+// 25G 12 lane Tx     : 0x16, 2 bytes
+// 25G 12 lane Rx     : 0x16, 2 bytes
+// 14G 12 lane Tx     : 0x16, 1 byte
+// 14G 12 lane Rx     : 0x16, 1 byte
+// 25G 4 lane XCVR    : 0x16, 1 byte
+
+// status register
+// 25G 12 lane Tx     : 0x2, 2 bytes TBC
+// 25G 12 lane Rx
+// 14G 12 lane Tx     : 0x2, 2 bytes
+// 14G 12 lane Rx     : 0x2, 2 bytes
+// 25G 4 lane XCVR    : 0x2, 2 bytes
+
+// Tx disable register
+// 25G 12 lane Tx     : 0x34, 2 bytes TBC!!
+// 14G 12 lane Tx     : 0x34, 2 byte
+// 25G 4 lane XCVR    : 0x56, 1 byte
+
+// Rx disable register
+// 25G 12 lane Rx     : 0x34, 2 bytes TBC!!
+// 14G 12 lane Rx     : 0x34, 2 bytes
+// 25G 4 lane XCVR    : 0x35, 1 byte
+
+// CDR enable/disable
+// 25G 12 lane Tx     : 0x4a, 2 bytes TBC!!
+// 25G 12 lane Rx     : 0x4a, 2 bytes TBC!!
+// 25G 4 lane XCVR    : 0x62, 1 byte
+
+// Add mask information? 
 
 #else
 #error "Define either Rev1 or Rev2"
@@ -550,19 +578,17 @@ void FireFlyTask(void *parameters)
   }
   vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
 
-  if (getPSStatus(5) == PWR_ON) {
-    // Disable all Firefly devices
-    disable_transmit(true, NFIREFLIES);
-    disable_receivers(true, NFIREFLIES);
-  }
+  if (getPowerControlState() == POWER_ON) {
+      // Disable all Firefly devices
+      disable_transmit(true, NFIREFLIES);
+      disable_receivers(true, NFIREFLIES);
+    }
   bool suspended = false;
 
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
   for (;;) {
-#ifdef I2C_PULLUP_BUG2
     bool good = false;
-#endif // I2C_PULLUP_BUG
 
     // -------------------------------
     // check for any messages.
@@ -674,8 +700,7 @@ void FireFlyTask(void *parameters)
     for (uint8_t ff = 0; ff < NFIREFLIES; ++ff) {
       if (!isEnabledFF(ff)) // skip the FF if it's not enabled via the FF config
         continue;
-#ifdef I2C_PULLUP_BUG2
-      if (getPSStatus(5) != PWR_ON) {
+      if (getPowerControlState() != POWER_ON) {
         if (good) {
           Print("FIF: 3V3 died. Skipping I2C monitoring.\r\n");
           good = false;
@@ -686,7 +711,6 @@ void FireFlyTask(void *parameters)
       else {
         good = true;
       }
-#endif // I2C_PULLUP_BUG
       ff_updateTick = xTaskGetTickCount();
       int i2c_device;
       if (ff < NFIREFLIES_F1) {
