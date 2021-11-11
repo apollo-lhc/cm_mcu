@@ -100,35 +100,9 @@ void MonitorTask(void *parameters)
   // wait for the power to come up
   vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
 
-#ifdef I2C_PULLUP_BUG
-  bool good = false;
-#endif // I2C_PULLUP_BUG
+  bool isFullyPowered = false; // assume not fully powered
   for (;;) {
     char tmp[TMPBUFFER_SZ];
-#ifdef I2C_PULLUP_BUG
-    // check if the 3.3V is there or not. If it disappears then nothing works
-    // since that is the I2C pullups. This will be changed with next
-    // rev of the board.
-    // HACK -- THIS TEST IS ONLY USED FOR THE XILINX TASK (name starts with 'X')
-    if (getPSStatus(5) != PWR_ON
-#ifdef ECN001
-        && args->name[0] == 'X'
-#endif // NO_ECN001
-    ) {
-      if (good) {
-        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
-        SuppressedPrint(tmp, &current_error_cnt, &log);
-        log_warn(LOG_MON, "%s: 3V3 died. Skipping I2C monitoring.\r\n", args->name);
-        good = false;
-      }
-      vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
-      continue;
-    }
-    else {
-      good = true;
-    }
-#endif // I2C_PULLUP_BUG
-
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
       while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
@@ -137,11 +111,28 @@ void MonitorTask(void *parameters)
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
     for (int ps = 0; ps < args->n_devices; ++ps) {
-#ifdef I2C_PULLUP_BUG
-      if (getPSStatus(5) != PWR_ON && args->name[0] == 'X') {
-        break;
+      // handle case where only management power is on
+      if (args->requirePower) { // if this device requires more than management power
+        enum power_system_state power_state = getPowerControlState();
+        if (power_state != POWER_ON) { // if the power state is not fully on
+          if (isFullyPowered) {                  // was previously on
+            snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
+            SuppressedPrint(tmp, &current_error_cnt, &log);
+            log_info(LOG_MON, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
+            isFullyPowered = false;
+          }
+          break; // skip this iteration
+        }
+        else if (power_state == POWER_ON) { // if the power state is fully on
+          if (!isFullyPowered) {                      // was previously off
+            snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
+            SuppressedPrint(tmp, &current_error_cnt, &log);
+            log_info(LOG_MON, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
+            isFullyPowered = true;
+          }
+        }
+        // if the power state is unknown, don't do anything
       }
-#endif // I2C_PULLUP_BUG
 
       // select the appropriate output for the mux
       data[0] = 0x1U << args->devices[ps].mux_bit;
@@ -265,7 +256,7 @@ void MonitorTask(void *parameters)
         } // loop over commands
       }   // loop over pages
     }     // loop over power supplies
-    if (args->xSem != NULL)
+    if (args->xSem != NULL) // if we have a semaphore, give it
       xSemaphoreGive(args->xSem);
 
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));

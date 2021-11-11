@@ -90,6 +90,7 @@ struct MonitorTaskArgs_t fpga_args = {
     .smbus_status = &eStatus5,
 #endif
     .xSem = NULL,
+    .requirePower = true,
 };
 #ifdef REV1
 // Power supply arguments for Monitoring task
@@ -265,6 +266,7 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
     .xSem = NULL,
+    .requirePower = false,
 };
 
 static int fpga_f1 = -1;

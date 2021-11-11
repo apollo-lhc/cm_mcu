@@ -180,7 +180,6 @@ header file. */
 
 #define SYSTEM_STACK_SIZE 128
 // these need thought re Rev1/Rev2
-#define I2C_PULLUP_BUG
 #ifndef NO_ECN001
 #define ECN001
 #endif // NO_ECN001
