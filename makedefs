@@ -109,6 +109,7 @@ CFLAGS=-mthumb             \
        -Wall               \
        -pedantic           \
        -DPART_${PART}      \
+       -Wdouble-promotion \
        -fstack-usage \
        -c
 
