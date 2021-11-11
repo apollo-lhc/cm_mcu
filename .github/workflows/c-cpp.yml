@@ -69,7 +69,7 @@ jobs:
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make REV1=1 clean
-        make -k Rev2=1 
+        make -k REV2=1 
 
   build-clang: 
 # this build also needs arm-none-eabi-gcc as some of the clang sysroot stuff depends on it.
