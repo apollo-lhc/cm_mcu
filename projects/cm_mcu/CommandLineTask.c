@@ -613,9 +613,11 @@ static struct command_t commands[] = {
         "Scan current I2C bus.\r\n",
         1,
     },
+  #ifdef REV2
     {
       "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
     },
+  #endif // REV2
     {"help", help_command_fcn, "This help command\r\n", -1},
     {
         "log",
