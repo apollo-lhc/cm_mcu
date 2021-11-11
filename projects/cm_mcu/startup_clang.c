@@ -185,7 +185,11 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // ADC Sequence 2
     IntDefaultHandler,      // ADC Sequence 3
     IntDefaultHandler,      // Watchdog timer
+#ifdef REV1
     Timer0AIntHandler,      // Timer 0 subtimer A
+#else // not REV1
+    IntDefaultHandler, // Timer 0 subtimer A
+#endif
     IntDefaultHandler,      // Timer 0 subtimer B
     IntDefaultHandler,      // Timer 1 subtimer A
     IntDefaultHandler,      // Timer 1 subtimer B
