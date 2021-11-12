@@ -51,7 +51,7 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
-#define F1_NDEVICES 2
+#define F2_NDEVICES 2
 
 #elif defined(REV2)
 struct dev_i2c_addr_t fpga_addrs[] = {
