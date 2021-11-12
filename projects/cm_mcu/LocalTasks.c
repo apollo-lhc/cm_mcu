@@ -26,7 +26,7 @@
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2
 //#define FPGA_MON_NDEVICES           (FPGA_MON_NDEVICES_PER_FPGA * FPGA_MON_NFPGA)
-#define FPGA_MON_NDEVICES           3
+#define FPGA_MON_NDEVICES           8
 #define FPGA_MON_NCOMMANDS          1
 #define FPGA_MON_NVALUES_PER_DEVICE 1
 #define FPGA_MON_NVALUES            (FPGA_MON_NCOMMANDS * FPGA_MON_NDEVICES * FPGA_MON_NVALUES_PER_DEVICE)
@@ -40,15 +40,19 @@ struct dev_i2c_addr_t fpga_addrs[] = {
     {"KU15P", 0x70, 0, 0x36},   // KU15P FPGA
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
+#define F1F2_NDEVICES 3
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
     {"KU15P", 0x70, 0, 0x36},
 };
+#define F1_NDEVICES 1
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
+#define F1_NDEVICES 2
+
 #elif defined(REV2)
 struct dev_i2c_addr_t fpga_addrs[] = {
     {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
@@ -60,6 +64,7 @@ struct dev_i2c_addr_t fpga_addrs[] = {
     {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
     {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
 };
+#define F1F2_NDEVICES 8
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
     {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
@@ -67,6 +72,7 @@ struct dev_i2c_addr_t fpga_addrs_f1only[] = {
     {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
     {"F1_3", 0x70, 3, 0x45}, // F1 X1Y1
 };
+#define F1_NDEVICES 4
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
@@ -74,6 +80,8 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
     {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
 };
+#define F2_NDEVICES 4
+
 #endif
 
 struct pm_command_t pm_command_fpga[] = {
@@ -86,7 +94,7 @@ float pm_fpga[FPGA_MON_NVALUES] = {0};
 struct MonitorTaskArgs_t fpga_args = {
     .name = "XIMON",
     .devices = fpga_addrs,
-    .n_devices = FPGA_MON_NDEVICES,
+    .n_devices = F1F2_NDEVICES,
     .commands = pm_command_fpga,
     .n_commands = FPGA_MON_NCOMMANDS,
     .pm_values = pm_fpga,
@@ -315,7 +323,7 @@ void initFPGAMon()
 #endif // DEBUG
   if (!f1_enable && f2_enable) {
     fpga_args.devices = fpga_addrs_f2only;
-    fpga_args.n_devices = 2;
+    fpga_args.n_devices = F2_NDEVICES;
     set_f2_index(0);
 #ifndef REV1
     write_gpio_pin(_F1_JTAG_BYPASS, 0);
@@ -324,7 +332,7 @@ void initFPGAMon()
   }
   else if (!f2_enable && f1_enable) {
     fpga_args.devices = fpga_addrs_f1only;
-    fpga_args.n_devices = 1;
+    fpga_args.n_devices = F1_NDEVICES;
     set_f1_index(0);
 #ifndef REV1
     write_gpio_pin(_F1_JTAG_BYPASS, 1);
