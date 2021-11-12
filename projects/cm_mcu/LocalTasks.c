@@ -51,18 +51,28 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
 };
 #elif defined(REV2)
 struct dev_i2c_addr_t fpga_addrs[] = {
-    {"F1", 0x70, 3, 0x36},   // F1
-    {"F2", 0x70, 1, 0x36},    // F2
-    {"F2SL1", 0x70, 1, 0x34}, // F2 FPGA SL1
+    {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
+    {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
+    {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
+    {"F1_3", 0x70, 3, 0x45}, // F1 X1Y1
+    {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
+    {"F2_1", 0x70, 1, 0x34}, // F2 X0Y1
+    {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
+    {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
 };
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
-    {"F1", 0x70, 3, 0x36},   // F1
+    {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
+    {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
+    {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
+    {"F1_3", 0x70, 3, 0x45}, // F1 X1Y1
 };
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
-    {"F2", 0x70, 1, 0x36},    // F2
-    {"F2SL1", 0x70, 1, 0x34}, // F2 FPGA SL1
+    {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
+    {"F2_1", 0x70, 1, 0x34}, // F2 X0Y1
+    {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
+    {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
 };
 #endif
 
