@@ -259,8 +259,10 @@ void ZynqMonTask(void *parameters)
       }
     }
     if (enable) {
+#ifdef REV1
       // Enable the interrupts during transmission
       MAP_IntEnable(INT_TIMER0A);
+#endif // REV1
 
       if (inTestMode) {
 #ifdef ZYNQMON_TEST_MODE

@@ -286,7 +286,7 @@ int main(void)
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+  xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);

@@ -68,11 +68,6 @@ const char *getPowerControlStateName(enum power_system_state s)
 void PowerSupplyTask(void *parameters)
 {
 
-  // -------------------------------------------------
-  //
-  // REV 1
-  //
-  // -------------------------------------------------
 
   // compile-time sanity check
   static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_F2_MASK | PS_ENS_F1_MASK), "mask");
@@ -114,13 +109,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
   }
-  // -------------------------------------------------
-  //
-  // REV 2
-  //
-  // -------------------------------------------------
-  // add REV2 here 
-#ifdef ECN001
+#if defined( ECN001) || defined (REV2)
   // configure the LGA80D supplies. This call takes some time.
   LGA80D_init();
 #endif // ECN001
@@ -157,7 +146,7 @@ void PowerSupplyTask(void *parameters)
           break;
       }
     }
-    bool ignorefail =true; // HACK THIS NEEDS TO BE FIXED TODO FIXME
+    bool ignorefail =false; // HACK THIS NEEDS TO BE FIXED TODO FIXME
     // Check the state of BLADE_POWER_EN.
     bool blade_power_enable = (read_gpio_pin(BLADE_POWER_EN) == 1);
 

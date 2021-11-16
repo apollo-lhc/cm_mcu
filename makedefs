@@ -302,7 +302,7 @@ ${COMPILER}${SUFFIX}/%.o: %.c
 	 else                                                 \
 	     echo ${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<}); \
 	 fi
-	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<})
+	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} ${<}
 ifneq ($(findstring CYGWIN, ${os}), )
 	@if [ -e ${@:.o=.d} ];                                   \
 	then                                                     \

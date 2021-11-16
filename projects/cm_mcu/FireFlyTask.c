@@ -65,6 +65,10 @@ void Print(const char *str);
     }                                                                                              \
   }
 
+// the following are true for both Rev1 and Rev2
+#define FF_I2CMUX_1_ADDR 0x70
+#define FF_I2CMUX_2_ADDR 0x71
+
 // i2c addresses
 // ECUO-B04 XCVR: 0x50 7 bit I2C address
 // ECUO-T12 Tx:   0x50 7 bit I2C address (both 14 and 25G)
@@ -77,31 +81,31 @@ void Print(const char *str);
 // -------------------------------------------------
 
 struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
-    {"K01  12 Tx GTH", 0x70, 0, 0x50}, //
-    {"K01  12 Rx GTH", 0x70, 1, 0x54}, //
-    {"K02  12 Tx GTH", 0x70, 2, 0x50}, //
-    {"K02  12 Rx GTH", 0x70, 3, 0x54}, //
-    {"K03  12 Tx GTH", 0x70, 4, 0x50}, //
-    {"K03  12 Rx GTH", 0x70, 5, 0x54}, //
-    {"K04 4 XCVR GTY", 0x71, 0, 0x50}, //
-    {"K05 4 XCVR GTY", 0x71, 1, 0x50}, //
-    {"K06 4 XCVR GTY", 0x71, 2, 0x50}, //
-    {"K07  12 Tx GTY", 0x71, 3, 0x50}, //
-    {"K07  12 Rx GTY", 0x71, 4, 0x54}, //
-    {"V01 4 XCVR GTY", 0x70, 0, 0x50}, //
-    {"V02 4 XCVR GTY", 0x70, 1, 0x50}, //
-    {"V03 4 XCVR GTY", 0x70, 2, 0x50}, //
-    {"V04 4 XCVR GTY", 0x70, 3, 0x50}, //
-    {"V05 4 XCVR GTY", 0x70, 4, 0x50}, //
-    {"V06 4 XCVR GTY", 0x70, 5, 0x50}, //
-    {"V07 4 XCVR GTY", 0x71, 0, 0x50}, //
-    {"V08 4 XCVR GTY", 0x71, 1, 0x50}, //
-    {"V09 4 XCVR GTY", 0x71, 2, 0x50}, //
-    {"V10 4 XCVR GTY", 0x71, 3, 0x50}, //
-    {"V11  12 Tx GTY", 0x70, 6, 0x50}, //
-    {"V11  12 Rx GTY", 0x70, 7, 0x54}, //
-    {"V12  12 Tx GTY", 0x71, 4, 0x50}, //
-    {"V12  12 Rx GTY", 0x71, 5, 0x54}, //
+    {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"K01  12 Rx GTH", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"K02  12 Tx GTH", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"K02  12 Rx GTH", FF_I2CMUX_1_ADDR, 3, 0x54}, //
+    {"K03  12 Tx GTH", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"K03  12 Rx GTH", FF_I2CMUX_1_ADDR, 5, 0x54}, //
+    {"K04 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"K05 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"K06 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"K07  12 Tx GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"K07  12 Rx GTY", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"V01 4 XCVR GTY", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"V02 4 XCVR GTY", FF_I2CMUX_1_ADDR, 1, 0x50}, //
+    {"V03 4 XCVR GTY", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"V04 4 XCVR GTY", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"V05 4 XCVR GTY", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"V06 4 XCVR GTY", FF_I2CMUX_1_ADDR, 5, 0x50}, //
+    {"V07 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"V08 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"V09 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"V10 4 XCVR GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"V11  12 Tx GTY", FF_I2CMUX_1_ADDR, 6, 0x50}, //
+    {"V11  12 Rx GTY", FF_I2CMUX_1_ADDR, 7, 0x54}, //
+    {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
+    {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
 #elif defined (REV2)
 // -------------------------------------------------
@@ -110,26 +114,26 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 //
 // -------------------------------------------------
 struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
-    {"F1_1  12 Tx", 0x70, 0, 0x50}, //
-    {"F1_1  12 Rx", 0x70, 1, 0x54}, //
-    {"F1_2  12 Tx", 0x70, 3, 0x50}, //
-    {"F1_2  12 Rx", 0x70, 4, 0x54}, //
-    {"F1_3  12 Tx", 0x71, 3, 0x50}, //
-    {"F1_3  12 Rx", 0x71, 4, 0x54}, //
-    {"F1_4 4 XCVR", 0x70, 2, 0x50}, //
-    {"F1_5 4 XCVR", 0x71, 0, 0x50}, //
-    {"F1_6 4 XCVR", 0x71, 1, 0x50}, //
-    {"F1_7 4 XCVR", 0x71, 2, 0x50}, //
-    {"F2_1  12 Tx", 0x70, 0, 0x50}, //
-    {"F2_1  12 Rx", 0x70, 1, 0x54}, //
-    {"F2_2  12 Tx", 0x70, 3, 0x50}, //
-    {"F2_2  12 Rx", 0x70, 4, 0x54}, //
-    {"F2_3  12 Tx", 0x71, 3, 0x50}, //
-    {"F2_3  12 Rx", 0x71, 4, 0x54}, //
-    {"F2_4 4 XCVR", 0x70, 2, 0x50}, //
-    {"F2_5 4 XCVR", 0x71, 0, 0x50}, //
-    {"F2_6 4 XCVR", 0x71, 1, 0x50}, //
-    {"F2_7 4 XCVR", 0x71, 2, 0x50}, //
+    {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 
 };
 
@@ -494,11 +498,7 @@ static int set_xcvr_cdr(uint8_t value, int num_ff)
     imax = NFIREFLIES;
   }
   for (; i < imax; ++i) {
-    if (!isEnabledFF(i) // skip the FF if it's not enabled via the FF config
-#ifdef TEST_FF12CHANNEL25G
-        && !(i == 21 || i == 22)
-#endif // TEST_FF12CHANNEL25G
-    )
+    if (!isEnabledFF(i) ) // skip the FF if it's not enabled via the FF config
       continue;
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
       // Print(ff_i2c_addrs[i].name); Print("\r\n");
@@ -585,8 +585,8 @@ void FireFlyTask(void *parameters)
 
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
+  bool good = false;
   for (;;) {
-    bool good = false;
 
     // -------------------------------
     // check for any messages.
@@ -668,7 +668,7 @@ void FireFlyTask(void *parameters)
           Print(tmp);
           break;
         }
-        regdata[CHARLENGTH - 1] = '\0'; // santity check
+        regdata[CHARLENGTH - 1] = '\0'; // Sanity check
         Print((char*)regdata);
         Print("\r\n");
         break;
@@ -676,9 +676,20 @@ void FireFlyTask(void *parameters)
       case FFLY_SUSPEND:
         suspended = true;
         break;
-      case FFLY_RESUME:
+      case FFLY_RESUME: {
         suspended = false;
+        const int devices[]= {I2C_DEVICE_F1, I2C_DEVICE_F2};
+        const int mux_addrs[] = {FF_I2CMUX_1_ADDR, FF_I2CMUX_2_ADDR};
+        // reset the two sets of muxes just to be sure
+        for ( int i = 0; i < 2; ++i ) {
+        	int res = apollo_i2c_ctl_w(devices[i], mux_addrs[i], 1, 0);
+        	if ( res != 0 ) {
+        		log_error(LOG_FFLY, "mux %d (0x%x) error %r", devices[i], mux_addrs[i], res);
+        		break;
+        	}
+        }
         break;
+      }
       default:
         message = RED_LED_TOGGLE;
         // message I don't understand? Toggle red LED
@@ -700,7 +711,7 @@ void FireFlyTask(void *parameters)
         continue;
       if (getPowerControlState() != POWER_ON) {
         if (good) {
-          Print("FIF: 3V3 died. Skipping I2C monitoring.\r\n");
+          log_warn(LOG_FFLY, "FIF: 3V3 died. Skipping I2C monitoring.\r\n");
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_FireFly);
         }
@@ -731,6 +742,7 @@ void FireFlyTask(void *parameters)
       if ( res != 0 ) {
         snprintf(tmp, 64, "FIF: mux writing error %d, break out of loop (ff=%d)\r\n", res, ff);
         Print(tmp);
+        log_error(LOG_FFLY, "FIF: mux writing error %d, break out of loop (ff=%d)\r\n", res, ff);
         break;
       }
 
@@ -868,15 +880,22 @@ void FireFlyTask(void *parameters)
         ff_status[ff].test[i - 148] = tmp1.s;
       }
 #endif
-
+      UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
+      static UBaseType_t vv = 0;
+      if ( val > vv ) {
+    	  log_info(LOG_FFLY, "stack size is now %d\r\n", val);
+      }
+      vv = val;
       // clear the I2C mux
       data[0] = 0x0;
       snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\r\n", data[0]);
       DPRINT(tmp);
+      log_debug(LOG_FFLY, "Output of mux set to 0x%02x\r\n", data[0]);
       res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
       if (res != 0) {
         snprintf(tmp, 64, "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
         Print(tmp);
+        log_warn(LOG_FFLY, "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
       }
 
     } // loop over firefly modules
