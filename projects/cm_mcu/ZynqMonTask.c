@@ -109,6 +109,15 @@ unsigned long g_ulBitTime;
 
 QueueHandle_t xZynqMonQueue;
 
+
+// category | count
+// -------- | -----
+// FPGA     | 4*N_FPGA
+// GIT      | 20 chars
+// ADC      | N_ADC+1 (21)
+// PSMON    | 2*10*N_Devices (2 is for number of pages)
+// uptime   | 20 chars
+
 #ifdef REV1
 extern uint32_t g_ui32SysClock;
 tSoftUART g_sUART;

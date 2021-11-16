@@ -711,7 +711,7 @@ void FireFlyTask(void *parameters)
         continue;
       if (getPowerControlState() != POWER_ON) {
         if (good) {
-          log_warn(LOG_FFLY, "FIF: 3V3 died. Skipping I2C monitoring.\r\n");
+          log_warn(LOG_FFLY, "No power, skip I2C monitor.\r\n");
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_FireFly);
         }
@@ -723,6 +723,7 @@ void FireFlyTask(void *parameters)
           task_watchdog_register_task(kWatchdogTaskID_FireFly);
         }
         good = true;
+        log_warn(LOG_FFLY, "Power on, resume I2C monitor.\r\n");
       }
       ff_updateTick = xTaskGetTickCount();
       int i2c_device;
@@ -736,13 +737,12 @@ void FireFlyTask(void *parameters)
       // select the appropriate output for the mux
       data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
       char tmp[64];
-      snprintf(tmp, 64, "FIF: Output of mux set to 0x%02x\r\n", data[0]);
-      DPRINT(tmp);
+      log_debug(LOG_FFLY, "Mux set to 0x%02x\r\n", data[0]);
       int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
       if ( res != 0 ) {
         snprintf(tmp, 64, "FIF: mux writing error %d, break out of loop (ff=%d)\r\n", res, ff);
         Print(tmp);
-        log_error(LOG_FFLY, "FIF: mux writing error %d, break out of loop (ff=%d)\r\n", res, ff);
+        log_error(LOG_FFLY, "Mux write error %d, break (ff=%d)\r\n", res, ff);
         break;
       }
 
@@ -758,6 +758,7 @@ void FireFlyTask(void *parameters)
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
+        log_error(LOG_FFLY, "Temp read Error %d, break (ff=%d)\r\n", res, ff);
         ff_stat[ff].temp = -54;
         break;
       }
@@ -773,7 +774,8 @@ void FireFlyTask(void *parameters)
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
-        ff_stat[ff].temp = -54;
+        log_error(LOG_FFLY, "stat read Error %d, break (ff=%d)\r\n", res, ff);
+        ff_stat[ff].status = -54;
         break;
       }
       ff_stat[ff].status = data[0] & FF_STATUS_COMMAND_REG_MASK;
