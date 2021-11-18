@@ -721,9 +721,9 @@ void FireFlyTask(void *parameters)
       else { // power is on, and ...
         if ( ! good ) { // ... was not good, but is now good
           task_watchdog_register_task(kWatchdogTaskID_FireFly);
+          log_warn(LOG_FFLY, "Power on, resume I2C monitor.\r\n");
+          good = true;
         }
-        good = true;
-        log_warn(LOG_FFLY, "Power on, resume I2C monitor.\r\n");
       }
       ff_updateTick = xTaskGetTickCount();
       int i2c_device;

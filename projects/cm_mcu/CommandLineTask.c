@@ -598,6 +598,7 @@ static struct command_t commands[] = {
     },
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},
+    {"help", help_command_fcn, "This help command\r\n", -1},
     {"id", board_id_info, "Prints board ID information.\r\n", 0},
     {"i2cr", i2c_ctl_r,
      "args: <dev> <address> <number of bytes>\r\nRead I2C controller. Addr in hex.\r\n", 3},
@@ -618,7 +619,6 @@ static struct command_t commands[] = {
       "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
     },
   #endif // REV2
-    {"help", help_command_fcn, "This help command\r\n", -1},
     {
         "log",
         log_ctl,
@@ -634,12 +634,7 @@ static struct command_t commands[] = {
         "failures.\r\n",
         1,
     },
-    {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n"},
-#ifdef REV2
-    {
-      "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
-    },
-#endif // REV2
+    {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n", 1},
      {
        "psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
      },
