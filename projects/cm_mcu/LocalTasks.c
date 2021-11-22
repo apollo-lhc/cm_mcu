@@ -20,17 +20,18 @@
 #include "common/pinsel.h"
 #include "common/smbus_units.h"
 #include "I2CCommunication.h"
+#include "common/log.h"
+#include "common/printf.h"
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2
 //#define FPGA_MON_NDEVICES           (FPGA_MON_NDEVICES_PER_FPGA * FPGA_MON_NFPGA)
-#define FPGA_MON_NDEVICES           3
+#define FPGA_MON_NDEVICES           8
 #define FPGA_MON_NCOMMANDS          1
 #define FPGA_MON_NVALUES_PER_DEVICE 1
 #define FPGA_MON_NVALUES            (FPGA_MON_NCOMMANDS * FPGA_MON_NDEVICES * FPGA_MON_NVALUES_PER_DEVICE)
 
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
+#define LOG_FACILITY LOG_SERVICE
 
 // FPGA arguments for monitoring task
 #ifdef REV1
@@ -39,30 +40,48 @@ struct dev_i2c_addr_t fpga_addrs[] = {
     {"KU15P", 0x70, 0, 0x36},   // KU15P FPGA
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
+#define F1F2_NDEVICES 3
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
     {"KU15P", 0x70, 0, 0x36},
 };
+#define F1_NDEVICES 1
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
+#define F2_NDEVICES 2
+
 #elif defined(REV2)
 struct dev_i2c_addr_t fpga_addrs[] = {
-    {"F1", 0x70, 3, 0x36},   // F1
-    {"F2", 0x70, 1, 0x36},    // F2
-    {"F2SL1", 0x70, 1, 0x34}, // F2 FPGA SL1
+    {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
+    {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
+    {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
+    {"F1_3", 0x70, 3, 0x45}, // F1 X1Y1
+    {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
+    {"F2_1", 0x70, 1, 0x34}, // F2 X0Y1
+    {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
+    {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
 };
+#define F1F2_NDEVICES 8
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
-    {"F1", 0x70, 3, 0x36},   // F1
+    {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
+    {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
+    {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
+    {"F1_3", 0x70, 3, 0x45}, // F1 X1Y1
 };
+#define F1_NDEVICES 4
 
 struct dev_i2c_addr_t fpga_addrs_f2only[] = {
-    {"F2", 0x70, 1, 0x36},    // F2
-    {"F2SL1", 0x70, 1, 0x34}, // F2 FPGA SL1
+    {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
+    {"F2_1", 0x70, 1, 0x34}, // F2 X0Y1
+    {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
+    {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
 };
+#define F2_NDEVICES 4
+
 #endif
 
 struct pm_command_t pm_command_fpga[] = {
@@ -75,7 +94,7 @@ float pm_fpga[FPGA_MON_NVALUES] = {0};
 struct MonitorTaskArgs_t fpga_args = {
     .name = "XIMON",
     .devices = fpga_addrs,
-    .n_devices = FPGA_MON_NDEVICES,
+    .n_devices = F1F2_NDEVICES,
     .commands = pm_command_fpga,
     .n_commands = FPGA_MON_NCOMMANDS,
     .pm_values = pm_fpga,
@@ -89,6 +108,7 @@ struct MonitorTaskArgs_t fpga_args = {
     .smbus_status = &eStatus5,
 #endif
     .xSem = NULL,
+    .requirePower = true,
 };
 #ifdef REV1
 // Power supply arguments for Monitoring task
@@ -147,33 +167,33 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
-    Print("error in snapdump (0)\r\n");
+    log_error(LOG_SERVICE, "page\r\n");
   }
 
   // actual command -- snapshot control copy NVRAM for reading
   uint8_t cmd = 0x1;
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
   if (r) {
-    Print("error in snapdump 1\r\n");
+    log_error(LOG_SERVICE, "ctrl\r\n");
   }
   // actual command -- read snapshot
   tSMBusStatus r2 =
       SMBusMasterBlockRead(&g_sMaster1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
   if (r2 != SMBUS_OK) {
-    Print("error setting up block read (snapdump 2)\r\n");
+    log_error(LOG_SERVICE, "block %d\r\n", r2);
   }
   while ((r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
   if (r2 != SMBUS_TRANSFER_COMPLETE) {
-    Print("error in snapdump(3)\r\n");
+    log_error(LOG_SERVICE, "SMBUS %d\r\n", r2);
   }
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
     cmd = 0x3;
     r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
     if (r) {
-      Print("error in snapdump 4\r\n");
+      log_error(LOG_SERVICE, "error reset\r\n");
     }
   }
   xSemaphoreGive(dcdc_args.xSem);
@@ -186,7 +206,7 @@ void LGA80D_init(void)
 {
   while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
     ;
-  Print("LGA80D_init\r\n");
+  log_info(LOG_SERVICE, "LGA80D_init\r\n");
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);
@@ -194,31 +214,29 @@ void LGA80D_init(void)
   for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
     for (uint8_t page = 0; page < 2; ++page) {
       // page register
-      char tmp[256];
       int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[0],
                               &page);
       if (r) {
-        snprintf(tmp, 256, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
-        Print(tmp);
-        Print("error in LGA80D_init (0)\r\n");
+        log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
+        log_error(LOG_SERVICE, "error(0)\r\n");
       }
       // actual command -- frequency switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[2],
                           (uint8_t *)&freqlin11);
       if (r) {
-        Print("error in LGA80D_init (1)\r\n");
+        log_error(LOG_SERVICE, "error(1)\r\n");
       }
       // actual command -- vout_droop switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[5],
                           (uint8_t *)&drooplin11);
       if (r) {
-        Print("error in LGA80D_init (2)\r\n");
+        log_error(LOG_SERVICE, "error(2)\r\n");
       }
       // actual command -- multiphase_ramp_gain switch
       uint8_t val = 0x7U; // by suggestion of Artesian
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
       if (r) {
-        Print("error in LGA80D_init (3)\r\n");
+        log_error(LOG_SERVICE, "error(3)\r\n");
       }
     }
   }
@@ -266,6 +284,7 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
     .xSem = NULL,
+    .requirePower = false,
 };
 
 static int fpga_f1 = -1;
@@ -295,7 +314,7 @@ void initFPGAMon()
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
 #ifndef REV1 // FIXME REMOVE THESE
-  write_gpio_pin(JTAG_FROM_SM, 0);
+  write_gpio_pin(JTAG_FROM_SM, 1);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);
 #endif // not REV1
@@ -304,7 +323,7 @@ void initFPGAMon()
 #endif // DEBUG
   if (!f1_enable && f2_enable) {
     fpga_args.devices = fpga_addrs_f2only;
-    fpga_args.n_devices = 2;
+    fpga_args.n_devices = F2_NDEVICES;
     set_f2_index(0);
 #ifndef REV1
     write_gpio_pin(_F1_JTAG_BYPASS, 0);
@@ -313,7 +332,7 @@ void initFPGAMon()
   }
   else if (!f2_enable && f1_enable) {
     fpga_args.devices = fpga_addrs_f1only;
-    fpga_args.n_devices = 1;
+    fpga_args.n_devices = F1_NDEVICES;
     set_f1_index(0);
 #ifndef REV1
     write_gpio_pin(_F1_JTAG_BYPASS, 1);

@@ -105,17 +105,17 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH5,  "F1_VCCINT", 1.f, 0.85f},
     {ADC_CTL_CH6,  "F1_AVCC", 1.f, 0.90f},
     {ADC_CTL_CH7,  "F1_AVTT", 1.f, 1.2f},
-	  {ADC_CTL_CH8,  "F1_VCCAUX", 1.f, 1.8f},
+	{ADC_CTL_CH8,  "F1_VCCAUX", 1.f, 1.8f},
     {ADC_CTL_CH9,  "F2_VCCINT", 1.f, 0.85f},
     {ADC_CTL_CH10, "F2_AVCC", 1.f, 0.90f},
     {ADC_CTL_CH11, "F2_AVTT", 1.f, 1.2f},
     {ADC_CTL_CH12, "F2_VCCAUX", 1.f, 1.8f},
-    {ADC_CTL_CH13, "CUR_V_12V", 2.f, 2.5f}, // TODO: sf
-    {ADC_CTL_CH14, "CUR_V_M3V3", 2.f, 2.5f}, // TODO: sf
-    {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 2.5f}, // TODO: sf
-    {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
-    {ADC_CTL_CH17, "CUR_V_F1VCCAUX", 2.f, 2.5f}, // TODO: sf
-    //{ADC_CTL_CH18, "F1_TEMP", (1.026f/1.004f)/0.004f, 35.f}, // degrees K
+    {ADC_CTL_CH13, "CUR_V_12V", 10.f, 2.5f},
+    {ADC_CTL_CH14, "CUR_V_M3V3", 2.f, 2.5f},
+    {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 2.5f},
+    {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 1.f, 2.5f},
+    {ADC_CTL_CH17, "CUR_V_F2VCCAUX", 1.f, 2.5f},
+	//{ADC_CTL_CH18, "F1_TEMP", (1.026f/1.004f)/0.004f, 35.f}, // degrees K
     {ADC_CTL_CH18, "F1_TEMP", 1.f, 35.f}, // degrees K
     {ADC_CTL_CH19, "F2_TEMP", (1.026f/1.004f)/0.004f, 35.f}, // degrees K
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f}, // this one is special, temp in C

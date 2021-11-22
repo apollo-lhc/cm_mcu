@@ -6,6 +6,7 @@
 #define FREERTOS_CONFIG_H
 
 #include "common/utils.h"
+#include "common/printf.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/rom.h"
 
@@ -99,7 +100,7 @@ to exclude the API function. */
 #define INCLUDE_xTaskAbortDelay             0
 #define INCLUDE_xTaskGetSchedulerState      0
 #define INCLUDE_xTaskGetIdleTaskHandle      0
-#define INCLUDE_uxTaskGetStackHighWaterMark 0
+#define INCLUDE_uxTaskGetStackHighWaterMark 1
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS
@@ -179,7 +180,6 @@ header file. */
 
 #define SYSTEM_STACK_SIZE 128
 // these need thought re Rev1/Rev2
-#define I2C_PULLUP_BUG
 #ifndef NO_ECN001
 #define ECN001
 #endif // NO_ECN001

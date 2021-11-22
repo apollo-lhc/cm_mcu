@@ -6,12 +6,17 @@
  */
 
 // Include commands
+
+#include <strings.h>
+
 #include "commands/BoardCommands.h"
 #include "commands/BufferCommands.h"
 #include "commands/EEPROMCommands.h"
 #include "commands/I2CCommands.h"
 #include "commands/SensorControl.h"
 #include "common/smbus_units.h"
+#include "common/printf.h"
+#include "common/log.h"
 
 static char m[SCRATCH_SIZE];
 
@@ -186,6 +191,13 @@ static BaseType_t stack_ctl(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
+static BaseType_t mem_ctl(int argc, char **argv, char* m)
+{
+  size_t heapSize = xPortGetFreeHeapSize();
+  snprintf(m, SCRATCH_SIZE, "heap: %d bytes\r\n", heapSize);
+  return pdFALSE;
+}
+
 static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
 {
   TaskStatus_t *pxTaskStatusArray;
@@ -250,7 +262,6 @@ static BaseType_t uptime(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-#pragma GCC diagnostic pop
 // WARNING: this command easily leads to stack overflows. It does not correctly
 // ensure that there are no overwrites to pcCommandString.
 static BaseType_t TaskStatsCommand(int argc, char **argv, char* m)
@@ -281,7 +292,9 @@ static BaseType_t TaskStatsCommand(int argc, char **argv, char* m)
   }
   strncpy(mm, pcHeader, SCRATCH_SIZE - copied);
   copied += strlen(pcHeader);
-  TaskGetRunTimeStats(mm + strlen(pcHeader), SCRATCH_SIZE - copied);
+  TaskGetRunTimeStats(m + copied, SCRATCH_SIZE - copied);
+  int len = strlen(m);
+  configASSERT(len<SCRATCH_SIZE);
 
   /* There is no more data to return after this single string, so return
   pdFALSE. */
@@ -300,7 +313,7 @@ static BaseType_t watchdog_ctl(int argc, char **argv, char *m)
 
 static BaseType_t zmon_ctl(int argc, char **argv, char *m)
 {
-  int s = SCRATCH_SIZE, copied = 0;
+  int copied = 0;
   bool understood = true;
   uint32_t message = 0;
   if (argc == 2) {
@@ -367,7 +380,11 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
   }
 
   if (!understood) {
-    snprintf(m, s, "%s: message %s not understood\r\n", argv[0], argv[1]);
+    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: message not understood >", argv[0]);
+    for ( int i = 0; i < argc; ++i ) {
+    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s ", argv[i]);
+    }
+    snprintf(m+copied, SCRATCH_SIZE-copied, "<\r\n");
     return pdFALSE;
   }
 
@@ -379,6 +396,148 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
+
+
+// this command takes up to two arguments
+static BaseType_t log_ctl(int argc, char **argv, char* m)
+{
+  int copied = 0;
+  if (argc == 2) {
+    if (strncmp(argv[argc - 1], "toggle", 6) == 0) {
+      bool newval = !log_get_quiet();
+      log_set_quiet(newval);
+      snprintf(m, SCRATCH_SIZE, "%s: quiet set to %d\r\n", argv[0], newval);
+    }
+    else if (strncmp(argv[argc - 1], "status", 6) == 0) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: status\r\n", argv[0]);
+      for ( enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i ) {
+        int level = log_get_current_level(i);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %-7s = %s\r\n", argv[0], log_facility_string(i),
+                           log_level_string(level));
+      }
+    }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: command %s not understood\r\n", argv[0], argv[1]);
+    }
+  }
+  else if (argc == 3) {
+    int j =0;
+    size_t len = strlen(argv[1]);
+    bool success = false;
+    const char *f, *l;
+    for (; j < NUM_LOG_FACILITIES; ++j) {
+      f = log_facility_string(j);
+      if (strncasecmp(argv[1], f, len) == 0 ) {
+        break;
+      }
+    }
+    len = strlen(argv[2]);
+    int i = 0;
+    for (; i < NUM_LOG_LEVELS && j < NUM_LOG_FACILITIES; ++i) {
+      l = log_level_string(i);
+      if (strncasecmp(argv[2], l, len) == 0 ) {
+        log_set_level(i, j);
+        success=true;
+        break;
+      }
+    }
+    if (success) {
+      snprintf(m, SCRATCH_SIZE, "%s: set logging level for facility %s to %s\r\n", argv[0], f, l);
+    }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: facility %s not recognized\r\n", argv[0], argv[1]);
+    }
+
+  }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: argument(s)", argv[0]);
+    for ( int i = 1; i < argc; ++i) {
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s ", argv[i]);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "not understood\r\n");
+  }
+
+  return pdFALSE;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+/*-----------------------------------------------------------*/
+#define tskRUNNING_CHAR   ( 'X' )
+#define tskBLOCKED_CHAR   ( 'B' )
+#define tskREADY_CHAR   ( 'R' )
+#define tskDELETED_CHAR   ( 'D' )
+#define tskSUSPENDED_CHAR ( 'S' )
+
+static portBASE_TYPE taskInfo( int argc, char *argv[], char *m)
+{
+  const char *const pcHeader = "Task   State  Priority  Stack  #\r\n*********************************\r\n";
+
+  /* Generate a table of task stats. */
+  strcpy( m, pcHeader );
+  int copied = strlen(m);
+
+  /* Take a snapshot of the number of tasks in case it changes while this
+    function is executing. */
+  UBaseType_t uxArraySize = uxTaskGetNumberOfTasks();
+
+  /* Allocate an array index for each task.  NOTE!  if
+    configSUPPORT_DYNAMIC_ALLOCATION is set to 0 then pvPortMalloc() will
+    equate to NULL. */
+  TaskStatus_t *pxTaskStatusArray = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation allocates a struct that has the alignment requirements of a pointer. */
+
+  if( pxTaskStatusArray != NULL ) {
+    /* Generate the (binary) data. */
+    uxTaskGetSystemState( pxTaskStatusArray, uxArraySize, NULL );
+    char cStatus;
+
+    /* Create a human readable table from the binary data. */
+    for( UBaseType_t x = 0; x < uxArraySize; x++ ) {
+      switch( pxTaskStatusArray[ x ].eCurrentState ) {
+      case eRunning:
+        cStatus = tskRUNNING_CHAR;
+        break;
+      case eReady:
+        cStatus = tskREADY_CHAR;
+        break;
+      case eBlocked:
+        cStatus = tskBLOCKED_CHAR;
+        break;
+      case eSuspended:
+        cStatus = tskSUSPENDED_CHAR;
+        break;
+      case eDeleted:
+        cStatus = tskDELETED_CHAR;
+        break;
+      case eInvalid:
+      default:
+        cStatus = ( char ) 0x00;
+        break;
+      }
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%-6s",
+          pxTaskStatusArray[ x ].pcTaskName );
+
+      // note that the Stack high water mark shows the smallest the
+      // stack has ever been. Smaller == closer to overflow.
+      copied += snprintf( m+copied, SCRATCH_SIZE-copied, "\t%c\t%u\t%u\t%u\r\n",
+          cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority,
+          ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark,
+          ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber );
+    }
+
+    /* Free the array again.  NOTE!  If configSUPPORT_DYNAMIC_ALLOCATION
+      is 0 then vPortFree() will be #defined to nothing. */
+    vPortFree( pxTaskStatusArray );
+  }
+
+  int len = strlen(m);
+  configASSERT(len<SCRATCH_SIZE);
+  /* There is no more data to return after this single string, so return
+  pdFALSE. */
+  return pdFALSE;
+}
+/*-----------------------------------------------------------*/
+////////////////////////////////////////////////////////////////////////
 
 static const char *const pcWelcomeMessage =
     "CLI based on microrl.\r\nType \"help\" to view a list of registered commands.\r\n";
@@ -392,122 +551,141 @@ struct command_t {
 
 #define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
 static struct command_t commands[] = {
-    {"adc", adc_ctl, "adc\r\n Displays a table showing the state of ADC inputs.\r\n", 0},
-    {"alm", alarm_ctl, "alm (clear|status|settemp #)\r\n Get or clear status of alarm task.\r\n",
+    {"adc", adc_ctl, "Displays a table showing the state of ADC inputs.\r\n", 0},
+    {"alm", alarm_ctl, "args: (clear|status|settemp #)\r\nGet or clear status of alarm task.\r\n",
      -1},
-    {"bootloader", bl_ctl, "bootloader\r\n Call the boot loader\r\n", 0},
+    {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
     {"clock", clock_ctl,
-     "clock\r\n Reset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n", 1},
-    {"eeprom_info", eeprom_info, "eeprom_info\r\n Prints information about the EEPROM.\r\n", 0},
+     "args: (1|2)\r\nReset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n", 1},
+    {"eeprom_info", eeprom_info, "Prints information about the EEPROM.\r\n", 0},
     {"eeprom_read", eeprom_read,
-     "eeprom_read <address>\r\n Reads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
+     "args: <address>\r\nReads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
      1},
     {"eeprom_write", eeprom_write,
-     "eeprom_write <address> <data>\r\n Writes <data> to <address> in EEPROM. <address> should be "
-     "a "
-     "multiple of 4.\r\n",
+     "args: <address> <data>\r\nWrites <data> to <address> in EEPROM. <address> should be "
+     "a multiple of 4.\r\n",
      2},
     {"errorlog_entry", errbuff_in,
-     "errorlog_entry <data>\r\n Manual entry of 2-byte code into the eeprom error logger.\r\n", 1},
+     "args: <data>\r\nManual entry of 2-byte code into the eeprom error logger.\r\n", 1},
     {"errorlog", errbuff_out,
-     "errorlog <n>\r\n Prints last n entries in the eeprom error logger.\r\n", 1},
+     "args: <n>\r\nPrints last n entries in the eeprom error logger.\r\n", 1},
     {"errorlog_info", errbuff_info,
-     "errorlog_info\r\n Prints information about the eeprom error logger.\r\n", 0},
+     "Prints information about the eeprom error logger.\r\n", 0},
     {"errorlog_reset", errbuff_reset,
-     "errorlog_reset <data>\r\n Resets the eeprom error logger.\r\n", 0},
-    {"fpga_reset", fpga_reset, "fpga_reset (k|v)\r\n Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
+     "Resets the eeprom error logger.\r\n", 0},
+    {"fpga_reset", fpga_reset, "Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
     {"ff", ff_ctl,
-     "ff <none> |(xmit|cdr on/off (0-23|all))| regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
+     "args: <none> |(xmit|cdr on/off (0-23|all))| regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
      " Firefly monitoring command\r\n",
      -1},
     {
         "ff_status",
         ff_status,
-        "ff_status\r\n Displays a table showing the status of the fireflies.\r\n",
+        "Displays a table showing the status of the fireflies.\r\n",
         0,
     },
     {
         "ff_los",
         ff_los_alarm,
-        "ff_los\r\n Displays a table showing the loss of signal alarms of the fireflies.\r\n",
+        "Displays a table showing the loss of signal alarms of the fireflies.\r\n",
         0,
     },
     {
         "ff_cdr_lol",
         ff_cdr_lol_alarm,
-        "ff_cdr_lol\r\n Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
+        "Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
         0,
     },
-    {"fpga", fpga_ctl, "fpga (<none>|done)\r\n Displays a table showing the state of FPGAs.\r\n",
+    {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},
-    {"id", board_id_info, "id\r\n Prints board ID information.\r\n", 0},
+    {"help", help_command_fcn, "This help command\r\n", -1},
+    {"id", board_id_info, "Prints board ID information.\r\n", 0},
     {"i2cr", i2c_ctl_r,
-     "i2cr <dev> <address> <number of bytes>\r\n Read I2C controller. Addr in hex.\r\n", 3},
+     "args: <dev> <address> <number of bytes>\r\nRead I2C controller. Addr in hex.\r\n", 3},
     {"i2crr", i2c_ctl_reg_r,
      "i2crr <dev> <address> <reg> <number of bytes>\r\n Read I2C controller. Addr in hex\r\n", 4},
     {"i2cw", i2c_ctl_w, "i2cw <dev> <address> <number of bytes> <value>\r\n Write I2C controller.\r\n",
      4},
     {"i2cwr", i2c_ctl_reg_w,
-     "i2cwr <dev> <address> <reg> <number of bytes>\r\n Write I2C controller.\r\n", 5},
+     "args: <dev> <address> <reg> <number of bytes>\r\nWrite I2C controller.\r\n", 5},
     {
         "i2c_scan",
         i2c_scan,
-        "i2c_scan\r\n Scan current I2C bus.\r\n",
+        "Scan current I2C bus.\r\n",
         1,
     },
-    {"help", help_command_fcn, "help\r\n This help command\r\n", -1},
-    {"pwr", power_ctl,
-     "pwr (on|off|status|clearfail)\r\n Turn on or off all power, get status or clear "
-     "failures.\r\n",
-     1},
-    {"led", led_ctl, "led (0-4)\r\n Manipulate red LED.\r\n", 1},
-    {"psmon", psmon_ctl, "psmon <#>\r\n Displays a table showing the state of power supplies.\r\n",
-     1},
+  #ifdef REV2
+    {
+      "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
+    },
+  #endif // REV2
+    {
+        "log",
+        log_ctl,
+        "args: (<fac> debug|toggle|info|warn|fatal|trace)(status|quiet)\r\nManipulate logger levels\r\n",
+        -1,
+    },
+    {"led", led_ctl, "Manipulate red LED.\r\n", 1},
+    {"mem", mem_ctl, "Size of heap.\r\n", 0},
+    {
+        "pwr",
+        power_ctl,
+        "args: (on|off|status|clearfail)\r\nTurn on or off all power, get status or clear "
+        "failures.\r\n",
+        1,
+    },
+    {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n", 1},
      {
-       "psreg", psmon_reg, "psreg <which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
+       "psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
      },
+     {"restart_mcu", restart_mcu, "Restart the microcontroller\r\n", 0},
     {"snapshot", snapshot,
-     "snapshot # (0|1)\r\n Dump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
+     "args:# (0|1)\r\nDump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
      "if to reset snapshot.\r\n",
      2},
-    {"restart_mcu", restart_mcu, "restart_mcu\r\n Restart the microcontroller\r\n", 0},
     {
         "set_id",
         set_board_id,
-        "set_id <password> <address> <data>\r\n Allows the user to set the board id "
+        "args: <passwd> <addr> <data>\r\nAllows the user to set the board id "
         "information.\r\n",
         3,
     },
     {
         "set_id_password",
         set_board_id_password,
-        "set_id_password\r\n One-time use: sets password for ID block.\r\n",
+        "One-time use: sets password for ID block.\r\n",
         0,
     },
     {
         "simple_sensor",
         sensor_summary,
-        "simple_sensor\r\n Displays a table showing the state of temps.\r\n",
+        "Displays a table showing the state of temps.\r\n",
         0,
     },
     {
         "stack_usage",
         stack_ctl,
-        "stack_usage\r\n Print out system stack high water mark.\r\n",
+        "Print out system stack high water mark.\r\n",
         0,
     },
-    {"task-stats", TaskStatsCommand,
-     "task-stats\r\n Displays a table showing the state of each FreeRTOS task\r\n", 0},
-    {"uptime", uptime, "uptime\r\n Display uptime in minutes\r\n", 0},
-    {"version", ver_ctl, "version\r\n Display information about MCU firmware version\r\n", 0},
-    {"watchdog", watchdog_ctl, "watchdog\r\n Display status of the watchdog task\r\n", 0},
+    {
+        "taskinfo", taskInfo, "Info about FreeRTOS tasks\r\n", 0,
+    },
+    {
+        "taskstats",
+        TaskStatsCommand,
+       "Displays a table showing the state of each FreeRTOS task\r\n", 0
+    },
+    {"uptime", uptime, "Display uptime in minutes\r\n", 0},
+    {"version", ver_ctl, "Display information about MCU firmware version\r\n", 0},
+    {"watchdog", watchdog_ctl, "Display status of the watchdog task\r\n", 0},
     {
         "zmon",
         zmon_ctl,
 #ifdef ZYNQMON_TEST_MODE
-        "zmon (on|off|status|debug1|debug2|debugraw|normal|sendone|(settest <sensor> <val>))\r\n"
+        "args:(on|off|status|debug1|debug2|debugraw|normal|sendone|(settest <sensor> <val>))\r\n"
 #else
-        "zmon (on|off)\r\n"
+        "args:(on|off)\r\n"
 #endif // ZYNQMON_TEST_MODE
         " Control ZynqMon task.\r\n",
         -1,
@@ -541,10 +719,14 @@ static BaseType_t help_command_fcn(int argc, char **argv, char* m)
   static int i = 0;
   if (argc == 1) {
     for (; i < NUM_COMMANDS; ++i) {
-      if ((SCRATCH_SIZE - copied) < strlen(commands[i].helpstr)) {
+      int left = SCRATCH_SIZE - copied;
+      // need room for command string, help string, newlines, etc, and trailing \0
+      int len = strlen(commands[i].helpstr)+ strlen(commands[i].commandstr) + 7;
+      if (left < len) {
         return pdTRUE;
       }
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s", commands[i].helpstr);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
+          commands[i].commandstr, commands[i].helpstr);
     }
     i = 0;
     return pdFALSE;
@@ -553,7 +735,8 @@ static BaseType_t help_command_fcn(int argc, char **argv, char* m)
     // help for any command that matches the entered command
     for (int j = 0; j < NUM_COMMANDS; ++j) {
       if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0) {
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s", commands[j].helpstr);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
+            commands[j].commandstr, commands[j].helpstr);
         // return pdFALSE;
       }
     }
@@ -603,6 +786,7 @@ static int execute(void *p, int argc, char **argv)
 
   return 0;
 }
+
 
 // The actual task
 void vCommandLineTask(void *pvParameters)

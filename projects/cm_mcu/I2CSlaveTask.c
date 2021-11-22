@@ -19,6 +19,7 @@
 #include "Tasks.h"
 #include "MonitorTask.h"
 #include "common/uart.h"
+#include "common/log.h"
 #include "I2CSlaveTask.h"
 
 // Rev 2:
@@ -39,10 +40,6 @@
 #define SLAVE_I2C_BASE I2C0_BASE
 #endif
 
-//#define DEBUG_I2CSLAVE
-#ifdef DEBUG_I2CSLAVE
-void Print(const char *str);
-#endif
 
 // IPMC register map documented here
 // https://github.com/apollo-lhc/cm_mcu/wiki/MCU-slave-documentation
@@ -140,17 +137,10 @@ void I2CSlaveTask(void *parameters)
   enum I2C_STATE theState = I2C_READY;
   uint8_t addr = 0;
   uint16_t val = 0;
-#ifdef DEBUG_I2CSLAVE
-  char tmp[64];
-#endif
 
   // loop forever
   for (;;) {
-#ifdef DEBUG_I2CSLAVE
-    snprintf(tmp, 64, "state is %d\r\n", (int)theState);
-    Print(tmp);
-#endif
-
+    log_trace(LOG_I2C, "state is %d\r\n", (int)theState);
     // block on notification from the I2C Slave interrupt handler
     // Wait to be notified that the transmission is complete.
     // we wait indefinitely between transactions, but time out after some time
@@ -169,16 +159,10 @@ void I2CSlaveTask(void *parameters)
     }
     TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
 
-#ifdef DEBUG_I2CSLAVE
-    snprintf(tmp, 64, "\tINT is 0x%08x\r\n", interruptStatus);
-    Print(tmp);
-#endif
+    log_trace(LOG_I2C, "INT is 0x%08x\r\n", interruptStatus);
     // read the I2C slave status register I2CSCSR
     uint32_t status = ROM_I2CSlaveStatus(SLAVE_I2C_BASE);
-#ifdef DEBUG_I2CSLAVE
-    snprintf(tmp, 64, "Slave status is 0x%08x\r\n", status);
-    Print(tmp);
-#endif
+    log_trace(LOG_I2C, "Slave status is 0x%08x\r\n", status);
 
     // we received an interrupt.
     // only possible values of the interrupt are the values set in the slave
@@ -187,9 +171,7 @@ void I2CSlaveTask(void *parameters)
     // I2C_SLAVE_INT_STOP
     // I2C_SLAVE_INT_START
     if (interruptStatus & I2C_SLAVE_INT_STOP) {
-#ifdef DEBUG_I2CSLAVE
-      Print("Stop interrupt received");
-#endif
+      log_trace(LOG_I2C, "Stop interrupt received");
     }
     else if (interruptStatus & I2C_SLAVE_INT_DATA) {
       if (status == I2C_SLAVE_ACT_TREQ) { // transmission request
@@ -204,11 +186,8 @@ void I2CSlaveTask(void *parameters)
           {
             // register read
             uint8_t b = getSlaveData(addr);
-#ifdef DEBUG_I2CSLAVE
-            snprintf(tmp, 64, "byte 1 sent %x\r\n", b);
-            Print(tmp);
-#endif
             ROM_I2CSlaveDataPut(SLAVE_I2C_BASE, b);
+            log_trace(LOG_I2C, "byte 1 sent %x\r\n", b);
             theState = I2C_READY;
             break;
           }
@@ -221,10 +200,7 @@ void I2CSlaveTask(void *parameters)
       // below here, receive requests
       else if (status == I2C_SLAVE_ACT_RREQ_FBR) { // first byte
         addr = ROM_I2CSlaveDataGet(SLAVE_I2C_BASE);
-#ifdef DEBUG_I2CSLAVE
-        snprintf(tmp, 64, "Address %d received\r\n", addr);
-        Print(tmp);
-#endif
+        log_debug(LOG_I2C, "Address %d received\r\n", addr);
         theState = I2C_FIRSTBYTE;
       }
       else if (status == I2C_SLAVE_ACT_RREQ) { // not first byte
@@ -238,9 +214,7 @@ void I2CSlaveTask(void *parameters)
             val = ROM_I2CSlaveDataGet(SLAVE_I2C_BASE);
             setSlaveData(addr, val);
             theState = I2C_READY;
-#ifdef DEBUG_I2CSLAVE
-            Print("wrote byte 1\r\n");
-#endif
+            log_trace(LOG_I2C, "wrote byte 1\r\n");
             break;
           default:
             // error ? return to I2C ready state

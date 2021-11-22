@@ -20,8 +20,6 @@
 #endif // USE_FREERTOS
 
 
-
-
 // clang-format off
 #if defined(REV1) 
 // ------------------------------------------

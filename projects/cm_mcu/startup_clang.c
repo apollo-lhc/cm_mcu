@@ -151,41 +151,53 @@ DEFINE_HANDLER(pwm1_fault);
 // The Nested Vectored Interrupt Controller (NVIC) Table:
 // Mark with .nvic_table (as in the linker script) so it'll be placed correctly
 void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
-    ResetISR,               // The reset handler
-    HANDLER(NmiSR),         // The NMI handler
-    HardFault_handler,      // The hard fault handler -- was FaultISR
-    IntDefaultHandler,      // The MPU fault handler
-    IntDefaultHandler,      // The bus fault handler
-    IntDefaultHandler,      // The usage fault handler
-    0,                      // Reserved
-    0,                      // Reserved
-    0,                      // Reserved
-    0,                      // Reserved
-    vPortSVCHandler,        // SVCall handler
-    IntDefaultHandler,      // Debug monitor handler
-    0,                      // Reserved
-    xPortPendSVHandler,     // The PendSV handler
-    xPortSysTickHandler,    // The SysTick handler
-    IntDefaultHandler,      // GPIO Port A
-    IntDefaultHandler,      // GPIO Port B
-    IntDefaultHandler,      // GPIO Port C
-    IntDefaultHandler,      // GPIO Port D
-    IntDefaultHandler,      // GPIO Port E
-    IntDefaultHandler,      // UART0 Rx and Tx
-    UART1IntHandler,        // UART1 Rx and Tx -- ZYNQ UART
-    IntDefaultHandler,      // SSI0 Rx and Tx
-    I2CSlave0Interrupt,     // I2C0 Master and Slave
-    IntDefaultHandler,      // PWM Fault
-    IntDefaultHandler,      // PWM Generator 0
-    IntDefaultHandler,      // PWM Generator 1
-    IntDefaultHandler,      // PWM Generator 2
-    IntDefaultHandler,      // Quadrature Encoder 0
-    IntDefaultHandler,      // ADC Sequence 0
-    ADCSeq1Interrupt,       // ADC Sequence 1
-    IntDefaultHandler,      // ADC Sequence 2
-    IntDefaultHandler,      // ADC Sequence 3
-    IntDefaultHandler,      // Watchdog timer
-    Timer0AIntHandler,      // Timer 0 subtimer A
+    ResetISR,            // The reset handler
+    HANDLER(NmiSR),      // The NMI handler
+    HardFault_handler,   // The hard fault handler -- was FaultISR
+    IntDefaultHandler,   // The MPU fault handler
+    IntDefaultHandler,   // The bus fault handler
+    IntDefaultHandler,   // The usage fault handler
+    0,                   // Reserved
+    0,                   // Reserved
+    0,                   // Reserved
+    0,                   // Reserved
+    vPortSVCHandler,     // SVCall handler
+    IntDefaultHandler,   // Debug monitor handler
+    0,                   // Reserved
+    xPortPendSVHandler,  // The PendSV handler
+    xPortSysTickHandler, // The SysTick handler
+    IntDefaultHandler,   // GPIO Port A
+    IntDefaultHandler,   // GPIO Port B
+    IntDefaultHandler,   // GPIO Port C
+    IntDefaultHandler,   // GPIO Port D
+    IntDefaultHandler,   // GPIO Port E
+#ifdef REV2
+    UART0IntHandler, // UART0 Rx and Tx
+#else
+    IntDefaultHandler, // UART0 Rx and Tx
+#endif
+#ifdef REV1
+    UART1IntHandler, // UART1 Rx and Tx -- ZYNQ UART
+#else
+    IntDefaultHandler, // UART1 Rx and Tx
+#endif
+    IntDefaultHandler,  // SSI0 Rx and Tx
+    I2CSlave0Interrupt, // I2C0 Master and Slave
+    IntDefaultHandler,  // PWM Fault
+    IntDefaultHandler,  // PWM Generator 0
+    IntDefaultHandler,  // PWM Generator 1
+    IntDefaultHandler,  // PWM Generator 2
+    IntDefaultHandler,  // Quadrature Encoder 0
+    IntDefaultHandler,  // ADC Sequence 0
+    ADCSeq1Interrupt,   // ADC Sequence 1
+    IntDefaultHandler,  // ADC Sequence 2
+    IntDefaultHandler,  // ADC Sequence 3
+    IntDefaultHandler,  // Watchdog timer
+#ifdef REV1
+    Timer0AIntHandler, // Timer 0 subtimer A
+#else // not REV1
+    IntDefaultHandler, // Timer 0 subtimer A
+#endif
     IntDefaultHandler,      // Timer 0 subtimer B
     IntDefaultHandler,      // Timer 1 subtimer A
     IntDefaultHandler,      // Timer 1 subtimer B
@@ -223,7 +235,11 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // SSI2 Rx and Tx
     IntDefaultHandler,      // SSI3 Rx and Tx
     IntDefaultHandler,      // UART3 Rx and Tx
-    UART4IntHandler,        // UART4 Rx and Tx -- FRONT PANEL
+#ifdef REV1
+    UART4IntHandler, // UART4 Rx and Tx -- FRONT PANEL
+#else
+    IntDefaultHandler, // UART4 Rx and Tx
+#endif
     IntDefaultHandler,      // UART5 Rx and Tx
     IntDefaultHandler,      // UART6 Rx and Tx
     IntDefaultHandler,      // UART7 Rx and Tx

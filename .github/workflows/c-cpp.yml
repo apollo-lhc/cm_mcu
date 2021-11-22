@@ -2,8 +2,12 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ master pw-patch-1 ]
+    branches: [ master ]
   pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '30 4 * * 1'
+  workflow_dispatch:
     branches: [ master ]
 
 #  note that I need to manually set the path for the arm-none-eabi-gcc exe
@@ -47,16 +51,25 @@ jobs:
          pwd
     - name: test
       run: echo $FREERTOS_ROOT; echo $PATH; ls -d ~/work/_temp/*
-    - name: make with GCC, debug build
+    - name: make with GCC, debug build, Rev1
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make -k DEBUG=1 REV1=1
-    - name: make with GCC
+    - name: make with GCC, debug build, Rev2
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make REV1=1 clean
-        arm-none-eabi-gcc --version
+        make -k DEBUG=1 REV2=1
+    - name: make with GCC, Rev1
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make REV1=1 clean
         make -k REV1=1 
+    - name: make with GCC, Rev 2
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make REV1=1 clean
+        make -k REV2=1 
 
   build-clang: 
 # this build also needs arm-none-eabi-gcc as some of the clang sysroot stuff depends on it.
@@ -98,7 +111,12 @@ jobs:
          export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
          echo $FREERTOS_ROOT
          pwd
-    - name: make with CLANG
+    - name: make with CLANG, Rev 1
       run: |
          export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
          make -k COMPILER=clang REV1=1
+    - name: make with CLANG, Rev 2
+      run: |
+         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+         make -k COMPILER=clang REV1=1 clean
+         make -k COMPILER=clang REV2=1

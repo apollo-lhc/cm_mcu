@@ -4,7 +4,7 @@ Microcontroller source code, initially targeting the [TI Tiva TM4C1290NCPDT](htt
 ## Project
 The project is a makefile project; you can also use the Eclipse-based [GNU MCU Eclipse](https://gnu-mcu-eclipse.github.io) IDE which integrates well with the Segger debugger. An Eclipse project is included in the repo. Again the build proceeds via `make` even if you use the IDE.  Follow the instructions on this page, also for windows you'll need to install `make`, `echo` and `rm` (as explained on the GNU MCU web page, see below.) You will also need a command-line `git`. The windows compilation has not been extensively tested.
 ## Compiler and source code
-For the compiler use the [generic GNU ARM compiler](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm), [8-2018q4](https://launchpad.net/gcc-arm-embedded/+announcement/15181) release. Since this is a bare-metal application we are using the "arm-none-eabi" version of the tools (i.e., gcc becomes arm-none-eabi-gcc). This compiler is available as a part of the Petalinux suite but it has some weird options on how glibc is compiled so we are _not_ using it for this project.  The compiler linked above is available for Windows, Linux and MacOS. 
+For the compiler use the [generic GNU ARM compiler](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm), 10-2020-q4 release. Since this is a bare-metal application we are using the "arm-none-eabi" version of the tools (i.e., gcc becomes arm-none-eabi-gcc). This compiler is available as a part of the Petalinux suite but it has some weird options on how glibc is compiled so we are _not_ using it for this project.  The compiler linked above is available for Windows, Linux and MacOS. 
 There is also partial support for clang, mainly to allow use of its syntax checking and static code analysis. 
 
 To compile the source code simply type `make` at the top-level directory. To get debugging symbols type `make DEBUG=1`. To see the gory details of the build add `VERBOSE=1` to the command line.
@@ -38,14 +38,13 @@ Please try to use the below versions to avoid unnecessary issues. In particular 
 
 | Software | Release | 
 |----------|---------|
-| arm-none-eabi compiler | 8-2018q4* | 
+| arm-none-eabi compiler | 10-2020-q4 | 
 | FreeRTOS | 10.2 | 
 | Tivaware | included in build|
 
-The code has also been tested with the 9-2019 version of the ARM gcc compiler, which is more aggressive in the warnings. 
 
 ## Continuous Integration (CI)
-We use travis to do a verification of the code base during pull requests. The PR triggers a simply build of the code with warnings as errors and fails if there are compliation warnings or errors. The CI also builds binaries when new releases are created and populates the release page with these binaries, which are the authoratative ones (these binaries are built without debugging.) 
+We use Github Actions to do a verification of the code base during pull requests. The PR triggers a simply build of the code with warnings as errors and fails if there are compliation warnings or errors. The CI also builds binaries when new releases are created and populates the release page with these binaries, which are the authoratative ones (these binaries are built without debugging.) 
 
 ## Code structure overview
 The repository contains two directors that are imported from the tivaware distribution (`inc` and `driverlib`). The `common` directory contains software that can be used across several projects. The `projects` directory contains the main program files. The main binary lives in `projects/cm_mcu`.

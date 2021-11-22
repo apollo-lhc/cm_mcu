@@ -109,6 +109,15 @@ unsigned long g_ulBitTime;
 
 QueueHandle_t xZynqMonQueue;
 
+
+// category | count
+// -------- | -----
+// FPGA     | 4*N_FPGA
+// GIT      | 20 chars
+// ADC      | N_ADC+1 (21)
+// PSMON    | 2*10*N_Devices (2 is for number of pages)
+// uptime   | 20 chars
+
 #ifdef REV1
 extern uint32_t g_ui32SysClock;
 tSoftUART g_sUART;
@@ -195,7 +204,7 @@ ZMUartCharPut(unsigned char c)
 #elif defined(REV2)
 void ZMUartCharPut(unsigned char c)
 {
-  UARTCharPut(UART4_BASE, c); // CHANGE TO ACTUAL UART USED
+  UARTCharPut(UART4_BASE, c);
 }
 #else
 #error "Unknown board revision"
@@ -259,8 +268,10 @@ void ZynqMonTask(void *parameters)
       }
     }
     if (enable) {
+#ifdef REV1
       // Enable the interrupts during transmission
       MAP_IntEnable(INT_TIMER0A);
+#endif // REV1
 
       if (inTestMode) {
 #ifdef ZYNQMON_TEST_MODE
@@ -324,7 +335,7 @@ void ZynqMonTask(void *parameters)
         last = pdTICKS_TO_S(dcdc_args.updateTick);
         stale = checkStale(last, now);
 
-        for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
+        for (int j = 0; j < 5; ++j) { // loop over supplies FIXME hardcoded value
           for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
             for (int k = 0; k < 5; ++k) {               // loop over FIRST FIVE commands
               int index =

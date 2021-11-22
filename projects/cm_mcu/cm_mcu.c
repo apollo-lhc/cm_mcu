@@ -24,6 +24,7 @@
 #include "common/pinout.h"
 #include "common/pinsel.h"
 #include "common/smbus.h"
+#include "common/log.h"
 #include "CommandLineTask.h"
 #include "InterruptHandlers.h"
 #include "MonitorTask.h"
@@ -106,10 +107,10 @@ void SystemInitInterrupts()
   // this also sets up the interrupts
 #if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
-  UART4Init(g_ui32SysClock); // front panel UART
 #elif defined(REV2)
   UART0Init(g_ui32SysClock); // ZYNQ UART
 #endif
+  UART4Init(g_ui32SysClock); // front panel UART in Rev1 and Zynq comms in Rev2
 
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
@@ -231,12 +232,18 @@ const char *gitVersion()
   const char * gitVersion = FIRMWARE_VERSION BUILD_TYPE;
   return gitVersion;
 }
+
 //
 int main(void)
 {
   SystemInit();
 
   initFPGAMon();
+
+  // all facilities start at INFO
+  for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
+    log_set_level(LOG_INFO, i);
+  }
 
   // mutex for the UART output
   xUARTMutex = xSemaphoreCreateMutex();
@@ -272,23 +279,23 @@ int main(void)
     fpga_args.pm_values[i] = -999.f;
 
   // start the tasks here
-  xTaskCreate(PowerSupplyTask, "POW", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(PowerSupplyTask, "POW", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(LedTask, "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 1, NULL);
 #ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+  xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTask, "XIMON", configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-//  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
 //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
@@ -354,7 +361,7 @@ uintptr_t __stack_chk_guard = 0xdeadbeef;
 
 void __stack_chk_fail(void)
 {
-  Print("Stack smashing detected\r\n");
+  log_fatal(LOG_SERVICE, "Stack smashing detected\r\n");
   __asm volatile("cpsid i"); /* disable interrupts */
   __asm volatile("bkpt #0"); /* break target */
   for (;;)
@@ -381,8 +388,6 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */
-  (void)pxTask;
-  (void)pcTaskName;
   taskDISABLE_INTERRUPTS();
   char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
@@ -410,9 +415,7 @@ void vApplicationIdleHook(void)
   static int HW = 999;
   int nHW = SystemStackWaterHighWaterMark();
   if (nHW < HW) {
-    char tmp[64];
-    snprintf(tmp, 64, "Stack canary now %d\r\n", nHW);
-    Print(tmp);
+    log_info(LOG_SERVICE, "Stack canary now %d\r\n", nHW);
     HW = nHW;
 #ifdef DUMP_STACK
     const uint32_t *p = getSystemStack();

@@ -16,6 +16,8 @@
 #include "queue.h"
 #include "semphr.h"
 
+#include "common/printf.h"
+
 #ifdef __INTELLISENSE__
 #define __fp16 float
 #endif // __INTELLISENSE

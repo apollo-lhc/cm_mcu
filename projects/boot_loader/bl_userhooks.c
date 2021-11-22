@@ -23,6 +23,7 @@
 #include "boot_loader/bl_config.h"
 #include "boot_loader/bl_uart.h"
 
+#include "common/printf.h"
 #include "common/microrl.h"
 #include "boot_loader/rl_config.h"
 

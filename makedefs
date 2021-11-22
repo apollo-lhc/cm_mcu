@@ -109,6 +109,7 @@ CFLAGS=-mthumb             \
        -Wall               \
        -pedantic           \
        -DPART_${PART}      \
+       -Wdouble-promotion \
        -fstack-usage \
        -c
 
@@ -130,7 +131,7 @@ LD=${PREFIX}-ld
 #
 # The flags passed to the linker.
 #
-LDFLAGS=--gc-sections
+LDFLAGS=--gc-sections 
 
 #
 # Get the location of libgcc.a from the GCC front-end.
@@ -141,7 +142,6 @@ LIBGCC:=${shell ${CC} ${CFLAGS} -print-libgcc-file-name}
 # Get the location of libc.a from the GCC front-end.
 #
 LIBC:=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
-
 #
 # Get the location of libm.a from the GCC front-end.
 #
@@ -197,7 +197,16 @@ LD=ld.lld
 #
 SIZE=llvm-size
 
-
+#
+# The flags passed to the linker.
+#
+LDFLAGS= 
+#LDFLAGS= --gc-sections -flto
+# nota bene, if I use --gc-sections, -flto and --lto-03 for compiler and linker, 
+# respectively, for CLANG, the cm_mcu binary has basically zero size, 
+# all the relevant files are stripped. but the boot loader binary is good.
+# if I leave those out, the boot_loader binary is gigantic. Weird. 
+# therefore: do not use the clang binaries for anything but static code analysis. 
 
 #
 # Set the compiler CPU/FPU options.
@@ -228,13 +237,16 @@ CFLAGS=                     \
        -DPART_${PART}       \
        --sysroot=${SYSROOT} \
        -Wall                \
-	   -pedantic            \
+       -pedantic            \
+       -fno-exceptions      \
+       -fno-rtti            \
+       -fomit-frame-pointer \
        -c
 
 ifdef DEBUG
 CFLAGS+=-g -D DEBUG -O0
 else
-CFLAGS+=-Oz 
+CFLAGS+=-Oz
 endif
 
 ## THESE BELOW GET CALLED FROM GCC
@@ -290,7 +302,7 @@ ${COMPILER}${SUFFIX}/%.o: %.c
 	 else                                                 \
 	     echo ${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<}); \
 	 fi
-	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<})
+	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} ${<}
 ifneq ($(findstring CYGWIN, ${os}), )
 	@if [ -e ${@:.o=.d} ];                                   \
 	then                                                     \
@@ -347,14 +359,14 @@ ${COMPILER}${SUFFIX}/%.axf:
 	          --entry ${ENTRY_${notdir ${@:.axf=}}}                       \
 	          ${LDFLAGSgcc_${notdir ${@:.axf=}}}                          \
 	          ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})                  \
-	          '${LIBM}' '${LIBC}' '${LIBGCC}';                            \
+	          '${LIBM}' '${LIBC}'  '${LIBGCC}'; \
 	     echo ${SIZE} ${@} ;                                              \
 	 fi;                                                                  \
 	${LD} -T $${ldname}                                                   \
 	      --entry ${ENTRY_${notdir ${@:.axf=}}}                           \
 	      ${LDFLAGSgcc_${notdir ${@:.axf=}}}                              \
 	      ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})                      \
-	      '${LIBM}' '${LIBC}' '${LIBGCC}'
+	      '${LIBM}' '${LIBC}'  '${LIBGCC}' 
 	@${OBJCOPY} -O binary ${@} ${@:.axf=.bin}
 	@${SIZE} ${@}
 

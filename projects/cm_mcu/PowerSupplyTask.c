@@ -19,6 +19,7 @@
 #include "common/power_ctl.h"
 #include "common/uart.h"
 #include "common/utils.h"
+#include "common/log.h"
 
 // FreeRTOS includes
 #include "FreeRTOS.h"
@@ -27,6 +28,7 @@
 
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
+
 
 enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
 
@@ -47,19 +49,11 @@ static uint16_t check_ps_oks(void)
   return status;
 }
 
-#ifdef DEBUG
-void Print(const char *str);
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
-
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
 {
-  char tmp[64];
-  snprintf(tmp, 64, "failure set: fail, supply_mask,bitset =  %x,%x,%x\r\n", failed_mask,
-           supply_ok_mask, supply_bitset);
-  Print(tmp);
+  log_error(LOG_PWRCTL, "psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n", failed_mask,
+      supply_ok_mask, supply_bitset);
 }
-#endif // DEBUG
 
 static char *power_system_state_names[] = {
     "FAIL", "INIT", "OFF", "L1ON", "L2ON", "L3ON", "L4ON", "L5ON", "ON",
@@ -74,11 +68,6 @@ const char *getPowerControlStateName(enum power_system_state s)
 void PowerSupplyTask(void *parameters)
 {
 
-  // -------------------------------------------------
-  //
-  // REV 1
-  //
-  // -------------------------------------------------
 
   // compile-time sanity check
   static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_F2_MASK | PS_ENS_F1_MASK), "mask");
@@ -120,13 +109,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
   }
-  // -------------------------------------------------
-  //
-  // REV 2
-  //
-  // -------------------------------------------------
-  // add REV2 here 
-#ifdef ECN001
+#if defined( ECN001) || defined (REV2)
   // configure the LGA80D supplies. This call takes some time.
   LGA80D_init();
 #endif // ECN001
@@ -163,7 +146,7 @@ void PowerSupplyTask(void *parameters)
           break;
       }
     }
-    bool ignorefail =true; // HACK THIS NEEDS TO BE FIXED TODO FIXME
+    bool ignorefail =false; // HACK THIS NEEDS TO BE FIXED TODO FIXME
     // Check the state of BLADE_POWER_EN.
     bool blade_power_enable = (read_gpio_pin(BLADE_POWER_EN) == 1);
 
@@ -208,9 +191,7 @@ void PowerSupplyTask(void *parameters)
         if (supply_off && !ignorefail) {
           // log erroring supplies
           failed_mask = (~supply_bitset) & supply_ok_mask;
-#ifdef DEBUG
           printfail(failed_mask, supply_ok_mask, supply_bitset);
-#endif // DEBUG
           errbuffer_power_fail(failed_mask);
           // turn off all supplies
           disable_ps();
@@ -218,12 +199,14 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else if (external_alarm) {
+          log_info(LOG_PWRCTL, "external alarm power down\r\n");
           errbuffer_put(EBUF_POWER_OFF_TEMP, 0);
           // turn off all supplies
           disable_ps();
           nextState = POWER_FAILURE;
         }
         else if (!blade_power_enable || cli_powerdown_request) {
+          log_info(LOG_PWRCTL, "power-down requested\r\n");
           disable_ps();
           errbuffer_put(EBUF_POWER_OFF, 0);
           nextState = POWER_OFF;
@@ -237,6 +220,7 @@ void PowerSupplyTask(void *parameters)
         // start power-on sequence
         if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
             !power_supply_alarm) {
+          log_info(LOG_PWRCTL, "power-up requested\r\n");
           turn_on_ps_at_prio(f2_enable, f1_enable, 1);
           errbuffer_put(EBUF_POWER_ON, 0);
           nextState = POWER_L1ON;
@@ -249,9 +233,7 @@ void PowerSupplyTask(void *parameters)
       case POWER_L1ON: {
         if (((supply_bitset & supply_ok_mask_L1) != supply_ok_mask_L1) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L1;
-#ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L1, supply_bitset);
-#endif // DEBUG
           errbuffer_power_fail(failed_mask);
           disable_ps();
           power_supply_alarm = true;
@@ -267,9 +249,7 @@ void PowerSupplyTask(void *parameters)
       case POWER_L2ON: {
         if (((supply_bitset & supply_ok_mask_L2) != supply_ok_mask_L2) && !ignorefail){
           failed_mask = (~supply_bitset) & supply_ok_mask_L2;
-#ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L2, supply_bitset);
-#endif // DEBUG
           errbuffer_power_fail(failed_mask);
           disable_ps();
           power_supply_alarm = true;
@@ -292,9 +272,7 @@ void PowerSupplyTask(void *parameters)
       case POWER_L4ON: {
         if (((supply_bitset & supply_ok_mask_L4) != supply_ok_mask_L4) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L4;
-#ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L4, supply_bitset);
-#endif // DEBUG
           errbuffer_power_fail(failed_mask);
 
           disable_ps();
@@ -311,9 +289,7 @@ void PowerSupplyTask(void *parameters)
       case POWER_L5ON: {
         if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5)&& !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
-#ifdef DEBUG
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
-#endif // DEBUG
           errbuffer_power_fail(failed_mask);
 
           disable_ps();
@@ -384,14 +360,10 @@ void PowerSupplyTask(void *parameters)
         }
       }
     }
-#ifdef DEBUG
     if (currentState != nextState) {
-      char tmp[64];
-      snprintf(tmp, 64, "PowerSupplyTask: change from state %s to %s\r\n",
-               power_system_state_names[currentState], power_system_state_names[nextState]);
-      Print(tmp);
+      log_debug(LOG_PWRCTL, "PowerSupplyTask: change from state %s to %s\r\n", power_system_state_names[currentState],
+                power_system_state_names[nextState]);
     }
-#endif
     currentState = nextState;
 
     // wait here for the x msec, where x is 2nd argument below.
