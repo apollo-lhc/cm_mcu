@@ -12,6 +12,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h> // memset
+#include <time.h> // struct tm
+
+// ROM header must come before MAP header
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/hibernate.h"
 
 #include "Tasks.h"
 #include "MonitorTask.h"
@@ -348,3 +354,33 @@ void initFPGAMon()
 #endif // REV1
   }
 }
+
+#ifdef REV2
+// initialize the real-time clock, which lives in the Hibernate Module in the TM4C1294NCPDT
+extern uint32_t g_ui32SysClock;
+// TODO: change to MAP_ functions to save space
+
+void InitRTC()
+{
+  // Enable the RTC module
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_HIBERNATE);
+  // set the clock. the argument appears to be unused in the function below.
+  HibernateClockConfig(HIBERNATE_OSC_HIGHDRIVE | HIBERNATE_OSC_DISABLE);
+  HibernateEnableExpClk(g_ui32SysClock);
+  // set the RTC to calendar mode
+  HibernateCounterMode(HIBERNATE_COUNTER_24HR);
+  // set to a default value
+  struct tm now = {
+    .tm_sec = 0,
+    .tm_min = 0,
+    .tm_hour = 0,
+    .tm_mday = 23,
+    .tm_mon = 10,
+    .tm_year = 2021,
+    .tm_wday = 0,
+    .tm_yday = 0,
+    .tm_isdst = 0,
+  };
+  HibernateCalendarSet(&now);
+}
+#endif // REV2
