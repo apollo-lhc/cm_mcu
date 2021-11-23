@@ -4,9 +4,10 @@
  *  Created on: Jan 18, 2021
  *      Author: fatimayousuf
  */
-
+#include <time.h>
 #include "BoardCommands.h"
 #include "common/pinsel.h"
+#include "driverlib/hibernate.h"
 
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char* m)
@@ -127,4 +128,26 @@ BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
+
+BaseType_t time_ctl(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  if (argc == 3) {
+    if (strncmp(argv[1], "set", 2) == 0) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Does nothing yet (TM)\r\n");
+      write_gpio_pin(JTAG_FROM_SM, 1);
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Usage: jtag_sm_ctl on/off (got %s)\r\n", argv[1]);
+    }
+  }
+  else { // all other cases
+    struct tm now;
+    HibernateCalendarGet(&now);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Time now: %02d:%02d:%02d %02d/%02d/%d\r\n", 
+      now.tm_hour, now.tm_min, now.tm_sec, now.tm_mon+1, now.tm_mday, now.tm_year+1900);
+  }
+  return pdFALSE;
+}
+
 #endif

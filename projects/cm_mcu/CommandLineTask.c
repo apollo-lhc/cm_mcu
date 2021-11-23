@@ -676,6 +676,12 @@ static struct command_t commands[] = {
         TaskStatsCommand,
        "Displays a table showing the state of each FreeRTOS task\r\n", 0
     },
+    {
+      "time",
+      time_ctl,
+      "time display and control\r\n", 
+      -1,
+    },
     {"uptime", uptime, "Display uptime in minutes\r\n", 0},
     {"version", ver_ctl, "Display information about MCU firmware version\r\n", 0},
     {"watchdog", watchdog_ctl, "Display status of the watchdog task\r\n", 0},
