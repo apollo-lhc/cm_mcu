@@ -17,6 +17,8 @@
 // ROM header must come before MAP header
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
+#include "inc/hw_types.h"
+#include "inc/hw_hibernate.h"
 #include "driverlib/hibernate.h"
 
 #include "Tasks.h"
@@ -364,9 +366,15 @@ void InitRTC()
 {
   // Enable the RTC module
   SysCtlPeripheralEnable(SYSCTL_PERIPH_HIBERNATE);
+  // based on 7.4.1 of the data sheet
+  HWREG(HIB_IM) = HIB_IM_WC;
   // set the clock. the argument appears to be unused in the function below.
-  HibernateClockConfig(HIBERNATE_OSC_HIGHDRIVE | HIBERNATE_OSC_DISABLE);
   HibernateEnableExpClk(g_ui32SysClock);
+  // wait for the WC interrupt to be set
+  while (!(HWREG(HIB_MIS) & HIB_MIS_WC))
+    ;
+
+  HibernateClockConfig(HIBERNATE_OSC_HIGHDRIVE | HIBERNATE_OSC_DISABLE);
   // set the RTC to calendar mode
   HibernateCounterMode(HIBERNATE_COUNTER_24HR);
   // set to a default value
