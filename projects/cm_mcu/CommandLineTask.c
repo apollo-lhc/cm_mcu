@@ -679,7 +679,7 @@ static struct command_t commands[] = {
     {
       "time",
       time_ctl,
-      "time display and control\r\n", 
+      "(set HH:MM:SS MM/DD/YYYY|<none)\r\nRTC set and display\r\n",
       -1,
     },
     {"uptime", uptime, "Display uptime in minutes\r\n", 0},

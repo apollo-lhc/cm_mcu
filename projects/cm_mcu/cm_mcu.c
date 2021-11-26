@@ -237,8 +237,10 @@ const char *gitVersion()
 int main(void)
 {
   SystemInit();
+  InitRTC();
 
   initFPGAMon();
+
 
   // all facilities start at INFO
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {

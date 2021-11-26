@@ -226,25 +226,25 @@ void LGA80D_init(void)
                               &page);
       if (r) {
         log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
-        log_error(LOG_SERVICE, "error(0)\r\n");
+        log_error(LOG_SERVICE, "LGA80D(0)\r\n");
       }
       // actual command -- frequency switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[2],
                           (uint8_t *)&freqlin11);
       if (r) {
-        log_error(LOG_SERVICE, "error(1)\r\n");
+        log_error(LOG_SERVICE, "LGA80D(1)\r\n");
       }
       // actual command -- vout_droop switch
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[5],
                           (uint8_t *)&drooplin11);
       if (r) {
-        log_error(LOG_SERVICE, "error(2)\r\n");
+        log_error(LOG_SERVICE, "LGA80D(2)\r\n");
       }
       // actual command -- multiphase_ramp_gain switch
       uint8_t val = 0x7U; // by suggestion of Artesian
       r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
       if (r) {
-        log_error(LOG_SERVICE, "error(3)\r\n");
+        log_error(LOG_SERVICE, "LGA80D(3)\r\n");
       }
     }
   }
@@ -360,35 +360,36 @@ void initFPGAMon()
 #ifdef REV2
 // initialize the real-time clock, which lives in the Hibernate Module in the TM4C1294NCPDT
 extern uint32_t g_ui32SysClock;
-// TODO: change to MAP_ functions to save space
 
 void InitRTC()
 {
   // Enable the RTC module
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_HIBERNATE);
-  // based on 7.4.1 of the data sheet
-  HWREG(HIB_IM) = HIB_IM_WC;
-  // set the clock. the argument appears to be unused in the function below.
-  HibernateEnableExpClk(g_ui32SysClock);
-  // wait for the WC interrupt to be set
-  while (!(HWREG(HIB_MIS) & HIB_MIS_WC))
-    ;
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_HIBERNATE);
+  // wait for it to be ready
+  while (! ROM_SysCtlPeripheralReady(SYSCTL_PERIPH_HIBERNATE) )
+  {
 
-  HibernateClockConfig(HIBERNATE_OSC_HIGHDRIVE | HIBERNATE_OSC_DISABLE);
+  }
+  // Enable the clocking. AFAIK the argument is not used
+  ROM_HibernateEnableExpClk(g_ui32SysClock);
+  // Set to use external crystal with 12 pF drive
+  ROM_HibernateClockConfig(HIBERNATE_OSC_LOWDRIVE );
+  // enable the RTC
+  ROM_HibernateRTCEnable();
   // set the RTC to calendar mode
-  HibernateCounterMode(HIBERNATE_COUNTER_24HR);
+  ROM_HibernateCounterMode(HIBERNATE_COUNTER_24HR);
   // set to a default value
   struct tm now = {
     .tm_sec = 0,
     .tm_min = 0,
     .tm_hour = 0,
     .tm_mday = 23,
-    .tm_mon = 10,
-    .tm_year = 2021,
+    .tm_mon = 10, // month goes from 0-11
+    .tm_year = 121, // year is since 1900
     .tm_wday = 0,
     .tm_yday = 0,
     .tm_isdst = 0,
   };
-  HibernateCalendarSet(&now);
+  ROM_HibernateCalendarSet(&now);
 }
 #endif // REV2
