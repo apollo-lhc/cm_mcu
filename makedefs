@@ -109,8 +109,8 @@ CFLAGS=-mthumb             \
        -Wall               \
        -pedantic           \
        -DPART_${PART}      \
-       -Wdouble-promotion \
-       -fstack-usage \
+       -Wdouble-promotion  \
+       -fstack-usage       \
        -c
 
 #
@@ -131,7 +131,7 @@ LD=${PREFIX}-ld
 #
 # The flags passed to the linker.
 #
-LDFLAGS=--gc-sections 
+LDFLAGS=--gc-sections #-specs=nano.specs -specs=nosys.specs
 
 #
 # Get the location of libgcc.a from the GCC front-end.

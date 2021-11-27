@@ -199,6 +199,11 @@ void SystemInitInterrupts()
 
   setupActiveLowPins();
 
+#ifdef REV2
+  // RTC in the Hibernation module
+  InitRTC();
+#endif // REV2
+
   // SYSTICK timer -- this is already enabled in the portable layer
   return;
 }
@@ -239,6 +244,7 @@ int main(void)
   SystemInit();
 
   initFPGAMon();
+
 
   // all facilities start at INFO
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
