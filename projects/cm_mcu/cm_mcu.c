@@ -199,6 +199,11 @@ void SystemInitInterrupts()
 
   setupActiveLowPins();
 
+#ifdef REV2
+  // RTC in the Hibernation module
+  InitRTC();
+#endif // REV2
+
   // SYSTICK timer -- this is already enabled in the portable layer
   return;
 }
@@ -237,7 +242,6 @@ const char *gitVersion()
 int main(void)
 {
   SystemInit();
-  InitRTC();
 
   initFPGAMon();
 

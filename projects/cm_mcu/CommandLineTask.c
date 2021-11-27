@@ -676,12 +676,14 @@ static struct command_t commands[] = {
         TaskStatsCommand,
        "Displays a table showing the state of each FreeRTOS task\r\n", 0
     },
+#ifdef REV2
     {
       "time",
       time_ctl,
       "(set HH:MM:SS MM/DD/YYYY|<none)\r\nRTC set and display\r\n",
       -1,
     },
+#endif // REV2
     {"uptime", uptime, "Display uptime in minutes\r\n", 0},
     {"version", ver_ctl, "Display information about MCU firmware version\r\n", 0},
     {"watchdog", watchdog_ctl, "Display status of the watchdog task\r\n", 0},
