@@ -187,11 +187,11 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
   else { // all other cases
     uint32_t ui32Date = HWREG(HIB_CAL1);
     if ( ! (ui32Date & HIB_CAL1_VALID )) {
-      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "cal invalid\r\n");
+      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: RTC state invalid\r\n", argv[0]);
     }
     else {
     	struct tm now;
-    	HibernateCalendarGet(&now);
+    	ROM_HibernateCalendarGet(&now);
     	copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Time now: %02d:%02d:%02d %02d/%02d/%d\r\n",
     			now.tm_hour, now.tm_min, now.tm_sec, now.tm_mon+1, now.tm_mday, now.tm_year+1900);
     }
