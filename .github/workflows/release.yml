@@ -39,15 +39,32 @@ jobs:
          export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
          echo $FREERTOS_ROOT
          pwd
-     - name: make with GCC
+     - name: make with GCC for Rev1
        run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
-        make clean
-        make -k NO_ECN001=1 
-        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001.bin
-        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001.axf
-        make clean
-        make -k
+        make clean REV1=1
+        make -k NO_ECN001=1 REV1=1
+        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001_rev1.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_rev1.axf
+        make clean REV1=1
+        make -k REV1=1
+        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_rev1.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_rev1.axf
+        cp projects/boot_loader/gcc/bl_main.bin bl_main_rev1.bin
+        cp projects/boot_loader/gcc/bl_main.axf bl_main_rev1.axf
+     - name: make with GCC for Rev2
+       run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make clean REV2=1
+        make -k NO_ECN001=1 REV2=1
+        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001_rev2.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_rev2.axf
+        make clean REV2=1
+        make -k REV2=1
+        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_rev2.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_rev2.axf
+        cp projects/boot_loader/gcc/bl_main.bin bl_main_rev2.bin
+        cp projects/boot_loader/gcc/bl_main.axf bl_main_rev2.axf
      - name: test
        run: pwd; ls -R ; find . -type f -name '*.axf' -print
      - uses: "marvinpinto/action-automatic-releases@latest"
@@ -55,8 +72,5 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            ./projects/cm_mcu/gcc/cm_mcu.bin
-            ./projects/boot_loader/gcc/bl_main.bin
-            ./projects/cm_mcu/gcc/cm_mcu.axf
-            ./projects/boot_loader/gcc/bl_main.axf
             ./cm_mcu*.*
+            ./bl_main*.*
