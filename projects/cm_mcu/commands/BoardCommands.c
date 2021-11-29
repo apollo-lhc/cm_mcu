@@ -7,6 +7,7 @@
 #include <time.h>
 #include "BoardCommands.h"
 #include "common/pinsel.h"
+#include "inc/hw_hibernate.h"
 #include "driverlib/hibernate.h"
 
 // This command takes no arguments
@@ -74,11 +75,11 @@ BaseType_t board_id_info(int argc, char **argv, char* m)
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn) & 0xff;
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08x\r\n", (uint32_t)sn);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08lx\r\n", (uint32_t)sn);
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %x\r\n", num);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %x\r\n", rev);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly config: %x\r\n", ff);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lx\r\n", num);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lx\r\n", rev);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly config: %lx\r\n", ff);
 
   return pdFALSE;
 }
@@ -96,7 +97,7 @@ BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
       write_gpio_pin(JTAG_FROM_SM, 0);
     } 
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Usage: jtag_sm_ctl on/off (got %s)\r\n", argv[1]);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Usage: %s on/off (got %s)\r\n", argv[0], argv[1]);
     }
   }
   else if ( argc == 3) {
@@ -128,7 +129,6 @@ BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
-#include "inc/hw_hibernate.h"
 BaseType_t time_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;

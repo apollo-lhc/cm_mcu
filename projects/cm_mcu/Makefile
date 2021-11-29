@@ -13,6 +13,7 @@ PART=TM4C1290NCPDT
 # The base directory for TivaWare.
 #
 ROOT=../..
+BASE=$(shell cd ../..; pwd)
 
 # if the environment variable is not set, this is used
 FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
@@ -47,15 +48,14 @@ endif
 #
 # Where to find source files that do not live in this directory.
 #
-VPATH=../drivers
+VPATH=${BASE}/driverlib
 VPATH+=commands
 # board specific 
-VPATH+=../../common
+VPATH+=${BASE}/common
 # FreeRTOS
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
-# hack
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -102,7 +102,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev2.o
 endif 
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinsel.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/i2c_reg.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/uart.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/LocalUart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/utils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/log.o
@@ -142,7 +142,14 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/heap_4.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/printf.o
 ## TivaWare
-${COMPILER}/cm_mcu.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
+${COMPILER}/cm_mcu.axf: ${COMPILER}/uart.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/sysctl.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/gpio.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/interrupt.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/hibernate.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/adc.o
+
+#${COMPILER}/cm_mcu.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 ${COMPILER}/cm_mcu.axf: cm_mcu.ld
 SCATTERgcc_cm_mcu=cm_mcu.ld
 ENTRY_cm_mcu=ResetISR
@@ -160,3 +167,5 @@ ${COMPILER}/cm_mcu.o: ${SRCS} ${HDRS}
 ifneq (${MAKECMDGOALS},clean)
 -include ${wildcard ${COMPILER}/*.d} __dummy__
 endif
+
+.PHONY: ${COMPILER}

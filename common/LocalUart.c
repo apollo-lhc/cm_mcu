@@ -6,7 +6,7 @@
  */
 #include <string.h>
 
-#include "common/uart.h"
+#include "common/LocalUart.h"
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
@@ -39,7 +39,7 @@ void UART4Init(uint32_t ui32SysClock)
   // Enable the UART interrupt.
   //
 #ifdef USE_FREERTOS
-  IntPrioritySet(INT_UART4, configKERNEL_INTERRUPT_PRIORITY);
+  MAP_IntPrioritySet(INT_UART4, configKERNEL_INTERRUPT_PRIORITY);
 #endif // USE_FREERTOS
   MAP_IntEnable(INT_UART4);
   MAP_UARTIntEnable(UART4_BASE, UART_INT_RX | UART_INT_RT);
@@ -63,7 +63,7 @@ void UART1Init(uint32_t ui32SysClock)
   // Enable the UART interrupt.
   //
 #ifdef USE_FREERTOS
-  IntPrioritySet(INT_UART1, configKERNEL_INTERRUPT_PRIORITY);
+  MAP_IntPrioritySet(INT_UART1, configKERNEL_INTERRUPT_PRIORITY);
 #endif // USE_FREERTOS
   MAP_IntEnable(INT_UART1);
   MAP_UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
@@ -86,7 +86,7 @@ void UART0Init(uint32_t ui32SysClock)
   // Enable the UART interrupt.
   //
 #ifdef USE_FREERTOS
-  IntPrioritySet(INT_UART0, configKERNEL_INTERRUPT_PRIORITY);
+  MAP_IntPrioritySet(INT_UART0, configKERNEL_INTERRUPT_PRIORITY);
 #endif // USE_FREERTOS
   MAP_IntEnable(INT_UART0);
   MAP_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);

@@ -17,8 +17,6 @@
 // ROM header must come before MAP header
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
-#include "inc/hw_types.h"
-#include "inc/hw_hibernate.h"
 #include "driverlib/hibernate.h"
 
 #include "Tasks.h"
@@ -33,7 +31,6 @@
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2
-//#define FPGA_MON_NDEVICES           (FPGA_MON_NDEVICES_PER_FPGA * FPGA_MON_NFPGA)
 #define FPGA_MON_NDEVICES           8
 #define FPGA_MON_NCOMMANDS          1
 #define FPGA_MON_NVALUES_PER_DEVICE 1

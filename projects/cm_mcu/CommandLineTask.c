@@ -65,10 +65,10 @@ static BaseType_t clock_ctl(int argc, char **argv, char* m)
   if (!((i == 1) || (i == 2))) {
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "Invalid mode %d for clock, only 1 (reset) and 2 (program) supported\r\n", i);
+                 "Invalid mode %ld for clock, only 1 (reset) and 2 (program) supported\r\n", i);
     return pdFALSE;
   }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s mode set to %d. \r\n", argv[0], i);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s mode set to %ld. \r\n", argv[0], i);
   if (i == 1) {
     status = initialize_clock();
     if (status == 0)
@@ -233,14 +233,14 @@ static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
         uint32_t ulStatsAsPercentage = pxTaskStatusArray[x].ulRunTimeCounter / ulTotalRunTime;
 
         if (ulStatsAsPercentage > 0UL) {
-          snprintf(pcWriteBuffer, bufferLength, "%s\t%12u\t%2u%%\r\n",
+          snprintf(pcWriteBuffer, bufferLength, "%s\t%12lu\t%2lu%%\r\n",
                    pxTaskStatusArray[x].pcTaskName, pxTaskStatusArray[x].ulRunTimeCounter,
                    ulStatsAsPercentage);
         }
         else {
           // If the percentage is zero here then the task has
           // consumed less than 1% of the total run time.
-          snprintf(pcWriteBuffer, bufferLength, "%s\t%12u\t<1%%\r\n",
+          snprintf(pcWriteBuffer, bufferLength, "%s\t%12lu\t<1%%\r\n",
                    pxTaskStatusArray[x].pcTaskName, pxTaskStatusArray[x].ulRunTimeCounter);
         }
         size_t added = strlen((char *)pcWriteBuffer);
@@ -258,7 +258,7 @@ static BaseType_t uptime(int argc, char **argv, char* m)
 {
   int s = SCRATCH_SIZE;
   TickType_t now = xTaskGetTickCount() / (configTICK_RATE_HZ * 60); // time in minutes
-  snprintf(m, s, "%s: MCU uptime %d minutes\r\n", argv[0], now);
+  snprintf(m, s, "%s: MCU uptime %ld minutes\r\n", argv[0], now);
   return pdFALSE;
 }
 

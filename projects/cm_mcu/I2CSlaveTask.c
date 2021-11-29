@@ -18,7 +18,7 @@
 #include "InterruptHandlers.h"
 #include "Tasks.h"
 #include "MonitorTask.h"
-#include "common/uart.h"
+#include "common/LocalUart.h"
 #include "common/log.h"
 #include "I2CSlaveTask.h"
 

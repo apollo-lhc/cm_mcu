@@ -11,7 +11,6 @@
 #include <stddef.h>
 
 // local includes
-#include "common/uart.h"
 #include "common/utils.h"
 #include "common/power_ctl.h"
 #include "common/pinout.h"
@@ -36,7 +35,6 @@ void LedTask(void *parameters)
 {
   TickType_t xLastWakeTime = xTaskGetTickCount();
   uint32_t callcnt = 0;
-
   enum LEDpattern greenLedPattern = OFF;
   enum LEDpattern blueLedPattern = OFF;
   enum LEDpattern redLedPattern = OFF;

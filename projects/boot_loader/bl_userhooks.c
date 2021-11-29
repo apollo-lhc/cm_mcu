@@ -29,7 +29,7 @@
 
 #include "boot_loader/bl_userhooks.h"
 
-#include "common/uart.h"
+#include "common/LocalUart.h"
 
 
 #define LONG_DELAY 2500000

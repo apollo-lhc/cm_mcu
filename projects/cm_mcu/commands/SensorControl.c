@@ -191,7 +191,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char* m)
     int copied = 0;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ALARM status\r\n", argv[0]);
     int32_t stat = getAlarmStatus();
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08x\r\n", stat);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08lx\r\n", stat);
 
     float ff_val = getAlarmTemperature(FF);
     int tens, frac;
@@ -666,7 +666,7 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
       if (checkStale(last, now)) {
         int mins = (now - last) / 60;
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                           "%s: stale data, last update %d minutes ago (%x, %x)\r\n", argv[0], mins,
+                           "%s: stale data, last update %d minutes ago (%ld, %ld)\r\n", argv[0], mins,
                            now, last);
       }
 
@@ -742,8 +742,8 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
                        argv[0], which, (NSUPPLIES_PS-1));
     return pdFALSE;
   }
-  BaseType_t regAddress  = strtol(argv[2], NULL, 16);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s, reg 0x%02x\r\n", argv[0],
+  UBaseType_t regAddress  = strtoul(argv[2], NULL, 16);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s, reg 0x%02lx\r\n", argv[0],
                      page, pm_addrs_dcdc[which].name, regAddress);
 
 

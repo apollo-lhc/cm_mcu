@@ -17,7 +17,6 @@
 #include "common/pinout.h"
 #include "common/pinsel.h"
 #include "common/power_ctl.h"
-#include "common/uart.h"
 #include "common/utils.h"
 #include "common/log.h"
 

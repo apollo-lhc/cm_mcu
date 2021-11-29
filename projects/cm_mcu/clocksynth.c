@@ -8,9 +8,6 @@
 #include "common/utils.h"
 #include "I2CCommunication.h"
 #include "Tasks.h"
-#include "common/uart.h"
-#include "inc/hw_memmap.h"
-#include <string.h>
 
 int snprintf(char *buf, unsigned int count, const char *format, ...);
 // clang-format off
