@@ -360,10 +360,18 @@ void PowerSupplyTask(void *parameters)
       }
     }
     if (currentState != nextState) {
-      log_debug(LOG_PWRCTL, "PowerSupplyTask: change from state %s to %s\r\n", power_system_state_names[currentState],
-                power_system_state_names[nextState]);
+      log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
+                power_system_state_names[currentState], power_system_state_names[nextState]);
     }
     currentState = nextState;
+
+    // monitor stack usage for this task
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
+    static UBaseType_t vv = 0;
+    if (val > vv) {
+      log_info(LOG_SERVICE, "stack size of %s is now %d\r\n", pcTaskGetName(NULL), val);
+    }
+    vv = val;
 
     // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));

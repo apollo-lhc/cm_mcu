@@ -34,6 +34,7 @@
 
 #include "InterruptHandlers.h"
 #include "Tasks.h"
+#include "common/log.h"
 
 // On Apollo the ADC range is from 0 - 2.5V.
 // Some signals must be scaled to fit in this range.
@@ -302,6 +303,14 @@ void ADCMonitorTask(void *parameters)
     // special: temperature of Tiva die. Tiva manu 15.3.6, last equation.
     fADCvalues[ADC_INFO_TEMP_ENTRY] =
         147.5f - (75.f * ADC_MAX_VOLTAGE_RANGE * iADCvalues[ADC_INFO_TEMP_ENTRY]) / 4096.f;
+
+    // monitor stack usage for this task
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
+    static UBaseType_t vv = 0;
+    if (val > vv) {
+      log_info(LOG_SERVICE, "stack size of %s is now %d\r\n", pcTaskGetName(NULL), val);
+    }
+    vv = val;
 
     // wait x ms for next iteration
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(1000));

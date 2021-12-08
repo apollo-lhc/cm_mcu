@@ -259,6 +259,14 @@ void MonitorTask(void *parameters)
     if (args->xSem != NULL) // if we have a semaphore, give it
       xSemaphoreGive(args->xSem);
 
+    // monitor stack usage for this task
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
+    static UBaseType_t vv = 0;
+    if (val > vv) {
+      log_info(LOG_SERVICE, "stack size of %s is now %d\r\n", pcTaskGetName(NULL), val);
+    }
+    vv = val;
+
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
   } // infinite loop
 }

@@ -882,10 +882,11 @@ void FireFlyTask(void *parameters)
         ff_status[ff].test[i - 148] = tmp1.s;
       }
 #endif
+      // monitor stack usage for this task
       UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
       static UBaseType_t vv = 0;
       if ( val > vv ) {
-    	  log_info(LOG_FFLY, "stack size is now %d\r\n", val);
+    	  log_info(LOG_SERVICE, "stack size of %s is now %d\r\n", pcTaskGetName(NULL), val);
       }
       vv = val;
       // clear the I2C mux

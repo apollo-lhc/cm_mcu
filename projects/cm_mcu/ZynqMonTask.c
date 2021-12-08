@@ -26,7 +26,7 @@
 
 #include "Tasks.h"
 #include "MonitorTask.h"
-
+#include "common/log.h"
 
 // Rev 2
 // this needs to be split into a SoftUART version (Rev1) and a hard UART version (Rev2)
@@ -431,7 +431,15 @@ void ZynqMonTask(void *parameters)
 
       MAP_IntDisable(INT_TIMER0A);
 #endif // REV1
-    } // if ( enabled)
+    }  // if ( enabled)
+
+    // monitor stack usage for this task
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
+    static UBaseType_t vv = 0;
+    if (val > vv) {
+      log_info(LOG_SERVICE, "stack size of %s is now %d\r\n", pcTaskGetName(NULL), val);
+    }
+    vv = val;
     // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5000));
   }
