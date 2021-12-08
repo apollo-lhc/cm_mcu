@@ -14,7 +14,7 @@ endif
 endif
 
 
-DIRS=driverlib projects 
+DIRS=projects 
 DIRSCLEAN=$(addsuffix .clean,$(DIRS))
 
 all:  $(DIRS)

@@ -111,6 +111,7 @@ CFLAGS=-mthumb             \
        -pedantic           \
        -DPART_${PART}      \
        -Wdouble-promotion  \
+       -Wformat=2          \
        -fstack-usage       \
        -ffile-prefix-map=${BASE}=. \
        -c
@@ -243,6 +244,7 @@ CFLAGS=                     \
        -fno-exceptions      \
        -fno-rtti            \
        -fomit-frame-pointer \
+       -Wno-format          \
        -c
 
 ifdef DEBUG
@@ -250,6 +252,9 @@ CFLAGS+=-g -D DEBUG -O0
 else
 CFLAGS+=-Oz
 endif
+
+## flags for the linker
+LDFLAGS=--gc-sections
 
 ## THESE BELOW GET CALLED FROM GCC
 ##
