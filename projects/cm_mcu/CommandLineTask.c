@@ -843,12 +843,12 @@ void vCommandLineTask(void *pvParameters)
        Blocked state until a character is received. */
     xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
     microrl_insert_char(&rl, cRxedChar);
+
     // monitor stack usage for this task
     UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
-    static UBaseType_t vv = 0;
-    if (val > vv) {
-      log_info(LOG_SERVICE, "stack size  of %s is now %d\r\n", pcTaskGetName(NULL), val);
+    if (val < args->stack_size) {
+      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, args->stack_size);
     }
-    vv = val;
+    args->stack_size = val;
   }
 }

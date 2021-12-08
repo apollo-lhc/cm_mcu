@@ -169,12 +169,13 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       day = atoi(pp[1]);
       year = atoi(pp[2]);
       struct tm t;
-      t.tm_hour = hour;
-      t.tm_min = min;
-      t.tm_sec = sec;
+      // no real checking of the values; just normalize it to the right range
+      t.tm_hour = hour%24; // 0-23
+      t.tm_min = min%60; // 0-59
+      t.tm_sec = sec%60; //
       t.tm_year = year>=100?year-1900:year+1900; // years since 1900
-      t.tm_mday = day;
-      t.tm_mon = month-1; // month goes from 0-11
+      t.tm_mday = day%31;
+      t.tm_mon = (month-1)%12; // month goes from 0-11
 
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "New time: %02d:%02d:%02d %02d/%02d/%d\r\n",
           t.tm_hour, t.tm_min, t.tm_sec, t.tm_mon+1, t.tm_mday, t.tm_year+1900);

@@ -114,6 +114,7 @@ struct MonitorTaskArgs_t fpga_args = {
 #endif
     .xSem = NULL,
     .requirePower = true,
+    .stack_size = 4096U,
 };
 #ifdef REV1
 // Power supply arguments for Monitoring task
@@ -152,7 +153,6 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
 #else
 #error "need to define either Rev1 or Rev2"
 #endif // REV1
-void Print(const char *);
 
 // this function is run once in the dcdc monitoring task
 struct pm_command_t extra_cmds[] = {
@@ -290,6 +290,7 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus_status = &eStatus1,
     .xSem = NULL,
     .requirePower = false,
+    .stack_size = 4096U,
 };
 
 static int fpga_f1 = -1;

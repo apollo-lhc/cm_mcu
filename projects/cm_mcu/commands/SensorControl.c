@@ -265,23 +265,13 @@ BaseType_t led_ctl(int argc, char **argv, char* m)
 {
 
   BaseType_t i1 = strtol(argv[1], NULL, 10);
-  configASSERT(i1 != 99);
+
+  BaseType_t ones = i1%10;
+  BaseType_t tens = i1/10; // integer truncation
 
   uint32_t message = HUH; // default: message not understood
-  if (i1 == 0) {          // ToDo: make messages less clunky. break out color.
-    message = RED_LED_OFF;
-  }
-  else if (i1 == 1) {
-    message = RED_LED_ON;
-  }
-  else if (i1 == 2) {
-    message = RED_LED_TOGGLE;
-  }
-  else if (i1 == 3) {
-    message = RED_LED_TOGGLE3;
-  }
-  else if (i1 == 4) {
-    message = RED_LED_TOGGLE4;
+  if ( ones < 5 && tens>0 && tens<4) {
+    message = i1;
   }
   // Send a message to the LED task
   xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));

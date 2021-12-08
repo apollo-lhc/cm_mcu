@@ -264,6 +264,7 @@ int main(void)
                                            1);  // number of items before a trigger is sent
   cli_uart4.uart_base = FP_UART;
   cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
+  cli_uart4.stack_size = 4096U;
   xUART1StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
   cli_uart.uart_base = ZQ_UART;
@@ -275,6 +276,7 @@ int main(void)
 
   cli_uart.uart_base = ZQ_UART;
   cli_uart.UartStreamBuffer = xUART0StreamBuffer;
+  cli_uart.stack_size = 4096U;
 #endif // REV1
 
 

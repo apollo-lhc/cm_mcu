@@ -226,9 +226,9 @@ void I2CSlaveTask(void *parameters)
 
     // monitor stack usage for this task
     UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
-    static UBaseType_t vv = 0;
-    if (val > vv) {
-      log_info(LOG_SERVICE, "stack size of %s is now %d\r\n", pcTaskGetName(NULL), val);
+    static UBaseType_t vv = 4096;
+    if (val < vv) {
+      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
     }
     vv = val;
   }

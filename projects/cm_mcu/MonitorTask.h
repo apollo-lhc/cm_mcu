@@ -48,6 +48,7 @@ struct MonitorTaskArgs_t {
   volatile TickType_t updateTick;      // last update time, in ticks
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
   bool requirePower;                   // true if device requires power
+  UBaseType_t stack_size;              // stack size of task
 };
 // DC-DC converter
 #ifdef REV1

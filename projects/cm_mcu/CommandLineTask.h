@@ -22,6 +22,7 @@ void vCommandLineTask(void *pvParameters);
 typedef struct {
   StreamBufferHandle_t UartStreamBuffer;
   uint32_t uart_base;
+  UBaseType_t stack_size;
 } CommandLineTaskArgs_t;
 
 #endif /* PROJECTS_CM_MCU_COMMANDLINETASK_H_ */

@@ -15,6 +15,7 @@
 #include "common/power_ctl.h"
 #include "common/pinout.h"
 #include "common/pinsel.h"
+#include "common/log.h"
 #include "Tasks.h"
 
 // FreeRTOS includes
@@ -124,6 +125,15 @@ void LedTask(void *parameters)
     else if (callcnt % blueLedPattern == 0) // toggle patterns
       toggle_gpio_pin(MCU_LED_BLUE);
     ++callcnt;
+
+    // monitor stack usage for this task
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
+    static UBaseType_t vv = 4096;
+    if (val < vv) {
+      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
+    }
+    vv = val;
+
     // wait for next check
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
   }
