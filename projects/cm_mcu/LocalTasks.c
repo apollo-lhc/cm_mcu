@@ -147,8 +147,8 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"F1VCCINT2", 0x70, 2, 0x43}, // second vccint, F1
     {"F2VCCINT1", 0x70, 3, 0x44}, // first vccint, F2
     {"F2VCCINT2", 0x70, 4, 0x43}, // second vccint, F2
-    {"F1AVCC/TT", 0x70, 5, 0x40}, // AVCC/AVTT for F1
-    {"F2AVCC/TT", 0x70, 6, 0x40}, // AVCC/AVTT for F2
+    {"F1AVTT/CC", 0x70, 5, 0x40}, // AVCC/AVTT for F1
+    {"F2AVTT/CC", 0x70, 6, 0x40}, // AVCC/AVTT for F2
 };
 #else
 #error "need to define either Rev1 or Rev2"

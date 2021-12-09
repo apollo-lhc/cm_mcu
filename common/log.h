@@ -8,13 +8,19 @@
 #ifndef LOG_H
 #define LOG_H
 
-//#include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include "FreeRTOSConfig.h"
 #include "FreeRTOS.h"
 #include "printf.h"
-//#include <time.h>
+
+#ifdef gcc
+// use this until GCC gets __FILE_NAME__ in GCC12. CLANG already has it
+// __FILE_NAME__ just returns the file, not the whole directory.
+// note that it appears that the whole file name is still in the binary so there
+// is still wasted space 
+#define __FILE_NAME__ (__builtin_strrchr("/" __FILE__, '/') + 1)
+#endif
 
 #define LOG_VERSION "0.1.0_pw"
 
@@ -47,12 +53,12 @@ typedef void (*log_LogFn)(log_Event *ev);
 typedef void (*log_LockFn)(bool lock, void *udata);
 
 
-#define log_trace(LOG_FACILITY, ...) log_log(LOG_TRACE, __FILE__, __LINE__, LOG_FACILITY, __VA_ARGS__)
-#define log_debug(LOG_FACILITY, ...) log_log(LOG_DEBUG, __FILE__, __LINE__, LOG_FACILITY, __VA_ARGS__)
-#define log_info(LOG_FACILITY, ...)  log_log(LOG_INFO, __FILE__, __LINE__, LOG_FACILITY, __VA_ARGS__)
-#define log_warn(LOG_FACILITY, ...)  log_log(LOG_WARN, __FILE__, __LINE__, LOG_FACILITY, __VA_ARGS__)
-#define log_error(LOG_FACILITY, ...) log_log(LOG_ERROR, __FILE__, __LINE__, LOG_FACILITY, __VA_ARGS__)
-#define log_fatal(LOG_FACILITY, ...) log_log(LOG_FATAL, __FILE__, __LINE__, LOG_FACILITY, __VA_ARGS__)
+#define log_trace(LOG_FACILITY, ...) log_log(LOG_TRACE, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)
+#define log_debug(LOG_FACILITY, ...) log_log(LOG_DEBUG, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)
+#define log_info(LOG_FACILITY, ...)  log_log(LOG_INFO, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)
+#define log_warn(LOG_FACILITY, ...)  log_log(LOG_WARN, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)
+#define log_error(LOG_FACILITY, ...) log_log(LOG_ERROR, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)
+#define log_fatal(LOG_FACILITY, ...) log_log(LOG_FATAL, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)
 
 const char* log_level_string(int level);
 const char *log_facility_string(int level);
