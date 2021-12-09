@@ -14,7 +14,7 @@
 #include "InterruptHandlers.h"
 
 // local includes
-#include "common/uart.h"
+#include "common/LocalUart.h"
 #include "common/utils.h"
 #include "common/power_ctl.h"
 #include "common/i2c_reg.h"

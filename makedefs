@@ -46,6 +46,7 @@
 #******************************************************************************
 os:=${shell uname -s}
 
+
 #******************************************************************************
 #
 # The compiler to be used.
@@ -110,7 +111,9 @@ CFLAGS=-mthumb             \
        -pedantic           \
        -DPART_${PART}      \
        -Wdouble-promotion  \
+       -Wformat=2          \
        -fstack-usage       \
+       -ffile-prefix-map=${BASE}=. \
        -c
 
 #
@@ -141,7 +144,7 @@ LIBGCC:=${shell ${CC} ${CFLAGS} -print-libgcc-file-name}
 #
 # Get the location of libc.a from the GCC front-end.
 #
-LIBC:=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
+LIBC:=${shell ${CC} ${CFLAGS} -print-file-name=libc_nano.a}
 #
 # Get the location of libm.a from the GCC front-end.
 #
@@ -241,6 +244,7 @@ CFLAGS=                     \
        -fno-exceptions      \
        -fno-rtti            \
        -fomit-frame-pointer \
+       -Wno-format          \
        -c
 
 ifdef DEBUG
@@ -248,6 +252,9 @@ CFLAGS+=-g -D DEBUG -O0
 else
 CFLAGS+=-Oz
 endif
+
+## flags for the linker
+LDFLAGS=--gc-sections
 
 ## THESE BELOW GET CALLED FROM GCC
 ##
@@ -302,7 +309,7 @@ ${COMPILER}${SUFFIX}/%.o: %.c
 	 else                                                 \
 	     echo ${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<}); \
 	 fi
-	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} ${<}
+	@${CC} ${CFLAGS} -D${COMPILER} -o ${@} $(abspath ${<})
 ifneq ($(findstring CYGWIN, ${os}), )
 	@if [ -e ${@:.o=.d} ];                                   \
 	then                                                     \

@@ -17,6 +17,7 @@
 #include "driverlib/rom_map.h"
 
 #include "Tasks.h"
+#include "common/log.h"
 
 QueueHandle_t xEPRMQueue_in;
 QueueHandle_t xEPRMQueue_out;
@@ -89,5 +90,14 @@ void EEPROMTask(void *parameters)
       default:
         break;
     }
+    // monitor stack usage for this task
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
+    static UBaseType_t vv = 4096;
+    if (val < vv) {
+      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
+    }
+    vv = val;
+
+
   } // infinite for loop
 }

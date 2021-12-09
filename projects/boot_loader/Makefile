@@ -36,6 +36,7 @@ IPATH+=${ROOT}
 
 ## where to find sources
 VPATH=.
+VPATH+=${ROOT}/driverlib
 VPATH+=../../common
 
 # GIT 
@@ -74,12 +75,16 @@ ${COMPILER}/bl_main.axf: ${COMPILER}/bl_check.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_packet.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_flash.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_userhooks.o
-${COMPILER}/bl_main.axf: ${COMPILER}/uart.o
+${COMPILER}/bl_main.axf: ${COMPILER}/LocalUart.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/microrl.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/printf.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_startup_${COMPILER}.o
 # TIVAWARE
-${COMPILER}/bl_main.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
+${COMPILER}/bl_main.axf: ${COMPILER}/sysctl.o
+${COMPILER}/bl_main.axf: ${COMPILER}/interrupt.o
+${COMPILER}/bl_main.axf: ${COMPILER}/cpu.o
+
+#${COMPILER}/bl_main.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
 
 SCATTERgcc_bl_main=bl_link.ld
 ENTRY_bl_main=ResetISR
@@ -97,3 +102,5 @@ ${COMPILER}/bl_main.o: ${SRCS} ${HDRS}
 ifneq (${MAKECMDGOALS},clean)
 -include ${wildcard ${COMPILER}/*.d} __dummy__
 endif
+
+.PHONY: ${COMPILER}

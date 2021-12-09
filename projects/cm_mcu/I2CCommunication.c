@@ -18,7 +18,7 @@
 
 // local includes
 #include "common/i2c_reg.h"
-#include "common/uart.h"
+#include "common/LocalUart.h"
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
 #include "common/smbus.h"

@@ -42,7 +42,7 @@
 #endif
 
 // PW customization
-#include "common/uart.h"
+#include "common/LocalUart.h"
 #include "boot_loader/bl_userhooks.h"
 
 #ifdef DEBUG

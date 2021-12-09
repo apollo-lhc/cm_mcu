@@ -20,7 +20,7 @@ BaseType_t eeprom_read(int argc, char **argv, char* m)
   uint32_t data2 = (uint32_t)(data >> 32);
   uint32_t data1 = (uint32_t)data;
   copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                     "Data read from EEPROM block %d: %08x %08x\r\n", block, data1, data2);
+                     "Data read from EEPROM block %ld: %08lx %08lx\r\n", block, data1, data2);
 
   return pdFALSE;
 }
@@ -39,7 +39,7 @@ BaseType_t eeprom_write(int argc, char **argv, char* m)
     return pdFALSE;
   }
   write_eeprom(data, addr);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Data written to EEPROM block %d: %08x\r\n",
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Data written to EEPROM block %ld: %08lx\r\n",
                      block, data);
 
   return pdFALSE;

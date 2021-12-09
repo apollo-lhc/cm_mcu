@@ -24,7 +24,6 @@
 
 
         // Prototypes/Declarations:
-void ResetISR(void);
 static void IntDefaultHandler(void);
 
 //*****************************************************************************
@@ -335,7 +334,7 @@ extern int main();
 // (i.e. one that does not have a strongly defined interrupt handler) is
 // triggered.
 void __default_int_handler(void)
-{
+{ 
   while (1)
     ;
 }
@@ -344,7 +343,8 @@ void __default_int_handler(void)
 // handler above (ResetISR() is weakly aliased to this function) so
 // that (if needed) this function can be overriden in a project using this
 // file (shouldn't be necessary though).
-void __default_rst_handler(void) {
+void ResetISR(void)
+{
   uint32_t *pui32Src, *pui32Dest;
 
   //

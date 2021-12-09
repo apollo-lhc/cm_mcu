@@ -17,7 +17,7 @@
 #include <string.h>
 
 // local includes
-#include "common/uart.h"
+#include "common/LocalUart.h"
 #include "common/utils.h"
 #include "common/power_ctl.h"
 #include "common/i2c_reg.h"
@@ -33,6 +33,8 @@
 #include "AlarmUtilities.h"
 
 // TI Includes
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
@@ -40,9 +42,7 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
 #include "driverlib/i2c.h"
-#include "driverlib/rom.h"
 #include "driverlib/adc.h"
-#include "driverlib/rom_map.h"
 #include "driverlib/uart.h"
 #include "driverlib/interrupt.h"
 
@@ -92,7 +92,7 @@ void SystemInit()
 {
   //
   // Run from the PLL, internal oscillator, at the defined clock speed configCPU_CLOCK_HZ
-  //
+  // This function does not exist in the ROM
   g_ui32SysClock = MAP_SysCtlClockFreqSet((SYSCTL_OSC_INT | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_320),
                                           configCPU_CLOCK_HZ);
 
@@ -264,6 +264,7 @@ int main(void)
                                            1);  // number of items before a trigger is sent
   cli_uart4.uart_base = FP_UART;
   cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
+  cli_uart4.stack_size = 4096U;
   xUART1StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
   cli_uart.uart_base = ZQ_UART;
@@ -275,6 +276,7 @@ int main(void)
 
   cli_uart.uart_base = ZQ_UART;
   cli_uart.UartStreamBuffer = xUART0StreamBuffer;
+  cli_uart.stack_size = 4096U;
 #endif // REV1
 
 

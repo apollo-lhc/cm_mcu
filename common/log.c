@@ -41,9 +41,9 @@ static struct {
   log_Callback callbacks[MAX_CALLBACKS];
 } L;
 
-static const char *level_strings[] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE",};
+static const char *level_strings[] = {"FTL", "ERR", "WRN", "INF", "DBG", "TRC",};
 
-static const char *facility_strings[] = { "UNK", "SERVICE", "MON", "FFLY", "PWRCTL", "I2C", "ALM", "CLI", 
+static const char *facility_strings[] = { "UNK", "SRV", "MON", "FFL", "PWR", "I2C", "ALM", "CLI",
 };
 
 #ifdef LOG_USE_COLOR
@@ -93,7 +93,7 @@ void ApolloLog(log_Event *ev)
 #ifdef LOG_USE_COLOR
   r = snprintf(tmp, 256, "%s", level_colors[ev->level]);
 #endif // LOG_USE_COLOR
-  r += snprintf(tmp + r, 256 - r, "%d %-5s %-5s %s:%u:", ev->time, facility_strings[ev->fac], level_strings[ev->level],
+  r += snprintf(tmp + r, 256 - r, "%d %-3s %-3s %s:%u:", ev->time, facility_strings[ev->fac], level_strings[ev->level],
                 ev->file, ev->line);
   r += vsnprintf(tmp+r, 256-r, ev->fmt, ev->ap);
 #ifdef LOG_USE_COLOR

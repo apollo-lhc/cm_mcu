@@ -19,7 +19,7 @@
 
 // local includes
 #include "common/i2c_reg.h"
-#include "common/uart.h"
+#include "common/LocalUart.h"
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
 #include "common/smbus.h"
@@ -56,15 +56,10 @@
 
 void Print(const char *str);
 
-// local sprintf prototype
-int snprintf(char *buf, unsigned int count, const char *format, ...);
-
 #define MAX_INPUT_LENGTH  50
 #define MAX_OUTPUT_LENGTH 512
 #define SCRATCH_SIZE 512
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat" // because of our mini-sprintf
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;

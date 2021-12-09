@@ -39,21 +39,21 @@ extern QueueHandle_t xLedQueue;
 // control the LED
 void LedTask(void *parameters);
 
-#define RED_LED_OFF       (25)
-#define RED_LED_ON        (26)
-#define RED_LED_TOGGLE    (27)
-#define RED_LED_TOGGLE3   (28)
-#define RED_LED_TOGGLE4   (29)
-#define BLUE_LED_OFF      (30)
-#define BLUE_LED_ON       (31)
-#define BLUE_LED_TOGGLE   (32)
-#define BLUE_LED_TOGGLE3  (33)
-#define BLUE_LED_TOGGLE4  (34)
-#define GREEN_LED_OFF     (35)
-#define GREEN_LED_ON      (36)
-#define GREEN_LED_TOGGLE  (37)
-#define GREEN_LED_TOGGLE3 (38)
-#define GREEN_LED_TOGGLE4 (39)
+#define RED_LED_OFF       (10)
+#define RED_LED_ON        (11)
+#define RED_LED_TOGGLE    (12)
+#define RED_LED_TOGGLE3   (13)
+#define RED_LED_TOGGLE4   (14)
+#define BLUE_LED_OFF      (20)
+#define BLUE_LED_ON       (21)
+#define BLUE_LED_TOGGLE   (22)
+#define BLUE_LED_TOGGLE3  (23)
+#define BLUE_LED_TOGGLE4  (24)
+#define GREEN_LED_OFF     (30)
+#define GREEN_LED_ON      (31)
+#define GREEN_LED_TOGGLE  (32)
+#define GREEN_LED_TOGGLE3 (33)
+#define GREEN_LED_TOGGLE4 (34)
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task
@@ -228,8 +228,10 @@ uint16_t getZYNQMonTestData();
 const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
 
+#ifdef REV2
 // hibernate/RTC
 void InitRTC();
+#endif // REV2
 
 struct dev_i2c_addr_t; // forward reference
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
