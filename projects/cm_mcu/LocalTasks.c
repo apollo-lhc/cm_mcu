@@ -147,8 +147,8 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
     {"F1VCCINT2", 0x70, 2, 0x43}, // second vccint, F1
     {"F2VCCINT1", 0x70, 3, 0x44}, // first vccint, F2
     {"F2VCCINT2", 0x70, 4, 0x43}, // second vccint, F2
-    {"F1AVCC/TT", 0x70, 5, 0x40}, // AVCC/AVTT for F1
-    {"F2AVCC/TT", 0x70, 6, 0x40}, // AVCC/AVTT for F2
+    {"F1AVTT/CC", 0x70, 5, 0x40}, // AVCC/AVTT for F1
+    {"F2AVTT/CC", 0x70, 6, 0x40}, // AVCC/AVTT for F2
 };
 #else
 #error "need to define either Rev1 or Rev2"
@@ -375,19 +375,19 @@ void InitRTC()
   // enable the RTC
   ROM_HibernateRTCEnable();
   // set the RTC to calendar mode
-  ROM_HibernateCounterMode(HIBERNATE_COUNTER_24HR);
-  // set to a default value
-  struct tm now = {
-    .tm_sec = 0,
-    .tm_min = 0,
-    .tm_hour = 0,
-    .tm_mday = 23,
-    .tm_mon = 10, // month goes from 0-11
-    .tm_year = 121, // year is since 1900
-    .tm_wday = 0,
-    .tm_yday = 0,
-    .tm_isdst = 0,
-  };
-  ROM_HibernateCalendarSet(&now);
+  //  ROM_HibernateCounterMode(HIBERNATE_COUNTER_24HR);
+  //  // set to a default value
+  //  struct tm now = {
+  //    .tm_sec = 0,
+  //    .tm_min = 0,
+  //    .tm_hour = 0,
+  //    .tm_mday = 23,
+  //    .tm_mon = 10, // month goes from 0-11
+  //    .tm_year = 121, // year is since 1900
+  //    .tm_wday = 0,
+  //    .tm_yday = 0,
+  //    .tm_isdst = 0,
+  //  };
+  // ROM_HibernateCalendarSet(&now);
 }
 #endif // REV2
