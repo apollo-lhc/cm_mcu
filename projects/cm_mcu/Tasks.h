@@ -104,6 +104,8 @@ uint8_t getFFstatus(const uint8_t i);
 bool getFFlos(int i, int channel);
 bool getFFlol(int i, int channel);
 TickType_t getFFupdateTick();
+// FFLY I/O Expander initialization
+void init_registers_ff();
 
 int disable_xcvr_cdr(const char *name);
 
@@ -227,6 +229,9 @@ uint16_t getZYNQMonTestData();
 // utility functions
 const uint32_t *getSystemStack();
 int SystemStackWaterHighWaterMark();
+
+// clock IO expander initalization
+void init_registers_clk();
 
 #ifdef REV2
 // hibernate/RTC

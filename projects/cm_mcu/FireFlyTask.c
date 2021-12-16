@@ -580,7 +580,12 @@ void FireFlyTask(void *parameters)
       // Disable all Firefly devices
       disable_transmit(true, NFIREFLIES);
       disable_receivers(true, NFIREFLIES);
-    }
+      init_registers_ff();
+      log_info(LOG_FFLY, "initialization complete.\r\n");
+  }
+  else {
+    log_warn(LOG_FFLY, "Initialization skipped -- no power\r\n");
+  }
   bool suspended = false;
 
   // reset the wake time to account for the time spent in any work in i2c tasks

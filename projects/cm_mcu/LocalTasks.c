@@ -392,7 +392,7 @@ void InitRTC()
 }
 #endif // REV2
 #ifdef REV1
-void init_registers()
+void init_registers_clk()
 {
   // =====================================================
   // CMv1 Schematic 4.03 I2C CLOCK SOURCE CONTROL
@@ -439,6 +439,9 @@ void init_registers()
 
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
+}
+void init_registers_ff()
+{
 
   // =====================================================
   // CMv1 Schematic 4.05 I2C KU15P OPTICS
@@ -517,17 +520,15 @@ void init_registers()
   // # set third I2C switch on channel 3 (U4, address 0x72) to port 2 
   apollo_i2c_ctl_w( 4, 0x72, 1, 0x04);
   apollo_i2c_ctl_reg_w( 4, 0x21, 0x02, 1, 0x00); // 00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w( 4, 0x21, 0x03, 1, 0x03); // 00000011 [P17..P10]  
-  
+  apollo_i2c_ctl_reg_w( 4, 0x21, 0x03, 1, 0x03); // 00000011 [P17..P10]
 }
 #endif // REV1
 #ifdef REV2
-  void init_registers()
-  {
-    // initialize the external I2C registers for the clocks and for the optical devices.
+void init_registers_clk()
+{
+  // initialize the external I2C registers for the clocks and for the optical devices.
 #if 0
-#define X(COMMAND, DEV, ...) \
-apollo_i2c_ctl_##COMMAND(DEV, __VA_ARGS__);
+#define X(COMMAND, DEV, ...) apollo_i2c_ctl_##COMMAND(DEV, __VA_ARGS__);
 #include "reg_init.def"
 #endif // 0
 
@@ -583,7 +584,9 @@ apollo_i2c_ctl_##COMMAND(DEV, __VA_ARGS__);
   apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_w(2, 0x21, 0x02, 1, 0x80); //  10000000 [P07..P00]
   apollo_i2c_ctl_reg_w(2, 0x21, 0x03, 1, 0x03); //  00000011 [P17..P10]
-
+}
+void init_registers_ff()
+{
   // =====================================================
   // CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
 
@@ -656,4 +659,4 @@ apollo_i2c_ctl_##COMMAND(DEV, __VA_ARGS__);
   apollo_i2c_ctl_reg_w(3, 0x21, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x21, 0x03, 1, 0x01); //  00000001 [P17..P10]
 }
-#endif // REV2 
+#endif // REV2
