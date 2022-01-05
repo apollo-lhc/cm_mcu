@@ -5,6 +5,11 @@
  *      Author: fatimayousuf
  */
 #include <time.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#include <stdlib.h>
+#include "driverlib/gpio.h"
 #include "BoardCommands.h"
 #include "common/pinsel.h"
 #include "inc/hw_hibernate.h"
@@ -200,4 +205,53 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-#endif
+
+BaseType_t gpio_ctl(int argc, char **argv, char *m)
+{
+  int port = -1; int pin = -1;
+  // should either have three or four arguments
+  if (!( argc == 3 || argc == 4 )) {
+    snprintf(m, SCRATCH_SIZE, "%s: usage: %s (set|get) <name of pin> <val>\r\n", argv[0], argv[0]);
+    return pdFALSE;
+  }
+  /// X-Macro start
+  // find the corresponding pins and ports
+#define X(NAME, PPIN, PPORT, LOCALPIN, INPUT) \
+  if (strncmp(#NAME, argv[2], 7) == 0) {      \
+    port = GPIO_PORT##PPORT##_BASE;           \
+    pin = GPIO_PIN_##LOCALPIN;                \
+  }
+#include "common/gpio_pins.def"
+  // X-Macro end 
+  // ensure we found a match
+  if (pin == -1 || port == -1) {
+    snprintf(m, SCRATCH_SIZE, "%s: couldn't find pin %s\r\n", argv[0], argv[2]);
+    return pdFALSE;
+  }
+  if (argc == 4) {
+    if (strncmp(argv[1], "set", 3) == 0) {
+      uint32_t pinval = atoi(argv[3]) % 2;
+      MAP_GPIOPinWrite(port, pin, pinval);
+      snprintf(m, SCRATCH_SIZE, "%s: set %s to %ld\r\n", argv[0], argv[2], pinval);
+      return pdFALSE;
+    }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: command %s not understood\r\n", argv[0], argv[1]);
+      return pdFALSE;
+    }
+  }
+  else if (argc == 3) {
+    if (strncmp(argv[1], "get", 3) == 0) {
+      uint32_t val = MAP_GPIOPinRead(port, pin);
+      snprintf(m, SCRATCH_SIZE, "%s: pin %s reads %ld\r\n", argv[0], argv[2], val);
+      return pdFALSE;
+    }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: command %s not understood\r\n", argv[0], argv[1]);
+      return pdFALSE;
+    }
+  }
+  m[0] = '\0';
+  return pdFALSE;
+}
+#endif // Rev2

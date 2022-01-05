@@ -29,22 +29,22 @@
 // ------------------------------------------
 // if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
-    {  CTRL_F1_VCCINT_PWR_EN, 1},
-    {  CTRL_F2_VCCINT_PWR_EN, 1},
-    {  CTRL_VCC_1V8_PWR_EN,  2},
-    {  CTRL_VCC_3V3_PWR_EN,  2},
-    {  CTRL_F2_MGTY1_VCCAUX_PWR_EN, 3},
-    {  CTRL_F2_MGTY2_VCCAUX_PWR_EN, 3},
-    {  CTRL_F1_MGTY_VCCAUX_PWR_EN,  3},
-    {  CTRL_F1_MGTH_VCCAUX_PWR_EN,  3},
-    {  CTRL_F2_MGTY1_AVCC_PWR_EN, 4},
-    {  CTRL_F2_MGTY2_AVCC_PWR_EN, 4},
-    {  CTRL_F1_MGTY_AVCC_PWR_EN,  4},
-    {  CTRL_F1_MGTH_AVCC_PWR_EN,  4},  
-    {  CTRL_F1_MGTY_AVTT_PWR_EN,  5},
-    {  CTRL_F1_MGTH_AVTT_PWR_EN,  5},
-    {  CTRL_F2_MGTY1_AVTT_PWR_EN, 5},
-    {  CTRL_F2_MGTY2_AVTT_PWR_EN, 5}
+    {  CTRL_F1_VCCINT_PWR_EN, "CTRL_F1_VCCINT_PWR_EN", 1},
+    {  CTRL_F2_VCCINT_PWR_EN, "CTRL_F2_VCCINT_PWR_EN", 1},
+    {  CTRL_VCC_1V8_PWR_EN, "CTRL_VCC_1V8_PWR_EN", 2},
+    {  CTRL_VCC_3V3_PWR_EN, "CTRL_VCC_3V3_PWR_EN", 2},
+    {  CTRL_F2_MGTY1_VCCAUX_PWR_EN, "CTRL_F2_MGTY1_VCCAUX_PWR_EN", 3},
+    {  CTRL_F2_MGTY2_VCCAUX_PWR_EN, "CTRL_F2_MGTY2_VCCAUX_PWR_EN", 3},
+    {  CTRL_F1_MGTY_VCCAUX_PWR_EN, "CTRL_F1_MGTY_VCCAUX_PWR_EN", 3},
+    {  CTRL_F1_MGTH_VCCAUX_PWR_EN, "CTRL_F1_MGTH_VCCAUX_PWR_EN", 3},
+    {  CTRL_F2_MGTY1_AVCC_PWR_EN, "CTRL_F2_MGTY1_AVCC_PWR_EN", 4},
+    {  CTRL_F2_MGTY2_AVCC_PWR_EN, "CTRL_F2_MGTY2_AVCC_PWR_EN", 4},
+    {  CTRL_F1_MGTY_AVCC_PWR_EN, "CTRL_F1_MGTY_AVCC_PWR_EN", 4},
+    {  CTRL_F1_MGTH_AVCC_PWR_EN, "CTRL_F1_MGTH_AVCC_PWR_EN", 4},  
+    {  CTRL_F1_MGTY_AVTT_PWR_EN, "CTRL_F1_MGTY_AVTT_PWR_EN",  5},
+    {  CTRL_F1_MGTH_AVTT_PWR_EN, "CTRL_F1_MGTH_AVTT_PWR_EN", 5},
+    {  CTRL_F2_MGTY1_AVTT_PWR_EN, "CTRL_F2_MGTY1_AVTT_PWR_EN", 5},
+    {  CTRL_F2_MGTY2_AVTT_PWR_EN, "CTRL_F2_MGTY2_AVTT_PWR_EN", 5}
 };
 
 //if you update this you need to update N_PS_OKS too
@@ -52,20 +52,20 @@ static const struct gpio_pin_t enables[] = {
 // TPS5218 supply does not have any such output
 const
 struct gpio_pin_t oks[] = {
-    { F1_VCCINT_PG_A, 1},
-    { F1_VCCINT_PG_B, 1},
-    { F2_VCCINT_PG_A, 1},
-    { F2_VCCINT_PG_B, 1},
-    { VCC_1V8_PG,    2},
-    { VCC_3V3_PG,    2},
-    { F2_MGTY1_AVCC_OK, 4},
-    { F2_MGTY2_AVCC_OK, 4},
-    { F1_MGTY_AVCC_OK,  4},
-    { F1_MGTH_AVCC_OK,  4},
-    { F1_MGTY_AVTT_OK,  5},
-    { F1_MGTH_AVTT_OK,  5},
-    { F2_MGTY1_AVTT_OK, 5},
-    { F2_MGTY2_AVTT_OK, 5}
+    { F1_VCCINT_PG_A, "F1_VCCINT_PG_A", 1},
+    { F1_VCCINT_PG_B, "F1_VCCINT_PG_B", 1},
+    { F2_VCCINT_PG_A, "F2_VCCINT_PG_A", 1},
+    { F2_VCCINT_PG_B, "F2_VCCINT_PG_B", 1},
+    { VCC_1V8_PG, "VCC_1V8_PG",   2},
+    { VCC_3V3_PG, "VCC_3V3_PG",  2},
+    { F2_MGTY1_AVCC_OK, "F2_MGTY1_AVCC_OK", 4},
+    { F2_MGTY2_AVCC_OK, "F2_MGTY2_AVCC_OK", 4},
+    { F1_MGTY_AVCC_OK,  "F1_MGTY_AVCC_OK", 4},
+    { F1_MGTH_AVCC_OK, "F1_MGTH_AVCC_OK", 4},
+    { F1_MGTY_AVTT_OK, "F1_MGTY_AVTT_OK", 5},
+    { F1_MGTH_AVTT_OK,  "F1_MGTH_AVTT_OK", 5},
+    { F2_MGTY1_AVTT_OK, "F2_MGTY1_AVTT_OK", 5},
+    { F2_MGTY2_AVTT_OK, "F2_MGTY2_AVTT_OK", 5}
 };
 #elif defined(REV2) // REV2
 // ------------------------------------------
@@ -76,33 +76,33 @@ struct gpio_pin_t oks[] = {
 // add here
 // if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
-    {  EN_F1_INT, 1},
-    {  EN_F2_INT, 1},
-    {  EN_1V8,  2},
-    {  EN_3V3,  2},
-    {  EN_F1_VCCAUX, 3},
-    {  EN_F2_VCCAUX,  3},
-    {  EN_F1_AVCC, 4},
-    {  EN_F2_AVCC, 4},
-    {  EN_F1_AVTT,  5},
-    {  EN_F2_AVTT,  5},
+    {  EN_F1_INT, "EN_F1_INT", 1},
+    {  EN_F2_INT, "EN_F2_INT", 1},
+    {  EN_1V8, "EN_1V8", 2},
+    {  EN_3V3, "EN_3V3" ,2},
+    {  EN_F1_VCCAUX, "EN_F1_VCCAUX", 3},
+    {  EN_F2_VCCAUX,  "EN_F2_VCCAUX", 3},
+    {  EN_F1_AVCC, "EN_F1_AVCC", 4},
+    {  EN_F2_AVCC, "EN_F2_AVCC", 4},
+    {  EN_F1_AVTT, "EN_F1_AVTT", 5},
+    {  EN_F2_AVTT, "EN_F2_AVTT", 5},
 };
 
 //if you update this you need to update N_PS_OKS too
 const
 struct gpio_pin_t oks[N_PS_OKS] = {
-    { PG_F1_INT_A, 1},
-    { PG_F1_INT_B, 1},
-    { PG_F2_INT_A, 1},
-    { PG_F2_INT_B, 1},
-    { PG_1V8,    2},
-    { PG_3V3,    2},
-    { PG_F1_VCCAUX, 3},
-    { PG_F2_VCCAUX, 3},
-    { PG_F1_AVCC,  4},
-    { PG_F2_AVCC,  4},
-    { PG_F1_AVTT,  5},
-    { PG_F2_AVTT,  5},
+    { PG_F1_INT_A, "PG_F1_INT_A", 1},
+    { PG_F1_INT_B, "PG_F1_INT_B", 1},
+    { PG_F2_INT_A, "PG_F2_INT_A", 1},
+    { PG_F2_INT_B, "PG_F2_INT_B", 1},
+    { PG_1V8, "PG_1V8",   2},
+    { PG_3V3, "PG_3V3",   2},
+    { PG_F1_VCCAUX, "PG_F1_VCCAUX", 3},
+    { PG_F2_VCCAUX, "PG_F2_VCCAUX", 3},
+    { PG_F1_AVCC, "PG_F1_AVCC", 4},
+    { PG_F2_AVCC, "PG_F2_AVCC", 4},
+    { PG_F1_AVTT,  "PG_F1_AVTT", 5},
+    { PG_F2_AVTT, "PG_F2_AVTT", 5},
 };
 
 #else
@@ -150,7 +150,7 @@ bool disable_ps(void)
     // disable the supplies at the relevant priority
     for (int e = 0; e < N_PS_ENABLES; ++e) {
       if (enables[e].priority == prio) {
-        write_gpio_pin(enables[e].name, 0x0);
+        write_gpio_pin(enables[e].pin_number, 0x0);
       }
     } // loop over enables
     bool ready_to_proceed = false;
@@ -158,7 +158,7 @@ bool disable_ps(void)
       bool all_ready = true;
       for (int o = 0; o < N_PS_OKS; ++o) {
         if (oks[o].priority >= prio) {
-          int8_t val = read_gpio_pin(oks[o].name);
+          int8_t val = read_gpio_pin(oks[o].pin_number);
           if (val == 1) { // all supplies are supposed to be off now
             all_ready = false;
             states[o] = PWR_UNKNOWN;
@@ -201,7 +201,7 @@ bool turn_on_ps(uint16_t ps_en_mask)
         // check if this supply is to be enabled
         if (((1U << e) & ps_en_mask) == 0) // not in mask
           continue;
-        write_gpio_pin(enables[e].name, 0x1);
+        write_gpio_pin(enables[e].pin_number, 0x1);
       }
     }
   }
@@ -234,7 +234,7 @@ void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio)
                           ((currmask & PS_ENS_F2_MASK) && f2_enable) || // f2
                           ((currmask & PS_ENS_F1_MASK) && f1_enable);   // f1
       if (enableSupply) {
-        write_gpio_pin(enables[e].name, 0x1);
+        write_gpio_pin(enables[e].pin_number, 0x1);
       }
     }
   }
