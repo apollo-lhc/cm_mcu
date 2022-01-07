@@ -142,7 +142,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       // we don't have access to sscanf, let alone strptime, since it requires _sbrk ...
       // convert HH:MM:SS into three strings
       char *p = argv[2];
-      char *pp[3];
+      char *pp[3] = {'\0','\0','\0'} ;
       pp[0] = p;
       int i = 1;
       while ( *p != '\0') {
@@ -178,7 +178,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       t.tm_hour = hour%24; // 0-23
       t.tm_min = min%60; // 0-59
       t.tm_sec = sec%60; //
-      t.tm_year = year>=100?year-1900:year+1900; // years since 1900
+      t.tm_year = year>=100?year-1900:year+100; // years since 1900
       t.tm_mday = day%31;
       t.tm_mon = (month-1)%12; // month goes from 0-11
 
@@ -187,7 +187,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       ROM_HibernateCalendarSet(&t);
     }
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Usage: %s set HH:MM:SS MM:DD:YYYY\r\n", argv[0]);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Usage: %s set HH:MM:SS MM/DD/YYYY\r\n", argv[0]);
     }
   }
   else { // all other cases
@@ -217,7 +217,7 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   /// X-Macro start
   // find the corresponding pins and ports
 #define X(NAME, PPIN, PPORT, LOCALPIN, INPUT) \
-  if (strncmp(#NAME, argv[2], 7) == 0) {      \
+  if (strncmp(#NAME, argv[2], strlen(#NAME)) == 0) {      \
     port = GPIO_PORT##PPORT##_BASE;           \
     pin = GPIO_PIN_##LOCALPIN;                \
   }
@@ -230,7 +230,10 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   }
   if (argc == 4) {
     if (strncmp(argv[1], "set", 3) == 0) {
-      uint32_t pinval = atoi(argv[3]) % 2;
+      // the GPIOPinWrite allows more than one pin to be written at the same time;
+      // therefore since in this interface only one pin is to be manipulated it
+      // needs to be shifted to the appropriate position.
+      uint32_t pinval = atoi(argv[3]) << pin; // input value should be either 0 or 1
       MAP_GPIOPinWrite(port, pin, pinval);
       snprintf(m, SCRATCH_SIZE, "%s: set %s to %ld\r\n", argv[0], argv[2], pinval);
       return pdFALSE;
@@ -242,7 +245,13 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   }
   else if (argc == 3) {
     if (strncmp(argv[1], "get", 3) == 0) {
+      // see comments on the "set" command above
       uint32_t val = MAP_GPIOPinRead(port, pin);
+      if ( val == pin )
+        val = 1;
+      else
+        val = 0;
+
       snprintf(m, SCRATCH_SIZE, "%s: pin %s reads %ld\r\n", argv[0], argv[2], val);
       return pdFALSE;
     }
