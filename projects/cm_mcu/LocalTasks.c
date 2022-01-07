@@ -527,10 +527,6 @@ void init_registers_ff()
 void init_registers_clk()
 {
   // initialize the external I2C registers for the clocks and for the optical devices.
-#if 0
-#define X(COMMAND, DEV, ...) apollo_i2c_ctl_##COMMAND(DEV, __VA_ARGS__);
-#include "reg_init.def"
-#endif // 0
 
   // =====================================================
   // CMv2 Schematic 4.03 I2C CLOCK CONTROL
