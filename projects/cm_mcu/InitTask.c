@@ -30,7 +30,11 @@ void InitTask(void *parameters)
   // clear RESC register
   ROM_SysCtlResetCauseClear(r);
   errbuffer_put(EBUF_RESTART, restart_reason);
-  log_info(LOG_SERVICE, "InitTask, REC register=0x%08x\r\n", restart_reason);
+  log_info(LOG_SERVICE, "REC register=0x%08x\r\n", restart_reason);
+
+  init_registers_clk(); // initalize I/O expander for clocks
+  log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
+
   vTaskSuspend(NULL);
 
   // Delete this task

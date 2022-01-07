@@ -5,6 +5,6 @@ AllowShortFunctionsOnASingleLine: false
 IndentCaseLabels: true
 SortIncludes: false
 AlignConsecutiveMacros: true
-ColumnLimit: 120
+ColumnLimit: 90
 UseTab: Never
-
+AlignEscapedNewlines: Left

@@ -41,7 +41,7 @@ static uint16_t check_ps_oks(void)
 {
   uint16_t status = 0U;
   for (int i = 0; i < N_PS_OKS; ++i) {
-    int val = read_gpio_pin(oks[i].name);
+    int val = read_gpio_pin(oks[i].pin_number);
     if (val)
       status |= 1U << i;
   }

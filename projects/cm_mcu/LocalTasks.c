@@ -375,7 +375,7 @@ void InitRTC()
   // enable the RTC
   ROM_HibernateRTCEnable();
   // set the RTC to calendar mode
-  //  ROM_HibernateCounterMode(HIBERNATE_COUNTER_24HR);
+  ROM_HibernateCounterMode(HIBERNATE_COUNTER_24HR);
   //  // set to a default value
   //  struct tm now = {
   //    .tm_sec = 0,
@@ -389,5 +389,270 @@ void InitRTC()
   //    .tm_isdst = 0,
   //  };
   // ROM_HibernateCalendarSet(&now);
+}
+#endif // REV2
+#ifdef REV1
+void init_registers_clk()
+{
+  // =====================================================
+  // CMv1 Schematic 4.03 I2C CLOCK SOURCE CONTROL
+
+  // 1a) U93 inputs vs. outputs (I2C address 0x20 on I2C channel #2)
+  // All used signals are outputs [P03..P00], [P14..P10].
+  // All unused signals should be inputs [P07..P04], [P17..P15].
+
+  // # set I2C switch on channel 2 (U94, address 0x70) to port 6 
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  apollo_i2c_ctl_reg_w( 2, 0x20, 0x06, 1, 0xf0); // 11110000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 2, 0x20, 0x07, 1, 0xe0); // 11100000 [P17..P10]
+
+  // 1b) U93 default output values (I2C address 0x20 on I2C channel #2)
+  // The outputs on P00, P01, P02, and P03 should default to "0".
+  // This causes the muxes on sheet 2.06 to use clocks from the SM (high
+  // quality / high performance) rather than clocks from the synthesizer.
+
+  // The outputs on P10 and P11 should default to "0". Selection of which 
+  // input clock to use on the synthesizer will be defined in the 
+  // configuration file for this chip. It will not be switchable under 
+  // program control.
+
+  // The output on P12 should default to "0". The synthesizer outputs will be 
+  // enabled, even if we are not using it.
+
+  // The outputs on P13 and P14 should default to "1". This negates the 
+  // active-lo "RESET" input on the synthesizer and the legacy TTC logic.
+
+  // # set I2C switch on channel 2 (U94, address 0x70) to port 6 
+  apollo_i2c_ctl_w( 2, 0x70, 1, 0x40);
+  apollo_i2c_ctl_reg_w( 2, 0x20, 0x02, 1, 0xf0); // 11110000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 2, 0x20, 0x03, 1, 0xf8); // 11111000 [P17..P10]
+
+  // 2a) U92 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
+  // The signals on P00, P01, and P02 are inputs.
+  // There other signals are unused and should be set as inputs.
+  // There are no outputs.
+
+  // # set I2C switch on channel 2 (U94, address 0x70) to port 7 
+  apollo_i2c_ctl_w( 2, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w( 2, 0x21, 0x06, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 2, 0x21, 0x07, 1, 0xff); // 11111111 [P17..P10]
+
+  // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
+  // All signals are inputs so nothing needs to be done.
+}
+void init_registers_ff()
+{
+
+  // =====================================================
+  // CMv1 Schematic 4.05 I2C KU15P OPTICS
+
+  // 3a) U102 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs.
+
+  // # set first I2C switch on channel 4 (U100, address 0x70) to port 7 
+  apollo_i2c_ctl_w( 4, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w( 4, 0x20, 0x06, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x20, 0x07, 1, 0xff); // 11111111 [P17..P10]
+
+  // 3b) U102 default output values (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs so nothing needs to be done.
+
+  // 4a) U1 inputs vs. outputs (I2C address 0x21 on I2C channel #4)
+  // The "/K_FF_RIGHT_RESET" signal on P10 and "/K_FF_LEFT_RESET" signal on 
+  // P11 are outputs.
+  // All other signals are inputs
+
+  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6 
+  apollo_i2c_ctl_w( 4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w( 4, 0x21, 0x06, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 0x07, 1, 0xfc); // 11111100 [P17..P10]
+
+  // 4b) U1 default output values (I2C address 0x21 on I2C channel #4)
+  // The outputs on P10 and P11 should default to "1".
+  // This negates the active-lo "RESET" inputs on the KU15P FireFlys
+
+  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6 
+  apollo_i2c_ctl_w( 4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w( 4, 0x21, 0x02, 1, 0x00); // 00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 0x03, 1, 0x01); // 00000011 [P17..P10]
+
+  // =====================================================
+  // CMv1 Schematic 4.06 I2C VU7P OPTICS
+
+  // 5a) U103 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs.
+
+  // # set third I2C switch on channel 3 (U4, address 0x72) to port 0 
+  apollo_i2c_ctl_w( 3, 0x72, 1, 0x01);
+  apollo_i2c_ctl_reg_w( 3, 0x20, 0x06, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 3, 0x20, 0x07, 1, 0xff); // 11111111 [P17..P10]
+
+  // 5b) U103 default output values (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs so nothing needs to be done.
+
+  // 6a) U5 inputs vs. outputs (I2C address 0x21 on I2C channel #3)
+  // All signals are inputs.
+
+  // # set third I2C switch on channel 3 (U4, address 0x72) to port 1 
+  apollo_i2c_ctl_w( 3, 0x72, 1, 0x02);
+  apollo_i2c_ctl_reg_w( 3, 0x21, 0x06, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 3, 0x21, 0x07, 1, 0xff); // 11111111 [P17..P10]
+
+  // 6b) U5 default output values (I2C address 0x21 on I2C channel #3)
+  // All signals are inputs so nothing needs to be done.
+
+  // 7a) U6 inputs vs. outputs (I2C address 0x22 on I2C channel #3)
+  // The "/V_FF_RIGHT_RESET" signal on P10 and "/V_FF_LEFT_RESET" signal on 
+  // P11 are outputs. The "SFP..." signals on P12 and P13 are also outputs.
+  // All other signals are inputs
+
+  // # set third I2C switch on channel 3 (U4, address 0x72) to port 2 
+  apollo_i2c_ctl_w( 3, 0x72, 1, 0x04);
+  apollo_i2c_ctl_reg_w( 3, 0x22, 0x06, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 3, 0x22, 0x07, 1, 0xf0); // 11110000 [P17..P10]
+
+  // 7b) U6 default output values (I2C address 0x22 on I2C channel #3)
+  // The outputs on P10 and P11 should default to "1".
+  // This negates the active-lo "RESET" inputs on the VU7P FireFlys.
+  // The outputs on P12 should default to "0" to enable the optical output.
+  // The output on P13 should default to "0" until determined otherwise.
+
+  // # set third I2C switch on channel 3 (U4, address 0x72) to port 2 
+  apollo_i2c_ctl_w( 4, 0x72, 1, 0x04);
+  apollo_i2c_ctl_reg_w( 4, 0x21, 0x02, 1, 0x00); // 00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 0x03, 1, 0x03); // 00000011 [P17..P10]
+}
+#endif // REV1
+#ifdef REV2
+void init_registers_clk()
+{
+  // initialize the external I2C registers for the clocks and for the optical devices.
+
+  // =====================================================
+  // CMv2 Schematic 4.03 I2C CLOCK CONTROL
+
+  // 1a) U88 inputs vs. outputs (I2C address 0x20 on I2C channel #2)
+  // The "/INT..." signals on P04 and P05 are inputs.
+  // The unused signals on P06, P11, P16, and P17 should be inputs.
+  // The remaining 10 signals are outputs.
+
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 6
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  apollo_i2c_ctl_reg_w(2, 0x20, 0x06, 1, 0x70); //  01110000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x20, 0x07, 1, 0xc2); //  11000010 [P17..P10]
+
+  // 1b) U88 default output values (I2C address 0x20 on I2C channel #2)
+  // The outputs on P00, P01, P02, and P03 should default to "0".
+  // This causes the muxes on sheet 2.08 to use clocks from synth R0A.
+  // The outputs on P07 and P10 should default to "1".
+  // This negates the active-lo "RESET" inputs on synths R0A and R0B.
+  // The outputs on P12, P13, P14, and P15 should default to "0".
+  // Selection of which input clock to use on synths R0A and R0B will be
+  // defined in the configuration files for these chips. They will not be
+  // switchable under program control.
+
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 6
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  apollo_i2c_ctl_reg_w(2, 0x20, 0x02, 1, 0x80); //  10000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x20, 0x03, 1, 0x01); //  00000001 [P17..P10]
+
+  // 2a) U83 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
+  // The "/INT..." signals on P04, P05, and P06 are inputs.
+  // There ane no unused signals.
+  // The remaining 13 signals are outputs.
+
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 7
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(2, 0x21, 0x06, 1, 0x70); //  01110000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x21, 0x07, 1, 0x00); //  00000000 [P17..P10]
+
+  // 2b) U88 default output values (I2C address 0x21 on I2C channel #2)
+  // The outputs on P00, P01, P02, and P03 should default to "0".
+  // This causes the muxes on sheet 2.08 to use clocks from synth R0A.
+  // The outputs on P07, P10, and P11 should default to "1".
+  // This negates the active-lo "RESET" inputs on synths R1A, R1B, and R1C.
+  // The outputs on P12, P13, P14, P15, P16, and P17 should default to "0".
+  // Selection of which input clock to use on synths R1A, R1B, and R1C
+  // will be defined in the configuration files for these chips. They will
+  // not be switchable under program control.
+
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 7
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(2, 0x21, 0x02, 1, 0x80); //  10000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x21, 0x03, 1, 0x03); //  00000011 [P17..P10]
+}
+void init_registers_ff()
+{
+  // =====================================================
+  // CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
+
+  // 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs.
+
+  // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
+  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(4, 0x20, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x20, 0x07, 1, 0xff); //  11111111 [P17..P10]
+
+  // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs so nothing needs to be done.
+
+  // 4a) U18 inputs vs. outputs (I2C address 0x21 on I2C channel #4)
+  // The "/F1_FF_RESET" signal on P10 is an output
+  // The "EN_...3V8" signals on P11, P12, and P13 are outputs.
+  // All other signals are inputs
+
+  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(4, 0x21, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x21, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+
+  // 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
+  // The output on P10 should default to "1".
+  // This negates the active-lo "RESET" input on the FPGA#1 FireFlys
+  // The outputs on P11, P12, and P13 should default to "0"
+  // This disables the 3.8 volt power supplies on the three FireFly
+  // 12-lane transmitter sites for FPGA#1.
+
+  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(4, 0x21, 0x02, 1, 0x00); //  00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x21, 0x03, 1, 0x01); //  00000001 [P17..P10]
+
+  // =====================================================
+  // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
+
+  // 5a) U10 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs.
+
+  // # set first I2C switch on channel 3 (U9, address 0x70) to port 7
+  apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(3, 0x20, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x20, 0x07, 1, 0xff); //  11111111 [P17..P10]
+
+  // 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs so nothing needs to be done.
+
+  // 6a) U12 inputs vs. outputs (I2C address 0x21 on I2C channel #3)
+  // The "/F2_FF_RESET" signal on P10 is an output
+  // The "EN_...3V8" signals on P11, P12, and P13 are outputs.
+  // All other signals are inputs
+
+  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(3, 0x21, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x21, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+
+  // 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
+  // The output on P10 should default to "1".
+  // This negates the active-lo "RESET" input on the FPGA#2 FireFlys
+  // The outputs on P11, P12, and P13 should default to "0"
+  // This disables the 3.8 volt power supplies on the three FireFly
+  // 12-lane transmitter sites for FPGA#2.
+
+  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(3, 0x21, 0x02, 1, 0x00); //  00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x21, 0x03, 1, 0x01); //  00000001 [P17..P10]
 }
 #endif // REV2

@@ -598,6 +598,11 @@ static struct command_t commands[] = {
     },
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},
+#ifdef REV2
+     {
+       "gpio", gpio_ctl, "Get or set any GPIO pin.\r\n", -1,
+     },
+#endif // REV2
     {"help", help_command_fcn, "This help command\r\n", -1},
     {"id", board_id_info, "Prints board ID information.\r\n", 0},
     {"i2cr", i2c_ctl_r,
