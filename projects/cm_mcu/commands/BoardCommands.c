@@ -142,7 +142,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       // we don't have access to sscanf, let alone strptime, since it requires _sbrk ...
       // convert HH:MM:SS into three strings
       char *p = argv[2];
-      char *pp[3] = {'\0','\0','\0'} ;
+      char *pp[3] = {"\0","\0","\0"} ;
       pp[0] = p;
       int i = 1;
       while ( *p != '\0') {
