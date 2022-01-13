@@ -57,7 +57,7 @@ static void format_data(const uint8_t sensor, const uint16_t data, uint8_t messa
   // data frame 2, data[11:6] (6 bits)
   message[2] = SENSOR_MESSAGE_DATA_FRAME;
   message[2] |= (data >> 6) & 0x3F;
-  // // data frame 3, data[5:0] ( 6 bits )
+  // data frame 3, data[5:0] ( 6 bits )
   message[3] = SENSOR_MESSAGE_DATA_FRAME;
   message[3] |= data & 0x3F;
 }
@@ -209,6 +209,20 @@ void ZMUartCharPut(unsigned char c)
 #else
 #error "Unknown board revision"
 #endif
+
+struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
+
+void zm_send_data(struct zynqmon_data_t *data[])
+{
+  // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
+  for ( int i = 0; i < ZM_NUM_ENTRIES; ++i) {
+    uint8_t message[4];
+    format_data(zynqmon_data[i].sensor, zynqmon_data[i].data.us, message);
+    for ( int j = 0; j < 4; ++j) {
+      ZMUartCharPut(message[j]);
+    }
+  }
+}
 
 void ZynqMonTask(void *parameters)
 {

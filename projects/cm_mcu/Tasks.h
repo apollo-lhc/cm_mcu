@@ -218,9 +218,24 @@ void EEPROMTask(void *parameters);
 
 extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
+// data for zynqmon task to be sent to Zynq 
+#define ZM_NUM_ENTRIES 256
+struct zynqmon_data_t {
+  uint8_t sensor;
+  union convert_16_t {
+    uint16_t us;
+    uint8_t uc[2];
+    char c[2];
+    int16_t i;
+    __fp16 f;
+  } data;
+};
+
+extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
 #ifdef ZYNQMON_TEST_MODE
-void setZYNQMonTestData(uint8_t sensor, uint16_t value);
+    void
+    setZYNQMonTestData(uint8_t sensor, uint16_t value);
 uint8_t getZYNQMonTestMode();
 uint8_t getZYNQMonTestSensor();
 uint16_t getZYNQMonTestData();
