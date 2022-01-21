@@ -1,0 +1,85 @@
+name: zynqmon configuration file
+cm_hw_rev: 1A
+sm_hw_rev: 1A
+sm_fw_rev: 1A
+revision: 1
+config:
+  - name: firefly
+    start: 0
+    count: 25
+    mcu_call: firefly
+    type: int8
+    names:
+      - K01  12 Tx GTH
+      - K01  12 Rx GTH
+      - K02  12 Tx GTH
+      - K02  12 Rx GTH
+      - K03  12 Tx GTH
+      - K03  12 Rx GTH
+      - K04 4 XCVR GTY
+      - K05 4 XCVR GTY
+      - K06 4 XCVR GTY
+      - K07  12 Tx GTY
+      - K07  12 Rx GTY
+      - V01 4 XCVR GTY
+      - V02 4 XCVR GTY
+      - V03 4 XCVR GTY
+      - V04 4 XCVR GTY
+      - V05 4 XCVR GTY
+      - V06 4 XCVR GTY
+      - V07 4 XCVR GTY
+      - V08 4 XCVR GTY
+      - V09 4 XCVR GTY
+      - V10 4 XCVR GTY
+      - V11  12 Tx GTY
+      - V11  12 Rx GTY
+      - V12  12 Tx GTY
+      - V12  12 Rx GTY
+  - name: psmon
+    start: 20
+    count: 20
+    mcu_call: psmon
+    type: fp16
+    single_instance: &psmon_one [TEMP1, TEMP3, VIN, VOUT, IOUT, RESERVED, RESERVED, RESERVED]
+    names: &psmon_all [ *psmon_one, *psmon_one,*psmon_one,*psmon_one,*psmon_one,*psmon_one,*psmon_one,*psmon_one]
+  - name: adcmon
+    start: 40
+    count: 21
+    mcu_call: adcmon
+    type: fp16
+    names:
+      - VCC_12V
+      - VCC_2V5
+      - VCC_M3V3
+      - VCC_3V3
+      - VCC_1V8
+      - VCC_M1V8
+      - V_VCCINT
+      - K_VCCINT
+      - V_MGTY1_AVTT
+      - V_MGTY2_AVTT
+      - K_MGTH_AVTT
+      - K_MGTY_AVTT
+      - V_MGTY1_VCCAUX
+      - V_MGTY2_VCCAUX
+      - K_MGTY_VCCAUX
+      - K_MGTH_VCCAUX
+      - V_MGTY1_AVCC
+      - V_MGTY2_AVCC
+      - K_MGTY_AVCC
+      - K_MGTH_AVCC
+      - TM4C_TEMP
+  - name: uptime
+    start: 192
+    count: 2
+    type: uint16
+    mcu_call: uptime
+    names:
+      - Uptime
+  - name: gitversion
+    start: 194
+    count: 20
+    type: char
+    mcu_call: gitversion
+    names:
+      - Git_Version
