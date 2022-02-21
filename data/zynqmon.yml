@@ -7,7 +7,7 @@ config:
   - name: firefly
     start: 0
     count: 25
-    mcu_call: firefly
+    mcu_call: firefly_temps
     type: int8
     names:
       - K01  12 Tx GTH
@@ -37,7 +37,7 @@ config:
       - V12  12 Rx GTY
   - name: psmon
     start: 20
-    count: 20
+    count: 64
     mcu_call: psmon
     type: fp16
     single_instance: &psmon_one [TEMP1, TEMP3, VIN, VOUT, IOUT, RESERVED, RESERVED, RESERVED]
@@ -83,3 +83,11 @@ config:
     mcu_call: gitversion
     names:
       - Git_Version
+  - name: fpga
+    start: 128
+    count: 2
+    type: float16
+    mcu_call: fpga
+    names:
+      - F1_TEMP
+      - F2_TEMP
