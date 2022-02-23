@@ -403,8 +403,8 @@ void init_registers_clk()
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6 
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w( 2, 0x20, 0x06, 1, 0xf0); // 11110000 [P07..P00]
-  apollo_i2c_ctl_reg_w( 2, 0x20, 0x07, 1, 0xe0); // 11100000 [P17..P10]
+  apollo_i2c_ctl_reg_w( 2, 0x20, 1, (uint8_t[]){0,0x06}, 1, 0xf0); // 11110000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 2, 0x20, 1, (uint8_t[]){0,0x07}, 1, 0xe0); // 11100000 [P17..P10]
 
   // 1b) U93 default output values (I2C address 0x20 on I2C channel #2)
   // The outputs on P00, P01, P02, and P03 should default to "0".
@@ -424,8 +424,8 @@ void init_registers_clk()
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6 
   apollo_i2c_ctl_w( 2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w( 2, 0x20, 0x02, 1, 0xf0); // 11110000 [P07..P00]
-  apollo_i2c_ctl_reg_w( 2, 0x20, 0x03, 1, 0xf8); // 11111000 [P17..P10]
+  apollo_i2c_ctl_reg_w( 2, 0x20, 1, (uint8_t[]){0, 0x02}, 1, 0xf0); // 11110000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 2, 0x20, 1, (uint8_t[]){0, 0x03}, 1, 0xf8); // 11111000 [P17..P10]
 
   // 2a) U92 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
   // The signals on P00, P01, and P02 are inputs.
@@ -434,8 +434,8 @@ void init_registers_clk()
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 7 
   apollo_i2c_ctl_w( 2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w( 2, 0x21, 0x06, 1, 0xff); // 11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w( 2, 0x21, 0x07, 1, 0xff); // 11111111 [P17..P10]
+  apollo_i2c_ctl_reg_w( 2, 0x21, 1, (uint8_t[]){0, 0x06}, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 2, 0x21, 1, (uint8_t[]){0, 0x07}, 1, 0xff); // 11111111 [P17..P10]
 
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
@@ -451,8 +451,8 @@ void init_registers_ff()
 
   // # set first I2C switch on channel 4 (U100, address 0x70) to port 7 
   apollo_i2c_ctl_w( 4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w( 4, 0x20, 0x06, 1, 0xff); // 11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w( 4, 0x20, 0x07, 1, 0xff); // 11111111 [P17..P10]
+  apollo_i2c_ctl_reg_w( 4, 0x20, 1, (uint8_t[]){0,0x06}, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x20, 1, (uint8_t[]){0,0x07}, 1, 0xff); // 11111111 [P17..P10]
 
   // 3b) U102 default output values (I2C address 0x20 on I2C channel #4)
   // All signals are inputs so nothing needs to be done.
@@ -464,8 +464,8 @@ void init_registers_ff()
 
   // # set second I2C switch on channel 4 (U17, address 0x71) to port 6 
   apollo_i2c_ctl_w( 4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w( 4, 0x21, 0x06, 1, 0xff); // 11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w( 4, 0x21, 0x07, 1, 0xfc); // 11111100 [P17..P10]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 1, (uint8_t[]){0,0x06}, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 1, (uint8_t[]){0,0x07}, 1, 0xfc); // 11111100 [P17..P10]
 
   // 4b) U1 default output values (I2C address 0x21 on I2C channel #4)
   // The outputs on P10 and P11 should default to "1".
@@ -473,8 +473,8 @@ void init_registers_ff()
 
   // # set second I2C switch on channel 4 (U17, address 0x71) to port 6 
   apollo_i2c_ctl_w( 4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w( 4, 0x21, 0x02, 1, 0x00); // 00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w( 4, 0x21, 0x03, 1, 0x01); // 00000011 [P17..P10]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 1, (uint8_t[]){0,0x02}, 1, 0x00); // 00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 1, (uint8_t[]){0,0x03}, 1, 0x01); // 00000011 [P17..P10]
 
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
@@ -484,8 +484,8 @@ void init_registers_ff()
 
   // # set third I2C switch on channel 3 (U4, address 0x72) to port 0 
   apollo_i2c_ctl_w( 3, 0x72, 1, 0x01);
-  apollo_i2c_ctl_reg_w( 3, 0x20, 0x06, 1, 0xff); // 11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w( 3, 0x20, 0x07, 1, 0xff); // 11111111 [P17..P10]
+  apollo_i2c_ctl_reg_w( 3, 0x20, 1, (uint8_t[]){0,0x06}, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 3, 0x20, 1, (uint8_t[]){0,0x07}, 1, 0xff); // 11111111 [P17..P10]
 
   // 5b) U103 default output values (I2C address 0x20 on I2C channel #3)
   // All signals are inputs so nothing needs to be done.
@@ -495,8 +495,8 @@ void init_registers_ff()
 
   // # set third I2C switch on channel 3 (U4, address 0x72) to port 1 
   apollo_i2c_ctl_w( 3, 0x72, 1, 0x02);
-  apollo_i2c_ctl_reg_w( 3, 0x21, 0x06, 1, 0xff); // 11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w( 3, 0x21, 0x07, 1, 0xff); // 11111111 [P17..P10]
+  apollo_i2c_ctl_reg_w( 3, 0x21, 1, (uint8_t[]){0,0x06}, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 3, 0x21, 1, (uint8_t[]){0,0x07}, 1, 0xff); // 11111111 [P17..P10]
 
   // 6b) U5 default output values (I2C address 0x21 on I2C channel #3)
   // All signals are inputs so nothing needs to be done.
@@ -508,8 +508,8 @@ void init_registers_ff()
 
   // # set third I2C switch on channel 3 (U4, address 0x72) to port 2 
   apollo_i2c_ctl_w( 3, 0x72, 1, 0x04);
-  apollo_i2c_ctl_reg_w( 3, 0x22, 0x06, 1, 0xff); // 11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w( 3, 0x22, 0x07, 1, 0xf0); // 11110000 [P17..P10]
+  apollo_i2c_ctl_reg_w( 3, 0x22, 1, (uint8_t[]){0,0x06}, 1, 0xff); // 11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w( 3, 0x22, 1, (uint8_t[]){0,0x07}, 1, 0xf0); // 11110000 [P17..P10]
 
   // 7b) U6 default output values (I2C address 0x22 on I2C channel #3)
   // The outputs on P10 and P11 should default to "1".
@@ -519,8 +519,8 @@ void init_registers_ff()
 
   // # set third I2C switch on channel 3 (U4, address 0x72) to port 2 
   apollo_i2c_ctl_w( 4, 0x72, 1, 0x04);
-  apollo_i2c_ctl_reg_w( 4, 0x21, 0x02, 1, 0x00); // 00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w( 4, 0x21, 0x03, 1, 0x03); // 00000011 [P17..P10]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 1, (uint8_t[]){0,0x02}, 1, 0x00); // 00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w( 4, 0x21, 1, (uint8_t[]){0,0x03}, 1, 0x03); // 00000011 [P17..P10]
 }
 #endif // REV1
 #ifdef REV2
@@ -538,8 +538,8 @@ void init_registers_clk()
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 0x06, 1, 0x70); //  01110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 0x07, 1, 0xc2); //  11000010 [P17..P10]
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, (uint8_t[]){0,0x06}, 1, 0x70); //  01110000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, (uint8_t[]){0,0x07}, 1, 0xc2); //  11000010 [P17..P10]
 
   // 1b) U88 default output values (I2C address 0x20 on I2C channel #2)
   // The outputs on P00, P01, P02, and P03 should default to "0".
@@ -553,8 +553,8 @@ void init_registers_clk()
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 0x02, 1, 0x80); //  10000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, (uint8_t[]){0,0x02}, 1, 0x80); //  10000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, (uint8_t[]){0,0x03}, 1, 0x01); //  00000001 [P17..P10]
 
   // 2a) U83 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
   // The "/INT..." signals on P04, P05, and P06 are inputs.
@@ -563,8 +563,8 @@ void init_registers_clk()
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 7
   apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(2, 0x21, 0x06, 1, 0x70); //  01110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x21, 0x07, 1, 0x00); //  00000000 [P17..P10]
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, (uint8_t[]){0,0x06}, 1, 0x70); //  01110000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, (uint8_t[]){0,0x07}, 1, 0x00); //  00000000 [P17..P10]
 
   // 2b) U88 default output values (I2C address 0x21 on I2C channel #2)
   // The outputs on P00, P01, P02, and P03 should default to "0".
@@ -578,8 +578,8 @@ void init_registers_clk()
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 7
   apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(2, 0x21, 0x02, 1, 0x80); //  10000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x21, 0x03, 1, 0x03); //  00000011 [P17..P10]
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, (uint8_t[]){0,0x02}, 1, 0x80); //  10000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, (uint8_t[]){0,0x03}, 1, 0x03); //  00000011 [P17..P10]
 }
 void init_registers_ff()
 {
@@ -591,8 +591,8 @@ void init_registers_ff()
 
   // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(4, 0x20, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x20, 0x07, 1, 0xff); //  11111111 [P17..P10]
+  apollo_i2c_ctl_reg_w(4, 0x20, 1, (uint8_t[]){0,0x06}, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x20, 1, (uint8_t[]){0,0x07}, 1, 0xff); //  11111111 [P17..P10]
 
   // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
   // All signals are inputs so nothing needs to be done.
@@ -604,8 +604,8 @@ void init_registers_ff()
 
   // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(4, 0x21, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x21, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, (uint8_t[]){0,0x06}, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, (uint8_t[]){0,0x07}, 1, 0xf0); //  11110000 [P17..P10]
 
   // 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
   // The output on P10 should default to "1".
@@ -616,8 +616,8 @@ void init_registers_ff()
 
   // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(4, 0x21, 0x02, 1, 0x00); //  00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x21, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, (uint8_t[]){0,0x02}, 1, 0x00); //  00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, (uint8_t[]){0,0x03}, 1, 0x01); //  00000001 [P17..P10]
 
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
@@ -627,8 +627,8 @@ void init_registers_ff()
 
   // # set first I2C switch on channel 3 (U9, address 0x70) to port 7
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(3, 0x20, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x20, 0x07, 1, 0xff); //  11111111 [P17..P10]
+  apollo_i2c_ctl_reg_w(3, 0x20, 1, (uint8_t[]){0,0x06}, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x20, 1, (uint8_t[]){0,0x07}, 1, 0xff); //  11111111 [P17..P10]
 
   // 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
   // All signals are inputs so nothing needs to be done.
@@ -640,8 +640,8 @@ void init_registers_ff()
 
   // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(3, 0x21, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x21, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, (uint8_t[]){0,0x06}, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, (uint8_t[]){0,0x07}, 1, 0xf0); //  11110000 [P17..P10]
 
   // 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
   // The output on P10 should default to "1".
@@ -652,7 +652,7 @@ void init_registers_ff()
 
   // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(3, 0x21, 0x02, 1, 0x00); //  00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x21, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, (uint8_t[]){0,0x02}, 1, 0x00); //  00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, (uint8_t[]){0,0x03}, 1, 0x01); //  00000001 [P17..P10]
 }
 #endif // REV2

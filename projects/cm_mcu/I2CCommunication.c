@@ -72,6 +72,7 @@ SemaphoreHandle_t (*getSemaphore[7])(void) = {
 };
 
 #define MAX_BYTES 4
+#define MAX_BYTES_ADDR 2
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
   tSMBus* p_sMaster = pSMBus[device];
@@ -107,13 +108,15 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   return retval;
 }
 
-int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
+int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr, uint8_t *reg_address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
   tSMBus* smbus = pSMBus[device];
   tSMBusStatus* p_status = eStatus[device];
 
   configASSERT(smbus != NULL);
-
+  memset(reg_address, 0, nbytes_addr * sizeof(reg_address[0]));
+  if (nbytes_addr > MAX_BYTES_ADDR)
+    nbytes_addr = MAX_BYTES_ADDR;
   memset(data, 0, nbytes * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
@@ -126,7 +129,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, u
   }
   int retval = 0;
 
-  tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, &reg_address, 1, data, nbytes);
+  tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, reg_address, nbytes_addr, data, nbytes);
   if (r != SMBUS_OK) {
     retval = -1;
   }
@@ -143,24 +146,27 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t reg_address, u
     return *p_status;
 }
 
-int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t reg_address, uint8_t nbytes, int packed_data)
+int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, uint8_t *reg_address, uint8_t nbytes, int packed_data)
 {
   tSMBus* p_sMaster = pSMBus[device];
   tSMBusStatus* p_eStatus = eStatus[device];
 
   configASSERT(p_sMaster != NULL);
 
-  // first byte is the register, others are the data
-  uint8_t data[MAX_BYTES+1];
-  data[0] = reg_address;
-  // pack the bytes into the data array, offset by
-  // one due to the address
-  for (int i = 1; i < MAX_BYTES + 1; ++i) {
-    data[i] = (packed_data >> (i - 1) * 8) & 0xFFUL;
+  // first byte (if write to one of five clcok chips) or two bytes (if write to EEPROM) is the register, others are the data
+  uint8_t data[MAX_BYTES+nbytes_addr];
+  for (int i = 0; i < MAX_BYTES_ADDR; ++i){
+    data[i] = reg_address[i];
+    if (data[i] != 0) ++nbytes; // to account for the register address
   }
-  nbytes++; // to account for the register address
-  if (nbytes > MAX_BYTES)
-    nbytes = MAX_BYTES;
+  // pack the bytes into the data array, offset by
+  // one or two due to the address
+  for (int i = MAX_BYTES_ADDR; i < MAX_BYTES + MAX_BYTES_ADDR; ++i) {
+    data[i] = (packed_data >> (i - MAX_BYTES_ADDR) * 8) & 0xFFUL;
+  }
+  
+  if (nbytes > MAX_BYTES+MAX_BYTES_ADDR)
+    nbytes = MAX_BYTES+MAX_BYTES_ADDR;
   // get the semaphore
   SemaphoreHandle_t s = NULL;
   if ( getSemaphore[device] != NULL ) {

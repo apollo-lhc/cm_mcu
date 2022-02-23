@@ -337,7 +337,7 @@ bool isEnabledFF(int ff)
     return true;
 }
 
-static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, size_t size)
+static int read_ff_register(const char *name, uint8_t *reg_addr, uint8_t *value, size_t size)
 {
   memset(value, 0, size);
   // find the appropriate information for this FF device
@@ -373,7 +373,7 @@ static int read_ff_register(const char *name, uint8_t reg_addr, uint8_t *value, 
 
     if (! res ) {
     // Read from register.
-    res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, reg_addr, size, value);
+    res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, reg_addr, size, value);
 
     //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
     if (res != 0) {
@@ -426,7 +426,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     // write to register. First word is reg address, then the data.
     // increment size to account for the register address
     if ( ! res ) {
-      res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, reg, size, (int)value);
+      res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint8_t[]){0,reg}, size, (int)value);
       if (res != 0) {
         char tmp[64];
         snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
@@ -535,7 +535,7 @@ static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8
   if (num_ff >= NFIREFLIES) {
     return -1;
   }
-  int ret = read_ff_register(ff_i2c_addrs[num_ff].name, regnumber, value, 1);
+  int ret = read_ff_register(ff_i2c_addrs[num_ff].name, (uint8_t[]){0,regnumber}, value, 1);
   return ret;
 }
 
@@ -667,7 +667,7 @@ void FireFlyTask(void *parameters)
         uint8_t regdata[CHARLENGTH];
         memset(regdata, 'x', CHARLENGTH);
         regdata[theSZ - 1] = '\0';
-        int ret = read_ff_register(ff_i2c_addrs[theFF].name, theReg, &regdata[0], theSZ);
+        int ret = read_ff_register(ff_i2c_addrs[theFF].name, (uint8_t[]){0,theReg}, &regdata[0], theSZ);
         if (ret != 0) {
           snprintf(tmp, CHARLENGTH, "read_ff_reg failed with %d\r\n", ret);
           Print(tmp);
@@ -759,7 +759,7 @@ void FireFlyTask(void *parameters)
 
 #define ERRSTR "FIF: %s: Error %d, break loop (ff=%d,c=%d) ...\r\n"
       // Read the temperature
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_TEMP_COMMAND_REG, 2, data);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint8_t[]){0,FF_TEMP_COMMAND_REG}, 2, data);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
@@ -775,7 +775,7 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // read the status register
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, FF_STATUS_COMMAND_REG, 2, data);
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint8_t[]){0,FF_STATUS_COMMAND_REG}, 2, data);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
@@ -794,7 +794,7 @@ void FireFlyTask(void *parameters)
       data[0] = 0x0U;
       data[1] = 0x0U;
       for (uint8_t i = 189; i < 205; i++) {// change from 171-185 to 189-198 or 189-204 or 196-211
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, &i, 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint8_t[]){0,i}, 1, data);
         if (res == -1) {
           snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
               1);
@@ -830,7 +830,7 @@ void FireFlyTask(void *parameters)
       // TODO: single multi-byte read rather than multiple reads 
       int reg_i=0;
       while(reg_i<2 && los_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, los_regs[reg_i], 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint8_t[]){0,los_regs[reg_i]}, 1, data);
         if (res != 0) {
           snprintf(tmp, 64, ERRSTR, __func__, res, ff, 3);
           DPRINT(tmp);
@@ -856,7 +856,7 @@ void FireFlyTask(void *parameters)
 
       reg_i=0;
       while(reg_i<2 && cdr_lol_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, cdr_lol_regs[reg_i], 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint8_t[]){0,cdr_lol_regs[reg_i]}, 1, data);
         if (res != 0) {
           snprintf(tmp, 64, ERRSTR, __func__, res, ff, 5);
           DPRINT(tmp);
@@ -875,7 +875,7 @@ void FireFlyTask(void *parameters)
       data[1] = 0x0U;
 
       for (uint8_t i = 148; i < 164; i++) {
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, i, 1, data);
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint8_t[]){0,i}, 1, data);
         if (res != 0){
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
               ff, 1);
