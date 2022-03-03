@@ -205,7 +205,7 @@ extern QueueHandle_t xEPRMQueue_out;
 uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
 
-// ZynqMon
+// -- ZynqMon
 //#define ZYNQMON_TEST_MODE
 // ZynqMon queue messages
 #define ZYNQMON_ENABLE_TRANSMIT  0x1
@@ -234,8 +234,7 @@ struct zynqmon_data_t {
 extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
 #ifdef ZYNQMON_TEST_MODE
-    void
-    setZYNQMonTestData(uint8_t sensor, uint16_t value);
+void setZYNQMonTestData(uint8_t sensor, uint16_t value);
 uint8_t getZYNQMonTestMode();
 uint8_t getZYNQMonTestSensor();
 uint16_t getZYNQMonTestData();

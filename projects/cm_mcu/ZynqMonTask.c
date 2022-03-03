@@ -204,7 +204,7 @@ ZMUartCharPut(unsigned char c)
 #elif defined(REV2)
 void ZMUartCharPut(unsigned char c)
 {
-  UARTCharPut(UART4_BASE, c);
+  ROM_UARTCharPut(UART4_BASE, c);
 }
 #else
 #error "Unknown board revision"
@@ -212,16 +212,150 @@ void ZMUartCharPut(unsigned char c)
 
 struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
-void zm_send_data(struct zynqmon_data_t *data[])
+void zm_send_data(struct zynqmon_data_t data[])
 {
   // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
   for ( int i = 0; i < ZM_NUM_ENTRIES; ++i) {
     uint8_t message[4];
-    format_data(zynqmon_data[i].sensor, zynqmon_data[i].data.us, message);
+    format_data(data[i].sensor, data[i].data.us, message);
     for ( int j = 0; j < 4; ++j) {
       ZMUartCharPut(message[j]);
     }
   }
+}
+
+// this only needs to be called once
+#define ZM_GIT_VERSION_LENGTH 20
+void zm_set_gitversion(struct zynqmon_data_t data[], int start)
+{
+  // git version
+  char buff[ZM_GIT_VERSION_LENGTH];
+  // clear the buffer
+  memset(buff, 0, ZM_GIT_VERSION_LENGTH); // technically not needed
+  // get the git version and copy it into the buffer
+  strncpy(buff, gitVersion(), ZM_GIT_VERSION_LENGTH);
+  // loop over the buffer and copy it into the data struct
+  for (int j = 0; j < ZM_GIT_VERSION_LENGTH/2; j++) {
+    data[j].sensor = start + j;
+    data[j].data.us = buff[j] << 8 | buff[j+1];
+  }
+}
+
+// store the uptime. This is a 32 bit unsigned int. Updates once per loop
+void zm_set_uptime(struct zynqmon_data_t data[], int start)
+{
+  TickType_t now = xTaskGetTickCount() / (configTICK_RATE_HZ * 60); // time in minutes
+
+  uint16_t now_16 = now & 0xFFFFU; // lower 16 bits
+  data[0].sensor = start;
+  data[0].data.us = now_16;
+  now_16 = (now >> 16) & 0xFFFFU; // upper 16 bits
+  data[0].sensor = start + 1;
+  data[0].data.us = now_16;
+}
+
+// wasting half the data packet here; could repack it
+// updated once per loop. Store the firefly temperature data 
+void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
+{
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+  // Fireflies
+  TickType_t last = pdTICKS_TO_S(getFFupdateTick());
+  bool stale = checkStale(last, now);
+
+  // update the data for ZMON
+  for (int i = 0; i < NFIREFLIES; i++) {
+    data[i].sensor = i + start; // sensor id
+    if ( ! stale ) {
+      data[i].data.i = getFFtemp(i); // sensor value and type
+    }
+    else {
+      data[i].data.i = -56; // special stale value
+    }
+  }
+
+}
+
+// store the zynqmon ADCMon data
+void zm_set_adcmon(struct zynqmon_data_t data[], int start)
+{
+  // update the data for ZMON
+  for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    data[i].sensor = i + start;  // sensor id
+    data[i].data.f = getADCvalue(i); // sensor value and type
+  }
+}
+
+// store the PSMON data
+void zm_set_psmon(struct zynqmon_data_t data[], int start)
+{
+  // MonitorTask values -- power supply
+  // this indirection list is required because of a mistake
+  // made when initially putting together the register list.
+  const size_t offsets[] = {32, 40, 48, 56, 160, 168, 64, 72, 80, 88};
+  // update times, in seconds. If the data is stale, send NaN
+  TickType_t last = pdTICKS_TO_S(dcdc_args.updateTick);
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+  bool stale = checkStale(last, now);
+
+  for (int j = 0; j < 5; ++j) { // loop over supplies FIXME hardcoded value
+    for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
+      for (int k = 0; k < 5; ++k) {               // loop over FIRST FIVE commands
+        int index =
+            j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
+
+        if (stale) {
+          data[index].data.f = __builtin_nanf("");
+        }
+        else {
+          data[index].data.f = dcdc_args.pm_values[index];
+          if (data[index].data.f < -900.f)
+            data[index].data.f = __builtin_nanf("");
+        }
+        int reg = offsets[j * 2 + l] + k;
+        data[index].sensor = reg;
+      }
+    }
+  }
+}
+
+void zm_set_fpgamon(struct zynqmon_data_t data[], int start)
+{
+  // FPGA values
+  TickType_t last = pdTICKS_TO_S(fpga_args.updateTick);
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+  bool stale = checkStale(last, now);
+
+  for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
+
+    if (stale) {
+      data[j].data.f = __builtin_nanf("");
+    }
+    else {
+      data[j].data.f = fpga_args.pm_values[j];
+      if (data[j].data.f < -900.f)
+        data[j].data.f = __builtin_nanf("");
+    }
+    data[j].sensor = j + start;
+  }
+}
+
+// this code will ultimately be generated from the YML file
+void zm_fill_structs()
+{
+  // firefly
+  zm_set_firefly_temps(&zynqmon_data[0], 0);
+  // psmon
+  zm_set_psmon(&zynqmon_data[25], 20);
+  // adcmon
+  zm_set_adcmon(&zynqmon_data[45], 40);
+  // uptime
+  zm_set_uptime(&zynqmon_data[66], 192);
+  // gitversion
+  zm_set_gitversion(&zynqmon_data[68], 194);
 }
 
 void ZynqMonTask(void *parameters)
@@ -433,6 +567,8 @@ void ZynqMonTask(void *parameters)
         for (int i = 0; i < 4; ++i) {
           ZMUartCharPut( message[i]);
         }
+        zm_fill_structs();
+        zm_send_data(zynqmon_data);
       } // if not test mode
 
 #ifdef REV1

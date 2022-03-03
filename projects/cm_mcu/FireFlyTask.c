@@ -904,11 +904,6 @@ void FireFlyTask(void *parameters)
     update_max();
     update_min();
 #endif // DEBUG_FIF
-  // update the data for ZMON
-    for (int i = 0; i < NFIREFLIES; i++) {
-      zynqmon_data[i].sensor = i;
-      zynqmon_data[i].data.i= ff_stat[i].temp;
-    }
     task_watchdog_feed_task(kWatchdogTaskID_FireFly);
     vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(250));
   } // infinite loop for task
