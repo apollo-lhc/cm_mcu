@@ -65,7 +65,7 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
   int status = apollo_i2c_ctl_reg_w(device, address, nbytes_addr, packed_reg_address, nbytes, packed_data);
   if (status == 0) {
     snprintf(m, s, "%s: Wrote to address 0x%lx, register 0x%lx, value 0x%08lx (%ld bytes)\r\n", argv[0], address,
-             packed_reg_address, packed_data, nbytes - nbytes_addr);
+             packed_reg_address, packed_data, nbytes);
   }
   else {
     snprintf(m, s, "%s: failure %d\r\n", argv[0], status);

@@ -157,7 +157,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   // first byte (if write to one of five clcok chips) or two bytes (if write to EEPROM) is the register, others are the data
   uint8_t data[MAX_BYTES_ADDR + MAX_BYTES];
   for (int i = 0; i < MAX_BYTES_ADDR; ++i){
-	data[i] = (packed_reg_address >> (i) * 8) & 0xFFUL;
+	data[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFFUL;
     if (data[i] != 0) ++nbytes; // to account for the register address
   }
   // pack the bytes into the data array, offset by
