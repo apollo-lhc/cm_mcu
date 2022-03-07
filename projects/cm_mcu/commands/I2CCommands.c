@@ -54,7 +54,7 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
   int s = SCRATCH_SIZE;
   // first byte is the register, others are the data
   UBaseType_t device, address, packed_reg_address, packed_data;
-  BaseType_t nbytes_addr, nbytes; 
+  BaseType_t nbytes_addr, nbytes;
   device = strtoul(argv[1], NULL, 16);     // i2c device
   address = strtoul(argv[2], NULL, 16);     // address
   nbytes_addr = strtol(argv[3], NULL, 10);
