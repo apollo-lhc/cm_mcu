@@ -373,7 +373,7 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
 
     if (! res ) {
     // Read from register.
-    res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)packed_reg_addr, size, *((uint32_t*)value));
+    res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, packed_reg_addr, size, *((uint32_t*)value));
 
     //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
     if (res != 0) {
@@ -426,7 +426,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     // write to register. First word is reg address, then the data.
     // increment size to account for the register address
     if ( ! res ) {
-      res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)reg, size, (uint32_t)value);
+      res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
       if (res != 0) {
         char tmp[64];
         snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
