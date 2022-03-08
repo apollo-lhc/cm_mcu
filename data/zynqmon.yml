@@ -3,6 +3,8 @@ cm_hw_rev: 1A
 sm_hw_rev: 1A
 sm_fw_rev: 1A
 revision: 1
+psmon_single_instance: &psmon_one [TEMP1, TEMP3, VIN, VOUT, IOUT, RESERVED, RESERVED, RESERVED]
+
 config:
   - name: firefly
     start: 0
@@ -36,12 +38,12 @@ config:
       - V12  12 Tx GTY
       - V12  12 Rx GTY
   - name: psmon
-    start: 20
-    count: 64
+    start: 32
+    count: 8
     mcu_call: psmon
     type: fp16
-    single_instance: &psmon_one [TEMP1, TEMP3, VIN, VOUT, IOUT, RESERVED, RESERVED, RESERVED]
-    names: &psmon_all [ *psmon_one, *psmon_one,*psmon_one,*psmon_one,*psmon_one,*psmon_one,*psmon_one,*psmon_one]
+    prefix: 
+    names: *psmon_one
   - name: adcmon
     start: 40
     count: 21
@@ -72,7 +74,7 @@ config:
   - name: uptime
     start: 192
     count: 2
-    type: uint16
+    type: uint32_t
     mcu_call: uptime
     names:
       - Uptime
@@ -86,7 +88,7 @@ config:
   - name: fpga
     start: 128
     count: 2
-    type: float16
+    type: fp16
     mcu_call: fpga
     names:
       - F1_TEMP
