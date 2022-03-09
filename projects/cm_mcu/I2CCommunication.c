@@ -71,6 +71,7 @@ SemaphoreHandle_t (*getSemaphore[7])(void) = {
     NULL,
 };
 
+#define MAX_BYTES_ADDR 2
 #define MAX_BYTES 4
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
@@ -113,7 +114,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   tSMBusStatus* p_status = eStatus[device];
 
   configASSERT(smbus != NULL);
-  uint8_t reg_address[nbytes_addr];
+  uint8_t reg_address[MAX_BYTES_ADDR];
   for (int i = 0; i < nbytes_addr; ++i) {
       reg_address[i] = (packed_reg_address >> i * 8) & 0xFF;
   }
@@ -153,16 +154,16 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
 
   configASSERT(p_sMaster != NULL);
 
-  // first byte (if write to one of five clcok chips) or two bytes (if write to EEPROM) is the register, others are the data
-  uint8_t data[nbytes_addr + MAX_BYTES];
+  // first byte (if write to one of five clock chips) or two bytes (if write to EEPROM) is the register, others are the data
+  uint8_t data[MAX_BYTES_ADDR + MAX_BYTES];
   for (int i = 0; i < nbytes_addr; ++i){
-	data[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF;
+    data[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
     if (data[i] != 0) ++nbytes; // to account for the register address
   }
   // pack the bytes into the data array, offset by
   // one or two due to the address
   for (int i = nbytes_addr; i < MAX_BYTES + nbytes_addr; ++i) {
-    data[i] = (packed_data >> (i) * 8) & 0xFF;
+    data[i] = (packed_data >> (i - nbytes_addr) * 8) & 0xFF;
   }
   
   if (nbytes > MAX_BYTES+nbytes_addr)

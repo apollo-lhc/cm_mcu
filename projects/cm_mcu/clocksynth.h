@@ -30,6 +30,6 @@ int load_clock();
 #define CLOCK_EXPANDER_ENABLE_CLOCKSYNTH              0x13
 #define CLOCK_EXPANDER_RESET_CLOCKSYNTH               0x1b
 #define CLOCK_EXPANDER_CONFIGURATION_PORT_0           0x06 // configuration port to set I/O port as input or output
-#define CHANGEPAGE_REG_ADDR                           0x01
+#define CLOCK_CHANGEPAGE_REG_ADDR                           0x01
 
 #endif /* PROJECTS_CM_MCU_CLOCKSYNTH_H_ */

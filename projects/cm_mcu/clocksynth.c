@@ -131,7 +131,7 @@ static int write_register(int RegList[][2], int n_row)
     uint16_t LowByte_reg_addr = LowByte;
 
     if (ChangePage) {
-      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH_I2C_ADDRESS, 1, CHANGEPAGE_REG_ADDR, 1, NewHighByte);
+      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH_I2C_ADDRESS, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, NewHighByte);
       if (status != 0)
         return status;
     }
