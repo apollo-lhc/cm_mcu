@@ -42,10 +42,18 @@ config:
     count: 8
     mcu_call: psmon
     type: fp16
-    prefix: 
+    prefixes: 
+      - 3V3
+      - 1V8
+      - KVCCINT1_1
+      - KVCCINT1_2
+      - VVCCINT1_1
+      - VVCCINT1_2
+      - VVCCINT2_1
+      - VVCCINT2_2
     names: *psmon_one
   - name: adcmon
-    start: 40
+    start: 96
     count: 21
     mcu_call: adcmon
     type: fp16
@@ -77,17 +85,18 @@ config:
     type: uint32_t
     mcu_call: uptime
     names:
-      - Uptime
+      - MCU_UPTIME
   - name: gitversion
-    start: 194
+    start: 118
     count: 20
     type: char
+    size: 5
     mcu_call: gitversion
     names:
-      - Git_Version
+      - MCU_FW_VER
   - name: fpga
     start: 128
-    count: 2
+    count: 8
     type: fp16
     mcu_call: fpga
     names:
