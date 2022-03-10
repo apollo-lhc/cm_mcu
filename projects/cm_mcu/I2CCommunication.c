@@ -158,8 +158,8 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   uint8_t data[MAX_BYTES_ADDR + MAX_BYTES];
   for (int i = 0; i < nbytes_addr; ++i){
     data[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
-    if (data[i] != 0) ++nbytes; // to account for the register address
   }
+  nbytes += nbytes_addr;
   // pack the bytes into the data array, offset by
   // one or two due to the address
   for (int i = nbytes_addr; i < MAX_BYTES + nbytes_addr; ++i) {
