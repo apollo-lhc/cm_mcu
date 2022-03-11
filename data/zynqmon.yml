@@ -11,6 +11,7 @@ config:
     count: 25
     mcu_call: firefly_temps
     type: int8
+    extra: Table=CM_FF_MON;Row=_3;Column=Temp_C;Status=2;
     names:
       - K01  12 Tx GTH
       - K01  12 Rx GTH
@@ -57,6 +58,7 @@ config:
     count: 21
     mcu_call: adcmon
     type: fp16
+    extra: Table=CM_MON;Row=_3;Column=Volts;Status=2;
     names:
       - VCC_12V
       - VCC_2V5
@@ -81,7 +83,7 @@ config:
       - TM4C_TEMP
   - name: uptime
     start: 192
-    count: 2
+    count: 1
     type: uint32_t
     mcu_call: uptime
     names:
@@ -96,9 +98,12 @@ config:
       - MCU_FW_VER
   - name: fpga
     start: 128
-    count: 8
+    count: 4
     type: fp16
+    extra: Table=CM_MON;Row=_3;Column=Temp_C;Status=2;
     mcu_call: fpga
     names:
-      - F1_TEMP
-      - F2_TEMP
+      - F1_TEMP_SLR0
+      - F2_TEMP_SLR0
+      - F1_TEMP_SLR1
+      - F2_TEMP_SLR1
