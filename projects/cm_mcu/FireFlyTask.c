@@ -371,17 +371,20 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
       Print(tmp);
     }
 
-    if (! res ) {
-    // Read from register.
-    res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, packed_reg_addr, size, *((uint32_t*)value));
-
-    //r = SMBusMasterI2CWriteRead(smbus, ff_i2c_addrs[ff].dev_addr, &reg_addr, 1, value, size);
-    if (res != 0) {
-      char tmp[128];
-      snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
-               ff_i2c_addrs[ff].name);
-      Print(tmp);
-    }
+    if (!res) {
+      // Read from register.
+      uint32_t uidata;
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1,
+                                 packed_reg_addr, size, &uidata);
+      for (int i = 0; i < size; ++i) {
+        value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
+      }
+      if (res != 0) {
+        char tmp[128];
+        snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
+                 ff_i2c_addrs[ff].name);
+        Print(tmp);
+      }
     }
   }
   //xSemaphoreGive(xFFMutex);
@@ -759,7 +762,8 @@ void FireFlyTask(void *parameters)
 
 #define ERRSTR "FIF: %s: Error %d, break loop (ff=%d,c=%d) ...\r\n"
       // Read the temperature
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)FF_TEMP_COMMAND_REG, 2, *((uint32_t*)data));
+      uint32_t temp_raw;
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)FF_TEMP_COMMAND_REG, 2, &temp_raw);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
@@ -767,7 +771,7 @@ void FireFlyTask(void *parameters)
         ff_stat[ff].temp = -54;
         break;
       }
-      tmp1.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
+      tmp1.us = temp_raw & 0xFFU; // change from uint_8 to int8_t, preserving bit pattern
       ff_stat[ff].temp = tmp1.s;
 #ifdef DEBUG_FIF
       snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", ff, ff_i2c_addrs[ff].name, tmp.s);
@@ -775,7 +779,8 @@ void FireFlyTask(void *parameters)
 #endif // DEBUG_FIF
 
       // read the status register
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)FF_STATUS_COMMAND_REG, 2, *((uint32_t*)data));
+      uint32_t status_raw;
+      res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)FF_STATUS_COMMAND_REG, 2, &status_raw);
       if (res != 0) {
         snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
         Print(tmp);
@@ -783,7 +788,7 @@ void FireFlyTask(void *parameters)
         ff_stat[ff].status = -54;
         break;
       }
-      ff_stat[ff].status = data[0] & FF_STATUS_COMMAND_REG_MASK;
+      ff_stat[ff].status = status_raw & FF_STATUS_COMMAND_REG_MASK;
 #ifdef DEBUG_FIF
       snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", ff, ff_i2c_addrs[ff].name, data[0]);
       DPRINT(tmp);
@@ -830,7 +835,8 @@ void FireFlyTask(void *parameters)
       // TODO: single multi-byte read rather than multiple reads 
       int reg_i=0;
       while(reg_i<2 && los_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)los_regs[reg_i], 1, *((uint32_t*)data));
+        uint32_t los_raw;
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)los_regs[reg_i], 1, &los_raw);
         if (res != 0) {
           snprintf(tmp, 64, ERRSTR, __func__, res, ff, 3);
           DPRINT(tmp);
@@ -838,25 +844,28 @@ void FireFlyTask(void *parameters)
           break;
         }
         else if (res==0){
-          ff_stat[ff].los_alarm[reg_i] = data[0];
+          ff_stat[ff].los_alarm[reg_i] = los_raw & 0xFFU;
         }
         reg_i+=1;
       }
 
       // Check the CDR loss of lock alarm
-      int cdr_lol_regs[2];
+      uint16_t cdr_lol_reg_addrs;
+      BaseType_t nreg;
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL)  {
-        cdr_lol_regs[0] = ECU0_25G_CDR_LOL_ALARM_REG_2;
-        cdr_lol_regs[1] = ECU0_25G_CDR_LOL_ALARM_REG_1;
+        cdr_lol_reg_addrs = ECU0_25G_CDR_LOL_ALARM_REG_2 | (ECU0_25G_CDR_LOL_ALARM_REG_1 << 8);
+        nreg = 2;
       }
       else{
-        cdr_lol_regs[0] = ECU0_25G_XCVR_CDR_LOL_ALARM_REG;
-        cdr_lol_regs[1] = 0;
+        cdr_lol_reg_addrs = ECU0_25G_XCVR_CDR_LOL_ALARM_REG;
+        nreg = 1;
       }
 
       reg_i=0;
-      while(reg_i<2 && cdr_lol_regs[reg_i] != 0){
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)cdr_lol_regs[reg_i], 1, *((uint32_t*)data));
+      while (reg_i < 2 && cdr_lol_reg_addrs[reg_i] != 0) {
+        uint32_t lol_raw;
+        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, nreg,
+                                   cdr_lol_reg_addrs, 1, &lol_raw);
         if (res != 0) {
           snprintf(tmp, 64, ERRSTR, __func__, res, ff, 5);
           DPRINT(tmp);
@@ -864,7 +873,7 @@ void FireFlyTask(void *parameters)
           break;
         }
         else if(res==0){
-          ff_stat[ff].cdr_lol_alarm[reg_i] = data[0];
+          ff_stat[ff].cdr_lol_alarm[reg_i] = lol_raw & 0xFFU;
         }
         reg_i+=1;
       }
