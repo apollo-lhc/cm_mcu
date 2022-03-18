@@ -30,8 +30,9 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
-  UBaseType_t device, address, packed_reg_address, packed_data;
-  BaseType_t nbytes_addr, nbytes;
+  UBaseType_t device, address, packed_reg_address;
+  uint32_t packed_data;
+    BaseType_t nbytes_addr, nbytes;
   device = strtol(argv[1], NULL, 16); // i2c device
   address = strtol(argv[2], NULL, 16);
   nbytes_addr = strtol(argv[3], NULL, 10);
@@ -39,9 +40,11 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
   nbytes = strtol(argv[5], NULL, 10);
   packed_data = strtoul(argv[6], NULL, 16); // data;
 
-  int status = apollo_i2c_ctl_reg_r(device, address, nbytes_addr, packed_reg_address, nbytes, packed_data);
+  int status = apollo_i2c_ctl_reg_r(device, address, nbytes_addr, packed_reg_address,
+                                    nbytes, &packed_data);
   if (status == 0) {
-    snprintf(m, s, "i2cr: add: 0x%02lx, reg 0x%02lx: value 0x%08lx (%ld bytes)\r\n", address, packed_reg_address, packed_data, nbytes);
+    snprintf(m, s, "i2cr: add: 0x%02lx, reg 0x%02lx: value 0x%08lx (%ld bytes)\r\n",
+             address, packed_reg_address, packed_data, nbytes);
   }
   else {
     snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
