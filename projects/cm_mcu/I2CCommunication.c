@@ -117,8 +117,8 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
 
   configASSERT(smbus != NULL);
   uint8_t reg_address[MAX_BYTES_ADDR];
-  for (int i = 0; i < nbytes_addr; ++i) {
-      reg_address[i] = (packed_reg_address >> i * 8) & 0xFF;
+  for (int i = 0; i < nbytes_addr; ++i){
+    reg_address[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
   uint8_t data[MAX_BYTES];
   // get the semaphore
@@ -141,10 +141,10 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   if (s)
     xSemaphoreGive(s);
   // pack the data for return to the caller 
-  *packed_data = 0;
+  *packed_data = 0UL;
   nbytes = (nbytes > MAX_BYTES) ? MAX_BYTES : nbytes;
   for (int i = 0; i < nbytes; ++i) {
-    *packed_data |= (data[i] >> i * 8);
+    *packed_data |= data[i] << (i * 8);
   }
 
   if ( retval )
