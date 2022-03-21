@@ -2615,7 +2615,20 @@ SMBusMasterIntProcess(tSMBus *psSMBus)
                 //
                 // Move to the read first "turnaround" state.
                 //
-                psSMBus->ui8MasterState = SMBUS_STATE_READ_FIRST;
+                //psSMBus->ui8MasterState = SMBUS_STATE_READ_FIRST;
+                //
+                // Move to appropriate read state for the turn around based on
+                // receive size.
+                //
+                if(psSMBus->ui8RxSize == 1)
+                {
+                   psSMBus->ui8MasterState = SMBUS_STATE_READ_ONE;
+                }
+                else
+                {
+                   psSMBus->ui8MasterState = SMBUS_STATE_READ_FIRST;
+                }
+
 
                 //
                 // Continue the burst write.

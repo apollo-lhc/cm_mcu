@@ -90,7 +90,7 @@
  * devices. Overhead is 2 char on each saved line
  */
 #ifndef MICRORL_RING_HISTORY_LEN
-#define MICRORL_RING_HISTORY_LEN 64
+#define MICRORL_RING_HISTORY_LEN 128
 #endif
 
 /*
