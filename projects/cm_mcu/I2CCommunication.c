@@ -108,20 +108,19 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   return retval;
 }
 
-int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr, uint16_t packed_reg_address, uint8_t nbytes, uint32_t packed_data)
+int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
+                         uint16_t packed_reg_address, uint8_t nbytes,
+                         uint32_t *packed_data)
 {
   tSMBus* smbus = pSMBus[device];
   tSMBusStatus* p_status = eStatus[device];
 
   configASSERT(smbus != NULL);
   uint8_t reg_address[MAX_BYTES_ADDR];
-  for (int i = 0; i < nbytes_addr; ++i) {
-      reg_address[i] = (packed_reg_address >> i * 8) & 0xFF;
+  for (int i = 0; i < nbytes_addr; ++i){
+    reg_address[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
   uint8_t data[MAX_BYTES];
-  for (int i = 0; i < MAX_BYTES; ++i) {
-      data[i] = (packed_data >> i * 8) & 0xFF;
-  }
   // get the semaphore
   SemaphoreHandle_t s = NULL;
   if ( getSemaphore[device] != NULL ) {
@@ -141,6 +140,13 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   }
   if (s)
     xSemaphoreGive(s);
+  // pack the data for return to the caller 
+  *packed_data = 0UL;
+  nbytes = (nbytes > MAX_BYTES) ? MAX_BYTES : nbytes;
+  for (int i = 0; i < nbytes; ++i) {
+    *packed_data |= data[i] << (i * 8);
+  }
+
   if ( retval )
     return retval;
   else

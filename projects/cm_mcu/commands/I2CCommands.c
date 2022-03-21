@@ -18,8 +18,8 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 
   int status = apollo_i2c_ctl_r(device, address, nbytes, data);
   if (status == 0) {
-    snprintf(m, s, "%s: dev %ld, add 0x%02lx: value 0x%02x %02x %02x %02x\r\n", argv[0], device, address, data[3],
-             data[2], data[1], data[0]);
+    snprintf(m, s, "%s: dev %ld, addr 0x%02lx: val=0x%02x %02x %02x %02x\r\n", argv[0],
+             device, address, data[3], data[2], data[1], data[0]);
   }
   else {
     snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
@@ -30,21 +30,25 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
-  UBaseType_t device, address, packed_reg_address, packed_data;
+  UBaseType_t device, address, packed_reg_address;
+  uint32_t packed_data;
   BaseType_t nbytes_addr, nbytes;
   device = strtol(argv[1], NULL, 16); // i2c device
   address = strtol(argv[2], NULL, 16);
   nbytes_addr = strtol(argv[3], NULL, 10);
   packed_reg_address = strtol(argv[4], NULL, 16);
   nbytes = strtol(argv[5], NULL, 10);
-  packed_data = strtoul(argv[6], NULL, 16); // data;
 
-  int status = apollo_i2c_ctl_reg_r(device, address, nbytes_addr, packed_reg_address, nbytes, packed_data);
+  int status = apollo_i2c_ctl_reg_r(device, address, nbytes_addr, packed_reg_address,
+                                    nbytes, &packed_data);
   if (status == 0) {
-    snprintf(m, s, "i2cr: add: 0x%02lx, reg 0x%02lx: value 0x%08lx (%ld bytes)\r\n", address, packed_reg_address, packed_data, nbytes);
+    snprintf(m, s, "i2cr: add: 0x%02lx, reg 0x%02lx: value 0x%08lx (%ld bytes)\r\n",
+             address, packed_reg_address, packed_data, nbytes);
   }
   else {
-    snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
+    int copied = snprintf(m, s, "i2cr: add: 0x%02lx, reg 0x%02lx: value 0x%08lx (%ld bytes)\r\n",
+        address, packed_reg_address, packed_data, nbytes);
+    snprintf(m + copied, s - copied, "%s: failure %d\r\n", argv[0], status);
   }
   return pdFALSE;
 }
@@ -64,8 +68,8 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
 
   int status = apollo_i2c_ctl_reg_w(device, address, nbytes_addr, packed_reg_address, nbytes, packed_data);
   if (status == 0) {
-    snprintf(m, s, "%s: Wrote to address 0x%lx, register 0x%lx, value 0x%08lx (%ld bytes)\r\n", argv[0], address,
-             packed_reg_address, packed_data, nbytes);
+    snprintf(m, s, "%s: W to addr 0x%lx, reg 0x%lx, val=0x%08lx (%ld bytes)\r\n", argv[0],
+             address, packed_reg_address, packed_data, nbytes);
   }
   else {
     snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
@@ -86,7 +90,8 @@ BaseType_t i2c_ctl_w(int argc, char **argv, char *m)
 
   int status = apollo_i2c_ctl_w(device, address, nbytes, value);
   if (status == 0) {
-    snprintf(m, s, "i2cwr: Wrote to address 0x%lx, value 0x%08lx (%ld bytes)\r\n", address, value, nbytes);
+    snprintf(m, s, "i2cwr: Wrote to addr 0x%lx, val=0x%08lx (%ld bytes)\r\n", address,
+             value, nbytes);
   }
   else {
     snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
