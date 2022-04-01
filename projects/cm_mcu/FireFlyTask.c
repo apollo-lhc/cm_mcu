@@ -173,11 +173,13 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #error "Define either Rev1 or Rev2"
 #endif
 // Register definitions
+
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
 #define FF_STATUS_COMMAND_REG      0x2
 #define FF_STATUS_COMMAND_REG_MASK 0xFFU
 #define FF_TEMP_COMMAND_REG        0x16
+#define FF_PAGE_REG                0x7FU // page register
 
 // two bytes, 12 FF to be disabled
 #define ECU0_14G_TX_DISABLE_REG      0x34
@@ -741,6 +743,12 @@ void FireFlyTask(void *parameters)
         break;
       }
 
+      // save the value of the PAGE resgister; to be restored at the bottom of the loop
+      uint8_t page_reg_value = 0;
+      read_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, &page_reg_value, 1);
+      // set the page register to 0
+      write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, 0, 1);
+
       typedef union {
         uint8_t us;
         int8_t s;
@@ -865,6 +873,10 @@ void FireFlyTask(void *parameters)
         log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
       }
       vv = val;
+
+      // restore the page register to its value at the top of the loop
+      write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, page_reg_value, 1);
+
       // clear the I2C mux
       data[0] = 0x0;
       log_debug(LOG_FFLY, "Output of mux set to 0x%02x\r\n", data[0]);
