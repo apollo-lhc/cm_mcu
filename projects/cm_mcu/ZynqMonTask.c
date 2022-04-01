@@ -343,7 +343,8 @@ void zm_set_fpgamon(struct zynqmon_data_t data[], int start)
   }
 }
 
-// this code will ultimately be generated from the YML file
+#ifdef REV1
+// this code will ultimately be generated from the YAML file
 void zm_fill_structs()
 {
   // firefly
@@ -357,6 +358,22 @@ void zm_fill_structs()
   // gitversion
   zm_set_gitversion(&zynqmon_data[68], 194);
 }
+#elif defined REV2
+// this code will ultimately be generated from the YAML file
+void zm_fill_structs()
+{
+  // firefly
+  zm_set_firefly_temps(&zynqmon_data[0], 0);
+  // psmon
+  zm_set_psmon(&zynqmon_data[25], 20);
+  // adcmon
+  zm_set_adcmon(&zynqmon_data[45], 40);
+  // uptime
+  zm_set_uptime(&zynqmon_data[66], 192);
+  // gitversion
+  zm_set_gitversion(&zynqmon_data[68], 194);
+}
+#endif
 
 void ZynqMonTask(void *parameters)
 {
