@@ -173,27 +173,27 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #error "Define either Rev1 or Rev2"
 #endif
 // Register definitions
-
+// -------------------------------------------------
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
-#define FF_STATUS_COMMAND_REG      0x2
+#define FF_STATUS_COMMAND_REG      0x02U
 #define FF_STATUS_COMMAND_REG_MASK 0xFFU
-#define FF_TEMP_COMMAND_REG        0x16
+#define FF_TEMP_COMMAND_REG        0x16U
 #define FF_PAGE_REG                0x7FU // page register
 
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_TX_DISABLE_REG      0x34
+#define ECU0_14G_TX_DISABLE_REG      0x34U
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
+#define ECU0_25G_XVCR_TX_DISABLE_REG 0x56U
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_RX_DISABLE_REG      0x34
+#define ECU0_14G_RX_DISABLE_REG      0x34U
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_RX_DISABLE_REG 0x35
+#define ECU0_25G_XVCR_RX_DISABLE_REG 0x35U
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
-#define ECU0_25G_XVCR_CDR_REG        0x62
+#define ECU0_25G_XVCR_CDR_REG        0x62U
 // two bytes, 12 FF to be enabled/disabled. The byte layout 
 // is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
-#define ECU0_25G_TXRX_CDR_REG        0x4A
+#define ECU0_25G_TXRX_CDR_REG        0x4AU
 
 #define ECU0_25G_XCVR_LOS_ALARM_REG     0x3
 #define ECU0_25G_XCVR_CDR_LOL_ALARM_REG 0x5
@@ -874,8 +874,13 @@ void FireFlyTask(void *parameters)
       }
       vv = val;
 
-      // restore the page register to its value at the top of the loop
-      write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, page_reg_value, 1);
+      // restore the page register to its value at the top of the loop, if it's non-zero
+      if ( page_reg_value != 0 ) {
+        res = write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, page_reg_value, 1);
+        if (res != 0) {
+          log_error(LOG_FFLY, "page reg write error %d (ff=%d)\r\n", res, ff);
+        }
+      }
 
       // clear the I2C mux
       data[0] = 0x0;
