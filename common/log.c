@@ -23,6 +23,7 @@
 #include "log.h"
 #include "task.h"
 #include "printf.h"
+#include "time.h"
 
 #define MAX_CALLBACKS 8
 #define stdout_callback ApolloLog
@@ -93,8 +94,8 @@ void ApolloLog(log_Event *ev)
 #ifdef LOG_USE_COLOR
   r = snprintf(tmp, 256, "%s", level_colors[ev->level]);
 #endif // LOG_USE_COLOR
-  r += snprintf(tmp + r, 256 - r, "%d %-3s %-3s %s:%u:", ev->time, facility_strings[ev->fac], level_strings[ev->level],
-                ev->file, ev->line);
+  r += snprintf(tmp + r, 256 - r, "20%d %-3s %-3s %s:%u:", ev->time,
+                facility_strings[ev->fac], level_strings[ev->level], ev->file, ev->line);
   r += vsnprintf(tmp+r, 256-r, ev->fmt, ev->ap);
 #ifdef LOG_USE_COLOR
   snprintf(tmp + r, 256 - r, "%s", "\033[0m");
@@ -180,11 +181,19 @@ int log_add_fp(FILE *fp, int level) {
 #endif // NOTDEF
 
 
-static void init_event(log_Event *ev, void *udata) {
-  ev->time = xTaskGetTickCount();
+static void init_event(log_Event *ev, void *udata) 
+{
+  struct tm now;
+  ROM_HibernateCalendarGet(&now);
+  if ( now.tm_year < 120) { // RTC not yet set
+    ev->time = xTaskGetTickCount();
+  }
+  else { // RTC is set
+    ev->time = now.tm_min + 100 * now.tm_hour + 10000 * (now.tm_mday) +
+               1000000 * (now.tm_mon + 1) + 100000000 * (now.tm_year - 100);
+  }
   ev->udata = udata;
 }
-
 
 void log_log(int level, const char *file, int line, enum log_facility_t facility,
              const char *fmt, ...)
