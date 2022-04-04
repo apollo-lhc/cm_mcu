@@ -94,7 +94,7 @@ void ApolloLog(log_Event *ev)
 #ifdef LOG_USE_COLOR
   r = snprintf(tmp, 256, "%s", level_colors[ev->level]);
 #endif // LOG_USE_COLOR
-  r += snprintf(tmp + r, 256 - r, "20%d %-3s %-3s %s:%u:", ev->time,
+  r += snprintf(tmp + r, 256 - r, "20%u %-3s %-3s %s:%u:", ev->time,
                 facility_strings[ev->fac], level_strings[ev->level], ev->file, ev->line);
   r += vsnprintf(tmp+r, 256-r, ev->fmt, ev->ap);
 #ifdef LOG_USE_COLOR

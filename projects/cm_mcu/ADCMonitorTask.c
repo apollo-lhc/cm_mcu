@@ -298,7 +298,8 @@ void ADCMonitorTask(void *parameters)
 
     // convert data to float values
     for (int i = 0; i < ADC_CHANNEL_COUNT; ++i) {
-      fADCvalues[i] = iADCvalues[i] / 4096.f * ADC_MAX_VOLTAGE_RANGE * ADCs[i].scale;
+      fADCvalues[i] = iADCvalues[i] / 4096.f * ADC_MAX_VOLTAGE_RANGE * ADCs[i].scale
+          + ADCs[i].offset;
     }
     // special: temperature of Tiva die. Tiva manu 15.3.6, last equation.
     fADCvalues[ADC_INFO_TEMP_ENTRY] =
