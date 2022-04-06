@@ -90,22 +90,16 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
     s = (*getSemaphore[device])();
     xSemaphoreTake(s, portMAX_DELAY);
   }
-  int retval = 0;
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
-  if (r != SMBUS_OK) {
-    retval = -1;
-  }
-  if ( ! retval ) {
+  if ( r == SMBUS_OK ) { // the read was successfully initiated
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
-    if (*p_eStatus != SMBUS_OK) {
-      retval = -2;
-    }
+    r = *p_eStatus;
   }
   if ( s )
     xSemaphoreGive(s);
-  return retval;
+  return r;
 }
 
 int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
@@ -127,16 +121,13 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
     s = (*getSemaphore[device])();
     xSemaphoreTake(s, portMAX_DELAY);
   }
-  int retval = 0;
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, reg_address, nbytes_addr, data, nbytes);
-  if (r != SMBUS_OK) {
-    retval = -1;
-  }
-  if ( ! retval ) {
+  if ( r == SMBUS_OK ) { // the WriteRead was successfully initiated
     while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
+    r = *p_status;
   }
   if (s)
     xSemaphoreGive(s);
@@ -146,11 +137,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   for (int i = 0; i < nbytes; ++i) {
     *packed_data |= data[i] << (i * 8);
   }
-
-  if ( retval )
-    return retval;
-  else
-    return *p_status;
+  return r;
 }
 
 int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, uint16_t packed_reg_address, uint8_t nbytes, uint32_t packed_data)
@@ -180,24 +167,18 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
     s = (*getSemaphore[device])();
     xSemaphoreTake(s, portMAX_DELAY);
   }
-  int retval = 0;
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
-  if (r != SMBUS_OK) {
-    retval = -1;
-  }
-  if ( ! retval ) {
+  if ( r == SMBUS_OK ) { // the write was successfully initiated
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
-    if (*p_eStatus != SMBUS_OK) {
-      retval= -2;
-    }
+    r = *p_eStatus;
   }
   if (s)
     xSemaphoreGive(s);
 
-  return retval;
+  return r;
 }
 
 int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
@@ -219,23 +200,17 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
     s = (*getSemaphore[device])();
     xSemaphoreTake(s, portMAX_DELAY);
   }
-  int retval = 0;
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
-  if (r != SMBUS_OK) {
-    retval = -1;
-  }
-  if (! retval ) {
+  if ( r == SMBUS_OK ) { // the write was successfully initiated
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
-    if (*p_eStatus != SMBUS_OK) {
-      retval = -2;
-    }
+    r = *p_eStatus;
   }
   if (s)
     xSemaphoreGive(s);
-  return retval;
+  return r;
 }
 // for PMBUS commands 
 int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
@@ -247,13 +222,13 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool rea
   data = 0x1U << add->mux_bit;
   tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
   if (r != SMBUS_OK) {
-    return -1;
+    return r;
   }
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
   if (*smbus_status != SMBUS_OK) {
-    return -2;
+    return *smbus_status;
   }
   // read/write to the device itself
   if (read) {
@@ -263,16 +238,10 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool rea
     r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
   if (r != SMBUS_OK) {
-    return -3;
+    return r;
   }
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
   }
-  // this is checking the return from the interrupt
-  if (*smbus_status != SMBUS_OK) {
-    return -4;
-  }
-  // if we get here, a successful read/write command
-
-  return 0;
+  return r;
 }
