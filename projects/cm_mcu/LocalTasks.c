@@ -656,3 +656,230 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 }
 #endif // REV2
+
+#ifdef REV2
+int init_load_clk(int clk_n)
+{
+
+  if (getPowerControlState() != POWER_ON) {
+	  log_debug(LOG_SERVICE, "LGA80D_init() needs more time to turn on power supplies \r\n");
+	  vTaskDelay(pdMS_TO_TICKS(3000)); // wait 3s
+  }
+  clk_n = clk_n -1;
+  int PreambleList_row[5] = {6,0,3,0,0};
+  int RegisterList_row[5] = {378,0,587,0,0};
+  int PostambleList_row[5] = {3,0,5,0,0};
+  char *clk_ids[5] = {"r0a","r0b","r1a","r1b","r1c"};
+  uint8_t i2c_mux_masks[5] = {0x01,0x02,0x04,0x08,0x10};
+  uint8_t i2c_addrs[5] = {0x77,0x6b,0x6b,0x6b,0x6b};
+
+  //apollo_i2c_ctl_w(2, 0x70, 1, 0xc0);
+  apollo_i2c_ctl_w(2, 0x70, 1, i2c_mux_masks[clk_n]);
+
+
+  log_debug(LOG_SERVICE, "Start programming clock %s \r\n", clk_ids[clk_n]);
+  uint32_t reg0;
+  uint32_t reg1;
+  uint32_t data;
+  uint32_t check_page;
+  uint32_t check_data;
+
+
+  int first_page = 32*(clk_n);
+
+  log_debug(LOG_SERVICE, "Loading clock %s PreambleList from EEPROM \r\n", clk_ids[clk_n]);
+  bool ChangePage = true;
+  int HighByte = -1;
+  int status_w = -10;
+  int status_r = -10;
+
+  for (int i = 0; i < PreambleList_row[clk_n]*3; ++i){
+	  if ((i+1) % 3 == 0){ // this is when we retrieve two-byte register and data
+		  uint16_t packed_reg0_address = (first_page << 8) + i-2;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg0_address, 1, &reg0);
+
+		  uint16_t packed_reg1_address = (first_page << 8) + i-1;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg1_address, 1, &reg1);
+
+		  uint16_t packed_data_address = (first_page << 8) + i;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_data_address, 1, &data);
+
+		  int NewHighByte = reg0;
+
+		  if (NewHighByte != HighByte) {
+			  ChangePage = true;
+		  }
+		  else {
+			  ChangePage = false;
+		  }
+		  HighByte = NewHighByte;
+		  uint16_t LowByte_reg_addr = reg1;
+
+		  if (ChangePage) {
+			  log_debug(LOG_SERVICE, "check page written to clk = 0x%08x\r\n", NewHighByte);
+			  status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs[clk_n], 1, 0x01, 1, NewHighByte);
+		  }
+		  status_r = apollo_i2c_ctl_reg_r(2, i2c_addrs[clk_n], 1, 0x01, 1, &check_page);
+		  log_debug(LOG_SERVICE, "check page read from clk = 0x%08x\r\n", check_page);
+
+		  if (status_w != 0 || status_r != 0){
+			  log_debug(LOG_SERVICE, "error in w/r statuses for page");
+			  log_error(LOG_SERVICE, "write status is %d & read status is %d \r\n",status_w,status_r);
+			  return status_w;
+		  }
+
+
+		  log_debug(LOG_SERVICE, "check data written to clk = 0x%08x\r\n", data);
+		  status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs[clk_n], 1, LowByte_reg_addr, 1, data);
+
+		  status_r = apollo_i2c_ctl_reg_r(2, i2c_addrs[clk_n], 1, LowByte_reg_addr, 1, &check_data);
+		  log_debug(LOG_SERVICE, "check data read from clk = 0x%08x\r\n", check_data);
+		  if (status_w != 0 || status_r != 0){
+			  log_debug(LOG_SERVICE, "error in w/r statuses for data");
+			  log_error(LOG_SERVICE, "write status is %d & read status is %d \r\n",status_w,status_r);
+			  return status_w;
+		  }
+
+
+
+	  }
+  }
+
+  vTaskDelay(pdMS_TO_TICKS(3000)); //300 ms minimum
+
+  int reg_page = first_page;
+  int reg_pages[3];
+
+  log_debug(LOG_SERVICE, "Loading clock %s RegisterList from EEPROM \r\n", clk_ids[clk_n]);
+  ChangePage = true;
+  HighByte = -1;
+  status_w = -10;
+  status_r = -10;
+  for (int i = 0; i < RegisterList_row[clk_n]*3; ++i){
+	  //vTaskDelay(pdMS_TO_TICKS(330));
+	  if ((i+1) % 128 == 1){
+		  reg_page += 1;
+	  }
+	  if ((i+1) % 3 == 1){
+		  reg_pages[0] = reg_page;
+	  }
+	  if ((i+1) % 3 == 2){
+		  reg_pages[1] = reg_page;
+	  }
+	  if ((i+1) % 3 == 0){ // this is when we retrieve two-byte register and data stored in three sequential lines from EEPROM
+		  reg_pages[2] = reg_page;
+
+		  uint16_t packed_reg0_address = (reg_pages[0] << 8) + i-2;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg0_address, 1, &reg0);
+
+		  uint16_t packed_reg1_address = (reg_pages[1] << 8) + i-1;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg1_address, 1, &reg1);
+
+		  uint16_t packed_data_address = (reg_pages[2] << 8) + i;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_data_address, 1, &data);
+
+		  int NewHighByte = reg0;
+
+
+		  if (NewHighByte != HighByte) {
+			  ChangePage = true;
+		  }
+		  else {
+			  ChangePage = false;
+		  }
+		  HighByte = NewHighByte;
+		  uint16_t LowByte_reg_addr = reg1;
+
+		  if (ChangePage) {
+			  log_debug(LOG_SERVICE, "check page written to clk = 0x%08x\r\n", NewHighByte);
+			  status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs[clk_n], 1, 0x01, 1, NewHighByte);
+		  }
+		  status_r = apollo_i2c_ctl_reg_r(2, i2c_addrs[clk_n], 1, 0x01, 1, &check_page);
+		  log_debug(LOG_SERVICE, "check page read from clk = 0x%08x\r\n", check_page);
+
+		  if (status_w != 0 || status_r != 0){
+			  log_debug(LOG_SERVICE, "error in w/r statuses for page");
+			  log_error(LOG_SERVICE, "write status is %d & read status is %d \r\n",status_w,status_r);
+			  return status_w;
+		  }
+
+
+		  log_debug(LOG_SERVICE, "check data written to clk = 0x%08x\r\n", data);
+		  status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs[clk_n], 1, LowByte_reg_addr, 1, data);
+
+		  status_r = apollo_i2c_ctl_reg_r(2, i2c_addrs[clk_n], 1, LowByte_reg_addr, 1, &check_data);
+		  log_debug(LOG_SERVICE, "check data read from clk = 0x%08x\r\n", check_data);
+		  if (status_w != 0 || status_r != 0){
+			  log_debug(LOG_SERVICE, "error in w/r statuses for data");
+			  log_error(LOG_SERVICE, "write status is %d & read status is %d \r\n",status_w,status_r);
+			  return status_w;
+		  }
+
+
+
+	  }
+
+  }
+
+  vTaskDelay(pdMS_TO_TICKS(3000)); //300 ms minimum
+
+  int last_page = 32*(clk_n+1)-1;
+  log_debug(LOG_SERVICE, "Loading clock %s PostambleList from EEPROM \r\n", clk_ids[clk_n]);
+  ChangePage = true;
+  HighByte = -1;
+  status_w = -10;
+  status_r = -10;
+  for (int i = 0; i < PostambleList_row[clk_n]*3; ++i){
+	  if ((i+1) % 3 == 0){ // this is when we retrieve two-byte register and data stored in three sequential lines from EEPROM
+		  uint16_t packed_reg0_address = (last_page << 8) + i-2;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg0_address, 1, &reg0);
+
+		  uint16_t packed_reg1_address = (last_page << 8) + i-1;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg1_address, 1, &reg1);
+
+		  uint16_t packed_data_address = (last_page << 8) + i;
+		  apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_data_address, 1, &data);
+
+		  int NewHighByte = reg0;
+
+		  if (NewHighByte != HighByte) {
+			  ChangePage = true;
+		  }
+		  else {
+			  ChangePage = false;
+		  }
+		  HighByte = NewHighByte;
+		  uint16_t LowByte_reg_addr = reg1;
+		  if (ChangePage) {
+			  log_debug(LOG_SERVICE, "check page written to clk = 0x%08x\r\n", NewHighByte);
+			  status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs[clk_n], 1, 0x01, 1, NewHighByte);
+		  }
+		  status_r = apollo_i2c_ctl_reg_r(2, i2c_addrs[clk_n], 1, 0x01, 1, &check_page);
+		  log_debug(LOG_SERVICE, "check page read from clk = 0x%08x\r\n", check_page);
+		  // note that 0x001C register performs a soft reset rather than store data stored in three sequential lines from EEPROM
+
+		  if (status_w != 0 || status_r != 0){
+			  log_debug(LOG_SERVICE, "error in w/r statuses for page");
+			  log_error(LOG_SERVICE, "write status is %d & read status is %d \r\n",status_w,status_r);
+			  return status_w;
+		  }
+
+
+		  log_debug(LOG_SERVICE, "check data written to clk = 0x%08x\r\n", data);
+		  status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs[clk_n], 1, LowByte_reg_addr, 1, data);
+
+		  status_r = apollo_i2c_ctl_reg_r(2, i2c_addrs[clk_n], 1, LowByte_reg_addr, 1, &check_data);
+		  log_debug(LOG_SERVICE, "check data read from clk = 0x%08x\r\n", check_data);
+		  if (status_w != 0 || status_r != 0){
+			  log_debug(LOG_SERVICE, "error in w/r statuses for data");
+			  log_error(LOG_SERVICE, "write status is %d & read status is %d \r\n",status_w,status_r);
+			  return status_w;
+		  }
+
+
+	  }
+  }
+  return status_w;
+
+}
+#endif // REV2

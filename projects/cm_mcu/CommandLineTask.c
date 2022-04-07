@@ -90,6 +90,31 @@ static BaseType_t clock_ctl(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
+// this command takes one argument (from triplet version but will take two argument to include an input from config versions for octlet eeprom)
+static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
+{
+  int copied = 0;
+  int status = -1; // shut up clang compiler warning
+  char *clk_ids[5] = {"r0a","r0b","r1a","r1b","r1c"};
+  BaseType_t i = strtol(argv[1], NULL, 10);
+  if (!((i == 1) || (i == 2) || (i==3) || (i==4) || (i==5))) {
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied,
+                 "Invalid clock chip %ld , the clock id options are r0a:1, r0b:2, r1a:3, r1b:4 and r1c:5 \r\n", i);
+    return pdFALSE;
+  }
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s is programming clock %s. \r\n", argv[0], clk_ids[i-1]);
+
+  status = init_load_clk(i);
+  if (status == 0)
+	copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "clock synthesizer with id %s successfully programmed. \r\n", clk_ids[i-1]);
+
+  if (status != 0)
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
+  return pdFALSE;
+}
+
 // this command takes no arguments
 static BaseType_t ver_ctl(int argc, char **argv, char* m)
 {
@@ -622,6 +647,11 @@ static struct command_t commands[] = {
   #ifdef REV2
     {
       "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
+    },
+  #endif // REV2
+  #ifdef REV2
+    {
+	  "loadclock", init_load_clock_ctl, "args: the clock id options to program are r0a:1, r0b:2, r1a:3, r1b:4 and r1c:5.\r\n", 1,
     },
   #endif // REV2
     {
