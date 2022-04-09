@@ -7,6 +7,7 @@
 
 
 #include "SensorControl.h"
+#include "common/smbus_helper.h"
 
 // this command takes no arguments since there is only one command
 // right now.
@@ -436,8 +437,9 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
         if (f == pdTRUE) {
           uint8_t retcode = (message>>24) & 0xFFU;
           uint8_t value = message & 0xFFU;
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command returned 0x%x (ret %d).\r\n", argv[0],
-                   value, retcode);
+          snprintf(m + copied, SCRATCH_SIZE - copied,
+                   "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
+                   retcode, SMBUS_get_error(retcode));
         }
         else
           snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command failed (queue).\r\n", argv[0]);

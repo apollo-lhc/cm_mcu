@@ -22,6 +22,7 @@
 
 // local includes
 #include "common/i2c_reg.h"
+#include "common/smbus_helper.h"
 #include "MonitorTask.h"
 #include "common/power_ctl.h"
 #include "common/log.h"
@@ -367,8 +368,8 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
     uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
     res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
     if ( res != 0 ) {
-      log_warn(LOG_FFLY, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
-               ff_i2c_addrs[ff].name);
+      log_warn(LOG_FFLY, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+               SMBUS_get_error(res), ff_i2c_addrs[ff].name);
     }
 
     if (!res) {
@@ -380,8 +381,8 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
         value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
       }
       if (res != 0) {
-        log_warn(LOG_FFLY, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
-                 ff_i2c_addrs[ff].name);
+        log_warn(LOG_FFLY, "%s: FF Regread error %d (%s) (ff=%s) ...\r\n", __func__, res,
+                 SMBUS_get_error(res), ff_i2c_addrs[ff].name);
       }
     }
   }
@@ -417,8 +418,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
     res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
     if ( res != 0 ) {
-      log_warn(LOG_FFLY, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
-               ff_i2c_addrs[ff].name);
+      log_warn(LOG_FFLY, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+               SMBUS_get_error(res), ff_i2c_addrs[ff].name);
     }
 
 
@@ -427,8 +428,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     if ( ! res ) {
       res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
       if (res != 0) {
-        log_warn(LOG_FFLY, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
-                 ff_i2c_addrs[ff].name);
+        log_warn(LOG_FFLY, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+                 SMBUS_get_error(res), ff_i2c_addrs[ff].name);
       }
     }
   }

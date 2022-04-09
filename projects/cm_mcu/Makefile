@@ -109,6 +109,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/log.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/clocksynth.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/softuart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_helper.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommunication.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
