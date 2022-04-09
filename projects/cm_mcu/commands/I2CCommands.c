@@ -15,7 +15,7 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
   device = strtol(argv[1], NULL, 16);
   address = strtol(argv[2], NULL, 16);
   nbytes = strtol(argv[3], NULL, 10);
-  uint8_t data[I2C_CTL_MAX_BYTES];
+  uint8_t data[I2C_CTL_MAX_BYTES] = {0,0,0,0};
 
   int status = apollo_i2c_ctl_r(device, address, nbytes, data);
   if (status == 0) {
@@ -32,7 +32,7 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
   UBaseType_t device, address, packed_reg_address;
-  uint32_t packed_data;
+  uint32_t packed_data = 0U;
   BaseType_t nbytes_addr, nbytes;
   device = strtol(argv[1], NULL, 16); // i2c device
   address = strtol(argv[2], NULL, 16);

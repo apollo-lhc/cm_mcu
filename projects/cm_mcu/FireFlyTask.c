@@ -518,9 +518,15 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
     imax = NFIREFLIES;
   }
   for (; i < imax; ++i) {
-    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+    if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
+      log_warn(LOG_FFLY, "Skip writing to disabled FF %d\r\n", i);
       continue;
-    ret += write_ff_register(ff_i2c_addrs[i].name, regnumber, value, 1);
+    }
+    int ret1 = write_ff_register(ff_i2c_addrs[i].name, regnumber, value, 1);
+    if ( ret1 ) {
+      log_warn(LOG_FFLY, "%s: error %s\r\n", __func__, SMBUS_get_error(ret1));
+      ret += ret1;
+    }
   }
   return ret;
 }
@@ -744,11 +750,12 @@ void FireFlyTask(void *parameters)
         break;
       }
 
-      // save the value of the PAGE resgister; to be restored at the bottom of the loop
-      uint8_t page_reg_value = 0;
+      // save the value of the PAGE register; to be restored at the bottom of the loop
+      uint8_t page_reg_value;
       read_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, &page_reg_value, 1);
-      // set the page register to 0
-      write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, 0, 1);
+      // set the page register to 0, if needed
+      if ( page_reg_value != 0 )
+        write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, 0, 1);
 
       typedef union {
         uint8_t us;
@@ -756,7 +763,6 @@ void FireFlyTask(void *parameters)
       } convert_8_t;
       convert_8_t tmp1;
 
-#define ERRSTR "FIF: %s: Error %d, break loop (ff=%d,c=%d) ...\r\n"
       // Read the temperature
       uint32_t temp_raw;
       res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)FF_TEMP_COMMAND_REG, 2, &temp_raw);
