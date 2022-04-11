@@ -113,8 +113,9 @@ CFLAGS=-mthumb             \
        -Wdouble-promotion  \
        -Wformat=2          \
        -fstack-usage       \
-       -ffile-prefix-map=${BASE}=. \
        -c
+
+#       -ffile-prefix-map=${BASE}=. \
 
 #
 # The size command

@@ -6,6 +6,7 @@
  */
 
 #include "I2CCommands.h"
+#include "common/smbus_helper.h"
 
 BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 {
@@ -14,7 +15,7 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
   device = strtol(argv[1], NULL, 16);
   address = strtol(argv[2], NULL, 16);
   nbytes = strtol(argv[3], NULL, 10);
-  uint8_t data[I2C_CTL_MAX_BYTES];
+  uint8_t data[I2C_CTL_MAX_BYTES] = {0,0,0,0};
 
   int status = apollo_i2c_ctl_r(device, address, nbytes, data);
   if (status == 0) {
@@ -22,7 +23,7 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
              device, address, data[3], data[2], data[1], data[0]);
   }
   else {
-    snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
+    snprintf(m, s, "%s: failure %d (%s)\r\n", argv[0], status, SMBUS_get_error(status));
   }
   return pdFALSE;
 }
@@ -31,7 +32,7 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
   UBaseType_t device, address, packed_reg_address;
-  uint32_t packed_data;
+  uint32_t packed_data = 0U;
   BaseType_t nbytes_addr, nbytes;
   device = strtol(argv[1], NULL, 16); // i2c device
   address = strtol(argv[2], NULL, 16);
@@ -48,7 +49,8 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
   else {
     int copied = snprintf(m, s, "i2cr: add: 0x%02lx, reg 0x%02lx: value 0x%08lx (%ld bytes)\r\n",
         address, packed_reg_address, packed_data, nbytes);
-    snprintf(m + copied, s - copied, "%s: failure %d\r\n", argv[0], status);
+    snprintf(m + copied, s - copied, "%s: failure %d (%s)\r\n", argv[0], status,
+             SMBUS_get_error(status));
   }
   return pdFALSE;
 }
@@ -72,7 +74,7 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
              address, packed_reg_address, packed_data, nbytes);
   }
   else {
-    snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
+    snprintf(m, s, "%s: failure %d (%s)\r\n", argv[0], status, SMBUS_get_error(status));
   }
 
   return pdFALSE;
@@ -94,7 +96,7 @@ BaseType_t i2c_ctl_w(int argc, char **argv, char *m)
              value, nbytes);
   }
   else {
-    snprintf(m, s, "%s: failure %d\r\n", argv[0], status);
+    snprintf(m, s, "%s: failure %d (%s)\r\n", argv[0], status, SMBUS_get_error(status));
   }
   return pdFALSE;
 }
