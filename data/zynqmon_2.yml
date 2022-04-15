@@ -1,0 +1,118 @@
+name: zynqmon configuration file
+cm_hw_rev: 2B
+sm_hw_rev: 1A
+sm_fw_rev: 1A
+revision: 1
+psmon_single_instance: &psmon_one [TEMP1, TEMP3, VIN, VOUT, IOUT, STATUS_WORD, RESERVED, RESERVED]
+
+config:
+  - name: firefly
+    start: 0
+    count: 20
+    mcu_call: firefly_temps
+    type: int8
+    extra: Table=CM_FF_MON;Row=_3;Column=Temp_C;Status=2;
+    names:
+      - F1_1  12 Tx
+      - F1_1  12 Rx
+      - F1_2  12 Tx
+      - F1_2  12 Rx
+      - F1_3  12 Tx
+      - F1_3  12 Rx
+      - F1_4 4 XCVR
+      - F1_5 4 XCVR
+      - F1_6 4 XCVR
+      - F1_7 4 XCVR
+      - F2_1  12 Tx
+      - F2_1  12 Rx
+      - F2_2  12 Tx
+      - F2_2  12 Rx
+      - F2_3  12 Tx
+      - F2_3  12 Rx
+      - F2_4 4 XCVR
+      - F2_5 4 XCVR
+      - F2_6 4 XCVR
+      - F2_7 4 XCVR
+  - name: psmon
+    start: 32
+    count: 80
+    mcu_call: psmon
+    type: fp16
+    prefixes: 
+      - 3V3
+      - 1V8
+      - F1VCCINT1_1
+      - F1VCCINT1_2
+      - F2VCCINT1_1
+      - F2VCCINT1_2
+      - F1AVTT
+      - F1AVCC
+      - F2AVTT
+      - F2AVCC
+    names: 
+      - TEMP1
+      - TEMP3
+      - VIN
+      - VOUT
+      - IOUT
+      - STATUS_WORD
+      - RESERVED
+      - RESERVED
+  - name: adcmon
+    start: 128
+    count: 21
+    mcu_call: adcmon
+    type: fp16
+    extra: Table=CM_MON;Row=_3;Column=Volts;Status=2;
+    names:
+      - VCC_12V 
+      - VCC_M3V3
+      - VCC_3V3
+      - VCC_4V0 
+      - VCC_1V8
+      - F1_VCCINT
+      - F1_AVCC
+      - F1_AVTT
+      - F1_VCCAUX
+      - F2_VCCINT
+      - F2_AVCC 
+      - F2_AVTT 
+      - F2_VCCAUX
+      - CUR_V_12V
+      - CUR_V_M3V3
+      - CUR_V_4V0
+      - CUR_V_F1VCCAUX
+      - CUR_V_F2VCCAUX
+      - F1_TEMP
+      - F2_TEMP
+      - TM4C_TEMP
+  - name: uptime
+    start: 192
+    count: 1
+    type: uint32_t
+    mcu_call: uptime
+    names:
+      - MCU_UPTIME
+  - name: gitversion
+    start: 118
+    count: 20
+    type: char
+    size: 5
+    mcu_call: gitversion
+    names:
+      - MCU_FW_VER
+  - name: fpga
+    start: 150
+    count: 8
+    type: fp16
+    extra: Table=CM_MON;Row=_3;Column=Temp_C;Status=2;
+    mcu_call: fpga
+    names:
+      - F1_TEMP_SLR0
+      - F2_TEMP_SLR0
+      - F1_TEMP_SLR1
+      - F2_TEMP_SLR1
+      - F1_TEMP_SLR2
+      - F2_TEMP_SLR2
+      - F1_TEMP_SLR3
+      - F2_TEMP_SLR3
