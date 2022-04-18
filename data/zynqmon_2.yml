@@ -38,6 +38,7 @@ config:
     count: 80
     mcu_call: psmon
     type: fp16
+    extra: Table=CM_MON;Row=_3;Column=_4;Status=2
     prefixes: 
       - 3V3
       - 1V8
