@@ -223,6 +223,12 @@ void zm_send_data(struct zynqmon_data_t data[])
     }
   }
 }
+// in all these functions, the "start" argument is used to set the
+// address that is sent with the data to the Zynq and indicates
+// a memory location in the Zynq memory.
+// the order that the data is stored in on the zynqmon_data array
+// does not have to correspond to the order in which the data is
+// stored in, or sent to, the Zynq.
 
 // this only needs to be called once
 #define ZM_GIT_VERSION_LENGTH 20
@@ -287,8 +293,8 @@ void zm_set_adcmon(struct zynqmon_data_t data[], int start)
   }
 }
 
-// store the PSMON data
-void zm_set_psmon(struct zynqmon_data_t data[], int start)
+// store the PSMON data. In Rev1 legacy version the start argument is not used.
+void zm_set_psmon_legacy(struct zynqmon_data_t data[], int start)
 {
   // MonitorTask values -- power supply
   // this indirection list is required because of a mistake
@@ -320,8 +326,39 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
     }
   }
 }
+void zm_set_psmon(struct zynqmon_data_t data[], int start)
+{
+  // MonitorTask values -- power supply
+  // update times, in seconds. If the data is stale, send NaN
+  TickType_t last = pdTICKS_TO_S(dcdc_args.updateTick);
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
 
-void zm_set_fpgamon(struct zynqmon_data_t data[], int start)
+  bool stale = checkStale(last, now);
+
+  for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies FIXME hardcoded value
+    for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
+      for (int k = 0; k < dcdc_args.n_commands; ++k) { // loop over FIRST SIX commands
+        if ( k > 5 ) {
+          continue; // only consider first six commands
+        }
+        int index =
+            j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
+
+        if (stale) {
+          data[index].data.f = __builtin_nanf("");
+        }
+        else {
+          data[index].data.f = dcdc_args.pm_values[index];
+          if (data[index].data.f < -900.f)
+            data[index].data.f = __builtin_nanf("");
+        }
+        data[index].sensor = index + start;
+      }
+    }
+  }
+}
+
+void zm_set_fpga(struct zynqmon_data_t data[], int start)
 {
   // FPGA values
   TickType_t last = pdTICKS_TO_S(fpga_args.updateTick);
@@ -359,19 +396,21 @@ void zm_fill_structs()
   zm_set_gitversion(&zynqmon_data[68], 194);
 }
 #elif defined REV2
-// this code will ultimately be generated from the YAML file
+// this code will is generated from the YAML file
 void zm_fill_structs()
 {
-  // firefly
+  // firefly, size 20
   zm_set_firefly_temps(&zynqmon_data[0], 0);
-  // psmon
-  zm_set_psmon(&zynqmon_data[25], 20);
-  // adcmon
-  zm_set_adcmon(&zynqmon_data[45], 40);
-  // uptime
-  zm_set_uptime(&zynqmon_data[66], 192);
-  // gitversion
-  zm_set_gitversion(&zynqmon_data[68], 194);
+  // psmon, size 80
+  zm_set_psmon(&zynqmon_data[20], 32);
+  // adcmon, size 21
+  zm_set_adcmon(&zynqmon_data[100], 128);
+  // uptime, size 2
+  zm_set_uptime(&zynqmon_data[121], 192);
+  // gitversion, size 20
+  zm_set_gitversion(&zynqmon_data[123], 118);
+  // fpga, size 8
+  zm_set_fpga(&zynqmon_data[143], 150);
 }
 #endif
 
