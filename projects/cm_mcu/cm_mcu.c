@@ -303,7 +303,7 @@ int main(void)
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
 //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);

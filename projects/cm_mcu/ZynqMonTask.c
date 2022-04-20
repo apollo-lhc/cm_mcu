@@ -241,9 +241,11 @@ void zm_set_gitversion(struct zynqmon_data_t data[], int start)
   // get the git version and copy it into the buffer
   strncpy(buff, gitVersion(), ZM_GIT_VERSION_LENGTH);
   // loop over the buffer and copy it into the data struct
-  for (int j = 0; j < ZM_GIT_VERSION_LENGTH/2; j++) {
-    data[j].sensor = start + j;
-    data[j].data.us = buff[j] << 8 | buff[j+1];
+  // each data word consists of two chars.
+  for (int j = 0; j < ZM_GIT_VERSION_LENGTH; j+=2) {
+    data[j/2].sensor = start + (j/2);
+    data[j/2].data.c[0] = buff[j];
+    data[j/2].data.c[1] = buff[j+1];
   }
 }
 
@@ -335,24 +337,27 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
 
   bool stale = checkStale(last, now);
 
-  for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies FIXME hardcoded value
+  int ll = 0;
+
+  for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
     for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
       for (int k = 0; k < dcdc_args.n_commands; ++k) { // loop over FIRST SIX commands
-        if ( k > 5 ) {
-          continue; // only consider first six commands
+        if ( k >= 6 ) {
+          break; // only consider first six commands
         }
         int index =
             j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
 
         if (stale) {
-          data[index].data.f = __builtin_nanf("");
+          data[ll].data.f = __builtin_nanf("");
         }
         else {
-          data[index].data.f = dcdc_args.pm_values[index];
-          if (data[index].data.f < -900.f)
-            data[index].data.f = __builtin_nanf("");
+          data[ll].data.f = dcdc_args.pm_values[index];
+          if (data[l].data.f < -900.f)
+            data[ll].data.f = __builtin_nanf("");
         }
-        data[index].sensor = index + start;
+        data[ll].sensor = ll + start;
+        ++ll;
       }
     }
   }
@@ -404,13 +409,13 @@ void zm_fill_structs()
   // psmon, size 80
   zm_set_psmon(&zynqmon_data[20], 32);
   // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[100], 128);
+  zm_set_adcmon(&zynqmon_data[104], 128);
   // uptime, size 2
-  zm_set_uptime(&zynqmon_data[121], 192);
+  zm_set_uptime(&zynqmon_data[125], 192);
   // gitversion, size 20
-  zm_set_gitversion(&zynqmon_data[123], 118);
+  zm_set_gitversion(&zynqmon_data[127], 118);
   // fpga, size 8
-  zm_set_fpga(&zynqmon_data[143], 150);
+  zm_set_fpga(&zynqmon_data[147], 150);
 }
 #endif
 
@@ -423,6 +428,9 @@ void ZynqMonTask(void *parameters)
   // will be done centrally in Rev 2
 
   uint8_t message[4] = {0x9c, 0x2c, 0x2b, 0x3e};
+
+  // reset the data we will send
+  memset(zynqmon_data, 0, ZM_NUM_ENTRIES*sizeof(struct zynqmon_data_t));
 
   bool enable = true;
   // initialize to the current tick time
