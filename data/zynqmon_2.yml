@@ -39,26 +39,28 @@ config:
     mcu_call: psmon
     type: fp16
     extra: Table=CM_MON;Row=_3;Column=_4;Status=2
-    prefixes: 
+    names: 
       - 3V3
       - 1V8
       - F1VCCINT1_1
       - F1VCCINT1_2
+      - F1VCCINT2_1
+      - F1VCCINT2_2
       - F2VCCINT1_1
       - F2VCCINT1_2
+      - F2VCCINT2_1
+      - F2VCCINT2_2
       - F1AVTT
       - F1AVCC
       - F2AVTT
       - F2AVCC
-    names: 
+    postfixes: 
       - TEMP1
       - TEMP3
       - VIN
       - VOUT
       - IOUT
       - STATUS_WORD
-      - RESERVED
-      - RESERVED
   - name: adcmon
     start: 128
     count: 21
@@ -110,10 +112,10 @@ config:
     mcu_call: fpga
     names:
       - F1_TEMP_SLR0
-      - F2_TEMP_SLR0
       - F1_TEMP_SLR1
-      - F2_TEMP_SLR1
       - F1_TEMP_SLR2
-      - F2_TEMP_SLR2
       - F1_TEMP_SLR3
+      - F2_TEMP_SLR0
+      - F2_TEMP_SLR1
+      - F2_TEMP_SLR2
       - F2_TEMP_SLR3
