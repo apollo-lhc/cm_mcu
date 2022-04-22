@@ -116,7 +116,7 @@ QueueHandle_t xZynqMonQueue;
 // GIT      | 20 chars
 // ADC      | N_ADC+1 (21)
 // PSMON    | 2*10*N_Devices (2 is for number of pages)
-// uptime   | 20 chars
+// uptime   | 1 uint32, transmitted as 2 uint16's
 
 #ifdef REV1
 extern uint32_t g_ui32SysClock;
@@ -258,8 +258,8 @@ void zm_set_uptime(struct zynqmon_data_t data[], int start)
   data[0].sensor = start;
   data[0].data.us = now_16;
   now_16 = (now >> 16) & 0xFFFFU; // upper 16 bits
-  data[0].sensor = start + 1;
-  data[0].data.us = now_16;
+  data[1].sensor = start + 1;
+  data[1].data.us = now_16;
 }
 
 // wasting half the data packet here; could repack it
