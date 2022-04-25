@@ -232,11 +232,11 @@ int SystemStackWaterHighWaterMark();
 
 // clock IO expander initalization
 void init_registers_clk();
-
+#ifdef REV2
 // configuring clock initalization
 int init_load_clk(int clk_n);
 
-#ifdef REV2
+
 // hibernate/RTC
 void InitRTC();
 #endif // REV2

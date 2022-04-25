@@ -34,8 +34,10 @@ void InitTask(void *parameters)
 
   init_registers_clk(); // initalize I/O expander for clocks
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
+#ifdef REV2
   init_load_clk(0);
   init_load_clk(2);
+#endif // REV2
   log_info(LOG_SERVICE, "Configuring clocks initialized\r\n");
   vTaskSuspend(NULL);
 
