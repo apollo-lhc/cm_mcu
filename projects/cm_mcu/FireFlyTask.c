@@ -173,25 +173,27 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 #error "Define either Rev1 or Rev2"
 #endif
 // Register definitions
+// -------------------------------------------------
 // 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
 // Same address for 4 XCVR and 12 Tx/Rx devices
-#define FF_STATUS_COMMAND_REG      0x2
+#define FF_STATUS_COMMAND_REG      0x02U
 #define FF_STATUS_COMMAND_REG_MASK 0xFFU
-#define FF_TEMP_COMMAND_REG        0x16
+#define FF_TEMP_COMMAND_REG        0x16U
+#define FF_PAGE_REG                0x7FU // page register
 
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_TX_DISABLE_REG      0x34
+#define ECU0_14G_TX_DISABLE_REG      0x34U
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_TX_DISABLE_REG 0x56
+#define ECU0_25G_XVCR_TX_DISABLE_REG 0x56U
 // two bytes, 12 FF to be disabled
-#define ECU0_14G_RX_DISABLE_REG      0x34
+#define ECU0_14G_RX_DISABLE_REG      0x34U
 // one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_RX_DISABLE_REG 0x35
+#define ECU0_25G_XVCR_RX_DISABLE_REG 0x35U
 // one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
-#define ECU0_25G_XVCR_CDR_REG        0x62
+#define ECU0_25G_XVCR_CDR_REG        0x62U
 // two bytes, 12 FF to be enabled/disabled. The byte layout 
 // is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
-#define ECU0_25G_TXRX_CDR_REG        0x4A
+#define ECU0_25G_TXRX_CDR_REG        0x4AU
 
 #define ECU0_25G_XCVR_LOS_ALARM_REG     0x3
 #define ECU0_25G_XCVR_CDR_LOL_ALARM_REG 0x5
@@ -365,10 +367,8 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
     uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
     res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
     if ( res != 0 ) {
-      char tmp[64];
-      snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
+      log_warn(LOG_FFLY, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
                ff_i2c_addrs[ff].name);
-      Print(tmp);
     }
 
     if (!res) {
@@ -380,10 +380,8 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
         value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
       }
       if (res != 0) {
-        char tmp[128];
-        snprintf(tmp, 128, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
+        log_warn(LOG_FFLY, "%s: FF Regread error %d  (ff=%s) ...\r\n", __func__, res,
                  ff_i2c_addrs[ff].name);
-        Print(tmp);
       }
     }
   }
@@ -419,10 +417,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     uint8_t muxmask = 0x1U << ff_i2c_addrs[ff].mux_bit;
     res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, muxmask);
     if ( res != 0 ) {
-      char tmp[64];
-      snprintf(tmp, 64, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
+      log_warn(LOG_FFLY, "%s: Mux writing error %d  (ff=%s) ...\r\n", __func__, res,
                ff_i2c_addrs[ff].name);
-      Print(tmp);
     }
 
 
@@ -431,10 +427,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     if ( ! res ) {
       res = apollo_i2c_ctl_reg_w(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
       if (res != 0) {
-        char tmp[64];
-        snprintf(tmp, 64, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
+        log_warn(LOG_FFLY, "%s: FF writing error %d  (ff=%s) ...\r\n", __func__, res,
                  ff_i2c_addrs[ff].name);
-        Print(tmp);
       }
     }
   }
@@ -504,12 +498,10 @@ static int set_xcvr_cdr(uint8_t value, int num_ff)
     if (!isEnabledFF(i) ) // skip the FF if it's not enabled via the FF config
       continue;
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
-      // Print(ff_i2c_addrs[i].name); Print("\r\n");
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG, value, 1);
     }
     else { // Tx/Rx
       uint16_t value16 = value == 0 ? 0U : 0xffffU; // hack
-      Print(ff_i2c_addrs[i].name); Print("\r\n");
       ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_TXRX_CDR_REG, value16, 2);
     }
   }
@@ -744,15 +736,18 @@ void FireFlyTask(void *parameters)
 
       // select the appropriate output for the mux
       data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-      char tmp[64];
       log_debug(LOG_FFLY, "Mux set to 0x%02x\r\n", data[0]);
       int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
       if ( res != 0 ) {
-        snprintf(tmp, 64, "FIF: mux writing error %d, break out of loop (ff=%d)\r\n", res, ff);
-        Print(tmp);
-        log_error(LOG_FFLY, "Mux write error %d, break (ff=%d)\r\n", res, ff);
+        log_warn(LOG_FFLY, "Mux write error %d, break (ff=%d)\r\n", res, ff);
         break;
       }
+
+      // save the value of the PAGE resgister; to be restored at the bottom of the loop
+      uint8_t page_reg_value = 0;
+      read_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, &page_reg_value, 1);
+      // set the page register to 0
+      write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, 0, 1);
 
       typedef union {
         uint8_t us;
@@ -765,9 +760,7 @@ void FireFlyTask(void *parameters)
       uint32_t temp_raw;
       res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)FF_TEMP_COMMAND_REG, 2, &temp_raw);
       if (res != 0) {
-        snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
-        Print(tmp);
-        log_error(LOG_FFLY, "Temp read Error %d, break (ff=%d)\r\n", res, ff);
+        log_warn(LOG_FFLY, "Temp read Error %d, break (ff=%d)\r\n", res, ff);
         ff_stat[ff].temp = -54;
         break;
       }
@@ -782,9 +775,7 @@ void FireFlyTask(void *parameters)
       uint32_t status_raw;
       res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)FF_STATUS_COMMAND_REG, 2, &status_raw);
       if (res != 0) {
-        snprintf(tmp, 64, ERRSTR, __func__, res, ff, 1);
-        Print(tmp);
-        log_error(LOG_FFLY, "stat read Error %d, break (ff=%d)\r\n", res, ff);
+        log_warn(LOG_FFLY, "stat read Error %d, break (ff=%d)\r\n", res, ff);
         ff_stat[ff].status = -54;
         break;
       }
@@ -882,13 +873,20 @@ void FireFlyTask(void *parameters)
         log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
       }
       vv = val;
+
+      // restore the page register to its value at the top of the loop, if it's non-zero
+      if ( page_reg_value != 0 ) {
+        res = write_ff_register(ff_i2c_addrs[ff].name, FF_PAGE_REG, page_reg_value, 1);
+        if (res != 0) {
+          log_error(LOG_FFLY, "page reg write error %d (ff=%d)\r\n", res, ff);
+        }
+      }
+
       // clear the I2C mux
       data[0] = 0x0;
       log_debug(LOG_FFLY, "Output of mux set to 0x%02x\r\n", data[0]);
       res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
       if (res != 0) {
-        snprintf(tmp, 64, "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
-        Print(tmp);
         log_warn(LOG_FFLY, "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
       }
 
