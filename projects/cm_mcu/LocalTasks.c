@@ -667,7 +667,7 @@ static int load_register(int reg_count, uint16_t reg_page, uint16_t i2c_addrs)
   uint32_t data; // data from a config file for each address
   int HighByte = -1; // keep track when reg0 is changed
   int status = -10; // write data to a clock chip failed or not
-  uint16_t reg_pages[3]; // an array of pages the triplet is on in eeprom for an edge case
+  uint16_t reg_pages[3] = {0,0,0}; // an array of pages the triplet is on in eeprom for an edge case
 
   for (int i = 0; i < reg_count*3; ++i){
 
