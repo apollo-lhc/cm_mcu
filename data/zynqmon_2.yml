@@ -11,7 +11,7 @@ config:
     count: 20
     mcu_call: firefly_temps
     type: int8
-    extra: Table=CM_FF_MON;Row=_3;Column=Temp_C;Status=2;
+    extra: Table=CM_FF_MON;Column=Temp_C;Status=1;
     names:
       - F1_1  12 Tx
       - F1_1  12 Rx
@@ -38,7 +38,7 @@ config:
     count: 80
     mcu_call: psmon
     type: fp16
-    extra: Table=CM_MON;Row=_3;Column=_4;Status=2
+    extra: Table=CM_MON;Status=2
     names: 
       - 3V3
       - 1V8
@@ -66,7 +66,7 @@ config:
     count: 21
     mcu_call: adcmon
     type: fp16
-    extra: Table=CM_MON;Row=_3;Column=Volts;Status=2;
+    extra: Table=CM_MON;Status=2;Column=ADC
     names:
       - VCC_12V 
       - VCC_M3V3
@@ -94,6 +94,7 @@ config:
     count: 1
     type: uint32_t
     mcu_call: uptime
+    extra: Table=CM_MON;Column=Minutes;Status=1
     names:
       - MCU_UPTIME
   - name: gitversion
@@ -108,7 +109,7 @@ config:
     start: 150
     count: 8
     type: fp16
-    extra: Table=CM_MON;Row=_3;Column=Temp_C;Status=2;
+    extra: Table=CM_MON;Column=Temp_C;Status=2;
     mcu_call: fpga
     names:
       - F1_TEMP_SLR0
