@@ -482,7 +482,7 @@ static int disable_receivers(bool disable, int num_ff)
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
         ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
     }
-    else if (strstr(ff_i2c_addrs[i].name, "Tx") != NULL) { // change this back to rx
+    else if (strstr(ff_i2c_addrs[i].name, "Rx") != NULL) {
         ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2);
     }
   }
