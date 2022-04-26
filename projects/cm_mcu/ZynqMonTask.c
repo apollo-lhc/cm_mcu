@@ -212,17 +212,6 @@ void ZMUartCharPut(unsigned char c)
 
 struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
-void zm_send_data(struct zynqmon_data_t data[])
-{
-  // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
-  for ( int i = 0; i < ZM_NUM_ENTRIES; ++i) {
-    uint8_t message[4];
-    format_data(data[i].sensor, data[i].data.us, message);
-    for ( int j = 0; j < 4; ++j) {
-      ZMUartCharPut(message[j]);
-    }
-  }
-}
 // in all these functions, the "start" argument is used to set the
 // address that is sent with the data to the Zynq and indicates
 // a memory location in the Zynq memory.
@@ -415,9 +404,29 @@ void zm_fill_structs()
   // gitversion, size 20
   zm_set_gitversion(&zynqmon_data[127], 118);
   // fpga, size 8
-  zm_set_fpga(&zynqmon_data[147], 150);
+  zm_set_fpga(&zynqmon_data[137], 150);
+
+
 }
+#define ZMON_VALID_ENTRIES 145
 #endif
+
+
+void zm_send_data(struct zynqmon_data_t data[])
+{
+  // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
+  for ( int i = 0; i < ZMON_VALID_ENTRIES; ++i) {
+    if ( data[i].sensor == 0 ) {
+      int jj = i/2;
+    }
+    uint8_t message[4];
+    format_data(data[i].sensor, data[i].data.us, message);
+    for ( int j = 0; j < 4; ++j) {
+      ZMUartCharPut(message[j]);
+    }
+  }
+}
+
 
 void ZynqMonTask(void *parameters)
 {
