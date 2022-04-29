@@ -24,6 +24,7 @@
 #include "task.h"
 #include "printf.h"
 #include "time.h"
+#include <string.h>
 
 #define MAX_CALLBACKS 8
 #define stdout_callback ApolloLog
@@ -85,7 +86,79 @@ static void file_callback(log_Event *ev) {
 }
 #endif
 
+// apollo log specfic functions start
+// prototype
 void Print(const char* str);
+
+struct buff_t {
+  size_t size;
+  char *data;
+  size_t last;
+};
+#define LOG_BUFFER_SIZE 1024
+char log_buffer[LOG_BUFFER_SIZE];
+struct buff_t b = {
+  .size = LOG_BUFFER_SIZE,
+  .data = log_buffer,
+  .last = 0,
+};
+static void log_add_string(const char *s, struct buff_t *b)
+{
+  // add a string to the circular buffer. the "last" element should
+  // always point to the '\0' of the last string added.
+  // two cases: either the string fits in one copy, or in two
+  size_t len = strlen(s) + 1; // +1 for string terminator
+  long left = b->size - b->last;
+  if (len <= left) {
+    // single copy is going to work
+    memcpy(b->data + b->last, s, len);
+    b->last += len - 1; // string terminator
+  }
+  else { // need two copies, len > left
+    memcpy(b->data + b->last, s, left);
+    long len2 = len - left;
+    memcpy(b->data, s + left, len2);
+    b->last = len - left - 1;
+  }
+  // printf(">0x%02x<\n", (unsigned char)b->data[b->last]);
+}
+#ifdef NOTDEF
+void log_add_string2(const char *s, struct buff_t *bu)
+{
+  // add a string to the circular buffer. the "last" element should
+  // always point to the '\0' of the last string added.
+  // two cases: either the string fits into the current buffer from 
+  // the current "last" position, or it does not fit. If it does not fit, 
+  // we copy it to two locations: the end of the buffer, and the beginning
+  // of the wrap-around area.
+  size_t len = strlen(s);
+  long left = bu->size - bu->last; // how much space is left in the buffer
+  strlcpy(bu->data + bu->last, s, left); // copy the string to the end of the buffer
+  if (len <= left) {
+    // single copy is going to work
+    bu->last += len;
+  }
+  else {                                     // need two copies, len < left
+    strlcpy(bu->data, s + left - 1, bu->size); // minus 1 for \0 string terminator
+    bu->last = len - left + 1; // +1 for \0 string terminator
+  }
+}
+ #endif // NOTDEF
+ // This does not handle the case if sz is too small (i.e., smaller than bu->size)
+int log_dump_buffer_to_string(char *s, size_t sz)
+{
+  int copied = snprintf(s, sz, "%s", b.data + b.last + 1);
+  copied += snprintf(s+copied, sz-copied, "%s", b.data);
+  return copied;
+}
+
+// print to callback
+void log_dump( void (*f)(const char*s))
+{
+  f(b.data + b.last + 1);
+  f(b.data);
+}
+
 
 void ApolloLog(log_Event *ev)
 {
@@ -100,8 +173,11 @@ void ApolloLog(log_Event *ev)
 #ifdef LOG_USE_COLOR
   snprintf(tmp + r, 256 - r, "%s", "\033[0m");
 #endif
+  log_add_string(tmp, &b);
   Print(tmp);
 }
+
+// apollo log specfic functions end
 
 static void lock(void)   {
   if (L.lock) {

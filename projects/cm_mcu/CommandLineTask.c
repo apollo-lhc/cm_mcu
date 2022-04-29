@@ -443,6 +443,9 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
                            log_level_string(level));
       }
     }
+    else if (strncmp(argv[argc - 1], "dump", 4) == 0) {
+      log_dump(Print);
+    }
     else {
       snprintf(m, SCRATCH_SIZE, "%s: command %s not understood\r\n", argv[0], argv[1]);
     }
