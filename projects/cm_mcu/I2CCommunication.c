@@ -24,6 +24,7 @@
 #include "common/smbus.h"
 #include "common/utils.h"
 #include "common/microrl.h"
+#include "common/log.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
@@ -92,8 +93,13 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   }
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
   if ( r == SMBUS_OK ) { // the read was successfully initiated
+    int tries = 0;
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
+      if ( tries > 100 ) {
+        log_warn(LOG_I2C, "transfer stuck\r\n");
+        break;
+      }
     }
     r = *p_eStatus;
   }
@@ -124,8 +130,13 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, reg_address, nbytes_addr, data, nbytes);
   if ( r == SMBUS_OK ) { // the WriteRead was successfully initiated
+    int tries = 0;
     while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
+      if ( tries > 100 ) {
+        log_warn(LOG_I2C, "transfer stuck\r\n");
+        break;
+      }
     }
     r = *p_status;
   }
@@ -170,8 +181,13 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if ( r == SMBUS_OK ) { // the write was successfully initiated
+    int tries = 0;
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
+      if ( tries > 100 ) {
+        log_warn(LOG_I2C, "transfer stuck\r\n");
+        break;
+      }
     }
     r = *p_eStatus;
   }
@@ -203,8 +219,13 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if ( r == SMBUS_OK ) { // the write was successfully initiated
+    int tries = 0;
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
+      if ( tries > 100 ) {
+        log_warn(LOG_I2C, "transfer stuck\r\n");
+        break;
+      }
     }
     r = *p_eStatus;
   }
@@ -224,8 +245,13 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool rea
   if (r != SMBUS_OK) {
     return r;
   }
+  int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+    vTaskDelay(pdMS_TO_TICKS(10));
+    if ( tries > 100 ) {
+      log_warn(LOG_I2C, "transfer stuck\r\n");
+      break;
+    }
   }
   if (*smbus_status != SMBUS_OK) {
     return *smbus_status;
@@ -240,8 +266,13 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool rea
   if (r != SMBUS_OK) {
     return r;
   }
+  tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
+    vTaskDelay(pdMS_TO_TICKS(10));
+    if ( tries > 100 ) {
+      log_warn(LOG_I2C, "transfer stuck\r\n");
+      break;
+    }
   }
   return r;
 }
