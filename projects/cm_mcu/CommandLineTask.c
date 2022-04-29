@@ -444,6 +444,8 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
       }
     }
     else if (strncmp(argv[argc - 1], "dump", 4) == 0) {
+      // note that this is different from other functions because it does not
+      // use the intermediate buffer and just prints directy to the callback function.
       log_dump(Print);
     }
     else {

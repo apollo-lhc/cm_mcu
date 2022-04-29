@@ -70,6 +70,9 @@ int log_get_current_level(int facility);
 int log_add_callback(log_LogFn fn, void *udata, int level);
 //int log_add_fp(FILE *fp, int level);
 
+void log_dump( void (*f)(const char*s));
+
+
 void log_log(int level, const char *file, int line, enum log_facility_t facility,
              const char *fmt, ...);
 
