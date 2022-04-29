@@ -433,13 +433,18 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
       snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s sent.\r\n", argv[0], argv[1],
                argv[2]);
       if (receiveAnswer) {
-        BaseType_t f = xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(500));
+        BaseType_t f = xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(5000));
         if (f == pdTRUE) {
           uint8_t retcode = (message>>24) & 0xFFU;
           uint8_t value = message & 0xFFU;
-          snprintf(m + copied, SCRATCH_SIZE - copied,
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                    "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
                    retcode, SMBUS_get_error(retcode));
+          UBaseType_t n = uxQueueMessagesWaiting(xFFlyQueueOut);
+          if ( n > 0 ) {
+            copied += snprintf(m+copied, SCRATCH_SIZE-copied,
+                "%s: still have %lu messages in the queue\r\n", argv[0], n);
+          }
         }
         else
           snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command failed (queue).\r\n", argv[0]);

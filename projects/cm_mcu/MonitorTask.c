@@ -153,8 +153,14 @@ void MonitorTask(void *parameters)
         SuppressedPrint(tmp, &current_error_cnt, &log);
         continue;
       }
+      int tries = 0;
       while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        if ( ++tries > 500 ) {
+          log_warn(LOG_MON, "timed out (SMBUSxfer mux) (%s, dev=%d)\r\n",
+              args->name, ps);
+          break;
+        }
       }
       if (*args->smbus_status != SMBUS_OK) {
         snprintf(tmp, TMPBUFFER_SZ,
@@ -222,8 +228,14 @@ void MonitorTask(void *parameters)
             SuppressedPrint(tmp, &current_error_cnt, &log);
             continue; // abort reading this register
           }
+          int tries = 0;
           while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+            if ( ++tries > 500 ) {
+              log_warn(LOG_MON, "timed out (SMBUSxfer) (%s, c=%d,dev=%d)\r\n",
+                  args->name, c, ps);
+              break;
+            }
           }
           if (*args->smbus_status != SMBUS_OK) {
             snprintf(tmp, TMPBUFFER_SZ,
