@@ -37,8 +37,8 @@ void InitTask(void *parameters)
 #ifdef REV2
   init_load_clk(0);
   init_load_clk(2);
+  log_info(LOG_SERVICE, "Clocks configured\r\n");
 #endif // REV2
-  log_info(LOG_SERVICE, "Configuring clocks initialized\r\n");
   vTaskSuspend(NULL);
 
   // Delete this task

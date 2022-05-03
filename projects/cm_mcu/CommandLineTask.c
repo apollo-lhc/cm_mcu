@@ -95,7 +95,6 @@ static BaseType_t clock_ctl(int argc, char **argv, char* m)
 static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
 {
   int copied = 0;
-  int status = -1; // shut up clang compiler warning
   char *clk_ids[5] = {"r0a","r0b","r1a","r1b","r1c"};
   BaseType_t i = strtol(argv[1], NULL, 10);
   if (i < 0 || i > 5) {
@@ -105,6 +104,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s is programming clock %s. \r\n", argv[0], clk_ids[i]);
+  int status = -1; // shut up clang compiler warning
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
   if (status == 0){
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
