@@ -667,7 +667,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
   uint32_t data; // data from a config file for each address
   int HighByte = -1; // keep track when reg0 is changed
   int status_w = -10; // write data to a clock chip failed or not
-  int status_r = -10; // read data from EEPROM failed or not
+
 
   for (int i = 0; i < reg_count*3; ++i){
 
@@ -678,15 +678,15 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
     if ((i+1) % 3 == 0){ // this is when we retrieve two-byte address and data stored in three sequential lines from eeprom
 
       uint16_t packed_reg0_address = (reg_page << 8) + (i-2)%126 ;
-      apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg0_address, 3, &triplet); //read triplet from eeprom
+      int status_r = apollo_i2c_ctl_reg_r(2, 0x50, 2, packed_reg0_address, 3, &triplet); //read triplet from eeprom
       if (status_r!= 0) {
         log_debug(LOG_SERVICE, "error in read triplet from EEPROM");
         log_error(LOG_SERVICE, "read status is %d\r\n",status_r);
       }
       // organize the three bytes
-      data = triplet >> 16 ;
-      reg1 = (triplet - (data << 16)) >> 8;
-      reg0 = triplet - (data << 16) - (reg1 << 8);
+      data = (triplet >> 16) & 0xFFU;
+      reg1 = (triplet >> 8) & 0xFFU;
+      reg0 = triplet & 0xFFU;
 
       if (reg0 != HighByte) {
         log_debug(LOG_SERVICE, "check page written to clk = %x\r\n", reg0);
@@ -701,7 +701,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       HighByte = reg0; //update the current high byte or page
 
 
-      vTaskDelay(pdMS_TO_TICKS(30)); //delay 30 ms to prevent PSMON stack overflow
+      vTaskDelay(pdMS_TO_TICKS(10)); //delay 10 ms to prevent PSMON stack overflow
 
       log_debug(LOG_SERVICE, "check data written to clk = %x\r\n", data);
       status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs, 1, (uint16_t)reg1, 1, data); //write data to a clock chip
@@ -724,7 +724,7 @@ int init_load_clk(int clk_n)
 {
 
   while (getPowerControlState() != POWER_ON) {
-    vTaskDelay(pdMS_TO_TICKS(3000)); // delay 3s
+    vTaskDelay(pdMS_TO_TICKS(10)); //delay 10 ms
   }
 
   char *clk_ids[5] = {"r0a","r0b","r1a","r1b","r1c"};
