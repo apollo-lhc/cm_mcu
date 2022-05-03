@@ -700,9 +700,6 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
 
       HighByte = reg0; //update the current high byte or page
 
-
-      vTaskDelay(pdMS_TO_TICKS(10)); //delay 10 ms to prevent PSMON stack overflow
-
       log_debug(LOG_SERVICE, "check data written to clk = %x\r\n", data);
       status_w = apollo_i2c_ctl_reg_w(2, i2c_addrs, 1, (uint16_t)reg1, 1, data); //write data to a clock chip
 
@@ -735,45 +732,37 @@ int init_load_clk(int clk_n)
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
 
   apollo_i2c_ctl_w(2, 0x70, 1, 1<<clk_n);
-  char string[5]; //place holder for a string to be converted from base16 to base10
-  sprintf(string, "%x",32*(clk_n));
-  uint16_t init_preamble_page = strtoul(string, NULL, 16);
-  sprintf(string, "%x",32*(clk_n)+1);
-  uint16_t init_register_page = strtoul(string, NULL, 16);
-  sprintf(string, "%x",32*(clk_n + 1)-1);
-  uint16_t init_postamble_page = strtoul(string, NULL, 16);
+  uint16_t init_preamble_page = 32*(clk_n);
+  uint16_t init_register_page = 32*(clk_n)+1;
+  uint16_t init_postamble_page = 32*(clk_n + 1)-1;
 
-  uint32_t PreambleList_row; //the hexadecimal size of preamble list in a clock config file store at the end of the last eeprom page of a clock
+  uint32_t PreambleList_row; //the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(2, 0x50, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
   if (status_r!= 0) {
     log_debug(LOG_SERVICE, "error in read preamblelist count from EEPROM");
     log_error(LOG_SERVICE, "read status is %d\r\n",status_r);
     return status_r; // fail reading and exit
   }
-  sprintf(string, "%lu",PreambleList_row);
-  int PreambleList_nrow = strtoul(string, NULL, 10); //the decimal size of preamble list in a clock config file
-  uint32_t RegisterList_row; //the hexadecimal size of register list in a clock config file store at the end of the last eeprom page of a clock
+
+  uint32_t RegisterList_row; //the size of register list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(2, 0x50, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r!= 0) {
     log_debug(LOG_SERVICE, "error in read registerlist count from EEPROM");
     log_error(LOG_SERVICE, "read status is %d\r\n",status_r);
     return status_r; // fail reading and exit
   }
-  sprintf(string, "%lu",RegisterList_row);
-  int RegisterList_nrow = strtoul(string, NULL, 10); //the decimal size of register list in a clock config file
-  uint32_t PostambleList_row; //the hexadecimal size of postamble list in a clock config file store at the end of the last eeprom page of a clock
+
+  uint32_t PostambleList_row; //the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(2, 0x50, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r!= 0) {
     log_debug(LOG_SERVICE, "error in read postamblelist count from EEPROM");
     log_error(LOG_SERVICE, "read status is %d\r\n",status_r);
     return status_r; // fail reading and exit
   }
-  sprintf(string, "%lu",PostambleList_row);
-  int PostambleList_nrow = strtoul(string, NULL, 10); //the decimal size of postamble list in a clock config file
 
   log_debug(LOG_SERVICE, "Start programming clock %s \r\n", clk_ids[clk_n]);
   log_debug(LOG_SERVICE, "Loading clock %s PreambleList from EEPROM \r\n", clk_ids[clk_n]);
-  status_w= load_clk_registers(PreambleList_nrow, init_preamble_page, i2c_addrs);
+  status_w= load_clk_registers(PreambleList_row, init_preamble_page, i2c_addrs);
   if (status_w!= 0){
     log_debug(LOG_SERVICE, "error in write preamblelist data to clock chip");
     log_error(LOG_SERVICE, "write status is %d\r\n",status_w);
@@ -781,7 +770,7 @@ int init_load_clk(int clk_n)
   }
   vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
   log_debug(LOG_SERVICE, "Loading clock %s RegisterList from EEPROM \r\n", clk_ids[clk_n]);
-  status_w= load_clk_registers(RegisterList_nrow, init_register_page, i2c_addrs);
+  status_w= load_clk_registers(RegisterList_row, init_register_page, i2c_addrs);
   if (status_w!= 0){
     log_debug(LOG_SERVICE, "error in write registerlist data to clock chip");
     log_error(LOG_SERVICE, "write status is %d\r\n",status_w);
@@ -789,7 +778,7 @@ int init_load_clk(int clk_n)
   }
   vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
   log_debug(LOG_SERVICE, "Loading clock %s PostambleList from EEPROM \r\n", clk_ids[clk_n]);
-  status_w= load_clk_registers(PostambleList_nrow, init_postamble_page, i2c_addrs);
+  status_w= load_clk_registers(PostambleList_row, init_postamble_page, i2c_addrs);
   if (status_w!= 0){
       log_debug(LOG_SERVICE, "error in write postamblelist data to clock chip");
       log_error(LOG_SERVICE, "write status is %d\r\n",status_w);
