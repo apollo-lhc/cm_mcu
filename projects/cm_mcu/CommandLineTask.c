@@ -107,11 +107,11 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
   int status = -1; // shut up clang compiler warning
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
   if (status == 0){
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+    snprintf(m + copied, SCRATCH_SIZE - copied,
         "clock synthesizer with id %s successfully programmed. \r\n", clk_ids[i]);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
   }
   return pdFALSE;
 }
