@@ -97,7 +97,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
   int copied = 0;
   char *clk_ids[5] = {"r0a","r0b","r1a","r1b","r1c"};
   BaseType_t i = strtol(argv[1], NULL, 10);
-  if (i < 0 || i > 5) {
+  if (i < 0 || i > 4) {
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied,
             "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, r1b:3 and r1c:4 \r\n", i);
