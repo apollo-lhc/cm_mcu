@@ -184,7 +184,7 @@ header file. */
 #define ECN001
 #endif // NO_ECN001
 
-#define pdTICKS_TO_MS(xTicks) (((TickType_t)(xTicks)*1000u) / configTICK_RATE_HZ)
+#define pdTICKS_TO_MS(xTicks) ((TickType_t)(xTicks) * (1000u/ configTICK_RATE_HZ))
 #define pdTICKS_TO_S(xTicks) ((TickType_t)(xTicks) / configTICK_RATE_HZ)
 
 #ifdef __cplusplus
