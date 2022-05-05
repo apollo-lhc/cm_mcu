@@ -296,7 +296,7 @@ int main(void)
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTask, "PSMON", configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
               NULL);

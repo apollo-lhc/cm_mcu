@@ -232,8 +232,18 @@ int SystemStackWaterHighWaterMark();
 
 // clock IO expander initalization
 void init_registers_clk();
-
 #ifdef REV2
+
+#define CLOCK_CHIP_COMMON_I2C_ADDR  0x6b
+#define CLOCK_CHIP_R0A_I2C_ADDR     0x77
+#define CLOCK_I2C_DEV               2
+#define CLOCK_I2C_MUX_ADDR          0x70
+#define CLOCK_I2C_EEPROM_ADDR       0x50
+
+// configuring clock initalization
+int init_load_clk(int clk_n);
+
+
 // hibernate/RTC
 void InitRTC();
 #endif // REV2
