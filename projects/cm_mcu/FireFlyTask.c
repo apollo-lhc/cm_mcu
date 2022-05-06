@@ -876,12 +876,8 @@ void FireFlyTask(void *parameters)
       }
 
       // monitor stack usage for this task
-      UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
       static UBaseType_t vv = 4096;
-      if (val < vv) {
-        log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
-      }
-      vv = val;
+      CHECK_TASK_STACK_USAGE(vv);
 
       // restore the page register to its value at the top of the loop, if it's non-zero
       if ( page_reg_value != 0 ) {

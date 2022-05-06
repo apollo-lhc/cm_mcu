@@ -282,4 +282,16 @@ void task_watchdog_unregister_task(uint16_t task_id);
 void task_watchdog_feed_task(uint16_t task_id);
 uint16_t task_watchdog_get_status();
 
+// general
+// monitor stack usage for this task
+#define CHECK_TASK_STACK_USAGE(vv)                                                   \
+  {                                                                                  \
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                             \
+    if (val < vv) {                                                                  \
+      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
+               vv);                                                                  \
+    }                                                                                \
+    vv = val;                                                                        \
+  }
+
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

@@ -885,10 +885,6 @@ void vCommandLineTask(void *pvParameters)
     microrl_insert_char(&rl, cRxedChar);
 
     // monitor stack usage for this task
-    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
-    if (val < args->stack_size) {
-      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, args->stack_size);
-    }
-    args->stack_size = val;
+    CHECK_TASK_STACK_USAGE(args->stack_size);
   }
 }
