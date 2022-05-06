@@ -102,13 +102,23 @@ struct buff_t b = {
   .data = log_buffer,
   .last = 0,
 };
+
+static size_t lenx(const char*s, size_t maxlen)
+{
+  // I need the cast here to tell the ptrdiff the size of the pointer.
+  ptrdiff_t plen = (char*)__builtin_memchr(s, '\0', maxlen) - s;
+  size_t len = plen;
+  return len>maxlen?maxlen:len;
+}
+
 static void log_add_string(const char *s, struct buff_t *b)
 {
   // add a string to the circular buffer. the "last" element should
   // always point to the '\0' of the last string added.
   // two cases: either the string fits in one copy, or in two
-  size_t len = strlen(s) + 1; // +1 for string terminator
   long left = b->size - b->last;
+  //size_t len = strlen(s) + 1; // +1 for string terminator
+  size_t len = lenx(s, left) + 1; // +1 for string terminator
   if (len <= left) {
     // single copy is going to work
     memcpy(b->data + b->last, s, len);
@@ -122,7 +132,7 @@ static void log_add_string(const char *s, struct buff_t *b)
   }
   // printf(">0x%02x<\n", (unsigned char)b->data[b->last]);
 }
-#ifdef NOTDEF
+#if 0
 void log_add_string2(const char *s, struct buff_t *bu)
 {
   // add a string to the circular buffer. the "last" element should
