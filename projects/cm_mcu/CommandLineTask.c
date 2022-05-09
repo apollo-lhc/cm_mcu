@@ -506,8 +506,8 @@ static portBASE_TYPE taskInfo( int argc, char *argv[], char *m)
   const char *const pcHeader = "Task   State  Priority  Stack  #\r\n*********************************\r\n";
 
   /* Generate a table of task stats. */
-  strcpy( m, pcHeader );
-  int copied = strlen(m);
+  strcpy( m, pcHeader ); // cppcheck-suppress strcpy_to_buffer
+  int copied = strlen(m); // cppcheck-suppress strlen_side
 
   /* Take a snapshot of the number of tasks in case it changes while this
     function is executing. */

@@ -191,7 +191,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char* m)
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ALARM status\r\n", argv[0]);
-    int32_t stat = getAlarmStatus();
+    uint32_t stat = getAlarmStatus();
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08lx\r\n", stat);
 
     float ff_val = getAlarmTemperature(FF);

@@ -235,7 +235,7 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
       // needs to be shifted to the appropriate position.
       uint32_t pinval = atoi(argv[3]) << pin; // input value should be either 0 or 1
       MAP_GPIOPinWrite(port, pin, pinval);
-      snprintf(m, SCRATCH_SIZE, "%s: set %s to %ld\r\n", argv[0], argv[2], pinval);
+      snprintf(m, SCRATCH_SIZE, "%s: set %s to %lu\r\n", argv[0], argv[2], pinval);
       return pdFALSE;
     }
     else {
@@ -252,7 +252,7 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
       else
         val = 0;
 
-      snprintf(m, SCRATCH_SIZE, "%s: pin %s reads %ld\r\n", argv[0], argv[2], val);
+      snprintf(m, SCRATCH_SIZE, "%s: pin %s reads %lu\r\n", argv[0], argv[2], val);
       return pdFALSE;
     }
     else {

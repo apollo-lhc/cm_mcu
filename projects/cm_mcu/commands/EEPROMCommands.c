@@ -10,8 +10,6 @@
 // This command takes 1 arg, the address
 BaseType_t eeprom_read(int argc, char **argv, char* m)
 {
-  int copied = 0;
-
   uint32_t addr;
   addr = strtol(argv[1], NULL, 16);
   uint32_t block = EEPROMBlockFromAddr(addr);
@@ -19,8 +17,8 @@ BaseType_t eeprom_read(int argc, char **argv, char* m)
   uint64_t data = read_eeprom_multi(addr);
   uint32_t data2 = (uint32_t)(data >> 32);
   uint32_t data1 = (uint32_t)data;
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                     "Data read from EEPROM block %ld: %08lx %08lx\r\n", block, data1, data2);
+  snprintf(m, SCRATCH_SIZE, "Data read from EEPROM block %ld: %08lx %08lx\r\n", block,
+           data1, data2);
 
   return pdFALSE;
 }
