@@ -37,6 +37,7 @@ enum log_facility_t {
   LOG_CLI,
   NUM_LOG_FACILITIES
 };
+#define LOG_USE_COLOR 
 
 typedef struct {
   va_list ap;

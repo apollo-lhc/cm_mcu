@@ -34,7 +34,6 @@ ifdef REV1
 CFLAGS += -DREV1
 endif 
 CFLAGS+=-DPRINTF_INCLUDE_CONFIG_H
-CFLAGS += -DLOG_USE_COLOR
 
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #CFLAGS+=-fstack-protector 
