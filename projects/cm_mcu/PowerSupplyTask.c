@@ -63,6 +63,13 @@ const char *getPowerControlStateName(enum power_system_state s)
   return power_system_state_names[s];
 }
 
+// alarm from outside this task
+static bool external_alarm = false;
+const bool getPowerControlExternalAlarmState()
+{
+  return external_alarm;
+}
+
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
@@ -72,8 +79,6 @@ void PowerSupplyTask(void *parameters)
   static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_F2_MASK | PS_ENS_F1_MASK), "mask");
   static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK | PS_OKS_F2_MASK | PS_OKS_F1_MASK), "mask");
 
-  // alarm from outside this task
-  bool external_alarm = false;
   // powerdown request from the CLI
   bool cli_powerdown_request = false;
 

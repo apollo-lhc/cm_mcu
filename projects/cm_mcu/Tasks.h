@@ -72,6 +72,8 @@ enum power_system_state {
 };
 enum power_system_state getPowerControlState();
 const char *getPowerControlStateName(enum power_system_state);
+const bool getPowerControlExternalAlarmState();
+
 void LGA80D_init(void);
 
 // --- Semi-generic PMBUS based I2C task

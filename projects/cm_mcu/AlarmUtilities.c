@@ -44,9 +44,9 @@ void setAlarmTemperature(enum device theDevice, float temperature)
 {
   alarmTemp[theDevice] = temperature;
 }
-// static float tm4c_temp, max_fpga, max_dcdc_temp;
-// static int8_t imax_ff_temp;
 
+// check the current temperature status.
+// returns +1 for warning, +2 or higher for error
 int TempStatus()
 {
   int retval = 0;
@@ -54,9 +54,12 @@ int TempStatus()
 
   // microcontroller
   currentTemp[TM4C] = getADCvalue(ADC_INFO_TEMP_ENTRY);
-  if (currentTemp[TM4C] > getAlarmTemperature(TM4C)) {
+  float excess_temp = currentTemp[TM4C] - getAlarmTemperature(TM4C);
+  if ( excess_temp > 0.f ) { // over temperature
     status_T |= ALM_STAT_TM4C_OVERTEMP;
     retval++;
+    if ( excess_temp > ALM_OVERTEMP_THRESHOLD )
+      ++retval;
   }
 
   // FPGA
@@ -66,9 +69,12 @@ int TempStatus()
   else {
     currentTemp[FPGA] = fpga_args.pm_values[0];
   }
-  if (currentTemp[FPGA] > getAlarmTemperature(FPGA)) {
+  excess_temp = currentTemp[FPGA] - getAlarmTemperature(FPGA);
+  if (excess_temp > 0.f ) {
     status_T |= ALM_STAT_FPGA_OVERTEMP;
     retval++;
+    if ( excess_temp > ALM_OVERTEMP_THRESHOLD )
+      ++retval;
   }
 
   // DCDC. The first command is READ_TEMPERATURE_1.
@@ -83,9 +89,12 @@ int TempStatus()
         currentTemp[DCDC] = thistemp;
     }
   }
-  if (currentTemp[DCDC] > getAlarmTemperature(DCDC)) {
+  excess_temp = currentTemp[DCDC] - getAlarmTemperature(DCDC);
+  if (excess_temp > 0.f ) {
     status_T |= ALM_STAT_DCDC_OVERTEMP;
     retval++;
+    if ( excess_temp > ALM_OVERTEMP_THRESHOLD )
+      ++retval;
   }
 
   // Fireflies. These are reported as ints but we are asked
@@ -97,9 +106,12 @@ int TempStatus()
       imax_ff_temp = v;
   }
   currentTemp[FF] = (float)imax_ff_temp;
-  if (currentTemp[FF] > getAlarmTemperature(FF)) {
+  excess_temp = currentTemp[FF] - getAlarmTemperature(FF);
+  if (excess_temp > 0.f ) {
     status_T |= ALM_STAT_FIREFLY_OVERTEMP;
     retval++;
+    if ( excess_temp > ALM_OVERTEMP_THRESHOLD )
+      ++retval;
   }
   return retval;
 }
