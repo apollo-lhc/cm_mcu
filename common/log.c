@@ -130,7 +130,6 @@ static void log_add_string(const char *s, struct buff_t *b)
     memcpy(b->data, s + left, len2);
     b->last = len - left - 1;
   }
-  // printf(">0x%02x<\n", (unsigned char)b->data[b->last]);
 }
 #if 0
 void log_add_string2(const char *s, struct buff_t *bu)
