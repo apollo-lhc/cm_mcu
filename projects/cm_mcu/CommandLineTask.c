@@ -443,6 +443,11 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
                            log_level_string(level));
       }
     }
+    else if (strncmp(argv[argc - 1], "dump", 4) == 0) {
+      // note that this is different from other functions because it does not
+      // use the intermediate buffer and just prints directy to the callback function.
+      log_dump(Print);
+    }
     else {
       snprintf(m, SCRATCH_SIZE, "%s: command %s not understood\r\n", argv[0], argv[1]);
     }
@@ -501,8 +506,8 @@ static portBASE_TYPE taskInfo( int argc, char *argv[], char *m)
   const char *const pcHeader = "Task   State  Priority  Stack  #\r\n*********************************\r\n";
 
   /* Generate a table of task stats. */
-  strcpy( m, pcHeader );
-  int copied = strlen(m);
+  strcpy( m, pcHeader ); // cppcheck-suppress strcpy_to_buffer
+  int copied = strlen(m); // cppcheck-suppress strlen_side
 
   /* Take a snapshot of the number of tasks in case it changes while this
     function is executing. */
@@ -880,10 +885,6 @@ void vCommandLineTask(void *pvParameters)
     microrl_insert_char(&rl, cRxedChar);
 
     // monitor stack usage for this task
-    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
-    if (val < args->stack_size) {
-      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, args->stack_size);
-    }
-    args->stack_size = val;
+    CHECK_TASK_STACK_USAGE(args->stack_size);
   }
 }

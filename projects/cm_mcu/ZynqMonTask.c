@@ -57,7 +57,7 @@ static void format_data(const uint8_t sensor, const uint16_t data, uint8_t messa
   // data frame 2, data[11:6] (6 bits)
   message[2] = SENSOR_MESSAGE_DATA_FRAME;
   message[2] |= (data >> 6) & 0x3F;
-  // // data frame 3, data[5:0] ( 6 bits )
+  // data frame 3, data[5:0] ( 6 bits )
   message[3] = SENSOR_MESSAGE_DATA_FRAME;
   message[3] |= data & 0x3F;
 }
@@ -116,7 +116,7 @@ QueueHandle_t xZynqMonQueue;
 // GIT      | 20 chars
 // ADC      | N_ADC+1 (21)
 // PSMON    | 2*10*N_Devices (2 is for number of pages)
-// uptime   | 20 chars
+// uptime   | 1 uint32, transmitted as 2 uint16's
 
 #ifdef REV1
 extern uint32_t g_ui32SysClock;
@@ -204,11 +204,229 @@ ZMUartCharPut(unsigned char c)
 #elif defined(REV2)
 void ZMUartCharPut(unsigned char c)
 {
-  UARTCharPut(UART4_BASE, c);
+  ROM_UARTCharPut(UART4_BASE, c);
 }
 #else
 #error "Unknown board revision"
 #endif
+
+struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
+
+// in all these functions, the "start" argument is used to set the
+// address that is sent with the data to the Zynq and indicates
+// a memory location in the Zynq memory.
+// the order that the data is stored in on the zynqmon_data array
+// does not have to correspond to the order in which the data is
+// stored in, or sent to, the Zynq.
+
+// this only needs to be called once
+#define ZM_GIT_VERSION_LENGTH 20
+void zm_set_gitversion(struct zynqmon_data_t data[], int start)
+{
+  // git version
+  char buff[ZM_GIT_VERSION_LENGTH];
+  // clear the buffer
+  memset(buff, 0, ZM_GIT_VERSION_LENGTH); // technically not needed
+  // get the git version and copy it into the buffer
+  strncpy(buff, gitVersion(), ZM_GIT_VERSION_LENGTH);
+  // loop over the buffer and copy it into the data struct
+  // each data word consists of two chars.
+  for (int j = 0; j < ZM_GIT_VERSION_LENGTH; j+=2) {
+    data[j/2].sensor = start + (j/2);
+    data[j/2].data.c[0] = buff[j];
+    data[j/2].data.c[1] = buff[j+1];
+  }
+}
+
+// store the uptime. This is a 32 bit unsigned int. Updates once per loop
+void zm_set_uptime(struct zynqmon_data_t data[], int start)
+{
+  TickType_t now = xTaskGetTickCount() / (configTICK_RATE_HZ * 60); // time in minutes
+
+  uint16_t now_16 = now & 0xFFFFU; // lower 16 bits
+  data[0].sensor = start;
+  data[0].data.us = now_16;
+  now_16 = (now >> 16) & 0xFFFFU; // upper 16 bits
+  data[1].sensor = start + 1;
+  data[1].data.us = now_16;
+}
+
+// wasting half the data packet here; could repack it
+// updated once per loop. Store the firefly temperature data 
+void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
+{
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+  // Fireflies
+  TickType_t last = pdTICKS_TO_S(getFFupdateTick());
+  bool stale = checkStale(last, now);
+
+  // update the data for ZMON
+  for (int i = 0; i < NFIREFLIES; i++) {
+    data[i].sensor = i + start; // sensor id
+    if ( ! stale ) {
+      data[i].data.i = getFFtemp(i); // sensor value and type
+    }
+    else {
+      data[i].data.i = -56; // special stale value
+    }
+  }
+
+}
+
+// store the zynqmon ADCMon data
+void zm_set_adcmon(struct zynqmon_data_t data[], int start)
+{
+  // update the data for ZMON
+  for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    data[i].sensor = i + start;  // sensor id
+    data[i].data.f = getADCvalue(i); // sensor value and type
+  }
+}
+
+// store the PSMON data. In Rev1 legacy version the start argument is not used.
+void zm_set_psmon_legacy(struct zynqmon_data_t data[], int start)
+{
+  // MonitorTask values -- power supply
+  // this indirection list is required because of a mistake
+  // made when initially putting together the register list.
+  const size_t offsets[] = {32, 40, 48, 56, 160, 168, 64, 72, 80, 88};
+  // update times, in seconds. If the data is stale, send NaN
+  TickType_t last = pdTICKS_TO_S(dcdc_args.updateTick);
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+  bool stale = checkStale(last, now);
+
+  for (int j = 0; j < 5; ++j) { // loop over supplies FIXME hardcoded value
+    for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
+      for (int k = 0; k < 5; ++k) {               // loop over FIRST FIVE commands
+        int index =
+            j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
+
+        if (stale) {
+          data[index].data.f = __builtin_nanf("");
+        }
+        else {
+          data[index].data.f = dcdc_args.pm_values[index];
+          if (data[index].data.f < -900.f)
+            data[index].data.f = __builtin_nanf("");
+        }
+        int reg = offsets[j * 2 + l] + k;
+        data[index].sensor = reg;
+      }
+    }
+  }
+}
+void zm_set_psmon(struct zynqmon_data_t data[], int start)
+{
+  // MonitorTask values -- power supply
+  // update times, in seconds. If the data is stale, send NaN
+  TickType_t last = pdTICKS_TO_S(dcdc_args.updateTick);
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+  bool stale = checkStale(last, now);
+
+  int ll = 0;
+
+  for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
+    for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
+      for (int k = 0; k < dcdc_args.n_commands; ++k) { // loop over FIRST SIX commands
+        if ( k >= 6 ) {
+          break; // only consider first six commands
+        }
+        int index =
+            j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
+
+        if (stale) {
+          data[ll].data.f = __builtin_nanf("");
+        }
+        else {
+          data[ll].data.f = dcdc_args.pm_values[index];
+          if (data[l].data.f < -900.f)
+            data[ll].data.f = __builtin_nanf("");
+        }
+        data[ll].sensor = ll + start;
+        ++ll;
+      }
+    }
+  }
+}
+
+void zm_set_fpga(struct zynqmon_data_t data[], int start)
+{
+  // FPGA values
+  TickType_t last = pdTICKS_TO_S(fpga_args.updateTick);
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+  bool stale = checkStale(last, now);
+
+  for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
+
+    if (stale) {
+      data[j].data.f = __builtin_nanf("");
+    }
+    else {
+      data[j].data.f = fpga_args.pm_values[j];
+      if (data[j].data.f < -900.f)
+        data[j].data.f = __builtin_nanf("");
+    }
+    data[j].sensor = j + start;
+  }
+}
+
+#ifdef REV1
+// this code will ultimately be generated from the YAML file
+void zm_fill_structs()
+{
+  // firefly, size 25
+  zm_set_firefly_temps(&zynqmon_data[0], 0);
+  // psmon, size 64
+  zm_set_psmon(&zynqmon_data[25], 32);
+  // adcmon, size 21
+  zm_set_adcmon(&zynqmon_data[89], 96);
+  // uptime, size 2
+  zm_set_uptime(&zynqmon_data[110], 192);
+  // gitversion, size 10.0
+  zm_set_gitversion(&zynqmon_data[112], 118);
+  // fpga, size 4
+  zm_set_fpga(&zynqmon_data[122], 128);
+}
+#define ZMON_VALID_ENTRIES 126
+#elif defined REV2
+// this code will is generated from the YAML file
+void zm_fill_structs()
+{
+  // firefly, size 20
+  zm_set_firefly_temps(&zynqmon_data[0], 0);
+  // psmon, size 80
+  zm_set_psmon(&zynqmon_data[20], 32);
+  // adcmon, size 21
+  zm_set_adcmon(&zynqmon_data[104], 128);
+  // uptime, size 2
+  zm_set_uptime(&zynqmon_data[125], 192);
+  // gitversion, size 20
+  zm_set_gitversion(&zynqmon_data[127], 118);
+  // fpga, size 8
+  zm_set_fpga(&zynqmon_data[137], 150);
+
+
+}
+#define ZMON_VALID_ENTRIES 145
+#endif
+
+
+void zm_send_data(struct zynqmon_data_t data[])
+{
+  // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
+  for ( int i = 0; i < ZMON_VALID_ENTRIES; ++i) {
+    uint8_t message[4];
+    format_data(data[i].sensor, data[i].data.us, message);
+    for ( int j = 0; j < 4; ++j) {
+      ZMUartCharPut(message[j]);
+    }
+  }
+}
+
 
 void ZynqMonTask(void *parameters)
 {
@@ -218,7 +436,12 @@ void ZynqMonTask(void *parameters)
 #endif
   // will be done centrally in Rev 2
 
+#ifdef ZYNQMON_TEST_MODE
   uint8_t message[4] = {0x9c, 0x2c, 0x2b, 0x3e};
+#endif // ZYNQMON_TEST_MODE
+
+  // reset the data we will send
+  memset(zynqmon_data, 0, ZM_NUM_ENTRIES*sizeof(struct zynqmon_data_t));
 
   bool enable = true;
   // initialize to the current tick time
@@ -304,121 +527,8 @@ void ZynqMonTask(void *parameters)
 #endif       // ZYNQMON_TEST_MODE
       }      // end test mode
       else { // normal mode
-        TickType_t now = pdTICKS_TO_S(xLastWakeTime) ;
-
-        // Fireflies
-        TickType_t last = pdTICKS_TO_S(getFFupdateTick()) ;
-        bool stale = checkStale(last, now);
-        for (int j = 0; j < NFIREFLIES; ++j) {
-          int16_t temperature;
-          if (stale) {
-            temperature = -56;
-          }
-          else {
-            temperature = getFFtemp(j);
-          }
-          format_data(j, temperature, message);
-          // send data buffer
-          for (int i = 0; i < 4; ++i) {
-            ZMUartCharPut( message[i]);
-          }
-        }
-        typedef union {
-          uint16_t us;
-          __fp16 f;
-        } convert_16_t;
-        // MonitorTask values -- power supply
-        // this indirection list is required because of a mistake
-        // made when initially putting together the register list.
-        const size_t offsets[] = {32, 40, 48, 56, 160, 168, 64, 72, 80, 88};
-        // update times, in seconds. If the data is stale, send NaN
-        last = pdTICKS_TO_S(dcdc_args.updateTick);
-        stale = checkStale(last, now);
-
-        for (int j = 0; j < 5; ++j) { // loop over supplies FIXME hardcoded value
-          for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
-            for (int k = 0; k < 5; ++k) {               // loop over FIRST FIVE commands
-              int index =
-                  j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
-              convert_16_t u;
-              if (stale) {
-                u.f = __builtin_nanf("");
-              }
-              else {
-                u.f = dcdc_args.pm_values[index];
-                if (u.f < -900.f)
-                  u.f = __builtin_nanf("");
-              }
-              int reg = offsets[j * 2 + l] + k;
-              format_data(reg, u.us, message);
-              for (int i = 0; i < 4; ++i) {
-                ZMUartCharPut( message[i]);
-              }
-            }
-          }
-        }
-        // ADC values
-        const int offsetADC = 96;
-        for (int j = 0; j < ADC_CHANNEL_COUNT; ++j) {
-          convert_16_t u;
-          u.f = getADCvalue(j);
-          format_data(j + offsetADC, u.us, message);
-          for (int i = 0; i < 4; ++i) {
-            ZMUartCharPut( message[i]);
-          }
-        }
-        // MonitorTask -- FPGA values
-        // THIS WILL BREAK IF WE HAVE MORE THAN ONE PAGE OR IF WE HAVE
-        // MORE THAN A SIMPLE SET OF COMMANDS -- NOTA BENE
-        const int offsetFPGA = 128;
-        // update times, in seconds. If the data is stale, send NaN
-        now = pdTICKS_TO_S(xLastWakeTime);
-        last = pdTICKS_TO_S(fpga_args.updateTick);
-        stale = checkStale(last, now);
-
-        // loop over FPGA arguments 
-        for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
-          convert_16_t u;
-          if (stale) {
-            u.f = __builtin_nanf("");
-          }
-          else {
-            u.f = fpga_args.pm_values[j];
-            if (u.f < -900.f)
-              u.f = __builtin_nanf("");
-          }
-          format_data(j + offsetFPGA, u.us, message);
-          for (int i = 0; i < 4; ++i) {
-            ZMUartCharPut( message[i]);
-          }
-        }
-        // git version
-        const int offsetGIT = 118;
-        char buff[SZ];
-        memset(buff, 0, SZ); // technically not needed
-        strncpy(buff, gitVersion(), SZ);
-        uint16_t *p = (uint16_t *)buff;
-        // each message sends two chars
-        for (int j = 0; j < SZ / 2; j++) {
-          format_data(j + offsetGIT, *p, message);
-          ++p;
-          for (int i = 0; i < 4; ++i) {
-            ZMUartCharPut( message[i]);
-          }
-        }
-        // uptime
-        const int offsetUPTIME = 192;
-        now = xLastWakeTime / (configTICK_RATE_HZ * 60); // time in minutes
-        uint16_t now_16 = now & 0xFFFFU;                 // lower 16 bits
-        format_data(offsetUPTIME, now_16, message);
-        for (int i = 0; i < 4; ++i) {
-          ZMUartCharPut( message[i]);
-        }
-        now_16 = (now >> 16) & 0xFFFFU; // upper 16 bits
-        format_data(offsetUPTIME + 1, now_16, message);
-        for (int i = 0; i < 4; ++i) {
-          ZMUartCharPut( message[i]);
-        }
+        zm_fill_structs();
+        zm_send_data(zynqmon_data);
       } // if not test mode
 
 #ifdef REV1
@@ -434,12 +544,9 @@ void ZynqMonTask(void *parameters)
     }  // if ( enabled)
 
     // monitor stack usage for this task
-    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
     static UBaseType_t vv = 4096;
-    if (val < vv) {
-      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
-    }
-    vv = val;
+    CHECK_TASK_STACK_USAGE(vv);
+
     // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5000));
   }

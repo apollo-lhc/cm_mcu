@@ -205,7 +205,7 @@ extern QueueHandle_t xEPRMQueue_out;
 uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
 
-// ZynqMon
+// -- ZynqMon
 //#define ZYNQMON_TEST_MODE
 // ZynqMon queue messages
 #define ZYNQMON_ENABLE_TRANSMIT  0x1
@@ -218,6 +218,20 @@ void EEPROMTask(void *parameters);
 
 extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
+// data for zynqmon task to be sent to Zynq 
+#define ZM_NUM_ENTRIES 256
+struct zynqmon_data_t {
+  uint8_t sensor;
+  union convert_16_t {
+    uint16_t us;
+    uint8_t uc[2];
+    char c[2];
+    int16_t i;
+    __fp16 f;
+  } data;
+};
+
+extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
 #ifdef ZYNQMON_TEST_MODE
 void setZYNQMonTestData(uint8_t sensor, uint16_t value);
@@ -267,5 +281,17 @@ void task_watchdog_register_task(uint16_t task_id);
 void task_watchdog_unregister_task(uint16_t task_id);
 void task_watchdog_feed_task(uint16_t task_id);
 uint16_t task_watchdog_get_status();
+
+// general
+// monitor stack usage for this task
+#define CHECK_TASK_STACK_USAGE(vv)                                                   \
+  {                                                                                  \
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                             \
+    if (val < vv) {                                                                  \
+      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
+               vv);                                                                  \
+    }                                                                                \
+    vv = val;                                                                        \
+  }
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

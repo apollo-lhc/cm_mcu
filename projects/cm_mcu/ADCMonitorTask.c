@@ -306,12 +306,8 @@ void ADCMonitorTask(void *parameters)
         147.5f - (75.f * ADC_MAX_VOLTAGE_RANGE * iADCvalues[ADC_INFO_TEMP_ENTRY]) / 4096.f;
 
     // monitor stack usage for this task
-    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
     static UBaseType_t vv = 4096;
-    if (val < vv) {
-      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
-    }
-    vv = val;
+    CHECK_TASK_STACK_USAGE(vv);
 
     // wait x ms for next iteration
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(1000));

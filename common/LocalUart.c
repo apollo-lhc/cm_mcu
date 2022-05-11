@@ -104,7 +104,7 @@ void UART0Init(uint32_t ui32SysClock)
 
 void UART4Print(const char *str)
 {
-  int size = strlen(str);
+  size_t size = strlen(str);
   for (int i = 0; i < size; ++i) {
     //
     // Write the next character to the UART.
@@ -115,7 +115,7 @@ void UART4Print(const char *str)
 
 void UARTPrint(uint32_t uart_base, const char *str)
 {
-  int size = strlen(str);
+  size_t size = strlen(str);
   for (int i = 0; i < size; ++i) {
     //
     // Write the next character to the UART.

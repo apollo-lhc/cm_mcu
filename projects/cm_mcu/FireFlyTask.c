@@ -206,6 +206,8 @@ struct dev_i2c_addr_t ff_i2c_addrs[NFIREFLIES] = {
 
 static SemaphoreHandle_t xFFMutex = NULL;
 
+extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
+
 SemaphoreHandle_t getFFMutex()
 {
   return xFFMutex;
@@ -480,7 +482,7 @@ static int disable_receivers(bool disable, int num_ff)
     if (strstr(ff_i2c_addrs[i].name, "XCVR") != NULL) {
         ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
     }
-    else if (strstr(ff_i2c_addrs[i].name, "Tx") != NULL) { // change this back to rx
+    else if (strstr(ff_i2c_addrs[i].name, "Rx") != NULL) {
         ret += write_ff_register(ff_i2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2);
     }
   }
@@ -874,12 +876,8 @@ void FireFlyTask(void *parameters)
       }
 
       // monitor stack usage for this task
-      UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
       static UBaseType_t vv = 4096;
-      if (val < vv) {
-        log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, vv);
-      }
-      vv = val;
+      CHECK_TASK_STACK_USAGE(vv);
 
       // restore the page register to its value at the top of the loop, if it's non-zero
       if ( page_reg_value != 0 ) {

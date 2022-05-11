@@ -55,6 +55,15 @@ void Print(const char *str);
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
+// break out of loop, releasing semaphore if we have it
+#define release_break()           \
+  {                               \
+    if (args->xSem != NULL) {     \
+      xSemaphoreGive(args->xSem); \
+    }                             \
+    break;                        \
+  }
+
 // FIXME: the current_error_count never goes down, only goes up.
 static void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
 {
@@ -121,7 +130,7 @@ void MonitorTask(void *parameters)
             log_info(LOG_MON, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
             isFullyPowered = false;
           }
-          break; // skip this iteration
+          release_break(); // skip this iteration
         }
         else if (power_state == POWER_ON) { // if the power state is fully on
           if (!isFullyPowered) {                      // was previously off
@@ -144,8 +153,14 @@ void MonitorTask(void *parameters)
         SuppressedPrint(tmp, &current_error_cnt, &log);
         continue;
       }
+      int tries = 0;
       while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+        if ( ++tries > 500 ) {
+          log_warn(LOG_MON, "timed out (SMBUSxfer mux) (%s, dev=%d)\r\n",
+              args->name, ps);
+          break;
+        }
       }
       if (*args->smbus_status != SMBUS_OK) {
         snprintf(tmp, TMPBUFFER_SZ,
@@ -154,7 +169,7 @@ void MonitorTask(void *parameters)
         SuppressedPrint(tmp, &current_error_cnt, &log);
         log_trace(LOG_MON, "%s:Mux w error %d, break (ps=%d)\r\n", args->name, *args->smbus_status,
                   ps);
-        break;
+        release_break();
       }
 #ifdef DEBUG_MON
       data[0] = 0xAAU;
@@ -171,7 +186,7 @@ void MonitorTask(void *parameters)
                  "MON(%s): Mux reading error %d, break out of loop (ps=%d) ...\r\n", args->name,
                  *args->smbus_status, ps);
         SuppressedPrint(tmp, &current_error_cnt, &log);
-        break;
+        release_break();
       }
       else {
         DPRINT("MON(%s): read back register on mux to be %02x\r\n", args->name, data[0]);
@@ -213,8 +228,14 @@ void MonitorTask(void *parameters)
             SuppressedPrint(tmp, &current_error_cnt, &log);
             continue; // abort reading this register
           }
+          int tries = 0;
           while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
+            if ( ++tries > 500 ) {
+              log_warn(LOG_MON, "timed out (SMBUSxfer) (%s, c=%d,dev=%d)\r\n",
+                  args->name, c, ps);
+              break;
+            }
           }
           if (*args->smbus_status != SMBUS_OK) {
             snprintf(tmp, TMPBUFFER_SZ,
@@ -224,7 +245,7 @@ void MonitorTask(void *parameters)
             // abort reading this device
             if ( log )
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
-            break;
+            release_break();
           }
           DPRINT("MON(%s): %d %s is 0x%02x %02x\r\n", args->name, ps, args->commands[c].name, data[1], data[0]);
           float val;
@@ -259,12 +280,7 @@ void MonitorTask(void *parameters)
     if (args->xSem != NULL) // if we have a semaphore, give it
       xSemaphoreGive(args->xSem);
 
-    // monitor stack usage for this task
-    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);
-    if (val < args->stack_size) {
-      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, args->stack_size);
-    }
-    args->stack_size = val;
+    CHECK_TASK_STACK_USAGE(args->stack_size);
 
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
   } // infinite loop

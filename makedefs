@@ -161,7 +161,7 @@ OBJCOPY=${PREFIX}-objcopy
 # variable is set.
 #
 ifdef DEBUG
-CFLAGS+=-g -D DEBUG -O0
+CFLAGS+=-g -D DEBUG -Os
 else
 CFLAGS+=-Os 
 endif

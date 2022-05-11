@@ -239,13 +239,13 @@ uint32_t increase_head()
 uint32_t errbuffer_findhead()
 {
   uint32_t ahead = ebuf->minaddr, head = ahead, cap = ebuf->capacity;
-  uint32_t entry, previous = 1, i = 0;
+  uint32_t previous = 1, i = 0;
   while (i <= cap) {
     ahead += 4;
     if (ahead > ebuf->maxaddr) {
       ahead = ebuf->minaddr;
     }
-    entry = read_eeprom_raw(ahead);
+    uint32_t entry = read_eeprom_raw(ahead);
     if (entry == 0 && previous == 0) {
       break;
     }
