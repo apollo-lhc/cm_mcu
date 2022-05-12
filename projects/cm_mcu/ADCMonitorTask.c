@@ -97,6 +97,12 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f, 0.f}, // this one is special, temp in C
 };
 #elif defined(REV2)
+// -------------------------------------------------
+//
+// REV 2
+//
+// -------------------------------------------------
+
 static
 struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH0,  "VCC_12V", 6.f, 0.f, 12.f},
@@ -117,8 +123,8 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 0.f, 2.5f},
     {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 1.f, 0.f, 2.5f},
     {ADC_CTL_CH17, "CUR_V_F2VCCAUX", 1.f, 0.f, 2.5f},
-    {ADC_CTL_CH18, "F1_TEMP", (1.026f/1.004f)/0.004f, -273.15f, 35.f}, // degrees C
-    {ADC_CTL_CH19, "F2_TEMP", (1.026f/1.004f)/0.004f, -273.15f, 35.f}, // degrees C
+    {ADC_CTL_CH18, "F1_TEMP", (1.004f/1.026f)/0.004f, -273.15f, 35.f}, // degrees C
+    {ADC_CTL_CH19, "F2_TEMP", (1.004f/1.026f)/0.004f, -273.15f, 35.f}, // degrees C
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f, 0.f}, // this one is special, temp in C
 };
 #else
@@ -126,12 +132,6 @@ struct ADC_Info_t ADCs[] = {
 #endif
 // clang-format on
 
-// -------------------------------------------------
-//
-// REV 2
-//
-// -------------------------------------------------
-// To be added here 
 
 static __fp16 fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
 
@@ -298,12 +298,12 @@ void ADCMonitorTask(void *parameters)
 
     // convert data to float values
     for (int i = 0; i < ADC_CHANNEL_COUNT; ++i) {
-      fADCvalues[i] = iADCvalues[i] / 4096.f * ADC_MAX_VOLTAGE_RANGE * ADCs[i].scale
+      fADCvalues[i] = iADCvalues[i] * (ADC_MAX_VOLTAGE_RANGE/4096.f)  * ADCs[i].scale
           + ADCs[i].offset;
     }
     // special: temperature of Tiva die. Tiva manu 15.3.6, last equation.
     fADCvalues[ADC_INFO_TEMP_ENTRY] =
-        147.5f - (75.f * ADC_MAX_VOLTAGE_RANGE * iADCvalues[ADC_INFO_TEMP_ENTRY]) / 4096.f;
+        147.5f - ((75.f * ADC_MAX_VOLTAGE_RANGE/ 4096.f) * iADCvalues[ADC_INFO_TEMP_ENTRY]) ;
 
     // monitor stack usage for this task
     static UBaseType_t vv = 4096;
