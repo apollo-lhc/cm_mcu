@@ -5,9 +5,11 @@
  *      Author: fatimayousuf
  */
 
-
+#include <strings.h>
+#include "parameters.h"
 #include "SensorControl.h"
 #include "common/smbus_helper.h"
+
 
 // this command takes no arguments since there is only one command
 // right now.
@@ -125,6 +127,8 @@ BaseType_t power_ctl(int argc, char **argv, char* m)
                          argv[0], f1_enable, f2_enable);
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "State machine state: %s\r\n",
                          getPowerControlStateName(getPowerControlState()));
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "External Alarm: %d\r\n",
+          getPowerControlExternalAlarmState());
     }
     for (; i < N_PS_OKS; ++i) {
       enum ps_state j = getPSStatus(i);
@@ -229,22 +233,22 @@ BaseType_t alarm_ctl(int argc, char **argv, char* m)
     }
     float newtemp = (float)strtol(argv[3], NULL, 10);
     char *device = argv[2];
-    if (!strcmp(device, "ff")) {
+    if (!strncasecmp(device, "ff", 2)) {
       setAlarmTemperature(FF, newtemp);
       snprintf(m, s, "%s: set Firefly alarm temperature to %s\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    if (!strcmp(device, "fpga")) {
+    if (!strncasecmp(device, "fpga", 4)) {
       setAlarmTemperature(FPGA, newtemp);
       snprintf(m, s, "%s: set FPGA alarm temperature to %s\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    if (!strcmp(device, "dcdc")) {
+    if (!strncasecmp(device, "dcdc", 4)) {
       setAlarmTemperature(DCDC, newtemp);
       snprintf(m, s, "%s: set DCDC alarm temperature to %s\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    if (!strcmp(device, "tm4c")) {
+    if (!strncasecmp(device, "tm4c", 4)) {
       setAlarmTemperature(TM4C, newtemp);
       snprintf(m, s, "%s: set TM4C alarm temperature to %s\r\n", argv[0], argv[3]);
       return pdFALSE;

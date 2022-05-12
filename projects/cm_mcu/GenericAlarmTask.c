@@ -36,8 +36,6 @@ enum alarm_task_state { ALM_INIT, ALM_NORMAL, ALM_WARN, ALM_ERROR };
 void GenericAlarmTask(void *parameters)
 {
   struct GenericAlarmParams_t *params = parameters;
-  QueueHandle_t xAlmQueue = params->xAlmQueue;
-  xAlmQueue = xQueueCreate(10, sizeof(uint32_t));
 
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -48,7 +46,7 @@ void GenericAlarmTask(void *parameters)
   for (;;) {
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));
 
-    if (xQueueReceive(xAlmQueue, &message, 0)) {
+    if (xQueueReceive(params->xAlmQueue, &message, 0)) {
       switch (message) {
         case ALM_CLEAR_ALL: // clear all alarms
           alarming = false;
@@ -108,6 +106,10 @@ void GenericAlarmTask(void *parameters)
           // error has cleared, log and move to normal state
           if (params->errorlog_clearerror)
             params->errorlog_clearerror();
+          message = TEMP_ALARM_CLEAR;
+          // this message always goes to the power queue, for all
+          // alarms.
+          xQueueSendToFront(xPwrQueue, &message, 100);
           nextState = ALM_NORMAL;
         }
         else {
