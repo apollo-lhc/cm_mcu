@@ -5,10 +5,10 @@
  *      Author: fatimayousuf
  */
 
-#include "parameters.h"
 
 #ifndef SENSOR_CONTROL_H_
 #define SENSOR_CONTROL_H_
+#include "parameters.h"
 
 BaseType_t sensor_summary(int argc, char **argv, char* m);
 

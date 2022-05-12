@@ -36,8 +36,6 @@ enum alarm_task_state { ALM_INIT, ALM_NORMAL, ALM_WARN, ALM_ERROR };
 void GenericAlarmTask(void *parameters)
 {
   struct GenericAlarmParams_t *params = parameters;
-  //QueueHandle_t xAlmQueue = params->xAlmQueue;
-//  xAlmQueue = xQueueCreate(10, sizeof(uint32_t));
 
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();

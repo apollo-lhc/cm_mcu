@@ -6,6 +6,7 @@
  */
 
 #include <strings.h>
+#include "parameters.h"
 #include "SensorControl.h"
 #include "common/smbus_helper.h"
 
