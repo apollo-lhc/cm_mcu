@@ -39,17 +39,6 @@
 // prototype of mutex'd print
 void Print(const char *str);
 
-//#define DEBUG_MON
-#ifdef DEBUG_MON
-#define DPRINT(...)                                                                                                    \
-  {                                                                                                                    \
-    snprintf(tmp, TMPBUFFER_SZ, __VA_ARGS__);                                                                          \
-    Print(tmp);                                                                                                        \
-  }
-#else // DEBUG_MON
-#define DPRINT(...)
-#endif // DEBUG_MON
-
 // Todo: rewrite to get away from awkward/bad SMBUS implementation from TI
 
 // the PAGE command is an SMBUS standard at register 0
@@ -171,27 +160,7 @@ void MonitorTask(void *parameters)
                   ps);
         release_break();
       }
-#ifdef DEBUG_MON
-      data[0] = 0xAAU;
-      r = SMBusMasterI2CRead(args->smbus, 0x70U, data, 1);
-      if (r != SMBUS_OK) {
-        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Read of MUX output failed\r\n", args->name);
-        SuppressedPrint(tmp, &current_error_cnt, &log);
-      }
-      while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-      }
-      if (*args->smbus_status != SMBUS_OK) {
-        snprintf(tmp, TMPBUFFER_SZ,
-                 "MON(%s): Mux reading error %d, break out of loop (ps=%d) ...\r\n", args->name,
-                 *args->smbus_status, ps);
-        SuppressedPrint(tmp, &current_error_cnt, &log);
-        release_break();
-      }
-      else {
-        DPRINT("MON(%s): read back register on mux to be %02x\r\n", args->name, data[0]);
-      }
-#endif // DEBUG_MON
+
       // loop over pages on the supply
       for (uint8_t page = 0; page < args->n_pages; ++page) {
         r = SMBusMasterByteWordWrite(args->smbus, args->devices[ps].dev_addr, PAGE_COMMAND, &page,
@@ -209,7 +178,6 @@ void MonitorTask(void *parameters)
                    *args->smbus_status);
           SuppressedPrint(tmp, &current_error_cnt, &log);
         }
-        DPRINT("\t\tMON(%s): Page %d\r\n", args->name, page);
         log_trace(LOG_MON, "%s: Page %d\r\n", args->name, page);
 
         // loop over commands
@@ -247,22 +215,15 @@ void MonitorTask(void *parameters)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
             release_break();
           }
-          DPRINT("MON(%s): %d %s is 0x%02x %02x\r\n", args->name, ps, args->commands[c].name, data[1], data[0]);
           float val;
           if (args->commands[c].type == PM_LINEAR11) {
             linear11_val_t ii;
             ii.raw = (data[1] << 8) | data[0];
             val = linear11_to_float(ii);
-            int tens, fraction;
-            float_to_ints(val, &tens, &fraction);
-            DPRINT("\t\t%d.%02d (linear11)\r\n", tens, fraction);
           }
           else if (args->commands[c].type == PM_LINEAR16U) {
             uint16_t ii = (data[1] << 8) | data[0];
             val = linear16u_to_float(ii);
-            int tens, fraction;
-            float_to_ints(val, &tens, &fraction);
-            DPRINT("\t\t%d.%02d (linear16u)\r\n", tens, fraction);
           }
           else if (args->commands[c].type == PM_STATUS) {
             // Note: this assumes 2 byte xfer and endianness and converts and int to a float
