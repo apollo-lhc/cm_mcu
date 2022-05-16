@@ -8,6 +8,7 @@
 // Include commands
 
 #include <strings.h>
+#include <assert.h>
 
 #include "commands/BoardCommands.h"
 #include "commands/BufferCommands.h"
@@ -98,9 +99,10 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
   char *clk_ids[5] = {"r0a","r0b","r1a","r1b","r1c"};
   BaseType_t i = strtol(argv[1], NULL, 10);
   if (i < 0 || i > 4) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-            "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, r1b:3 and r1c:4 \r\n", i);
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, "
+             "r1b:3 and r1c:4 \r\n",
+             i);
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s is programming clock %s. \r\n", argv[0], clk_ids[i]);
@@ -228,11 +230,11 @@ static BaseType_t mem_ctl(int argc, char **argv, char* m)
 static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
 {
   TaskStatus_t *pxTaskStatusArray;
-  volatile UBaseType_t uxArraySize, x;
+  volatile UBaseType_t uxArraySize;
   uint32_t ulTotalRunTime;
 
   // Make sure the write buffer does not contain a string.
-  *pcWriteBuffer = 0x00;
+  *pcWriteBuffer = '\0';
 
   // Take a snapshot of the number of tasks in case it changes while this
   // function is executing.
@@ -253,7 +255,7 @@ static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
     if (ulTotalRunTime > 0) {
       // For each populated position in the pxTaskStatusArray array,
       // format the raw data as human readable ASCII data
-      for (x = 0; x < uxArraySize; x++) {
+      for (UBaseType_t x = 0; x < uxArraySize; x++) {
         // What percentage of the total run time has the task used?
         // This will always be rounded down to the nearest integer.
         // ulTotalRunTimeDiv100 has already been divided by 100.
@@ -506,8 +508,9 @@ static portBASE_TYPE taskInfo( int argc, char *argv[], char *m)
   const char *const pcHeader = "Task   State  Priority  Stack  #\r\n*********************************\r\n";
 
   /* Generate a table of task stats. */
-  strcpy( m, pcHeader ); // cppcheck-suppress strcpy_to_buffer
-  int copied = strlen(m); // cppcheck-suppress strlen_side
+  static_assert(sizeof(m) >= sizeof(pcHeader), "m too small");
+  strcpy( m, pcHeader ); 
+  int copied = strlen(m); 
 
   /* Take a snapshot of the number of tasks in case it changes while this
     function is executing. */
@@ -764,8 +767,8 @@ struct microrl_user_data_t {
 static BaseType_t help_command_fcn(int argc, char **argv, char* m)
 {
   int copied = 0;
-  static int i = 0;
   if (argc == 1) {
+    static int i = 0;
     for (; i < NUM_COMMANDS; ++i) {
       int left = SCRATCH_SIZE - copied;
       // need room for command string, help string, newlines, etc, and trailing \0
@@ -790,8 +793,8 @@ static BaseType_t help_command_fcn(int argc, char **argv, char* m)
     }
   }
   if (copied == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "%s: No command starting with %s found\r\n", argv[0], argv[1]);
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "%s: No command starting with %s found\r\n", argv[0], argv[1]);
   }
   return pdFALSE;
 }

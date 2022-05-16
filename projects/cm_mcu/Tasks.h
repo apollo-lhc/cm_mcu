@@ -225,10 +225,10 @@ void ZynqMonTask(void *parameters);
 struct zynqmon_data_t {
   uint8_t sensor;
   union convert_16_t {
-    uint16_t us;
-    uint8_t uc[2];
-    char c[2];
-    int16_t i;
+    uint16_t us;   // cppcheck-suppress unusedStructMember
+    uint8_t uc[2]; // cppcheck-suppress unusedStructMember
+    char c[2];     // cppcheck-suppress unusedStructMember
+    int16_t i;     // cppcheck-suppress unusedStructMember
     __fp16 f;
   } data;
 };

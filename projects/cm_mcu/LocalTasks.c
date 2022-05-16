@@ -665,7 +665,7 @@ void init_registers_ff()
 static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_addrs)
 {
   int8_t HighByte = -1; // keep track when reg0 is changed
-  int status_w;
+  int status_w = -1;
 
   for (int i = 0; i < reg_count*3; ++i){
 

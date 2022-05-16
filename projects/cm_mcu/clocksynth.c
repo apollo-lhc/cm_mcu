@@ -4,6 +4,8 @@
  *  Created on: Jul 30, 2020
  *      Author: rzou
  */
+#include <assert.h>
+
 #include "clocksynth.h"
 #include "common/utils.h"
 #include "I2CCommunication.h"
@@ -70,17 +72,10 @@ int RegisterList[][2] = {{ 0x000B , 0x74 },
 
 int initialize_clock()
 {
-  int status = -10;
-  if (!((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) || (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6))) {
-    status = -1;
-  }
-  else{
-    status = 0;
-  }
-  if (status != 0)
-    return status;
+  static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
+        (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)), "Invalid I2C base");
   // Enable clocksynth, two i/o expanders via switch
-  status = apollo_i2c_ctl_w(CLOCK_I2C_BASE, CLOCK_SWITCH_I2C_ADDRESS, 1, CLOCK_SWITCH_ENABLEMAP);
+  int status = apollo_i2c_ctl_w(CLOCK_I2C_BASE, CLOCK_SWITCH_I2C_ADDRESS, 1, CLOCK_SWITCH_ENABLEMAP);
   if (status != 0)
     return status;
   // Setting clock write expander to have all I/O ports (P0-7,P10-17) set as outputs
@@ -115,7 +110,7 @@ int initialize_clock()
 
 static int write_register(int RegList[][2], int n_row)
 {
-  bool ChangePage = true;
+  bool ChangePage;
   int HighByte = -1;
   int status = -10;
   for (int i = 0; i < n_row; i++) {

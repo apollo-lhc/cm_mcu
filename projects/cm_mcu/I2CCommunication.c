@@ -234,7 +234,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
   return r;
 }
 // for PMBUS commands 
-int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
+int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus * const smbus_status, bool read,
                     struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
 {
   // write to the I2C mux

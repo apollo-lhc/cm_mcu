@@ -132,8 +132,6 @@ void setPSStatus(int i, enum ps_state theState)
 // de-assert BLADE_POWER_OK on successful exit.
 bool disable_ps(void)
 {
-  bool success = true;
-
   // first set the supplies to off to tell the
   // other tasks to prepare
   for (int o = 0; o < N_PS_OKS; ++o)
@@ -172,11 +170,9 @@ bool disable_ps(void)
   } // loop over priorities
 
   // turn off POWER_OK when we are done
-  if (success)
-    write_gpio_pin(BLADE_POWER_OK, 0x0);
-  else
-    write_gpio_pin(BLADE_POWER_OK, 0x1);
-  return success;
+  write_gpio_pin(BLADE_POWER_OK, 0x0);
+
+  return true;
 }
 
 // check the power supplies and turn them on one by one

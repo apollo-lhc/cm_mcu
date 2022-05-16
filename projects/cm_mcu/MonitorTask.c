@@ -121,7 +121,7 @@ void MonitorTask(void *parameters)
           }
           release_break(); // skip this iteration
         }
-        else if (power_state == POWER_ON) { // if the power state is fully on
+        else {                                        // if the power state is fully on
           if (!isFullyPowered) {                      // was previously off
             snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
             SuppressedPrint(tmp, &current_error_cnt, &log);
@@ -196,7 +196,7 @@ void MonitorTask(void *parameters)
             SuppressedPrint(tmp, &current_error_cnt, &log);
             continue; // abort reading this register
           }
-          int tries = 0;
+          tries = 0;
           while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
             if ( ++tries > 500 ) {

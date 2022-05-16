@@ -64,11 +64,10 @@ BaseType_t sensor_summary(int argc, char **argv, char* m)
 // dump monitor information
 BaseType_t psmon_ctl(int argc, char **argv, char* m)
 {
-  int s = SCRATCH_SIZE;
   BaseType_t i1 = strtol(argv[1], NULL, 10);
 
   if (i1 < 0 || i1 >= dcdc_args.n_commands) {
-    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
+    snprintf(m, SCRATCH_SIZE, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
              dcdc_args.n_commands - 1);
     return pdFALSE;
   }

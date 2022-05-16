@@ -335,6 +335,7 @@ bool isEnabledFF(int ff)
   static uint32_t ff_config;
   if (!configured) {
     ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
+    configured = true;
   }
   if (!((1 << ff) & ff_config))
     return false;
@@ -551,7 +552,7 @@ void FireFlyTask(void *parameters)
 {
   // initialize to the current tick time
   ff_updateTick = xTaskGetTickCount();
-  uint8_t data[2];
+  uint8_t data8[2];
 
   // create firefly mutex
   xFFMutex = xSemaphoreCreateMutex();
@@ -744,9 +745,9 @@ void FireFlyTask(void *parameters)
       }
 
       // select the appropriate output for the mux
-      data[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
-      log_debug(LOG_FFLY, "Mux set to 0x%02x\r\n", data[0]);
-      int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
+      data8[0] = 0x1U << ff_i2c_addrs[ff].mux_bit;
+      log_debug(LOG_FFLY, "Mux set to 0x%02x\r\n", data8[0]);
+      int res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data8[0]);
       if ( res != 0 ) {
         log_warn(LOG_FFLY, "Mux write error %d, break (ff=%d)\r\n", res, ff);
         break;
@@ -775,10 +776,6 @@ void FireFlyTask(void *parameters)
       }
       tmp1.us = temp_raw & 0xFFU; // change from uint_8 to int8_t, preserving bit pattern
       ff_stat[ff].temp = tmp1.s;
-#ifdef DEBUG_FIF
-      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", ff, ff_i2c_addrs[ff].name, tmp.s);
-      DPRINT(tmp);
-#endif // DEBUG_FIF
 
       // read the status register
       uint32_t status_raw;
@@ -789,39 +786,6 @@ void FireFlyTask(void *parameters)
         break;
       }
       ff_stat[ff].status = status_raw & FF_STATUS_COMMAND_REG_MASK;
-#ifdef DEBUG_FIF
-      snprintf(tmp, 64, "FIF: %d %s is 0x%02x\r\n", ff, ff_i2c_addrs[ff].name, data[0]);
-      DPRINT(tmp);
-#endif // DEBUG_FIF
-
-      // Read the serial number
-#ifdef DEBUG_FIF
-      data[0] = 0x0U;
-      data[1] = 0x0U;
-      for (uint8_t i = 189; i < 205; i++) {// change from 171-185 to 189-198 or 189-204 or 196-211
-#error "this code needs to be fixed"
-        uint32_t serial_raw;
-        res = apollo_i2c_ctl_reg_r(i2c_device, ff_i2c_addrs[ff].dev_addr, 1, (uint16_t)i, 1, &serial_raw);
-        if (res == -1) {
-          snprintf(tmp, 64, "FIF: %s: SMBUS failed (master/bus busy, ps=%d,c=%d)\r\n", __func__, ff,
-              1);
-          DPRINT(tmp);
-          continue; // abort reading this register
-        }
-        else if (res==-2){
-          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, *p_status,
-              ff, 1);
-          DPRINT(tmp);
-          ff_status[ff].serial_num[i - 196] = 0;
-          break;
-        }
-        else if (res==0){
-          convert_8_t tmp3;
-          tmp3.us = data[0]; // change from uint_8 to int8_t, preserving bit pattern
-          ff_status[ff].serial_num[i - 196] = tmp3.s;
-        }
-      }
-#endif // DEBUG_FIF
 
       // Check the loss of signal alarm
       uint32_t los_regs;
@@ -829,7 +793,7 @@ void FireFlyTask(void *parameters)
 
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL)  {
         nreg = 2;
-        los_regs = ECU0_25G_TX_LOS_ALARM_REG_2 | (ECU0_25G_TX_LOS_ALARM_REG_1 << 8);
+        los_regs = ECU0_25G_TX_LOS_ALARM_REG_1;
       }
       else {
         nreg = 1;
@@ -843,8 +807,9 @@ void FireFlyTask(void *parameters)
         log_error(LOG_FFLY, "los read Error %d, break (ff=%d)\r\n", res, ff);
         ff_stat[ff].los_alarm[0] = 0xff; // is this the right value to use?
         ff_stat[ff].los_alarm[1] = 0xff; // is this the right value to use?
+        break;
       }
-      else if (res == 0) {
+      else {
         ff_stat[ff].los_alarm[0] = los_raw & 0xFFU;
         ff_stat[ff].los_alarm[1] = (los_raw >> 8) & 0xFFU;
       }
@@ -852,7 +817,7 @@ void FireFlyTask(void *parameters)
       // Check the CDR loss of lock alarm
       uint16_t cdr_lol_reg_addrs;
       if (strstr(ff_i2c_addrs[ff].name, "XCVR") == NULL)  {
-        cdr_lol_reg_addrs = ECU0_25G_CDR_LOL_ALARM_REG_2 | (ECU0_25G_CDR_LOL_ALARM_REG_1 << 8);
+        cdr_lol_reg_addrs = ECU0_25G_CDR_LOL_ALARM_REG_1;
         nreg = 2;
       }
       else{
@@ -867,10 +832,10 @@ void FireFlyTask(void *parameters)
         log_error(LOG_FFLY, "LOL read error %d (ff=%d)\r\n", res, ff);
         // what is a good value to set these to in case of error?
         ff_stat[ff].cdr_lol_alarm[0] = 0xff;
-        ff_stat[ff].cdr_lol_alarm[0] = 0xff;
+        ff_stat[ff].cdr_lol_alarm[1] = 0xff;
         break;
       }
-      else if (res == 0) {
+      else {
         ff_stat[ff].cdr_lol_alarm[0] = lol_raw & 0xFFU;
         ff_stat[ff].cdr_lol_alarm[1] = (lol_raw >> 8) & 0xFFU;
       }
@@ -888,9 +853,9 @@ void FireFlyTask(void *parameters)
       }
 
       // clear the I2C mux
-      data[0] = 0x0;
-      log_debug(LOG_FFLY, "Output of mux set to 0x%02x\r\n", data[0]);
-      res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data[0]);
+      data8[0] = 0x0;
+      log_debug(LOG_FFLY, "Output of mux set to 0x%02x\r\n", data8[0]);
+      res = apollo_i2c_ctl_w(i2c_device, ff_i2c_addrs[ff].mux_addr, 1, data8[0]);
       if (res != 0) {
         log_warn(LOG_FFLY, "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
       }

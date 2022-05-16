@@ -61,12 +61,12 @@ static uint8_t getSlaveData(uint8_t address)
       value = getADCvalue(20) + 0.5f; // always valid
       break;
     case 0x12U: // FPGA F2 temp
-      value = (uint8_t)local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U;
+      value = (uint8_t)(local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U);
       if (value == 0)
         value = 0xFFU; // invalid value
       break;
     case 0x14U: // FPGA F1 temp
-      value = (uint8_t)local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U;
+      value = (uint8_t)(local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U);
       if (value == 0)
         value = 0xFFU; // invalid value
       break;
