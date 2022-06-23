@@ -43,13 +43,13 @@ static struct {
   log_Callback callbacks[MAX_CALLBACKS];
 } L;
 
-static const char *level_strings[] = {"FTL", "ERR", "WRN", "INF", "DBG", "TRC",};
+static const char * const level_strings[] = {"FTL", "ERR", "WRN", "INF", "DBG", "TRC",};
 
-static const char *facility_strings[] = { "UNK", "SRV", "MON", "FFL", "PWR", "I2C", "ALM", "CLI",
+static const char * const facility_strings[] = { "UNK", "SRV", "MON", "FFL", "PWR", "I2C", "ALM", "CLI",
 };
 
 #ifdef LOG_USE_COLOR
-static const char *level_colors[] = { //
+static const char * const level_colors[] = { //
     "\x1b[35m", "\x1b[31m", "\x1b[33m", "\x1b[32m", "\x1b[36m", "\x1b[94m" //
 };
 #endif

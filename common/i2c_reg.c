@@ -21,6 +21,7 @@
 #endif // USE_FREERTOS
 
 // This array helps us simplify the use of different I2C devices in the board.
+const
 uint32_t I2C_BASE[] = {I2C0_BASE, I2C1_BASE, I2C2_BASE, I2C3_BASE, I2C4_BASE,
                        I2C5_BASE, I2C6_BASE, I2C7_BASE, I2C8_BASE, I2C9_BASE};
 

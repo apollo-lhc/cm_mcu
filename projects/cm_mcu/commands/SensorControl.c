@@ -28,7 +28,7 @@ BaseType_t sensor_summary(int argc, char **argv, char* m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MCU %02d.%02d\r\n", tens, frac);
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
-  int8_t imax_temp = -99.0;
+  int8_t imax_temp = -99;
   for (int i = 0; i < NFIREFLIES; ++i) {
     int8_t v = getFFtemp(i);
     if (v > imax_temp)
@@ -46,7 +46,7 @@ BaseType_t sensor_summary(int argc, char **argv, char* m)
 
   // DCDC. The first command is READ_TEMPERATURE_1.
   // I am assuming it stays that way!!!!!!!!
-  float max_temp = -99.0;
+  float max_temp = -99.0f;
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     for (int page = 0; page < dcdc_args.n_pages; ++page) {
       float thistemp = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
@@ -388,7 +388,7 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
     // now process various commands.
     if (argc == 4) { // command + three arguments
       bool receiveAnswer = false;
-      uint8_t code;
+      uint8_t code = 0;
       uint32_t data = (whichFF & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET;
       if (strncmp(argv[1], "cdr", 3) == 0) {
         code = FFLY_DISABLE_CDR; // default: disable

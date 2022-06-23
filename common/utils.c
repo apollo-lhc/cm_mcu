@@ -217,7 +217,7 @@ struct error_buffer_t {
 
 static error_buffer_t errbuf = {
     .minaddr = 0, .maxaddr = 0, .head = 0, .capacity = 0, .last = 0, .counter = 0};
-errbuf_handle_t ebuf = &errbuf;
+const errbuf_handle_t ebuf = &errbuf;
 
 uint32_t decrease_head()
 {
@@ -496,8 +496,8 @@ uint32_t stopwatch_getticks()
 
 void float_to_ints(float val, int *tens, int *fraction)
 {
-  *tens = val;
-  *fraction = ABS((val - *tens) * 100.0f + 0.5f);
+  *tens = (int)val;
+  *fraction = (int)ABS((val - *tens) * 100.0f + 0.5f);
 
   return;
 }
@@ -505,5 +505,5 @@ void float_to_ints(float val, int *tens, int *fraction)
 
 bool checkStale(int oldTime, int newTime) 
 {
-  return ((oldTime>newTime) && (newTime-oldTime)>60);
+  return ((oldTime<newTime) && (newTime-oldTime)>60);
 }
