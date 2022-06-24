@@ -130,7 +130,7 @@ jobs:
       uses: tj-actions/changed-files@v23
       with:
         files_ignore: |
-          *.yml
+          **/*.yml
           .clang*
     - name: Format changed files
       uses: DoozyX/clang-format-lint-action@v0.13
