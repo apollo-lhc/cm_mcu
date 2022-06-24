@@ -128,6 +128,12 @@ jobs:
     - name: Get changed files
       id: changed-files
       uses: tj-actions/changed-files@v23
+      with:
+        files_ignore: |
+          *.yml
+          .clang-format
+          .clang-tidy
+          *.md
     - uses: DoozyX/clang-format-lint-action@v0.13
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
