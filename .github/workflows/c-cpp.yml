@@ -131,10 +131,9 @@ jobs:
       with:
         files_ignore: |
           *.yml
-          .clang-format
-          .clang-tidy
-          *.md
-    - uses: DoozyX/clang-format-lint-action@v0.13
+          .clang*
+    - name: Format changed files
+      uses: DoozyX/clang-format-lint-action@v0.13
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
