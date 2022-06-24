@@ -8,7 +8,7 @@
 #include "EEPROMCommands.h"
 
 // This command takes 1 arg, the address
-BaseType_t eeprom_read(int argc, char **argv, char* m)
+BaseType_t eeprom_read(int argc, char **argv, char *m)
 {
   uint32_t addr = strtol(argv[1], NULL, 16);
   uint32_t block = EEPROMBlockFromAddr(addr);
@@ -23,7 +23,7 @@ BaseType_t eeprom_read(int argc, char **argv, char* m)
 }
 
 // This command takes 2 args, the address and 4 bytes of data to be written
-BaseType_t eeprom_write(int argc, char **argv, char* m)
+BaseType_t eeprom_write(int argc, char **argv, char *m)
 {
   int copied = 0;
 
@@ -42,7 +42,7 @@ BaseType_t eeprom_write(int argc, char **argv, char* m)
 }
 
 // Takes 0 arguments
-BaseType_t eeprom_info(int argc, char **argv, char* m)
+BaseType_t eeprom_info(int argc, char **argv, char *m)
 {
   int copied = snprintf(m, SCRATCH_SIZE, "EEPROM has 96 blocks of 64 bytes each.\r\n");
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Block 0 \t 0x0000-0x0040 \t Free.\r\n");

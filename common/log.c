@@ -26,7 +26,7 @@
 #include "time.h"
 #include <string.h>
 
-#define MAX_CALLBACKS 8
+#define MAX_CALLBACKS   8
 #define stdout_callback ApolloLog
 
 typedef struct {
@@ -43,43 +43,60 @@ static struct {
   log_Callback callbacks[MAX_CALLBACKS];
 } L;
 
-static const char * const level_strings[] = {"FTL", "ERR", "WRN", "INF", "DBG", "TRC",};
+static const char *const level_strings[] = {
+    "FTL",
+    "ERR",
+    "WRN",
+    "INF",
+    "DBG",
+    "TRC",
+};
 
-static const char * const facility_strings[] = { "UNK", "SRV", "MON", "FFL", "PWR", "I2C", "ALM", "CLI",
+static const char *const facility_strings[] = {
+    "UNK",
+    "SRV",
+    "MON",
+    "FFL",
+    "PWR",
+    "I2C",
+    "ALM",
+    "CLI",
 };
 
 #ifdef LOG_USE_COLOR
-static const char * const level_colors[] = { //
+static const char *const level_colors[] = {
+    //
     "\x1b[35m", "\x1b[31m", "\x1b[33m", "\x1b[32m", "\x1b[36m", "\x1b[94m" //
 };
 #endif
 
 #ifdef NOTDEF
-static void stdout_callback(log_Event *ev) {
+static void stdout_callback(log_Event *ev)
+{
   char buf[16];
   buf[strftime(buf, sizeof(buf), "%H:%M:%S", ev->time)] = '\0';
 #ifdef LOG_USE_COLOR
   fprintf(
-    ev->udata, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
-    buf, level_colors[ev->level], level_strings[ev->level],
-    ev->file, ev->line);
+      ev->udata, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+      buf, level_colors[ev->level], level_strings[ev->level],
+      ev->file, ev->line);
 #else
   fprintf(
-    ev->udata, "%s %-5s %s:%d: ",
-    buf, level_strings[ev->level], ev->file, ev->line);
+      ev->udata, "%s %-5s %s:%d: ",
+      buf, level_strings[ev->level], ev->file, ev->line);
 #endif
   vfprintf(ev->udata, ev->fmt, ev->ap);
   fprintf(ev->udata, "\n");
   fflush(ev->udata);
 }
 
-
-static void file_callback(log_Event *ev) {
+static void file_callback(log_Event *ev)
+{
   char buf[64];
   buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ev->time)] = '\0';
   fprintf(
-    ev->udata, "%s %-5s %s:%d: ",
-    buf, level_strings[ev->level], ev->file, ev->line);
+      ev->udata, "%s %-5s %s:%d: ",
+      buf, level_strings[ev->level], ev->file, ev->line);
   vfprintf(ev->udata, ev->fmt, ev->ap);
   fprintf(ev->udata, "\n");
   fflush(ev->udata);
@@ -88,7 +105,7 @@ static void file_callback(log_Event *ev) {
 
 // apollo log specfic functions start
 // prototype
-void Print(const char* str);
+void Print(const char *str);
 
 struct buff_t {
   size_t size;
@@ -98,17 +115,17 @@ struct buff_t {
 #define LOG_BUFFER_SIZE 1024
 char log_buffer[LOG_BUFFER_SIZE];
 struct buff_t b = {
-  .size = LOG_BUFFER_SIZE,
-  .data = log_buffer,
-  .last = 0,
+    .size = LOG_BUFFER_SIZE,
+    .data = log_buffer,
+    .last = 0,
 };
 
-static size_t lenx(const char*s, size_t maxlen)
+static size_t lenx(const char *s, size_t maxlen)
 {
   // I need the cast here to tell the ptrdiff the size of the pointer.
-  ptrdiff_t plen = (char*)__builtin_memchr(s, '\0', maxlen) - s;
+  ptrdiff_t plen = (char *)__builtin_memchr(s, '\0', maxlen) - s;
   size_t len = plen;
-  return len>maxlen?maxlen:len;
+  return len > maxlen ? maxlen : len;
 }
 
 static void log_add_string(const char *s, struct buff_t *b)
@@ -152,22 +169,21 @@ void log_add_string2(const char *s, struct buff_t *bu)
     bu->last = len - left + 1; // +1 for \0 string terminator
   }
 }
- #endif // NOTDEF
- // This does not handle the case if sz is too small (i.e., smaller than bu->size)
+#endif // NOTDEF
+// This does not handle the case if sz is too small (i.e., smaller than bu->size)
 int log_dump_buffer_to_string(char *s, size_t sz)
 {
   int copied = snprintf(s, sz, "%s", b.data + b.last + 1);
-  copied += snprintf(s+copied, sz-copied, "%s", b.data);
+  copied += snprintf(s + copied, sz - copied, "%s", b.data);
   return copied;
 }
 
 // print to callback
-void log_dump( void (*f)(const char*s))
+void log_dump(void (*f)(const char *s))
 {
   f(b.data + b.last + 1);
   f(b.data);
 }
-
 
 void ApolloLog(log_Event *ev)
 {
@@ -178,7 +194,7 @@ void ApolloLog(log_Event *ev)
 #endif // LOG_USE_COLOR
   r += snprintf(tmp + r, 256 - r, "20%u %-3s %-3s %s:%u:", ev->time,
                 facility_strings[ev->fac], level_strings[ev->level], ev->file, ev->line);
-  r += vsnprintf(tmp+r, 256-r, ev->fmt, ev->ap);
+  r += vsnprintf(tmp + r, 256 - r, ev->fmt, ev->ap);
 #ifdef LOG_USE_COLOR
   snprintf(tmp + r, 256 - r, "%s", "\033[0m");
 #endif
@@ -188,22 +204,23 @@ void ApolloLog(log_Event *ev)
 
 // apollo log specfic functions end
 
-static void lock(void)   {
+static void lock(void)
+{
   if (L.lock) {
     L.lock(true, L.udata);
   }
 }
 
-
-static void unlock(void) {
+static void unlock(void)
+{
   if (L.lock) {
     L.lock(false, L.udata);
   }
 }
 
-
-const char* log_level_string(int level) {
-  if (level >= NUM_LOG_LEVELS ) {
+const char *log_level_string(int level)
+{
+  if (level >= NUM_LOG_LEVELS) {
     return "UNKN";
   }
   return level_strings[level];
@@ -217,21 +234,22 @@ const char *log_facility_string(int facility)
   return facility_strings[facility];
 }
 
-void log_set_lock(log_LockFn fn, void *udata) {
+void log_set_lock(log_LockFn fn, void *udata)
+{
   L.lock = fn;
   L.udata = udata;
 }
 
-
-void log_set_level(int level, int facility) {
-  if ( facility >= NUM_LOG_FACILITIES) {
-    return ;
+void log_set_level(int level, int facility)
+{
+  if (facility >= NUM_LOG_FACILITIES) {
+    return;
   }
   L.level[facility] = level;
 }
 
-
-void log_set_quiet(bool enable) {
+void log_set_quiet(bool enable)
+{
   L.quiet = enable;
 }
 
@@ -242,17 +260,17 @@ bool log_get_quiet()
 
 int log_get_current_level(int facility)
 {
-  if ( facility >= NUM_LOG_FACILITIES ) {
+  if (facility >= NUM_LOG_FACILITIES) {
     return -1;
   }
   return L.level[facility];
 }
 
-
-int log_add_callback(log_LogFn fn, void *udata, int level) {
+int log_add_callback(log_LogFn fn, void *udata, int level)
+{
   for (int i = 0; i < MAX_CALLBACKS; i++) {
     if (!L.callbacks[i].fn) {
-      L.callbacks[i] = (log_Callback) { fn, udata, level };
+      L.callbacks[i] = (log_Callback){fn, udata, level};
       return 0;
     }
   }
@@ -260,17 +278,17 @@ int log_add_callback(log_LogFn fn, void *udata, int level) {
 }
 
 #ifdef NOTDEF
-int log_add_fp(FILE *fp, int level) {
+int log_add_fp(FILE *fp, int level)
+{
   return log_add_callback(file_callback, fp, level);
 }
 #endif // NOTDEF
 
-
-static void init_event(log_Event *ev, void *udata) 
+static void init_event(log_Event *ev, void *udata)
 {
   struct tm now;
   ROM_HibernateCalendarGet(&now);
-  if ( now.tm_year < 120) { // RTC not yet set
+  if (now.tm_year < 120) { // RTC not yet set
     ev->time = xTaskGetTickCount();
   }
   else { // RTC is set
@@ -284,15 +302,15 @@ void log_log(int level, const char *file, int line, enum log_facility_t facility
              const char *fmt, ...)
 {
   log_Event ev = {
-    .fmt   = fmt,
-    .file  = file,
-    .line  = line,
-    .level = level,
-    .fac = facility,
+      .fmt = fmt,
+      .file = file,
+      .line = line,
+      .level = level,
+      .fac = facility,
   };
 
   lock();
-  if (facility >= NUM_LOG_FACILITIES ) {
+  if (facility >= NUM_LOG_FACILITIES) {
     facility = LOG_DEFAULT; //
   }
 
@@ -303,11 +321,10 @@ void log_log(int level, const char *file, int line, enum log_facility_t facility
     va_end(ev.ap);
   }
 
-
   if (!L.quiet) {
     for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
       log_Callback *cb = &L.callbacks[i];
-      if (level <= L.level[facility] ) {
+      if (level <= L.level[facility]) {
         init_event(&ev, cb->udata);
         va_start(ev.ap, fmt);
         cb->fn(&ev);

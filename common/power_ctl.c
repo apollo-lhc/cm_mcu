@@ -19,7 +19,6 @@
 #include "task.h"
 #endif // USE_FREERTOS
 
-
 // clang-format off
 #if defined(REV1) 
 // ------------------------------------------
@@ -107,7 +106,7 @@ struct gpio_pin_t oks[N_PS_OKS] = {
 
 #else
 #error "Unknown board revision"
-#endif // REV2 
+#endif // REV2
 
 // clang-format on
 #define PS_NUM_PRIORITIES 5
@@ -211,7 +210,7 @@ void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio)
 {
   // in the special case where neither f1 or f2 are enabled (no FPGAs),
   // enable both of them (commissioning of new PCB
-  if ( ! f1_enable && ! f2_enable ) {
+  if (!f1_enable && !f2_enable) {
     f1_enable = true;
     f2_enable = true;
   }

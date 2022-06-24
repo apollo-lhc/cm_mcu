@@ -73,7 +73,8 @@ int RegisterList[][2] = {{ 0x000B , 0x74 },
 int initialize_clock()
 {
   static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
-        (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)), "Invalid I2C base");
+                 (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
+                "Invalid I2C base");
   // Enable clocksynth, two i/o expanders via switch
   int status = apollo_i2c_ctl_w(CLOCK_I2C_BASE, CLOCK_SWITCH_I2C_ADDRESS, 1, CLOCK_SWITCH_ENABLEMAP);
   if (status != 0)

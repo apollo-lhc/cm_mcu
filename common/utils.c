@@ -19,7 +19,6 @@
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t *errbuf_handle_t;
 
-
 uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data)
 {
   return ((action << 48) | (addr << 32) | data);
@@ -112,15 +111,15 @@ uint8_t toggle_gpio_pin(int pin)
 
 // Set up all the active low pins to be off (i.e., high)
 static const int pins[] = {
-    _FPGA_I2C_RESET,     //
-    _PWR_I2C_RESET,      //
-    _CLOCKS_I2C_RESET,   //
+    _FPGA_I2C_RESET,      //
+    _PWR_I2C_RESET,       //
+    _CLOCKS_I2C_RESET,    //
     _F2_OPTICS_I2C_RESET, //
     _F1_OPTICS_I2C_RESET, //
 #ifdef REV2
     _F1_JTAG_BYPASS, //
     _F1_JTAG_BYPASS, //
-#endif // REV2
+#endif               // REV2
 };
 #define NPINS (sizeof(pins) / pins[0])
 
@@ -145,7 +144,7 @@ static const char *ebuf_errstrings[] = {
     "Hard fault",
     "Assertion failed",
     "Stack Overflow",
-    "(continue)",  // item 10 
+    "(continue)", // item 10
     "Power Failure",
     "Temp High (TM4C FPGA FF DCDC)",
     "MARK",
@@ -502,8 +501,7 @@ void float_to_ints(float val, int *tens, int *fraction)
   return;
 }
 
-
-bool checkStale(int oldTime, int newTime) 
+bool checkStale(int oldTime, int newTime)
 {
-  return ((oldTime<newTime) && (newTime-oldTime)>60);
+  return ((oldTime < newTime) && (newTime - oldTime) > 60);
 }
