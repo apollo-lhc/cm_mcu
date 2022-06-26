@@ -14,7 +14,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 // memory mappings
 #include "inc/hw_types.h"

@@ -8,7 +8,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "driverlib/rom.h"
 #include "driverlib/eeprom.h"

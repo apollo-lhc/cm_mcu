@@ -23,7 +23,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 // memory mappings
 #include "inc/hw_memmap.h"
@@ -137,7 +136,7 @@ static __fp16 fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
 
 // read-only accessor functions for ADC names and values.
 
-const char *getADCname(const int i)
+const char * const getADCname(const int i)
 {
   configASSERT(i >= 0 && i < ADC_CHANNEL_COUNT);
   return ADCs[i].name;
