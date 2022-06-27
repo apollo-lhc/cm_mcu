@@ -12,7 +12,6 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-
 extern SemaphoreHandle_t xMonSem;
 
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
@@ -62,7 +61,7 @@ struct MonitorTaskArgs_t {
 #define NSUPPLIES_PS (7) // 7 devices, 2 pages each
 #endif
 #define NCOMMANDS_PS 20 // number of entries in dcdc_ array
-#define NPAGES_PS    2  // number of pages on the power supplies.
+#define NPAGES_PS    2 // number of pages on the power supplies.
 
 extern struct MonitorTaskArgs_t dcdc_args;
 extern struct MonitorTaskArgs_t fpga_args;

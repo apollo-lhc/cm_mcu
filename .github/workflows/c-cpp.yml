@@ -133,10 +133,12 @@ jobs:
           **/*.yml
           .clang*
           .git*
+          **/*.sh
     - name: Format changed files
-      uses: DoozyX/clang-format-lint-action@v0.13
+      uses: DoozyX/clang-format-lint-action@v0.14
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
         clangFormatVersion: 11
         inplace: false
+        style: file

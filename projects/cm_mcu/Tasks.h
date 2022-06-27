@@ -94,8 +94,8 @@ void MonitorTask(void *parameters);
 #else // REV2
 // REV 2
 #define NFIREFLIES_F1 10
-#define NFIREFLIES_F2 10 
-#endif                   // REV 2
+#define NFIREFLIES_F2 10
+#endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 void FireFlyTask(void *parameters);
