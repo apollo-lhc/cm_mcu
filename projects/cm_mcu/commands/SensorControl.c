@@ -98,7 +98,7 @@ BaseType_t psmon_ctl(int argc, char **argv, char *m)
 }
 
 // send power control commands
-extern struct gpio_pin_t oks[];
+extern struct gpio_pin_t oks[N_PS_OKS];
 BaseType_t power_ctl(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
@@ -721,8 +721,8 @@ BaseType_t fpga_reset(int argc, char **argv, char *m)
 }
 
 extern struct MonitorTaskArgs_t dcdc_args;
-extern struct dev_i2c_addr_t pm_addrs_dcdc[];
-extern struct pm_command_t extra_cmds[]; // LocalTasks.c
+extern struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
+extern struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
 
 // Read out registers from LGA80D
 BaseType_t psmon_reg(int argc, char **argv, char *m)

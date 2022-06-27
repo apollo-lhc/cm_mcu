@@ -12,7 +12,6 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-extern float pm_values[];
 
 extern SemaphoreHandle_t xMonSem;
 

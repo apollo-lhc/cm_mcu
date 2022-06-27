@@ -126,7 +126,7 @@ struct MonitorTaskArgs_t fpga_args = {
 //       0x43     | KVCCINT  |     1
 //       0x46     | VVCCINT  |     1
 //       0x45     | VVCCINT  |     1
-struct dev_i2c_addr_t pm_addrs_dcdc[] = {
+struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
     {"3V3/1V8", 0x70, 0, 0x40},  // Dual supply 1.8 / 3.3 V
     {"KVCCINT1", 0x70, 1, 0x44}, // first vccint, KU15P
     {"KVCCINT2", 0x70, 2, 0x43}, // second vccint, KU15P
@@ -142,7 +142,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
 //       0x43     | F1VCCINT  |     1
 //       0x46     | F2VCCINT  |     1
 //       0x45     | F2VCCINT  |     1
-struct dev_i2c_addr_t pm_addrs_dcdc[] = {
+struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
     {"3V3/1V8", 0x70, 0, 0x40},   // Dual supply 1.8 / 3.3 V
     {"F1VCCINT1", 0x70, 1, 0x44}, // first vccint, F1
     {"F1VCCINT2", 0x70, 2, 0x43}, // second vccint, F1
@@ -156,7 +156,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[] = {
 #endif // REV1
 
 // this function is run once in the dcdc monitoring task
-struct pm_command_t extra_cmds[] = {
+struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
     {0x0, 1, "PAGE", "", PM_STATUS},
     {0x1, 1, "OPERATION", "", PM_STATUS},
     {0x33, 2, "FREQUENCY_SWITCH", "Hz", PM_LINEAR11},
@@ -253,7 +253,6 @@ void LGA80D_init(void)
 
 // if you change the length of this array, you also need to change
 // NCOMMANDS_PS in MonitorTask.h
-// TODO make this fix automatic
 struct pm_command_t pm_command_dcdc[] = {
     {0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11},
     {0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11},

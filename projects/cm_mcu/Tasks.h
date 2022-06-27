@@ -78,6 +78,12 @@ void LGA80D_init(void);
 
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
+#ifdef REV1
+#define N_PM_ADDRS_DCDC 5
+#elif defined(REV2) // REV2
+#define N_PM_ADDRS_DCDC 7
+#endif
+#define N_EXTRA_CMDS 7
 
 // Firefly task
 // --- Firefly monitoring
@@ -88,8 +94,7 @@ void MonitorTask(void *parameters);
 #else // REV2
 // REV 2
 #define NFIREFLIES_F1 10
-#define NFIREFLIES_F2 10 // Placeholders
-//#error "Fix placeholder values"
+#define NFIREFLIES_F2 10 
 #endif                   // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
