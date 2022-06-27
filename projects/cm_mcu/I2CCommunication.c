@@ -56,7 +56,7 @@ extern tSMBusStatus eStatus5;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
 
-tSMBus *  const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
+tSMBus *const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
 tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
 
 // array of function pointers to access to the semaphores to control access to the
@@ -238,10 +238,10 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bo
                     struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
 {
   // select the appropriate output for the mux
-   uint8_t data = 0x1U << add->mux_bit;
-   tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
-   if (r != SMBUS_OK) {
-     return r;
+  uint8_t data = 0x1U << add->mux_bit;
+  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+  if (r != SMBUS_OK) {
+    return r;
   }
   int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {

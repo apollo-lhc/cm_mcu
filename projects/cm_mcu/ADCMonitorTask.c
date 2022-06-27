@@ -131,12 +131,11 @@ struct ADC_Info_t ADCs[] = {
 #endif
 // clang-format on
 
-
 static __fp16 fADCvalues[ADC_CHANNEL_COUNT]; // ADC values in volts
 
 // read-only accessor functions for ADC names and values.
 
-const char * const getADCname(const int i)
+const char *const getADCname(const int i)
 {
   configASSERT(i >= 0 && i < ADC_CHANNEL_COUNT);
   return ADCs[i].name;
@@ -297,12 +296,11 @@ void ADCMonitorTask(void *parameters)
 
     // convert data to float values
     for (int i = 0; i < ADC_CHANNEL_COUNT; ++i) {
-      fADCvalues[i] = iADCvalues[i] * (ADC_MAX_VOLTAGE_RANGE/4096.f)  * ADCs[i].scale
-          + ADCs[i].offset;
+      fADCvalues[i] = iADCvalues[i] * (ADC_MAX_VOLTAGE_RANGE / 4096.f) * ADCs[i].scale + ADCs[i].offset;
     }
     // special: temperature of Tiva die. Tiva manu 15.3.6, last equation.
     fADCvalues[ADC_INFO_TEMP_ENTRY] =
-        147.5f - ((75.f * ADC_MAX_VOLTAGE_RANGE/ 4096.f) * iADCvalues[ADC_INFO_TEMP_ENTRY]) ;
+        147.5f - ((75.f * ADC_MAX_VOLTAGE_RANGE / 4096.f) * iADCvalues[ADC_INFO_TEMP_ENTRY]);
 
     // monitor stack usage for this task
     static UBaseType_t vv = 4096;

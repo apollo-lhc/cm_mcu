@@ -324,7 +324,7 @@ void initFPGAMon()
   write_gpio_pin(JTAG_FROM_SM, 1);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);
-#endif        // not REV1
+#endif // not REV1
 #ifndef DEBUG // todo: just log this
   configASSERT(f1_enable || f2_enable);
 #endif // DEBUG

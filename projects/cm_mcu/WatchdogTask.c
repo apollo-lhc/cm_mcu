@@ -23,7 +23,6 @@
 
 #include "common/log.h"
 
-
 static uint16_t s_registered_tasks = 0;
 static uint16_t s_fed_tasks = 0;
 

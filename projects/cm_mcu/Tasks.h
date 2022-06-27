@@ -29,7 +29,7 @@ void InitTask(void *parameters);
 #define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
-const char * const getADCname(const int i);
+const char *const getADCname(const int i);
 float getADCvalue(const int i);
 float getADCtargetValue(const int i);
 
@@ -90,7 +90,7 @@ void MonitorTask(void *parameters);
 #define NFIREFLIES_F1 10
 #define NFIREFLIES_F2 10 // Placeholders
 //#error "Fix placeholder values"
-#endif                   // REV 2
+#endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 void FireFlyTask(void *parameters);

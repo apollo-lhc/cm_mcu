@@ -132,6 +132,7 @@ jobs:
         files_ignore: |
           **/*.yml
           .clang*
+          .git*
     - name: Format changed files
       uses: DoozyX/clang-format-lint-action@v0.13
       with:
