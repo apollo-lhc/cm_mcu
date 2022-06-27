@@ -54,7 +54,7 @@ void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bi
       supply_ok_mask, supply_bitset);
 }
 
-static char *power_system_state_names[] = {
+static const char * const power_system_state_names[] = {
     "FAIL", "INIT", "OFF", "L1ON", "L2ON", "L3ON", "L4ON", "L5ON", "ON",
 };
 

@@ -56,8 +56,8 @@ extern tSMBusStatus eStatus5;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
 
-tSMBus *pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
-tSMBusStatus *eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
+tSMBus *  const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
+tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
 
 // array of function pointers to access to the semaphores to control access to the
 // I2C controller
@@ -237,13 +237,11 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
 int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bool read,
                     struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
 {
-  // write to the I2C mux
-  uint8_t data;
   // select the appropriate output for the mux
-  data = 0x1U << add->mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
-  if (r != SMBUS_OK) {
-    return r;
+   uint8_t data = 0x1U << add->mux_bit;
+   tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+   if (r != SMBUS_OK) {
+     return r;
   }
   int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {

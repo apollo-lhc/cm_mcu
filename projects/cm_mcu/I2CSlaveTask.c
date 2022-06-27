@@ -7,7 +7,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h" // to be removed
@@ -96,7 +95,7 @@ static uint8_t getSlaveData(uint8_t address)
       if (max_temp < 0)
         value = 0xFFU; // invalid
       else
-        value = (uint8_t)max_temp + 0.5f;
+        value = (uint8_t)(max_temp + 0.5f);
     } break;
     default:
       value = 0xFFU;

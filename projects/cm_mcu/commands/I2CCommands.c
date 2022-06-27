@@ -11,11 +11,10 @@
 BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
-  BaseType_t device, address, nbytes;
-  device = strtol(argv[1], NULL, 16);
-  address = strtol(argv[2], NULL, 16);
-  nbytes = strtol(argv[3], NULL, 10);
-  uint8_t data[I2C_CTL_MAX_BYTES] = {0,0,0,0};
+  BaseType_t device = strtol(argv[1], NULL, 16);
+  BaseType_t address = strtol(argv[2], NULL, 16);
+  BaseType_t nbytes = strtol(argv[3], NULL, 10);
+  uint8_t data[I2C_CTL_MAX_BYTES] = {0, 0, 0, 0};
 
   int status = apollo_i2c_ctl_r(device, address, nbytes, data);
   if (status == 0) {

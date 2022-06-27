@@ -29,7 +29,7 @@ void InitTask(void *parameters);
 #define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
-const char *getADCname(const int i);
+const char * const getADCname(const int i);
 float getADCvalue(const int i);
 float getADCtargetValue(const int i);
 

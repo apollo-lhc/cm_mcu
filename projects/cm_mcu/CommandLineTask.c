@@ -299,7 +299,7 @@ static BaseType_t TaskStatsCommand(int argc, char **argv, char *m)
   const char *const pcHeader = "            Time     %\r\n"
                                "********************************\r\n";
   BaseType_t xSpacePadding;
-  int copied = 0;
+  unsigned int copied = 0;
   char *mm = m;
   /* Generate a table of task stats. */
   strncpy(mm, "Task", s);
@@ -322,7 +322,7 @@ static BaseType_t TaskStatsCommand(int argc, char **argv, char *m)
   strncpy(mm, pcHeader, SCRATCH_SIZE - copied);
   copied += strlen(pcHeader);
   TaskGetRunTimeStats(m + copied, SCRATCH_SIZE - copied);
-  int len = strlen(m);
+  unsigned int len = strlen(m);
   configASSERT(len < SCRATCH_SIZE);
 
   /* There is no more data to return after this single string, so return
@@ -507,7 +507,7 @@ static portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
   /* Generate a table of task stats. */
   static_assert(sizeof(m) >= sizeof(pcHeader), "m too small");
   strcpy(m, pcHeader);
-  int copied = strlen(m);
+  unsigned int copied = strlen(m);
 
   /* Take a snapshot of the number of tasks in case it changes while this
     function is executing. */
@@ -562,7 +562,7 @@ static portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
     vPortFree(pxTaskStatusArray);
   }
 
-  int len = strlen(m);
+  unsigned int len = strlen(m);
   configASSERT(len < SCRATCH_SIZE);
   /* There is no more data to return after this single string, so return
   pdFALSE. */
@@ -777,7 +777,7 @@ static BaseType_t help_command_fcn(int argc, char **argv, char *m)
     for (; i < NUM_COMMANDS; ++i) {
       int left = SCRATCH_SIZE - copied;
       // need room for command string, help string, newlines, etc, and trailing \0
-      int len = strlen(commands[i].helpstr) + strlen(commands[i].commandstr) + 7;
+      unsigned int len = strlen(commands[i].helpstr) + strlen(commands[i].commandstr) + 7;
       if (left < len) {
         return pdTRUE;
       }
