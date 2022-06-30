@@ -90,7 +90,6 @@ void PowerSupplyTask(void *parameters)
 
   // masks to enable/check appropriate supplies
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
-  uint16_t supply_en_mask = PS_ENS_GEN_MASK;
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
            supply_ok_mask_L5 = 0U;
 
@@ -105,7 +104,6 @@ void PowerSupplyTask(void *parameters)
   // end HACK
   if (f1_enable) {
     supply_ok_mask |= PS_OKS_F1_MASK;
-    supply_en_mask |= PS_ENS_F1_MASK;
     supply_ok_mask_L1 = PS_OKS_F1_MASK_L1;
     supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_F1_MASK_L2;
     supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
@@ -113,7 +111,6 @@ void PowerSupplyTask(void *parameters)
   }
   if (f2_enable) {
     supply_ok_mask |= PS_OKS_F2_MASK;
-    supply_en_mask |= PS_ENS_F2_MASK;
     supply_ok_mask_L1 |= PS_OKS_F2_MASK_L1;
     supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_F2_MASK_L2;
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;

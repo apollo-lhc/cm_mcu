@@ -1,13 +1,14 @@
 #ifndef PINSEL_H
 #define PINSEL_H
 
+#include <stdint.h>
 #ifndef PART_TM4C1290NCPDT
 #define PART_TM4C1290NCPDT
 #endif // PART_TM4C1290NCPDT
 
 // data structures to hold GPIO PIN information
 struct gpio_pin_t {
-  int pin_number;
+  uint8_t pin_number;
   char *name;
   int priority;
 };
