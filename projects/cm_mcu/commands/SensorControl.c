@@ -10,10 +10,9 @@
 #include "SensorControl.h"
 #include "common/smbus_helper.h"
 
-
 // this command takes no arguments since there is only one command
 // right now.
-BaseType_t sensor_summary(int argc, char **argv, char* m)
+BaseType_t sensor_summary(int argc, char **argv, char *m)
 {
   int copied = 0;
   // collect all sensor information
@@ -28,7 +27,7 @@ BaseType_t sensor_summary(int argc, char **argv, char* m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MCU %02d.%02d\r\n", tens, frac);
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
-  int8_t imax_temp = -99.0;
+  int8_t imax_temp = -99;
   for (int i = 0; i < NFIREFLIES; ++i) {
     int8_t v = getFFtemp(i);
     if (v > imax_temp)
@@ -46,7 +45,7 @@ BaseType_t sensor_summary(int argc, char **argv, char* m)
 
   // DCDC. The first command is READ_TEMPERATURE_1.
   // I am assuming it stays that way!!!!!!!!
-  float max_temp = -99.0;
+  float max_temp = -99.0f;
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     for (int page = 0; page < dcdc_args.n_pages; ++page) {
       float thistemp = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
@@ -62,13 +61,12 @@ BaseType_t sensor_summary(int argc, char **argv, char* m)
 }
 
 // dump monitor information
-BaseType_t psmon_ctl(int argc, char **argv, char* m)
+BaseType_t psmon_ctl(int argc, char **argv, char *m)
 {
-  int s = SCRATCH_SIZE;
   BaseType_t i1 = strtol(argv[1], NULL, 10);
 
   if (i1 < 0 || i1 >= dcdc_args.n_commands) {
-    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
+    snprintf(m, SCRATCH_SIZE, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
              dcdc_args.n_commands - 1);
     return pdFALSE;
   }
@@ -82,7 +80,7 @@ BaseType_t psmon_ctl(int argc, char **argv, char* m)
                        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
-      dcdc_args.commands[i1].name, dcdc_args.commands[i1].command);
+                     dcdc_args.commands[i1].name, dcdc_args.commands[i1].command);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", dcdc_args.devices[ps].name);
@@ -100,8 +98,8 @@ BaseType_t psmon_ctl(int argc, char **argv, char* m)
 }
 
 // send power control commands
-extern struct gpio_pin_t oks[];
-BaseType_t power_ctl(int argc, char **argv, char* m)
+extern struct gpio_pin_t oks[N_PS_OKS];
+BaseType_t power_ctl(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
 
@@ -128,7 +126,7 @@ BaseType_t power_ctl(int argc, char **argv, char* m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "State machine state: %s\r\n",
                          getPowerControlStateName(getPowerControlState()));
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "External Alarm: %d\r\n",
-          getPowerControlExternalAlarmState());
+                         getPowerControlExternalAlarmState());
     }
     for (; i < N_PS_OKS; ++i) {
       enum ps_state j = getPSStatus(i);
@@ -176,7 +174,7 @@ BaseType_t power_ctl(int argc, char **argv, char* m)
 }
 
 // takes 1-2 arguments
-BaseType_t alarm_ctl(int argc, char **argv, char* m)
+BaseType_t alarm_ctl(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
   if (argc < 2) {
@@ -266,16 +264,16 @@ BaseType_t alarm_ctl(int argc, char **argv, char* m)
 }
 
 // send LED commands
-BaseType_t led_ctl(int argc, char **argv, char* m)
+BaseType_t led_ctl(int argc, char **argv, char *m)
 {
 
   BaseType_t i1 = strtol(argv[1], NULL, 10);
 
-  BaseType_t ones = i1%10;
-  BaseType_t tens = i1/10; // integer truncation
+  BaseType_t ones = i1 % 10;
+  BaseType_t tens = i1 / 10; // integer truncation
 
   uint32_t message = HUH; // default: message not understood
-  if ( ones < 5 && tens>0 && tens<4) {
+  if (ones < 5 && tens > 0 && tens < 4) {
     message = i1;
   }
   // Send a message to the LED task
@@ -286,7 +284,7 @@ BaseType_t led_ctl(int argc, char **argv, char* m)
 }
 
 // this command takes no arguments
-BaseType_t adc_ctl(int argc, char **argv, char* m)
+BaseType_t adc_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
 
@@ -310,7 +308,7 @@ BaseType_t adc_ctl(int argc, char **argv, char* m)
 }
 
 // this command takes up to two arguments
-BaseType_t ff_ctl(int argc, char **argv, char* m)
+BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
   // argument handling
   int copied = 0;
@@ -355,22 +353,21 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
     }
     whichff = 0;
   } // argc == 1
-  else if ( argc == 2 ) {
+  else if (argc == 2) {
     uint8_t code;
     if (strncmp(argv[1], "suspend", 4) == 0) {
-     code = FFLY_SUSPEND;
+      code = FFLY_SUSPEND;
     }
     else if (strncmp(argv[1], "resume", 4) == 0) {
       code = FFLY_RESUME;
     }
     else {
-      snprintf(m+copied, SCRATCH_SIZE-copied, "%s: %s not understood", argv[0], argv[1]);
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s not understood", argv[0], argv[1]);
       return pdFALSE;
     }
     uint32_t message = (code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET;
     xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s  sent.\r\n", argv[0], argv[1]);
-
   }
   else {
     int whichFF = 0;
@@ -389,7 +386,7 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
     // now process various commands.
     if (argc == 4) { // command + three arguments
       bool receiveAnswer = false;
-      uint8_t code;
+      uint8_t code = 0;
       uint32_t data = (whichFF & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET;
       if (strncmp(argv[1], "cdr", 3) == 0) {
         code = FFLY_DISABLE_CDR; // default: disable
@@ -439,15 +436,15 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
       if (receiveAnswer) {
         BaseType_t f = xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(5000));
         if (f == pdTRUE) {
-          uint8_t retcode = (message>>24) & 0xFFU;
+          uint8_t retcode = (message >> 24) & 0xFFU;
           uint8_t value = message & 0xFFU;
           copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                   "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
-                   retcode, SMBUS_get_error(retcode));
+                             "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
+                             retcode, SMBUS_get_error(retcode));
           UBaseType_t n = uxQueueMessagesWaiting(xFFlyQueueOut);
-          if ( n > 0 ) {
-            copied += snprintf(m+copied, SCRATCH_SIZE-copied,
-                "%s: still have %lu messages in the queue\r\n", argv[0], n);
+          if (n > 0) {
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                               "%s: still have %lu messages in the queue\r\n", argv[0], n);
           }
         }
         else
@@ -481,7 +478,7 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
                  "%s: write val 0x%x to register 0x%x, FF %d.\r\n", argv[0], value, regnum,
                  channel);
         whichFF = 0;
-      } // end regw
+      }                                            // end regw
       else if (strncmp(argv[1], "test", 4) == 0) { // test code
         uint8_t code = FFLY_TEST_READ;
         if (whichFF == NFIREFLIES) {
@@ -515,7 +512,7 @@ BaseType_t ff_ctl(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-BaseType_t ff_status(int argc, char **argv, char* m)
+BaseType_t ff_status(int argc, char **argv, char *m)
 {
   int copied = 0;
 
@@ -526,8 +523,8 @@ BaseType_t ff_status(int argc, char **argv, char* m)
   for (; whichff < NFIREFLIES; ++whichff) {
 
     const char *name = getFFname(whichff);
-    if (!isEnabledFF(whichff)){
-      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%17s   --", name);
+    if (!isEnabledFF(whichff)) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s   --", name);
     }
     else {
       uint8_t status = getFFstatus(whichff);
@@ -549,7 +546,8 @@ BaseType_t ff_status(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
+BaseType_t ff_los_alarm(int argc, char **argv, char *m)
+{
   int copied = 0;
 
   static int whichff = 0;
@@ -559,24 +557,23 @@ BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
   for (; whichff < NFIREFLIES; ++whichff) {
     const char *name = getFFname(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
-    if (!isEnabledFF(whichff)){
-      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
+    if (!isEnabledFF(whichff)) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
     }
-    else{
-      for (size_t i = 0; i<8; i++) {
-        int alarm = getFFlos(whichff, i)? 1:0;
-        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+    else {
+      for (size_t i = 0; i < 8; i++) {
+        int alarm = getFFlos(whichff, i) ? 1 : 0;
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
       }
       if (strstr(name, "XCVR") == NULL) {
-        for (size_t i = 8; i<12; i++) {
-          int alarm = getFFlos(whichff, i)? 1:0;
-          copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        for (size_t i = 8; i < 12; i++) {
+          int alarm = getFFlos(whichff, i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
       }
-      else{
-        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
+      else {
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
       }
-
     }
 
     bool isTx = (strstr(name, "Tx") != NULL);
@@ -594,7 +591,8 @@ BaseType_t ff_los_alarm(int argc, char **argv, char* m) {
   return pdFALSE;
 }
 
-BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m) {
+BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
+{
   int copied = 0;
 
   static int whichff = 0;
@@ -604,22 +602,22 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m) {
   for (; whichff < NFIREFLIES; ++whichff) {
     const char *name = getFFname(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
-    if (!isEnabledFF(whichff)){
-      copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
+    if (!isEnabledFF(whichff)) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
     }
-    else{
-      for (size_t i = 0; i<8; i++) {
-        int alarm = getFFlol(whichff, i)? 1:0;
-        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+    else {
+      for (size_t i = 0; i < 8; i++) {
+        int alarm = getFFlol(whichff, i) ? 1 : 0;
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
       }
       if (strstr(name, "XCVR") == NULL) {
-        for (size_t i = 8; i<12; i++) {
-          int alarm = getFFlol(whichff, i)? 1:0;
-          copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        for (size_t i = 8; i < 12; i++) {
+          int alarm = getFFlol(whichff, i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
       }
-      else{
-        copied+=snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
+      else {
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
       }
     }
 
@@ -638,7 +636,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m) {
   return pdFALSE;
 }
 
-BaseType_t fpga_ctl(int argc, char **argv, char* m)
+BaseType_t fpga_ctl(int argc, char **argv, char *m)
 {
   if (argc == 2) {
     if (strncmp(argv[1], "done", 4) == 0) { // print out value of done pins
@@ -702,7 +700,7 @@ BaseType_t fpga_ctl(int argc, char **argv, char* m)
 }
 
 // This command takes 1 argument, either k or v
-BaseType_t fpga_reset(int argc, char **argv, char* m)
+BaseType_t fpga_reset(int argc, char **argv, char *m)
 {
   int copied = 0;
   const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
@@ -723,8 +721,8 @@ BaseType_t fpga_reset(int argc, char **argv, char* m)
 }
 
 extern struct MonitorTaskArgs_t dcdc_args;
-extern struct dev_i2c_addr_t pm_addrs_dcdc[];
-extern struct pm_command_t extra_cmds[]; // LocalTasks.c
+extern struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
+extern struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
 
 // Read out registers from LGA80D
 BaseType_t psmon_reg(int argc, char **argv, char *m)
@@ -738,16 +736,14 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
                        argv[0], page);
     return pdFALSE;
   }
-  if (which < 0 || which > (NSUPPLIES_PS-1)) {
+  if (which < 0 || which > (NSUPPLIES_PS - 1)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
-                       argv[0], which, (NSUPPLIES_PS-1));
+                       argv[0], which, (NSUPPLIES_PS - 1));
     return pdFALSE;
   }
-  UBaseType_t regAddress  = strtoul(argv[2], NULL, 16);
+  UBaseType_t regAddress = strtoul(argv[2], NULL, 16);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s, reg 0x%02lx\r\n", argv[0],
                      page, pm_addrs_dcdc[which].name, regAddress);
-
-
 
   // acquire the semaphore
   while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
@@ -759,19 +755,17 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
     Print("error in psmon_reg (page)\r\n");
   }
   // read register, 2 bytes
-  uint8_t thevalue[2] = {0,0};
+  uint8_t thevalue[2] = {0, 0};
   struct pm_command_t thecmd = {regAddress, 2, "dummy", "", PM_STATUS};
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[which], &thecmd, thevalue);
   if (r) {
     Print("error in psmon_reg (regr)\r\n");
   }
-  uint16_t vv = (thevalue[0] | (thevalue[1]<<8));
+  uint16_t vv = (thevalue[0] | (thevalue[1] << 8));
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
-      argv[0], vv);
+                     argv[0], vv);
 
   // release the semaphore
   xSemaphoreGive(dcdc_args.xSem);
   return pdFALSE;
-
 }
-

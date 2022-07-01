@@ -19,7 +19,6 @@
 #include "task.h"
 #endif // USE_FREERTOS
 
-
 // clang-format off
 #if defined(REV1) 
 // ------------------------------------------
@@ -107,7 +106,7 @@ struct gpio_pin_t oks[N_PS_OKS] = {
 
 #else
 #error "Unknown board revision"
-#endif // REV2 
+#endif // REV2
 
 // clang-format on
 #define PS_NUM_PRIORITIES 5
@@ -132,8 +131,6 @@ void setPSStatus(int i, enum ps_state theState)
 // de-assert BLADE_POWER_OK on successful exit.
 bool disable_ps(void)
 {
-  bool success = true;
-
   // first set the supplies to off to tell the
   // other tasks to prepare
   for (int o = 0; o < N_PS_OKS; ++o)
@@ -172,11 +169,9 @@ bool disable_ps(void)
   } // loop over priorities
 
   // turn off POWER_OK when we are done
-  if (success)
-    write_gpio_pin(BLADE_POWER_OK, 0x0);
-  else
-    write_gpio_pin(BLADE_POWER_OK, 0x1);
-  return success;
+  write_gpio_pin(BLADE_POWER_OK, 0x0);
+
+  return true;
 }
 
 // check the power supplies and turn them on one by one
@@ -215,7 +210,7 @@ void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio)
 {
   // in the special case where neither f1 or f2 are enabled (no FPGAs),
   // enable both of them (commissioning of new PCB
-  if ( ! f1_enable && ! f2_enable ) {
+  if (!f1_enable && !f2_enable) {
     f1_enable = true;
     f2_enable = true;
   }

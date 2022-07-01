@@ -29,7 +29,7 @@ void InitTask(void *parameters);
 #define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 
-const char *getADCname(const int i);
+const char *const getADCname(const int i);
 float getADCvalue(const int i);
 float getADCtargetValue(const int i);
 
@@ -78,6 +78,12 @@ void LGA80D_init(void);
 
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
+#ifdef REV1
+#define N_PM_ADDRS_DCDC 5
+#elif defined(REV2) // REV2
+#define N_PM_ADDRS_DCDC 7
+#endif
+#define N_EXTRA_CMDS 7
 
 // Firefly task
 // --- Firefly monitoring
@@ -87,9 +93,8 @@ void MonitorTask(void *parameters);
 #define NFIREFLIES_F2 14
 #else // REV2
 // REV 2
-#define NFIREFLIES_F1    10
-#define NFIREFLIES_F2    10 // Placeholders
-//#error "Fix placeholder values"
+#define NFIREFLIES_F1 10
+#define NFIREFLIES_F2 10
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
@@ -117,7 +122,7 @@ int disable_xcvr_cdr(const char *name);
 #define FFLY_ENABLE_CDR          (3)
 #define FFLY_DISABLE_CDR         (4)
 #define FFLY_DISABLE             (5)
-#define FFLY_ENABLE	             (6)
+#define FFLY_ENABLE              (6)
 #define FFLY_WRITE_REGISTER      (7)
 #define FFLY_READ_REGISTER       (8)
 #define FFLY_TEST_READ           (9)
@@ -178,7 +183,10 @@ const char *gitVersion();
 #define ALM_CLEAR_CURRENT 3
 #define ALM_CLEAR_VOLTAGE 4
 
-enum device { FF, DCDC, TM4C, FPGA };
+enum device { FF,
+              DCDC,
+              TM4C,
+              FPGA };
 
 void GenericAlarmTask(void *parameters);
 
@@ -220,15 +228,15 @@ void EEPROMTask(void *parameters);
 
 extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
-// data for zynqmon task to be sent to Zynq 
+// data for zynqmon task to be sent to Zynq
 #define ZM_NUM_ENTRIES 256
 struct zynqmon_data_t {
   uint8_t sensor;
   union convert_16_t {
-    uint16_t us;
-    uint8_t uc[2];
-    char c[2];
-    int16_t i;
+    uint16_t us;   // cppcheck-suppress unusedStructMember
+    uint8_t uc[2]; // cppcheck-suppress unusedStructMember
+    char c[2];     // cppcheck-suppress unusedStructMember
+    int16_t i;     // cppcheck-suppress unusedStructMember
     __fp16 f;
   } data;
 };
@@ -250,15 +258,14 @@ int SystemStackWaterHighWaterMark();
 void init_registers_clk();
 #ifdef REV2
 
-#define CLOCK_CHIP_COMMON_I2C_ADDR  0x6b
-#define CLOCK_CHIP_R0A_I2C_ADDR     0x77
-#define CLOCK_I2C_DEV               2
-#define CLOCK_I2C_MUX_ADDR          0x70
-#define CLOCK_I2C_EEPROM_ADDR       0x50
+#define CLOCK_CHIP_COMMON_I2C_ADDR 0x6b
+#define CLOCK_CHIP_R0A_I2C_ADDR    0x77
+#define CLOCK_I2C_DEV              2
+#define CLOCK_I2C_MUX_ADDR         0x70
+#define CLOCK_I2C_EEPROM_ADDR      0x50
 
 // configuring clock initalization
 int init_load_clk(int clk_n);
-
 
 // hibernate/RTC
 void InitRTC();
@@ -273,7 +280,7 @@ int get_f2_index();
 void initFPGAMon();
 
 // Watchdog Task
-void WatchdogTask(void* parameters);
+void WatchdogTask(void *parameters);
 enum WatchdogTaskLabel {
   kWatchdogTaskID_FireFly,
   kWatchdogTaskID_XiMon,

@@ -7,7 +7,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h" // to be removed
@@ -23,8 +22,8 @@
 #include "I2CSlaveTask.h"
 
 // Rev 2:
-// All that needs to be done is rename local_fpga_{v,k}u to 
-// f{1,2} AFAIK. 
+// All that needs to be done is rename local_fpga_{v,k}u to
+// f{1,2} AFAIK.
 
 // This slave task is designed currently only for access to
 // registers, with a single byte address and a single byte data.
@@ -39,7 +38,6 @@
 #if defined(REV1) || defined(REV2)
 #define SLAVE_I2C_BASE I2C0_BASE
 #endif
-
 
 // IPMC register map documented here
 // https://github.com/apollo-lhc/cm_mcu/wiki/MCU-slave-documentation
@@ -61,12 +59,12 @@ static uint8_t getSlaveData(uint8_t address)
       value = getADCvalue(20) + 0.5f; // always valid
       break;
     case 0x12U: // FPGA F2 temp
-      value = (uint8_t)local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U;
+      value = (uint8_t)(local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U);
       if (value == 0)
         value = 0xFFU; // invalid value
       break;
     case 0x14U: // FPGA F1 temp
-      value = (uint8_t)local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U;
+      value = (uint8_t)(local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U);
       if (value == 0)
         value = 0xFFU; // invalid value
       break;
@@ -97,7 +95,7 @@ static uint8_t getSlaveData(uint8_t address)
       if (max_temp < 0)
         value = 0xFFU; // invalid
       else
-        value = (uint8_t)max_temp + 0.5f;
+        value = (uint8_t)(max_temp + 0.5f);
     } break;
     default:
       value = 0xFFU;
@@ -121,7 +119,6 @@ void I2CSlaveTask(void *parameters)
 
   local_fpga_f1 = get_f1_index();
   local_fpga_f2 = get_f2_index();
-
 
   ROM_I2CSlaveEnable(SLAVE_I2C_BASE);
 

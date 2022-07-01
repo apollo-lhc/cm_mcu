@@ -11,11 +11,10 @@
 BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
-  BaseType_t device, address, nbytes;
-  device = strtol(argv[1], NULL, 16);
-  address = strtol(argv[2], NULL, 16);
-  nbytes = strtol(argv[3], NULL, 10);
-  uint8_t data[I2C_CTL_MAX_BYTES] = {0,0,0,0};
+  BaseType_t device = strtol(argv[1], NULL, 16);
+  BaseType_t address = strtol(argv[2], NULL, 16);
+  BaseType_t nbytes = strtol(argv[3], NULL, 10);
+  uint8_t data[I2C_CTL_MAX_BYTES] = {0, 0, 0, 0};
 
   int status = apollo_i2c_ctl_r(device, address, nbytes, data);
   if (status == 0) {
@@ -48,7 +47,7 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
   }
   else {
     int copied = snprintf(m, s, "i2cr: add: 0x%02lx, reg 0x%02lx: value 0x%08lx (%ld bytes)\r\n",
-        address, packed_reg_address, packed_data, nbytes);
+                          address, packed_reg_address, packed_data, nbytes);
     snprintf(m + copied, s - copied, "%s: failure %d (%s)\r\n", argv[0], status,
              SMBUS_get_error(status));
   }
@@ -61,12 +60,12 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
   // first byte is the register, others are the data
   UBaseType_t device, address, packed_reg_address, packed_data;
   BaseType_t nbytes_addr, nbytes;
-  device = strtoul(argv[1], NULL, 16);     // i2c device
-  address = strtoul(argv[2], NULL, 16);     // address
+  device = strtoul(argv[1], NULL, 16);  // i2c device
+  address = strtoul(argv[2], NULL, 16); // address
   nbytes_addr = strtol(argv[3], NULL, 10);
   packed_reg_address = strtoul(argv[4], NULL, 16); // register
-  nbytes = strtol(argv[5], NULL, 16);      // number of bytes
-  packed_data = strtoul(argv[6], NULL, 16); // data
+  nbytes = strtol(argv[5], NULL, 16);              // number of bytes
+  packed_data = strtoul(argv[6], NULL, 16);        // data
 
   int status = apollo_i2c_ctl_reg_w(device, address, nbytes_addr, packed_reg_address, nbytes, packed_data);
   if (status == 0) {

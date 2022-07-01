@@ -21,8 +21,8 @@
 #endif // USE_FREERTOS
 
 // This array helps us simplify the use of different I2C devices in the board.
-uint32_t I2C_BASE[] = {I2C0_BASE, I2C1_BASE, I2C2_BASE, I2C3_BASE, I2C4_BASE,
-                       I2C5_BASE, I2C6_BASE, I2C7_BASE, I2C8_BASE, I2C9_BASE};
+const uint32_t I2C_BASE[] = {I2C0_BASE, I2C1_BASE, I2C2_BASE, I2C3_BASE, I2C4_BASE,
+                             I2C5_BASE, I2C6_BASE, I2C7_BASE, I2C8_BASE, I2C9_BASE};
 
 // initialize I2C module 0
 // Slightly modified version of TI's example code
@@ -228,7 +228,6 @@ void initI2C4(const uint32_t sysclockfreq)
   write_gpio_pin(_F1_OPTICS_I2C_RESET, 0x1); // active low
 }
 
-
 #ifdef REV2
 // I2C controller 5 is for FPGAs on the CM
 void initI2C5(const uint32_t sysclockfreq)
@@ -270,7 +269,7 @@ void initI2C5(const uint32_t sysclockfreq)
   ;
   write_gpio_pin(_FPGA_I2C_RESET, 0x1); // active low
 }
-#elif defined (REV1)
+#elif defined(REV1)
 // I2C controller 6 is for FPGAs on the CM
 void initI2C6(const uint32_t sysclockfreq)
 {
@@ -312,4 +311,3 @@ void initI2C6(const uint32_t sysclockfreq)
   write_gpio_pin(_FPGA_I2C_RESET, 0x1); // active low
 }
 #endif
-

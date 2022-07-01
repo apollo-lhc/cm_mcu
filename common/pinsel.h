@@ -1,13 +1,14 @@
 #ifndef PINSEL_H
 #define PINSEL_H
 
+#include <stdint.h>
 #ifndef PART_TM4C1290NCPDT
 #define PART_TM4C1290NCPDT
 #endif // PART_TM4C1290NCPDT
 
 // data structures to hold GPIO PIN information
 struct gpio_pin_t {
-  int pin_number;
+  uint8_t pin_number;
   char *name;
   int priority;
 };
@@ -70,25 +71,23 @@ struct gpio_pin_t {
 #define MCU_LED_RED                 118 // port, local_pin = P 0
 #define _F2_FPGA_DONE               119 // port, local_pin = P 1
 
-#define isFPGAF1_PRESENT() (read_gpio_pin(TM4C_DIP_SW_1)==1)
-#define isFPGAF2_PRESENT() (read_gpio_pin(TM4C_DIP_SW_2)==1)
+#define isFPGAF1_PRESENT() (read_gpio_pin(TM4C_DIP_SW_1) == 1)
+#define isFPGAF2_PRESENT() (read_gpio_pin(TM4C_DIP_SW_2) == 1)
 
 #elif defined(REV2)
 
 #define X(name, pin, port, localpin, input) \
   name = pin,
-enum pins
-{
+enum pins {
 #include "gpio_pins.def"
 };
 
-#define isFPGAF1_PRESENT() (read_gpio_pin(_F1_INSTALLED)==0)
-#define isFPGAF2_PRESENT() (read_gpio_pin(_F2_INSTALLED)==0)
+#define isFPGAF1_PRESENT() (read_gpio_pin(_F1_INSTALLED) == 0)
+#define isFPGAF2_PRESENT() (read_gpio_pin(_F2_INSTALLED) == 0)
 
 #else
 #error "Unknown board revision"
 #endif
-
 
 void pinsel(int pin, uint32_t *x_gpio_port, uint8_t *x_gpio_pin);
 

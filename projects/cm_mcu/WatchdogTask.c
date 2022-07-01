@@ -8,7 +8,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 // driverlib
@@ -23,7 +22,6 @@
 #include "task.h"
 
 #include "common/log.h"
-
 
 static uint16_t s_registered_tasks = 0;
 static uint16_t s_fed_tasks = 0;

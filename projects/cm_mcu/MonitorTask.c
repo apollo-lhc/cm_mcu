@@ -14,7 +14,6 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 // memory mappings
 #include "inc/hw_types.h"
@@ -113,7 +112,7 @@ void MonitorTask(void *parameters)
       if (args->requirePower) { // if this device requires more than management power
         enum power_system_state power_state = getPowerControlState();
         if (power_state != POWER_ON) { // if the power state is not fully on
-          if (isFullyPowered) {                  // was previously on
+          if (isFullyPowered) {        // was previously on
             snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
             SuppressedPrint(tmp, &current_error_cnt, &log);
             log_info(LOG_MON, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
@@ -121,8 +120,8 @@ void MonitorTask(void *parameters)
           }
           release_break(); // skip this iteration
         }
-        else if (power_state == POWER_ON) { // if the power state is fully on
-          if (!isFullyPowered) {                      // was previously off
+        else {                   // if the power state is fully on
+          if (!isFullyPowered) { // was previously off
             snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
             SuppressedPrint(tmp, &current_error_cnt, &log);
             log_info(LOG_MON, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
@@ -145,9 +144,9 @@ void MonitorTask(void *parameters)
       int tries = 0;
       while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-        if ( ++tries > 500 ) {
+        if (++tries > 500) {
           log_warn(LOG_MON, "timed out (SMBUSxfer mux) (%s, dev=%d)\r\n",
-              args->name, ps);
+                   args->name, ps);
           break;
         }
       }
@@ -196,12 +195,12 @@ void MonitorTask(void *parameters)
             SuppressedPrint(tmp, &current_error_cnt, &log);
             continue; // abort reading this register
           }
-          int tries = 0;
+          tries = 0;
           while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-            if ( ++tries > 500 ) {
+            if (++tries > 500) {
               log_warn(LOG_MON, "timed out (SMBUSxfer) (%s, c=%d,dev=%d)\r\n",
-                  args->name, c, ps);
+                       args->name, c, ps);
               break;
             }
           }
@@ -211,7 +210,7 @@ void MonitorTask(void *parameters)
                      *args->smbus_status, ps, c, page);
             SuppressedPrint(tmp, &current_error_cnt, &log);
             // abort reading this device
-            if ( log )
+            if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
             release_break();
           }
@@ -235,9 +234,9 @@ void MonitorTask(void *parameters)
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
-        } // loop over commands
-      }   // loop over pages
-    }     // loop over power supplies
+        }                   // loop over commands
+      }                     // loop over pages
+    }                       // loop over power supplies
     if (args->xSem != NULL) // if we have a semaphore, give it
       xSemaphoreGive(args->xSem);
 

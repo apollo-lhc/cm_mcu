@@ -8,6 +8,7 @@
 // Include commands
 
 #include <strings.h>
+#include <assert.h>
 
 #include "commands/BoardCommands.h"
 #include "commands/BufferCommands.h"
@@ -21,7 +22,7 @@
 static char m[SCRATCH_SIZE];
 
 // this command takes no arguments and never returns.
-static BaseType_t bl_ctl(int argc, char **argv, char* m)
+static BaseType_t bl_ctl(int argc, char **argv, char *m)
 {
   Print("Jumping to boot loader.\r\n");
   ROM_SysCtlDelay(100000);
@@ -57,7 +58,7 @@ static BaseType_t bl_ctl(int argc, char **argv, char* m)
 }
 
 // this command takes one argument
-static BaseType_t clock_ctl(int argc, char **argv, char* m)
+static BaseType_t clock_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   int status = -1; // shut up clang compiler warning
@@ -92,23 +93,24 @@ static BaseType_t clock_ctl(int argc, char **argv, char* m)
 
 #ifdef REV2
 // this command takes one argument (from triplet version but will take two argument to include an input from config versions for octlet eeprom)
-static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
+static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
-  char *clk_ids[5] = {"r0a","r0b","r1a","r1b","r1c"};
+  char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
   BaseType_t i = strtol(argv[1], NULL, 10);
   if (i < 0 || i > 4) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-            "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, r1b:3 and r1c:4 \r\n", i);
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, "
+             "r1b:3 and r1c:4 \r\n",
+             i);
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s is programming clock %s. \r\n", argv[0], clk_ids[i]);
-  int status = -1; // shut up clang compiler warning
+  int status = -1;           // shut up clang compiler warning
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
-  if (status == 0){
+  if (status == 0) {
     snprintf(m + copied, SCRATCH_SIZE - copied,
-        "clock synthesizer with id %s successfully programmed. \r\n", clk_ids[i]);
+             "clock synthesizer with id %s successfully programmed. \r\n", clk_ids[i]);
   }
   else {
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
@@ -118,7 +120,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char* m)
 #endif //REV2
 
 // this command takes no arguments
-static BaseType_t ver_ctl(int argc, char **argv, char* m)
+static BaseType_t ver_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Version %s built at %s.\r\n", gitVersion(),
@@ -149,7 +151,7 @@ typedef struct __attribute__((packed)) {
 
 extern struct dev_i2c_addr_t pm_addrs_dcdc[];
 
-static BaseType_t snapshot(int argc, char **argv, char* m)
+static BaseType_t snapshot(int argc, char **argv, char *m)
 {
   _Static_assert(sizeof(snapshot_t) == 32, "sizeof snapshot_t");
   int copied = 0;
@@ -161,9 +163,9 @@ static BaseType_t snapshot(int argc, char **argv, char* m)
                        argv[0], page);
     return pdFALSE;
   }
-  if (which < 0 || which > (NSUPPLIES_PS-1)) {
+  if (which < 0 || which > (NSUPPLIES_PS - 1)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
-                       argv[0], which, (NSUPPLIES_PS-1));
+                       argv[0], which, (NSUPPLIES_PS - 1));
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
@@ -209,7 +211,7 @@ static BaseType_t snapshot(int argc, char **argv, char* m)
 }
 
 // takes no arguments
-static BaseType_t stack_ctl(int argc, char **argv, char* m)
+static BaseType_t stack_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   int i = SystemStackWaterHighWaterMark();
@@ -218,7 +220,7 @@ static BaseType_t stack_ctl(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-static BaseType_t mem_ctl(int argc, char **argv, char* m)
+static BaseType_t mem_ctl(int argc, char **argv, char *m)
 {
   size_t heapSize = xPortGetFreeHeapSize();
   snprintf(m, SCRATCH_SIZE, "heap: %d bytes\r\n", heapSize);
@@ -228,11 +230,11 @@ static BaseType_t mem_ctl(int argc, char **argv, char* m)
 static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
 {
   TaskStatus_t *pxTaskStatusArray;
-  volatile UBaseType_t uxArraySize, x;
+  volatile UBaseType_t uxArraySize;
   uint32_t ulTotalRunTime;
 
   // Make sure the write buffer does not contain a string.
-  *pcWriteBuffer = 0x00;
+  *pcWriteBuffer = '\0';
 
   // Take a snapshot of the number of tasks in case it changes while this
   // function is executing.
@@ -253,7 +255,7 @@ static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
     if (ulTotalRunTime > 0) {
       // For each populated position in the pxTaskStatusArray array,
       // format the raw data as human readable ASCII data
-      for (x = 0; x < uxArraySize; x++) {
+      for (UBaseType_t x = 0; x < uxArraySize; x++) {
         // What percentage of the total run time has the task used?
         // This will always be rounded down to the nearest integer.
         // ulTotalRunTimeDiv100 has already been divided by 100.
@@ -281,7 +283,7 @@ static void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
   }
 }
 
-static BaseType_t uptime(int argc, char **argv, char* m)
+static BaseType_t uptime(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
   TickType_t now = xTaskGetTickCount() / (configTICK_RATE_HZ * 60); // time in minutes
@@ -291,13 +293,13 @@ static BaseType_t uptime(int argc, char **argv, char* m)
 
 // WARNING: this command easily leads to stack overflows. It does not correctly
 // ensure that there are no overwrites to pcCommandString.
-static BaseType_t TaskStatsCommand(int argc, char **argv, char* m)
+static BaseType_t TaskStatsCommand(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
   const char *const pcHeader = "            Time     %\r\n"
                                "********************************\r\n";
   BaseType_t xSpacePadding;
-  int copied = 0;
+  unsigned int copied = 0;
   char *mm = m;
   /* Generate a table of task stats. */
   strncpy(mm, "Task", s);
@@ -320,8 +322,8 @@ static BaseType_t TaskStatsCommand(int argc, char **argv, char* m)
   strncpy(mm, pcHeader, SCRATCH_SIZE - copied);
   copied += strlen(pcHeader);
   TaskGetRunTimeStats(m + copied, SCRATCH_SIZE - copied);
-  int len = strlen(m);
-  configASSERT(len<SCRATCH_SIZE);
+  unsigned int len = strlen(m);
+  configASSERT(len < SCRATCH_SIZE);
 
   /* There is no more data to return after this single string, so return
   pdFALSE. */
@@ -407,11 +409,11 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
   }
 
   if (!understood) {
-    copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: message not understood >", argv[0]);
-    for ( int i = 0; i < argc; ++i ) {
-    	copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s ", argv[i]);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: message not understood >", argv[0]);
+    for (int i = 0; i < argc; ++i) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", argv[i]);
     }
-    snprintf(m+copied, SCRATCH_SIZE-copied, "<\r\n");
+    snprintf(m + copied, SCRATCH_SIZE - copied, "<\r\n");
     return pdFALSE;
   }
 
@@ -424,9 +426,8 @@ static BaseType_t zmon_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-
 // this command takes up to two arguments
-static BaseType_t log_ctl(int argc, char **argv, char* m)
+static BaseType_t log_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   if (argc == 2) {
@@ -437,7 +438,7 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
     }
     else if (strncmp(argv[argc - 1], "status", 6) == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: status\r\n", argv[0]);
-      for ( enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i ) {
+      for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
         int level = log_get_current_level(i);
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %-7s = %s\r\n", argv[0], log_facility_string(i),
                            log_level_string(level));
@@ -453,13 +454,13 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
     }
   }
   else if (argc == 3) {
-    int j =0;
+    int j = 0;
     size_t len = strlen(argv[1]);
     bool success = false;
     const char *f, *l;
     for (; j < NUM_LOG_FACILITIES; ++j) {
       f = log_facility_string(j);
-      if (strncasecmp(argv[1], f, len) == 0 ) {
+      if (strncasecmp(argv[1], f, len) == 0) {
         break;
       }
     }
@@ -467,9 +468,9 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
     int i = 0;
     for (; i < NUM_LOG_LEVELS && j < NUM_LOG_FACILITIES; ++i) {
       l = log_level_string(i);
-      if (strncasecmp(argv[2], l, len) == 0 ) {
+      if (strncasecmp(argv[2], l, len) == 0) {
         log_set_level(i, j);
-        success=true;
+        success = true;
         break;
       }
     }
@@ -479,12 +480,11 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
     else {
       snprintf(m, SCRATCH_SIZE, "%s: facility %s not recognized\r\n", argv[0], argv[1]);
     }
-
   }
   else {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: argument(s)", argv[0]);
-    for ( int i = 1; i < argc; ++i) {
-      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s ", argv[i]);
+    for (int i = 1; i < argc; ++i) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", argv[i]);
     }
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "not understood\r\n");
   }
@@ -492,22 +492,22 @@ static BaseType_t log_ctl(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 /*-----------------------------------------------------------*/
-#define tskRUNNING_CHAR   ( 'X' )
-#define tskBLOCKED_CHAR   ( 'B' )
-#define tskREADY_CHAR   ( 'R' )
-#define tskDELETED_CHAR   ( 'D' )
-#define tskSUSPENDED_CHAR ( 'S' )
+#define tskRUNNING_CHAR   ('X')
+#define tskBLOCKED_CHAR   ('B')
+#define tskREADY_CHAR     ('R')
+#define tskDELETED_CHAR   ('D')
+#define tskSUSPENDED_CHAR ('S')
 
-static portBASE_TYPE taskInfo( int argc, char *argv[], char *m)
+static portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
 {
   const char *const pcHeader = "Task   State  Priority  Stack  #\r\n*********************************\r\n";
 
   /* Generate a table of task stats. */
-  strcpy( m, pcHeader ); // cppcheck-suppress strcpy_to_buffer
-  int copied = strlen(m); // cppcheck-suppress strlen_side
+  static_assert(sizeof(m) >= sizeof(pcHeader), "m too small");
+  strcpy(m, pcHeader);
+  unsigned int copied = strlen(m);
 
   /* Take a snapshot of the number of tasks in case it changes while this
     function is executing. */
@@ -516,54 +516,54 @@ static portBASE_TYPE taskInfo( int argc, char *argv[], char *m)
   /* Allocate an array index for each task.  NOTE!  if
     configSUPPORT_DYNAMIC_ALLOCATION is set to 0 then pvPortMalloc() will
     equate to NULL. */
-  TaskStatus_t *pxTaskStatusArray = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation allocates a struct that has the alignment requirements of a pointer. */
+  TaskStatus_t *pxTaskStatusArray = pvPortMalloc(uxArraySize * sizeof(TaskStatus_t)); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation allocates a struct that has the alignment requirements of a pointer. */
 
-  if( pxTaskStatusArray != NULL ) {
+  if (pxTaskStatusArray != NULL) {
     /* Generate the (binary) data. */
-    uxTaskGetSystemState( pxTaskStatusArray, uxArraySize, NULL );
+    uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, NULL);
     char cStatus;
 
     /* Create a human readable table from the binary data. */
-    for( UBaseType_t x = 0; x < uxArraySize; x++ ) {
-      switch( pxTaskStatusArray[ x ].eCurrentState ) {
-      case eRunning:
-        cStatus = tskRUNNING_CHAR;
-        break;
-      case eReady:
-        cStatus = tskREADY_CHAR;
-        break;
-      case eBlocked:
-        cStatus = tskBLOCKED_CHAR;
-        break;
-      case eSuspended:
-        cStatus = tskSUSPENDED_CHAR;
-        break;
-      case eDeleted:
-        cStatus = tskDELETED_CHAR;
-        break;
-      case eInvalid:
-      default:
-        cStatus = ( char ) 0x00;
-        break;
+    for (UBaseType_t x = 0; x < uxArraySize; x++) {
+      switch (pxTaskStatusArray[x].eCurrentState) {
+        case eRunning:
+          cStatus = tskRUNNING_CHAR;
+          break;
+        case eReady:
+          cStatus = tskREADY_CHAR;
+          break;
+        case eBlocked:
+          cStatus = tskBLOCKED_CHAR;
+          break;
+        case eSuspended:
+          cStatus = tskSUSPENDED_CHAR;
+          break;
+        case eDeleted:
+          cStatus = tskDELETED_CHAR;
+          break;
+        case eInvalid:
+        default:
+          cStatus = (char)0x00;
+          break;
       }
-      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%-6s",
-          pxTaskStatusArray[ x ].pcTaskName );
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-6s",
+                         pxTaskStatusArray[x].pcTaskName);
 
       // note that the Stack high water mark shows the smallest the
       // stack has ever been. Smaller == closer to overflow.
-      copied += snprintf( m+copied, SCRATCH_SIZE-copied, "\t%c\t%u\t%u\t%u\r\n",
-          cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority,
-          ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark,
-          ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber );
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t%c\t%u\t%u\t%u\r\n",
+                         cStatus, (unsigned int)pxTaskStatusArray[x].uxCurrentPriority,
+                         (unsigned int)pxTaskStatusArray[x].usStackHighWaterMark,
+                         (unsigned int)pxTaskStatusArray[x].xTaskNumber);
     }
 
     /* Free the array again.  NOTE!  If configSUPPORT_DYNAMIC_ALLOCATION
       is 0 then vPortFree() will be #defined to nothing. */
-    vPortFree( pxTaskStatusArray );
+    vPortFree(pxTaskStatusArray);
   }
 
-  int len = strlen(m);
-  configASSERT(len<SCRATCH_SIZE);
+  unsigned int len = strlen(m);
+  configASSERT(len < SCRATCH_SIZE);
   /* There is no more data to return after this single string, so return
   pdFALSE. */
   return pdFALSE;
@@ -576,7 +576,7 @@ static const char *const pcWelcomeMessage =
 
 struct command_t {
   const char *commandstr;
-  BaseType_t (*interpreter)(int argc, char **, char* m);
+  BaseType_t (*interpreter)(int argc, char **, char *m);
   const char *helpstr;
   const int num_args;
 };
@@ -631,9 +631,12 @@ static struct command_t commands[] = {
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},
 #ifdef REV2
-     {
-       "gpio", gpio_ctl, "Get or set any GPIO pin.\r\n", -1,
-     },
+    {
+        "gpio",
+        gpio_ctl,
+        "Get or set any GPIO pin.\r\n",
+        -1,
+    },
 #endif // REV2
     {"help", help_command_fcn, "This help command\r\n", -1},
     {"id", board_id_info, "Prints board ID information.\r\n", 0},
@@ -653,10 +656,16 @@ static struct command_t commands[] = {
     },
 #ifdef REV2
     {
-        "jtag_sm", jtag_sm_ctl, "(on|off) set the JTAG from SM or not\r\n", -1,
+        "jtag_sm",
+        jtag_sm_ctl,
+        "(on|off) set the JTAG from SM or not\r\n",
+        -1,
     },
     {
-        "loadclock", init_load_clock_ctl, "args: the clock id options to program are r0a:0, r0b:1, r1a:2, r1b:3 and r1c:4.\r\n", 1,
+        "loadclock",
+        init_load_clock_ctl,
+        "args: the clock id options to program are r0a:0, r0b:1, r1a:2, r1b:3 and r1c:4.\r\n",
+        1,
     },
 #endif // REV2
     {
@@ -675,10 +684,8 @@ static struct command_t commands[] = {
         1,
     },
     {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n", 1},
-     {
-       "psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2
-     },
-     {"restart_mcu", restart_mcu, "Restart the microcontroller\r\n", 0},
+    {"psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2},
+    {"restart_mcu", restart_mcu, "Restart the microcontroller\r\n", 0},
     {"snapshot", snapshot,
      "args:# (0|1)\r\nDump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
      "if to reset snapshot.\r\n",
@@ -709,19 +716,20 @@ static struct command_t commands[] = {
         0,
     },
     {
-        "taskinfo", taskInfo, "Info about FreeRTOS tasks\r\n", 0,
+        "taskinfo",
+        taskInfo,
+        "Info about FreeRTOS tasks\r\n",
+        0,
     },
-    {
-        "taskstats",
-        TaskStatsCommand,
-       "Displays a table showing the state of each FreeRTOS task\r\n", 0
-    },
+    {"taskstats",
+     TaskStatsCommand,
+     "Displays a table showing the state of each FreeRTOS task\r\n", 0},
 #ifdef REV2
     {
-      "time",
-      time_ctl,
-      "(set HH:MM:SS MM/DD/YYYY|<none)\r\nRTC set and display\r\n",
-      -1,
+        "time",
+        time_ctl,
+        "(set HH:MM:SS MM/DD/YYYY|<none)\r\nRTC set and display\r\n",
+        -1,
     },
 #endif // REV2
     {"uptime", uptime, "Display uptime in minutes\r\n", 0},
@@ -761,20 +769,20 @@ struct microrl_user_data_t {
   uint32_t uart_base;
 };
 
-static BaseType_t help_command_fcn(int argc, char **argv, char* m)
+static BaseType_t help_command_fcn(int argc, char **argv, char *m)
 {
   int copied = 0;
-  static int i = 0;
   if (argc == 1) {
+    static int i = 0;
     for (; i < NUM_COMMANDS; ++i) {
       int left = SCRATCH_SIZE - copied;
       // need room for command string, help string, newlines, etc, and trailing \0
-      int len = strlen(commands[i].helpstr)+ strlen(commands[i].commandstr) + 7;
+      unsigned int len = strlen(commands[i].helpstr) + strlen(commands[i].commandstr) + 7;
       if (left < len) {
         return pdTRUE;
       }
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
-          commands[i].commandstr, commands[i].helpstr);
+                         commands[i].commandstr, commands[i].helpstr);
     }
     i = 0;
     return pdFALSE;
@@ -784,14 +792,14 @@ static BaseType_t help_command_fcn(int argc, char **argv, char* m)
     for (int j = 0; j < NUM_COMMANDS; ++j) {
       if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0) {
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
-            commands[j].commandstr, commands[j].helpstr);
+                           commands[j].commandstr, commands[j].helpstr);
         // return pdFALSE;
       }
     }
   }
   if (copied == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "%s: No command starting with %s found\r\n", argv[0], argv[1]);
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "%s: No command starting with %s found\r\n", argv[0], argv[1]);
   }
   return pdFALSE;
 }
@@ -835,7 +843,6 @@ static int execute(void *p, int argc, char **argv)
   return 0;
 }
 
-
 // The actual task
 void vCommandLineTask(void *pvParameters)
 {
@@ -853,9 +860,9 @@ void vCommandLineTask(void *pvParameters)
   };
 
 #ifdef REV1
-  void (*printer)(const char*) = U4Print;
+  void (*printer)(const char *) = U4Print;
 #elif defined(REV2)
-  void (*printer)(const char*) = U0Print;
+  void (*printer)(const char *) = U0Print;
 #endif
 
   struct microrl_config rl_config = {
@@ -876,7 +883,6 @@ void vCommandLineTask(void *pvParameters)
   microrl_init(&rl, &rl_config);
   microrl_set_execute_callback(&rl, execute);
   microrl_insert_char(&rl, ' '); // this seems to be necessary?
-
 
   for (;;) {
     /* This implementation reads a single character at a time.  Wait in the

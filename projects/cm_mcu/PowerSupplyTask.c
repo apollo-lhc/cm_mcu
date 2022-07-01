@@ -28,7 +28,6 @@
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 
-
 enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
 
 enum power_system_state getPowerControlState()
@@ -51,11 +50,19 @@ static uint16_t check_ps_oks(void)
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
 {
   log_error(LOG_PWRCTL, "psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n", failed_mask,
-      supply_ok_mask, supply_bitset);
+            supply_ok_mask, supply_bitset);
 }
 
-static char *power_system_state_names[] = {
-    "FAIL", "INIT", "OFF", "L1ON", "L2ON", "L3ON", "L4ON", "L5ON", "ON",
+static const char *const power_system_state_names[] = {
+    "FAIL",
+    "INIT",
+    "OFF",
+    "L1ON",
+    "L2ON",
+    "L3ON",
+    "L4ON",
+    "L5ON",
+    "ON",
 };
 
 const char *getPowerControlStateName(enum power_system_state s)
@@ -74,7 +81,6 @@ const bool getPowerControlExternalAlarmState()
 void PowerSupplyTask(void *parameters)
 {
 
-
   // compile-time sanity check
   static_assert(PS_ENS_MASK == (PS_ENS_GEN_MASK | PS_ENS_F2_MASK | PS_ENS_F1_MASK), "mask");
   static_assert(PS_OKS_MASK == (PS_OKS_GEN_MASK | PS_OKS_F2_MASK | PS_OKS_F1_MASK), "mask");
@@ -84,7 +90,6 @@ void PowerSupplyTask(void *parameters)
 
   // masks to enable/check appropriate supplies
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
-  uint16_t supply_en_mask = PS_ENS_GEN_MASK;
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
            supply_ok_mask_L5 = 0U;
 
@@ -92,14 +97,13 @@ void PowerSupplyTask(void *parameters)
   bool f2_enable = isFPGAF2_PRESENT();
   // HACK
   // setting the enables both to true for debugging blank bo
-  if ( ! f1_enable && ! f2_enable ) {
+  if (!f1_enable && !f2_enable) {
     f1_enable = true;
     f2_enable = true;
   }
   // end HACK
   if (f1_enable) {
     supply_ok_mask |= PS_OKS_F1_MASK;
-    supply_en_mask |= PS_ENS_F1_MASK;
     supply_ok_mask_L1 = PS_OKS_F1_MASK_L1;
     supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_F1_MASK_L2;
     supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
@@ -107,13 +111,12 @@ void PowerSupplyTask(void *parameters)
   }
   if (f2_enable) {
     supply_ok_mask |= PS_OKS_F2_MASK;
-    supply_en_mask |= PS_ENS_F2_MASK;
     supply_ok_mask_L1 |= PS_OKS_F2_MASK_L1;
     supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_F2_MASK_L2;
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
   }
-#if defined( ECN001) || defined (REV2)
+#if defined(ECN001) || defined(REV2)
   // configure the LGA80D supplies. This call takes some time.
   LGA80D_init();
 #endif // ECN001
@@ -150,7 +153,7 @@ void PowerSupplyTask(void *parameters)
           break;
       }
     }
-    bool ignorefail =false; // HACK THIS NEEDS TO BE FIXED TODO FIXME
+    bool ignorefail = false; // HACK THIS NEEDS TO BE FIXED TODO FIXME
     // Check the state of BLADE_POWER_EN.
     bool blade_power_enable = (read_gpio_pin(BLADE_POWER_EN) == 1);
 
@@ -251,7 +254,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L2ON: {
-        if (((supply_bitset & supply_ok_mask_L2) != supply_ok_mask_L2) && !ignorefail){
+        if (((supply_bitset & supply_ok_mask_L2) != supply_ok_mask_L2) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L2;
           printfail(failed_mask, supply_ok_mask_L2, supply_bitset);
           errbuffer_power_fail(failed_mask);
@@ -291,7 +294,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_L5ON: {
-        if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5)&& !ignorefail) {
+        if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
           errbuffer_power_fail(failed_mask);
@@ -307,7 +310,7 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
-      case POWER_FAILURE: { // we go through POWER_OFF state before turning on.
+      case POWER_FAILURE: {                           // we go through POWER_OFF state before turning on.
         if (!power_supply_alarm && !external_alarm) { // errors cleared
           nextState = POWER_OFF;
           errbuffer_power_fail_clear();
