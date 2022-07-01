@@ -21,6 +21,7 @@
 
 #include "Tasks.h"
 #include "MonitorTask.h"
+#include "MonitorI2CTask.h"
 #include "InterruptHandlers.h"
 
 #include "common/pinsel.h"
@@ -29,6 +30,34 @@
 #include "I2CCommunication.h"
 #include "common/log.h"
 #include "common/printf.h"
+
+// FFLXCVR arguments for monitoring i2c task of 4-channel TX/RX firefly ports with 25 Gbps
+#ifdef REV2
+struct sm_command_t sm_command_fflxcvr[] = {
+    { 0x02, 2, "FF_STATUS_REG", "", PM_STATUS },
+    { 0x16, 1, "FF_TEMPERATURE", "C", PM_LINEAR11 },
+    { 0x7f, 2, "FF_PAGE_REG", "", PM_STATUS },
+
+};
+float fflxcvr_values[NSUPPLIES_FFLXCVR * NCOMMANDS_FFLXCVR];
+
+struct MonitorI2CTaskArgs_t fflxcvr_args = {
+    .name = "FFLYXCVRMON",
+    .devices = NULL,
+    .n_devices = NSUPPLIES_FFLXCVR,
+    .commands = sm_command_fflxcvr,
+    .n_commands = NCOMMANDS_FFLXCVR,
+    .sm_values = fflxcvr_values,
+    .n_values = NSUPPLIES_FFLXCVR * NPAGES_FFLXCVR * NCOMMANDS_FFLXCVR,
+    .n_pages = NPAGES_FFLXCVR,
+    .smbus = &g_sMaster4, .smbus_status = &eStatus4,
+    .xSem = NULL,
+    .requirePower = false,
+    .stack_size = 4096U, };
+// FFL12C14 arguments for monitoring i2c task of 12-channel firefly ports with 14 Gbps
+
+// FFL12C25 arguments for monitoring i2c task of 12-channel firefly ports with 25 Gbps
+#endif
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2
@@ -60,16 +89,15 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
 #define F2_NDEVICES 2
 
 #elif defined(REV2)
-struct dev_i2c_addr_t fpga_addrs[] = {
-    {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
-    {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
-    {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
-    {"F1_3", 0x70, 3, 0x45}, // F1 X1Y1
-    {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
-    {"F2_1", 0x70, 1, 0x34}, // F2 X0Y1
-    {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
-    {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
-};
+struct dev_i2c_addr_t fpga_addrs[] = { { "F1_0", 0x70, 3, 0x36 }, // F1 X0Y0
+		{ "F1_1", 0x70, 3, 0x34 }, // F1 X0Y1
+		{ "F1_2", 0x70, 3, 0x47 }, // F1 X1Y0
+		{ "F1_3", 0x70, 3, 0x45 }, // F1 X1Y1
+		{ "F2_0", 0x70, 1, 0x36 }, // F2 X0Y0
+		{ "F2_1", 0x70, 1, 0x34 }, // F2 X0Y1
+		{ "F2_2", 0x70, 1, 0x47 }, // F2 X1Y0
+		{ "F2_3", 0x70, 1, 0x45 }, // F2 X1Y1
+		};
 #define F1F2_NDEVICES 8
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
@@ -90,33 +118,23 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
 
 #endif
 
-struct pm_command_t pm_command_fpga[] = {
-    {0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11},
-};
+struct pm_command_t pm_command_fpga[] = { { 0x8d, 2, "READ_TEMPERATURE_1", "C",
+		PM_LINEAR11 }, };
 
 // only one of these might be valid
-float pm_fpga[FPGA_MON_NVALUES] = {0};
+float pm_fpga[FPGA_MON_NVALUES] = { 0 };
 
-struct MonitorTaskArgs_t fpga_args = {
-    .name = "XIMON",
-    .devices = fpga_addrs,
-    .n_devices = F1F2_NDEVICES,
-    .commands = pm_command_fpga,
-    .n_commands = FPGA_MON_NCOMMANDS,
-    .pm_values = pm_fpga,
-    .n_values = FPGA_MON_NVALUES,
-    .n_pages = 1,
+struct MonitorTaskArgs_t fpga_args = { .name = "XIMON", .devices = fpga_addrs,
+		.n_devices = F1F2_NDEVICES, .commands = pm_command_fpga, .n_commands =
+		FPGA_MON_NCOMMANDS, .pm_values = pm_fpga, .n_values =
+		FPGA_MON_NVALUES, .n_pages = 1,
 #ifdef REV1
     .smbus = &g_sMaster6,
     .smbus_status = &eStatus6,
 #elif defined(REV2)
-    .smbus = &g_sMaster5,
-    .smbus_status = &eStatus5,
+		.smbus = &g_sMaster5, .smbus_status = &eStatus5,
 #endif
-    .xSem = NULL,
-    .requirePower = true,
-    .stack_size = 4096U,
-};
+		.xSem = NULL, .requirePower = true, .stack_size = 4096U, };
 #ifdef REV1
 // Power supply arguments for Monitoring task
 // Supply Address | Voltages | Priority
@@ -142,6 +160,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
 //       0x43     | F1VCCINT  |     1
 //       0x46     | F2VCCINT  |     1
 //       0x45     | F2VCCINT  |     1
+
 struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
     {"3V3/1V8", 0x70, 0, 0x40},   // Dual supply 1.8 / 3.3 V
     {"F1VCCINT1", 0x70, 1, 0x44}, // first vccint, F1
@@ -151,6 +170,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
     {"F1AVTT/CC", 0x70, 5, 0x40}, // AVCC/AVTT for F1
     {"F2AVTT/CC", 0x70, 6, 0x40}, // AVCC/AVTT for F2
 };
+
 #else
 #error "need to define either Rev1 or Rev2"
 #endif // REV1
@@ -208,47 +228,49 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
 // Initialization function for the LGA80D. These settings
 // need to be called when the supply output is OFF
 // this is currently not ensured in this code.
-void LGA80D_init(void)
-{
-  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
-    ;
-  log_info(LOG_SERVICE, "LGA80D_init\r\n");
-  // set up the switching frequency
-  uint16_t freqlin11 = float_to_linear11(457.14f);
-  uint16_t drooplin11 = float_to_linear11(0.0700f);
-  // we do the same for all devices except the 0th one, which is the 1.8/3.3V device
-  for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
-    for (uint8_t page = 0; page < 2; ++page) {
-      // page register
-      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[0],
-                              &page);
-      if (r) {
-        log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev, page, r);
-        log_error(LOG_SERVICE, "LGA80D(0)\r\n");
-      }
-      // actual command -- frequency switch
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[2],
-                          (uint8_t *)&freqlin11);
-      if (r) {
-        log_error(LOG_SERVICE, "LGA80D(1)\r\n");
-      }
-      // actual command -- vout_droop switch
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[5],
-                          (uint8_t *)&drooplin11);
-      if (r) {
-        log_error(LOG_SERVICE, "LGA80D(2)\r\n");
-      }
-      // actual command -- multiphase_ramp_gain switch
-      uint8_t val = 0x7U; // by suggestion of Artesian
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, pm_addrs_dcdc + dev, &extra_cmds[6], &val);
-      if (r) {
-        log_error(LOG_SERVICE, "LGA80D(3)\r\n");
-      }
-    }
-  }
-  xSemaphoreGive(dcdc_args.xSem);
+void LGA80D_init(void) {
+	while (xSemaphoreTake(dcdc_args.xSem, (TickType_t) 10) == pdFALSE)
+		;
+	log_info(LOG_SERVICE, "LGA80D_init\r\n");
+	// set up the switching frequency
+	uint16_t freqlin11 = float_to_linear11(457.14f);
+	uint16_t drooplin11 = float_to_linear11(0.0700f);
+	// we do the same for all devices except the 0th one, which is the 1.8/3.3V device
+	for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
+		for (uint8_t page = 0; page < 2; ++page) {
+			// page register
+			int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+					pm_addrs_dcdc + dev, &extra_cmds[0], &page);
+			if (r) {
+				log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev,
+						page, r);
+				log_error(LOG_SERVICE, "LGA80D(0)\r\n");
+			}
+			// actual command -- frequency switch
+			r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+					pm_addrs_dcdc + dev, &extra_cmds[2], (uint8_t*) &freqlin11);
+			if (r) {
+				log_error(LOG_SERVICE, "LGA80D(1)\r\n");
+			}
+			// actual command -- vout_droop switch
+			r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+					pm_addrs_dcdc + dev, &extra_cmds[5],
+					(uint8_t*) &drooplin11);
+			if (r) {
+				log_error(LOG_SERVICE, "LGA80D(2)\r\n");
+			}
+			// actual command -- multiphase_ramp_gain switch
+			uint8_t val = 0x7U; // by suggestion of Artesian
+			r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+					pm_addrs_dcdc + dev, &extra_cmds[6], &val);
+			if (r) {
+				log_error(LOG_SERVICE, "LGA80D(3)\r\n");
+			}
+		}
+	}
+	xSemaphoreGive(dcdc_args.xSem);
 
-  return;
+	return;
 }
 
 // if you change the length of this array, you also need to change
@@ -277,82 +299,67 @@ struct pm_command_t pm_command_dcdc[] = {
 };
 float dcdc_values[NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS];
 
-struct MonitorTaskArgs_t dcdc_args = {
-    .name = "PSMON",
-    .devices = pm_addrs_dcdc,
-    .n_devices = NSUPPLIES_PS,
-    .commands = pm_command_dcdc,
-    .n_commands = NCOMMANDS_PS,
-    .pm_values = dcdc_values,
-    .n_values = NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS,
-    .n_pages = NPAGES_PS,
-    .smbus = &g_sMaster1,
-    .smbus_status = &eStatus1,
-    .xSem = NULL,
-    .requirePower = false,
-    .stack_size = 4096U,
-};
+struct MonitorTaskArgs_t dcdc_args = { .name = "PSMON",
+		.devices = pm_addrs_dcdc, .n_devices = NSUPPLIES_PS, .commands =
+				pm_command_dcdc, .n_commands = NCOMMANDS_PS, .pm_values =
+				dcdc_values,
+		.n_values = NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS, .n_pages =
+		NPAGES_PS, .smbus = &g_sMaster1, .smbus_status = &eStatus1,
+		.xSem = NULL, .requirePower = false, .stack_size = 4096U, };
 
 static int fpga_f1 = -1;
 static int fpga_f2 = -1;
-int get_f1_index()
-{
-  return fpga_f1;
+int get_f1_index() {
+	return fpga_f1;
 }
-int get_f2_index()
-{
-  return fpga_f2;
+int get_f2_index() {
+	return fpga_f2;
 }
-void set_f1_index(int index)
-{
-  fpga_f1 = index;
-  return;
+void set_f1_index(int index) {
+	fpga_f1 = index;
+	return;
 }
-void set_f2_index(int index)
-{
-  fpga_f2 = index;
-  return;
+void set_f2_index(int index) {
+	fpga_f2 = index;
+	return;
 }
 
-void initFPGAMon()
-{
-  // check if we are to include both FPGAs or not
-  bool f1_enable = isFPGAF1_PRESENT();
-  bool f2_enable = isFPGAF2_PRESENT();
+void initFPGAMon() {
+	// check if we are to include both FPGAs or not
+	bool f1_enable = isFPGAF1_PRESENT();
+	bool f2_enable = isFPGAF2_PRESENT();
 #ifndef REV1 // FIXME REMOVE THESE
   write_gpio_pin(JTAG_FROM_SM, 1);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);
 #endif        // not REV1
 #ifndef DEBUG // todo: just log this
-  configASSERT(f1_enable || f2_enable);
+	configASSERT(f1_enable || f2_enable);
 #endif // DEBUG
-  if (!f1_enable && f2_enable) {
-    fpga_args.devices = fpga_addrs_f2only;
-    fpga_args.n_devices = F2_NDEVICES;
-    set_f2_index(0);
+	if (!f1_enable && f2_enable) {
+		fpga_args.devices = fpga_addrs_f2only;
+		fpga_args.n_devices = F2_NDEVICES;
+		set_f2_index(0);
 #ifndef REV1
-    write_gpio_pin(_F1_JTAG_BYPASS, 0);
-    write_gpio_pin(_F2_JTAG_BYPASS, 1);
+		write_gpio_pin(_F1_JTAG_BYPASS, 0);
+		write_gpio_pin(_F2_JTAG_BYPASS, 1);
 #endif // REV1
-  }
-  else if (!f2_enable && f1_enable) {
-    fpga_args.devices = fpga_addrs_f1only;
-    fpga_args.n_devices = F1_NDEVICES;
-    set_f1_index(0);
+	} else if (!f2_enable && f1_enable) {
+		fpga_args.devices = fpga_addrs_f1only;
+		fpga_args.n_devices = F1_NDEVICES;
+		set_f1_index(0);
 #ifndef REV1
-    write_gpio_pin(_F1_JTAG_BYPASS, 1);
-    write_gpio_pin(_F2_JTAG_BYPASS, 0);
+		write_gpio_pin(_F1_JTAG_BYPASS, 1);
+		write_gpio_pin(_F2_JTAG_BYPASS, 0);
 #endif // REV1
-  }
-  else {
-    set_f2_index(0);
-    set_f1_index(1);
+	} else {
+		set_f2_index(0);
+		set_f1_index(1);
 #ifndef REV1
-    write_gpio_pin(_F1_JTAG_BYPASS, 1);
-    write_gpio_pin(_F2_JTAG_BYPASS, 1);
+		write_gpio_pin(_F1_JTAG_BYPASS, 1);
+		write_gpio_pin(_F2_JTAG_BYPASS, 1);
 #endif // REV1
-  }
+	}
 }
 
 #ifdef REV2
@@ -522,136 +529,134 @@ void init_registers_ff()
 }
 #endif // REV1
 #ifdef REV2
-void init_registers_clk()
-{
-  // initialize the external I2C registers for the clocks and for the optical devices.
+void init_registers_clk() {
+	// initialize the external I2C registers for the clocks and for the optical devices.
 
-  // =====================================================
-  // CMv2 Schematic 4.03 I2C CLOCK CONTROL
+	// =====================================================
+	// CMv2 Schematic 4.03 I2C CLOCK CONTROL
 
-  // 1a) U88 inputs vs. outputs (I2C address 0x20 on I2C channel #2)
-  // The "/INT..." signals on P04 and P05 are inputs.
-  // The unused signals on P06, P11, P16, and P17 should be inputs.
-  // The remaining 10 signals are outputs.
+	// 1a) U88 inputs vs. outputs (I2C address 0x20 on I2C channel #2)
+	// The "/INT..." signals on P04 and P05 are inputs.
+	// The unused signals on P06, P11, P16, and P17 should be inputs.
+	// The remaining 10 signals are outputs.
 
-  // # set I2C switch on channel 2 (U84, address 0x70) to port 6
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xc2); //  11000010 [P17..P10]
+	// # set I2C switch on channel 2 (U84, address 0x70) to port 6
+	apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
+	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xc2); //  11000010 [P17..P10]
 
-  // 1b) U88 default output values (I2C address 0x20 on I2C channel #2)
-  // The outputs on P00, P01, P02, and P03 should default to "0".
-  // This causes the muxes on sheet 2.08 to use clocks from synth R0A.
-  // The outputs on P07 and P10 should default to "1".
-  // This negates the active-lo "RESET" inputs on synths R0A and R0B.
-  // The outputs on P12, P13, P14, and P15 should default to "0".
-  // Selection of which input clock to use on synths R0A and R0B will be
-  // defined in the configuration files for these chips. They will not be
-  // switchable under program control.
+	// 1b) U88 default output values (I2C address 0x20 on I2C channel #2)
+	// The outputs on P00, P01, P02, and P03 should default to "0".
+	// This causes the muxes on sheet 2.08 to use clocks from synth R0A.
+	// The outputs on P07 and P10 should default to "1".
+	// This negates the active-lo "RESET" inputs on synths R0A and R0B.
+	// The outputs on P12, P13, P14, and P15 should default to "0".
+	// Selection of which input clock to use on synths R0A and R0B will be
+	// defined in the configuration files for these chips. They will not be
+	// switchable under program control.
 
-  // # set I2C switch on channel 2 (U84, address 0x70) to port 6
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+	// # set I2C switch on channel 2 (U84, address 0x70) to port 6
+	apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
+	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  // 2a) U83 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
-  // The "/INT..." signals on P04, P05, and P06 are inputs.
-  // There ane no unused signals.
-  // The remaining 13 signals are outputs.
+	// 2a) U83 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
+	// The "/INT..." signals on P04, P05, and P06 are inputs.
+	// There ane no unused signals.
+	// The remaining 13 signals are outputs.
 
-  // # set I2C switch on channel 2 (U84, address 0x70) to port 7
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0x00); //  00000000 [P17..P10]
+	// # set I2C switch on channel 2 (U84, address 0x70) to port 7
+	apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
+	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0x00); //  00000000 [P17..P10]
 
-  // 2b) U88 default output values (I2C address 0x21 on I2C channel #2)
-  // The outputs on P00, P01, P02, and P03 should default to "0".
-  // This causes the muxes on sheet 2.08 to use clocks from synth R0A.
-  // The outputs on P07, P10, and P11 should default to "1".
-  // This negates the active-lo "RESET" inputs on synths R1A, R1B, and R1C.
-  // The outputs on P12, P13, P14, P15, P16, and P17 should default to "0".
-  // Selection of which input clock to use on synths R1A, R1B, and R1C
-  // will be defined in the configuration files for these chips. They will
-  // not be switchable under program control.
+	// 2b) U88 default output values (I2C address 0x21 on I2C channel #2)
+	// The outputs on P00, P01, P02, and P03 should default to "0".
+	// This causes the muxes on sheet 2.08 to use clocks from synth R0A.
+	// The outputs on P07, P10, and P11 should default to "1".
+	// This negates the active-lo "RESET" inputs on synths R1A, R1B, and R1C.
+	// The outputs on P12, P13, P14, P15, P16, and P17 should default to "0".
+	// Selection of which input clock to use on synths R1A, R1B, and R1C
+	// will be defined in the configuration files for these chips. They will
+	// not be switchable under program control.
 
-  // # set I2C switch on channel 2 (U84, address 0x70) to port 7
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
+	// # set I2C switch on channel 2 (U84, address 0x70) to port 7
+	apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
+	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 }
-void init_registers_ff()
-{
-  // =====================================================
-  // CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
+void init_registers_ff() {
+	// =====================================================
+	// CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
 
-  // 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
-  // All signals are inputs.
+	// 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
+	// All signals are inputs.
 
-  // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
-  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+	// # set first I2C switch on channel 4 (U14, address 0x70) to port 7
+	apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+	apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+	apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
 
-  // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
-  // All signals are inputs so nothing needs to be done.
+	// 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
+	// All signals are inputs so nothing needs to be done.
 
-  // 4a) U18 inputs vs. outputs (I2C address 0x21 on I2C channel #4)
-  // The "/F1_FF_RESET" signal on P10 is an output
-  // The "EN_...3V8" signals on P11, P12, and P13 are outputs.
-  // All other signals are inputs
+	// 4a) U18 inputs vs. outputs (I2C address 0x21 on I2C channel #4)
+	// The "/F1_FF_RESET" signal on P10 is an output
+	// The "EN_...3V8" signals on P11, P12, and P13 are outputs.
+	// All other signals are inputs
 
-  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+	// # set second I2C switch on channel 4 (U17, address 0x71) to port 6
+	apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
 
-  // 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
-  // The output on P10 should default to "1".
-  // This negates the active-lo "RESET" input on the FPGA#1 FireFlys
-  // The outputs on P11, P12, and P13 should default to "0"
-  // This disables the 3.8 volt power supplies on the three FireFly
-  // 12-lane transmitter sites for FPGA#1.
+	// 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
+	// The output on P10 should default to "1".
+	// This negates the active-lo "RESET" input on the FPGA#1 FireFlys
+	// The outputs on P11, P12, and P13 should default to "0"
+	// This disables the 3.8 volt power supplies on the three FireFly
+	// 12-lane transmitter sites for FPGA#1.
 
-  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+	// # set second I2C switch on channel 4 (U17, address 0x71) to port 6
+	apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
+	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  // =====================================================
-  // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
+	// =====================================================
+	// CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
 
-  // 5a) U10 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
-  // All signals are inputs.
+	// 5a) U10 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
+	// All signals are inputs.
 
-  // # set first I2C switch on channel 3 (U9, address 0x70) to port 7
-  apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+	// # set first I2C switch on channel 3 (U9, address 0x70) to port 7
+	apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
+	apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+	apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
 
-  // 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
-  // All signals are inputs so nothing needs to be done.
+	// 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
+	// All signals are inputs so nothing needs to be done.
 
-  // 6a) U12 inputs vs. outputs (I2C address 0x21 on I2C channel #3)
-  // The "/F2_FF_RESET" signal on P10 is an output
-  // The "EN_...3V8" signals on P11, P12, and P13 are outputs.
-  // All other signals are inputs
+	// 6a) U12 inputs vs. outputs (I2C address 0x21 on I2C channel #3)
+	// The "/F2_FF_RESET" signal on P10 is an output
+	// The "EN_...3V8" signals on P11, P12, and P13 are outputs.
+	// All other signals are inputs
 
-  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
-  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+	// # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+	apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
 
-  // 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
-  // The output on P10 should default to "1".
-  // This negates the active-lo "RESET" input on the FPGA#2 FireFlys
-  // The outputs on P11, P12, and P13 should default to "0"
-  // This disables the 3.8 volt power supplies on the three FireFly
-  // 12-lane transmitter sites for FPGA#2.
+	// 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
+	// The output on P10 should default to "1".
+	// This negates the active-lo "RESET" input on the FPGA#2 FireFlys
+	// The outputs on P11, P12, and P13 should default to "0"
+	// This disables the 3.8 volt power supplies on the three FireFly
+	// 12-lane transmitter sites for FPGA#2.
 
-  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
-  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+	// # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+	apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
+	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 }
 #endif // REV2
 
