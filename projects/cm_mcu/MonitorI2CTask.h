@@ -58,7 +58,7 @@ struct MonitorI2CTaskArgs_t {
   UBaseType_t stack_size;              // stack size of task
 };
 
-#define NSUPPLIES_FFLDAQ (8)
+#define NSUPPLIES_FFLDAQ (4)
 #define NCOMMANDS_FFLDAQ 3  // number of entries in ffldaq_ array
 #define NPAGES_FFLDAQ    1   // number of pages on the 4-channel firefly ports with 25 Gbps
 

@@ -42,14 +42,14 @@ struct sm_command_t sm_command_ffldaq[] = {
 float ffldaq_values[NSUPPLIES_FFLDAQ * NCOMMANDS_FFLDAQ];
 
 struct MonitorI2CTaskArgs_t ffldaq_args = {
-    .name = "FFLYDAQMON",
+    .name = "FFDAQ",
     .devices = NULL,
     .n_devices = NSUPPLIES_FFLDAQ,
     .commands = sm_command_ffldaq,
     .n_commands = NCOMMANDS_FFLDAQ,
     .n_values = NSUPPLIES_FFLDAQ * NPAGES_FFLDAQ * NCOMMANDS_FFLDAQ,
     .n_pages = NPAGES_FFLDAQ,
-    .smbus = &g_sMaster4, .smbus_status = &eStatus4,
+    .smbus = &g_sMaster3, .smbus_status = &eStatus3,
     .xSem = NULL,
     .requirePower = false,
     .stack_size = 4096U, };

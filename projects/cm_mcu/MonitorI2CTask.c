@@ -122,26 +122,26 @@ struct dev_i2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 //
 // -------------------------------------------------
 struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = { { "F1_1  12 Tx",
-    FF_I2CMUX_1_ADDR, 0, 0x50, "FFLYITDTCMON"}, //
-    { "F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFLYITDTCMON"}, //
-    { "F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFLYITDTCMON"}, //
-    { "F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFLYITDTCMON"}, //
-    { "F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFLYITDTCMON"}, //
-    { "F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFLYITDTCMON"}, //
-    { "F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFLYDAQMON"}, //
-    { "F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFLYDAQMON"}, //
-    { "F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFLYDAQMON"}, //
-    { "F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFLYDAQMON"}, //
-    { "F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50, "FFLYITDTCMON"}, //
-    { "F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFLYITDTCMON"}, //
-    { "F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFLYITDTCMON"}, //
-    { "F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFLYITDTCMON"}, //
-    { "F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFLYITDTCMON"}, //
-    { "F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFLYITDTCMON"}, //
-    { "F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFLYDAQMON"}, //
-    { "F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFLYDAQMON"}, //
-    { "F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFLYDAQMON"}, //
-    { "F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFLYDAQMON"}, //
+    FF_I2CMUX_1_ADDR, 0, 0x50, "FFIT"}, //
+    { "F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFIT"}, //
+    { "F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFIT"}, //
+    { "F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFIT"}, //
+    { "F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFIT"}, //
+    { "F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFIT"}, //
+    { "F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFDAQ"}, //
+    { "F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFDAQ"}, //
+    { "F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFDAQ"}, //
+    { "F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFDAQ"}, //
+    //{ "F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50, "FFIT"}, //
+    //{ "F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFIT"}, //
+    //{ "F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFIT"}, //
+    //{ "F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFIT"}, //
+    //{ "F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFIT"}, //
+    //{ "F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFIT"}, //
+    //{ "F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFDAQ"}, //
+    //{ "F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFDAQ"}, //
+    //{ "F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFDAQ"}, //
+    //{ "F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFDAQ"}, //
 
 };
 
