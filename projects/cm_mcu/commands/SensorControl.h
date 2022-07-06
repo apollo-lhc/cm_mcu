@@ -34,6 +34,9 @@ BaseType_t ff_status(int argc, char **argv, char* m);
 BaseType_t ff_los_alarm(int argc, char **argv, char* m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m);
 
+// Fireflies in MonI2C
+BaseType_t ff_temp(int argc, char **argv, char* m);
+
 // FPGA
 BaseType_t fpga_ctl(int argc, char **argv, char* m);
 BaseType_t fpga_reset(int argc, char **argv, char* m);

@@ -31,25 +31,24 @@
 #include "common/log.h"
 #include "common/printf.h"
 
-// FFLXCVR arguments for monitoring i2c task of 4-channel TX/RX firefly ports with 25 Gbps
+// FFLDAQ arguments for monitoring i2c task of 4-channel TX/RX firefly ports with 25 Gbps
 #ifdef REV2
-struct sm_command_t sm_command_fflxcvr[] = {
-    { 0x02, 2, "FF_STATUS_REG", "", PM_STATUS },
-    { 0x16, 1, "FF_TEMPERATURE", "C", PM_LINEAR11 },
-    { 0x7f, 2, "FF_PAGE_REG", "", PM_STATUS },
+struct sm_command_t sm_command_ffldaq[] = {
+    { 1, 0x02, 1,  -98.0f, "FF_STATUS_REG", "", SM_STATUS },
+    { 1, 0x16, 1,  -98.0f, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x7f, 1,  -98.0f, "FF_PAGE_REG", "", SM_STATUS },
 
 };
-float fflxcvr_values[NSUPPLIES_FFLXCVR * NCOMMANDS_FFLXCVR];
+float ffldaq_values[NSUPPLIES_FFLDAQ * NCOMMANDS_FFLDAQ];
 
-struct MonitorI2CTaskArgs_t fflxcvr_args = {
-    .name = "FFLYXCVRMON",
+struct MonitorI2CTaskArgs_t ffldaq_args = {
+    .name = "FFLYDAQMON",
     .devices = NULL,
-    .n_devices = NSUPPLIES_FFLXCVR,
-    .commands = sm_command_fflxcvr,
-    .n_commands = NCOMMANDS_FFLXCVR,
-    .sm_values = fflxcvr_values,
-    .n_values = NSUPPLIES_FFLXCVR * NPAGES_FFLXCVR * NCOMMANDS_FFLXCVR,
-    .n_pages = NPAGES_FFLXCVR,
+    .n_devices = NSUPPLIES_FFLDAQ,
+    .commands = sm_command_ffldaq,
+    .n_commands = NCOMMANDS_FFLDAQ,
+    .n_values = NSUPPLIES_FFLDAQ * NPAGES_FFLDAQ * NCOMMANDS_FFLDAQ,
+    .n_pages = NPAGES_FFLDAQ,
     .smbus = &g_sMaster4, .smbus_status = &eStatus4,
     .xSem = NULL,
     .requirePower = false,

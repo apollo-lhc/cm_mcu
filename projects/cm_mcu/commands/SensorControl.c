@@ -636,6 +636,46 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+BaseType_t ff_temp(int argc, char **argv, char *m)
+{
+
+  BaseType_t i1 = strtol(argv[1], NULL, 10);
+
+  if (i1 < 0 || i1 >= ffldaq_args.n_commands) {
+    snprintf(m, SCRATCH_SIZE, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
+        ffldaq_args.n_commands - 1);
+    return pdFALSE;
+  }
+  // update times, in seconds
+  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+  TickType_t last = pdTICKS_TO_MS(ffldaq_args.updateTick) / 1000;
+  int copied = 0;
+  if (checkStale(last, now)) {
+    int mins = (now - last) / 60;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+  }
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
+      ffldaq_args.commands[i1].name, ffldaq_args.commands[i1].command);
+  for (int ps = 0; ps < ffldaq_args.n_devices; ++ps) {
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", ffldaq_args.devices[ps].name);
+    for (int page = 0; page < ffldaq_args.n_pages; ++page) {
+      float val = ffldaq_args.commands[1].sm_value;
+      int tens, frac;
+      float_to_ints(val, &tens, &frac);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE %02d.%02d\t", tens, frac);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  }
+
+  return pdFALSE;
+
+}
+
+extern struct MonitorI2CTaskArgs_t ffldaq_args;
+extern struct dev_moni2c_addr_t ff_i2c_addrs[NFIREFLIES];
+
 BaseType_t fpga_ctl(int argc, char **argv, char *m)
 {
   if (argc == 2) {

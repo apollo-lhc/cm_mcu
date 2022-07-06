@@ -628,6 +628,12 @@ static struct command_t commands[] = {
         "Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
         0,
     },
+    {
+        "ff_temp",
+        ff_temp,
+        "Displays a table showing the temperature of the I2C fireflies.\r\n",
+        0,
+    },
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},
 #ifdef REV2

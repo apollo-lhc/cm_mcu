@@ -27,6 +27,7 @@
 #include "common/log.h"
 #include "CommandLineTask.h"
 #include "InterruptHandlers.h"
+#include "MonitorI2CTask.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
 #include "I2CSlaveTask.h"
@@ -296,6 +297,8 @@ int main(void)
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               NULL);
+  xTaskCreate(MonitorI2CTask, "FFLYDAQMON", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+                NULL);
   xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
