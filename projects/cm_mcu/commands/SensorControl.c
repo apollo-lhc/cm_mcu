@@ -638,43 +638,69 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
 
 BaseType_t ff_temp(int argc, char **argv, char *m)
 {
-
-  BaseType_t i1 = strtol(argv[1], NULL, 10);
-
-  if (i1 < 0 || i1 >= ffldaq_args.n_commands) {
-    snprintf(m, SCRATCH_SIZE, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
-        ffldaq_args.n_commands - 1);
-    return pdFALSE;
-  }
-  // update times, in seconds
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-  TickType_t last = pdTICKS_TO_MS(ffldaq_args.updateTick) / 1000;
+  int i1 = 1;
+  // argument handling
   int copied = 0;
-  if (checkStale(last, now)) {
-    int mins = (now - last) / 60;
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-  }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
-      ffldaq_args.commands[i1].name, ffldaq_args.commands[i1].command);
-  for (int ps = 0; ps < ffldaq_args.n_devices; ++ps) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", ffldaq_args.devices[ps].name);
-    for (int page = 0; page < ffldaq_args.n_pages; ++page) {
-      float val = ffldaq_args.commands[1].sm_value;
-      int tens, frac;
-      float_to_ints(val, &tens, &frac);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE %02d.%02d\t", tens, frac);
+  static int whichff = 0;
+
+  if (whichff == 0) {
+    // check for stale data
+    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
+    if (checkStale(last, now)) {
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
     }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  }
+  // parse command based on how many arguments it has
+  if (argc == 1) { // default command: temps
+    if (whichff == 0) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF temperatures\r\n");
+    }
+    for (; whichff < NFIREFLIES; ++whichff) {
+      if (isEnabledFF(whichff) && strstr(ff_moni2c_addrs[whichff].instance,"FFDAQ") != NULL){
+        int index = whichff * (ffldaq_args.n_commands * ffldaq_args.n_pages) + i1;
+        uint8_t val = ffldaq_args.sm_values[index];
+        //int tens, frac;
+        //float_to_ints(val, &tens, &frac);
+        //copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d.%02d", ffldaq_args.devices[whichff].name, tens, frac);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ffldaq_args.devices[whichff].name, val);
+      }
+      else if (isEnabledFF(whichff) && strstr(ff_moni2c_addrs[whichff].instance,"FFIT") != NULL) {
+        int index = whichff * (fflit_args.n_commands * fflit_args.n_pages) + i1;
+        uint8_t val = fflit_args.sm_values[index];
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", fflit_args.devices[whichff].name, val);
+      }
+      else // dummy value
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ffldaq_args.devices[whichff].name, "--");
+      bool isTx = (strstr(ffldaq_args.devices[whichff].name, "Tx") != NULL);
+
+      if (isTx)
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+      else
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+
+      if ((SCRATCH_SIZE - copied) < 20) {
+        ++whichff;
+        return pdTRUE;
+      }
+    }
+    if (whichff % 2 == 1) {
+      m[copied++] = '\r';
+      m[copied++] = '\n';
+      m[copied] = '\0';
+    }
+    whichff = 0;
   }
 
   return pdFALSE;
 
 }
 
+extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 extern struct MonitorI2CTaskArgs_t ffldaq_args;
-extern struct dev_moni2c_addr_t ff_i2c_addrs[NFIREFLIES];
+extern struct MonitorI2CTaskArgs_t fflit_args;
 
 BaseType_t fpga_ctl(int argc, char **argv, char *m)
 {

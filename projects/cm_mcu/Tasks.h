@@ -89,6 +89,10 @@ void MonitorI2CTask(void *parameters);
 
 // Firefly task
 // --- Firefly monitoring
+// the following are true for both Rev1 and Rev2
+#define FF_I2CMUX_1_ADDR 0x70
+#define FF_I2CMUX_2_ADDR 0x71
+
 // REV1
 #ifndef REV2
 #define NFIREFLIES_F1 11
@@ -167,6 +171,15 @@ int disable_xcvr_cdr(const char *name);
 #define FF_MESSAGE_CODE_TEST_REG_MASK  ((1 << FF_MESSAGE_CODE_TEST_REG_SZ) - 1)
 #define FF_MESSAGE_CODE_TEST_SIZE_MASK ((1 << FF_MESSAGE_CODE_TEST_SIZE_SZ) - 1)
 #define FF_MESSAGE_CODE_TEST_FF_MASK   ((1 << FF_MESSAGE_CODE_TEST_FF_SZ) - 1)
+
+struct dev_moni2c_addr_t {
+  char *name;
+  uint8_t mux_addr; // I2C address of the Mux
+  uint8_t mux_bit;  // port of the mux; write value 0x1U<<mux_bit to the mux register
+  uint8_t dev_addr; // I2C address of device.
+  char *instance; // MONI2C instance
+};
+
 
 // ---- version info
 const char *buildTime();
@@ -285,6 +298,7 @@ void initFPGAMon();
 void WatchdogTask(void *parameters);
 enum WatchdogTaskLabel {
   kWatchdogTaskID_FireFly,
+  kWatchdogTaskID_MonitorI2CTask,
   kWatchdogTaskID_XiMon,
   kWatchdogTaskID_PSMon,
 };

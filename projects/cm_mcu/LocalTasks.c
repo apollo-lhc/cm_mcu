@@ -31,15 +31,39 @@
 #include "common/log.h"
 #include "common/printf.h"
 
+
 // FFLDAQ arguments for monitoring i2c task of 4-channel TX/RX firefly ports with 25 Gbps
 #ifdef REV2
-struct sm_command_t sm_command_ffldaq[] = {
-    { 1, 0x02, 1,  -98.0f, "FF_STATUS_REG", "", SM_STATUS },
-    { 1, 0x16, 1,  -98.0f, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x7f, 1,  -98.0f, "FF_PAGE_REG", "", SM_STATUS },
+struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = { { "F1_1  12 Tx",
+    FF_I2CMUX_1_ADDR, 0, 0x50, "FFIT"}, //
+    { "F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFIT"}, //
+    { "F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFIT"}, //
+    { "F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFIT"}, //
+    { "F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFIT"}, //
+    { "F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFIT"}, //
+    { "F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFDAQ"}, //
+    { "F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFDAQ"}, //
+    { "F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFDAQ"}, // FF 8
+    { "F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFDAQ"}, //
+    { "F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50, "FFITV"}, //
+    { "F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFITV"}, //
+    { "F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFITV"}, //
+    { "F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFITV"}, //
+    { "F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFITV"}, //
+    { "F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFITV"}, //
+    { "F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFDAQV"}, //
+    { "F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFDAQV"}, //
+    { "F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFDAQV"}, //
+    { "F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFDAQV"}, //
 
 };
-float ffldaq_values[NSUPPLIES_FFLDAQ * NCOMMANDS_FFLDAQ];
+struct sm_command_t sm_command_ffldaq[] = {
+    { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
+    { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+
+};
+uint8_t ffldaq_values[NSUPPLIES_FFLDAQ * NCOMMANDS_FFLDAQ];
 
 struct MonitorI2CTaskArgs_t ffldaq_args = {
     .name = "FFDAQ",
@@ -49,12 +73,37 @@ struct MonitorI2CTaskArgs_t ffldaq_args = {
     .n_commands = NCOMMANDS_FFLDAQ,
     .n_values = NSUPPLIES_FFLDAQ * NPAGES_FFLDAQ * NCOMMANDS_FFLDAQ,
     .n_pages = NPAGES_FFLDAQ,
-    .smbus = &g_sMaster3, .smbus_status = &eStatus3,
+    .sm_values = ffldaq_values,
+    .smbus = &g_sMaster4,
+    .smbus_status = &eStatus4,
     .xSem = NULL,
     .requirePower = false,
     .stack_size = 4096U, };
 // FFL12C14 arguments for monitoring i2c task of 12-channel firefly ports with 14 Gbps
 
+struct sm_command_t sm_command_fflit[] = {
+    { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
+    { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+
+};
+
+uint8_t fflit_values[NSUPPLIES_FFLIT * NCOMMANDS_FFLIT];
+
+struct MonitorI2CTaskArgs_t fflit_args = {
+    .name = "FFIT",
+    .devices = NULL,
+    .n_devices = NSUPPLIES_FFLIT,
+    .commands = sm_command_fflit,
+    .n_commands = NCOMMANDS_FFLIT,
+    .n_values = NSUPPLIES_FFLIT * NPAGES_FFLIT * NCOMMANDS_FFLIT,
+    .n_pages = NPAGES_FFLIT,
+    .sm_values = fflit_values,
+    .smbus = &g_sMaster4,
+    .smbus_status = &eStatus4,
+    .xSem = NULL,
+    .requirePower = false,
+    .stack_size = 4096U, };
 // FFL12C25 arguments for monitoring i2c task of 12-channel firefly ports with 25 Gbps
 #endif
 

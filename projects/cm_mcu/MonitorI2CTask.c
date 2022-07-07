@@ -48,9 +48,6 @@
 // local prototype
 void Print(const char *str);
 
-// the PAGE command is an SMBUS standard at register 0
-#define PAGE_COMMAND 0x1
-
 // break out of loop, releasing semaphore if we have it
 #define release_break()           \
 		{                               \
@@ -62,16 +59,6 @@ void Print(const char *str);
 
 // this needs to be a macro so that the __LINE__ will resolve to the right 
 // line (in a function call it would just resolve to the function call....)
-#define CHECKSTUCK_COUNT 30
-#define CHECKSTUCK()                                                                               \
-  {                                                                                                \
-    ++tries;                                                                                       \
-    if (tries > CHECKSTUCK_COUNT) {                                                                \
-      log_warn(LOG_MONI2C, "stuck (%u, %u)\r\n", (unsigned)ff_updateTick, (unsigned)ff_updateTick);            \
-      tries = 0;                                                                                   \
-      release_break();                                                                                   \
-    }                                                                                              \
-  }
 
 // the following are true for both Rev1 and Rev2
 #define FF_I2CMUX_1_ADDR 0x70
@@ -121,29 +108,6 @@ struct dev_i2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 // REV 2
 //
 // -------------------------------------------------
-struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = { { "F1_1  12 Tx",
-    FF_I2CMUX_1_ADDR, 0, 0x50, "FFIT"}, //
-    { "F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFIT"}, //
-    { "F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFIT"}, //
-    { "F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFIT"}, //
-    { "F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFIT"}, //
-    { "F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFIT"}, //
-    { "F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFDAQ"}, //
-    { "F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFDAQ"}, //
-    { "F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFDAQ"}, //
-    { "F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFDAQ"}, //
-    //{ "F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50, "FFIT"}, //
-    //{ "F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54, "FFIT"}, //
-    //{ "F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50, "FFIT"}, //
-    //{ "F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54, "FFIT"}, //
-    //{ "F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50, "FFIT"}, //
-    //{ "F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54, "FFIT"}, //
-    //{ "F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50, "FFDAQ"}, //
-    //{ "F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50, "FFDAQ"}, //
-    //{ "F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50, "FFDAQ"}, //
-    //{ "F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50, "FFDAQ"}, //
-
-};
 
 // information for registers
 // Temperature
@@ -210,15 +174,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = { { "F1_1  12 Tx",
 
 extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
-
-static TickType_t ff_updateTick;
-
-struct firefly_status_t {
-  uint8_t status;
-  int8_t temp;
-  uint8_t los_alarm[2];
-  uint8_t cdr_lol_alarm[2];
-};
+//static TickType_t ff_updateTick;
 
 // read-only accessor functions for Firefly names and values.
 
@@ -250,7 +206,7 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
     uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
     res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
     if (res != 0) {
-      log_warn(LOG_FFLY, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+      log_warn(LOG_MONI2C, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
                SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
 
@@ -263,7 +219,7 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
         value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
       }
       if (res != 0) {
-        log_warn(LOG_FFLY, "%s: FF Regread error %d (%s) (ff=%s) ...\r\n", __func__, res,
+        log_warn(LOG_MONI2C, "%s: FF Regread error %d (%s) (ff=%s) ...\r\n", __func__, res,
                  SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
       }
     }
@@ -300,7 +256,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
     res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
     if (res != 0) {
-      log_warn(LOG_FFLY, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+      log_warn(LOG_MONI2C, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
                SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
 
@@ -309,7 +265,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     if (!res) {
       res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
       if (res != 0) {
-        log_warn(LOG_FFLY, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+        log_warn(LOG_MONI2C, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
                  SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
       }
     }
@@ -370,7 +326,7 @@ static int disable_receivers(bool disable, int num_ff)
 // FireFly temperatures, voltages, currents, via I2C
 void MonitorI2CTask(void *parameters) {
   // initialize to the current tick time
-  ff_updateTick = xTaskGetTickCount();
+  TickType_t ff_updateTick = xTaskGetTickCount();
   uint8_t data[2];
 
   struct MonitorI2CTaskArgs_t *args = parameters;
@@ -387,9 +343,7 @@ void MonitorI2CTask(void *parameters) {
   vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(500));
 
   // watchdog info
-  task_watchdog_register_task(kWatchdogTaskID_FireFly);
-
-
+  //task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
 
   if (getPowerControlState() == POWER_ON) {
     // Disable all Firefly devices
@@ -417,21 +371,22 @@ void MonitorI2CTask(void *parameters) {
     // -------------------------------
     for (uint8_t ff = 0; ff < NFIREFLIES; ++ff) {
       if (strstr(ff_moni2c_addrs[ff].instance, args->name) != NULL){
+        //log_info(LOG_MONI2C, "%s.\r\n",args->devices->name);
         if (!isEnabledFF(ff)) // skip the FF if it's not enabled via the FF config
           continue;
         if (getPowerControlState() != POWER_ON) {
           if (good) {
             log_warn(LOG_MONI2C, "No power, skip I2C monitor.\r\n");
             good = false;
-            task_watchdog_unregister_task(kWatchdogTaskID_FireFly);
+            //task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
           }
           vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(500));
           continue;
         }
         else { // power is on, and ...
           if (!good) { // ... was not good, but is now good
-            task_watchdog_register_task(kWatchdogTaskID_FireFly);
-            log_warn(LOG_FFLY, "Power on, resume I2C monitor.\r\n");
+            //task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
+            log_warn(LOG_MONI2C, "Power on, resume I2C monitor.\r\n");
             good = true;
           }
         }
@@ -457,15 +412,17 @@ void MonitorI2CTask(void *parameters) {
         // save the value of the PAGE register; to be restored at the bottom of the loop
         uint8_t page_reg_value;
         read_ff_register(ff_moni2c_addrs[ff].name,
-                         (uint16_t) args->commands[args->n_commands].command, &page_reg_value,
+                         (uint16_t)args->commands[args->n_commands - 1].command, &page_reg_value,
                          1);
         // set the page register to 0, if needed
         if (page_reg_value != 0)
           write_ff_register(ff_moni2c_addrs[ff].name,
-              (uint16_t) args->commands[args->n_commands].command, 0, 1);
-
+              (uint16_t)args->commands[args->n_commands - 1].command, 0, 1);
         // Read I2C registers/commands
         for (int c = 0; c < args->n_commands - 1; ++c) { // exclude page reg
+          int index = ff * (args->n_commands * args->n_pages) + c;
+          uint16_t buf = 0x0U;
+          args->sm_values[index] = __builtin_bswap16(buf);
           uint32_t output_raw;
           res = apollo_i2c_ctl_reg_r(i2c_device, ff_moni2c_addrs[ff].dev_addr,
               args->commands[c].reg_size, (uint16_t) args->commands[c].command,
@@ -473,7 +430,7 @@ void MonitorI2CTask(void *parameters) {
           if (res != 0) {
             log_warn(LOG_MONI2C, "%s read Error %d, break (ff=%d)\r\n",
                 args->commands[c].name, res, ff);
-            args->commands[c].sm_value = -54;
+            //args->commands[c].sm_value = -54;
             release_break();
           }
           uint8_t data[args->commands[c].size];
@@ -498,7 +455,7 @@ void MonitorI2CTask(void *parameters) {
           else {
             val = -98.0f; // should never get here
           }
-          args->commands[c].sm_value = val;
+          args->sm_values[index] = val;
 
         } // loop over commands
 
@@ -515,7 +472,7 @@ void MonitorI2CTask(void *parameters) {
         // restore the page register to its value at the top of the loop, if it's non-zero
         if (page_reg_value != 0) {
           res = write_ff_register(ff_moni2c_addrs[ff].name,
-              (uint16_t) args->commands[args->n_commands].command, page_reg_value,
+              (uint16_t)args->commands[args->n_commands - 1].command, page_reg_value,
               1);
           if (res != 0) {
             log_error(LOG_MONI2C, "page reg write error %d (ff=%d)\r\n", res, ff);
@@ -532,13 +489,15 @@ void MonitorI2CTask(void *parameters) {
         }
 
       }
-      continue;
+      else{
+        continue;
+      }
     } // loop over firefly modules
 
     if (args->xSem != NULL) // if we have a semaphore, give it
       xSemaphoreGive(args->xSem);
 
-    task_watchdog_feed_task(kWatchdogTaskID_FireFly);
+    //task_watchdog_feed_task(kWatchdogTaskID_MonitorI2CTask);
     vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(250));
   } // infinite loop for task
 }
