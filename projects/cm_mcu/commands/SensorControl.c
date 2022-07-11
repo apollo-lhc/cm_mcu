@@ -659,22 +659,34 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF temperatures\r\n");
     }
     for (; whichff < NFIREFLIES; ++whichff) {
-      if (isEnabledFF(whichff) && strstr(ff_moni2c_addrs[whichff].instance,"FFDAQ") != NULL){
-        int index = whichff * (ffldaq_args.n_commands * ffldaq_args.n_pages) + i1;
-        uint8_t val = ffldaq_args.sm_values[index];
-        //int tens, frac;
-        //float_to_ints(val, &tens, &frac);
-        //copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d.%02d", ffldaq_args.devices[whichff].name, tens, frac);
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ffldaq_args.devices[whichff].name, val);
-      }
-      else if (isEnabledFF(whichff) && strstr(ff_moni2c_addrs[whichff].instance,"FFIT") != NULL) {
-        int index = whichff * (fflit_args.n_commands * fflit_args.n_pages) + i1;
-        uint8_t val = fflit_args.sm_values[index];
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", fflit_args.devices[whichff].name, val);
+      if (isEnabledFF(whichff)){
+        if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
+          int index = whichff * (fflit_f1_args.n_commands * fflit_f1_args.n_pages) + i1;
+          uint8_t val = fflit_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+
+        else if (NFIREFLIES_IT_F1 <= whichff && whichff < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1 ) {
+          int index = (whichff-NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
+          uint8_t val = ffldaq_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+        /*
+        else if (NFIREFLIES_F1 <= whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+          //int index = whichff * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+          uint8_t val = 0; //fflit_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_i2c_addrs[whichff].name, val);
+        }
+        else {
+          //int index = whichff * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+          uint8_t val = 0; //ffldaq_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_i2c_addrs[whichff].name, val);
+        }
+        */
       }
       else // dummy value
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ffldaq_args.devices[whichff].name, "--");
-      bool isTx = (strstr(ffldaq_args.devices[whichff].name, "Tx") != NULL);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
+      bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
 
       if (isTx)
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
@@ -699,8 +711,8 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
 }
 
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
-extern struct MonitorI2CTaskArgs_t ffldaq_args;
-extern struct MonitorI2CTaskArgs_t fflit_args;
+extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
+extern struct MonitorI2CTaskArgs_t fflit_f1_args;
 
 BaseType_t fpga_ctl(int argc, char **argv, char *m)
 {

@@ -12,16 +12,6 @@
 #include "semphr.h"
 #include "Tasks.h"
 
-// REV1
-#ifndef REV2
-#define NFIREFLIES_F1 11
-#define NFIREFLIES_F2 14
-#else // REV2
-// REV 2
-#define NFIREFLIES_F1 10
-#define NFIREFLIES_F2 10
-#endif // REV 2
-#define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 extern float sm_values[];
 
@@ -48,6 +38,7 @@ struct sm_command_t {
 struct MonitorI2CTaskArgs_t {
   const char *name;                    // name to be assigned to the task
   struct dev_moni2c_addr_t *devices;      // list of devices to query
+  int i2c_dev;                         // i2c controller #
   int n_devices;                       // number of devices
   struct sm_command_t *commands;       // list of commands
   const uint8_t n_commands;                // number of commands
@@ -62,17 +53,18 @@ struct MonitorI2CTaskArgs_t {
   UBaseType_t stack_size;              // stack size of task
 };
 
-#define NSUPPLIES_FFLDAQ (20)
-#define NCOMMANDS_FFLDAQ 3  // number of entries in ffldaq_ array
-#define NPAGES_FFLDAQ    1   // number of pages on the 4-channel firefly ports with 25 Gbps
+#define NSUPPLIES_FFLDAQ_F1 (4)
+#define NCOMMANDS_FFLDAQ_F1 3  // number of entries in ffldaq_ array
+#define NPAGES_FFLDAQ_F1    1   // number of pages on the 4-channel firefly ports with 25 Gbps
 
-#define NSUPPLIES_FFLIT (20)
-#define NCOMMANDS_FFLIT 3  // number of entries in fflit_ array
-#define NPAGES_FFLIT    1   // number of pages on the 12-channel firefly ports with 14 Gbps
+#define NSUPPLIES_FFLIT_F1 (6)
+#define NCOMMANDS_FFLIT_F1 3  // number of entries in fflit_ array
+#define NPAGES_FFLIT_F1    1   // number of pages on the 12-channel firefly ports with 14 Gbps
 
-extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
-extern struct MonitorI2CTaskArgs_t fflit_args;
+extern struct dev_moni2c_addr_t fflit_f1_moni2c_addrs[NFIREFLIES_IT_F1];
+extern struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1];
+extern struct MonitorI2CTaskArgs_t fflit_f1_args;
 //extern struct MonitorI2CTaskArgs_t fflot_args;
-extern struct MonitorI2CTaskArgs_t ffldaq_args;
+extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
 
 #endif /* PROJECTS_CM_MCU_MONITORI2CTASK_H_ */

@@ -89,6 +89,16 @@ void MonitorI2CTask(void *parameters);
 
 // Firefly task
 // --- Firefly monitoring
+// I2C information -- which device on the MCU is for the FF for each FPGA
+// this is what corresponds to I2C_BASE variables in the MCU
+#ifdef REV1
+#define I2C_DEVICE_F1 4
+#define I2C_DEVICE_F2 3
+#elif defined(REV2)
+#define I2C_DEVICE_F1 4
+#define I2C_DEVICE_F2 3
+#endif
+
 // the following are true for both Rev1 and Rev2
 #define FF_I2CMUX_1_ADDR 0x70
 #define FF_I2CMUX_2_ADDR 0x71
@@ -101,6 +111,10 @@ void MonitorI2CTask(void *parameters);
 // REV 2
 #define NFIREFLIES_F1 10
 #define NFIREFLIES_F2 10
+#define NFIREFLIES_IT_F1 6
+#define NFIREFLIES_DAQ_F1 4
+#define NFIREFLIES_IT_F2 6
+#define NFIREFLIES_DAQ_F2 4
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
@@ -177,9 +191,9 @@ struct dev_moni2c_addr_t {
   uint8_t mux_addr; // I2C address of the Mux
   uint8_t mux_bit;  // port of the mux; write value 0x1U<<mux_bit to the mux register
   uint8_t dev_addr; // I2C address of device.
-  char *instance; // MONI2C instance
 };
 
+extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
 // ---- version info
 const char *buildTime();

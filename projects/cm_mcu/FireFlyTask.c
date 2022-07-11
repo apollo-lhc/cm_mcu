@@ -31,6 +31,7 @@
 #define NPAGES_FF    1
 #define NCOMMANDS_FF 2
 
+/*
 // I2C information -- which device on the MCU is for the FF for each FPGA
 // this is what corresponds to I2C_BASE variables in the MCU
 #ifdef REV1
@@ -40,6 +41,7 @@
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
 #endif
+*/
 
 // local prototype
 void Print(const char *str);
