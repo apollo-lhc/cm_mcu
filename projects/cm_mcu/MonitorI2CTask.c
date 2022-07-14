@@ -35,6 +35,8 @@
 #define NPAGES_FF    1
 #define NCOMMANDS_FF 2
 
+#define DPRINT(x)
+
 
 // local prototype
 void Print(const char *str);
@@ -254,56 +256,11 @@ static int write_ff_register(void *parameters, const char *name, uint8_t reg, ui
 
   return res;
 }
-static int disable_transmit(void *parameters, bool disable, int num_ff)
-{
-  struct MonitorI2CTaskArgs_t *args = parameters;
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
-  if (disable == false)
-    value = 0x0;
-  if (num_ff == args->n_devices) { //loop over ALL transmitters.
-    i = 0;
-    imax = args->n_devices;
-  }
-  for (; i < imax; ++i) {
-    int isFFIT = strcmp(args->name, "FFIT");
-    if (!isEnabledFF(i + (isFFIT*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
-      continue;
-    if (strstr(args->devices[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(args, args->devices[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1);
-    }
-    else if (strstr(args->devices[i].name, "Tx") != NULL) {
-      ret += write_ff_register(args, args->devices[i].name, ECU0_14G_TX_DISABLE_REG, value, 2);
-    }
-  }
-  return ret;
-}
 
-static int disable_receivers(void *parameters, bool disable, int num_ff)
-{
+int8_t* test_read_vendor(void *parameters, const uint8_t i) {
   struct MonitorI2CTaskArgs_t *args = parameters;
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
-  if (disable == false)
-    value = 0x0;
-  if (num_ff == args->n_devices) { //loop over ALL transmitters.
-    i = 0;
-    imax = args->n_devices;
-  }
-  for (; i < imax; ++i) {
-    int isFFIT = strcmp(args->name, "FFIT");
-    if (!isEnabledFF(i + (isFFIT*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
-      continue;
-    if (strstr(args->devices[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(args, args->devices[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
-    }
-    else if (strstr(args->devices[i].name, "Rx") != NULL) {
-      ret += write_ff_register(args, args->devices[i].name, ECU0_14G_RX_DISABLE_REG, value, 2);
-    }
-  }
-  return ret;
+  configASSERT(i < NFIREFLIES);
+  return args->sm_vendor_part;
 }
 
 
@@ -329,17 +286,6 @@ void MonitorI2CTask(void *parameters) {
   // watchdog info
   //task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
 
-  if (getPowerControlState() == POWER_ON) {
-    // Disable all Firefly devices
-    disable_transmit(args, true, args->n_devices);
-    disable_receivers(args, true, args->n_devices);
-    init_registers_ff();
-    log_info(LOG_MONI2C, "initialization complete.\r\n");
-  }
-  else {
-    log_warn(LOG_MONI2C, "Initialization skipped -- no power\r\n");
-  }
-
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
   bool good = false;
@@ -359,6 +305,7 @@ void MonitorI2CTask(void *parameters) {
 
       if (!isEnabledFF(ff + (isFFIT*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
         continue;
+
       if (getPowerControlState() != POWER_ON) {
         if (good) {
           log_warn(LOG_MONI2C, "No power, skip I2C monitor.\r\n");
@@ -376,6 +323,7 @@ void MonitorI2CTask(void *parameters) {
         }
       }
       ff_updateTick = xTaskGetTickCount();
+
 
       // select the appropriate output for the mux
       data[0] = 0x1U << args->devices[ff].mux_bit;
@@ -396,6 +344,39 @@ void MonitorI2CTask(void *parameters) {
       if (page_reg_value != 0)
         write_ff_register(args, args->devices[ff].name,
             (uint16_t)args->commands[args->n_commands - 1].command, 0, 1);
+
+      // Write device vendor part
+      uint8_t vendor_data[2];
+      vendor_data[0] = 0x0U;
+      vendor_data[1] = 0x0U;
+      uint32_t vendor_char;
+      for (uint8_t i = 171; i < 187; i++) {
+
+        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
+        //log_info(LOG_MONI2C, "Debug: res = %d.\r\n", res);
+        if (res != 0){
+          //log_info(LOG_MONI2C, "Debug: Fail reading registers.\r\n");
+          char tmp[64];
+          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, res,
+                   ff, 1);
+          DPRINT(tmp);
+          args->sm_vendor_part[i - 171] = 0;
+          break;
+        }
+        for (int i = 0; i < 1; ++i) {
+          vendor_data[i] = (vendor_char>> (1 - 1 - i) * 8) & 0xFF;
+        }
+        typedef union {
+          uint8_t us;
+          int8_t s;
+        } convert_8_t;
+        convert_8_t tmp1;
+
+        tmp1.us = vendor_data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        args->sm_vendor_part[i - 171] = tmp1.s;
+        //log_info(LOG_MONI2C, "Debug: Each char is %s.\r\n", (char)tmp1.s);
+      }
+
       // Read I2C registers/commands
       for (int c = 0; c < args->n_commands - 1; ++c) { // exclude page reg
         int index = ff * (args->n_commands * args->n_pages) + c;
@@ -435,10 +416,6 @@ void MonitorI2CTask(void *parameters) {
             }
 
             args->sm_values[index] = val;
-            //log_info(LOG_MONI2C, "isFFIT %d.\r\n", isFFIT);
-            //log_info(LOG_MONI2C, "FF name %d.\r\n", args->devices[ff].name);
-            //log_info(LOG_MONI2C, "index %d.\r\n", index);
-            //log_info(LOG_MONI2C, "val %d.\r\n", val);
 
 
       } // loop over commands

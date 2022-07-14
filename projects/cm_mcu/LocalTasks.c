@@ -56,7 +56,9 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 
 };
 
-// FFLDAQ_F1 arguments for monitoring i2c task of 4-channel TX/RX firefly ports with 25 Gbps
+
+// FFDAQ arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA1
+
 #ifdef REV2
 struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     { "F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
@@ -71,6 +73,7 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
 
 };
 uint8_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
+int8_t ffldaq_f1_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .name = "FFDAQ",
@@ -86,8 +89,10 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .requirePower = false,
-    .stack_size = 4096U, };
-// FFL12C14 arguments for monitoring i2c task of 12-channel firefly ports with 14 Gbps
+    .stack_size = 4096U,
+    .sm_vendor_part = ffldaq_f1_vendor_part,};
+
+// FFIT arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA1
 
 struct sm_command_t sm_command_fflit_f1[] = {
     { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
@@ -106,6 +111,7 @@ struct dev_moni2c_addr_t fflit_f1_moni2c_addrs[NFIREFLIES_IT_F1] = { { "F1_1  12
 };
 
 uint8_t fflit_f1_values[NSUPPLIES_FFLIT_F1 * NCOMMANDS_FFLIT_F1];
+int8_t fflit_f1_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t fflit_f1_args = {
     .name = "FFIT",
@@ -121,8 +127,130 @@ struct MonitorI2CTaskArgs_t fflit_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .requirePower = false,
-    .stack_size = 4096U, };
-// FFL12C25 arguments for monitoring i2c task of 12-channel firefly ports with 25 Gbps
+    .stack_size = 4096U,
+    .sm_vendor_part = ffldaq_f1_vendor_part,};
+
+
+// FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
+
+struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
+    {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+};
+
+struct sm_command_t sm_command_ffldaq_f2[] = {
+    { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
+    { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+
+};
+uint8_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
+int8_t ffldaq_f2_vendor_part[164];
+
+struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
+    .name = "FFDAQV",
+    .devices = ffldaq_f2_moni2c_addrs,
+    .i2c_dev = I2C_DEVICE_F2,
+    .n_devices = NSUPPLIES_FFLDAQ_F2,
+    .commands = sm_command_ffldaq_f2,
+    .n_commands = NCOMMANDS_FFLDAQ_F2,
+    .n_values = NSUPPLIES_FFLDAQ_F2 * NPAGES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2,
+    .n_pages = NPAGES_FFLDAQ_F2,
+    .sm_values = ffldaq_f2_values,
+    .smbus = &g_sMaster3,
+    .smbus_status = &eStatus3,
+    .xSem = NULL,
+    .requirePower = false,
+    .stack_size = 4096U,
+    .sm_vendor_part = ffldaq_f2_vendor_part,};
+
+
+// FFITV arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
+
+struct sm_command_t sm_command_fflit_f2[] = {
+    { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
+    { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+
+};
+
+struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
+    {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+};
+
+uint8_t fflit_f2_values[NSUPPLIES_FFLIT_F2 * NCOMMANDS_FFLIT_F2];
+int8_t fflit_f2_vendor_part[164];
+
+struct MonitorI2CTaskArgs_t fflit_f2_args = {
+    .name = "FFITV",
+    .devices = fflit_f2_moni2c_addrs,
+    .i2c_dev = I2C_DEVICE_F2,
+    .n_devices = NSUPPLIES_FFLIT_F2,
+    .commands = sm_command_fflit_f2,
+    .n_commands = NCOMMANDS_FFLIT_F2,
+    .n_values = NSUPPLIES_FFLIT_F2 * NPAGES_FFLIT_F2 * NCOMMANDS_FFLIT_F2,
+    .n_pages = NPAGES_FFLIT_F2,
+    .sm_values = fflit_f2_values,
+    .smbus = &g_sMaster3,
+    .smbus_status = &eStatus3,
+    .xSem = NULL,
+    .requirePower = false,
+    .stack_size = 4096U,
+    .sm_vendor_part = fflit_f2_vendor_part,};
+
+
+// Clock arguments for monitoring task
+#define CLK_NDEVICES 2
+struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
+    //{"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD // **work in progress**
+    //{"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA **need .csv file from Charlie**
+    {"r1a", 0x70, 2, 0x6b}, // CLK R1A : Si5395-REVA
+    {"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
+    //{"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA **need .csv file from Charles**
+};
+
+
+struct sm_command_t sm_command_clk[] = {
+    {0x00,0x02, 1, "PN_BASE", "", SM_STATUS}, //page 0x00
+    {0x00,0x03, 1, "PN_BASE", "", SM_STATUS}, //page 0x00
+    {0x04,0x87, 1, "ZDM_EN", "", SM_STATUS}, //page 0x04
+    {0x04,0x87, 1, "ZDM_AUTOSW_EN", "", SM_STATUS}, //page 0x04
+    {0x05,0x05, 1, "DEVICE_REV", "", SM_STATUS}, //page 0x05
+    {0x05,0x36, 1, "CLK_SWITCH_MODE_&_HSW_EN", "", SM_STATUS}, //page 0x05
+    {0x05,0x38, 1, "IN0&1_PRIORITY", "", SM_STATUS}, //page 0x05
+    {0x05,0x39, 1, "IN2&3_PRIORITY", "", SM_STATUS}, //page 0x05
+    {0x05,0x37, 1, "IN_LOS&OOF_MSK", "", SM_STATUS}, //page 0x05
+
+};
+
+// only one of these might be valid
+uint8_t clk_values[CLK_MON_NVALUES] = {0U};
+int8_t clk_vendor_part[164];
+
+struct MonitorI2CTaskArgs_t clock_args = {
+    .name = "CLK",
+    .devices = clk_moni2c_addrs,
+    .i2c_dev = I2C_DEVICE_F2, //same i2c controller as FPGA#2
+    .n_devices = CLK_NDEVICES,
+    .commands = sm_command_clk,
+    .n_commands = NCOMMANDS_FFLIT_F2,
+    .n_values = NSUPPLIES_FFLIT_F2 * NPAGES_FFLIT_F2 * NCOMMANDS_FFLIT_F2,
+    .n_pages = NPAGES_FFLIT_F2,
+    .sm_values = fflit_f2_values,
+    .smbus = &g_sMaster3,
+    .smbus_status = &eStatus3,
+    .xSem = NULL,
+    .requirePower = false,
+    .stack_size = 4096U,
+    .sm_vendor_part = clk_vendor_part,};
+
 #endif
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2

@@ -193,6 +193,8 @@ struct dev_moni2c_addr_t {
   uint8_t dev_addr; // I2C address of device.
 };
 
+int8_t *test_read_vendor(void *parameters, const uint8_t i);
+
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
 // ---- version info

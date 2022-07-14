@@ -51,20 +51,37 @@ struct MonitorI2CTaskArgs_t {
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
   bool requirePower;                   // true if device requires power
   UBaseType_t stack_size;              // stack size of task
+  int8_t *sm_vendor_part;
 };
 
 #define NSUPPLIES_FFLDAQ_F1 (4)
-#define NCOMMANDS_FFLDAQ_F1 3  // number of entries in ffldaq_ array
-#define NPAGES_FFLDAQ_F1    1   // number of pages on the 4-channel firefly ports with 25 Gbps
+#define NCOMMANDS_FFLDAQ_F1 4  // number of commands
+#define NPAGES_FFLDAQ_F1    1   // number of pages on the 4-channel firefly ports
 
 #define NSUPPLIES_FFLIT_F1 (6)
-#define NCOMMANDS_FFLIT_F1 3  // number of entries in fflit_ array
-#define NPAGES_FFLIT_F1    1   // number of pages on the 12-channel firefly ports with 14 Gbps
+#define NCOMMANDS_FFLIT_F1 4  // number of commands
+#define NPAGES_FFLIT_F1    1   // number of pages on the 12-channel firefly ports
+
+#define NSUPPLIES_FFLDAQ_F2 (4)
+#define NCOMMANDS_FFLDAQ_F2 4  // number of commands
+#define NPAGES_FFLDAQ_F2    1   // number of pages on the 4-channel firefly ports
+
+#define NSUPPLIES_FFLIT_F2 (6)
+#define NCOMMANDS_FFLIT_F2 4  // number of commands
+#define NPAGES_FFLIT_F2    1   // number of pages on the 12-channel firefly ports
 
 extern struct dev_moni2c_addr_t fflit_f1_moni2c_addrs[NFIREFLIES_IT_F1];
 extern struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1];
+extern struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2];
+extern struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2];
 extern struct MonitorI2CTaskArgs_t fflit_f1_args;
-//extern struct MonitorI2CTaskArgs_t fflot_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
+extern struct MonitorI2CTaskArgs_t fflit_f2_args;
+extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
+
+#define CLK_MON_NDEVICES           2
+#define CLK_MON_NCOMMANDS          9
+#define CLK_MON_NVALUES_PER_DEVICE 9
+#define CLK_MON_NVALUES            (CLK_MON_NDEVICES * CLK_MON_NVALUES_PER_DEVICE)
 
 #endif /* PROJECTS_CM_MCU_MONITORI2CTASK_H_ */

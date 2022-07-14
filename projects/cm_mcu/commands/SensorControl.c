@@ -638,7 +638,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
 
 BaseType_t ff_temp(int argc, char **argv, char *m)
 {
-  int i1 = 1;
+  int i1 = 1; // 1 for FF temp
   // argument handling
   int copied = 0;
   static int whichff = 0;
@@ -656,7 +656,13 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
   // parse command based on how many arguments it has
   if (argc == 1) { // default command: temps
     if (whichff == 0) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF temperatures\r\n");
+      char *it_string = (char*)fflit_f1_args.sm_vendor_part;
+      char *daq_string = (char*)ffldaq_f1_args.sm_vendor_part;
+
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%16s\r\n",it_string);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%16s\r\n",daq_string);
+
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF Temperature\r\n");
     }
     for (; whichff < NFIREFLIES; ++whichff) {
       if (isEnabledFF(whichff)){
@@ -672,15 +678,15 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
         /*
-        else if (NFIREFLIES_F1 <= whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-          //int index = whichff * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
-          uint8_t val = 0; //fflit_f2_args.sm_values[index];
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_i2c_addrs[whichff].name, val);
+        else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+          int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+          uint8_t val = fflit_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
         else {
-          //int index = whichff * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-          uint8_t val = 0; //ffldaq_f2_args.sm_values[index];
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_i2c_addrs[whichff].name, val);
+          int index = (whichff-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+          uint8_t val = ffldaq_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
         */
       }
