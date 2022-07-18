@@ -171,6 +171,26 @@ extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
 // read-only accessor functions for Firefly names and values.
 
+bool getFFch_low(uint8_t val, int channel)
+{
+  configASSERT(channel < 8);
+  if (!((1 << channel) & val)) {
+    return false;
+  }
+  return true;
+
+}
+
+bool getFFch_high(uint8_t val, int channel)
+{
+  configASSERT(channel >= 8);
+  if (!((1 << (channel - 8)) & val)) {
+    return false;
+  }
+  return true;
+
+}
+
 static int read_ff_register(void *parameters, const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size)
 {
   struct MonitorI2CTaskArgs_t *args = parameters;
@@ -300,8 +320,18 @@ void MonitorI2CTask(void *parameters) {
     // -------------------------------
     for (uint8_t ff = 0; ff < args->n_devices; ++ff) {
 
+      uint8_t ven_addr_start;
+      uint8_t ven_addr_stop;
 
       int isFFIT = 1 - (strcmp(args->name, "FFIT") == 0);
+      if (1 - isFFIT) {
+        ven_addr_start = 171;
+        ven_addr_stop = 187;
+      }
+      else{
+        ven_addr_start = 168;
+        ven_addr_stop = 184;
+      }
 
       if (!isEnabledFF(ff + (isFFIT*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
         continue;
@@ -346,11 +376,10 @@ void MonitorI2CTask(void *parameters) {
             (uint16_t)args->commands[args->n_commands - 1].command, 0, 1);
 
       // Write device vendor part
-      uint8_t vendor_data[2];
-      vendor_data[0] = 0x0U;
-      vendor_data[1] = 0x0U;
+      uint8_t vendor_data[4];
+
       uint32_t vendor_char;
-      for (uint8_t i = 171; i < 187; i++) {
+      for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) { //171,187
 
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
         //log_info(LOG_MONI2C, "Debug: res = %d.\r\n", res);
@@ -360,11 +389,11 @@ void MonitorI2CTask(void *parameters) {
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, res,
                    ff, 1);
           DPRINT(tmp);
-          args->sm_vendor_part[i - 171] = 0;
-          break;
+          args->sm_vendor_part[i - ven_addr_start] = 0;
+          release_break();
         }
-        for (int i = 0; i < 1; ++i) {
-          vendor_data[i] = (vendor_char>> (1 - 1 - i) * 8) & 0xFF;
+        for (int i = 0; i < 4; ++i) {
+          vendor_data[i] = (vendor_char>> (3-i) * 8) & 0xFF;
         }
         typedef union {
           uint8_t us;
@@ -372,50 +401,39 @@ void MonitorI2CTask(void *parameters) {
         } convert_8_t;
         convert_8_t tmp1;
 
-        tmp1.us = vendor_data[0]; // change from uint_8 to int8_t, preserving bit pattern
-        args->sm_vendor_part[i - 171] = tmp1.s;
-        //log_info(LOG_MONI2C, "Debug: Each char is %s.\r\n", (char)tmp1.s);
+        tmp1.us = vendor_data[3]; //vendor_data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        args->sm_vendor_part[i - ven_addr_start] = tmp1.s;
       }
 
+
       // Read I2C registers/commands
+      //log_info(LOG_MONI2C, "Debug: n_command is %d.\r\n", args->n_commands);
       for (int c = 0; c < args->n_commands - 1; ++c) { // exclude page reg
         int index = ff * (args->n_commands * args->n_pages) + c;
         //uint16_t buf = 0x0U;
         //args->sm_values[index] = __builtin_bswap16(buf);
+
         uint32_t output_raw;
+
         res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr,
             args->commands[c].reg_size, (uint16_t) args->commands[c].command,
             args->commands[c].size, &output_raw);
-            if (res != 0) {
-              log_warn(LOG_MONI2C, "%s read Error %d, break (ff=%d)\r\n",
-                  args->commands[c].name, res, ff);
-              //args->commands[c].sm_value = -54;
-              release_break();
-            }
-            uint8_t data[args->commands[c].size];
-            for (int i = 0; i < args->commands[c].size; ++i) {
-              data[i] = (output_raw >> (args->commands[c].size - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
-            }
 
-            float val;
-            if (args->commands[c].type == SM_LINEAR11) {
-              linear11_val_t ii;
-              ii.raw = (data[1] << 8) | data[0];
-              val = linear11_to_float(ii);
-            }
-            else if (args->commands[c].type == SM_LINEAR16U) {
-              uint16_t ii = (data[1] << 8) | data[0];
-              val = linear16u_to_float(ii);
-            }
-            else if (args->commands[c].type == SM_STATUS) {
-              // Note: this assumes 2 byte xfer and endianness and converts and int to a float
-              val = (float) ((data[1] << 8) | data[0]); // ugly is my middle name
-            }
-            else {
-              val = -98.0f; // should never get here
-            }
 
-            args->sm_values[index] = val;
+        uint8_t data[4];
+        for (int i = 0; i < 4; ++i) {
+          data[i] = (output_raw >> (3-i) * 8) & 0xFF;
+        }
+
+        if (res != 0) {
+          log_warn(LOG_MONI2C, "%s read Error %d, break (ff=%d)\r\n",
+              args->commands[c].name, res, ff);
+          args->sm_values[index] = 0xff;
+          release_break();
+        }
+        else if (res==0){
+          args->sm_values[index] = data[3];
+        }
 
 
       } // loop over commands

@@ -69,6 +69,10 @@ struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
 struct sm_command_t sm_command_ffldaq_f1[] = {
     { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},
+    { 1, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},
+    { 1, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS},
+    { 1, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS},
     { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
 
 };
@@ -97,6 +101,10 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 struct sm_command_t sm_command_fflit_f1[] = {
     { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x08, 1, "FF_LOS_ALARM_0)", "", SM_STATUS}, // 7 reg address
+    { 1, 0x07, 1, "FF_LOS_ALARM_1", "", SM_STATUS}, // 8 reg address
+    { 1, 0x15, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address
+    { 1, 0x14, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 15 reg address
     { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
 
 };
@@ -128,7 +136,7 @@ struct MonitorI2CTaskArgs_t fflit_f1_args = {
     .xSem = NULL,
     .requirePower = false,
     .stack_size = 4096U,
-    .sm_vendor_part = ffldaq_f1_vendor_part,};
+    .sm_vendor_part = fflit_f1_vendor_part,};
 
 
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
@@ -143,11 +151,15 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 struct sm_command_t sm_command_ffldaq_f2[] = {
     { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},
+    { 1, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},
+    { 1, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS},
+    { 1, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS},
     { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
 
 };
 uint8_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
-int8_t ffldaq_f2_vendor_part[164];
+int8_t ffldaq_f2_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .name = "FFDAQV",
@@ -172,8 +184,11 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 struct sm_command_t sm_command_fflit_f2[] = {
     { 1, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
+    { 1, 0x08, 1, "FF_LOS_ALARM_0)", "", SM_STATUS}, // 7 reg address
+    { 1, 0x07, 1, "FF_LOS_ALARM_1", "", SM_STATUS}, // 8 reg address
+    { 1, 0x15, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address
+    { 1, 0x14, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 15 reg address
     { 1, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
-
 };
 
 struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
@@ -186,7 +201,7 @@ struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 };
 
 uint8_t fflit_f2_values[NSUPPLIES_FFLIT_F2 * NCOMMANDS_FFLIT_F2];
-int8_t fflit_f2_vendor_part[164];
+int8_t fflit_f2_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t fflit_f2_args = {
     .name = "FFITV",
@@ -232,7 +247,7 @@ struct sm_command_t sm_command_clk[] = {
 
 // only one of these might be valid
 uint8_t clk_values[CLK_MON_NVALUES] = {0U};
-int8_t clk_vendor_part[164];
+int8_t clk_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t clock_args = {
     .name = "CLK",
@@ -243,7 +258,7 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .n_commands = NCOMMANDS_FFLIT_F2,
     .n_values = NSUPPLIES_FFLIT_F2 * NPAGES_FFLIT_F2 * NCOMMANDS_FFLIT_F2,
     .n_pages = NPAGES_FFLIT_F2,
-    .sm_values = fflit_f2_values,
+    .sm_values = clk_values,
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,

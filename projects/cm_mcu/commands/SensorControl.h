@@ -31,8 +31,11 @@ BaseType_t adc_ctl(int argc, char **argv, char* m);
 // Fireflies
 BaseType_t ff_ctl(int argc, char **argv, char* m);
 BaseType_t ff_status(int argc, char **argv, char* m);
+BaseType_t ff_status_new(int argc, char **argv, char* m);
 BaseType_t ff_los_alarm(int argc, char **argv, char* m);
+BaseType_t ff_los_alarm_new(int argc, char **argv, char* m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char* m);
+BaseType_t ff_cdr_lol_alarm_new(int argc, char **argv, char* m);
 
 // Fireflies in MonI2C
 BaseType_t ff_temp(int argc, char **argv, char* m);

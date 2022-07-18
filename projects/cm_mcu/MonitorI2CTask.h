@@ -55,19 +55,19 @@ struct MonitorI2CTaskArgs_t {
 };
 
 #define NSUPPLIES_FFLDAQ_F1 (4)
-#define NCOMMANDS_FFLDAQ_F1 4  // number of commands
+#define NCOMMANDS_FFLDAQ_F1 7  // number of commands
 #define NPAGES_FFLDAQ_F1    1   // number of pages on the 4-channel firefly ports
 
 #define NSUPPLIES_FFLIT_F1 (6)
-#define NCOMMANDS_FFLIT_F1 4  // number of commands
+#define NCOMMANDS_FFLIT_F1 7  // number of commands
 #define NPAGES_FFLIT_F1    1   // number of pages on the 12-channel firefly ports
 
 #define NSUPPLIES_FFLDAQ_F2 (4)
-#define NCOMMANDS_FFLDAQ_F2 4  // number of commands
+#define NCOMMANDS_FFLDAQ_F2 7  // number of commands
 #define NPAGES_FFLDAQ_F2    1   // number of pages on the 4-channel firefly ports
 
 #define NSUPPLIES_FFLIT_F2 (6)
-#define NCOMMANDS_FFLIT_F2 4  // number of commands
+#define NCOMMANDS_FFLIT_F2 7  // number of commands
 #define NPAGES_FFLIT_F2    1   // number of pages on the 12-channel firefly ports
 
 extern struct dev_moni2c_addr_t fflit_f1_moni2c_addrs[NFIREFLIES_IT_F1];

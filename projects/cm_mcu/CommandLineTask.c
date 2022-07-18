@@ -617,14 +617,32 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_status2",
+        ff_status_new,
+        "Displays a table showing the status of the fireflies.\r\n",
+        0,
+    },
+    {
         "ff_los",
         ff_los_alarm,
         "Displays a table showing the loss of signal alarms of the fireflies.\r\n",
         0,
     },
     {
+        "ff_los2",
+        ff_los_alarm_new,
+        "Displays a table showing the loss of signal alarms of the fireflies.\r\n",
+        0,
+    },
+    {
         "ff_cdr_lol",
         ff_cdr_lol_alarm,
+        "Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
+        0,
+    },
+    {
+        "ff_cdr_lol2",
+        ff_cdr_lol_alarm_new,
         "Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
         0,
     },
