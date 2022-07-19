@@ -40,6 +40,9 @@ BaseType_t ff_cdr_lol_alarm_new(int argc, char **argv, char* m);
 // Fireflies in MonI2C
 BaseType_t ff_temp(int argc, char **argv, char* m);
 
+// Clocks
+BaseType_t clkmon_ctl(int argc, char **argv, char* m);
+
 // FPGA
 BaseType_t fpga_ctl(int argc, char **argv, char* m);
 BaseType_t fpga_reset(int argc, char **argv, char* m);

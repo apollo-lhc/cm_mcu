@@ -115,6 +115,7 @@ void MonitorI2CTask(void *parameters);
 #define NFIREFLIES_DAQ_F1 4
 #define NFIREFLIES_IT_F2 6
 #define NFIREFLIES_DAQ_F2 4
+#define CLK_PAGE_COMMAND 1
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 

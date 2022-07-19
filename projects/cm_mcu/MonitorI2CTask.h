@@ -26,6 +26,7 @@ enum sm_type { SM_STATUS,
 
 struct sm_command_t {
   int reg_size;              // number of bytes of register/command
+  unsigned char page;  // I2C page address
   unsigned char command; // I2c register address
   int size;              // number of bytes to read
   char *name;            // text describing command
@@ -79,9 +80,11 @@ extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
 extern struct MonitorI2CTaskArgs_t fflit_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
-#define CLK_MON_NDEVICES           2
-#define CLK_MON_NCOMMANDS          9
-#define CLK_MON_NVALUES_PER_DEVICE 9
-#define CLK_MON_NVALUES            (CLK_MON_NDEVICES * CLK_MON_NVALUES_PER_DEVICE)
+
+#define NSUPPLIES_CLK (2)
+#define NCOMMANDS_CLK 9  // number of commands
+#define NPAGES_CLK    1   //
+
+extern struct MonitorI2CTaskArgs_t clock_args;
 
 #endif /* PROJECTS_CM_MCU_MONITORI2CTASK_H_ */

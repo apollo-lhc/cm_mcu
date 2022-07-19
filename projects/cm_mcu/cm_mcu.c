@@ -298,10 +298,10 @@ int main(void)
   xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorI2CTask, "FFIT", 2*configMINIMAL_STACK_SIZE, &fflit_f1_args, tskIDLE_PRIORITY + 4,
-                 NULL);
+                NULL);
   xTaskCreate(MonitorI2CTask, "FFDAQ", 2*configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
-                  NULL);
-  xTaskCreate(MonitorI2CTask, "CLK", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+                 NULL);
+  xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
                     NULL);
   xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
