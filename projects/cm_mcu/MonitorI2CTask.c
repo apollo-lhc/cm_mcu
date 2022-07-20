@@ -175,6 +175,7 @@ extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 bool getFFch_low(uint8_t val, int channel)
 {
   configASSERT(channel < 8);
+  log_info(LOG_MONI2C, "low val is %x \r\n", val);
   if (!((1 << channel) & val)) {
     return false;
   }
@@ -185,6 +186,7 @@ bool getFFch_low(uint8_t val, int channel)
 bool getFFch_high(uint8_t val, int channel)
 {
   configASSERT(channel >= 8);
+  log_info(LOG_MONI2C, "high val is %x \r\n", val);
   if (!((1 << (channel - 8)) & val)) {
     return false;
   }
@@ -340,9 +342,9 @@ void MonitorI2CTask(void *parameters) {
   // watchdog info
   //task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
 
-  int IsCLK =  (strcmp(args->name, "CLKSI") == 0);
-  int IsFFIT =  (strcmp(args->name, "FFIT") == 0);
-  int IsFFDAQ =  (strcmp(args->name, "FFDAQ") == 0);
+  int IsCLK =  (strstr(args->name, "CLKSI") != NULL);
+  int IsFFIT =  (strstr(args->name, "FFIT") != NULL);
+  int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);
   //log_info(LOG_MONI2C, "Debug: args' name = %s.\r\n", args->name);
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
@@ -521,16 +523,19 @@ void MonitorI2CTask(void *parameters) {
           vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10));
         }
         else {
-
+          int size_alarm = 1;
+          if (IsFFIT && strstr(args->commands[c].name,"ALARM") != NULL) {
+            size_alarm = 2;
+          }
           uint32_t output_raw;
 
           res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr,
-              args->commands[c].reg_size, (uint16_t) args->commands[c].command,
-              args->commands[c].size, &output_raw);
+              size_alarm, (uint32_t) args->commands[c].command,
+              1, &output_raw);
 
-          uint8_t output_data[4];
-          for (int i = 0; i < 4; ++i) {
-            output_data[i] = (output_raw>> (3-i) * 8) & 0xFF;
+          uint8_t output_data[2]; // at most two-byte outputs
+          for (int i = 0; i < 2; ++i) {
+            output_data[1-i] = (output_raw>> (1-i) * 8) & 0xFFU;
           }
           if (res != 0) {
             log_warn(LOG_MONI2C, "%s read Error %d, break (ff=%d)\r\n",
@@ -539,8 +544,27 @@ void MonitorI2CTask(void *parameters) {
             release_break();
           }
           else if (res==0){
-            args->sm_values[index] = output_data[3];
-            //log_info(LOG_MONI2C, "Debug: val = %x.\r\n", data[0]);
+            /*
+            float val;
+            if (args->commands[c].type == SM_LINEAR11) {
+              linear11_val_t ii;
+              ii.raw = (output_data[0] << 8) | output_data[1];
+              val = linear11_to_float(ii);
+            }
+            else if (args->commands[c].type == SM_LINEAR16U) {
+              uint16_t ii = (output_data[0] << 8) | output_data[1];
+              val = linear16u_to_float(ii);
+            }
+            else if (args->commands[c].type == SM_STATUS) {
+              // Note: this assumes 2 byte xfer and endianness and converts and int to a float
+              val = (float)((output_data[0] << 8) | output_data[1]); // ugly is my middle name
+            }
+            else {
+              val = -98.0f; // should never get here
+            }
+            */
+            args->sm_values[index] = output_data[args->commands[c].size - 1];
+
           }
 
         }

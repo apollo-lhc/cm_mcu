@@ -69,10 +69,10 @@ struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
 struct sm_command_t sm_command_ffldaq_f1[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS},
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS},
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},   // 3 reg address, single-byte output
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},    // 3 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS},    // 5 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS},     // 5 reg address, single-byte output
     { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
 
 };
@@ -101,10 +101,10 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 struct sm_command_t sm_command_fflit_f1[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x08, 1, "FF_LOS_ALARM_0)", "", SM_STATUS}, // 7 reg address
-    { 1, 0x00, 0x07, 1, "FF_LOS_ALARM_1", "", SM_STATUS}, // 8 reg address
-    { 1, 0x00, 0x15, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address
-    { 1, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 15 reg address
+    { 1, 0x00, 0x07, 1, "FF_LOS_ALARM_0", "", SM_STATUS}, // 7 reg address, lower-byte output
+    { 1, 0x00, 0x07, 2, "FF_LOS_ALARM_1", "", SM_STATUS}, // 7 reg address, high-byte output
+    { 1, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address, lower-byte output
+    { 1, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 14 reg address, high-byte output
     { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
 
 };
@@ -151,10 +151,10 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 struct sm_command_t sm_command_ffldaq_f2[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS},
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS},
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},  // 3 reg address, single-byte output
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},   // 3 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 5 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 5 reg address, single-byte output
     { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
 
 };
@@ -182,12 +182,11 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 // FFITV arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
 
 struct sm_command_t sm_command_fflit_f2[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x08, 1, "FF_LOS_ALARM_0)", "", SM_STATUS}, // 7 reg address
-    { 1, 0x00, 0x07, 1, "FF_LOS_ALARM_1", "", SM_STATUS}, // 8 reg address
-    { 1, 0x00, 0x15, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address
-    { 1, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 15 reg address
+    { 1, 0x00, 0x07, 1, "FF_LOS_ALARM_0", "", SM_STATUS}, // 7 reg address, lower-byte output
+    { 1, 0x00, 0x07, 2, "FF_LOS_ALARM_1", "", SM_STATUS}, // 7 reg address, high-byte output
+    { 1, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address, lower-byte output
+    { 1, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 14 reg address, high-byte output
     { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
 };
 
