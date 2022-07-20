@@ -351,6 +351,7 @@ void MonitorI2CTask(void *parameters) {
   bool good = false;
   for (;;) {
     char tmp[TMPBUFFER_SZ];
+
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
       while (xSemaphoreTake(args->xSem, (TickType_t) 10) == pdFALSE)
@@ -379,6 +380,7 @@ void MonitorI2CTask(void *parameters) {
 
         if (!isEnabledFF(ff + (offsetFFIT*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
           continue;
+          //release_break();
       }
 
       if (args->requirePower){
@@ -389,14 +391,15 @@ void MonitorI2CTask(void *parameters) {
             SuppressedPrint(tmp, &current_error_cnt, &log);
             log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
             good = false;
-            //task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
+            task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
           }
           vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(500));
+          //continue;
           release_break();
         }
         else if (getPowerControlState() == POWER_ON) { // power is on, and ...
           if (!good) { // ... was not good, but is now good
-            //task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
+            task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
             //log_warn(LOG_MONI2C, "Power on, resume I2C monitor.\r\n");
             snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
             SuppressedPrint(tmp, &current_error_cnt, &log);
@@ -406,8 +409,6 @@ void MonitorI2CTask(void *parameters) {
         }
         // if the power state is unknown, don't do anything
       }
-
-
 
       // select the appropriate output for the mux
       data[0] = 0x1U << args->devices[ff].mux_bit;
@@ -544,25 +545,6 @@ void MonitorI2CTask(void *parameters) {
             release_break();
           }
           else if (res==0){
-            /*
-            float val;
-            if (args->commands[c].type == SM_LINEAR11) {
-              linear11_val_t ii;
-              ii.raw = (output_data[0] << 8) | output_data[1];
-              val = linear11_to_float(ii);
-            }
-            else if (args->commands[c].type == SM_LINEAR16U) {
-              uint16_t ii = (output_data[0] << 8) | output_data[1];
-              val = linear16u_to_float(ii);
-            }
-            else if (args->commands[c].type == SM_STATUS) {
-              // Note: this assumes 2 byte xfer and endianness and converts and int to a float
-              val = (float)((output_data[0] << 8) | output_data[1]); // ugly is my middle name
-            }
-            else {
-              val = -98.0f; // should never get here
-            }
-            */
             args->sm_values[index] = output_data[args->commands[c].size - 1];
 
           }

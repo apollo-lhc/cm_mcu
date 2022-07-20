@@ -307,6 +307,7 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+/*
 // this command takes up to two arguments
 BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
@@ -545,7 +546,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   whichff = 0;
   return pdFALSE;
 }
-
+*/
 BaseType_t ff_status_new(int argc, char **argv, char *m)
 {
   int i1 = 0;
@@ -592,7 +593,7 @@ BaseType_t ff_status_new(int argc, char **argv, char *m)
   whichff = 0;
   return pdFALSE;
 }
-
+/*
 BaseType_t ff_los_alarm(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -637,7 +638,7 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
   whichff = 0;
   return pdFALSE;
 }
-
+*/
 BaseType_t ff_los_alarm_new(int argc, char **argv, char *m)
 {
   int i1 = 2;
@@ -697,7 +698,7 @@ BaseType_t ff_los_alarm_new(int argc, char **argv, char *m)
   whichff = 0;
   return pdFALSE;
 }
-
+/*
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -742,7 +743,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
   whichff = 0;
   return pdFALSE;
 }
-
+*/
 BaseType_t ff_cdr_lol_alarm_new(int argc, char **argv, char *m)
 {
   int i1 = 4;

@@ -119,9 +119,9 @@ void MonitorI2CTask(void *parameters);
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
-void FireFlyTask(void *parameters);
-extern QueueHandle_t xFFlyQueueIn;
-extern QueueHandle_t xFFlyQueueOut;
+//void FireFlyTask(void *parameters);
+//extern QueueHandle_t xFFlyQueueIn;
+//extern QueueHandle_t xFFlyQueueOut;
 SemaphoreHandle_t getFFMutex();
 
 const char *getFFname(const uint8_t i);

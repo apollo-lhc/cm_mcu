@@ -295,18 +295,18 @@ int main(void)
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
-              NULL);
+  //xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+              //NULL);
   xTaskCreate(MonitorI2CTask, "FFIT", 2*configMINIMAL_STACK_SIZE, &fflit_f1_args, tskIDLE_PRIORITY + 4,
                 NULL);
   xTaskCreate(MonitorI2CTask, "FFDAQ", 2*configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
                  NULL);
   xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
                     NULL);
-  xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
-              NULL);
+  //xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
+              //NULL);
+  //xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
+              //NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
@@ -325,11 +325,12 @@ int main(void)
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xPwrQueue != NULL);
 
+  /*
   xFFlyQueueIn = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
   configASSERT(xFFlyQueueIn != NULL);
   xFFlyQueueOut = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
   configASSERT(xFFlyQueueOut != NULL);
-
+  */
   xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queues
   configASSERT(xEPRMQueue_in != NULL);
   xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
