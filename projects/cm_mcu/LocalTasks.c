@@ -251,7 +251,7 @@ int8_t clk_vendor_part[16];
 struct MonitorI2CTaskArgs_t clock_args = {
     .name = "CLKSI",
     .devices = clk_moni2c_addrs,
-    .i2c_dev = I2C_DEVICE_F2, //same i2c controller as FPGA#2
+    .i2c_dev = I2C_DEVICE_CLK,
     .n_devices = NSUPPLIES_CLK,
     .commands = sm_command_clk,
     .n_commands = NCOMMANDS_CLK,
@@ -264,6 +264,42 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .requirePower = true,
     .stack_size = 4096U,
     .sm_vendor_part = clk_vendor_part,};
+
+int8_t getFFtemp(const uint8_t i)
+{
+  int i1 = 1;
+  int8_t val;
+  configASSERT(i < NFIREFLIES);
+  if (0 <= i && i < NFIREFLIES_IT_F1){
+    int index = i * (fflit_f1_args.n_commands * fflit_f1_args.n_pages) + i1;
+    val = fflit_f1_args.sm_values[index];
+  }
+
+  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1 ) {
+    int index = (i-NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
+    val = ffldaq_f1_args.sm_values[index];
+  }
+  /*
+  else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+    int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+    uint8_t val = fflit_f2_args.sm_values[index];
+    }
+  else {
+    int index = (whichff-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+    uint8_t val = ffldaq_f2_args.sm_values[index];
+    }
+   */
+  return val;
+}
+
+#endif //REV 2
+
+#ifdef DEBUG_FIF
+int8_t *getFFserialnum(const uint8_t i)
+{
+  configASSERT(i < NFIREFLIES);
+  return ff_status[i].serial_num;
+}
 
 #endif
 

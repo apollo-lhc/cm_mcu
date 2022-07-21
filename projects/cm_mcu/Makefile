@@ -117,7 +117,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorI2CTask.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/FireFlyTask.o
+## ${COMPILER}/cm_mcu.axf: ${COMPILER}/FireFlyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/GenericAlarmTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmUtilities.o

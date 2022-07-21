@@ -97,6 +97,7 @@ void MonitorI2CTask(void *parameters);
 #elif defined(REV2)
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
+#define I2C_DEVICE_CLK 2
 #endif
 
 // the following are true for both Rev1 and Rev2
@@ -127,13 +128,11 @@ SemaphoreHandle_t getFFMutex();
 const char *getFFname(const uint8_t i);
 int8_t *test_read(const uint8_t i);
 bool isEnabledFF(int ff);
-int8_t getFFtemp(const uint8_t i);
-uint8_t getFFstatus(const uint8_t i);
+//int8_t getFFtemp(const uint8_t i);
+//uint8_t getFFstatus(const uint8_t i);
 bool getFFlos(int i, int channel);
 bool getFFlol(int i, int channel);
-TickType_t getFFupdateTick();
 // FFLY I/O Expander initialization
-void init_registers_ff();
 
 int disable_xcvr_cdr(const char *name);
 
@@ -197,6 +196,11 @@ struct dev_moni2c_addr_t {
 int8_t *test_read_vendor(void *parameters, const uint8_t i);
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
+bool isEnabledFF(int ff);
+int8_t getFFtemp(const uint8_t i);
+uint8_t getFFstatus(const uint8_t i);
+TickType_t getFFupdateTick();
+void init_registers_ff();
 
 
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];

@@ -67,7 +67,7 @@ SemaphoreHandle_t (*getSemaphore[7])(void) = {
     NULL,
     NULL,
     NULL,
-    getFFMutex,
+    NULL,
     NULL,
     NULL,
 };

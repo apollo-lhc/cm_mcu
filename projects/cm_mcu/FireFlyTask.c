@@ -329,6 +329,7 @@ TickType_t getFFupdateTick()
   return ff_updateTick;
 }
 
+
 bool isEnabledFF(int ff)
 {
   // firefly config stored in on-board EEPROM
