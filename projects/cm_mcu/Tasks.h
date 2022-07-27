@@ -101,6 +101,7 @@ void MonitorI2CTask(void *parameters);
 #endif
 
 // the following are true for both Rev1 and Rev2
+SemaphoreHandle_t getCLKSem();
 #define FF_I2CMUX_1_ADDR 0x70
 #define FF_I2CMUX_2_ADDR 0x71
 
@@ -123,7 +124,6 @@ void MonitorI2CTask(void *parameters);
 //void FireFlyTask(void *parameters);
 //extern QueueHandle_t xFFlyQueueIn;
 //extern QueueHandle_t xFFlyQueueOut;
-SemaphoreHandle_t getFFMutex();
 
 const char *getFFname(const uint8_t i);
 int8_t *test_read(const uint8_t i);

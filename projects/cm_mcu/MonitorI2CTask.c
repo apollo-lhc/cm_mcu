@@ -214,6 +214,12 @@ TickType_t getFFupdateTick()
 {
   return xTaskGetTickCount();
 }
+
+SemaphoreHandle_t getCLKSem()
+{
+  return clock_args.xSem;
+}
+
 /*
 static int read_ff_register(void *parameters, const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size)
 {
@@ -415,6 +421,10 @@ void MonitorI2CTask(void *parameters) {
   int IsFFIT =  (strstr(args->name, "FFIT") != NULL);
   int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);
 
+  if (IsCLK){
+    vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
+  }
+
   /*
   if (!IsCLK) {
     if (args->requirePower){
@@ -498,9 +508,7 @@ void MonitorI2CTask(void *parameters) {
         // if the power state is unknown, don't do anything
       }
 
-
       // select the appropriate output for the mux
-
       data[0] = 0x1U << args->devices[ff].mux_bit;
       log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data[0]);
       //vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(1000));
@@ -508,7 +516,7 @@ void MonitorI2CTask(void *parameters) {
           data[0]);
       if (res != 0) {
         log_warn(LOG_MONI2C, "Mux write error %d, break (instance=%s,ff=%d)\r\n", res, args->name, ff);
-        release_break()
+        release_break();
       }
 
       // save the value of the PAGE register; to be restored at the bottom of the loop
@@ -562,6 +570,7 @@ void MonitorI2CTask(void *parameters) {
         int index = ff * (args->n_commands * args->n_pages) + c;
 
         if (IsCLK){
+
           char tmp[64];
           snprintf(tmp, 64, "Debug: name = %s.\r\n", args->commands[c].name);
           uint8_t clk_page[2];
@@ -667,6 +676,7 @@ void MonitorI2CTask(void *parameters) {
       }
       */
       // clear the I2C mux
+      /*
       data[0] = 0x0;
       log_debug(LOG_MONI2C, "Output of mux set to 0x%02x\r\n", data[0]);
       res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ff].mux_addr, 1, data[0]);
@@ -674,7 +684,7 @@ void MonitorI2CTask(void *parameters) {
         log_warn(LOG_MONI2C,
             "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
       }
-
+      */
 
     } // loop over firefly modules
 

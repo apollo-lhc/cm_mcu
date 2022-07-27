@@ -42,6 +42,7 @@
 //#include "MonitorTask.h"
 #include "Tasks.h"
 #include "I2CCommunication.h"
+#include "MonitorI2CTask.h"
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
@@ -65,12 +66,21 @@ tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStat
 SemaphoreHandle_t (*getSemaphore[7])(void) = {
     NULL,
     NULL,
-    NULL,
+    getCLKSem,
     NULL,
     NULL,
     NULL,
     NULL,
 };
+
+// break out of loop, releasing semaphore if we have it
+#define release_break(sem)           \
+    {                               \
+  if (sem != NULL) {     \
+    xSemaphoreGive(sem); \
+  }                             \
+  break;                        \
+    }
 
 #define MAX_BYTES_ADDR 2
 #define MAX_BYTES      4
@@ -98,7 +108,7 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
+        release_break(s);
       }
     }
     r = *p_eStatus;
@@ -135,7 +145,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
+        release_break(s);
       }
     }
     r = *p_status;
@@ -186,7 +196,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
+        release_break(s);
       }
     }
     r = *p_eStatus;
@@ -224,7 +234,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
+        release_break(s);
       }
     }
     r = *p_eStatus;

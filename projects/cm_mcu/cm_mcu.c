@@ -256,9 +256,11 @@ int main(void)
   xUARTMutex = xSemaphoreCreateMutex();
   // mutex for I2C controller for the power supplies
   dcdc_args.xSem = xSemaphoreCreateMutex();
-  fflit_f1_args.xSem = xSemaphoreCreateMutex();
-  ffldaq_f1_args.xSem = xSemaphoreCreateMutex();
-  clock_args.xSem = xSemaphoreCreateMutex();
+  SemaphoreHandle_t i2c4_sem = xSemaphoreCreateMutex();
+  fflit_f1_args.xSem = i2c4_sem;
+  ffldaq_f1_args.xSem = i2c4_sem;
+  SemaphoreHandle_t i2c2_sem = xSemaphoreCreateMutex();
+  clock_args.xSem = i2c2_sem;
 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
@@ -300,16 +302,16 @@ int main(void)
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   //xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               //NULL);
-  xTaskCreate(MonitorI2CTask, "FFIT", 2*configMINIMAL_STACK_SIZE, &fflit_f1_args, tskIDLE_PRIORITY + 4,
-                NULL);
-  xTaskCreate(MonitorI2CTask, "FFDAQ", 2*configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
-                NULL);
-  //xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
-                   // NULL);
-  //xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
-              //NULL);
-  //xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
-              //NULL);
+  //xTaskCreate(MonitorI2CTask, "FFIT", 2*configMINIMAL_STACK_SIZE, &fflit_f1_args, tskIDLE_PRIORITY + 4,
+               // NULL);
+  //xTaskCreate(MonitorI2CTask, "FFDAQ", 2*configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
+               // NULL);
+  xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+                    NULL);
+  xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
+              NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
