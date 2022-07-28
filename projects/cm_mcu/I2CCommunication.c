@@ -60,28 +60,6 @@ extern tSMBusStatus eStatus6;
 tSMBus *const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
 tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
 
-// array of function pointers to access to the semaphores to control access to the
-// I2C controller
-// PMBUS commands are currently not covered
-SemaphoreHandle_t (*getSemaphore[7])(void) = {
-    NULL,
-    NULL,
-    getCLKSem,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-};
-
-// break out of loop, releasing semaphore if we have it
-#define release_break(sem)           \
-    {                               \
-  if (sem != NULL) {     \
-    xSemaphoreGive(sem); \
-  }                             \
-  break;                        \
-    }
-
 #define MAX_BYTES_ADDR 2
 #define MAX_BYTES      4
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
@@ -95,12 +73,6 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
-  // get the semaphore
-  SemaphoreHandle_t s = NULL;
-  if (getSemaphore[device] != NULL) {
-    s = (*getSemaphore[device])();
-    xSemaphoreTake(s, portMAX_DELAY);
-  }
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the read was successfully initiated
     int tries = 0;
@@ -108,13 +80,11 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        release_break(s);
+        break;
       }
     }
     r = *p_eStatus;
   }
-  if (s)
-    xSemaphoreGive(s);
   return r;
 }
 
@@ -131,12 +101,6 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
     reg_address[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
   uint8_t data[MAX_BYTES];
-  // get the semaphore
-  SemaphoreHandle_t s = NULL;
-  if (getSemaphore[device] != NULL) {
-    s = (*getSemaphore[device])();
-    xSemaphoreTake(s, portMAX_DELAY);
-  }
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, reg_address, nbytes_addr, data, nbytes);
   if (r == SMBUS_OK) { // the WriteRead was successfully initiated
@@ -145,13 +109,11 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        release_break(s);
+        break;
       }
     }
     r = *p_status;
   }
-  if (s)
-    xSemaphoreGive(s);
   // pack the data for return to the caller
   *packed_data = 0UL;
   nbytes = (nbytes > MAX_BYTES) ? MAX_BYTES : nbytes;
@@ -182,12 +144,6 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
 
   if (nbytes > MAX_BYTES + nbytes_addr)
     nbytes = MAX_BYTES + nbytes_addr;
-  // get the semaphore
-  SemaphoreHandle_t s = NULL;
-  if (getSemaphore[device] != NULL) {
-    s = (*getSemaphore[device])();
-    xSemaphoreTake(s, portMAX_DELAY);
-  }
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
@@ -196,13 +152,11 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        release_break(s);
+        break;
       }
     }
     r = *p_eStatus;
   }
-  if (s)
-    xSemaphoreGive(s);
 
   return r;
 }
@@ -220,13 +174,6 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
-  // get the semaphore
-  SemaphoreHandle_t s = NULL;
-  if (getSemaphore[device] != NULL) {
-    s = (*getSemaphore[device])();
-    xSemaphoreTake(s, portMAX_DELAY);
-  }
-
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
     int tries = 0;
@@ -234,13 +181,11 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > 100) {
         log_warn(LOG_I2C, "transfer stuck\r\n");
-        release_break(s);
+        break;
       }
     }
     r = *p_eStatus;
   }
-  if (s)
-    xSemaphoreGive(s);
   return r;
 }
 // for PMBUS commands
