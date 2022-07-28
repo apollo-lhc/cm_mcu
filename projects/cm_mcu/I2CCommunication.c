@@ -42,7 +42,6 @@
 //#include "MonitorTask.h"
 #include "Tasks.h"
 #include "I2CCommunication.h"
-#include "MonitorI2CTask.h"
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;

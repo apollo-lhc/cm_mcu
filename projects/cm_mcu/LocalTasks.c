@@ -31,13 +31,6 @@
 #include "common/log.h"
 #include "common/printf.h"
 
-// break out of loop, releasing semaphore if we have it
-#define release_break(sem)           \
-    {                               \
-  if (sem != NULL) {     \
-    xSemaphoreGive(sem); \
-  }                             \
-    }
 
 struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
@@ -791,6 +784,12 @@ void init_registers_clk() {
 	// The unused signals on P06, P11, P16, and P17 should be inputs.
 	// The remaining 10 signals are outputs.
 
+  // grab the semaphore to ensure unique access to I2C controller
+  if (clock_args.xSem != NULL) {
+    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
+      ;
+  }
+
 	// # set I2C switch on channel 2 (U84, address 0x70) to port 6
 	apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
 	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
@@ -835,8 +834,13 @@ void init_registers_clk() {
 	apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
 	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
 	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
+
+	xSemaphoreGive(clock_args.xSem);
+
+	return;
 }
 void init_registers_ff() {
+
 	// =====================================================
 	// CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
 
@@ -920,6 +924,12 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
   int8_t HighByte = -1; // keep track when reg0 is changed
   int status_w = -1;
 
+  // grab the semaphore to ensure unique access to I2C controller
+  if (clock_args.xSem != NULL) {
+    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
+      ;
+  }
+
   for (int i = 0; i < reg_count * 3; ++i) {
 
     if ((i + 1) % EEPROM_MAX_PER_PAGE == 1 && HighByte != -1) {
@@ -933,7 +943,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
                                           packed_reg0_address, 3, &triplet); //read triplet from eeprom
       if (status_r != 0) {
         log_error(LOG_SERVICE, "read failed: %s\r\n", SMBUS_get_error(status_r));
-        release_break(clock_args.xSem);
+        xSemaphoreGive(clock_args.xSem);
         return status_r;
       }
       // organize the three bytes
@@ -946,7 +956,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
         status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, 0x01, 1, reg0); // write a page change to a clock chip
         if (status_w != 0) {
           log_error(LOG_SERVICE, "write failed: %s\r\n", SMBUS_get_error(status_w));
-          release_break(clock_args.xSem);
+          xSemaphoreGive(clock_args.xSem);
           return status_w; // fail writing and exit
         }
         HighByte = reg0; //update the current high byte or page
@@ -955,12 +965,12 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, reg1, 1, data); //write data to a clock chip
       if (status_w != 0) {
         log_error(LOG_SERVICE, "write status is %d \r\n", status_w);
-        release_break(clock_args.xSem);
+        xSemaphoreGive(clock_args.xSem);
         return status_w; // fail writing and exit
       }
     }
   }
-  release_break(clock_args.xSem);
+  xSemaphoreGive(clock_args.xSem);
   return status_w;
 }
 
@@ -976,6 +986,12 @@ int init_load_clk(int clk_n)
   if (clk_n == 0)
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
 
+  // grab the semaphore to ensure unique access to I2C controller
+  if (clock_args.xSem != NULL) {
+    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
+      ;
+  }
+
   apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
   uint16_t init_preamble_page = 32 * (clk_n);
   uint16_t init_register_page = 32 * (clk_n) + 1;
@@ -985,7 +1001,7 @@ int init_load_clk(int clk_n)
   int status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PreL read error: %s\r\n", SMBUS_get_error(status_r));
-    release_break(clock_args.xSem);
+    xSemaphoreGive(clock_args.xSem);
     return status_r; // fail reading and exit
   }
 
@@ -993,7 +1009,7 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "RL read error: %s\r\n", SMBUS_get_error(status_r));
-    release_break(clock_args.xSem);
+    xSemaphoreGive(clock_args.xSem);
     return status_r; // fail reading and exit
   }
 
@@ -1001,7 +1017,7 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PosL read error: %s\r\n", SMBUS_get_error(status_r));
-    release_break(clock_args.xSem);
+    xSemaphoreGive(clock_args.xSem);
     return status_r; // fail reading and exit
   }
 
@@ -1010,7 +1026,7 @@ int init_load_clk(int clk_n)
   int status_w = load_clk_registers(PreambleList_row, init_preamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PreL write error %d\r\n", status_w);
-    release_break(clock_args.xSem);
+    xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
@@ -1018,7 +1034,7 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(RegisterList_row, init_register_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "RegL write error %d\r\n", status_w);
-    release_break(clock_args.xSem);
+    xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
@@ -1026,10 +1042,10 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(PostambleList_row, init_postamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PosL write error %d\r\n", status_w);
-    release_break(clock_args.xSem);
+    xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
-  release_break(clock_args.xSem);
+  xSemaphoreGive(clock_args.xSem);
   return status_w;
 }
 #endif // REV2
