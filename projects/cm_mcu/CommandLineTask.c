@@ -117,7 +117,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
-#endif //REV2
+#endif // REV2
 
 // this command takes no arguments
 static BaseType_t ver_ctl(int argc, char **argv, char *m)
@@ -872,7 +872,7 @@ void vCommandLineTask(void *pvParameters)
       .userdata = &rl_userdata,
   };
 #ifdef REV1
-  //this is a hack
+  // this is a hack
   if (uart_base == UART1_BASE) {
     rl_config.print = U1Print; // switch to Zynq
   }

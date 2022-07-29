@@ -16,7 +16,7 @@
 #include "driverlib/hibernate.h"
 
 // This command takes no arguments
-BaseType_t restart_mcu(int argc, char **argv, char* m)
+BaseType_t restart_mcu(int argc, char **argv, char *m)
 {
   int copied = 0;
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Restarting MCU\r\n");
@@ -25,7 +25,7 @@ BaseType_t restart_mcu(int argc, char **argv, char* m)
 }
 
 // Takes 3 arguments
-BaseType_t set_board_id(int argc, char **argv, char* m)
+BaseType_t set_board_id(int argc, char **argv, char *m)
 {
   int copied = 0;
 
@@ -57,7 +57,7 @@ BaseType_t set_board_id(int argc, char **argv, char* m)
 }
 
 // one-time use, has one function and takes 0 arguments
-BaseType_t set_board_id_password(int argc, char **argv, char* m)
+BaseType_t set_board_id_password(int argc, char **argv, char *m)
 {
   int copied = 0;
 
@@ -69,7 +69,7 @@ BaseType_t set_board_id_password(int argc, char **argv, char* m)
   return pdFALSE;
 }
 
-BaseType_t board_id_info(int argc, char **argv, char* m)
+BaseType_t board_id_info(int argc, char **argv, char *m)
 {
   int copied = 0;
   ;
@@ -92,7 +92,7 @@ BaseType_t board_id_info(int argc, char **argv, char* m)
 BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
-  if ( argc == 2 ) {
+  if (argc == 2) {
     if (strncmp(argv[1], "on", 2) == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "JTAG from SM enabled\r\n");
       write_gpio_pin(JTAG_FROM_SM, 1);
@@ -100,32 +100,32 @@ BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
     else if (strncmp(argv[1], "off", 3) == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "JTAG from SM disabled\r\n");
       write_gpio_pin(JTAG_FROM_SM, 0);
-    } 
+    }
     else {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Usage: %s on/off (got %s)\r\n", argv[0], argv[1]);
     }
   }
-  else if ( argc == 3) {
-	  BaseType_t pin = -1;
-	  if (strncmp(argv[1], "f1", 2) == 0) {
-		  pin = _F1_JTAG_BYPASS;
-	  }
-	  else if (strncmp(argv[1], "f2", 2) == 0) {
-		  pin = _F2_JTAG_BYPASS;
-	  }
-	  else {
-		  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: did not understand argument %s\r\n",
-				  argv[0], argv[1]);
-		  return pdFALSE;
-	  }
-	  BaseType_t val = 1;
-	  if (strncmp(argv[2], "on", 2) == 0) {
-		  val = 1;
-	  }
-	  else if (strncmp(argv[2], "off", 3) == 0) {
-		  val = 0;
-	  }
-	  write_gpio_pin(pin, val);
+  else if (argc == 3) {
+    BaseType_t pin = -1;
+    if (strncmp(argv[1], "f1", 2) == 0) {
+      pin = _F1_JTAG_BYPASS;
+    }
+    else if (strncmp(argv[1], "f2", 2) == 0) {
+      pin = _F2_JTAG_BYPASS;
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: did not understand argument %s\r\n",
+                         argv[0], argv[1]);
+      return pdFALSE;
+    }
+    BaseType_t val = 1;
+    if (strncmp(argv[2], "on", 2) == 0) {
+      val = 1;
+    }
+    else if (strncmp(argv[2], "off", 3) == 0) {
+      val = 0;
+    }
+    write_gpio_pin(pin, val);
   }
   else { // all other cases
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "JTAG from SM: %d\r\n", read_gpio_pin(JTAG_FROM_SM));
@@ -142,12 +142,12 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       // we don't have access to sscanf, let alone strptime, since it requires _sbrk ...
       // convert HH:MM:SS into three strings
       char *p = argv[2];
-      char *pp[3] = {"\0","\0","\0"} ;
+      char *pp[3] = {"\0", "\0", "\0"};
       pp[0] = p;
       int i = 1;
-      while ( *p != '\0') {
-        if ( *p == ':' ) {
-          pp[i++] = p+1;
+      while (*p != '\0') {
+        if (*p == ':') {
+          pp[i++] = p + 1;
           *p = '\0';
         }
         ++p;
@@ -160,9 +160,9 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       p = argv[3];
       pp[0] = p;
       i = 1;
-      while ( *p != '\0') {
-        if ( *p == '/' ) {
-          pp[i++] = p+1;
+      while (*p != '\0') {
+        if (*p == '/') {
+          pp[i++] = p + 1;
           *p = '\0';
         }
         ++p;
@@ -175,15 +175,15 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       year = atoi(pp[2]);
       struct tm t;
       // no real checking of the values; just normalize it to the right range
-      t.tm_hour = hour%24; // 0-23
-      t.tm_min = min%60; // 0-59
-      t.tm_sec = sec%60; //
-      t.tm_year = year>=100?year-1900:year+100; // years since 1900
-      t.tm_mday = day%31;
-      t.tm_mon = (month-1)%12; // month goes from 0-11
+      t.tm_hour = hour % 24;                              // 0-23
+      t.tm_min = min % 60;                                // 0-59
+      t.tm_sec = sec % 60;                                //
+      t.tm_year = year >= 100 ? year - 1900 : year + 100; // years since 1900
+      t.tm_mday = day % 31;
+      t.tm_mon = (month - 1) % 12; // month goes from 0-11
 
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "New time: %02d:%02d:%02d %02d/%02d/%d\r\n",
-          t.tm_hour, t.tm_min, t.tm_sec, t.tm_mon+1, t.tm_mday, t.tm_year+1900);
+                         t.tm_hour, t.tm_min, t.tm_sec, t.tm_mon + 1, t.tm_mday, t.tm_year + 1900);
       ROM_HibernateCalendarSet(&t);
     }
     else {
@@ -192,14 +192,14 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
   }
   else { // all other cases
     uint32_t ui32Date = HWREG(HIB_CAL1);
-    if ( ! (ui32Date & HIB_CAL1_VALID )) {
-      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%s: RTC state invalid\r\n", argv[0]);
+    if (!(ui32Date & HIB_CAL1_VALID)) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: RTC state invalid\r\n", argv[0]);
     }
     else {
-    	struct tm now;
-    	ROM_HibernateCalendarGet(&now);
-    	copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Time now: %02d:%02d:%02d %02d/%02d/%d\r\n",
-    			now.tm_hour, now.tm_min, now.tm_sec, now.tm_mon+1, now.tm_mday, now.tm_year+1900);
+      struct tm now;
+      ROM_HibernateCalendarGet(&now);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Time now: %02d:%02d:%02d %02d/%02d/%d\r\n",
+                         now.tm_hour, now.tm_min, now.tm_sec, now.tm_mon + 1, now.tm_mday, now.tm_year + 1900);
     }
   }
   return pdFALSE;
@@ -208,25 +208,26 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
 
 BaseType_t gpio_ctl(int argc, char **argv, char *m)
 {
-  int port = -1; int pin = -1;
+  int port = -1;
+  int pin = -1;
   // should either have three or four arguments
-  if (!( argc == 3 || argc == 4 )) {
+  if (!(argc == 3 || argc == 4)) {
     snprintf(m, SCRATCH_SIZE, "%s: usage: %s (set|get) <name of pin> <val>\r\n", argv[0], argv[0]);
     return pdFALSE;
   }
   /// X-Macro start
   // find the corresponding pins and ports
-#define X(NAME, PPIN, PPORT, LOCALPIN, INPUT) \
-  if (strncmp(#NAME, argv[2], strlen(#NAME)) == 0) {      \
-    port = GPIO_PORT##PPORT##_BASE;           \
-    pin = GPIO_PIN_##LOCALPIN;                \
+#define X(NAME, PPIN, PPORT, LOCALPIN, INPUT)        \
+  if (strncmp(#NAME, argv[2], strlen(#NAME)) == 0) { \
+    port = GPIO_PORT##PPORT##_BASE;                  \
+    pin = GPIO_PIN_##LOCALPIN;                       \
   }
 #ifdef REV1
 #include "common/gpio_pins_rev1.def"
 #elif defined(REV2)
 #include "common/gpio_pins_rev2.def"
 #endif
-  // X-Macro end 
+  // X-Macro end
   // ensure we found a match
   if (pin == -1 || port == -1) {
     snprintf(m, SCRATCH_SIZE, "%s: couldn't find pin %s\r\n", argv[0], argv[2]);
@@ -251,7 +252,7 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
     if (strncmp(argv[1], "get", 3) == 0) {
       // see comments on the "set" command above
       uint32_t val = MAP_GPIOPinRead(port, pin);
-      if ( val == pin )
+      if (val == pin)
         val = 1;
       else
         val = 0;
