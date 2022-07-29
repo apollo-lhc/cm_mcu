@@ -379,7 +379,7 @@ void pinsel(int pin, uint32_t *x_gpio_port, uint8_t *x_gpio_pin)
     gpio_pin  = GPIO_PIN_##LOCALPIN;     \
     break;                                    \
   }
-#include "gpio_pins.def"
+#include "gpio_pins_rev2.def"
     default: {
       gpio_port = -1;
       gpio_pin = -1;
