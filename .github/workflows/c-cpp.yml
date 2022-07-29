@@ -134,6 +134,7 @@ jobs:
           .clang*
           .git*
           **/*.sh
+          **/*.def
     - name: Format changed files
       uses: DoozyX/clang-format-lint-action@v0.14
       with:

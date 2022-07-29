@@ -204,7 +204,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
-
+#endif // Rev2
 
 BaseType_t gpio_ctl(int argc, char **argv, char *m)
 {
@@ -221,7 +221,11 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
     port = GPIO_PORT##PPORT##_BASE;           \
     pin = GPIO_PIN_##LOCALPIN;                \
   }
-#include "common/gpio_pins.def"
+#ifdef REV1
+#include "common/gpio_pins_rev1.def"
+#elif defined(REV2)
+#include "common/gpio_pins_rev2.def"
+#endif
   // X-Macro end 
   // ensure we found a match
   if (pin == -1 || port == -1) {
@@ -263,4 +267,3 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   m[0] = '\0';
   return pdFALSE;
 }
-#endif // Rev2
