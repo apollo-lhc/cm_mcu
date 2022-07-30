@@ -18,9 +18,9 @@
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char *m)
 {
-  int copied = 0;
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Restarting MCU\r\n");
+  snprintf(m, SCRATCH_SIZE, "Restarting MCU\r\n");
   MAP_SysCtlReset(); // This function does not return
+  __builtin_unreachable();
   return pdFALSE;
 }
 
