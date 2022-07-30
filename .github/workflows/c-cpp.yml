@@ -135,6 +135,8 @@ jobs:
           .git*
           **/*.sh
           **/*.def
+          **/Makefile
+          makedefs
     - name: Format changed files
       uses: DoozyX/clang-format-lint-action@v0.14
       with:
