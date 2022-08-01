@@ -650,6 +650,12 @@ void init_registers_clk()
   // All used signals are outputs [P03..P00], [P14..P10].
   // All unused signals should be inputs [P07..P04], [P17..P15].
 
+  // grab the semaphore to ensure unique access to I2C controller
+  if (clock_args.xSem != NULL) {
+    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
+      ;
+  }
+
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
   apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0xf0); // 11110000 [P07..P00]
@@ -688,6 +694,8 @@ void init_registers_clk()
 
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
+
+  xSemaphoreGive(clock_args.xSem);
 }
 void init_registers_ff()
 {
@@ -836,8 +844,6 @@ void init_registers_clk() {
 	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
 	xSemaphoreGive(clock_args.xSem);
-
-	return;
 }
 void init_registers_ff() {
 
@@ -923,12 +929,6 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
 {
   int8_t HighByte = -1; // keep track when reg0 is changed
   int status_w = -1;
-
-  // grab the semaphore to ensure unique access to I2C controller
-  if (clock_args.xSem != NULL) {
-    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
-      ;
-  }
 
   for (int i = 0; i < reg_count * 3; ++i) {
 
