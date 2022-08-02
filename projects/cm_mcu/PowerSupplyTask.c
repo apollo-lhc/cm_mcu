@@ -47,6 +47,19 @@ static uint16_t check_ps_oks(void)
   return status;
 }
 
+static int16_t getPSFailMask()
+{
+  // PS ignore mask stored in on-board EEPROM
+  static bool configured = false;
+
+  static uint32_t ps_ignore_mask;
+  if (!configured) {
+    ps_ignore_mask = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
+    configured = true;
+  }
+  return (0xFFFFU & ps_ignore_mask);
+}
+
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
 {
   log_error(LOG_PWRCTL, "psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n", failed_mask,
@@ -116,6 +129,21 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
   }
+  // exceptions are stored in the internal EEPROM -- the IGNORE mask.
+  uint16_t ignore_mask = getPSFailMask();
+  if (ignore_mask) {
+#define SZ 512
+    char tmp[SZ];
+    int copied = 0;
+    // debug the ignore mask
+    for (int i = 0; i < N_PS_OKS; ++i) {
+      BaseType_t ignored = (ignore_mask & (0x1U << i)) != 0;
+      copied += snprintf(tmp + copied, SZ - copied, "%s: %d\r\n", oks[i].name, ignored);
+    }
+    log_warn(LOG_PWRCTL, "PS ignore mask is set: 0x%04x\r\n%s\r\n", ignore_mask, tmp);
+    supply_ok_mask &= ~ignore_mask; // mask out the ignored bits.
+  }
+
 #if defined(ECN001) || defined(REV2)
   // configure the LGA80D supplies. This call takes some time.
   LGA80D_init();

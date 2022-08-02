@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 #include <stdlib.h>
+#include "common/utils.h"
 #include "driverlib/gpio.h"
 #include "BoardCommands.h"
 #include "common/pinsel.h"
@@ -76,6 +77,7 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
 
   uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
   uint32_t ff = read_eeprom_single(EEPROM_ID_FF_ADDR);
+  uint32_t ps = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
 
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn) & 0xff;
@@ -85,6 +87,7 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lx\r\n", num);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lx\r\n", rev);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly config: %lx\r\n", ff);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "PS ignore mask: %lx\r\n", ps);
 
   return pdFALSE;
 }

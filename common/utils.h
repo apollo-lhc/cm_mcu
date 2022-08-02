@@ -23,8 +23,9 @@ uint8_t toggle_gpio_pin(int pin);
 void setupActiveLowPins(void);
 
 // EEPROM
-#define EEPROM_ID_SN_ADDR 64
-#define EEPROM_ID_FF_ADDR (EEPROM_ID_SN_ADDR + 4)
+#define EEPROM_ID_SN_ADDR        0x40
+#define EEPROM_ID_FF_ADDR        (EEPROM_ID_SN_ADDR + 4) // 0x44
+#define EEPROM_ID_PS_IGNORE_MASK (EEPROM_ID_FF_ADDR + 4) // 0x48
 
 void write_eeprom(uint32_t data, uint32_t addr);
 uint32_t read_eeprom_single(uint32_t addr);
