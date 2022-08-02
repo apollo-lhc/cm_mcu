@@ -306,8 +306,8 @@ int main(void)
                 NULL);
   xTaskCreate(MonitorI2CTask, "FFDAQ", 2*configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
                 NULL);
-  //xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
-                   // NULL);
+  xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+                    NULL);
   xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,

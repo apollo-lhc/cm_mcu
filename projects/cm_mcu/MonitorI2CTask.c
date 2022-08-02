@@ -175,7 +175,6 @@ extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 bool getFFch_low(uint8_t val, int channel)
 {
   configASSERT(channel < 8);
-  log_info(LOG_MONI2C, "low val is %x \r\n", val);
   if (!((1 << channel) & val)) {
     return false;
   }
@@ -186,7 +185,6 @@ bool getFFch_low(uint8_t val, int channel)
 bool getFFch_high(uint8_t val, int channel)
 {
   configASSERT(channel >= 8);
-  log_info(LOG_MONI2C, "high val is %x \r\n", val);
   if (!((1 << (channel - 8)) & val)) {
     return false;
   }
@@ -476,7 +474,6 @@ void MonitorI2CTask(void *parameters) {
 
         if (!isEnabledFF(ff + (offsetFFIT*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
           continue;
-          //release_break();
       }
 
       //vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
@@ -493,7 +490,6 @@ void MonitorI2CTask(void *parameters) {
           }
           vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(500));
           continue;
-          //release_break();
         }
         else if (getPowerControlState() == POWER_ON) { // power is on, and ...
           if (!good) { // ... was not good, but is now good
@@ -577,7 +573,6 @@ void MonitorI2CTask(void *parameters) {
           clk_page[0] = (CLK_PAGE_COMMAND >> 0) & 0xFF;
           clk_page[1] = (page_reg_value >> 0 ) & 0xFF;
           int r = SMBusMasterI2CWrite(args->smbus, args->devices[ff].dev_addr, &clk_page[0], 2);
-          //log_info(LOG_MONI2C, "Debug: r write page = %d.\r\n", r);
           if (r != 0) {
             log_warn(LOG_MONI2C, "SMBUS page failed %s\r\n", args->name);
             Print("SMBUS command failed  (setting page)\r\n");
@@ -596,12 +591,13 @@ void MonitorI2CTask(void *parameters) {
           args->sm_values[index] = __builtin_bswap16(buf);
           i2cdata[0] = 0x0U;
 
+          /*
           SemaphoreHandle_t s = NULL;
           if ( args->xSem != NULL ) {
             s = args->xSem;
             xSemaphoreTake(s, portMAX_DELAY);
           }
-
+          */
 
           int res = SMBusMasterI2CWriteRead(args->smbus, args->devices[ff].dev_addr, &(args->commands[c].command), args->commands[c].size, i2cdata, 1);
 
@@ -617,10 +613,9 @@ void MonitorI2CTask(void *parameters) {
             }
             res = *(args->smbus_status);
           }
-          if (s)
-            xSemaphoreGive(s);
 
           // wait here for the x msec, where x is 2nd argument below.
+          //log_info(LOG_MONI2C, "Debug: command %s has value %d.\r\n", args->commands[c].name, i2cdata[0]);
           args->sm_values[index] = i2cdata[0];
           vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10));
         }

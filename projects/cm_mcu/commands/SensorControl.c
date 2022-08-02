@@ -554,6 +554,14 @@ BaseType_t ff_status_new(int argc, char **argv, char *m)
 
   static int whichff = 0;
   if (whichff == 0) {
+    // check for stale data
+    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
+    if (checkStale(last, now)) {
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
   }
 
@@ -646,6 +654,14 @@ BaseType_t ff_los_alarm_new(int argc, char **argv, char *m)
 
   static int whichff = 0;
   if (whichff == 0) {
+    // check for stale data
+    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
+    if (checkStale(last, now)) {
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
   }
 
@@ -751,6 +767,14 @@ BaseType_t ff_cdr_lol_alarm_new(int argc, char **argv, char *m)
 
   static int whichff = 0;
   if (whichff == 0) {
+    // check for stale data
+    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
+    if (checkStale(last, now)) {
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
   }
 

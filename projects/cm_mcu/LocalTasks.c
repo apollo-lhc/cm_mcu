@@ -970,7 +970,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       }
     }
   }
-  xSemaphoreGive(clock_args.xSem);
+  //xSemaphoreGive(clock_args.xSem);
   return status_w;
 }
 
