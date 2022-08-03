@@ -238,14 +238,11 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   }
   if (argc == 4) {
     if (strncmp(argv[1], "set", 3) == 0) {
-      // the GPIOPinWrite allows more than one pin to be written at the same time;
-      // therefore since in this interface only one pin is to be manipulated it
-      // needs to be shifted to the appropriate position.
-      uint32_t pinval = atoi(argv[3]) << pin; // input value should be either 0 or 1
-      pinval = atoi(argv[3]);
-      if ( pinval == 1 )
+      // Check GPIOPinWrite docs for why this is so weird
+      int pinval = atoi(argv[3]);
+      if (pinval == 1)
         pinval = pin;
-      else if ( pinval != 0 ) {
+      else if (pinval != 0) {
         snprintf(m, SCRATCH_SIZE, "%s: value %s not understood\r\n", argv[0], argv[3]);
         return pdFALSE;
       }
