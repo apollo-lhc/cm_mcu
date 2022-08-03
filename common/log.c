@@ -56,7 +56,7 @@ static const char *const facility_strings[] = {
     "UNK",
     "SRV",
     "MON",
-    "FFL",
+    "MONI2C",
     "PWR",
     "I2C",
     "ALM",

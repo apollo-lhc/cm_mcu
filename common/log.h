@@ -31,7 +31,6 @@ enum log_facility_t {
   LOG_SERVICE, // ISR and various tasks like that
   LOG_MON,
   LOG_MONI2C,
-  LOG_FFLY,
   LOG_PWRCTL,
   LOG_I2C,
   LOG_ALM,

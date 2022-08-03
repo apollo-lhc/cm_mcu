@@ -218,144 +218,6 @@ SemaphoreHandle_t getCLKSem()
   return clock_args.xSem;
 }
 
-/*
-static int read_ff_register(void *parameters, const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size)
-{
-  struct MonitorI2CTaskArgs_t *args = parameters;
-  memset(value, 0, size);
-  // find the appropriate information for this FF device
-  int ff;
-  for (ff = 0; ff < args->n_devices; ++ff) {
-    if (strncmp(args->devices[ff].name, name, 10) == 0)
-      break;
-  }
-  if (ff == args->n_devices) {
-    return -2; // no match found
-  }
-
-  int res;
-  xSemaphoreTake(args->xSem, portMAX_DELAY);
-  {
-    // write to the mux
-    // select the appropriate output for the mux
-    uint8_t muxmask = 0x1U << args->devices[ff].mux_bit;
-    res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ff].mux_addr, 1, muxmask);
-    if (res != 0) {
-      log_warn(LOG_MONI2C, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-          SMBUS_get_error(res), args->devices[ff].name);
-    }
-
-    if (!res) {
-      // Read from register.
-      uint32_t uidata;
-      res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr, 1,
-          packed_reg_addr, size, &uidata);
-      for (int i = 0; i < size; ++i) {
-        value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
-      }
-      if (res != 0) {
-        log_warn(LOG_MONI2C, "%s: FF Regread error %d (%s) (ff=%s) ...\r\n", __func__, res,
-            SMBUS_get_error(res), args->devices[ff].name);
-      }
-    }
-  }
-  //xSemaphoreGive(args->xSem);
-
-  return res;
-}
-
-static int write_ff_register(void *parameters, const char *name, uint8_t reg, uint16_t value, int size)
-{
-  struct MonitorI2CTaskArgs_t *args = parameters;
-  configASSERT(size <= 2);
-  // find the appropriate information for this FF device
-  int ff;
-  for (ff = 0; ff < args->n_devices; ++ff) {
-    if (strncmp(args->devices[ff].name, name, 10) == 0)
-      break;
-  }
-  if (ff == args->n_devices) {
-    return -2; // no match found
-  }
-
-  int res;
-  xSemaphoreTake(args->xSem, portMAX_DELAY);
-  {
-    // write to the mux
-    // select the appropriate output for the mux
-    uint8_t muxmask = 0x1U << args->devices[ff].mux_bit;
-    res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ff].mux_addr, 1, muxmask);
-    if (res != 0) {
-      log_warn(LOG_MONI2C, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-               SMBUS_get_error(res), args->devices[ff].name);
-    }
-
-    // write to register. First word is reg address, then the data.
-    // increment size to account for the register address
-    if (!res) {
-      res = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ff].dev_addr, 1, reg, size, (uint32_t)value);
-      if (res != 0) {
-        log_warn(LOG_MONI2C, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-                 SMBUS_get_error(res), args->devices[ff].name);
-      }
-    }
-  }
-  //xSemaphoreGive(args->xSem);
-
-  return res;
-}
-
-
-static int disable_transmit(void *parameters, bool disable, int num_ff)
-{
-  struct MonitorI2CTaskArgs_t *args = parameters;
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
-  if (disable == false)
-    value = 0x0;
-  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
-    i = 0;
-    imax = NFIREFLIES;
-  }
-  for (; i < imax; ++i) {
-    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-      continue;
-    if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(args, ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1);
-    }
-    else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
-      ret += write_ff_register(args, ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2);
-    }
-  }
-  return ret;
-}
-
-static int disable_receivers(void *parameters, bool disable, int num_ff)
-{
-  struct MonitorI2CTaskArgs_t *args = parameters;
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
-  if (disable == false)
-    value = 0x0;
-  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
-    i = 0;
-    imax = NFIREFLIES;
-  }
-  for (; i < imax; ++i) {
-    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-      continue;
-    if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(args, ff_moni2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1);
-    }
-    else if (strstr(ff_moni2c_addrs[i].name, "Rx") != NULL) {
-      ret += write_ff_register(args, ff_moni2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2);
-    }
-  }
-  return ret;
-}
-*/
 int8_t* test_read_vendor(void *parameters, const uint8_t i) {
   struct MonitorI2CTaskArgs_t *args = parameters;
   configASSERT(i < NFIREFLIES);
@@ -395,18 +257,13 @@ static void SuppressedPrint(const char *str, int *current_error_cnt, bool *loggi
 void MonitorI2CTask(void *parameters) {
   // initialize to the current tick time
   TickType_t ff_updateTick = xTaskGetTickCount();
-  uint8_t data[2];
-  uint8_t i2cdata[1];
+  //uint8_t data[2];
 
   struct MonitorI2CTaskArgs_t *args = parameters;
 
   configASSERT(args->name != 0);
   bool log = true;
   int current_error_cnt = 0;
-
-  // create firefly mutex
-  //xFFMutex = xSemaphoreCreateMutex();
-  //configASSERT(xFFMutex != 0);
 
   args->updateTick = ff_updateTick; // initial value
   // watchdog info
@@ -419,27 +276,9 @@ void MonitorI2CTask(void *parameters) {
   int IsFFIT =  (strstr(args->name, "FFIT") != NULL);
   int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);
 
-  if (IsCLK){
-    vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
-  }
+  vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
 
-  /*
-  if (!IsCLK) {
-    if (args->requirePower){
-      if (getPowerControlState() == POWER_ON) {
-        // Disable all Firefly devices
-        disable_transmit(args, true, NFIREFLIES);
-        disable_receivers(args, true, NFIREFLIES);
-        init_registers_ff();
-        log_info(LOG_MONI2C, "initialization complete.\r\n");
-      }
-      else {
-        log_warn(LOG_MONI2C, "Initialization skipped -- no power\r\n");
-      }
-    }
-  }
-  */
-  //log_info(LOG_MONI2C, "Debug: args' name = %s.\r\n", args->name);
+
   // reset the wake time to account for the time spent in any work in i2c tasks
   ff_updateTick = xTaskGetTickCount();
   bool good = false;
@@ -448,12 +287,12 @@ void MonitorI2CTask(void *parameters) {
 
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
-      while (xSemaphoreTake(args->xSem, (TickType_t) 10) == pdFALSE)
-        ;
+        while (xSemaphoreTake(args->xSem, (TickType_t) 10) == pdFALSE)
+          ;
     }
     ff_updateTick = xTaskGetTickCount();
     // -------------------------------
-    // loop over FireFly modules
+    // loop over devices
     // -------------------------------
     for (uint8_t ff = 0; ff < args->n_devices; ++ff) {
 
@@ -476,7 +315,6 @@ void MonitorI2CTask(void *parameters) {
           continue;
       }
 
-      //vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
 
       if (args->requirePower){
         if (getPowerControlState() != POWER_ON) {
@@ -505,30 +343,16 @@ void MonitorI2CTask(void *parameters) {
       }
 
       // select the appropriate output for the mux
+      uint8_t data[1];
       data[0] = 0x1U << args->devices[ff].mux_bit;
       log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data[0]);
-      //vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(1000));
-      int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ff].mux_addr, 1,
-          data[0]);
+      int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ff].mux_addr, 1, data[0]);
       if (res != 0) {
-        log_warn(LOG_MONI2C, "Mux write error %d, break (instance=%s,ff=%d)\r\n", res, args->name, ff);
+        log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ff=%d)\r\n", SMBUS_get_error(res), args->name, ff);
         release_break();
       }
 
-      // save the value of the PAGE register; to be restored at the bottom of the loop
-      uint8_t page_reg_value = args->commands[args->n_commands].page;
-      /*
-      if (!IsCLK){
-        read_ff_register(args, args->devices[ff].name,
-            (uint16_t)args->commands[args->n_commands - 1].command, &page_reg_value,
-            1);
-        // set the page register to 0, if needed
-        if (page_reg_value != 0)
-          write_ff_register(args, args->devices[ff].name,
-              (uint16_t)args->commands[args->n_commands - 1].command, 0, 1);
 
-      }
-      */
       // Write device vendor part
       uint8_t vendor_data[4];
 
@@ -536,9 +360,7 @@ void MonitorI2CTask(void *parameters) {
       for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) { //171,187
 
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
-        //log_info(LOG_MONI2C, "Debug: res = %d.\r\n", res);
         if (res != 0){
-          //log_info(LOG_MONI2C, "Debug: Fail reading registers.\r\n");
           char tmp[64];
           snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, res,
                    ff, 1);
@@ -555,26 +377,22 @@ void MonitorI2CTask(void *parameters) {
         } convert_8_t;
         convert_8_t tmp1;
 
-        tmp1.us = vendor_data[3]; //vendor_data[0]; // change from uint_8 to int8_t, preserving bit pattern
+        tmp1.us = vendor_data[3]; // change from uint_8 to int8_t, preserving bit pattern
         args->sm_vendor_part[i - ven_addr_start] = tmp1.s;
       }
 
 
       // Read I2C registers/commands
-      //log_info(LOG_MONI2C, "Debug: n_command is %d.\r\n", args->n_commands);
-      for (int c = 0; c < args->n_commands - 1; ++c) { // exclude page reg
+      for (int c = 0; c < args->n_commands; ++c) {
         int index = ff * (args->n_commands * args->n_pages) + c;
 
+        char tmp[64];
+        snprintf(tmp, 64, "Debug: name = %s.\r\n", args->commands[c].name);
+        uint8_t page_reg_value = args->commands[c].page;
         if (IsCLK){
-
-          char tmp[64];
-          snprintf(tmp, 64, "Debug: name = %s.\r\n", args->commands[c].name);
-          uint8_t clk_page[2];
-          clk_page[0] = (CLK_PAGE_COMMAND >> 0) & 0xFF;
-          clk_page[1] = (page_reg_value >> 0 ) & 0xFF;
-          int r = SMBusMasterI2CWrite(args->smbus, args->devices[ff].dev_addr, &clk_page[0], 2);
+          int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ff].dev_addr, 1, 0x01, 1, page_reg_value);
           if (r != 0) {
-            log_warn(LOG_MONI2C, "SMBUS page failed %s\r\n", args->name);
+            log_warn(LOG_MONI2C, "SMBUS page failed %s\r\n", SMBUS_get_error(r));
             Print("SMBUS command failed  (setting page)\r\n");
           }
           while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
@@ -586,102 +404,27 @@ void MonitorI2CTask(void *parameters) {
                 *args->smbus_status);
             SuppressedPrint(tmp, &current_error_cnt, &log);
           }
-
-          uint16_t buf = 0x0U;
-          args->sm_values[index] = __builtin_bswap16(buf);
-          i2cdata[0] = 0x0U;
-
-          /*
-          SemaphoreHandle_t s = NULL;
-          if ( args->xSem != NULL ) {
-            s = args->xSem;
-            xSemaphoreTake(s, portMAX_DELAY);
-          }
-          */
-
-          int res = SMBusMasterI2CWriteRead(args->smbus, args->devices[ff].dev_addr, &(args->commands[c].command), args->commands[c].size, i2cdata, 1);
-
-          if ( res == SMBUS_OK ) { // the WriteRead was successfully initiated
-            int tries = 0;
-            while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-              vTaskDelay(pdMS_TO_TICKS(10));
-              if ( tries++ > 100 ) {
-                log_warn(LOG_MONI2C, "timed out (SMBUSxfer) (%s, c=%d,dev=%d)\r\n",
-                    args->name, c, ff);
-                release_break();
-              }
-            }
-            res = *(args->smbus_status);
-          }
-
-          // wait here for the x msec, where x is 2nd argument below.
-          //log_info(LOG_MONI2C, "Debug: command %s has value %d.\r\n", args->commands[c].name, i2cdata[0]);
-          args->sm_values[index] = i2cdata[0];
-          vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(10));
-        }
-        else {
-          int size_alarm = 1;
-          if (IsFFIT && strstr(args->commands[c].name,"ALARM") != NULL) {
-            size_alarm = 2;
-          }
-          uint32_t output_raw;
-
-          int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr,
-              size_alarm, (uint32_t) args->commands[c].command,
-              1, &output_raw);
-
-          uint8_t output_data[2]; // at most two-byte outputs
-          for (int i = 0; i < 2; ++i) {
-            output_data[1-i] = (output_raw>> (1-i) * 8) & 0xFFU;
-          }
-          if (res != 0) {
-            log_warn(LOG_MONI2C, "%s read Error %d, break (ff=%d)\r\n",
-                args->commands[c].name, res, ff);
-            args->sm_values[index] = 0xff;
-            release_break();
-          }
-          else if (res==0){
-            args->sm_values[index] = output_data[args->commands[c].size - 1];
-
-          }
-
         }
 
+        //int res = SMBusMasterI2CWriteRead(args->smbus, args->devices[ff].dev_addr, &(args->commands[c].command), args->commands[c].size, i2cdata, 1);
+        uint32_t output_raw;
+        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr, args->commands[c].reg_size, (uint32_t) args->commands[c].command, args->commands[c].size, &output_raw);
+
+        if (res != 0) {
+          log_warn(LOG_MONI2C, "%s read Error %s, break (ff=%d)\r\n",
+              args->commands[c].name, SMBUS_get_error(res), ff);
+          args->sm_values[index] = 0xffff;
+          release_break();
+        }
+        else{
+          args->sm_values[index] = (uint16_t)output_raw;
+
+        }
 
       } // loop over commands
 
-      // Read the serial number
 
-      // Check the loss of signal alarm //PM_LINEAR16U for TX/RX and PM_STATUS for XCVR
-
-      // Check the CDR loss of lock alarm //PM_LINEAR16U for TX/RX and PM_STATUS for XCVR
-
-
-      // restore the page register to its value at the top of the loop, if it's non-zero
-      /*
-      if (!IsCLK){
-        if (page_reg_value != 0) {
-          int res = write_ff_register(args, args->devices[ff].name,
-              (uint16_t)args->commands[args->n_commands - 1].command, page_reg_value,
-              1);
-          if (res != 0) {
-            log_error(LOG_MONI2C, "page reg write error %d (ff=%d)\r\n", res, ff);
-          }
-        }
-      }
-      */
-      // clear the I2C mux
-      /*
-      data[0] = 0x0;
-      log_debug(LOG_MONI2C, "Output of mux set to 0x%02x\r\n", data[0]);
-      res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ff].mux_addr, 1, data[0]);
-      if (res != 0) {
-        log_warn(LOG_MONI2C,
-            "FIF: mux clearing error %d, end of loop (ff=%d)\r\n", res, ff);
-      }
-      */
-
-    } // loop over firefly modules
+    } // loop over devices
 
     if (args->xSem != NULL) // if we have a semaphore, give it
       xSemaphoreGive(args->xSem);

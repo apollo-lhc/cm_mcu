@@ -45,7 +45,7 @@ struct MonitorI2CTaskArgs_t {
   const uint8_t n_commands;                // number of commands
   const int n_values;                  // number of results
   const uint8_t n_pages;                   // number of pages to loop over
-  uint8_t *sm_values;
+  uint16_t *sm_values;
   tSMBus *smbus;                       // pointer to I2C controller
   volatile tSMBusStatus *smbus_status; // pointer to I2C status
   volatile TickType_t updateTick;      // last update time, in ticks
@@ -56,19 +56,19 @@ struct MonitorI2CTaskArgs_t {
 };
 
 #define NSUPPLIES_FFLDAQ_F1 (4)
-#define NCOMMANDS_FFLDAQ_F1 7  // number of commands
+#define NCOMMANDS_FFLDAQ_F1 4  // number of commands
 #define NPAGES_FFLDAQ_F1    1   // number of pages on the 4-channel firefly ports
 
 #define NSUPPLIES_FFLIT_F1 (6)
-#define NCOMMANDS_FFLIT_F1 7  // number of commands
+#define NCOMMANDS_FFLIT_F1 4  // number of commands
 #define NPAGES_FFLIT_F1    1   // number of pages on the 12-channel firefly ports
 
 #define NSUPPLIES_FFLDAQ_F2 (4)
-#define NCOMMANDS_FFLDAQ_F2 7  // number of commands
+#define NCOMMANDS_FFLDAQ_F2 4  // number of commands
 #define NPAGES_FFLDAQ_F2    1   // number of pages on the 4-channel firefly ports
 
 #define NSUPPLIES_FFLIT_F2 (6)
-#define NCOMMANDS_FFLIT_F2 7  // number of commands
+#define NCOMMANDS_FFLIT_F2 4  // number of commands
 #define NPAGES_FFLIT_F2    1   // number of pages on the 12-channel firefly ports
 
 extern struct dev_moni2c_addr_t fflit_f1_moni2c_addrs[NFIREFLIES_IT_F1];
@@ -81,7 +81,7 @@ extern struct MonitorI2CTaskArgs_t fflit_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
 
-#define NSUPPLIES_CLK (2)
+#define NSUPPLIES_CLK (1)
 #define NCOMMANDS_CLK 9  // number of commands
 #define NPAGES_CLK    1   //
 

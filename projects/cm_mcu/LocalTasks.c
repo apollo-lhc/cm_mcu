@@ -69,14 +69,11 @@ struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
 struct sm_command_t sm_command_ffldaq_f1[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},   // 3 reg address, single-byte output
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},    // 3 reg address, single-byte output
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS},    // 5 reg address, single-byte output
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS},     // 5 reg address, single-byte output
-    { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", "", SM_STATUS},   // 3 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", "", SM_STATUS},    // 5 reg address, single-byte output
 
 };
-uint8_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
+uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
 int8_t ffldaq_f1_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
@@ -101,11 +98,8 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 struct sm_command_t sm_command_fflit_f1[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x07, 1, "FF_LOS_ALARM_0", "", SM_STATUS}, // 7 reg address, lower-byte output
-    { 1, 0x00, 0x07, 2, "FF_LOS_ALARM_1", "", SM_STATUS}, // 7 reg address, high-byte output
-    { 1, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address, lower-byte output
-    { 1, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 14 reg address, high-byte output
-    { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", "", SM_STATUS}, // 7 reg address, lower-byte output
+    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", "", SM_STATUS}, // 14 reg address, lower-byte output
 
 };
 
@@ -118,7 +112,7 @@ struct dev_moni2c_addr_t fflit_f1_moni2c_addrs[NFIREFLIES_IT_F1] = { { "F1_1  12
     { "F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
 
-uint8_t fflit_f1_values[NSUPPLIES_FFLIT_F1 * NCOMMANDS_FFLIT_F1];
+uint16_t fflit_f1_values[NSUPPLIES_FFLIT_F1 * NCOMMANDS_FFLIT_F1];
 int8_t fflit_f1_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t fflit_f1_args = {
@@ -151,14 +145,11 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 struct sm_command_t sm_command_ffldaq_f2[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_0", "", SM_STATUS},  // 3 reg address, single-byte output
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM_1", "", SM_STATUS},   // 3 reg address, single-byte output
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 5 reg address, single-byte output
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 5 reg address, single-byte output
-    { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", "", SM_STATUS},  // 3 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", "", SM_STATUS}, // 5 reg address, single-byte output
 
 };
-uint8_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
+uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 int8_t ffldaq_f2_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
@@ -182,12 +173,10 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 // FFITV arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
 
 struct sm_command_t sm_command_fflit_f2[] = {
+    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x07, 1, "FF_LOS_ALARM_0", "", SM_STATUS}, // 7 reg address, lower-byte output
-    { 1, 0x00, 0x07, 2, "FF_LOS_ALARM_1", "", SM_STATUS}, // 7 reg address, high-byte output
-    { 1, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM_0", "", SM_STATUS}, // 14 reg address, lower-byte output
-    { 1, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM_1", "", SM_STATUS}, // 14 reg address, high-byte output
-    { 1, 0x00, 0x7f, 1, "FF_PAGE_REG", "", SM_STATUS },
+    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", "", SM_STATUS}, // 7 reg address, high-byte output
+    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", "", SM_STATUS}, // 14 reg address, high-byte output
 };
 
 struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
@@ -199,7 +188,7 @@ struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
 
-uint8_t fflit_f2_values[NSUPPLIES_FFLIT_F2 * NCOMMANDS_FFLIT_F2];
+uint16_t fflit_f2_values[NSUPPLIES_FFLIT_F2 * NCOMMANDS_FFLIT_F2];
 int8_t fflit_f2_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t fflit_f2_args = {
@@ -226,7 +215,7 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
     //{"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD // **work in progress**
     //{"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA **need .csv file from Charlie**
     {"r1a", 0x70, 2, 0x6b}, // CLK R1A : Si5395-REVA
-    {"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
+    //{"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
     //{"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA **need .csv file from Charles**
 };
 
@@ -245,7 +234,7 @@ struct sm_command_t sm_command_clk[] = {
 };
 
 // only one of these might be valid
-uint8_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
+uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
 int8_t clk_vendor_part[16];
 
 struct MonitorI2CTaskArgs_t clock_args = {
@@ -999,6 +988,7 @@ int init_load_clk(int clk_n)
 
   uint32_t PreambleList_row; //the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
   int status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
+
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PreL read error: %s\r\n", SMBUS_get_error(status_r));
     xSemaphoreGive(clock_args.xSem);
