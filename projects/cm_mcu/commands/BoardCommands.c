@@ -237,9 +237,9 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
     if (strncmp(argv[1], "set", 3) == 0) {
       // Check GPIOPinWrite docs for why this is so weird
       int pinval = atoi(argv[3]);
-      if ( pinval == 1 )
+      if (pinval == 1)
         pinval = pin;
-      else if ( pinval != 0 ) {
+      else if (pinval != 0) {
         snprintf(m, SCRATCH_SIZE, "%s: value %s not understood\r\n", argv[0], argv[3]);
         return pdFALSE;
       }
