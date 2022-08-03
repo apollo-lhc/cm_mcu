@@ -242,8 +242,15 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
       // therefore since in this interface only one pin is to be manipulated it
       // needs to be shifted to the appropriate position.
       uint32_t pinval = atoi(argv[3]) << pin; // input value should be either 0 or 1
+      pinval = atoi(argv[3]);
+      if ( pinval == 1 )
+        pinval = pin;
+      else if ( pinval != 0 ) {
+        snprintf(m, SCRATCH_SIZE, "%s: value %s not understood\r\n", argv[0], argv[3]);
+        return pdFALSE;
+      }
       MAP_GPIOPinWrite(port, pin, pinval);
-      snprintf(m, SCRATCH_SIZE, "%s: set %s to %lu\r\n", argv[0], argv[2], pinval);
+      snprintf(m, SCRATCH_SIZE, "%s: set %s to %s\r\n", argv[0], argv[2], argv[3]);
       return pdFALSE;
     }
     else {
