@@ -307,247 +307,8 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-/*
-// this command takes up to two arguments
-BaseType_t ff_ctl(int argc, char **argv, char *m)
-{
-  // argument handling
-  int copied = 0;
-  static int whichff = 0;
-
-  if (whichff == 0) {
-    // check for stale data
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-    TickType_t last = pdTICKS_TO_MS(getFFupdateTick()) / 1000;
-    if (checkStale(last, now)) {
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-  }
-  // parse command based on how many arguments it has
-  if (argc == 1) { // default command: temps
-    if (whichff == 0) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF temperatures\r\n");
-    }
-    for (; whichff < NFIREFLIES; ++whichff) {
-      int8_t val = getFFtemp(whichff);
-      const char *name = getFFname(whichff);
-      if (isEnabledFF(whichff)) // val > 0 )
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", name, val);
-      else // dummy value
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", name, "--");
-      bool isTx = (strstr(name, "Tx") != NULL);
-      if (isTx)
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-      else
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-      if ((SCRATCH_SIZE - copied) < 20) {
-        ++whichff;
-        return pdTRUE;
-      }
-    }
-    if (whichff % 2 == 1) {
-      m[copied++] = '\r';
-      m[copied++] = '\n';
-      m[copied] = '\0';
-    }
-    whichff = 0;
-  } // argc == 1
-  else if (argc == 2) {
-    uint8_t code;
-    if (strncmp(argv[1], "suspend", 4) == 0) {
-      code = FFLY_SUSPEND;
-    }
-    else if (strncmp(argv[1], "resume", 4) == 0) {
-      code = FFLY_RESUME;
-    }
-    else {
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s not understood", argv[0], argv[1]);
-      return pdFALSE;
-    }
-    uint32_t message = (code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET;
-    xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
-    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s  sent.\r\n", argv[0], argv[1]);
-  }
-  else {
-    int whichFF = 0;
-    // handle the channel number first
-    if (strncmp(argv[argc - 1], "all", 3) == 0) {
-      whichFF = NFIREFLIES;
-    }
-    else { // commands with arguments. The last argument is always which FF module.
-      whichFF = strtol(argv[argc - 1], NULL, 10);
-      if (whichFF >= NFIREFLIES || (whichFF == 0 && strncmp(argv[argc - 1], "0", 1) != 0)) {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: choose ff number less than %d\r\n",
-                 argv[0], NFIREFLIES);
-        return pdFALSE;
-      }
-    }
-    // now process various commands.
-    if (argc == 4) { // command + three arguments
-      bool receiveAnswer = false;
-      uint8_t code = 0;
-      uint32_t data = (whichFF & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET;
-      if (strncmp(argv[1], "cdr", 3) == 0) {
-        code = FFLY_DISABLE_CDR; // default: disable
-        if (strncmp(argv[2], "on", 2) == 0) {
-          code = FFLY_ENABLE_CDR;
-        }
-      }
-      else if (strncmp(argv[1], "xmit", 4) == 0) {
-        code = FFLY_DISABLE_TRANSMITTER;
-        if (strncmp(argv[2], "on", 2) == 0) {
-          code = FFLY_ENABLE_TRANSMITTER;
-        }
-      }
-      else if (strncmp(argv[1], "rcvr", 4) == 0) {
-        code = FFLY_DISABLE;
-        if (strncmp(argv[2], "on", 2) == 0) {
-          code = FFLY_ENABLE;
-        }
-      }
-      // Add here
-      else if (strncmp(argv[1], "regr", 4) == 0) {
-        code = FFLY_READ_REGISTER;
-        receiveAnswer = true;
-        if (whichFF == NFIREFLIES) {
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: cannot read all registers\r\n",
-                             argv[0]);
-          return pdFALSE;
-        }
-        // register number
-        uint8_t regnum = strtol(argv[2], NULL, 16);
-        copied +=
-            snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reading FF %s, register 0x%x\r\n",
-                     argv[0], getFFname(whichFF), regnum);
-        // pack channel and register into the data
-        data |= ((regnum & FF_MESSAGE_CODE_REG_REG_MASK) << FF_MESSAGE_CODE_REG_REG_OFFSET);
-      }
-      else {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s not recognized\r\n", argv[0],
-                 argv[1]);
-        return pdFALSE;
-      }
-      uint32_t message =
-          ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) | (data & FF_MESSAGE_DATA_MASK);
-      xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s %s sent.\r\n", argv[0], argv[1],
-               argv[2]);
-      if (receiveAnswer) {
-        BaseType_t f = xQueueReceive(xFFlyQueueOut, &message, pdMS_TO_TICKS(5000));
-        if (f == pdTRUE) {
-          uint8_t retcode = (message >> 24) & 0xFFU;
-          uint8_t value = message & 0xFFU;
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                             "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
-                             retcode, SMBUS_get_error(retcode));
-          UBaseType_t n = uxQueueMessagesWaiting(xFFlyQueueOut);
-          if (n > 0) {
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                               "%s: still have %lu messages in the queue\r\n", argv[0], n);
-          }
-        }
-        else
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Command failed (queue).\r\n", argv[0]);
-      }
-    }                     // argc == 4
-    else if (argc == 5) { // command + five arguments
-      // register write. model:
-      // ff regw reg# val (0-23|all)
-      // register read/write commands
-      if (strncmp(argv[1], "regw", 4) == 0) {
-        uint8_t code = FFLY_WRITE_REGISTER;
-        // the two additional arguments
-        // register number
-        // value to be written
-        uint8_t regnum = strtol(argv[2], NULL, 16);
-        uint16_t value = strtol(argv[3], NULL, 16);
-        uint8_t channel = whichFF;
-        if (channel == NFIREFLIES) {
-          channel = 0; // silently fall back to first channel
-        }
-        // pack channel, register and value into the data
-        uint32_t data =
-            ((regnum & FF_MESSAGE_CODE_REG_REG_MASK) << FF_MESSAGE_CODE_REG_REG_OFFSET) |
-            ((value & FF_MESSAGE_CODE_REG_DAT_MASK) << FF_MESSAGE_CODE_REG_DAT_OFFSET) |
-            ((channel & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET);
-        uint32_t message = ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) |
-                           ((data & FF_MESSAGE_DATA_MASK) << FF_MESSAGE_DATA_OFFSET);
-        xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "%s: write val 0x%x to register 0x%x, FF %d.\r\n", argv[0], value, regnum,
-                 channel);
-        whichFF = 0;
-      }                                            // end regw
-      else if (strncmp(argv[1], "test", 4) == 0) { // test code
-        uint8_t code = FFLY_TEST_READ;
-        if (whichFF == NFIREFLIES) {
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                             "%s: cannot test read all registers\r\n", argv[0]);
-          return pdFALSE;
-        }
-        uint8_t regnum = strtol(argv[2], NULL, 16);   // which register
-        uint8_t charsize = strtol(argv[3], NULL, 10); // how big
-        uint32_t message =
-            ((code & FF_MESSAGE_CODE_MASK) << FF_MESSAGE_CODE_OFFSET) |
-            (((regnum & FF_MESSAGE_CODE_TEST_REG_MASK) << FF_MESSAGE_CODE_TEST_REG_OFFSET) |
-             ((charsize & FF_MESSAGE_CODE_TEST_SIZE_MASK) << FF_MESSAGE_CODE_TEST_SIZE_OFFSET) |
-             ((whichFF & FF_MESSAGE_CODE_TEST_FF_MASK) << FF_MESSAGE_CODE_TEST_FF_OFFSET));
-        xQueueSendToBack(xFFlyQueueIn, &message, pdMS_TO_TICKS(10));
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s sent.\r\n", argv[0], argv[1]);
-        whichFF = 0;
-      }
-      else {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s not understood\r\n", argv[0],
-                 argv[1]);
-        return pdFALSE;
-      }
-    } // argc == 5
-    else {
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s not understood\r\n", argv[0],
-               argv[1]);
-      return pdFALSE;
-    }
-  }
-  return pdFALSE;
-}
 
 BaseType_t ff_status(int argc, char **argv, char *m)
-{
-  int copied = 0;
-
-  static int whichff = 0;
-  if (whichff == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY STATUS:\r\n");
-  }
-  for (; whichff < NFIREFLIES; ++whichff) {
-
-    const char *name = getFFname(whichff);
-    if (!isEnabledFF(whichff)) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s   --", name);
-    }
-    else {
-      uint8_t status = getFFstatus(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s 0x%02x ", name, status);
-    }
-
-    bool isTx = (strstr(name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-  whichff = 0;
-  return pdFALSE;
-}
-*/
-BaseType_t ff_status_new(int argc, char **argv, char *m)
 {
   int i1 = 0;
   int copied = 0;
@@ -580,10 +341,17 @@ BaseType_t ff_status_new(int argc, char **argv, char *m)
         int index = (whichff-NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
         uint16_t val = ffldaq_f1_args.sm_values[index];
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s 0x%02x ", ff_moni2c_addrs[whichff].name, val);
-      // two more if else for IT and DAQ of F2
+
       }
-      else{
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
+      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+        int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+        uint16_t val = fflit_f2_args.sm_values[index];
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
+      }
+      else {
+        int index = (whichff-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+        uint16_t val = ffldaq_f2_args.sm_values[index];
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
       }
     }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
@@ -601,53 +369,8 @@ BaseType_t ff_status_new(int argc, char **argv, char *m)
   whichff = 0;
   return pdFALSE;
 }
-/*
+
 BaseType_t ff_los_alarm(int argc, char **argv, char *m)
-{
-  int copied = 0;
-
-  static int whichff = 0;
-  if (whichff == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
-  }
-  for (; whichff < NFIREFLIES; ++whichff) {
-    const char *name = getFFname(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
-    if (!isEnabledFF(whichff)) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
-    }
-    else {
-      for (size_t i = 0; i < 8; i++) {
-        int alarm = getFFlos(whichff, i) ? 1 : 0;
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
-      }
-      if (strstr(name, "XCVR") == NULL) {
-        for (size_t i = 8; i < 12; i++) {
-          int alarm = getFFlos(whichff, i) ? 1 : 0;
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
-        }
-      }
-      else {
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
-      }
-    }
-
-    bool isTx = (strstr(name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-  whichff = 0;
-  return pdFALSE;
-}
-*/
-BaseType_t ff_los_alarm_new(int argc, char **argv, char *m)
 {
   int i1 = 2;
   int copied = 0;
@@ -686,7 +409,6 @@ BaseType_t ff_los_alarm_new(int argc, char **argv, char *m)
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
       }
-
       else if (NFIREFLIES_IT_F1 <= whichff && whichff < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1 ) {
         int index = (whichff-NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
@@ -696,10 +418,30 @@ BaseType_t ff_los_alarm_new(int argc, char **argv, char *m)
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
-      // two more if else for IT and DAQ of F2
       }
-      else{
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
+      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+        int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1-i] = (fflit_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+        for (size_t i = 8; i < 12; i++) {
+          int alarm = getFFch_high(i2cdata[1], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+      else {
+        int index = (whichff-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1-i] = (ffldaq_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
       }
     }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
@@ -717,53 +459,8 @@ BaseType_t ff_los_alarm_new(int argc, char **argv, char *m)
   whichff = 0;
   return pdFALSE;
 }
-/*
+
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
-{
-  int copied = 0;
-
-  static int whichff = 0;
-  if (whichff == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY CDR LOL ALARM:\r\n");
-  }
-  for (; whichff < NFIREFLIES; ++whichff) {
-    const char *name = getFFname(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", name);
-    if (!isEnabledFF(whichff)) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
-    }
-    else {
-      for (size_t i = 0; i < 8; i++) {
-        int alarm = getFFlol(whichff, i) ? 1 : 0;
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
-      }
-      if (strstr(name, "XCVR") == NULL) {
-        for (size_t i = 8; i < 12; i++) {
-          int alarm = getFFlol(whichff, i) ? 1 : 0;
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
-        }
-      }
-      else {
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
-      }
-    }
-
-    bool isTx = (strstr(name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-  whichff = 0;
-  return pdFALSE;
-}
-*/
-BaseType_t ff_cdr_lol_alarm_new(int argc, char **argv, char *m)
 {
   int i1 = 3;
   int copied = 0;
@@ -812,10 +509,30 @@ BaseType_t ff_cdr_lol_alarm_new(int argc, char **argv, char *m)
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
-      // two more if else for IT and DAQ of F2
       }
-      else{
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "    ");
+      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+        int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1-i] = (fflit_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+        for (size_t i = 8; i < 12; i++) {
+          int alarm = getFFch_high(i2cdata[1], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+      else {
+        int index = (whichff-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1-i] = (ffldaq_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
       }
     }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
@@ -875,7 +592,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
           uint8_t val = ffldaq_f1_args.sm_values[index];
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
-        /*
+
         else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
           int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
           uint8_t val = fflit_f2_args.sm_values[index];
@@ -886,7 +603,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
           uint8_t val = ffldaq_f2_args.sm_values[index];
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
-        */
+
       }
       else // dummy value
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
@@ -921,73 +638,65 @@ extern struct MonitorI2CTaskArgs_t fflit_f1_args;
 // dump clock monitor information
 BaseType_t clkmon_ctl(int argc, char **argv, char* m)
 {
-  int s = SCRATCH_SIZE;
-  BaseType_t i1 = strtol(argv[1], NULL, 10);
-
-  if (i1 < 0 || i1 >= clock_args.n_commands) {
-    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
-        clock_args.n_commands - 1);
-    return pdFALSE;
-  }
-  // update times, in seconds
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-  TickType_t last = pdTICKS_TO_MS(clock_args.updateTick) / 1000;
   int copied = 0;
-  if (checkStale(last, now)) {
-    int mins = (now - last) / 60;
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-  }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
-      clock_args.commands[i1].name, clock_args.commands[i1].command);
-  for (int ps = 0; ps < clock_args.n_devices; ++ps) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", clock_args.devices[ps].name);
+  char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
+  BaseType_t i = strtol(argv[1], NULL, 10);
 
-    uint8_t val = clock_args.sm_values[ps * (clock_args.n_commands * clock_args.n_pages) + i1];
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE(hex) %x\t", val);
-
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-  }
-
-  return pdFALSE;
-}
-
-BaseType_t clkr0amon_ctl(int argc, char **argv, char* m)
-{
-  int s = SCRATCH_SIZE;
-  BaseType_t i1 = strtol(argv[1], NULL, 10);
-
-  if (i1 < 0 || i1 >= clockr0a_args.n_commands) {
-    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
-        clockr0a_args.n_commands - 1);
+  if (i < 0 || i > 4) {
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+        "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, "
+        "r1b:3 and r1c:4 \r\n",
+        i);
     return pdFALSE;
-  }
-  // update times, in seconds
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-  TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
-  int copied = 0;
-  if (checkStale(last, now)) {
-    int mins = (now - last) / 60;
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-  }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
-      clockr0a_args.commands[i1].name, clockr0a_args.commands[i1].command);
-  for (int ps = 0; ps < clockr0a_args.n_devices; ++ps) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", clockr0a_args.devices[ps].name);
 
-    uint8_t val = clockr0a_args.sm_values[ps * (clockr0a_args.n_commands * clockr0a_args.n_pages) + i1];
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE(hex) %x\t", val);
+  }
 
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  if (i==0){
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI5341 with id : %s \r\n",
+          clk_ids[i]);
+    // update times, in seconds
+    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
+
+
+    if (checkStale(last, now)) {
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    for (int c = 0; c < clockr0a_args.n_commands; ++c) {
+      uint8_t val = clockr0a_args.sm_values[c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s : VALUE(hex) %x\t", clockr0a_args.commands[c].name, val);
+
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    }
+  }
+  else{
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI5395 with id : %s \r\n",
+          clk_ids[i]);
+    // update times, in seconds
+    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t last = pdTICKS_TO_MS(clock_args.updateTick) / 1000;
+
+
+    if (checkStale(last, now)) {
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    for (int c = 0; c < clock_args.n_commands; ++c) {
+      uint8_t val = clock_args.sm_values[(i-1) * (clock_args.n_commands * clock_args.n_pages) + c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s : VALUE(hex) %x\t", clock_args.commands[c].name, val);
+
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    }
   }
 
   return pdFALSE;
 }
 
 extern struct MonitorI2CTaskArgs_t clock_args;
+extern struct MonitorI2CTaskArgs_t clockr0a_args;
 
 BaseType_t fpga_ctl(int argc, char **argv, char *m)
 {

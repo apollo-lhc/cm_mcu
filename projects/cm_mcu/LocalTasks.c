@@ -31,6 +31,7 @@
 #include "common/log.h"
 #include "common/printf.h"
 
+#define DPRINT(x)
 
 struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
@@ -212,10 +213,10 @@ struct MonitorI2CTaskArgs_t fflit_f2_args = {
 // Clock arguments for monitoring task
 
 struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
-    //{"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA **need .csv file from Charlie**
+    {"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA **need .csv file from Charlie**
     {"r1a", 0x70, 2, 0x6b}, // CLK R1A : Si5395-REVA
     {"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
-    //{"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA **need .csv file from Charles**
+    {"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA **need .csv file from Charlie**
 };
 
 
@@ -345,17 +346,61 @@ int8_t getFFtemp(const uint8_t i)
     int index = (i-NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
     val = ffldaq_f1_args.sm_values[index];
   }
-  /*
-  else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-    int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
-    uint8_t val = fflit_f2_args.sm_values[index];
+
+  else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+    int index = (i-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+    val = fflit_f2_args.sm_values[index];
     }
   else {
-    int index = (whichff-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-    uint8_t val = ffldaq_f2_args.sm_values[index];
+    int index = (i-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+    val = ffldaq_f2_args.sm_values[index];
     }
-   */
+
   return val;
+}
+
+void getFFpart() // 0 for FFDAQ and 1 for FFNONDAQ
+{
+  // Write device vendor part for identifying FF devices
+  uint8_t vendor_data[4];
+  uint32_t vendor_char;
+  int8_t vendor_part[16];
+  //uint8_t ven_addr_start = ((!i)*VENDOR_START_BIT_FFDAQ) + (i*VENDOR_START_BIT_FFNONDAQ);
+  //uint8_t ven_addr_stop = ((!i)*VENDOR_STOP_BIT_FFDAQ) + (i*VENDOR_STOP_BIT_FFNONDAQ);
+  uint8_t ven_addr_start = VENDOR_START_BIT_FFNONDAQ;
+  uint8_t ven_addr_stop = VENDOR_STOP_BIT_FFNONDAQ;
+  uint8_t data[1];
+  data[0] = 0x1U << ffldaq_f1_args.devices[0].mux_bit; //mux_bit
+  log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data[0]);
+  int rmux = apollo_i2c_ctl_w(ffldaq_f1_args.i2c_dev, ffldaq_f1_args.devices[0].mux_addr, 1, data[0]);
+  if (rmux != 0) {
+    log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+  }
+  for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+    int res = apollo_i2c_ctl_reg_r(ffldaq_f1_args.i2c_dev, ffldaq_f1_args.devices[0].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
+    if (res != 0){
+      log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
+      vendor_part[i - ven_addr_start] = 0;
+      break;
+    }
+
+    else{
+      for (int i = 0; i < 4; ++i) {
+        vendor_data[i] = (vendor_char>> (3-i) * 8) & 0xFF;
+      }
+    }
+    typedef union {
+      uint8_t us;
+      int8_t s;
+    } convert_8_t;
+    convert_8_t tmp1;
+
+    tmp1.us = vendor_data[3]; // change from uint_8 to int8_t, preserving bit pattern
+    vendor_part[i - ven_addr_start] = tmp1.s;
+  }
+
+  char *vendor_string = (char*)vendor_part;
+  log_info(LOG_SERVICE, "Getting Firefly 4-ch part : %s:", vendor_string);
 }
 
 #endif //REV 2
@@ -772,6 +817,12 @@ void init_registers_ff()
   // 3a) U102 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
   // All signals are inputs.
 
+  // grab the semaphore to ensure unique access to I2C controller
+  if (ffldaq_f1_args.xSem != NULL) {
+    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t) 10) == pdFALSE)
+      ;
+  }
+
   // # set first I2C switch on channel 4 (U100, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
@@ -844,6 +895,8 @@ void init_registers_ff()
   apollo_i2c_ctl_w(4, 0x72, 1, 0x04);
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x03); // 00000011 [P17..P10]
+
+  xSemaphoreGive(ffldaq_f1_args.xSem);
 }
 #endif // REV1
 #ifdef REV2
@@ -919,6 +972,12 @@ void init_registers_ff() {
 	// 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
 	// All signals are inputs.
 
+  // grab the semaphore to ensure unique access to I2C controller
+  if (ffldaq_f1_args.xSem != NULL) {
+    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t) 10) == pdFALSE)
+      ;
+  }
+
 	// # set first I2C switch on channel 4 (U14, address 0x70) to port 7
 	apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
 	apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
@@ -984,6 +1043,9 @@ void init_registers_ff() {
 	apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
 	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
 	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+
+	getFFpart(ffldaq_f1_args.xSem);
+	xSemaphoreGive(ffldaq_f1_args.xSem);
 }
 #endif // REV2
 
@@ -1036,7 +1098,6 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       }
     }
   }
-  //xSemaphoreGive(clock_args.xSem);
   return status_w;
 }
 

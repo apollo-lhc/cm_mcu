@@ -83,7 +83,7 @@ extern struct MonitorI2CTaskArgs_t fflit_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
 
-#define NSUPPLIES_CLK (2)
+#define NSUPPLIES_CLK (4)
 #define NCOMMANDS_CLK 8  // number of commands
 #define NPAGES_CLK    1   //
 #define NSUPPLIES_CLKR0A (1)

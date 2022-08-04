@@ -87,9 +87,9 @@ void MonitorI2CTask(void *parameters);
 #define N_EXTRA_CMDS 7
 
 
-// Firefly task
-// --- Firefly monitoring
-// I2C information -- which device on the MCU is for the FF for each FPGA
+// MonitorI2C task
+// --- Firefly and Clock monitoring via I2C
+// I2C information -- which device on the MCU is for the FF for each FPGA and clock chips SI5341 and SI5395
 // this is what corresponds to I2C_BASE variables in the MCU
 #ifdef REV1
 #define I2C_DEVICE_F1 4
@@ -101,7 +101,6 @@ void MonitorI2CTask(void *parameters);
 #endif
 
 // the following are true for both Rev1 and Rev2
-SemaphoreHandle_t getCLKSem();
 #define FF_I2CMUX_1_ADDR 0x70
 #define FF_I2CMUX_2_ADDR 0x71
 
@@ -121,70 +120,10 @@ SemaphoreHandle_t getCLKSem();
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
-//void FireFlyTask(void *parameters);
-//extern QueueHandle_t xFFlyQueueIn;
-//extern QueueHandle_t xFFlyQueueOut;
-
-const char *getFFname(const uint8_t i);
-int8_t *test_read(const uint8_t i);
-bool isEnabledFF(int ff);
-//int8_t getFFtemp(const uint8_t i);
-//uint8_t getFFstatus(const uint8_t i);
-bool getFFlos(int i, int channel);
-bool getFFlol(int i, int channel);
-// FFLY I/O Expander initialization
-
-int disable_xcvr_cdr(const char *name);
-
-// messages for FF task
-#define FFLY_DISABLE_TRANSMITTER (1)
-#define FFLY_ENABLE_TRANSMITTER  (2)
-#define FFLY_ENABLE_CDR          (3)
-#define FFLY_DISABLE_CDR         (4)
-#define FFLY_DISABLE             (5)
-#define FFLY_ENABLE              (6)
-#define FFLY_WRITE_REGISTER      (7)
-#define FFLY_READ_REGISTER       (8)
-#define FFLY_TEST_READ           (9)
-#define FFLY_SUSPEND             (10)
-#define FFLY_RESUME              (11)
-
-// FF Task message format
-// two fields, a task code and task data.
-#define FF_MESSAGE_DATA_SZ     26
-#define FF_MESSAGE_DATA_OFFSET 0
-#define FF_MESSAGE_DATA_MASK   ((1 << FF_MESSAGE_DATA_SZ) - 1)
-#define FF_MESSAGE_CODE_SZ     6
-#define FF_MESSAGE_CODE_OFFSET FF_MESSAGE_DATA_SZ
-#define FF_MESSAGE_CODE_MASK   ((1 << FF_MESSAGE_CODE_SZ) - 1)
-
-// FF register read/write task
-// the 26 bits are split into three fields
-// 11 bits of register (top two bits are page)
-// 10 bits of data
-// 5 bits of which firefly
-#define FF_MESSAGE_CODE_REG_REG_SZ     11
-#define FF_MESSAGE_CODE_REG_REG_OFFSET 0
-#define FF_MESSAGE_CODE_REG_DAT_SZ     10
-#define FF_MESSAGE_CODE_REG_DAT_OFFSET FF_MESSAGE_CODE_REG_REG_SZ
-#define FF_MESSAGE_CODE_REG_FF_SZ      10
-#define FF_MESSAGE_CODE_REG_FF_OFFSET  (FF_MESSAGE_CODE_REG_REG_SZ + FF_MESSAGE_CODE_REG_DAT_SZ)
-// derived masks
-#define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
-#define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
-#define FF_MESSAGE_CODE_REG_FF_MASK  ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
-
-// FF test register
-#define FF_MESSAGE_CODE_TEST_REG_SZ      8
-#define FF_MESSAGE_CODE_TEST_REG_OFFSET  0
-#define FF_MESSAGE_CODE_TEST_SIZE_SZ     5
-#define FF_MESSAGE_CODE_TEST_SIZE_OFFSET FF_MESSAGE_CODE_TEST_REG_SZ
-#define FF_MESSAGE_CODE_TEST_FF_SZ       5
-#define FF_MESSAGE_CODE_TEST_FF_OFFSET   (FF_MESSAGE_CODE_TEST_REG_SZ + FF_MESSAGE_CODE_TEST_REG_SZ)
-// derived masks
-#define FF_MESSAGE_CODE_TEST_REG_MASK  ((1 << FF_MESSAGE_CODE_TEST_REG_SZ) - 1)
-#define FF_MESSAGE_CODE_TEST_SIZE_MASK ((1 << FF_MESSAGE_CODE_TEST_SIZE_SZ) - 1)
-#define FF_MESSAGE_CODE_TEST_FF_MASK   ((1 << FF_MESSAGE_CODE_TEST_FF_SZ) - 1)
+#define VENDOR_START_BIT_FFDAQ 171
+#define VENDOR_STOP_BIT_FFDAQ 187
+#define VENDOR_START_BIT_FFNONDAQ 168
+#define VENDOR_STOP_BIT_FFNONDAQ 184
 
 struct dev_moni2c_addr_t {
   char *name;
@@ -193,17 +132,17 @@ struct dev_moni2c_addr_t {
   uint8_t dev_addr; // I2C address of device.
 };
 
+extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
+
 int8_t *test_read_vendor(void *parameters, const uint8_t i);
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 int8_t getFFtemp(const uint8_t i);
+void getFFpart();
 uint8_t getFFstatus(const uint8_t i);
 TickType_t getFFupdateTick();
 void init_registers_ff();
-
-
-extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
 // ---- version info
 const char *buildTime();

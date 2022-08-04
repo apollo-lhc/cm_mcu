@@ -246,7 +246,6 @@ int main(void)
 
   initFPGAMon();
 
-
   // all facilities start at INFO
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
     log_set_level(LOG_INFO, i);
@@ -256,7 +255,10 @@ int main(void)
   xUARTMutex = xSemaphoreCreateMutex();
   // mutex for I2C controller for the power supplies
   dcdc_args.xSem = xSemaphoreCreateMutex();
+
   SemaphoreHandle_t i2c4_sem = xSemaphoreCreateMutex();
+  //getFFpart(i2c4_sem);
+  //vTaskDelay(pdMS_TO_TICKS(10)); //delay 10 ms
   fflit_f1_args.xSem = i2c4_sem;
   ffldaq_f1_args.xSem = i2c4_sem;
   SemaphoreHandle_t i2c2_sem = xSemaphoreCreateMutex();
@@ -301,8 +303,6 @@ int main(void)
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  //xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
-             // NULL);
   xTaskCreate(MonitorI2CTask, "FFIT", 2*configMINIMAL_STACK_SIZE, &fflit_f1_args, tskIDLE_PRIORITY + 4,
                 NULL);
   xTaskCreate(MonitorI2CTask, "FFDAQ", 2*configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
@@ -333,12 +333,6 @@ int main(void)
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xPwrQueue != NULL);
 
-  /*
-  xFFlyQueueIn = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
-  configASSERT(xFFlyQueueIn != NULL);
-  xFFlyQueueOut = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
-  configASSERT(xFFlyQueueOut != NULL);
-  */
   xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queues
   configASSERT(xEPRMQueue_in != NULL);
   xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
