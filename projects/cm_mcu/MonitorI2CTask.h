@@ -30,6 +30,8 @@ struct sm_command_t {
   unsigned char command; // I2c register address
   int size;              // number of bytes to read
   char *name;            // text describing command
+  int begin_bit;         // begin bit mask
+  int end_bit;           // end bit mask
   char *units;           // units for pretty printing
   enum sm_type type;     // how to decode command (L11 or bitfield or ...)
 };
@@ -81,10 +83,14 @@ extern struct MonitorI2CTaskArgs_t fflit_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
 
-#define NSUPPLIES_CLK (1)
-#define NCOMMANDS_CLK 9  // number of commands
+#define NSUPPLIES_CLK (2)
+#define NCOMMANDS_CLK 8  // number of commands
 #define NPAGES_CLK    1   //
+#define NSUPPLIES_CLKR0A (1)
+#define NCOMMANDS_CLKR0A 10  // number of commands
+#define NPAGES_CLKR0A    1   //
 
 extern struct MonitorI2CTaskArgs_t clock_args;
+extern struct MonitorI2CTaskArgs_t clockr0a_args;
 
 #endif /* PROJECTS_CM_MCU_MONITORI2CTASK_H_ */

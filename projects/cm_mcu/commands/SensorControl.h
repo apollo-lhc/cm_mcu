@@ -42,6 +42,7 @@ BaseType_t ff_temp(int argc, char **argv, char* m);
 
 // Clocks
 BaseType_t clkmon_ctl(int argc, char **argv, char* m);
+BaseType_t clkr0amon_ctl(int argc, char **argv, char* m);
 
 // FPGA
 BaseType_t fpga_ctl(int argc, char **argv, char* m);

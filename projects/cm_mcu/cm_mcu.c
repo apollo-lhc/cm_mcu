@@ -261,6 +261,7 @@ int main(void)
   ffldaq_f1_args.xSem = i2c4_sem;
   SemaphoreHandle_t i2c2_sem = xSemaphoreCreateMutex();
   clock_args.xSem = i2c2_sem;
+  clockr0a_args.xSem = i2c2_sem;
 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
@@ -308,6 +309,8 @@ int main(void)
                 NULL);
   xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
                     NULL);
+  xTaskCreate(MonitorI2CTask, "CLKR0A", 2*configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
+                      NULL);
   xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,

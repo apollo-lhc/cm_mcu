@@ -945,7 +945,41 @@ BaseType_t clkmon_ctl(int argc, char **argv, char* m)
         snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", clock_args.devices[ps].name);
 
     uint8_t val = clock_args.sm_values[ps * (clock_args.n_commands * clock_args.n_pages) + i1];
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE %x\t", val);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE(hex) %x\t", val);
+
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  }
+
+  return pdFALSE;
+}
+
+BaseType_t clkr0amon_ctl(int argc, char **argv, char* m)
+{
+  int s = SCRATCH_SIZE;
+  BaseType_t i1 = strtol(argv[1], NULL, 10);
+
+  if (i1 < 0 || i1 >= clockr0a_args.n_commands) {
+    snprintf(m, s, "%s: Invalid argument, must be between 0 and %d\r\n", argv[0],
+        clockr0a_args.n_commands - 1);
+    return pdFALSE;
+  }
+  // update times, in seconds
+  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+  TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
+  int copied = 0;
+  if (checkStale(last, now)) {
+    int mins = (now - last) / 60;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+  }
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s (0x%02x)\r\n",
+      clockr0a_args.commands[i1].name, clockr0a_args.commands[i1].command);
+  for (int ps = 0; ps < clockr0a_args.n_devices; ++ps) {
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied, "SUPPLY %s\r\n", clockr0a_args.devices[ps].name);
+
+    uint8_t val = clockr0a_args.sm_values[ps * (clockr0a_args.n_commands * clockr0a_args.n_pages) + i1];
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE(hex) %x\t", val);
 
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
   }

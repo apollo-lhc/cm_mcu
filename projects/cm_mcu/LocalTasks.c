@@ -67,10 +67,10 @@ struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     { "F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
 struct sm_command_t sm_command_ffldaq_f1[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", "", SM_STATUS},   // 3 reg address, single-byte output
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", "", SM_STATUS},    // 5 reg address, single-byte output
+    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
+    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},   // 3 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},    // 5 reg address, single-byte output
 
 };
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
@@ -96,10 +96,10 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 // FFIT arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA1
 
 struct sm_command_t sm_command_fflit_f1[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", "", SM_STATUS}, // 7 reg address, lower-byte output
-    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", "", SM_STATUS}, // 14 reg address, lower-byte output
+    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
+    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
+    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS}, // 7 reg address, lower-byte output
+    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS}, // 14 reg address, lower-byte output
 
 };
 
@@ -143,10 +143,10 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 };
 
 struct sm_command_t sm_command_ffldaq_f2[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", "", SM_STATUS},  // 3 reg address, single-byte output
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", "", SM_STATUS}, // 5 reg address, single-byte output
+    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
+    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
+    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},  // 3 reg address, single-byte output
+    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS}, // 5 reg address, single-byte output
 
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
@@ -173,10 +173,10 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 // FFITV arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
 
 struct sm_command_t sm_command_fflit_f2[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", "C", SM_STATUS },
-    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", "", SM_STATUS}, // 7 reg address, high-byte output
-    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", "", SM_STATUS}, // 14 reg address, high-byte output
+    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
+    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
+    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS}, // 7 reg address, high-byte output
+    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS}, // 14 reg address, high-byte output
 };
 
 struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
@@ -212,24 +212,49 @@ struct MonitorI2CTaskArgs_t fflit_f2_args = {
 // Clock arguments for monitoring task
 
 struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
-    //{"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD // **work in progress**
     //{"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA **need .csv file from Charlie**
     {"r1a", 0x70, 2, 0x6b}, // CLK R1A : Si5395-REVA
-    //{"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
+    {"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
     //{"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA **need .csv file from Charles**
 };
 
 
 struct sm_command_t sm_command_clk[] = {
-    {1, 0x00,0x02, 1, "PN_BASE", "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x03, 1, "PN_BASE", "", SM_STATUS}, //page 0x00
-    {1, 0x04,0x87, 1, "ZDM_EN", "", SM_STATUS}, //page 0x04
-    {1, 0x04,0x87, 1, "ZDM_AUTOSW_EN", "", SM_STATUS}, //page 0x04
-    {1, 0x05,0x05, 1, "DEVICE_REV", "", SM_STATUS}, //page 0x05
-    {1, 0x05,0x36, 1, "CLK_SWITCH_MODE_&_HSW_EN", "", SM_STATUS}, //page 0x05
-    {1, 0x05,0x38, 1, "IN0&1_PRIORITY", "", SM_STATUS}, //page 0x05
-    {1, 0x05,0x39, 1, "IN2&3_PRIORITY", "", SM_STATUS}, //page 0x05
-    {1, 0x05,0x37, 1, "IN_LOS&OOF_MSK", "", SM_STATUS}, //page 0x05
+    //device information on page 0 : table 16.2 and 16.4
+    {1, 0x00,0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS}, //page 0x00
+    //sticky flags on page 0 : table 16.12 and 16.13
+    /*
+    {1, 0x00,0x11, 1, "SYSINCAL_FLG", 0, 0, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x11, 1, "LOSXAXB_FLG", 1, 1, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x11, 1, "XAXB_ERR_FLG", 3, 3, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x11, 1, "SMBUS_TIMEOUT_FLG", 5, 5, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x12, 1, "LOS_FLG", 0, 3, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x12, 1, "OOF_FLG", 4, 7, "", SM_STATUS}, //page 0x00
+    */
+    //internal statuses on page 0 : table 16.8 and 16.9
+    //{1, 0x00,0x0C, 1, "SYSINCAL", 0, 0, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, //page 0x00
+    //{1, 0x00,0x0C, 1, "XAXB_ERR", 3, 3, "", SM_STATUS}, //page 0x00
+    //{1, 0x00,0x0C, 1, "SMBUS_TIMEOUT", 5, 5, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOS", 0, 3, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "OOF", 4, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0E, 1, "LOL", 1, 1, "", SM_STATUS}, //page 0x00
+    //automatic input selection on page 4 and 5 : table 5.3
+    /*
+    {1, 0x04,0x87, 1, "ZDM_EN", 0, 0, "", SM_STATUS}, //page 0x04
+    {1, 0x04,0x87, 1, "ZDM_AUTOSW_EN", 4, 4, "", SM_STATUS}, //page 0x04
+    {1, 0x05,0x36, 1, "CLK_SWITCH_MODE", 0, 1, "", SM_STATUS}, //page 0x05
+    {1, 0x05,0x36, 1, "HSW_EN", 2, 2, "", SM_STATUS}, //page 0x05
+    {1, 0x05,0x38, 1, "IN0_PRIORITY", 0, 2, "", SM_STATUS}, //page 0x05
+    {1, 0x05,0x38, 1, "IN1_PRIORITY", 4, 6, "", SM_STATUS}, //page 0x05
+    {1, 0x05,0x39, 1, "IN2_PRIORITY", 0, 2, "", SM_STATUS}, //page 0x05
+    {1, 0x05,0x39, 1, "IN3_PRIORITY", 4, 6, "", SM_STATUS}, //page 0x05
+    {1, 0x05,0x37, 1, "IN_LOS_MSK", 0, 3, "", SM_STATUS}, //page 0x05
+    {1, 0x05,0x37, 1, "IN_OOF_MSK", 4, 7, "", SM_STATUS}, //page 0x05
+    */
 
 };
 
@@ -253,6 +278,58 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .requirePower = true,
     .stack_size = 4096U,
     .sm_vendor_part = clk_vendor_part,};
+
+
+struct dev_moni2c_addr_t clkr0a_moni2c_addrs[] = {
+    {"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD
+};
+
+struct sm_command_t sm_command_clkr0a[] = {
+    //device information on page 0 : table 14.4 and 14.6
+    {1, 0x00,0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS}, //page 0x00 for testing
+    //sticky flags on page 0 : table 4.5
+    /*
+    {1, 0x00,0x11, 1, "SYSINCAL_FLG", 0, 0, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x11, 1, "LOSXAXB_FLG", 1, 1, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x11, 1, "LOSREF_FLG", 2, 2, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x11, 1, "LOS_FLG", 3, 3, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x11, 1, "SMBUS_TIMEOUT_FLG", 5, 5, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x12, 1, "LOSIN_FLG", 0, 3, "", SM_STATUS}, //page 0x00
+    */
+    //internal statuses on page 0 : table 4.5
+    {1, 0x00,0x0C, 1, "SYSINCAL", 0, 0, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0C, 1, "LOSREF", 2, 2, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0C, 1, "LOS", 3, 3, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0C, 1, "SMBUS_TIMEOUT", 5, 5, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOSIN", 0, 3, "", SM_STATUS}, //page 0x00
+    // enable zero delay mode on page 9 : table 14.82
+    //{1, 0x09,0x1C, 1, "ZDM_EN", 0, 7, "", SM_STATUS}, //page 0x09
+
+};
+
+uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
+int8_t clkr0a_vendor_part[16];
+
+struct MonitorI2CTaskArgs_t clockr0a_args = {
+    .name = "CLKR0A",
+    .devices = clkr0a_moni2c_addrs,
+    .i2c_dev = I2C_DEVICE_CLK,
+    .n_devices = NSUPPLIES_CLKR0A,
+    .commands = sm_command_clkr0a,
+    .n_commands = NCOMMANDS_CLKR0A,
+    .n_values = NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A,
+    .n_pages = NPAGES_CLKR0A,
+    .sm_values = clkr0a_values,
+    .smbus = &g_sMaster2,
+    .smbus_status = &eStatus2,
+    .xSem = NULL,
+    .requirePower = true,
+    .stack_size = 4096U,
+    .sm_vendor_part = clkr0a_vendor_part,};
 
 int8_t getFFtemp(const uint8_t i)
 {

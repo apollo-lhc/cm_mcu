@@ -588,6 +588,7 @@ static struct command_t commands[] = {
      -1},
     {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
     {"clkmon", clkmon_ctl, "Displays a table showing the clock chips' statuses.\r\n", 1},
+    {"clkr0amon", clkr0amon_ctl, "Displays a table showing the clock chip r0a' statuses.\r\n", 1},
     {"clock", clock_ctl,
      "args: (1|2)\r\nReset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n", 1},
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM.\r\n", 0},

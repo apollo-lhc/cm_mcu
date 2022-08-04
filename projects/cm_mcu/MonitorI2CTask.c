@@ -192,6 +192,11 @@ bool getFFch_high(uint8_t val, int channel)
 
 }
 
+void make_bitmask(unsigned int width, unsigned int shift, uint8_t *mask){
+  unsigned int t = width ? (2u << (width-1))-1u : 0u;
+  *mask = t << shift;
+}
+
 bool isEnabledFF(int ff)
 {
   // firefly config stored in on-board EEPROM
@@ -272,7 +277,7 @@ void MonitorI2CTask(void *parameters) {
   // wait for the power to come up
   vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(2500));
 
-  int IsCLK =  (strstr(args->name, "CLKSI") != NULL);
+  int IsCLK =  (strstr(args->name, "CLK") != NULL);
   int IsFFIT =  (strstr(args->name, "FFIT") != NULL);
   int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);
 
@@ -408,7 +413,11 @@ void MonitorI2CTask(void *parameters) {
 
         //int res = SMBusMasterI2CWriteRead(args->smbus, args->devices[ff].dev_addr, &(args->commands[c].command), args->commands[c].size, i2cdata, 1);
         uint32_t output_raw;
-        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr, args->commands[c].reg_size, (uint32_t) args->commands[c].command, args->commands[c].size, &output_raw);
+        uint8_t mask = 0;
+        make_bitmask(args->commands[c].end_bit - args->commands[c].begin_bit + 1,args->commands[c].begin_bit, &mask);
+        uint16_t full_mask = (0xff << 8) | mask;
+        uint16_t masked_command =  args->commands[c].command & full_mask;
+        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ff].dev_addr, args->commands[c].reg_size, masked_command, args->commands[c].size, &output_raw);
 
         if (res != 0) {
           log_warn(LOG_MONI2C, "%s read Error %s, break (ff=%d)\r\n",
