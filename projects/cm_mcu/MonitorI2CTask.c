@@ -169,7 +169,7 @@ void MonitorI2CTask(void *parameters) {
     // -------------------------------
     // loop over devices in the device-type instance
     // -------------------------------
-    for (uint8_t ps = 0; ps < args->n_devices; ++ps) {
+    for (int ps = 0; ps < args->n_devices; ++ps) {
 
       if (!IsCLK){ // Fireflies need to be checked if the links are connected or not
         int offsetFF12 = 1 - IsFF12;
