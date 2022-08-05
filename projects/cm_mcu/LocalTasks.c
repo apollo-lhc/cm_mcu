@@ -102,6 +102,7 @@ struct sm_command_t sm_command_fflit_f1[] = {
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
+// **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f1[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
@@ -126,7 +127,7 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .devices = ffl12_f1_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F1,
     .n_devices = NSUPPLIES_FFL12_F1,
-    .commands = sm_command_fflot_f1,
+    .commands = sm_command_fflot_f1, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
     .n_commands = NCOMMANDS_FFL12_F1,
     .n_values = NSUPPLIES_FFL12_F1 * NPAGES_FFL12_F1 * NCOMMANDS_FFL12_F1,
     .n_pages = NPAGES_FFL12_F1,
@@ -184,6 +185,7 @@ struct sm_command_t sm_command_fflit_f2[] = {
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
+// **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f2[] = {
     { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
     { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
@@ -208,7 +210,7 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .devices = ffl12_f2_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F2,
     .n_devices = NSUPPLIES_FFL12_F2,
-    .commands = sm_command_fflot_f2,
+    .commands = sm_command_fflot_f2, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
     .n_commands = NCOMMANDS_FFL12_F2,
     .n_values = NSUPPLIES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
     .n_pages = NPAGES_FFL12_F2,
@@ -243,7 +245,7 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00,0x0E, 1, "LOL", 1, 1, "", SM_STATUS}, //page 0x00
 };
 
-// only one of these might be valid
+
 uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
 
 struct MonitorI2CTaskArgs_t clock_args = {
@@ -327,7 +329,7 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-void getFFpart() // 0 for FFDAQ and 1 for FFNONDAQ
+void getFFpart()
 {
 
   if (ffldaq_f1_args.xSem != NULL) {
@@ -335,18 +337,21 @@ void getFFpart() // 0 for FFDAQ and 1 for FFNONDAQ
       ;
   }
   // Write device vendor part for identifying FF devices
+  // FF connecting to FPGA1
   uint8_t vendor_data1[4];
   uint32_t vendor_char1;
   int8_t vendor_part1[16];
+  // FF connecting to FPGA2
   uint8_t vendor_data2[4];
   uint32_t vendor_char2;
   int8_t vendor_part2[16];
 
   uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
   uint8_t ven_addr_stop = VENDOR_STOP_BIT_FF12;
-  // checking the FF 12-ch part connected to FPGA1
+
+  // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
   uint8_t data1[1];
-  data1[1] = 0x1U << ffl12_f1_args.devices[3].mux_bit; //mux_bit
+  data1[1] = 0x1U << ffl12_f1_args.devices[3].mux_bit;
   log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data1[1]);
   int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data1[1]);
   if (rmux != 0) {
@@ -374,15 +379,12 @@ void getFFpart() // 0 for FFDAQ and 1 for FFNONDAQ
   }
 
   char *vendor_string1 = (char*)vendor_part1;
-  //sprintf("FF part string: %s \r\n", vendor_string1);
   log_info(LOG_SERVICE, "Getting Firefly 4-ch part (FPGA1): %s \r\n:", vendor_string1);
   if ((strstr(vendor_string1, "14") != NULL)){
-    ffl12_f1_args.commands = sm_command_fflit_f1;
+    ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
   }
 
-  //vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
-
-  // checking the FF 12-ch part connected to FPGA2
+  // checking the FF 12-ch part connected to FPGA2 (need to check from Rx devices (i.e devices[odd]))
   uint8_t data2[1];
   data2[0] = 0x1U << ffl12_f2_args.devices[3].mux_bit; //mux_bit
   log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data2[0]);
@@ -393,7 +395,7 @@ void getFFpart() // 0 for FFDAQ and 1 for FFNONDAQ
   for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
     int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char2);
     if (res != 0){
-      log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res)); // expected ACK_ADDR_ERR because of no FPGA2 connection as of 08.04.22
+      log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res)); // expected ACK_ADDR_ERR because of no devices[3] for FPGA2 connection as of 08.04.22
       vendor_part2[i - ven_addr_start] = 0;
       break;
     }
@@ -413,9 +415,9 @@ void getFFpart() // 0 for FFDAQ and 1 for FFNONDAQ
   char *vendor_string2 = (char*)vendor_part2;
   log_info(LOG_SERVICE, "Getting Firefly 4-ch part (FPGA2) : %s \r\n:", vendor_string2);
   if ((strstr(vendor_string2, "14") != NULL)){
-    ffl12_f2_args.commands = sm_command_fflit_f2;
+    ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
   }
-  xSemaphoreGive(ffldaq_f1_args.xSem);
+  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }
 
 #endif //REV 2
@@ -821,7 +823,7 @@ void init_registers_clk()
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
 
-  xSemaphoreGive(clock_args.xSem);
+  xSemaphoreGive(clock_args.xSem); // if we have a semaphore, give it
 }
 void init_registers_ff()
 {
@@ -911,7 +913,7 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x03); // 00000011 [P17..P10]
 
-  xSemaphoreGive(ffldaq_f1_args.xSem);
+  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }
 #endif // REV1
 #ifdef REV2
@@ -977,7 +979,7 @@ void init_registers_clk() {
 	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
 	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
-	xSemaphoreGive(clock_args.xSem);
+	xSemaphoreGive(clock_args.xSem); // if we have a semaphore, give it
 }
 void init_registers_ff() {
 
@@ -1059,7 +1061,7 @@ void init_registers_ff() {
 	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
 	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-	xSemaphoreGive(ffldaq_f1_args.xSem);
+	xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }
 #endif // REV2
 

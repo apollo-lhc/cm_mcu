@@ -33,13 +33,13 @@
 #include "Tasks.h"
 #include "I2CCommunication.h"
 
-#define DPRINT(x)
-
 
 // local prototype
+
 void Print(const char *str);
 
 // break out of loop, releasing semaphore if we have it
+
 #define release_break()           \
 		{                               \
 	if (args->xSem != NULL) {     \
@@ -48,9 +48,12 @@ void Print(const char *str);
 	break;                        \
 		}
 
-// this needs to be a macro so that the __LINE__ will resolve to the right 
-// line (in a function call it would just resolve to the function call....)
+// get a mask of a register address given a starting bit field (shift) and the width
 
+void make_bitmask(unsigned int width, unsigned int shift, uint8_t *mask){
+  unsigned int t = width ? (2u << (width-1))-1u : 0u;
+  *mask = t << shift;
+}
 
 // read-only accessor functions for Firefly names and values.
 
@@ -72,11 +75,6 @@ bool getFFch_high(uint8_t val, int channel)
   }
   return true;
 
-}
-
-void make_bitmask(unsigned int width, unsigned int shift, uint8_t *mask){
-  unsigned int t = width ? (2u << (width-1))-1u : 0u;
-  *mask = t << shift;
 }
 
 bool isEnabledFF(int ff)
@@ -147,9 +145,9 @@ void MonitorI2CTask(void *parameters) {
   // wait for the power to come up
   vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(2500));
 
-  int IsCLK =  (strstr(args->name, "CLK") != NULL);
-  int IsFF12 =  (strstr(args->name, "FF12") != NULL);
-  int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);
+  int IsCLK =  (strstr(args->name, "CLK") != NULL); //the instance is of CLK-device type
+  int IsFF12 =  (strstr(args->name, "FF12") != NULL);  //the instance is of FF 12-ch part type
+  //int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);  //the instance is of FF 4-ch part type (DAQ links) -- not being used currently
 
   vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(2500));
 
@@ -167,11 +165,11 @@ void MonitorI2CTask(void *parameters) {
     }
     moni2c_updateTick = xTaskGetTickCount();
     // -------------------------------
-    // loop over devices
+    // loop over devices in the device-type instance
     // -------------------------------
     for (uint8_t ps = 0; ps < args->n_devices; ++ps) {
 
-      if (!IsCLK){
+      if (!IsCLK){ // Fireflies need to be checked if the links are connected or not
         int offsetFF12 = 1 - IsFF12;
         if (!isEnabledFF(ps + (offsetFF12*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
           continue;
@@ -219,7 +217,7 @@ void MonitorI2CTask(void *parameters) {
         char tmp[64];
         snprintf(tmp, 64, "Debug: name = %s.\r\n", args->commands[c].name);
         uint8_t page_reg_value = args->commands[c].page;
-        if (IsCLK){
+        if (IsCLK){ // Clocks have page registers that must be written to the chip for accessing registers on the same page
           int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, 0x01, 1, page_reg_value);
           if (r != 0) {
             log_warn(LOG_MONI2C, "SMBUS page failed %s\r\n", SMBUS_get_error(r));
@@ -238,8 +236,8 @@ void MonitorI2CTask(void *parameters) {
 
         uint32_t output_raw;
         uint8_t mask = 0;
-        make_bitmask(args->commands[c].end_bit - args->commands[c].begin_bit + 1,args->commands[c].begin_bit, &mask);
-        uint16_t full_mask = (0xff << 8) | mask;
+        make_bitmask(args->commands[c].end_bit - args->commands[c].begin_bit + 1,args->commands[c].begin_bit, &mask); // some registers are not full-byte
+        uint16_t full_mask = (0xff << 8) | mask; // the [15:8] bits are not parts of masking so they must be reserved
         uint16_t masked_command =  args->commands[c].command & full_mask;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size, masked_command, args->commands[c].size, &output_raw);
 
