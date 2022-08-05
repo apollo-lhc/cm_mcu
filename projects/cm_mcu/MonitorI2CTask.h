@@ -83,10 +83,10 @@ extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
 
 #define NSUPPLIES_CLK (4)
-#define NCOMMANDS_CLK 8  // number of commands
+#define NCOMMANDS_CLK 14  // number of commands
 #define NPAGES_CLK    1   //
 #define NSUPPLIES_CLKR0A (1)
-#define NCOMMANDS_CLKR0A 10  // number of commands
+#define NCOMMANDS_CLKR0A 13  // number of commands
 #define NPAGES_CLKR0A    1   //
 
 extern struct MonitorI2CTaskArgs_t clock_args;

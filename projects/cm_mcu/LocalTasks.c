@@ -59,7 +59,6 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 
 // FFDAQ arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA1
 
-#ifdef REV2
 struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     { "F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     { "F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
@@ -240,8 +239,14 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00,0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS}, //page 0x00 **for testing**
     //internal statuses on page 0 : table 16.8 and 16.9
     {1, 0x00,0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOS", 0, 3, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "OOF", 4, 7, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOS_IN0", 0, 0, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOS_IN1", 1, 1, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOS_IN2", 2, 2, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOS_IN3", 3, 3, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "OOF_IN0", 4, 4, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "OOF_IN1", 5, 5, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "OOF_IN2", 6, 6, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "OOF_IN3", 7, 7, "", SM_STATUS}, //page 0x00
     {1, 0x00,0x0E, 1, "LOL", 1, 1, "", SM_STATUS}, //page 0x00
 };
 
@@ -281,7 +286,10 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00,0x0C, 1, "LOSREF", 2, 2, "", SM_STATUS}, //page 0x00
     {1, 0x00,0x0C, 1, "LOS", 3, 3, "", SM_STATUS}, //page 0x00
     {1, 0x00,0x0C, 1, "SMBUS_TIMEOUT", 5, 5, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOSIN", 0, 3, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOSIN_IN0", 0, 0, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOSIN_IN1", 1, 1, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOSIN_IN2", 2, 2, "", SM_STATUS}, //page 0x00
+    {1, 0x00,0x0D, 1, "LOSIN_FB_IN", 3, 3, "", SM_STATUS}, //page 0x00
 };
 
 uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
@@ -420,15 +428,12 @@ void getFFpart()
   xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }
 
-#endif //REV 2
-
 #ifdef DEBUG_FIF
 int8_t *getFFserialnum(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
   return ff_status[i].serial_num;
 }
-
 #endif
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
