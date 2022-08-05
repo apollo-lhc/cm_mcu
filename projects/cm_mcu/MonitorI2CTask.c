@@ -100,12 +100,6 @@ TickType_t getFFupdateTick()
   return xTaskGetTickCount();
 }
 
-int8_t* test_read_vendor(void *parameters, const uint8_t i) {
-  struct MonitorI2CTaskArgs_t *args = parameters;
-  configASSERT(i < NFIREFLIES);
-  return args->sm_vendor_part;
-}
-
 // FIXME: the current_error_count never goes down, only goes up.
 static void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
 {
@@ -154,7 +148,7 @@ void MonitorI2CTask(void *parameters) {
   vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(2500));
 
   int IsCLK =  (strstr(args->name, "CLK") != NULL);
-  int IsFFIT =  (strstr(args->name, "FFIT") != NULL);
+  int IsFF12 =  (strstr(args->name, "FF12") != NULL);
   int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);
 
   vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(2500));
@@ -177,22 +171,9 @@ void MonitorI2CTask(void *parameters) {
     // -------------------------------
     for (uint8_t ps = 0; ps < args->n_devices; ++ps) {
 
-      uint8_t ven_addr_start = 0;
-      uint8_t ven_addr_stop = 0;
-
       if (!IsCLK){
-        int offsetFFIT = 1 - IsFFIT;
-        if (IsFFIT) {
-          ven_addr_start = 171;
-          ven_addr_stop = 187;
-        }
-        if (IsFFDAQ){
-          ven_addr_start = 168;
-          ven_addr_stop = 184;
-        }
-
-
-        if (!isEnabledFF(ps + (offsetFFIT*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
+        int offsetFF12 = 1 - IsFF12;
+        if (!isEnabledFF(ps + (offsetFF12*(NFIREFLIES_IT_F1)) + ((args->i2c_dev-I2C_DEVICE_F1)*(-1)*(NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
           continue;
       }
 
@@ -200,7 +181,6 @@ void MonitorI2CTask(void *parameters) {
       if (args->requirePower){
         if (getPowerControlState() != POWER_ON) {
           if (good) {
-            //log_warn(LOG_MONI2C, "No power, skip I2C monitor.\r\n");
             snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
             SuppressedPrint(tmp, &current_error_cnt, &log);
             log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
@@ -213,7 +193,6 @@ void MonitorI2CTask(void *parameters) {
         else if (getPowerControlState() == POWER_ON) { // power is on, and ...
           if (!good) { // ... was not good, but is now good
             task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
-            //log_warn(LOG_MONI2C, "Power on, resume I2C monitor.\r\n");
             snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
             SuppressedPrint(tmp, &current_error_cnt, &log);
             log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
@@ -232,36 +211,6 @@ void MonitorI2CTask(void *parameters) {
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
         release_break();
       }
-
-
-      // Write device vendor part for identifying FF devices
-      uint8_t vendor_data[4];
-
-      uint32_t vendor_char;
-      for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
-
-        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
-        if (res != 0){
-          char tmp[64];
-          snprintf(tmp, 64, "FIF: %s: Error %d, break loop (ps=%d,c=%d) ...\r\n", __func__, res,
-                   ps, 1);
-          DPRINT(tmp);
-          args->sm_vendor_part[i - ven_addr_start] = 0;
-          release_break();
-        }
-        for (int i = 0; i < 4; ++i) {
-          vendor_data[i] = (vendor_char>> (3-i) * 8) & 0xFF;
-        }
-        typedef union {
-          uint8_t us;
-          int8_t s;
-        } convert_8_t;
-        convert_8_t tmp1;
-
-        tmp1.us = vendor_data[3]; // change from uint_8 to int8_t, preserving bit pattern
-        args->sm_vendor_part[i - ven_addr_start] = tmp1.s;
-      }
-
 
       // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {

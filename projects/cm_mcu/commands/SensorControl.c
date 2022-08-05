@@ -332,8 +332,8 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     }
     else{
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
-        int index = whichff * (fflit_f1_args.n_commands * fflit_f1_args.n_pages) + i1;
-        uint16_t val = fflit_f1_args.sm_values[index];
+        int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+        uint16_t val = ffl12_f1_args.sm_values[index];
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s 0x%02x ", ff_moni2c_addrs[whichff].name, val);
       }
 
@@ -344,8 +344,8 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 
       }
       else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-        int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
-        uint16_t val = fflit_f2_args.sm_values[index];
+        int index = (whichff-NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
+        uint16_t val = ffl12_f2_args.sm_values[index];
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
       }
       else {
@@ -396,9 +396,9 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
     else{
       uint8_t i2cdata[2];
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
-        int index = whichff * (fflit_f1_args.n_commands * fflit_f1_args.n_pages) + i1;
+        int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
-          i2cdata[1-i] = (fflit_f1_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+          i2cdata[1-i] = (ffl12_f1_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
         }
         for (size_t i = 0; i < 8; i++) {
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
@@ -420,9 +420,9 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
         }
       }
       else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-        int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+        int index = (whichff-NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
-          i2cdata[1-i] = (fflit_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+          i2cdata[1-i] = (ffl12_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
         }
         for (size_t i = 0; i < 8; i++) {
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
@@ -486,9 +486,9 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
     else{
       uint8_t i2cdata[2];
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
-        int index = whichff * (fflit_f1_args.n_commands * fflit_f1_args.n_pages) + i1;
+        int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
-          i2cdata[1-i] = (fflit_f1_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+          i2cdata[1-i] = (ffl12_f1_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
         }
         for (size_t i = 0; i < 8; i++) {
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
@@ -511,9 +511,9 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
         }
       }
       else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-        int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
+        int index = (whichff-NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
-          i2cdata[1-i] = (fflit_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
+          i2cdata[1-i] = (ffl12_f2_args.sm_values[index]>> (1-i) * 8) & 0xFFU;
         }
         for (size_t i = 0; i < 8; i++) {
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
@@ -571,19 +571,13 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
   // parse command based on how many arguments it has
   if (argc == 1) { // default command: temps
     if (whichff == 0) {
-      char *it_string = (char*)fflit_f1_args.sm_vendor_part;
-      char *daq_string = (char*)ffldaq_f1_args.sm_vendor_part;
-
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n",it_string);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n",daq_string);
-
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF Temperature\r\n");
     }
     for (; whichff < NFIREFLIES; ++whichff) {
       if (isEnabledFF(whichff)){
         if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
-          int index = whichff * (fflit_f1_args.n_commands * fflit_f1_args.n_pages) + i1;
-          uint8_t val = fflit_f1_args.sm_values[index];
+          int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+          uint8_t val = ffl12_f1_args.sm_values[index];
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
 
@@ -594,8 +588,8 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
         }
 
         else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-          int index = (whichff-NFIREFLIES_F1) * (fflit_f2_args.n_commands * fflit_f2_args.n_pages) + i1;
-          uint8_t val = fflit_f2_args.sm_values[index];
+          int index = (whichff-NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
+          uint8_t val = ffl12_f2_args.sm_values[index];
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
         else {
@@ -633,7 +627,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
 
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
-extern struct MonitorI2CTaskArgs_t fflit_f1_args;
+extern struct MonitorI2CTaskArgs_t ffl12_f1_args;
 
 // dump clock monitor information
 BaseType_t clkmon_ctl(int argc, char **argv, char* m)

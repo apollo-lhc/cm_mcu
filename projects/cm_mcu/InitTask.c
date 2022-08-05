@@ -40,6 +40,7 @@ void InitTask(void *parameters)
   init_load_clk(2);
   init_load_clk(3);
   log_info(LOG_SERVICE, "Clocks configured\r\n");
+  getFFpart();
 #endif // REV2
   vTaskSuspend(NULL);
 

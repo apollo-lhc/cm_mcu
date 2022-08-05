@@ -54,32 +54,31 @@ struct MonitorI2CTaskArgs_t {
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
   bool requirePower;                   // true if device requires power
   UBaseType_t stack_size;              // stack size of task
-  int8_t *sm_vendor_part;
 };
 
 #define NSUPPLIES_FFLDAQ_F1 (4)
 #define NCOMMANDS_FFLDAQ_F1 4  // number of commands
 #define NPAGES_FFLDAQ_F1    1   // number of pages on the 4-channel firefly ports
 
-#define NSUPPLIES_FFLIT_F1 (6)
-#define NCOMMANDS_FFLIT_F1 4  // number of commands
-#define NPAGES_FFLIT_F1    1   // number of pages on the 12-channel firefly ports
+#define NSUPPLIES_FFL12_F1 (6)
+#define NCOMMANDS_FFL12_F1 4  // number of commands
+#define NPAGES_FFL12_F1    1   // number of pages on the 12-channel firefly ports
 
 #define NSUPPLIES_FFLDAQ_F2 (4)
 #define NCOMMANDS_FFLDAQ_F2 4  // number of commands
 #define NPAGES_FFLDAQ_F2    1   // number of pages on the 4-channel firefly ports
 
-#define NSUPPLIES_FFLIT_F2 (6)
-#define NCOMMANDS_FFLIT_F2 4  // number of commands
-#define NPAGES_FFLIT_F2    1   // number of pages on the 12-channel firefly ports
+#define NSUPPLIES_FFL12_F2 (6)
+#define NCOMMANDS_FFL12_F2 4  // number of commands
+#define NPAGES_FFL12_F2    1   // number of pages on the 12-channel firefly ports
 
-extern struct dev_moni2c_addr_t fflit_f1_moni2c_addrs[NFIREFLIES_IT_F1];
+extern struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1];
 extern struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1];
-extern struct dev_moni2c_addr_t fflit_f2_moni2c_addrs[NFIREFLIES_IT_F2];
+extern struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2];
 extern struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2];
-extern struct MonitorI2CTaskArgs_t fflit_f1_args;
+extern struct MonitorI2CTaskArgs_t ffl12_f1_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
-extern struct MonitorI2CTaskArgs_t fflit_f2_args;
+extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
 

@@ -120,10 +120,10 @@ void MonitorI2CTask(void *parameters);
 #endif // REV 2
 #define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
 
-#define VENDOR_START_BIT_FFDAQ 171
-#define VENDOR_STOP_BIT_FFDAQ 187
-#define VENDOR_START_BIT_FFNONDAQ 168
-#define VENDOR_STOP_BIT_FFNONDAQ 184
+#define VENDOR_START_BIT_FFDAQ 168
+#define VENDOR_STOP_BIT_FFDAQ 184
+#define VENDOR_START_BIT_FF12 171
+#define VENDOR_STOP_BIT_FF12 187
 
 struct dev_moni2c_addr_t {
   char *name;
@@ -134,7 +134,6 @@ struct dev_moni2c_addr_t {
 
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
-int8_t *test_read_vendor(void *parameters, const uint8_t i);
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);

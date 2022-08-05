@@ -257,10 +257,11 @@ int main(void)
   dcdc_args.xSem = xSemaphoreCreateMutex();
 
   SemaphoreHandle_t i2c4_sem = xSemaphoreCreateMutex();
-  //getFFpart(i2c4_sem);
-  //vTaskDelay(pdMS_TO_TICKS(10)); //delay 10 ms
-  fflit_f1_args.xSem = i2c4_sem;
+  ffl12_f1_args.xSem = i2c4_sem;
   ffldaq_f1_args.xSem = i2c4_sem;
+  SemaphoreHandle_t i2c3_sem = xSemaphoreCreateMutex();
+  ffl12_f2_args.xSem = i2c3_sem;
+  ffldaq_f2_args.xSem = i2c3_sem;
   SemaphoreHandle_t i2c2_sem = xSemaphoreCreateMutex();
   clock_args.xSem = i2c2_sem;
   clockr0a_args.xSem = i2c2_sem;
@@ -303,10 +304,14 @@ int main(void)
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(MonitorI2CTask, "FFIT", 2*configMINIMAL_STACK_SIZE, &fflit_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, "FF12", 2*configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
                 NULL);
   xTaskCreate(MonitorI2CTask, "FFDAQ", 2*configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
                 NULL);
+  xTaskCreate(MonitorI2CTask, "FF12V", 2*configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
+                  NULL);
+    xTaskCreate(MonitorI2CTask, "FFDAQV", 2*configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
+                  NULL);
   xTaskCreate(MonitorI2CTask, "CLKSI", 2*configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
                     NULL);
   xTaskCreate(MonitorI2CTask, "CLKR0A", 2*configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
