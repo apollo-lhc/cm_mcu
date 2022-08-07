@@ -359,9 +359,9 @@ void getFFpart()
 
   // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
   uint8_t data1[1];
-  data1[1] = 0x1U << ffl12_f1_args.devices[3].mux_bit;
-  log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data1[1]);
-  int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data1[1]);
+  data1[0] = 0x1U << ffl12_f1_args.devices[3].mux_bit;
+  log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data1[0]);
+  int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data1[0]);
   if (rmux != 0) {
     log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
   }
