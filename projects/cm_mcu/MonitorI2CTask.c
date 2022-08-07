@@ -100,33 +100,6 @@ TickType_t getFFupdateTick()
   return xTaskGetTickCount();
 }
 
-// FIXME: the current_error_count never goes down, only goes up.
-static void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging)
-{
-  const int error_max = 25;
-  const int error_restart_threshold = error_max - 10;
-
-  if (*current_error_cnt < error_max) {
-    if (*logging == true) {
-      Print(str);
-      ++(*current_error_cnt);
-      if (*current_error_cnt == error_max) {
-        Print("\t--> suppressing further errors for now\r\n");
-        log_warn(LOG_MON, "suppressing further errors for now\r\n");
-      }
-    }
-    else { // not logging
-      if (*current_error_cnt <= error_restart_threshold)
-        *logging = true; // restart logging
-    }
-  }
-  else { // more than error_max errors
-    *logging = false;
-  }
-
-  return;
-}
-
 #define TMPBUFFER_SZ 96
 
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
@@ -182,7 +155,7 @@ void MonitorI2CTask(void *parameters) {
         if (getPowerControlState() != POWER_ON) {
           if (good) {
             snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
-            SuppressedPrint(tmp, &current_error_cnt, &log);
+            SuppressedPrint(tmp, &current_error_cnt, &log, LOG_MONI2C);
             log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
             good = false;
             task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
@@ -194,7 +167,7 @@ void MonitorI2CTask(void *parameters) {
           if (!good) { // ... was not good, but is now good
             task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
             snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
-            SuppressedPrint(tmp, &current_error_cnt, &log);
+            SuppressedPrint(tmp, &current_error_cnt, &log, LOG_MONI2C);
             log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
             good = true;
           }

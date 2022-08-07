@@ -31,6 +31,35 @@
 #include "common/log.h"
 #include "common/printf.h"
 
+// prototype of mutex'd print
+void Print(const char *str);
+
+// FIXME: the current_error_count never goes down, only goes up.
+void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enum log_facility_t log_num)
+{
+  const int error_max = 25;
+  const int error_restart_threshold = error_max - 10;
+
+  if (*current_error_cnt < error_max) {
+    if (*logging == true) {
+      Print(str);
+      ++(*current_error_cnt);
+      if (*current_error_cnt == error_max) {
+        Print("\t--> suppressing further errors for now\r\n");
+        log_warn(log_num, "suppressing further errors for now\r\n");
+      }
+    }
+    else { // not logging
+      if (*current_error_cnt <= error_restart_threshold)
+        *logging = true; // restart logging
+    }
+  }
+  else { // more than error_max errors
+    *logging = false;
+  }
+
+  return;
+}
 
 struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //

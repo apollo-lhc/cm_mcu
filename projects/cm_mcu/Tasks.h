@@ -15,6 +15,7 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 #include "semphr.h"
+#include "common/log.h"
 
 #include "common/printf.h"
 
@@ -79,6 +80,7 @@ void LGA80D_init(void);
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
 void MonitorI2CTask(void *parameters); 
+void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enum log_facility_t);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
 #elif defined(REV2) // REV2

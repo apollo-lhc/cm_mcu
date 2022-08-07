@@ -13,8 +13,6 @@
 #include "Tasks.h"
 
 
-extern uint16_t sm_values[];
-
 extern SemaphoreHandle_t xMonSem;
 
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
