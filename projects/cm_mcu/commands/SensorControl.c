@@ -310,7 +310,7 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
 
 BaseType_t ff_status(int argc, char **argv, char *m)
 {
-  int i1 = 0;
+  
   int copied = 0;
 
   static int whichff = 0;
@@ -331,6 +331,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s   --", ff_moni2c_addrs[whichff].name);
     }
     else{
+      int i1 = 0; // 0 for status
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
         int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
         uint16_t val = ffl12_f1_args.sm_values[index];
@@ -372,7 +373,6 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 
 BaseType_t ff_los_alarm(int argc, char **argv, char *m)
 {
-  int i1 = 2;
   int copied = 0;
 
   static int whichff = 0;
@@ -394,6 +394,7 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
     }
     else{
+      int i1 = 2; //2 for los_alarm
       uint8_t i2cdata[2];
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
         int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
@@ -462,7 +463,6 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
 
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
 {
-  int i1 = 3;
   int copied = 0;
 
   static int whichff = 0;
@@ -484,6 +484,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "------------");
     }
     else{
+      int i1 = 3; // 3 for cdr_lol_alarm 
       uint8_t i2cdata[2];
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
         int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
@@ -553,7 +554,6 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
 
 BaseType_t ff_temp(int argc, char **argv, char *m)
 {
-  int i1 = 1; // 1 for FF temp
   // argument handling
   int copied = 0;
   static int whichff = 0;
@@ -575,6 +575,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
     }
     for (; whichff < NFIREFLIES; ++whichff) {
       if (isEnabledFF(whichff)){
+        int i1 = 1; // 1 for temperature
         if (0 <= whichff && whichff < NFIREFLIES_IT_F1){
           int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
           uint8_t val = ffl12_f1_args.sm_values[index];
