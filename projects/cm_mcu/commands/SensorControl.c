@@ -648,7 +648,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char* m)
 
   if (i==0){
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI5341 with id : %s \r\n",
-          clk_ids[i]);
+        clk_ids[i]);
     // update times, in seconds
     TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
     TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
@@ -668,7 +668,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char* m)
   }
   else{
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI5395 with id : %s \r\n",
-          clk_ids[i]);
+        clk_ids[i]);
     // update times, in seconds
     TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
     TickType_t last = pdTICKS_TO_MS(clock_args.updateTick) / 1000;
