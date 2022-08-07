@@ -315,7 +315,7 @@ int8_t getFFtemp(const uint8_t i)
   int i1 = 1;
   int8_t val;
   configASSERT(i < NFIREFLIES);
-  if (0 <= i && i < NFIREFLIES_IT_F1){
+  if (i < NFIREFLIES_IT_F1){
     int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
     val = ffl12_f1_args.sm_values[index];
   }
