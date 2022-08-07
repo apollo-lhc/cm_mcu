@@ -13,7 +13,7 @@
 #include "Tasks.h"
 
 
-extern float sm_values[];
+extern uint16_t sm_values[];
 
 extern SemaphoreHandle_t xMonSem;
 
