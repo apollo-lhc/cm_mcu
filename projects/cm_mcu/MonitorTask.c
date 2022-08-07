@@ -52,7 +52,6 @@ void Print(const char *str);
     break;                        \
   }
 
-
 #define TMPBUFFER_SZ 96
 void MonitorTask(void *parameters)
 {

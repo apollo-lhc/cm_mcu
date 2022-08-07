@@ -20,7 +20,6 @@
 #include "common/log.h"
 #include "Tasks.h"
 
-
 void InitTask(void *parameters)
 {
 
@@ -37,13 +36,13 @@ void InitTask(void *parameters)
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
 #ifdef REV2
   init_load_clk(0); // load clock r0a config from EEPROM
-  //init_load_clk(1); // load clock r0b config from EEPROM but no data to load as of 08.04.222
+  // init_load_clk(1); // load clock r0b config from EEPROM but no data to load as of 08.04.222
   init_load_clk(2); // load clock r1a config from EEPROM
   init_load_clk(3); // load clock r1b config from EEPROM
-  //init_load_clk(4); // load clock r1c config from EEPROM but no data  to load as of 08.04.222
+  // init_load_clk(4); // load clock r1c config from EEPROM but no data  to load as of 08.04.222
   log_info(LOG_SERVICE, "Clocks configured\r\n");
   getFFpart(); // the order of where to check FF part matters -- it won't be able to read anything if check sooner
-#endif // REV2
+#endif         // REV2
   vTaskSuspend(NULL);
 
   // Delete this task

@@ -134,7 +134,7 @@ static void log_add_string(const char *s, struct buff_t *b)
   // always point to the '\0' of the last string added.
   // two cases: either the string fits in one copy, or in two
   long left = b->size - b->last;
-  //size_t len = strlen(s) + 1; // +1 for string terminator
+  // size_t len = strlen(s) + 1; // +1 for string terminator
   size_t len = lenx(s, left) + 1; // +1 for string terminator
   if (len <= left) {
     // single copy is going to work

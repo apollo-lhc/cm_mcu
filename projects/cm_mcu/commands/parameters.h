@@ -59,8 +59,7 @@ void Print(const char *str);
 
 #define MAX_INPUT_LENGTH  50
 #define MAX_OUTPUT_LENGTH 512
-#define SCRATCH_SIZE 512
-
+#define SCRATCH_SIZE      512
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;

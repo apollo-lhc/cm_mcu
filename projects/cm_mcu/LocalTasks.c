@@ -85,20 +85,19 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 
 };
 
-
 // FFDAQ arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA1
 
 struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
-    { "F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
-    { "F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
-    { "F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
-    { "F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
 struct sm_command_t sm_command_ffldaq_f1[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
+    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
 
 };
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
@@ -117,35 +116,37 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .requirePower = true,
-    .stack_size = 4096U,};
+    .stack_size = 4096U,
+};
 
 // FF12 arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA1
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f1[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
-    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f1[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
-    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
 
 };
 
-struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = { { "F1_1  12 Tx",
-    FF_I2CMUX_1_ADDR, 0, 0x50}, //
-    { "F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
-    { "F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
-    { "F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
-    { "F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
-    { "F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
+    {"F1_1  12 Tx",
+     FF_I2CMUX_1_ADDR, 0, 0x50},                //
+    {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
 
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
@@ -164,8 +165,8 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .requirePower = true,
-    .stack_size = 4096U,};
-
+    .stack_size = 4096U,
+};
 
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
 
@@ -177,10 +178,10 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 };
 
 struct sm_command_t sm_command_ffldaq_f2[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
-    { 1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    { 1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
+    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
 
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
@@ -199,26 +200,26 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .requirePower = true,
-    .stack_size = 4096U,};
-
+    .stack_size = 4096U,
+};
 
 // FF12V arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f2[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
-    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f2[] = {
-    { 1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS },
-    { 1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS },
-    { 2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    { 2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
 
 };
 
@@ -247,8 +248,8 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .requirePower = true,
-    .stack_size = 4096U,};
-
+    .stack_size = 4096U,
+};
 
 // Clock arguments for monitoring task
 
@@ -259,26 +260,24 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
     {"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA **no info on EEPROM and need .csv file from Charlie**
 };
 
-
 struct sm_command_t sm_command_clk[] = {
-    //device information on page 0 : table 16.2 and 16.4
-    {1, 0x00,0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS}, //page 0x00 **for testing**
-    //internal statuses on page 0 : table 16.8 and 16.9
-    {1, 0x00,0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOS_IN0", 0, 0, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOS_IN1", 1, 1, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOS_IN2", 2, 2, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOS_IN3", 3, 3, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "OOF_IN0", 4, 4, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "OOF_IN1", 5, 5, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "OOF_IN2", 6, 6, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "OOF_IN3", 7, 7, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0E, 1, "LOL", 1, 1, "", SM_STATUS}, //page 0x00
+    // device information on page 0 : table 16.2 and 16.4
+    {1, 0x00, 0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS},   // page 0x00 **for testing**
+    // internal statuses on page 0 : table 16.8 and 16.9
+    {1, 0x00, 0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOS_IN0", 0, 0, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOS_IN1", 1, 1, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOS_IN2", 2, 2, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOS_IN3", 3, 3, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "OOF_IN0", 4, 4, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "OOF_IN1", 5, 5, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "OOF_IN2", 6, 6, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "OOF_IN3", 7, 7, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0E, 1, "LOL", 1, 1, "", SM_STATUS},     // page 0x00
 };
-
 
 uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
 
@@ -296,29 +295,29 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .smbus_status = &eStatus2,
     .xSem = NULL,
     .requirePower = true,
-    .stack_size = 4096U,};
-
+    .stack_size = 4096U,
+};
 
 struct dev_moni2c_addr_t clkr0a_moni2c_addrs[] = {
     {"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD
 };
 
 struct sm_command_t sm_command_clkr0a[] = {
-    //device information on page 0 : table 14.4 and 14.6
-    {1, 0x00,0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS}, //page 0x00 **for testing**
-    //internal statuses on page 0 : table 4.5
-    {1, 0x00,0x0C, 1, "SYSINCAL", 0, 0, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0C, 1, "LOSREF", 2, 2, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0C, 1, "LOS", 3, 3, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0C, 1, "SMBUS_TIMEOUT", 5, 5, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOSIN_IN0", 0, 0, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOSIN_IN1", 1, 1, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOSIN_IN2", 2, 2, "", SM_STATUS}, //page 0x00
-    {1, 0x00,0x0D, 1, "LOSIN_FB_IN", 3, 3, "", SM_STATUS}, //page 0x00
+    // device information on page 0 : table 14.4 and 14.6
+    {1, 0x00, 0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS},   // page 0x00 **for testing**
+    // internal statuses on page 0 : table 4.5
+    {1, 0x00, 0x0C, 1, "SYSINCAL", 0, 0, "", SM_STATUS},      // page 0x00
+    {1, 0x00, 0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS},       // page 0x00
+    {1, 0x00, 0x0C, 1, "LOSREF", 2, 2, "", SM_STATUS},        // page 0x00
+    {1, 0x00, 0x0C, 1, "LOS", 3, 3, "", SM_STATUS},           // page 0x00
+    {1, 0x00, 0x0C, 1, "SMBUS_TIMEOUT", 5, 5, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_IN0", 0, 0, "", SM_STATUS},     // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_IN1", 1, 1, "", SM_STATUS},     // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_IN2", 2, 2, "", SM_STATUS},     // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_FB_IN", 3, 3, "", SM_STATUS},   // page 0x00
 };
 
 uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
@@ -337,31 +336,32 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .smbus_status = &eStatus2,
     .xSem = NULL,
     .requirePower = true,
-    .stack_size = 4096U,};
+    .stack_size = 4096U,
+};
 
 int8_t getFFtemp(const uint8_t i)
 {
   int i1 = 1;
   int8_t val;
   configASSERT(i < NFIREFLIES);
-  if (i < NFIREFLIES_IT_F1){
+  if (i < NFIREFLIES_IT_F1) {
     int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
     val = ffl12_f1_args.sm_values[index];
   }
 
-  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1 ) {
-    int index = (i-NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
+  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
+    int index = (i - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
     val = ffldaq_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-    int index = (i-NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
+    int index = (i - NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
     val = ffl12_f2_args.sm_values[index];
-    }
+  }
   else {
-    int index = (i-NFIREFLIES_F1-NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+    int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
     val = ffldaq_f2_args.sm_values[index];
-    }
+  }
 
   return val;
 }
@@ -370,7 +370,7 @@ void getFFpart()
 {
 
   if (ffldaq_f1_args.xSem != NULL) {
-    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t) 10) == pdFALSE)
+    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
       ;
   }
   // Write device vendor part for identifying FF devices
@@ -396,13 +396,13 @@ void getFFpart()
   }
   for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
     int res = apollo_i2c_ctl_reg_r(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char1);
-    if (res != 0){
+    if (res != 0) {
       log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
       vendor_part1[i - ven_addr_start] = 0;
       break;
     }
     for (int i = 0; i < 4; ++i) {
-      vendor_data1[i] = (vendor_char1>> (3-i) * 8) & 0xFF;
+      vendor_data1[i] = (vendor_char1 >> (3 - i) * 8) & 0xFF;
     }
 
     typedef union {
@@ -415,15 +415,15 @@ void getFFpart()
     vendor_part1[i - ven_addr_start] = tmp1.s;
   }
 
-  char *vendor_string1 = (char*)vendor_part1;
+  char *vendor_string1 = (char *)vendor_part1;
   log_info(LOG_SERVICE, "Getting Firefly 4-ch part (FPGA1): %s \r\n:", vendor_string1);
-  if ((strstr(vendor_string1, "14") != NULL)){
+  if ((strstr(vendor_string1, "14") != NULL)) {
     ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
   }
 
   // checking the FF 12-ch part connected to FPGA2 (need to check from Rx devices (i.e devices[odd]))
   uint8_t data2[1];
-  data2[0] = 0x1U << ffl12_f2_args.devices[3].mux_bit; //mux_bit
+  data2[0] = 0x1U << ffl12_f2_args.devices[3].mux_bit; // mux_bit
   log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data2[0]);
   rmux = apollo_i2c_ctl_w(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].mux_addr, 1, data2[0]);
   if (rmux != 0) {
@@ -431,13 +431,13 @@ void getFFpart()
   }
   for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
     int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char2);
-    if (res != 0){
+    if (res != 0) {
       log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res)); // expected ACK_ADDR_ERR because of no devices[3] for FPGA2 connection as of 08.04.22
       vendor_part2[i - ven_addr_start] = 0;
       break;
     }
     for (int i = 0; i < 4; ++i) {
-      vendor_data2[i] = (vendor_char2>> (3-i) * 8) & 0xFF;
+      vendor_data2[i] = (vendor_char2 >> (3 - i) * 8) & 0xFF;
     }
     typedef union {
       uint8_t us;
@@ -449,9 +449,9 @@ void getFFpart()
     vendor_part2[i - ven_addr_start] = tmp1.s;
   }
 
-  char *vendor_string2 = (char*)vendor_part2;
+  char *vendor_string2 = (char *)vendor_part2;
   log_info(LOG_SERVICE, "Getting Firefly 4-ch part (FPGA2) : %s \r\n:", vendor_string2);
-  if ((strstr(vendor_string2, "14") != NULL)){
+  if ((strstr(vendor_string2, "14") != NULL)) {
     ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
   }
   xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
@@ -495,15 +495,16 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
 #define F2_NDEVICES 2
 
 #elif defined(REV2)
-struct dev_i2c_addr_t fpga_addrs[] = { { "F1_0", 0x70, 3, 0x36 }, // F1 X0Y0
-		{ "F1_1", 0x70, 3, 0x34 }, // F1 X0Y1
-		{ "F1_2", 0x70, 3, 0x47 }, // F1 X1Y0
-		{ "F1_3", 0x70, 3, 0x45 }, // F1 X1Y1
-		{ "F2_0", 0x70, 1, 0x36 }, // F2 X0Y0
-		{ "F2_1", 0x70, 1, 0x34 }, // F2 X0Y1
-		{ "F2_2", 0x70, 1, 0x47 }, // F2 X1Y0
-		{ "F2_3", 0x70, 1, 0x45 }, // F2 X1Y1
-		};
+struct dev_i2c_addr_t fpga_addrs[] = {
+    {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
+    {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
+    {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
+    {"F1_3", 0x70, 3, 0x45}, // F1 X1Y1
+    {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
+    {"F2_1", 0x70, 1, 0x34}, // F2 X0Y1
+    {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
+    {"F2_3", 0x70, 1, 0x45}, // F2 X1Y1
+};
 #define F1F2_NDEVICES 8
 
 struct dev_i2c_addr_t fpga_addrs_f1only[] = {
@@ -524,23 +525,36 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
 
 #endif
 
-struct pm_command_t pm_command_fpga[] = { { 0x8d, 2, "READ_TEMPERATURE_1", "C",
-		PM_LINEAR11 }, };
+struct pm_command_t pm_command_fpga[] = {
+    {0x8d, 2, "READ_TEMPERATURE_1", "C",
+     PM_LINEAR11},
+};
 
 // only one of these might be valid
-float pm_fpga[FPGA_MON_NVALUES] = { 0 };
+float pm_fpga[FPGA_MON_NVALUES] = {0};
 
-struct MonitorTaskArgs_t fpga_args = { .name = "XIMON", .devices = fpga_addrs,
-		.n_devices = F1F2_NDEVICES, .commands = pm_command_fpga, .n_commands =
-		FPGA_MON_NCOMMANDS, .pm_values = pm_fpga, .n_values =
-		FPGA_MON_NVALUES, .n_pages = 1,
+struct MonitorTaskArgs_t fpga_args = {
+    .name = "XIMON",
+    .devices = fpga_addrs,
+    .n_devices = F1F2_NDEVICES,
+    .commands = pm_command_fpga,
+    .n_commands =
+        FPGA_MON_NCOMMANDS,
+    .pm_values = pm_fpga,
+    .n_values =
+        FPGA_MON_NVALUES,
+    .n_pages = 1,
 #ifdef REV1
     .smbus = &g_sMaster6,
     .smbus_status = &eStatus6,
 #elif defined(REV2)
-		.smbus = &g_sMaster5, .smbus_status = &eStatus5,
+    .smbus = &g_sMaster5,
+    .smbus_status = &eStatus5,
 #endif
-		.xSem = NULL, .requirePower = true, .stack_size = 4096U, };
+    .xSem = NULL,
+    .requirePower = true,
+    .stack_size = 4096U,
+};
 #ifdef REV1
 // Power supply arguments for Monitoring task
 // Supply Address | Voltages | Priority
@@ -634,49 +648,50 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
 // Initialization function for the LGA80D. These settings
 // need to be called when the supply output is OFF
 // this is currently not ensured in this code.
-void LGA80D_init(void) {
-	while (xSemaphoreTake(dcdc_args.xSem, (TickType_t) 10) == pdFALSE)
-		;
-	log_info(LOG_SERVICE, "LGA80D_init\r\n");
-	// set up the switching frequency
-	uint16_t freqlin11 = float_to_linear11(457.14f);
-	uint16_t drooplin11 = float_to_linear11(0.0700f);
-	// we do the same for all devices except the 0th one, which is the 1.8/3.3V device
-	for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
-		for (uint8_t page = 0; page < 2; ++page) {
-			// page register
-			int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-					pm_addrs_dcdc + dev, &extra_cmds[0], &page);
-			if (r) {
-				log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev,
-						page, r);
-				log_error(LOG_SERVICE, "LGA80D(0)\r\n");
-			}
-			// actual command -- frequency switch
-			r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-					pm_addrs_dcdc + dev, &extra_cmds[2], (uint8_t*) &freqlin11);
-			if (r) {
-				log_error(LOG_SERVICE, "LGA80D(1)\r\n");
-			}
-			// actual command -- vout_droop switch
-			r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-					pm_addrs_dcdc + dev, &extra_cmds[5],
-					(uint8_t*) &drooplin11);
-			if (r) {
-				log_error(LOG_SERVICE, "LGA80D(2)\r\n");
-			}
-			// actual command -- multiphase_ramp_gain switch
-			uint8_t val = 0x7U; // by suggestion of Artesian
-			r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-					pm_addrs_dcdc + dev, &extra_cmds[6], &val);
-			if (r) {
-				log_error(LOG_SERVICE, "LGA80D(3)\r\n");
-			}
-		}
-	}
-	xSemaphoreGive(dcdc_args.xSem);
+void LGA80D_init(void)
+{
+  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
+  log_info(LOG_SERVICE, "LGA80D_init\r\n");
+  // set up the switching frequency
+  uint16_t freqlin11 = float_to_linear11(457.14f);
+  uint16_t drooplin11 = float_to_linear11(0.0700f);
+  // we do the same for all devices except the 0th one, which is the 1.8/3.3V device
+  for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
+    for (uint8_t page = 0; page < 2; ++page) {
+      // page register
+      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+                              pm_addrs_dcdc + dev, &extra_cmds[0], &page);
+      if (r) {
+        log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev,
+                  page, r);
+        log_error(LOG_SERVICE, "LGA80D(0)\r\n");
+      }
+      // actual command -- frequency switch
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+                          pm_addrs_dcdc + dev, &extra_cmds[2], (uint8_t *)&freqlin11);
+      if (r) {
+        log_error(LOG_SERVICE, "LGA80D(1)\r\n");
+      }
+      // actual command -- vout_droop switch
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+                          pm_addrs_dcdc + dev, &extra_cmds[5],
+                          (uint8_t *)&drooplin11);
+      if (r) {
+        log_error(LOG_SERVICE, "LGA80D(2)\r\n");
+      }
+      // actual command -- multiphase_ramp_gain switch
+      uint8_t val = 0x7U; // by suggestion of Artesian
+      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+                          pm_addrs_dcdc + dev, &extra_cmds[6], &val);
+      if (r) {
+        log_error(LOG_SERVICE, "LGA80D(3)\r\n");
+      }
+    }
+  }
+  xSemaphoreGive(dcdc_args.xSem);
 
-	return;
+  return;
 }
 
 // if you change the length of this array, you also need to change
@@ -705,67 +720,85 @@ struct pm_command_t pm_command_dcdc[] = {
 };
 float dcdc_values[NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS];
 
-struct MonitorTaskArgs_t dcdc_args = { .name = "PSMON",
-		.devices = pm_addrs_dcdc, .n_devices = NSUPPLIES_PS, .commands =
-				pm_command_dcdc, .n_commands = NCOMMANDS_PS, .pm_values =
-				dcdc_values,
-		.n_values = NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS, .n_pages =
-		NPAGES_PS, .smbus = &g_sMaster1, .smbus_status = &eStatus1,
-		.xSem = NULL, .requirePower = false, .stack_size = 4096U, };
+struct MonitorTaskArgs_t dcdc_args = {
+    .name = "PSMON",
+    .devices = pm_addrs_dcdc,
+    .n_devices = NSUPPLIES_PS,
+    .commands =
+        pm_command_dcdc,
+    .n_commands = NCOMMANDS_PS,
+    .pm_values =
+        dcdc_values,
+    .n_values = NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS,
+    .n_pages =
+        NPAGES_PS,
+    .smbus = &g_sMaster1,
+    .smbus_status = &eStatus1,
+    .xSem = NULL,
+    .requirePower = false,
+    .stack_size = 4096U,
+};
 
 static int fpga_f1 = -1;
 static int fpga_f2 = -1;
-int get_f1_index() {
-	return fpga_f1;
+int get_f1_index()
+{
+  return fpga_f1;
 }
-int get_f2_index() {
-	return fpga_f2;
+int get_f2_index()
+{
+  return fpga_f2;
 }
-void set_f1_index(int index) {
-	fpga_f1 = index;
-	return;
+void set_f1_index(int index)
+{
+  fpga_f1 = index;
+  return;
 }
-void set_f2_index(int index) {
-	fpga_f2 = index;
-	return;
+void set_f2_index(int index)
+{
+  fpga_f2 = index;
+  return;
 }
 
-void initFPGAMon() {
-	// check if we are to include both FPGAs or not
-	bool f1_enable = isFPGAF1_PRESENT();
-	bool f2_enable = isFPGAF2_PRESENT();
+void initFPGAMon()
+{
+  // check if we are to include both FPGAs or not
+  bool f1_enable = isFPGAF1_PRESENT();
+  bool f2_enable = isFPGAF2_PRESENT();
 #ifndef REV1 // FIXME REMOVE THESE
   write_gpio_pin(JTAG_FROM_SM, 1);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);
 #endif        // not REV1
 #ifndef DEBUG // todo: just log this
-	configASSERT(f1_enable || f2_enable);
+  configASSERT(f1_enable || f2_enable);
 #endif // DEBUG
-	if (!f1_enable && f2_enable) {
-		fpga_args.devices = fpga_addrs_f2only;
-		fpga_args.n_devices = F2_NDEVICES;
-		set_f2_index(0);
+  if (!f1_enable && f2_enable) {
+    fpga_args.devices = fpga_addrs_f2only;
+    fpga_args.n_devices = F2_NDEVICES;
+    set_f2_index(0);
 #ifndef REV1
-		write_gpio_pin(_F1_JTAG_BYPASS, 0);
-		write_gpio_pin(_F2_JTAG_BYPASS, 1);
+    write_gpio_pin(_F1_JTAG_BYPASS, 0);
+    write_gpio_pin(_F2_JTAG_BYPASS, 1);
 #endif // REV1
-	} else if (!f2_enable && f1_enable) {
-		fpga_args.devices = fpga_addrs_f1only;
-		fpga_args.n_devices = F1_NDEVICES;
-		set_f1_index(0);
+  }
+  else if (!f2_enable && f1_enable) {
+    fpga_args.devices = fpga_addrs_f1only;
+    fpga_args.n_devices = F1_NDEVICES;
+    set_f1_index(0);
 #ifndef REV1
-		write_gpio_pin(_F1_JTAG_BYPASS, 1);
-		write_gpio_pin(_F2_JTAG_BYPASS, 0);
+    write_gpio_pin(_F1_JTAG_BYPASS, 1);
+    write_gpio_pin(_F2_JTAG_BYPASS, 0);
 #endif // REV1
-	} else {
-		set_f2_index(0);
-		set_f1_index(1);
+  }
+  else {
+    set_f2_index(0);
+    set_f1_index(1);
 #ifndef REV1
-		write_gpio_pin(_F1_JTAG_BYPASS, 1);
-		write_gpio_pin(_F2_JTAG_BYPASS, 1);
+    write_gpio_pin(_F1_JTAG_BYPASS, 1);
+    write_gpio_pin(_F2_JTAG_BYPASS, 1);
 #endif // REV1
-	}
+  }
 }
 
 #ifdef REV2
@@ -814,7 +847,7 @@ void init_registers_clk()
 
   // grab the semaphore to ensure unique access to I2C controller
   if (clock_args.xSem != NULL) {
-    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
+    while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
       ;
   }
 
@@ -870,7 +903,7 @@ void init_registers_ff()
 
   // grab the semaphore to ensure unique access to I2C controller
   if (ffldaq_f1_args.xSem != NULL) {
-    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t) 10) == pdFALSE)
+    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
       ;
   }
 
@@ -951,151 +984,153 @@ void init_registers_ff()
 }
 #endif // REV1
 #ifdef REV2
-void init_registers_clk() {
-	// initialize the external I2C registers for the clocks and for the optical devices.
+void init_registers_clk()
+{
+  // initialize the external I2C registers for the clocks and for the optical devices.
 
-	// =====================================================
-	// CMv2 Schematic 4.03 I2C CLOCK CONTROL
+  // =====================================================
+  // CMv2 Schematic 4.03 I2C CLOCK CONTROL
 
-	// 1a) U88 inputs vs. outputs (I2C address 0x20 on I2C channel #2)
-	// The "/INT..." signals on P04 and P05 are inputs.
-	// The unused signals on P06, P11, P16, and P17 should be inputs.
-	// The remaining 10 signals are outputs.
+  // 1a) U88 inputs vs. outputs (I2C address 0x20 on I2C channel #2)
+  // The "/INT..." signals on P04 and P05 are inputs.
+  // The unused signals on P06, P11, P16, and P17 should be inputs.
+  // The remaining 10 signals are outputs.
 
   // grab the semaphore to ensure unique access to I2C controller
   if (clock_args.xSem != NULL) {
-    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
+    while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
       ;
   }
 
-	// # set I2C switch on channel 2 (U84, address 0x70) to port 6
-	apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
-	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xc2); //  11000010 [P17..P10]
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 6
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xc2); //  11000010 [P17..P10]
 
-	// 1b) U88 default output values (I2C address 0x20 on I2C channel #2)
-	// The outputs on P00, P01, P02, and P03 should default to "0".
-	// This causes the muxes on sheet 2.08 to use clocks from synth R0A.
-	// The outputs on P07 and P10 should default to "1".
-	// This negates the active-lo "RESET" inputs on synths R0A and R0B.
-	// The outputs on P12, P13, P14, and P15 should default to "0".
-	// Selection of which input clock to use on synths R0A and R0B will be
-	// defined in the configuration files for these chips. They will not be
-	// switchable under program control.
+  // 1b) U88 default output values (I2C address 0x20 on I2C channel #2)
+  // The outputs on P00, P01, P02, and P03 should default to "0".
+  // This causes the muxes on sheet 2.08 to use clocks from synth R0A.
+  // The outputs on P07 and P10 should default to "1".
+  // This negates the active-lo "RESET" inputs on synths R0A and R0B.
+  // The outputs on P12, P13, P14, and P15 should default to "0".
+  // Selection of which input clock to use on synths R0A and R0B will be
+  // defined in the configuration files for these chips. They will not be
+  // switchable under program control.
 
-	// # set I2C switch on channel 2 (U84, address 0x70) to port 6
-	apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
-	apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 6
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-	// 2a) U83 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
-	// The "/INT..." signals on P04, P05, and P06 are inputs.
-	// There ane no unused signals.
-	// The remaining 13 signals are outputs.
+  // 2a) U83 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
+  // The "/INT..." signals on P04, P05, and P06 are inputs.
+  // There ane no unused signals.
+  // The remaining 13 signals are outputs.
 
-	// # set I2C switch on channel 2 (U84, address 0x70) to port 7
-	apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
-	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0x00); //  00000000 [P17..P10]
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 7
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0x00); //  00000000 [P17..P10]
 
-	// 2b) U88 default output values (I2C address 0x21 on I2C channel #2)
-	// The outputs on P00, P01, P02, and P03 should default to "0".
-	// This causes the muxes on sheet 2.08 to use clocks from synth R0A.
-	// The outputs on P07, P10, and P11 should default to "1".
-	// This negates the active-lo "RESET" inputs on synths R1A, R1B, and R1C.
-	// The outputs on P12, P13, P14, P15, P16, and P17 should default to "0".
-	// Selection of which input clock to use on synths R1A, R1B, and R1C
-	// will be defined in the configuration files for these chips. They will
-	// not be switchable under program control.
+  // 2b) U88 default output values (I2C address 0x21 on I2C channel #2)
+  // The outputs on P00, P01, P02, and P03 should default to "0".
+  // This causes the muxes on sheet 2.08 to use clocks from synth R0A.
+  // The outputs on P07, P10, and P11 should default to "1".
+  // This negates the active-lo "RESET" inputs on synths R1A, R1B, and R1C.
+  // The outputs on P12, P13, P14, P15, P16, and P17 should default to "0".
+  // Selection of which input clock to use on synths R1A, R1B, and R1C
+  // will be defined in the configuration files for these chips. They will
+  // not be switchable under program control.
 
-	// # set I2C switch on channel 2 (U84, address 0x70) to port 7
-	apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
-	apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
+  // # set I2C switch on channel 2 (U84, address 0x70) to port 7
+  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
-	xSemaphoreGive(clock_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(clock_args.xSem); // if we have a semaphore, give it
 }
-void init_registers_ff() {
+void init_registers_ff()
+{
 
-	// =====================================================
-	// CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
+  // =====================================================
+  // CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
 
-	// 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
-	// All signals are inputs.
+  // 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs.
 
   // grab the semaphore to ensure unique access to I2C controller
   if (ffldaq_f1_args.xSem != NULL) {
-    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t) 10) == pdFALSE)
+    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
       ;
   }
 
-	// # set first I2C switch on channel 4 (U14, address 0x70) to port 7
-	apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-	apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-	apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+  // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
+  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
 
-	// 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
-	// All signals are inputs so nothing needs to be done.
+  // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs so nothing needs to be done.
 
-	// 4a) U18 inputs vs. outputs (I2C address 0x21 on I2C channel #4)
-	// The "/F1_FF_RESET" signal on P10 is an output
-	// The "EN_...3V8" signals on P11, P12, and P13 are outputs.
-	// All other signals are inputs
+  // 4a) U18 inputs vs. outputs (I2C address 0x21 on I2C channel #4)
+  // The "/F1_FF_RESET" signal on P10 is an output
+  // The "EN_...3V8" signals on P11, P12, and P13 are outputs.
+  // All other signals are inputs
 
-	// # set second I2C switch on channel 4 (U17, address 0x71) to port 6
-	apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
 
-	// 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
-	// The output on P10 should default to "1".
-	// This negates the active-lo "RESET" input on the FPGA#1 FireFlys
-	// The outputs on P11, P12, and P13 should default to "0"
-	// This disables the 3.8 volt power supplies on the three FireFly
-	// 12-lane transmitter sites for FPGA#1.
+  // 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
+  // The output on P10 should default to "1".
+  // This negates the active-lo "RESET" input on the FPGA#1 FireFlys
+  // The outputs on P11, P12, and P13 should default to "0"
+  // This disables the 3.8 volt power supplies on the three FireFly
+  // 12-lane transmitter sites for FPGA#1.
 
-	// # set second I2C switch on channel 4 (U17, address 0x71) to port 6
-	apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
-	apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-	// =====================================================
-	// CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
+  // =====================================================
+  // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
 
-	// 5a) U10 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
-	// All signals are inputs.
+  // 5a) U10 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs.
 
-	// # set first I2C switch on channel 3 (U9, address 0x70) to port 7
-	apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-	apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-	apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+  // # set first I2C switch on channel 3 (U9, address 0x70) to port 7
+  apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
 
-	// 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
-	// All signals are inputs so nothing needs to be done.
+  // 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs so nothing needs to be done.
 
-	// 6a) U12 inputs vs. outputs (I2C address 0x21 on I2C channel #3)
-	// The "/F2_FF_RESET" signal on P10 is an output
-	// The "EN_...3V8" signals on P11, P12, and P13 are outputs.
-	// All other signals are inputs
+  // 6a) U12 inputs vs. outputs (I2C address 0x21 on I2C channel #3)
+  // The "/F2_FF_RESET" signal on P10 is an output
+  // The "EN_...3V8" signals on P11, P12, and P13 are outputs.
+  // All other signals are inputs
 
-	// # set second I2C switch on channel 3 (U11, address 0x71) to port 6
-	apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
 
-	// 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
-	// The output on P10 should default to "1".
-	// This negates the active-lo "RESET" input on the FPGA#2 FireFlys
-	// The outputs on P11, P12, and P13 should default to "0"
-	// This disables the 3.8 volt power supplies on the three FireFly
-	// 12-lane transmitter sites for FPGA#2.
+  // 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
+  // The output on P10 should default to "1".
+  // This negates the active-lo "RESET" input on the FPGA#2 FireFlys
+  // The outputs on P11, P12, and P13 should default to "0"
+  // This disables the 3.8 volt power supplies on the three FireFly
+  // 12-lane transmitter sites for FPGA#2.
 
-	// # set second I2C switch on channel 3 (U11, address 0x71) to port 6
-	apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
-	apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-	xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }
 #endif // REV2
 
@@ -1118,14 +1153,14 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       uint32_t triplet;     // two-byte address and data, both read from EEPROM
       uint16_t packed_reg0_address = (reg_page << 8) + (i - 2) % EEPROM_MAX_PER_PAGE;
       int status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2,
-                                          packed_reg0_address, 3, &triplet); //read triplet from eeprom
+                                          packed_reg0_address, 3, &triplet); // read triplet from eeprom
       if (status_r != 0) {
         log_error(LOG_SERVICE, "read failed: %s\r\n", SMBUS_get_error(status_r));
         xSemaphoreGive(clock_args.xSem);
         return status_r;
       }
       // organize the three bytes
-      uint8_t data = (triplet >> 16) & 0xFFU; //high byte of two-byte address (a page of clock config to keep track when writing data to a clock chip)
+      uint8_t data = (triplet >> 16) & 0xFFU; // high byte of two-byte address (a page of clock config to keep track when writing data to a clock chip)
       uint8_t reg1 = (triplet >> 8) & 0xFFU;  // low byte of two-byte address
       uint8_t reg0 = triplet & 0xFFU;         // data for each address
 
@@ -1137,10 +1172,10 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
           xSemaphoreGive(clock_args.xSem);
           return status_w; // fail writing and exit
         }
-        HighByte = reg0; //update the current high byte or page
+        HighByte = reg0; // update the current high byte or page
       }
 
-      status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, reg1, 1, data); //write data to a clock chip
+      status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, reg1, 1, data); // write data to a clock chip
       if (status_w != 0) {
         log_error(LOG_SERVICE, "write status is %d \r\n", status_w);
         xSemaphoreGive(clock_args.xSem);
@@ -1155,7 +1190,7 @@ int init_load_clk(int clk_n)
 {
 
   while (getPowerControlState() != POWER_ON) {
-    vTaskDelay(pdMS_TO_TICKS(10)); //delay 10 ms
+    vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
   }
 
   char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
@@ -1165,7 +1200,7 @@ int init_load_clk(int clk_n)
 
   // grab the semaphore to ensure unique access to I2C controller
   if (clock_args.xSem != NULL) {
-    while (xSemaphoreTake(clock_args.xSem, (TickType_t) 10) == pdFALSE)
+    while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
       ;
   }
 
@@ -1174,7 +1209,7 @@ int init_load_clk(int clk_n)
   uint16_t init_register_page = 32 * (clk_n) + 1;
   uint16_t init_postamble_page = 32 * (clk_n + 1) - 1;
 
-  uint32_t PreambleList_row; //the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
+  uint32_t PreambleList_row; // the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
   int status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
 
   if (status_r != 0) {
@@ -1183,7 +1218,7 @@ int init_load_clk(int clk_n)
     return status_r; // fail reading and exit
   }
 
-  uint32_t RegisterList_row; //the size of register list in a clock config file store at the end of the last eeprom page of a clock
+  uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "RL read error: %s\r\n", SMBUS_get_error(status_r));
@@ -1191,7 +1226,7 @@ int init_load_clk(int clk_n)
     return status_r; // fail reading and exit
   }
 
-  uint32_t PostambleList_row; //the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
+  uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PosL read error: %s\r\n", SMBUS_get_error(status_r));
@@ -1207,7 +1242,7 @@ int init_load_clk(int clk_n)
     xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
-  vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
+  vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
   log_debug(LOG_SERVICE, "Loading clock %s RegisterList from EEPROM\r\n", clk_ids[clk_n]);
   status_w = load_clk_registers(RegisterList_row, init_register_page, i2c_addrs);
   if (status_w != 0) {
@@ -1215,7 +1250,7 @@ int init_load_clk(int clk_n)
     xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
-  vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
+  vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
   log_debug(LOG_SERVICE, "Loading clock %s PostambleList from EEPROM\r\n", clk_ids[clk_n]);
   status_w = load_clk_registers(PostambleList_row, init_postamble_page, i2c_addrs);
   if (status_w != 0) {

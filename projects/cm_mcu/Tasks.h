@@ -79,7 +79,7 @@ void LGA80D_init(void);
 
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
-void MonitorI2CTask(void *parameters); 
+void MonitorI2CTask(void *parameters);
 void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enum log_facility_t);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
@@ -87,7 +87,6 @@ void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enu
 #define N_PM_ADDRS_DCDC 7
 #endif
 #define N_EXTRA_CMDS 7
-
 
 // MonitorI2C task
 // --- Firefly and Clock monitoring via I2C
@@ -104,7 +103,7 @@ void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enu
 // the following are true for both Rev1 and Rev2
 #define FF_I2CMUX_1_ADDR 0x70
 #define FF_I2CMUX_2_ADDR 0x71
-#define I2C_DEVICE_CLK 2
+#define I2C_DEVICE_CLK   2
 
 // REV1
 #ifndef REV2
@@ -115,17 +114,17 @@ void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enu
 #define NFIREFLIES_F1 10
 #define NFIREFLIES_F2 10
 #endif // REV 2
-#define NFIREFLIES_IT_F1 6
+#define NFIREFLIES_IT_F1  6
 #define NFIREFLIES_DAQ_F1 4
-#define NFIREFLIES_IT_F2 6
+#define NFIREFLIES_IT_F2  6
 #define NFIREFLIES_DAQ_F2 4
-#define CLK_PAGE_COMMAND 1
-#define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
+#define CLK_PAGE_COMMAND  1
+#define NFIREFLIES        (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 #define VENDOR_START_BIT_FFDAQ 168
-#define VENDOR_STOP_BIT_FFDAQ 184
-#define VENDOR_START_BIT_FF12 171
-#define VENDOR_STOP_BIT_FF12 187
+#define VENDOR_STOP_BIT_FFDAQ  184
+#define VENDOR_START_BIT_FF12  171
+#define VENDOR_STOP_BIT_FF12   187
 
 struct dev_moni2c_addr_t {
   char *name;
