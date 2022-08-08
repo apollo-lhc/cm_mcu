@@ -94,10 +94,10 @@ struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
 struct sm_command_t sm_command_ffldaq_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
-    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", SM_STATUS},
+    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", SM_STATUS},
 
 };
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
@@ -123,19 +123,19 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", SM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", SM_STATUS},
 
 };
 
@@ -178,10 +178,10 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 };
 
 struct sm_command_t sm_command_ffldaq_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
-    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", SM_STATUS},
+    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", SM_STATUS},
 
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
@@ -207,19 +207,19 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", SM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0, 7, "", SM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0, 7, "C", SM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0, 7, "", SM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0, 7, "", SM_STATUS},
+    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", SM_STATUS},
+    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", SM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", SM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", SM_STATUS},
 
 };
 
@@ -262,11 +262,14 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
 
 struct sm_command_t sm_command_clk[] = {
     // device information on page 0 : table 16.2 and 16.4
-    {1, 0x00, 0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
-    {1, 0x00, 0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
-    {1, 0x00, 0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, // page 0x00
-    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS},   // page 0x00 **for testing**
+    {1, 0x00, 0x02, 1, "PN_BASE", 0xff, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x03, 1, "PN_BASE", 0xff, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", SM_STATUS},   // page 0x00 **for testing**
     // internal statuses on page 0 : table 16.8 and 16.9
+    {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSOFF_IN", 0xff, "", SM_STATUS}, // page 0x00
+    /*
     {1, 0x00, 0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "LOS_IN0", 0, 0, "", SM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "LOS_IN1", 1, 1, "", SM_STATUS}, // page 0x00
@@ -276,7 +279,8 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x0D, 1, "OOF_IN1", 5, 5, "", SM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "OOF_IN2", 6, 6, "", SM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "OOF_IN3", 7, 7, "", SM_STATUS}, // page 0x00
-    {1, 0x00, 0x0E, 1, "LOL", 1, 1, "", SM_STATUS},     // page 0x00
+    */
+    {1, 0x00, 0x0E, 1, "LOL", 0x02, "", SM_STATUS},     // page 0x00
 };
 
 uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
@@ -304,20 +308,20 @@ struct dev_moni2c_addr_t clkr0a_moni2c_addrs[] = {
 
 struct sm_command_t sm_command_clkr0a[] = {
     // device information on page 0 : table 14.4 and 14.6
-    {1, 0x00, 0x02, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
-    {1, 0x00, 0x03, 1, "PN_BASE", 0, 7, "", SM_STATUS},    // page 0x00
-    {1, 0x00, 0x05, 1, "DEVICE_REV", 0, 7, "", SM_STATUS}, // page 0x00
-    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0, 6, "", SM_STATUS},   // page 0x00 **for testing**
+    {1, 0x00, 0x02, 1, "PN_BASE", 0xff, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x03, 1, "PN_BASE", 0xff, "", SM_STATUS},    // page 0x00
+    {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", SM_STATUS},   // page 0x00 **for testing**
     // internal statuses on page 0 : table 4.5
-    {1, 0x00, 0x0C, 1, "SYSINCAL", 0, 0, "", SM_STATUS},      // page 0x00
-    {1, 0x00, 0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS},       // page 0x00
-    {1, 0x00, 0x0C, 1, "LOSREF", 2, 2, "", SM_STATUS},        // page 0x00
-    {1, 0x00, 0x0C, 1, "LOS", 3, 3, "", SM_STATUS},           // page 0x00
-    {1, 0x00, 0x0C, 1, "SMBUS_TIMEOUT", 5, 5, "", SM_STATUS}, // page 0x00
-    {1, 0x00, 0x0D, 1, "LOSIN_IN0", 0, 0, "", SM_STATUS},     // page 0x00
-    {1, 0x00, 0x0D, 1, "LOSIN_IN1", 1, 1, "", SM_STATUS},     // page 0x00
-    {1, 0x00, 0x0D, 1, "LOSIN_IN2", 2, 2, "", SM_STATUS},     // page 0x00
-    {1, 0x00, 0x0D, 1, "LOSIN_FB_IN", 3, 3, "", SM_STATUS},   // page 0x00
+    {1, 0x00, 0x0C, 1, "SYSINCAL", 0x01, "", SM_STATUS},       // page 0x00
+    {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", SM_STATUS},       // page 0x00
+    {1, 0x00, 0x0C, 1, "LOSREF", 0x04, "", SM_STATUS},        // page 0x00
+    {1, 0x00, 0x0C, 1, "LOS", 0x08, "", SM_STATUS},           // page 0x00
+    {1, 0x00, 0x0C, 1, "SMBUS_TIMEOUT", 0x20, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_IN0", 0x01, "", SM_STATUS},     // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_IN1", 0x02, "", SM_STATUS},     // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_IN2", 0x04, "", SM_STATUS},     // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSIN_FB_IN", 0x08, "", SM_STATUS},   // page 0x00
 };
 
 uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
@@ -378,6 +382,7 @@ void getFFpart()
   uint8_t vendor_data1[4];
   uint32_t vendor_char1;
   int8_t vendor_part1[16];
+
   // FF connecting to FPGA2
   uint8_t vendor_data2[4];
   uint32_t vendor_char2;
@@ -454,6 +459,7 @@ void getFFpart()
   if ((strstr(vendor_string2, "14") != NULL)) {
     ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
   }
+
   xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }
 

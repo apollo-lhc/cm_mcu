@@ -95,7 +95,7 @@ bool isEnabledFF(int ff)
 
 TickType_t getFFupdateTick()
 {
-  return xTaskGetTickCount();
+  return ffl12_f1_args.updateTick;
 }
 
 #define TMPBUFFER_SZ 96
@@ -104,7 +104,7 @@ TickType_t getFFupdateTick()
 void MonitorI2CTask(void *parameters)
 {
   // initialize to the current tick time
-  TickType_t moni2c_updateTick = xTaskGetTickCount();
+  TickType_t xLastWakeTime = xTaskGetTickCount();
 
   struct MonitorI2CTaskArgs_t *args = parameters;
 
@@ -112,21 +112,22 @@ void MonitorI2CTask(void *parameters)
   bool log = true;
   int current_error_cnt = 0;
 
-  args->updateTick = moni2c_updateTick; // initial value
+
   // watchdog info
   task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
+  args->updateTick = xLastWakeTime;
 
   // wait for the power to come up
-  vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(2500));
+  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
 
   int IsCLK = (strstr(args->name, "CLK") != NULL);   // the instance is of CLK-device type
   int IsFF12 = (strstr(args->name, "FF12") != NULL); // the instance is of FF 12-ch part type
   // int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);  //the instance is of FF 4-ch part type (DAQ links) -- not being used currently
 
-  vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(2500));
+  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
 
   // reset the wake time to account for the time spent in any work in i2c tasks
-  moni2c_updateTick = xTaskGetTickCount();
+
   bool good = false;
   for (;;) {
     char tmp[TMPBUFFER_SZ];
@@ -136,7 +137,7 @@ void MonitorI2CTask(void *parameters)
       while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
         ;
     }
-    moni2c_updateTick = xTaskGetTickCount();
+    args->updateTick = xTaskGetTickCount(); // current time in ticks
     // -------------------------------
     // loop over devices in the device-type instance
     // -------------------------------
@@ -157,7 +158,7 @@ void MonitorI2CTask(void *parameters)
             good = false;
             task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
           }
-          vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(500));
+          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
           continue;
         }
         else if (getPowerControlState() == POWER_ON) { // power is on, and ...
@@ -197,11 +198,13 @@ void MonitorI2CTask(void *parameters)
 
         uint32_t output_raw;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size, args->commands[c].command, args->commands[c].size, &output_raw);
-
+        /*
         uint8_t mask = 0;
         make_bitmask(args->commands[c].end_bit - args->commands[c].begin_bit + 1, args->commands[c].begin_bit, &mask); // some registers are not full-byte
         uint16_t full_mask = (0xff << 8) | mask; // the [15:8] bits are not parts of masking so they must be reserved
-        uint16_t masked_output = output_raw & full_mask;
+        */
+        uint16_t masked_output = output_raw & args->commands[c].bit_mask;
+
 
         if (res != 0) {
           log_warn(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
@@ -210,7 +213,7 @@ void MonitorI2CTask(void *parameters)
           release_break();
         }
         else {
-          masked_output = masked_output >> args->commands[c].begin_bit;
+          //masked_output = masked_output >> args->commands[c].begin_bit;
           args->sm_values[index] = (uint16_t)masked_output;
         }
 
@@ -225,6 +228,6 @@ void MonitorI2CTask(void *parameters)
     CHECK_TASK_STACK_USAGE(args->stack_size);
 
     // task_watchdog_feed_task(kWatchdogTaskID_MonitorI2CTask);
-    vTaskDelayUntil(&moni2c_updateTick, pdMS_TO_TICKS(250));
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
   } // infinite loop for task
 }
