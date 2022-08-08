@@ -196,21 +196,22 @@ void MonitorI2CTask(void *parameters)
         }
 
         uint32_t output_raw;
+        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size, args->commands[c].command, args->commands[c].size, &output_raw);
+
         uint8_t mask = 0;
         make_bitmask(args->commands[c].end_bit - args->commands[c].begin_bit + 1, args->commands[c].begin_bit, &mask); // some registers are not full-byte
-        // uint16_t full_mask = (0xff << 8) | mask; // the [15:8] bits are not parts of masking so they must be reserved
-        uint16_t masked_command = args->commands[c].command & mask; // full_mask
-        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size, masked_command, args->commands[c].size, &output_raw);
+        uint16_t full_mask = (0xff << 8) | mask; // the [15:8] bits are not parts of masking so they must be reserved
+        uint16_t masked_output = output_raw & full_mask;
 
         if (res != 0) {
           log_warn(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
-                   args->commands[c].name, SMBUS_get_error(res), ps);
+              args->commands[c].name, SMBUS_get_error(res), ps);
           args->sm_values[index] = 0xffff;
           release_break();
         }
         else {
-          output_raw = output_raw >> args->commands[c].begin_bit;
-          args->sm_values[index] = (uint16_t)output_raw;
+          masked_output = masked_output >> args->commands[c].begin_bit;
+          args->sm_values[index] = (uint16_t)masked_output;
         }
 
       } // loop over commands
