@@ -267,7 +267,7 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", SM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", SM_STATUS},   // page 0x00 **for testing**
     // internal statuses on page 0 : table 16.8 and 16.9
-    {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", SM_STATUS}, // page 0x00
+    {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", SM_STATUS},   // page 0x00
     {1, 0x00, 0x0D, 1, "LOSOFF_IN", 0xff, "", SM_STATUS}, // page 0x00
     /*
     {1, 0x00, 0x0C, 1, "LOSXAXB", 1, 1, "", SM_STATUS}, // page 0x00
@@ -280,7 +280,7 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x0D, 1, "OOF_IN2", 6, 6, "", SM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "OOF_IN3", 7, 7, "", SM_STATUS}, // page 0x00
     */
-    {1, 0x00, 0x0E, 1, "LOL", 0x02, "", SM_STATUS},     // page 0x00
+    {1, 0x00, 0x0E, 1, "LOL", 0x02, "", SM_STATUS}, // page 0x00
 };
 
 uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
@@ -313,7 +313,7 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", SM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", SM_STATUS},   // page 0x00 **for testing**
     // internal statuses on page 0 : table 4.5
-    {1, 0x00, 0x0C, 1, "SYSINCAL", 0x01, "", SM_STATUS},       // page 0x00
+    {1, 0x00, 0x0C, 1, "SYSINCAL", 0x01, "", SM_STATUS},      // page 0x00
     {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", SM_STATUS},       // page 0x00
     {1, 0x00, 0x0C, 1, "LOSREF", 0x04, "", SM_STATUS},        // page 0x00
     {1, 0x00, 0x0C, 1, "LOS", 0x08, "", SM_STATUS},           // page 0x00
