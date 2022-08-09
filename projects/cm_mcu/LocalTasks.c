@@ -343,6 +343,12 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .stack_size = 4096U,
 };
 
+/*
+TickType_t getFFupdateTick(){
+  return ffl12_f1_args.updateTick;
+}
+*/
+
 int8_t getFFtemp(const uint8_t i)
 {
   int i1 = 1;

@@ -75,6 +75,12 @@ bool getFFch_high(uint8_t val, int channel)
   return true;
 }
 
+static TickType_t ff_updateTick;
+TickType_t getFFupdateTick(){
+  return ff_updateTick;
+}
+
+
 extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
 bool isEnabledFF(int ff)
@@ -91,11 +97,6 @@ bool isEnabledFF(int ff)
     return false;
   else
     return true;
-}
-
-TickType_t getFFupdateTick()
-{
-  return ffl12_f1_args.updateTick;
 }
 
 #define TMPBUFFER_SZ 96
@@ -147,6 +148,7 @@ void MonitorI2CTask(void *parameters)
         int offsetFF12 = 1 - IsFF12;
         if (!isEnabledFF(ps + (offsetFF12 * (NFIREFLIES_IT_F1)) + ((args->i2c_dev - I2C_DEVICE_F1) * (-1) * (NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
           continue;
+        ff_updateTick = xTaskGetTickCount();
       }
 
       if (args->requirePower) {
@@ -198,11 +200,6 @@ void MonitorI2CTask(void *parameters)
 
         uint32_t output_raw;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size, args->commands[c].command, args->commands[c].size, &output_raw);
-        /*
-        uint8_t mask = 0;
-        make_bitmask(args->commands[c].end_bit - args->commands[c].begin_bit + 1, args->commands[c].begin_bit, &mask); // some registers are not full-byte
-        uint16_t full_mask = (0xff << 8) | mask; // the [15:8] bits are not parts of masking so they must be reserved
-        */
         uint16_t masked_output = output_raw & args->commands[c].bit_mask;
 
 
@@ -213,7 +210,6 @@ void MonitorI2CTask(void *parameters)
           release_break();
         }
         else {
-          //masked_output = masked_output >> args->commands[c].begin_bit;
           args->sm_values[index] = (uint16_t)masked_output;
         }
 

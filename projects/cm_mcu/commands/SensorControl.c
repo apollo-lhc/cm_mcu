@@ -640,7 +640,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 
   if (i == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI5341 with id : %s \r\n",
-                       clk_ids[i]);
+        clk_ids[i]);
     // update times, in seconds
     TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
     TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
@@ -648,18 +648,18 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     if (checkStale(last, now)) {
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
     }
     for (int c = 0; c < clockr0a_args.n_commands; ++c) {
       uint8_t val = clockr0a_args.sm_values[c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%10s: REG_ADDR 0x%04x\t  BIT_MASK 0x%02x\t  VALUE 0x%04x\t", clockr0a_args.commands[c].name, clockr0a_args.commands[c].command, clockr0a_args.commands[c].bit_mask, val);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : REG_ADDR 0x%04x BIT_MASK 0x%02x VALUE 0x%04x\t", clockr0a_args.commands[c].name, clockr0a_args.commands[c].command, clockr0a_args.commands[c].bit_mask, val);
 
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
     }
   }
   else {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI5395 with id : %s \r\n",
-                       clk_ids[i]);
+        clk_ids[i]);
     // update times, in seconds
     TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
     TickType_t last = pdTICKS_TO_MS(clock_args.updateTick) / 1000;
@@ -667,11 +667,11 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     if (checkStale(last, now)) {
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
     }
     for (int c = 0; c < clock_args.n_commands; ++c) {
       uint8_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%10s: REG_ADDR 0x%04x\t  BIT_MASK 0x%02x\t  VALUE 0x%04x\t", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : REG_ADDR 0x%04x BIT_MASK 0x%02x VALUE 0x%04x\t", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
 
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
     }
