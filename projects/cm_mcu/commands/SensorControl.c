@@ -627,6 +627,8 @@ extern struct MonitorI2CTaskArgs_t ffl12_f1_args;
 BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
+  static int c = 0;
+  char *header = "REG_TABLE";
   char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
   BaseType_t i = strtol(argv[1], NULL, 10);
 
@@ -650,12 +652,24 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
           "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
     }
-    for (int c = 0; c < clockr0a_args.n_commands; ++c) {
-      uint8_t val = clockr0a_args.sm_values[c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : REG_ADDR 0x%04x BIT_MASK 0x%02x VALUE 0x%04x\t", clockr0a_args.commands[c].name, clockr0a_args.commands[c].command, clockr0a_args.commands[c].bit_mask, val);
 
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
+    for (; c < clockr0a_args.n_commands; ++c) {
+      uint8_t val = clockr0a_args.sm_values[c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%02x    0x%04x\r\n", clockr0a_args.commands[c].name, clockr0a_args.commands[c].command, clockr0a_args.commands[c].bit_mask, val);
+
+      //copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+      if ((SCRATCH_SIZE - copied) < 50){
+        ++c;
+        return pdTRUE;
+      }
     }
+    if (c % 2 == 1){
+      m[copied++] = '\r';
+      m[copied++] = '\n';
+      m[copied] = '\0';
+    }
+    c = 0;
   }
   else {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI5395 with id : %s \r\n",
@@ -669,12 +683,24 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
           "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
     }
-    for (int c = 0; c < clock_args.n_commands; ++c) {
-      uint8_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : REG_ADDR 0x%04x BIT_MASK 0x%02x VALUE 0x%04x\t", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
 
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
+    for (; c < clock_args.n_commands; ++c) {
+      uint8_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%02x    0x%04x\r\n", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
+
+      //copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+      if ((SCRATCH_SIZE - copied) < 50){
+        ++c;
+        return pdTRUE;
+      }
     }
+    if (c % 2 == 1){
+      m[copied++] = '\r';
+      m[copied++] = '\n';
+      m[copied] = '\0';
+    }
+    c = 0;
   }
 
   return pdFALSE;
