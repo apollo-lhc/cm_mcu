@@ -374,19 +374,6 @@ void InitRTC()
   ROM_HibernateRTCEnable();
   // set the RTC to calendar mode
   ROM_HibernateCounterMode(HIBERNATE_COUNTER_24HR);
-  //  // set to a default value
-  //  struct tm now = {
-  //    .tm_sec = 0,
-  //    .tm_min = 0,
-  //    .tm_hour = 0,
-  //    .tm_mday = 23,
-  //    .tm_mon = 10, // month goes from 0-11
-  //    .tm_year = 121, // year is since 1900
-  //    .tm_wday = 0,
-  //    .tm_yday = 0,
-  //    .tm_isdst = 0,
-  //  };
-  // ROM_HibernateCalendarSet(&now);
 }
 #endif // REV2
 #ifdef REV1
