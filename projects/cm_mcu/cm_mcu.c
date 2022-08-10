@@ -184,6 +184,8 @@ void SystemInitInterrupts()
 #endif
 
   // I2C slave
+  ROM_I2CSlaveDisable(I2C0_BASE); // I don't understand why this is neeeded
+
   ROM_I2CSlaveAddressSet(I2C0_BASE, 0, I2C0_SLAVE_ADDRESS);
 
   ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
@@ -230,11 +232,11 @@ const char *buildTime()
 const char *gitVersion()
 {
 #ifdef DEBUG
-#define BUILD_TYPE " DEBUG build"
+#define BUILD_TYPE "DEBUG build"
 #else
-#define BUILD_TYPE " regular build"
+#define BUILD_TYPE "regular build"
 #endif 
-  const char * gitVersion = FIRMWARE_VERSION BUILD_TYPE;
+  const char * gitVersion = FIRMWARE_VERSION "\r\n" BUILD_TYPE "\r\n";
   return gitVersion;
 }
 

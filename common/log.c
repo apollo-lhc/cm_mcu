@@ -187,6 +187,9 @@ void log_dump(void (*f)(const char *s))
 
 void ApolloLog(log_Event *ev)
 {
+  // note to self: before you change the size of this buffer 
+  // willy-nilly remember that this has to be accomodated on the stack of every 
+  // FreeRTOS task that calls any of the log_ functions.
 #define SZ 128
   char tmp[SZ];
   int r = 0;
@@ -199,7 +202,7 @@ void ApolloLog(log_Event *ev)
 #ifdef LOG_USE_COLOR
   r += snprintf(tmp + r, SZ - r, "%s", "\033[0m");
 #endif
-  configASSERT(r<SZ);
+  configASSERT(r<SZ); // not the best way to go but ....
   log_add_string(tmp, &b);
   Print(tmp);
 }

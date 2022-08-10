@@ -25,6 +25,8 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
+void Print(const char*);
+
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 
@@ -55,9 +57,14 @@ static int16_t getPSFailMask()
   static uint32_t ps_ignore_mask;
   if (!configured) {
     ps_ignore_mask = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
+    if ( ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 |PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 )) {
+      log_warn(LOG_PWRCTL, "Warning: mask 0x%x included masks at below L4; ignoring\r\n", ps_ignore_mask);
+      // mask out supplies at startup L1, L2 or L3. We do not allow those to fail.
+      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 |PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 );
+    }
     configured = true;
   }
-  return (0xFFFFU & ps_ignore_mask);
+  return (0xFFFFU & ps_ignore_mask); // 16 bit
 }
 
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
@@ -132,15 +139,15 @@ void PowerSupplyTask(void *parameters)
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
   uint16_t ignore_mask = getPSFailMask();
   if (ignore_mask) {
-#define SZ 512
+#define SZ 128
     char tmp[SZ];
-    int copied = 0;
     // debug the ignore mask
     for (int i = 0; i < N_PS_OKS; ++i) {
       BaseType_t ignored = (ignore_mask & (0x1U << i)) != 0;
-      copied += snprintf(tmp + copied, SZ - copied, "%s: %d\r\n", oks[i].name, ignored);
+      snprintf(tmp, SZ, "% 25s: %d\r\n", oks[i].name, ignored);
+      Print(tmp);
     }
-    log_warn(LOG_PWRCTL, "PS ignore mask is set: 0x%04x\r\n%s\r\n", ignore_mask, tmp);
+    log_warn(LOG_PWRCTL, "PS ignore mask is set: 0x%04x\r\n", ignore_mask);
     supply_ok_mask &= ~ignore_mask; // mask out the ignored bits.
   }
 
