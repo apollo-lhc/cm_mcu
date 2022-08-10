@@ -187,17 +187,19 @@ void log_dump(void (*f)(const char *s))
 
 void ApolloLog(log_Event *ev)
 {
-  char tmp[256];
+#define SZ 128
+  char tmp[SZ];
   int r = 0;
 #ifdef LOG_USE_COLOR
-  r = snprintf(tmp, 256, "%s", level_colors[ev->level]);
+  r = snprintf(tmp, SZ, "%s", level_colors[ev->level]);
 #endif // LOG_USE_COLOR
-  r += snprintf(tmp + r, 256 - r, "20%u %-3s %-3s %s:%u:", ev->time,
+  r += snprintf(tmp + r, SZ - r, "20%u %-3s %-3s %s:%u:", ev->time,
                 facility_strings[ev->fac], level_strings[ev->level], ev->file, ev->line);
-  r += vsnprintf(tmp + r, 256 - r, ev->fmt, ev->ap);
+  r += vsnprintf(tmp + r, SZ - r, ev->fmt, ev->ap);
 #ifdef LOG_USE_COLOR
-  snprintf(tmp + r, 256 - r, "%s", "\033[0m");
+  r += snprintf(tmp + r, SZ - r, "%s", "\033[0m");
 #endif
+  configASSERT(r<SZ);
   log_add_string(tmp, &b);
   Print(tmp);
 }
@@ -286,6 +288,9 @@ int log_add_fp(FILE *fp, int level)
 
 static void init_event(log_Event *ev, void *udata)
 {
+#ifdef REV1 // no RTC in Rev1
+  ev->time = xTaskGetTickCount();
+#else // REV2 and later
   struct tm now;
   ROM_HibernateCalendarGet(&now);
   if (now.tm_year < 120) { // RTC not yet set
@@ -295,6 +300,7 @@ static void init_event(log_Event *ev, void *udata)
     ev->time = now.tm_min + 100 * now.tm_hour + 10000 * (now.tm_mday) +
                1000000 * (now.tm_mon + 1) + 100000000 * (now.tm_year - 100);
   }
+#endif // REV2 and later
   ev->udata = udata;
 }
 
