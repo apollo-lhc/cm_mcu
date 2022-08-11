@@ -133,7 +133,7 @@ void SystemInitInterrupts()
   ROM_IntEnable(INT_ADC0SS1);
   ROM_IntEnable(INT_ADC1SS0);
 
-#if defined(REV1)|| defined(REV2)
+#if defined(REV1) || defined(REV2)
   // Set up the I2C controllers
   initI2C0(g_ui32SysClock); // Slave controller
   initI2C1(g_ui32SysClock); // controller for power supplies
@@ -144,7 +144,7 @@ void SystemInitInterrupts()
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
 #elif defined(REV2)
-  initI2C5(g_ui32SysClock); // controller for FPGAs
+  initI2C5(g_ui32SysClock);  // controller for FPGAs
 #endif
 
   // smbus
@@ -228,15 +228,14 @@ const char *buildTime()
   return btime;
 }
 
-
 const char *gitVersion()
 {
 #ifdef DEBUG
 #define BUILD_TYPE "DEBUG build"
 #else
 #define BUILD_TYPE "regular build"
-#endif 
-  const char * gitVersion = FIRMWARE_VERSION "\r\n" BUILD_TYPE "\r\n";
+#endif
+  const char *gitVersion = FIRMWARE_VERSION "\r\n" BUILD_TYPE "\r\n";
   return gitVersion;
 }
 
@@ -246,7 +245,6 @@ int main(void)
   SystemInit();
 
   initFPGAMon();
-
 
   // all facilities start at INFO
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
@@ -281,7 +279,6 @@ int main(void)
   cli_uart.stack_size = 4096U;
 #endif // REV1
 
-
   // clear the various buffers
   for (int i = 0; i < dcdc_args.n_values; ++i)
     dcdc_args.pm_values[i] = -999.f;
@@ -289,26 +286,26 @@ int main(void)
     fpga_args.pm_values[i] = -999.f;
 
   // start the tasks here
-  xTaskCreate(PowerSupplyTask, "POW", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(PowerSupplyTask, "POW", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(LedTask, "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 1, NULL);
 #ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+  xTaskCreate(FireFlyTask, "FFLY", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTask, "PSMON", 2*configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, "PSMON", 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTask, "XIMON", 2*configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, "XIMON", 2 * configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(ZynqMonTask, "ZMON", 2*configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
-//  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+  //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------
   // Initialize all the queues

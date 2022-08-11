@@ -25,7 +25,7 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
-void Print(const char*);
+void Print(const char *);
 
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
@@ -57,10 +57,10 @@ static int16_t getPSFailMask()
   static uint32_t ps_ignore_mask;
   if (!configured) {
     ps_ignore_mask = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
-    if ( ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 |PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 )) {
+    if (ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5)) {
       log_warn(LOG_PWRCTL, "Warning: mask 0x%x included masks at below L4; ignoring\r\n", ps_ignore_mask);
       // mask out supplies at startup L1, L2 or L3. We do not allow those to fail.
-      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 |PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 );
+      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5);
     }
     configured = true;
   }

@@ -134,7 +134,6 @@ static void log_add_string(const char *s, struct buff_t *b)
   // always point to the '\0' of the last string added.
   // two cases: either the string fits in one copy, or in two
   long left = b->size - b->last;
-  //size_t len = strlen(s) + 1; // +1 for string terminator
   size_t len = lenx(s, left) + 1; // +1 for string terminator
   if (len <= left) {
     // single copy is going to work
@@ -187,8 +186,8 @@ void log_dump(void (*f)(const char *s))
 
 void ApolloLog(log_Event *ev)
 {
-  // note to self: before you change the size of this buffer 
-  // willy-nilly remember that this has to be accomodated on the stack of every 
+  // note to self: before you change the size of this buffer
+  // willy-nilly remember that this has to be accomodated on the stack of every
   // FreeRTOS task that calls any of the log_ functions.
 #define SZ 128
   char tmp[SZ];
@@ -202,7 +201,7 @@ void ApolloLog(log_Event *ev)
 #ifdef LOG_USE_COLOR
   r += snprintf(tmp + r, SZ - r, "%s", "\033[0m");
 #endif
-  configASSERT(r<SZ); // not the best way to go but ....
+  configASSERT(r < SZ); // not the best way to go but ....
   log_add_string(tmp, &b);
   Print(tmp);
 }
@@ -293,7 +292,7 @@ static void init_event(log_Event *ev, void *udata)
 {
 #ifdef REV1 // no RTC in Rev1
   ev->time = xTaskGetTickCount();
-#else // REV2 and later
+#else  // REV2 and later
   struct tm now;
   ROM_HibernateCalendarGet(&now);
   if (now.tm_year < 120) { // RTC not yet set

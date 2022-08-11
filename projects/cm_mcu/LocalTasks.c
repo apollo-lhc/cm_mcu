@@ -661,13 +661,13 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       uint32_t triplet;     // two-byte address and data, both read from EEPROM
       uint16_t packed_reg0_address = (reg_page << 8) + (i - 2) % EEPROM_MAX_PER_PAGE;
       int status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2,
-                                          packed_reg0_address, 3, &triplet); //read triplet from eeprom
+                                          packed_reg0_address, 3, &triplet); // read triplet from eeprom
       if (status_r != 0) {
         log_error(LOG_SERVICE, "read failed: %s\r\n", SMBUS_get_error(status_r));
         return status_r;
       }
       // organize the three bytes
-      uint8_t data = (triplet >> 16) & 0xFFU; //high byte of two-byte address (a page of clock config to keep track when writing data to a clock chip)
+      uint8_t data = (triplet >> 16) & 0xFFU; // high byte of two-byte address (a page of clock config to keep track when writing data to a clock chip)
       uint8_t reg1 = (triplet >> 8) & 0xFFU;  // low byte of two-byte address
       uint8_t reg0 = triplet & 0xFFU;         // data for each address
 
@@ -678,10 +678,10 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
           log_error(LOG_SERVICE, "write failed: %s\r\n", SMBUS_get_error(status_w));
           return status_w; // fail writing and exit
         }
-        HighByte = reg0; //update the current high byte or page
+        HighByte = reg0; // update the current high byte or page
       }
 
-      status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, reg1, 1, data); //write data to a clock chip
+      status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, reg1, 1, data); // write data to a clock chip
       if (status_w != 0) {
         log_error(LOG_SERVICE, "write status is %d \r\n", status_w);
         return status_w; // fail writing and exit
@@ -695,7 +695,7 @@ int init_load_clk(int clk_n)
 {
 
   while (getPowerControlState() != POWER_ON) {
-    vTaskDelay(pdMS_TO_TICKS(10)); //delay 10 ms
+    vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
   }
 
   char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
@@ -708,21 +708,21 @@ int init_load_clk(int clk_n)
   uint16_t init_register_page = 32 * (clk_n) + 1;
   uint16_t init_postamble_page = 32 * (clk_n + 1) - 1;
 
-  uint32_t PreambleList_row; //the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
+  uint32_t PreambleList_row; // the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
   int status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PreL read error: %s\r\n", SMBUS_get_error(status_r));
     return status_r; // fail reading and exit
   }
 
-  uint32_t RegisterList_row; //the size of register list in a clock config file store at the end of the last eeprom page of a clock
+  uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "RL read error: %s\r\n", SMBUS_get_error(status_r));
     return status_r; // fail reading and exit
   }
 
-  uint32_t PostambleList_row; //the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
+  uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PosL read error: %s\r\n", SMBUS_get_error(status_r));
@@ -736,14 +736,14 @@ int init_load_clk(int clk_n)
     log_error(LOG_SERVICE, "PreL write error %d\r\n", status_w);
     return status_w;
   }
-  vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
+  vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
   log_debug(LOG_SERVICE, "Loading clock %s RegisterList from EEPROM\r\n", clk_ids[clk_n]);
   status_w = load_clk_registers(RegisterList_row, init_register_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "RegL write error %d\r\n", status_w);
     return status_w;
   }
-  vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum delay
+  vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
   log_debug(LOG_SERVICE, "Loading clock %s PostambleList from EEPROM\r\n", clk_ids[clk_n]);
   status_w = load_clk_registers(PostambleList_row, init_postamble_page, i2c_addrs);
   if (status_w != 0) {
