@@ -47,7 +47,7 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
 {
   UBaseType_t device, address, packed_reg_address;
-  UBaseType_t packed_data;
+  uint32_t packed_data = 0U;
   BaseType_t nbytes_addr, nbytes;
   device = strtol(argv[1], NULL, 16); // i2c device
   if (!isValidDevice((int)device)) {

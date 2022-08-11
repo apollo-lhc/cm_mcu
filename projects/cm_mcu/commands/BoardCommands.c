@@ -87,7 +87,7 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lx\r\n", num);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lx\r\n", rev);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly config: %lx\r\n", ff);
-  //copied += 
+  //copied += // this is here to remind you to update `copied` if you add more lines
   snprintf(m + copied, SCRATCH_SIZE - copied, "PS ignore mask: %lx\r\n", ps);
 
   return pdFALSE;
