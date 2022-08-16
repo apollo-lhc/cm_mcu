@@ -12,15 +12,6 @@
 #include "semphr.h"
 #include "Tasks.h"
 
-extern SemaphoreHandle_t xMonSem;
-
-// pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
-// enum sm_type { SM_VOLTAGE, SM_NONVOLTAGE, SM_STATUS, SM_LINEAR11, SM_LINEAR16U, SM_LINEAR16S } ;
-enum sm_type { SM_STATUS,
-               SM_LINEAR11,
-               SM_LINEAR16U,
-               SM_LINEAR16S };
-
 struct sm_command_t {
   int reg_size;          // number of bytes of register/command
   unsigned char page;    // I2C page address
@@ -29,7 +20,7 @@ struct sm_command_t {
   char *name;            // text describing command
   uint16_t bit_mask;         // begin bit mask
   char *units;           // units for pretty printing
-  enum sm_type type;     // how to decode command (L11 or bitfield or ...)
+  enum pm_type type;     // how to decode command (L11 or bitfield or ...)
 };
 
 // how to find an I2C device, with a mux infront of it.
@@ -81,7 +72,7 @@ extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 #define NCOMMANDS_CLK    7 // number of commands
 #define NPAGES_CLK       1  //
 #define NSUPPLIES_CLKR0A (1)
-#define NCOMMANDS_CLKR0A 13 // number of commands
+#define NCOMMANDS_CLKR0A 6 // number of commands
 #define NPAGES_CLKR0A    1  //
 
 extern struct MonitorI2CTaskArgs_t clock_args;

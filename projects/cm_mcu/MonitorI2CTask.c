@@ -75,29 +75,7 @@ bool getFFch_high(uint8_t val, int channel)
   return true;
 }
 
-static TickType_t ff_updateTick;
-TickType_t getFFupdateTick(){
-  return ff_updateTick;
-}
-
-
 extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
-
-bool isEnabledFF(int ff)
-{
-  // firefly config stored in on-board EEPROM
-  static bool configured = false;
-
-  static uint32_t ff_config;
-  if (!configured) {
-    ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
-    configured = true;
-  }
-  if (!((1 << ff) & ff_config))
-    return false;
-  else
-    return true;
-}
 
 #define TMPBUFFER_SZ 96
 
@@ -110,9 +88,6 @@ void MonitorI2CTask(void *parameters)
   struct MonitorI2CTaskArgs_t *args = parameters;
 
   configASSERT(args->name != 0);
-  bool log = true;
-  int current_error_cnt = 0;
-
 
   // watchdog info
   task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
@@ -148,14 +123,13 @@ void MonitorI2CTask(void *parameters)
         int offsetFF12 = 1 - IsFF12;
         if (!isEnabledFF(ps + (offsetFF12 * (NFIREFLIES_IT_F1)) + ((args->i2c_dev - I2C_DEVICE_F1) * (-1) * (NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
           continue;
-        ff_updateTick = xTaskGetTickCount();
+        args->updateTick = xTaskGetTickCount();
       }
 
       if (args->requirePower) {
         if (getPowerControlState() != POWER_ON) {
           if (good) {
             snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
-            SuppressedPrint(tmp, &current_error_cnt, &log, LOG_MONI2C);
             log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
             good = false;
             task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
@@ -167,7 +141,6 @@ void MonitorI2CTask(void *parameters)
           if (!good) {                                 // ... was not good, but is now good
             task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
             snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
-            SuppressedPrint(tmp, &current_error_cnt, &log, LOG_MONI2C);
             log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
             good = true;
           }

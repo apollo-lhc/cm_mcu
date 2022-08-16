@@ -80,7 +80,6 @@ void LGA80D_init(void);
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
 void MonitorI2CTask(void *parameters);
-void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enum log_facility_t);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
 #elif defined(REV2) // REV2
@@ -126,6 +125,14 @@ void SuppressedPrint(const char *str, int *current_error_cnt, bool *logging, enu
 #define VENDOR_START_BIT_FF12  171
 #define VENDOR_STOP_BIT_FF12   187
 
+// pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
+enum pm_type { PM_VOLTAGE,
+  PM_NONVOLTAGE,
+  PM_STATUS,
+  PM_LINEAR11,
+  PM_LINEAR16U,
+  PM_LINEAR16S };
+
 struct dev_moni2c_addr_t {
   char *name;
   uint8_t mux_addr; // I2C address of the Mux
@@ -141,8 +148,90 @@ bool isEnabledFF(int ff);
 int8_t getFFtemp(const uint8_t i);
 void getFFpart();
 uint8_t getFFstatus(const uint8_t i);
-TickType_t getFFupdateTick();
+int getFFcheckStale();
+TickType_t getFFupdateTick(int ff_t);
 void init_registers_ff();
+
+// ff_ctl
+// control the LED
+void LedTask(void *parameters);
+
+#define RED_LED_OFF       (10)
+#define RED_LED_ON        (11)
+#define RED_LED_TOGGLE    (12)
+#define RED_LED_TOGGLE3   (13)
+#define RED_LED_TOGGLE4   (14)
+#define BLUE_LED_OFF      (20)
+#define BLUE_LED_ON       (21)
+#define BLUE_LED_TOGGLE   (22)
+#define BLUE_LED_TOGGLE3  (23)
+#define BLUE_LED_TOGGLE4  (24)
+#define GREEN_LED_OFF     (30)
+#define GREEN_LED_ON      (31)
+#define GREEN_LED_TOGGLE  (32)
+#define GREEN_LED_TOGGLE3 (33)
+#define GREEN_LED_TOGGLE4 (34)
+
+/*
+static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size, int i2c_device);
+static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff, int i2c_device);
+static int set_xcvr_cdr(uint8_t value, int num_ff, int i2c_device);
+static int disable_receivers(bool disable, int num_ff, int i2c_device);
+static int disable_transmit(bool disable, int num_ff, int i2c_device);
+static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size, int i2c_device);
+static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device);
+*/
+
+// messages for FF task
+#define FFLY_DISABLE_TRANSMITTER (1)
+#define FFLY_ENABLE_TRANSMITTER  (2)
+#define FFLY_ENABLE_CDR          (3)
+#define FFLY_DISABLE_CDR         (4)
+#define FFLY_DISABLE             (5)
+#define FFLY_ENABLE              (6)
+#define FFLY_WRITE_REGISTER      (7)
+#define FFLY_READ_REGISTER       (8)
+#define FFLY_TEST_READ           (9)
+#define FFLY_SUSPEND             (10)
+#define FFLY_RESUME              (11)
+
+// FF Task message format
+// two fields, a task code and task data.
+#define FF_MESSAGE_DATA_SZ     26
+#define FF_MESSAGE_DATA_OFFSET 0
+#define FF_MESSAGE_DATA_MASK   ((1 << FF_MESSAGE_DATA_SZ) - 1)
+#define FF_MESSAGE_CODE_SZ     6
+#define FF_MESSAGE_CODE_OFFSET FF_MESSAGE_DATA_SZ
+#define FF_MESSAGE_CODE_MASK   ((1 << FF_MESSAGE_CODE_SZ) - 1)
+
+// FF register read/write task
+// the 26 bits are split into three fields
+// 11 bits of register (top two bits are page)
+// 10 bits of data
+// 5 bits of which firefly
+#define FF_MESSAGE_CODE_REG_REG_SZ     11
+#define FF_MESSAGE_CODE_REG_REG_OFFSET 0
+#define FF_MESSAGE_CODE_REG_DAT_SZ     10
+#define FF_MESSAGE_CODE_REG_DAT_OFFSET FF_MESSAGE_CODE_REG_REG_SZ
+#define FF_MESSAGE_CODE_REG_FF_SZ      10
+#define FF_MESSAGE_CODE_REG_FF_OFFSET  (FF_MESSAGE_CODE_REG_REG_SZ + FF_MESSAGE_CODE_REG_DAT_SZ)
+// derived masks
+#define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
+#define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
+#define FF_MESSAGE_CODE_REG_FF_MASK  ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
+
+// FF test register
+#define FF_MESSAGE_CODE_TEST_REG_SZ      8
+#define FF_MESSAGE_CODE_TEST_REG_OFFSET  0
+#define FF_MESSAGE_CODE_TEST_SIZE_SZ     5
+#define FF_MESSAGE_CODE_TEST_SIZE_OFFSET FF_MESSAGE_CODE_TEST_REG_SZ
+#define FF_MESSAGE_CODE_TEST_FF_SZ       5
+#define FF_MESSAGE_CODE_TEST_FF_OFFSET   (FF_MESSAGE_CODE_TEST_REG_SZ + FF_MESSAGE_CODE_TEST_REG_SZ)
+// derived masks
+#define FF_MESSAGE_CODE_TEST_REG_MASK  ((1 << FF_MESSAGE_CODE_TEST_REG_SZ) - 1)
+#define FF_MESSAGE_CODE_TEST_SIZE_MASK ((1 << FF_MESSAGE_CODE_TEST_SIZE_SZ) - 1)
+#define FF_MESSAGE_CODE_TEST_FF_MASK   ((1 << FF_MESSAGE_CODE_TEST_FF_SZ) - 1)
+
 
 // ---- version info
 const char *buildTime();

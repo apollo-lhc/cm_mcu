@@ -11,16 +11,9 @@
 #include "common/smbus.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "Tasks.h"
 
 extern SemaphoreHandle_t xMonSem;
-
-// pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
-enum pm_type { PM_VOLTAGE,
-               PM_NONVOLTAGE,
-               PM_STATUS,
-               PM_LINEAR11,
-               PM_LINEAR16U,
-               PM_LINEAR16S };
 
 struct pm_command_t {
   unsigned char command; // I2c register address

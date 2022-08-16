@@ -255,16 +255,11 @@ void zm_set_uptime(struct zynqmon_data_t data[], int start)
 // updated once per loop. Store the firefly temperature data 
 void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 {
-  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-
   // Fireflies
-  TickType_t last = pdTICKS_TO_S(getFFupdateTick());
-  bool stale = checkStale(last, now);
-
   // update the data for ZMON
   for (int i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
-    if ( ! stale ) {
+    if ( getFFcheckStale() ) {
       data[i].data.i = getFFtemp(i); // sensor value and type
     }
     else {
