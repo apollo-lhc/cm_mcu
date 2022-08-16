@@ -96,6 +96,12 @@ const bool getPowerControlExternalAlarmState()
 {
   return external_alarm;
 }
+// which power supply OKs to ignore
+static uint16_t ignore_mask;
+const uint16_t getPowerControlIgnoreMask()
+{
+  return ignore_mask;
+}
 
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
@@ -137,7 +143,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
   }
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
-  uint16_t ignore_mask = getPSFailMask();
+  ignore_mask = getPSFailMask();
   if (ignore_mask) {
 #define SZ 128
     char tmp[SZ];
@@ -149,6 +155,10 @@ void PowerSupplyTask(void *parameters)
     }
     log_warn(LOG_PWRCTL, "PS ignore mask is set: 0x%04x\r\n", ignore_mask);
     supply_ok_mask &= ~ignore_mask; // mask out the ignored bits.
+    supply_ok_mask_L1 &= ~ignore_mask; // mask out the ignored bits.
+    supply_ok_mask_L2 &= ~ignore_mask; // mask out the ignored bits.
+    supply_ok_mask_L4 &= ~ignore_mask; // mask out the ignored bits.
+    supply_ok_mask_L5 &= ~ignore_mask; // mask out the ignored bits.
   }
 
 #if defined(ECN001) || defined(REV2)
