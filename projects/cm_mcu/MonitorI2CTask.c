@@ -175,10 +175,9 @@ void MonitorI2CTask(void *parameters)
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size, args->commands[c].command, args->commands[c].size, &output_raw);
         uint16_t masked_output = output_raw & args->commands[c].bit_mask;
 
-
         if (res != 0) {
           log_warn(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
-              args->commands[c].name, SMBUS_get_error(res), ps);
+                   args->commands[c].name, SMBUS_get_error(res), ps);
           args->sm_values[index] = 0xffff;
           release_break();
         }
