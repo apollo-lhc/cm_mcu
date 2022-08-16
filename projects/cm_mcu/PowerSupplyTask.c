@@ -154,7 +154,7 @@ void PowerSupplyTask(void *parameters)
       Print(tmp);
     }
     log_warn(LOG_PWRCTL, "PS ignore mask is set: 0x%04x\r\n", ignore_mask);
-    supply_ok_mask &= ~ignore_mask; // mask out the ignored bits.
+    supply_ok_mask &= ~ignore_mask;    // mask out the ignored bits.
     supply_ok_mask_L1 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L2 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L4 &= ~ignore_mask; // mask out the ignored bits.

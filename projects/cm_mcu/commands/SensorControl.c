@@ -161,14 +161,14 @@ BaseType_t power_ctl(int argc, char **argv, char *m)
     }
     i = 0;
     return pdFALSE;
-  }  
+  }
   else if (strncmp(argv[1], "igmask", 6) == 0) { // report ignore mask to UART
     int copied = 0;
     static int i = 0;
     uint16_t ignore_mask = getPowerControlIgnoreMask();
     for (; i < N_PS_OKS; ++i) {
       BaseType_t ignored = (ignore_mask & (0x1U << i)) != 0;
-      copied += snprintf(m+copied, SCRATCH_SIZE-copied, "%-15s: %ld\r\n", oks[i].name, ignored);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s: %ld\r\n", oks[i].name, ignored);
       if ((SCRATCH_SIZE - copied) < 20 && (i < N_PS_OKS)) {
         ++i;
         return pdTRUE;
