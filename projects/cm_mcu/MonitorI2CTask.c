@@ -41,9 +41,7 @@ void Print(const char *str);
 
 #define release_break()           \
   {                               \
-    if (args->xSem != NULL) {     \
-      xSemaphoreGive(args->xSem); \
-    }                             \
+    xSemaphoreGive(args->xSem);   \
     break;                        \
   }
 
@@ -82,8 +80,6 @@ extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
 void MonitorI2CTask(void *parameters)
 {
-  // initialize to the current tick time
-  TickType_t xLastWakeTime = xTaskGetTickCount();
 
   struct MonitorI2CTaskArgs_t *args = parameters;
 
@@ -91,16 +87,17 @@ void MonitorI2CTask(void *parameters)
 
   // watchdog info
   task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
-  args->updateTick = xLastWakeTime;
+
+  // initialize to the current tick time
+  args->updateTick = xTaskGetTickCount();
 
   // wait for the power to come up
-  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
+  vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(2500));
 
   int IsCLK = (strstr(args->name, "CLK") != NULL);   // the instance is of CLK-device type
   int IsFF12 = (strstr(args->name, "FF12") != NULL); // the instance is of FF 12-ch part type
   // int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);  //the instance is of FF 4-ch part type (DAQ links) -- not being used currently
 
-  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(2500));
 
   // reset the wake time to account for the time spent in any work in i2c tasks
 
@@ -109,10 +106,8 @@ void MonitorI2CTask(void *parameters)
     char tmp[TMPBUFFER_SZ];
 
     // grab the semaphore to ensure unique access to I2C controller
-    if (args->xSem != NULL) {
-      while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
+    while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
         ;
-    }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // -------------------------------
     // loop over devices in the device-type instance
@@ -134,7 +129,7 @@ void MonitorI2CTask(void *parameters)
             good = false;
             task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
           }
-          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
+          vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
           continue;
         }
         else if (getPowerControlState() == POWER_ON) { // power is on, and ...
@@ -189,13 +184,12 @@ void MonitorI2CTask(void *parameters)
 
     } // loop over devices
 
-    if (args->xSem != NULL) // if we have a semaphore, give it
-      xSemaphoreGive(args->xSem);
+    xSemaphoreGive(args->xSem);
 
     // monitor stack usage for this task
     CHECK_TASK_STACK_USAGE(args->stack_size);
 
     // task_watchdog_feed_task(kWatchdogTaskID_MonitorI2CTask);
-    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
+    vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(250));
   } // infinite loop for task
 }
