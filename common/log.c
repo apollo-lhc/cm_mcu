@@ -134,7 +134,6 @@ static void log_add_string(const char *s, struct buff_t *b)
   // always point to the '\0' of the last string added.
   // two cases: either the string fits in one copy, or in two
   long left = b->size - b->last;
-  //size_t len = strlen(s) + 1; // +1 for string terminator
   size_t len = lenx(s, left) + 1; // +1 for string terminator
   if (len <= left) {
     // single copy is going to work
@@ -187,17 +186,22 @@ void log_dump(void (*f)(const char *s))
 
 void ApolloLog(log_Event *ev)
 {
-  char tmp[256];
+  // note to self: before you change the size of this buffer
+  // willy-nilly remember that this has to be accomodated on the stack of every
+  // FreeRTOS task that calls any of the log_ functions.
+#define SZ 128
+  char tmp[SZ];
   int r = 0;
 #ifdef LOG_USE_COLOR
-  r = snprintf(tmp, 256, "%s", level_colors[ev->level]);
+  r = snprintf(tmp, SZ, "%s", level_colors[ev->level]);
 #endif // LOG_USE_COLOR
-  r += snprintf(tmp + r, 256 - r, "20%u %-3s %-3s %s:%u:", ev->time,
+  r += snprintf(tmp + r, SZ - r, "20%u %-3s %-3s %s:%u:", ev->time,
                 facility_strings[ev->fac], level_strings[ev->level], ev->file, ev->line);
-  r += vsnprintf(tmp + r, 256 - r, ev->fmt, ev->ap);
+  r += vsnprintf(tmp + r, SZ - r, ev->fmt, ev->ap);
 #ifdef LOG_USE_COLOR
-  snprintf(tmp + r, 256 - r, "%s", "\033[0m");
+  r += snprintf(tmp + r, SZ - r, "%s", "\033[0m");
 #endif
+  configASSERT(r < SZ); // not the best way to go but ....
   log_add_string(tmp, &b);
   Print(tmp);
 }
@@ -286,6 +290,9 @@ int log_add_fp(FILE *fp, int level)
 
 static void init_event(log_Event *ev, void *udata)
 {
+#ifdef REV1 // no RTC in Rev1
+  ev->time = xTaskGetTickCount();
+#else  // REV2 and later
   struct tm now;
   ROM_HibernateCalendarGet(&now);
   if (now.tm_year < 120) { // RTC not yet set
@@ -295,6 +302,7 @@ static void init_event(log_Event *ev, void *udata)
     ev->time = now.tm_min + 100 * now.tm_hour + 10000 * (now.tm_mday) +
                1000000 * (now.tm_mon + 1) + 100000000 * (now.tm_year - 100);
   }
+#endif // REV2 and later
   ev->udata = udata;
 }
 

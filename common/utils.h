@@ -23,8 +23,9 @@ uint8_t toggle_gpio_pin(int pin);
 void setupActiveLowPins(void);
 
 // EEPROM
-#define EEPROM_ID_SN_ADDR 64
-#define EEPROM_ID_FF_ADDR (EEPROM_ID_SN_ADDR + 4)
+#define EEPROM_ID_SN_ADDR        0x40
+#define EEPROM_ID_FF_ADDR        (EEPROM_ID_SN_ADDR + 4) // 0x44
+#define EEPROM_ID_PS_IGNORE_MASK (EEPROM_ID_FF_ADDR + 4) // 0x48
 
 void write_eeprom(uint32_t data, uint32_t addr);
 uint32_t read_eeprom_single(uint32_t addr);
@@ -36,12 +37,12 @@ uint64_t read_eeprom_multi(uint32_t addr);
 
 #define ERRDATA_OFFSET 8 // Number of bits reserved for error data
 #define ERRCODE_OFFSET 5 // Number of bits reserved for error codes
-#define COUNTER_OFFSET                                                                             \
+#define COUNTER_OFFSET \
   (16 - ERRDATA_OFFSET - ERRCODE_OFFSET) // Number of bits reserved for message counter
 
 #define ERRDATA_MASK ((1 << (ERRDATA_OFFSET)) - 1)
 #define ERRCODE_MASK ((1 << (ERRDATA_OFFSET + ERRCODE_OFFSET)) - 1 - ERRDATA_MASK)
-#define COUNTER_MASK                                                                               \
+#define COUNTER_MASK \
   ((1 << (ERRDATA_OFFSET + ERRCODE_OFFSET + COUNTER_OFFSET)) - 1 - ERRDATA_MASK - ERRCODE_MASK)
 
 // Number of repeated entries that initiates a hardware counter update (re-write entry)

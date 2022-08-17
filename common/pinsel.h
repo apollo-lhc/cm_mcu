@@ -79,7 +79,7 @@ struct gpio_pin_t {
 #define X(name, pin, port, localpin, input) \
   name = pin,
 enum pins {
-#include "gpio_pins.def"
+#include "gpio_pins_rev2.def"
 };
 
 #define isFPGAF1_PRESENT() (read_gpio_pin(_F1_INSTALLED) == 0)

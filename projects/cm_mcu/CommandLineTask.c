@@ -117,7 +117,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
-#endif //REV2
+#endif // REV2
 
 // this command takes no arguments
 static BaseType_t ver_ctl(int argc, char **argv, char *m)
@@ -630,14 +630,12 @@ static struct command_t commands[] = {
     },
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},
-#ifdef REV2
     {
         "gpio",
         gpio_ctl,
         "Get or set any GPIO pin.\r\n",
         -1,
     },
-#endif // REV2
     {"help", help_command_fcn, "This help command\r\n", -1},
     {"id", board_id_info, "Prints board ID information.\r\n", 0},
     {"i2cr", i2c_ctl_r,
@@ -874,7 +872,7 @@ void vCommandLineTask(void *pvParameters)
       .userdata = &rl_userdata,
   };
 #ifdef REV1
-  //this is a hack
+  // this is a hack
   if (uart_base == UART1_BASE) {
     rl_config.print = U1Print; // switch to Zynq
   }
