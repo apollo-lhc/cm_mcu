@@ -46,7 +46,8 @@ void Print(const char *str);
 // break out of loop, releasing semaphore if we have it
 #define release_break()           \
   {                               \
-    xSemaphoreGive(args->xSem);   \
+    if (args->xSem != NULL )      \
+      xSemaphoreGive(args->xSem); \
     break;                        \
   }
 
