@@ -150,7 +150,7 @@ void PowerSupplyTask(void *parameters)
     // debug the ignore mask
     for (int i = 0; i < N_PS_OKS; ++i) {
       BaseType_t ignored = (ignore_mask & (0x1U << i)) != 0;
-      snprintf(tmp, SZ, "% 25s: %d\r\n", oks[i].name, ignored);
+      snprintf(tmp, SZ, "%-16s: %d\r\n", oks[i].name, ignored);
       Print(tmp);
     }
     log_warn(LOG_PWRCTL, "PS ignore mask is set: 0x%04x\r\n", ignore_mask);
