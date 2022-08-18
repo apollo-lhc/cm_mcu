@@ -1261,6 +1261,8 @@ int init_load_clk(int clk_n)
     return status_r; // fail reading and exit
   }
 
+  configASSERT(PreambleList_row != 0xff);
+
   uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r != 0) {
@@ -1269,6 +1271,8 @@ int init_load_clk(int clk_n)
     return status_r; // fail reading and exit
   }
 
+  configASSERT(RegisterList_row != 0xffff);
+
   uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r != 0) {
@@ -1276,6 +1280,8 @@ int init_load_clk(int clk_n)
     xSemaphoreGive(clock_args.xSem);
     return status_r; // fail reading and exit
   }
+
+  configASSERT(PostambleList_row != 0xff);
 
   log_debug(LOG_SERVICE, "Start programming clock %s\r\n", clk_ids[clk_n]);
   log_debug(LOG_SERVICE, "Loading clock %s PreambleList from EEPROM\r\n", clk_ids[clk_n]);

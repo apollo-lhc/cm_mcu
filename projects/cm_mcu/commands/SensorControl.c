@@ -138,7 +138,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   return res;
 }
 
-static int disable_transmit(bool disable, int num_ff, int i2c_device)
+static int disable_transmit(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -149,20 +149,27 @@ static int disable_transmit(bool disable, int num_ff, int i2c_device)
     i = 0;
     imax = NFIREFLIES;
   }
+  int i2c_dev;
   for (; i < imax; ++i) {
     if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
       continue;
+    if (i < NFIREFLIES_F1){
+      i2c_dev = I2C_DEVICE_F1;
+    }
+    else{
+      i2c_dev = I2C_DEVICE_F2;
+    }
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1, i2c_device);
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2, i2c_device);
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2, i2c_dev);
     }
   }
   return ret;
 }
 
-static int disable_receivers(bool disable, int num_ff, int i2c_device)
+static int disable_receivers(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -173,20 +180,27 @@ static int disable_receivers(bool disable, int num_ff, int i2c_device)
     i = 0;
     imax = NFIREFLIES;
   }
+  int i2c_dev;
   for (; i < imax; ++i) {
     if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
       continue;
+    if (i < NFIREFLIES_F1){
+      i2c_dev = I2C_DEVICE_F1;
+    }
+    else{
+      i2c_dev = I2C_DEVICE_F2;
+    }
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1, i2c_device);
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Rx") != NULL) {
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2, i2c_device);
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2, i2c_dev);
     }
   }
   return ret;
 }
 
-static int set_xcvr_cdr(uint8_t value, int num_ff, int i2c_device)
+static int set_xcvr_cdr(uint8_t value, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -194,21 +208,28 @@ static int set_xcvr_cdr(uint8_t value, int num_ff, int i2c_device)
     i = 0;
     imax = NFIREFLIES;
   }
+  int i2c_dev;
   for (; i < imax; ++i) {
     if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
       continue;
+    if (i < NFIREFLIES_F1){
+      i2c_dev = I2C_DEVICE_F1;
+    }
+    else{
+      i2c_dev = I2C_DEVICE_F2;
+    }
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG, value, 1, i2c_device);
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG, value, 1, i2c_dev);
     }
     else {                                          // Tx/Rx
       uint16_t value16 = value == 0 ? 0U : 0xffffU; // hack
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_TXRX_CDR_REG, value16, 2, i2c_device);
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_TXRX_CDR_REG, value16, 2, i2c_dev);
     }
   }
   return ret;
 }
 
-static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff, int i2c_device)
+static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
@@ -216,12 +237,20 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
     i = 0;
     imax = NFIREFLIES;
   }
+  int i2c_dev;
   for (; i < imax; ++i) {
+
     if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
       log_warn(LOG_SERVICE, "Skip writing to disabled FF %d\r\n", i);
       continue;
     }
-    int ret1 = write_ff_register(ff_moni2c_addrs[i].name, regnumber, value, 1, i2c_device);
+    if (i < NFIREFLIES_F1){
+      i2c_dev = I2C_DEVICE_F1;
+    }
+    else{
+      i2c_dev = I2C_DEVICE_F2;
+    }
+    int ret1 = write_ff_register(ff_moni2c_addrs[i].name, regnumber, value, 1, i2c_dev);
     if (ret1) {
       log_warn(LOG_SERVICE, "%s: error %s\r\n", __func__, SMBUS_get_error(ret1));
       ret += ret1;
@@ -231,12 +260,19 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
 }
 
 // read a SINGLE firefly register, one byte only
-static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size, int i2c_device)
+static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size)
 {
   if (num_ff >= NFIREFLIES) {
     return -1;
   }
-  int ret = read_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, 1, i2c_device);
+  int i2c_dev;
+  if (num_ff < NFIREFLIES_F1){
+    i2c_dev = I2C_DEVICE_F1;
+  }
+  else{
+    i2c_dev = I2C_DEVICE_F2;
+  }
+  int ret = read_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, 1, i2c_dev);
   return ret;
 }
 
@@ -862,51 +898,22 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
   // argument handling
   int copied = 0;
   static int whichff = 0;
-  static TickType_t ff_updateTick;
   if (whichff == 0) {
     // check for stale data
     TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
     if (getFFcheckStale()==0) {
       TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
-      ff_updateTick = last;
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
           "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
     }
   }
   if (argc == 2) {
-    if (strncmp(argv[1], "suspend", 4) == 0) {
-      vTaskDelayUntil(&ff_updateTick, pdMS_TO_TICKS(250));
-    }
-    else if (strncmp(argv[1], "resume", 4) == 0) {
-      const int devices[] = {I2C_DEVICE_F1, I2C_DEVICE_F2};
-      const int mux_addrs[] = {FF_I2CMUX_1_ADDR, FF_I2CMUX_2_ADDR};
-      // reset the two sets of muxes just to be sure
-      while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
-        ;
-      int res = apollo_i2c_ctl_w(devices[0], mux_addrs[0], 1, 0);
-      if (res != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "mux %d (0x%x) error %d", devices[0], mux_addrs[0], res);
-        xSemaphoreGive(ffldaq_f1_args.xSem);
-        return pdFALSE;
-      }
-      xSemaphoreGive(ffldaq_f1_args.xSem);
-      while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
-        ;
-      res = apollo_i2c_ctl_w(devices[1], mux_addrs[1], 1, 0);
-      if (res != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "mux %d (0x%x) error %d", devices[1], mux_addrs[1], res);
-        xSemaphoreGive(ffldaq_f2_args.xSem);
-        return pdFALSE;
-      }
-      xSemaphoreGive(ffldaq_f2_args.xSem);
-      return pdFALSE;
-    }
-    else {
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s not understood", argv[0], argv[1]);
-      return pdFALSE;
-    }
+
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s not understood", argv[0], argv[1]);
+    return pdFALSE;
+
   }
   else {
     int whichFF = 0;
@@ -924,38 +931,31 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
     }
     // now process various commands.
     if (argc == 4) { // command + three arguments
-      int i2c_dev;
-      if (whichFF < NFIREFLIES_F1){
-        i2c_dev = I2C_DEVICE_F1;
-      }
-      else{
-        i2c_dev = I2C_DEVICE_F2;
-      }
       uint32_t data = (whichFF & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET;
       int channel = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) & FF_MESSAGE_CODE_REG_FF_MASK;
       if (channel > NFIREFLIES)
         channel = NFIREFLIES;
       if (strncmp(argv[1], "cdr", 3) == 0) {
-        set_xcvr_cdr(0x00, channel, i2c_dev); // default: disable
+        set_xcvr_cdr(0x00, channel); // default: disable
         return pdFALSE;
         if (strncmp(argv[2], "on", 2) == 0) {
-          set_xcvr_cdr(0xff, channel, i2c_dev);
+          set_xcvr_cdr(0xff, channel);
           return pdFALSE;
         }
       }
       else if (strncmp(argv[1], "xmit", 4) == 0) {
-        disable_transmit(true, channel, i2c_dev);
+        disable_transmit(true, channel);
         return pdFALSE;
         if (strncmp(argv[2], "on", 2) == 0) {
-          disable_transmit(false, channel, i2c_dev);
+          disable_transmit(false, channel);
           return pdFALSE;
         }
       }
       else if (strncmp(argv[1], "rcvr", 4) == 0) {
-        disable_receivers(true, channel, i2c_dev);
+        disable_receivers(true, channel);
         return pdFALSE;
         if (strncmp(argv[2], "on", 2) == 0) {
-          disable_receivers(false, channel, i2c_dev);
+          disable_receivers(false, channel);
           return pdFALSE;
         }
       }
@@ -976,7 +976,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         uint16_t theReg =
             (data >> FF_MESSAGE_CODE_REG_REG_OFFSET) & FF_MESSAGE_CODE_REG_REG_MASK;
         uint8_t value;
-        uint16_t ret = read_arbitrary_ff_register(theReg, channel, &value, 1, i2c_dev);
+        uint16_t ret = read_arbitrary_ff_register(theReg, channel, &value, 1);
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
             "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
             ret, SMBUS_get_error(ret));
@@ -989,13 +989,6 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 
     } // argc == 4
     else if (argc == 5) { // command + five arguments
-      int i2c_dev;
-      if (whichFF < NFIREFLIES_F1){
-        i2c_dev = I2C_DEVICE_F1;
-      }
-      else{
-        i2c_dev = I2C_DEVICE_F2;
-      }
       // register write. model:
       // ff regw reg# val (0-23|all)
       // register read/write commands
@@ -1009,7 +1002,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         if (channel == NFIREFLIES) {
           channel = 0; // silently fall back to first channel
         }
-        write_arbitrary_ff_register(regnum, value, channel, i2c_dev);
+        write_arbitrary_ff_register(regnum, value, channel);
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "%s: write val 0x%x to register 0x%x, FF %d.\r\n", argv[0], value, regnum,
                  channel);
@@ -1039,6 +1032,13 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         uint8_t regdata[CHARLENGTH];
         memset(regdata, 'x', CHARLENGTH);
         regdata[charsize - 1] = '\0';
+        int i2c_dev;
+        if (whichFF < NFIREFLIES_F1){
+          i2c_dev = I2C_DEVICE_F1;
+        }
+        else{
+          i2c_dev = I2C_DEVICE_F2;
+        }
         int ret = read_ff_register(ff_moni2c_addrs[whichFF].name, regnum, &regdata[0], charsize, i2c_dev);
         if (ret != 0) {
           snprintf(tmp, CHARLENGTH, "read_ff_reg failed with %d\r\n", ret);
