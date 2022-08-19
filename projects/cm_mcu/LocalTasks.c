@@ -703,20 +703,24 @@ int init_load_clk(int clk_n)
   if (clk_n == 0)
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
 
-  apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
+  int status_r = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
+  if (status_r != 0) {
+    log_error(LOG_SERVICE, "Mux error: %s\r\n", SMBUS_get_error(status_r));
+    return status_r; // fail reading and exit
+  }
   uint16_t init_preamble_page = 32 * (clk_n);
   uint16_t init_register_page = 32 * (clk_n) + 1;
   uint16_t init_postamble_page = 32 * (clk_n + 1) - 1;
 
   uint32_t PreambleList_row; // the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
-  int status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
+  status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PreL read error: %s\r\n", SMBUS_get_error(status_r));
     return status_r; // fail reading and exit
   }
 
-  if (PreambleList_row == 0xff){
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM at PreL \r\n");
+  if (PreambleList_row == 0xff) {
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM PreL\r\n");
     return status_r; // fail reading and exit
   }
 
@@ -727,8 +731,8 @@ int init_load_clk(int clk_n)
     return status_r; // fail reading and exit
   }
 
-  if (RegisterList_row == 0xffff){
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM at RegL \r\n");
+  if (RegisterList_row == 0xffff) {
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM RegL\r\n");
     return status_r; // fail reading and exit
   }
 
@@ -739,8 +743,8 @@ int init_load_clk(int clk_n)
     return status_r; // fail reading and exit
   }
 
-  if (PostambleList_row == 0xff){
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM at PostL \r\n");
+  if (PostambleList_row == 0xff) {
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM PostL\r\n");
     return status_r; // fail reading and exit
   }
 
