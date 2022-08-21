@@ -931,8 +931,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
     }
     // now process various commands.
     if (argc == 4) { // command + three arguments
-      uint32_t data = (whichFF & FF_MESSAGE_CODE_REG_FF_MASK) << FF_MESSAGE_CODE_REG_FF_OFFSET;
-      int channel = (data >> FF_MESSAGE_CODE_REG_FF_OFFSET) & FF_MESSAGE_CODE_REG_FF_MASK;
+      int channel = whichFF;
       if (channel > NFIREFLIES)
         channel = NFIREFLIES;
       if (strncmp(argv[1], "cdr", 3) == 0) {
@@ -971,12 +970,8 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         copied +=
             snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reading FF %s, register 0x%x\r\n",
                 argv[0], ff_moni2c_addrs[whichFF].name, regnum);
-        // pack channel and register into the data
-        data |= ((regnum & FF_MESSAGE_CODE_REG_REG_MASK) << FF_MESSAGE_CODE_REG_REG_OFFSET);
-        uint16_t theReg =
-            (data >> FF_MESSAGE_CODE_REG_REG_OFFSET) & FF_MESSAGE_CODE_REG_REG_MASK;
         uint8_t value;
-        uint16_t ret = read_arbitrary_ff_register(theReg, channel, &value, 1);
+        uint16_t ret = read_arbitrary_ff_register(regnum, channel, &value, 1);
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
             "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
             ret, SMBUS_get_error(ret));

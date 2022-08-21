@@ -195,43 +195,6 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
 #define FFLY_SUSPEND             (10)
 #define FFLY_RESUME              (11)
 
-// FF Task message format
-// two fields, a task code and task data.
-#define FF_MESSAGE_DATA_SZ     26
-#define FF_MESSAGE_DATA_OFFSET 0
-#define FF_MESSAGE_DATA_MASK   ((1 << FF_MESSAGE_DATA_SZ) - 1)
-#define FF_MESSAGE_CODE_SZ     6
-#define FF_MESSAGE_CODE_OFFSET FF_MESSAGE_DATA_SZ
-#define FF_MESSAGE_CODE_MASK   ((1 << FF_MESSAGE_CODE_SZ) - 1)
-
-// FF register read/write task
-// the 26 bits are split into three fields
-// 11 bits of register (top two bits are page)
-// 10 bits of data
-// 5 bits of which firefly
-#define FF_MESSAGE_CODE_REG_REG_SZ     11
-#define FF_MESSAGE_CODE_REG_REG_OFFSET 0
-#define FF_MESSAGE_CODE_REG_DAT_SZ     10
-#define FF_MESSAGE_CODE_REG_DAT_OFFSET FF_MESSAGE_CODE_REG_REG_SZ
-#define FF_MESSAGE_CODE_REG_FF_SZ      10
-#define FF_MESSAGE_CODE_REG_FF_OFFSET  (FF_MESSAGE_CODE_REG_REG_SZ + FF_MESSAGE_CODE_REG_DAT_SZ)
-// derived masks
-#define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
-#define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
-#define FF_MESSAGE_CODE_REG_FF_MASK  ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
-
-// FF test register
-#define FF_MESSAGE_CODE_TEST_REG_SZ      8
-#define FF_MESSAGE_CODE_TEST_REG_OFFSET  0
-#define FF_MESSAGE_CODE_TEST_SIZE_SZ     5
-#define FF_MESSAGE_CODE_TEST_SIZE_OFFSET FF_MESSAGE_CODE_TEST_REG_SZ
-#define FF_MESSAGE_CODE_TEST_FF_SZ       5
-#define FF_MESSAGE_CODE_TEST_FF_OFFSET   (FF_MESSAGE_CODE_TEST_REG_SZ + FF_MESSAGE_CODE_TEST_REG_SZ)
-// derived masks
-#define FF_MESSAGE_CODE_TEST_REG_MASK  ((1 << FF_MESSAGE_CODE_TEST_REG_SZ) - 1)
-#define FF_MESSAGE_CODE_TEST_SIZE_MASK ((1 << FF_MESSAGE_CODE_TEST_SIZE_SZ) - 1)
-#define FF_MESSAGE_CODE_TEST_FF_MASK   ((1 << FF_MESSAGE_CODE_TEST_FF_SZ) - 1)
-
 
 // ---- version info
 const char *buildTime();
