@@ -27,6 +27,7 @@
 #include "common/log.h"
 #include "CommandLineTask.h"
 #include "InterruptHandlers.h"
+#include "MonitorI2CTask.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
 #include "I2CSlaveTask.h"
@@ -256,6 +257,16 @@ int main(void)
   // mutex for I2C controller for the power supplies
   dcdc_args.xSem = xSemaphoreCreateMutex();
 
+  SemaphoreHandle_t i2c4_sem = xSemaphoreCreateMutex();
+  ffl12_f1_args.xSem = i2c4_sem;
+  ffldaq_f1_args.xSem = i2c4_sem;
+  SemaphoreHandle_t i2c3_sem = xSemaphoreCreateMutex();
+  ffl12_f2_args.xSem = i2c3_sem;
+  ffldaq_f2_args.xSem = i2c3_sem;
+  SemaphoreHandle_t i2c2_sem = xSemaphoreCreateMutex();
+  clock_args.xSem = i2c2_sem;
+  clockr0a_args.xSem = i2c2_sem;
+
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
 #ifdef REV1
@@ -288,12 +299,22 @@ int main(void)
   // start the tasks here
   xTaskCreate(PowerSupplyTask, "POW", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(LedTask, "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
-  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 1, NULL);
+  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
 #ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 1, NULL);
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(FireFlyTask, "FFLY", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, "FF12", 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorI2CTask, "FFDAQ", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorI2CTask, "FF12V", 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorI2CTask, "FFDAQV", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorI2CTask, "CLKSI", 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorI2CTask, "CLKR0A", 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTask, "PSMON", 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
@@ -316,11 +337,6 @@ int main(void)
 
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
   configASSERT(xPwrQueue != NULL);
-
-  xFFlyQueueIn = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
-  configASSERT(xFFlyQueueIn != NULL);
-  xFFlyQueueOut = xQueueCreate(10, sizeof(uint32_t)); // FFLY queue
-  configASSERT(xFFlyQueueOut != NULL);
 
   xEPRMQueue_in = xQueueCreate(5, sizeof(uint64_t)); // EPRM queues
   configASSERT(xEPRMQueue_in != NULL);

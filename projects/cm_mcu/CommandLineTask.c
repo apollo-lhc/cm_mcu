@@ -587,6 +587,7 @@ static struct command_t commands[] = {
     {"alm", alarm_ctl, "args: (clear|status|settemp #)\r\nGet or clear status of alarm task.\r\n",
      -1},
     {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
+    {"clkmon", clkmon_ctl, "Displays a table showing the clock chips' statuses given the clock chip id option\r\n", 1},
     {"clock", clock_ctl,
      "args: (1|2)\r\nReset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n", 1},
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM.\r\n", 0},
@@ -607,8 +608,8 @@ static struct command_t commands[] = {
      "Resets the eeprom error logger.\r\n", 0},
     {"fpga_reset", fpga_reset, "Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
     {"ff", ff_ctl,
-     "args: <none> |(xmit|cdr on/off (0-23|all))| regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
-     " Firefly monitoring command\r\n",
+     "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
+     " Firefly controlling and monitoring commands\r\n",
      -1},
     {
         "ff_status",
@@ -627,6 +628,12 @@ static struct command_t commands[] = {
         ff_cdr_lol_alarm,
         "Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
         0,
+    },
+    {
+        "ff_temp",
+        ff_temp,
+        "Displays a table showing the temperature of the I2C fireflies.\r\n",
+        -1,
     },
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},

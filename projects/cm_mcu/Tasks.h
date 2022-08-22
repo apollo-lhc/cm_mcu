@@ -15,6 +15,7 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 #include "semphr.h"
+#include "common/log.h"
 
 #include "common/printf.h"
 
@@ -79,6 +80,7 @@ void LGA80D_init(void);
 
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
+void MonitorI2CTask(void *parameters);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
 #elif defined(REV2) // REV2
@@ -86,8 +88,23 @@ void MonitorTask(void *parameters);
 #endif
 #define N_EXTRA_CMDS 7
 
-// Firefly task
-// --- Firefly monitoring
+// MonitorI2C task
+// --- Firefly and Clock monitoring via I2C
+// I2C information -- which device on the MCU is for the FF for each FPGA and clock chips SI5341 and SI5395
+// this is what corresponds to I2C_BASE variables in the MCU
+#ifdef REV1
+#define I2C_DEVICE_F1 4
+#define I2C_DEVICE_F2 3
+#elif defined(REV2)
+#define I2C_DEVICE_F1 4
+#define I2C_DEVICE_F2 3
+#endif
+
+// the following are true for both Rev1 and Rev2
+#define FF_I2CMUX_1_ADDR 0x70
+#define FF_I2CMUX_2_ADDR 0x71
+#define I2C_DEVICE_CLK   2
+
 // REV1
 #ifndef REV2
 #define NFIREFLIES_F1 11
@@ -97,25 +114,64 @@ void MonitorTask(void *parameters);
 #define NFIREFLIES_F1 10
 #define NFIREFLIES_F2 10
 #endif // REV 2
-#define NFIREFLIES (NFIREFLIES_F1 + NFIREFLIES_F2)
+#define NFIREFLIES_IT_F1  6
+#define NFIREFLIES_DAQ_F1 4
+#define NFIREFLIES_IT_F2  6
+#define NFIREFLIES_DAQ_F2 4
+#define CLK_PAGE_COMMAND  1
+#define NFIREFLIES        (NFIREFLIES_F1 + NFIREFLIES_F2)
 
-void FireFlyTask(void *parameters);
-extern QueueHandle_t xFFlyQueueIn;
-extern QueueHandle_t xFFlyQueueOut;
-SemaphoreHandle_t getFFMutex();
+#define VENDOR_START_BIT_FFDAQ 168
+#define VENDOR_STOP_BIT_FFDAQ  184
+#define VENDOR_START_BIT_FF12  171
+#define VENDOR_STOP_BIT_FF12   187
 
-const char *getFFname(const uint8_t i);
-int8_t *test_read(const uint8_t i);
+// pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
+enum pm_type { PM_VOLTAGE,
+               PM_NONVOLTAGE,
+               PM_STATUS,
+               PM_LINEAR11,
+               PM_LINEAR16U,
+               PM_LINEAR16S };
+
+struct dev_moni2c_addr_t {
+  char *name;
+  uint8_t mux_addr; // I2C address of the Mux
+  uint8_t mux_bit;  // port of the mux; write value 0x1U<<mux_bit to the mux register
+  uint8_t dev_addr; // I2C address of device.
+};
+
+extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
+
+bool getFFch_low(uint8_t val, int channel);
+bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 int8_t getFFtemp(const uint8_t i);
+void getFFpart();
 uint8_t getFFstatus(const uint8_t i);
-bool getFFlos(int i, int channel);
-bool getFFlol(int i, int channel);
-TickType_t getFFupdateTick();
-// FFLY I/O Expander initialization
+int getFFcheckStale();
+TickType_t getFFupdateTick(int ff_t);
 void init_registers_ff();
 
-int disable_xcvr_cdr(const char *name);
+// ff_ctl
+// control the LED
+void LedTask(void *parameters);
+
+#define RED_LED_OFF       (10)
+#define RED_LED_ON        (11)
+#define RED_LED_TOGGLE    (12)
+#define RED_LED_TOGGLE3   (13)
+#define RED_LED_TOGGLE4   (14)
+#define BLUE_LED_OFF      (20)
+#define BLUE_LED_ON       (21)
+#define BLUE_LED_TOGGLE   (22)
+#define BLUE_LED_TOGGLE3  (23)
+#define BLUE_LED_TOGGLE4  (24)
+#define GREEN_LED_OFF     (30)
+#define GREEN_LED_ON      (31)
+#define GREEN_LED_TOGGLE  (32)
+#define GREEN_LED_TOGGLE3 (33)
+#define GREEN_LED_TOGGLE4 (34)
 
 // messages for FF task
 #define FFLY_DISABLE_TRANSMITTER (1)
@@ -129,43 +185,6 @@ int disable_xcvr_cdr(const char *name);
 #define FFLY_TEST_READ           (9)
 #define FFLY_SUSPEND             (10)
 #define FFLY_RESUME              (11)
-
-// FF Task message format
-// two fields, a task code and task data.
-#define FF_MESSAGE_DATA_SZ     26
-#define FF_MESSAGE_DATA_OFFSET 0
-#define FF_MESSAGE_DATA_MASK   ((1 << FF_MESSAGE_DATA_SZ) - 1)
-#define FF_MESSAGE_CODE_SZ     6
-#define FF_MESSAGE_CODE_OFFSET FF_MESSAGE_DATA_SZ
-#define FF_MESSAGE_CODE_MASK   ((1 << FF_MESSAGE_CODE_SZ) - 1)
-
-// FF register read/write task
-// the 26 bits are split into three fields
-// 11 bits of register (top two bits are page)
-// 10 bits of data
-// 5 bits of which firefly
-#define FF_MESSAGE_CODE_REG_REG_SZ     11
-#define FF_MESSAGE_CODE_REG_REG_OFFSET 0
-#define FF_MESSAGE_CODE_REG_DAT_SZ     10
-#define FF_MESSAGE_CODE_REG_DAT_OFFSET FF_MESSAGE_CODE_REG_REG_SZ
-#define FF_MESSAGE_CODE_REG_FF_SZ      10
-#define FF_MESSAGE_CODE_REG_FF_OFFSET  (FF_MESSAGE_CODE_REG_REG_SZ + FF_MESSAGE_CODE_REG_DAT_SZ)
-// derived masks
-#define FF_MESSAGE_CODE_REG_REG_MASK ((1 << FF_MESSAGE_CODE_REG_REG_SZ) - 1)
-#define FF_MESSAGE_CODE_REG_DAT_MASK ((1 << FF_MESSAGE_CODE_REG_DAT_SZ) - 1)
-#define FF_MESSAGE_CODE_REG_FF_MASK  ((1 << FF_MESSAGE_CODE_REG_FF_SZ) - 1)
-
-// FF test register
-#define FF_MESSAGE_CODE_TEST_REG_SZ      8
-#define FF_MESSAGE_CODE_TEST_REG_OFFSET  0
-#define FF_MESSAGE_CODE_TEST_SIZE_SZ     5
-#define FF_MESSAGE_CODE_TEST_SIZE_OFFSET FF_MESSAGE_CODE_TEST_REG_SZ
-#define FF_MESSAGE_CODE_TEST_FF_SZ       5
-#define FF_MESSAGE_CODE_TEST_FF_OFFSET   (FF_MESSAGE_CODE_TEST_REG_SZ + FF_MESSAGE_CODE_TEST_REG_SZ)
-// derived masks
-#define FF_MESSAGE_CODE_TEST_REG_MASK  ((1 << FF_MESSAGE_CODE_TEST_REG_SZ) - 1)
-#define FF_MESSAGE_CODE_TEST_SIZE_MASK ((1 << FF_MESSAGE_CODE_TEST_SIZE_SZ) - 1)
-#define FF_MESSAGE_CODE_TEST_FF_MASK   ((1 << FF_MESSAGE_CODE_TEST_FF_SZ) - 1)
 
 // ---- version info
 const char *buildTime();
@@ -284,6 +303,7 @@ void initFPGAMon();
 void WatchdogTask(void *parameters);
 enum WatchdogTaskLabel {
   kWatchdogTaskID_FireFly,
+  kWatchdogTaskID_MonitorI2CTask,
   kWatchdogTaskID_XiMon,
   kWatchdogTaskID_PSMon,
 };

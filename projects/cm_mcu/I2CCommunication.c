@@ -39,9 +39,9 @@
 // TivaWare includes
 #include "driverlib/uart.h"
 
-//#include "MonitorTask.h"
 #include "Tasks.h"
 #include "I2CCommunication.h"
+#include "common/smbus_helper.h"
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
@@ -84,6 +84,9 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
     }
     r = *p_eStatus;
   }
+  else {
+    log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+  }
   return r;
 }
 
@@ -112,6 +115,9 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
       }
     }
     r = *p_status;
+  }
+  else {
+    log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
   }
   // pack the data for return to the caller
   *packed_data = 0UL;
@@ -156,6 +162,9 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
     }
     r = *p_eStatus;
   }
+  else {
+    log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+  }
 
   return r;
 }
@@ -185,6 +194,10 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
     }
     r = *p_eStatus;
   }
+  else {
+    log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+  }
+
   return r;
 }
 // for PMBUS commands
@@ -195,6 +208,7 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bo
   uint8_t data = 0x1U << add->mux_bit;
   tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
   if (r != SMBUS_OK) {
+    log_error(LOG_I2C, "PMBUS write fail %s\r\n", SMBUS_get_error(r));
     return r;
   }
   int tries = 0;
@@ -216,6 +230,7 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bo
     r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
   if (r != SMBUS_OK) {
+    log_error(LOG_I2C, "PMBUS write/read fail %s\r\n", SMBUS_get_error(r));
     return r;
   }
   tries = 0;
@@ -226,5 +241,6 @@ int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bo
       break;
     }
   }
+
   return r;
 }
