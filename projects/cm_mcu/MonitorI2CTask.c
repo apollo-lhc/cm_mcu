@@ -45,14 +45,6 @@ void Print(const char *str);
     break;                        \
   }
 
-// get a mask of a register address given a starting bit field (shift) and the width
-
-void make_bitmask(unsigned int width, unsigned int shift, uint8_t *mask)
-{
-  unsigned int t = width ? (2u << (width - 1)) - 1u : 0u;
-  *mask = t << shift;
-}
-
 // read-only accessor functions for Firefly names and values.
 
 bool getFFch_low(uint8_t val, int channel)
@@ -121,33 +113,33 @@ void MonitorI2CTask(void *parameters)
         args->updateTick = xTaskGetTickCount();
       }
 
-      if (args->requirePower) {
-        if (getPowerControlState() != POWER_ON) {
-          if (good) {
-            snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
-            log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
-            good = false;
-            task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
-          }
-          vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
-          continue;
+
+      if (getPowerControlState() != POWER_ON) {
+        if (good) {
+          snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
+          log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
+          good = false;
+          task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
-        else if (getPowerControlState() == POWER_ON) { // power is on, and ...
-          if (!good) {                                 // ... was not good, but is now good
-            task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
-            snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
-            log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
-            good = true;
-          }
-        }
-        // if the power state is unknown, don't do anything
+        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
+        continue;
       }
+      else if (getPowerControlState() == POWER_ON) { // power is on, and ...
+        if (!good) {                                 // ... was not good, but is now good
+          task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
+          snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
+          log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
+          good = true;
+        }
+      }
+      // if the power state is unknown, don't do anything
+
 
       // select the appropriate output for the mux
-      uint8_t data[1];
-      data[0] = 0x1U << args->devices[ps].mux_bit;
-      log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data[0]);
-      int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ps].mux_addr, 1, data[0]);
+      uint8_t data;
+      data = 0x1U << args->devices[ps].mux_bit;
+      log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
+      int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ps].mux_addr, 1, data);
       if (res != 0) {
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
         release_break();

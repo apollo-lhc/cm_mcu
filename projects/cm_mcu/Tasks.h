@@ -172,16 +172,6 @@ void LedTask(void *parameters);
 #define GREEN_LED_TOGGLE3 (33)
 #define GREEN_LED_TOGGLE4 (34)
 
-/*
-static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size, int i2c_device);
-static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff, int i2c_device);
-static int set_xcvr_cdr(uint8_t value, int num_ff, int i2c_device);
-static int disable_receivers(bool disable, int num_ff, int i2c_device);
-static int disable_transmit(bool disable, int num_ff, int i2c_device);
-static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size, int i2c_device);
-static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device);
-*/
-
 // messages for FF task
 #define FFLY_DISABLE_TRANSMITTER (1)
 #define FFLY_ENABLE_TRANSMITTER  (2)

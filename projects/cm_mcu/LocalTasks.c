@@ -131,7 +131,6 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
-    .requirePower = true,
     .stack_size = 4096U,
 };
 
@@ -180,7 +179,6 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
-    .requirePower = true,
     .stack_size = 4096U,
 };
 
@@ -215,7 +213,6 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
-    .requirePower = true,
     .stack_size = 4096U,
 };
 
@@ -263,7 +260,6 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
-    .requirePower = true,
     .stack_size = 4096U,
 };
 
@@ -303,7 +299,6 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
-    .requirePower = true,
     .stack_size = 4096U,
 };
 
@@ -337,7 +332,6 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
-    .requirePower = true,
     .stack_size = 4096U,
 };
 

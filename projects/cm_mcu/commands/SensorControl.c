@@ -44,46 +44,37 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
   }
 
   int res;
-  if (i2c_device == I2C_DEVICE_F1){
-    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
-      ;
+  SemaphoreHandle_t s = ffldaq_f1_args.xSem;
+  if (i2c_device == I2C_DEVICE_F2){
+    s = ffldaq_f2_args.xSem;
   }
-  else{
-    while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
-      ;
+  while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
+    ;
+
+  // write to the mux
+  // select the appropriate output for the mux
+  uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
+  res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
+  if (res != 0) {
+    log_warn(LOG_SERVICE, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+        SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
   }
-  {
-    // write to the mux
-    // select the appropriate output for the mux
-    uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
-    res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
+
+  if (!res) {
+    // Read from register.
+    uint32_t uidata;
+    res = apollo_i2c_ctl_reg_r(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
+        packed_reg_addr, size, &uidata);
+    for (int i = 0; i < size; ++i) {
+      value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
+    }
     if (res != 0) {
-      log_warn(LOG_SERVICE, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-    }
-
-    if (!res) {
-      // Read from register.
-      uint32_t uidata;
-      res = apollo_i2c_ctl_reg_r(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
-                                 packed_reg_addr, size, &uidata);
-      for (int i = 0; i < size; ++i) {
-        value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
-      }
-      if (res != 0) {
-        log_warn(LOG_SERVICE, "%s: FF Regread error %d (%s) (ff=%s) ...\r\n", __func__, res,
-                 SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-      }
+      log_warn(LOG_SERVICE, "%s: FF Regread error %d (%s) (ff=%s) ...\r\n", __func__, res,
+          SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
   }
 
-  if (i2c_device == I2C_DEVICE_F1){
-    xSemaphoreGive(ffldaq_f1_args.xSem);
-  }
-  else{
-    xSemaphoreGive(ffldaq_f2_args.xSem);
-  }
-
+  xSemaphoreGive(s);
   return res;
 }
 
@@ -99,42 +90,36 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   if (ff == NFIREFLIES) {
     return -2; // no match found
   }
+
   int res;
-  if (i2c_device == I2C_DEVICE_F1){
-    while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
-      ;
+  SemaphoreHandle_t s = ffldaq_f1_args.xSem;
+  if (i2c_device == I2C_DEVICE_F2){
+    s = ffldaq_f2_args.xSem;
   }
-  else{
-    while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
-      ;
+  while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
+    ;
+
+
+  // write to the mux
+  // select the appropriate output for the mux
+  uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
+  res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
+  if (res != 0) {
+    log_warn(LOG_SERVICE, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+        SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
   }
-  {
-    // write to the mux
-    // select the appropriate output for the mux
-    uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
-    res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
+
+  // write to register. First word is reg address, then the data.
+  // increment size to account for the register address
+  if (!res) {
+    res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
     if (res != 0) {
-      log_warn(LOG_SERVICE, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-    }
-
-    // write to register. First word is reg address, then the data.
-    // increment size to account for the register address
-    if (!res) {
-      res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
-      if (res != 0) {
-        log_warn(LOG_SERVICE, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-                 SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-      }
+      log_warn(LOG_SERVICE, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+          SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
   }
-  if (i2c_device == I2C_DEVICE_F1){
-    xSemaphoreGive(ffldaq_f1_args.xSem);
-  }
-  else{
-    xSemaphoreGive(ffldaq_f2_args.xSem);
-  }
 
+  xSemaphoreGive(s);
   return res;
 }
 
