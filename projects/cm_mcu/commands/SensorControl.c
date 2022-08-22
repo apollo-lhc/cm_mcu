@@ -901,7 +901,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
     TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
     int mins = (now - last) / 60;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+                       "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
   }
   if (argc == 2) {
 
