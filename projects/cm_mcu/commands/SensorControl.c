@@ -894,7 +894,6 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
   // argument handling
   int copied = 0;
-  int whichFF = 0;
   // check for stale data
   TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
@@ -910,6 +909,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
     return pdFALSE;
   }
   else {
+    int whichFF = 0;
     // handle the channel number first
     if (strncmp(argv[argc - 1], "all", 3) == 0) {
       whichFF = NFIREFLIES;
