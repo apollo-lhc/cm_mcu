@@ -608,9 +608,9 @@ static struct command_t commands[] = {
      "Resets the eeprom error logger.\r\n", 0},
     {"fpga_reset", fpga_reset, "Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
     {"ff", ff_ctl,
-    "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
-    " Firefly controlling and monitoring commands\r\n",
-    -1},
+     "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
+     " Firefly controlling and monitoring commands\r\n",
+     -1},
     {
         "ff_status",
         ff_status,
@@ -637,14 +637,12 @@ static struct command_t commands[] = {
     },
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},
-#ifdef REV2
     {
         "gpio",
         gpio_ctl,
         "Get or set any GPIO pin.\r\n",
         -1,
     },
-#endif // REV2
     {"help", help_command_fcn, "This help command\r\n", -1},
     {"id", board_id_info, "Prints board ID information.\r\n", 0},
     {"i2cr", i2c_ctl_r,

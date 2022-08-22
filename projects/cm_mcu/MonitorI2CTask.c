@@ -39,10 +39,10 @@ void Print(const char *str);
 
 // break out of loop, releasing semaphore if we have it
 
-#define release_break()           \
-  {                               \
-    xSemaphoreGive(args->xSem);   \
-    break;                        \
+#define release_break()         \
+  {                             \
+    xSemaphoreGive(args->xSem); \
+    break;                      \
   }
 
 // read-only accessor functions for Firefly names and values.
@@ -90,7 +90,6 @@ void MonitorI2CTask(void *parameters)
   int IsFF12 = (strstr(args->name, "FF12") != NULL); // the instance is of FF 12-ch part type
   // int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);  //the instance is of FF 4-ch part type (DAQ links) -- not being used currently
 
-
   // reset the wake time to account for the time spent in any work in i2c tasks
 
   bool good = false;
@@ -99,7 +98,7 @@ void MonitorI2CTask(void *parameters)
 
     // grab the semaphore to ensure unique access to I2C controller
     while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
-        ;
+      ;
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // -------------------------------
     // loop over devices in the device-type instance
@@ -112,7 +111,6 @@ void MonitorI2CTask(void *parameters)
           continue;
         args->updateTick = xTaskGetTickCount();
       }
-
 
       if (getPowerControlState() != POWER_ON) {
         if (good) {
@@ -133,7 +131,6 @@ void MonitorI2CTask(void *parameters)
         }
       }
       // if the power state is unknown, don't do anything
-
 
       // select the appropriate output for the mux
       uint8_t data;

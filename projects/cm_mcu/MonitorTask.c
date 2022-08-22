@@ -46,7 +46,7 @@ void Print(const char *str);
 // break out of loop, releasing semaphore if we have it
 #define release_break()           \
   {                               \
-    if (args->xSem != NULL )      \
+    if (args->xSem != NULL)       \
       xSemaphoreGive(args->xSem); \
     break;                        \
   }
@@ -141,7 +141,7 @@ void MonitorTask(void *parameters)
         // this is checking the return from the interrupt
         if (*args->smbus_status != SMBUS_OK) {
           snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Page SMBUS ERROR: %d\r\n", args->name,
-              *args->smbus_status);
+                   *args->smbus_status);
         }
         log_trace(LOG_MON, "%s: Page %d\r\n", args->name, page);
 
