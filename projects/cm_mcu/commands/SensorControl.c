@@ -882,8 +882,8 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
   // argument handling
   int copied = 0;
-  static int whichff = 0;
-  if (whichff == 0) {
+  int whichFF = 0;
+  if (whichFF == 0) {
     // check for stale data
     TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
@@ -901,7 +901,6 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 
   }
   else {
-    int whichFF = 0;
     // handle the channel number first
     if (strncmp(argv[argc - 1], "all", 3) == 0) {
       whichFF = NFIREFLIES;
@@ -1055,12 +1054,12 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   static int c = 0;
-  char *header = "REG_TABLE";
-  char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
   BaseType_t i = strtol(argv[1], NULL, 10);
   if (c == 0) {
+    char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id : %s \r\n",
                        clk_ids[i]);
+    char *header = "REG_TABLE";
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
   }
   if (i < 0 || i > 4) {
