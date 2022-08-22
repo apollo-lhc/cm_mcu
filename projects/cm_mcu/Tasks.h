@@ -74,6 +74,7 @@ enum power_system_state {
 enum power_system_state getPowerControlState();
 const char *getPowerControlStateName(enum power_system_state);
 const bool getPowerControlExternalAlarmState();
+const uint16_t getPowerControlIgnoreMask();
 
 void LGA80D_init(void);
 

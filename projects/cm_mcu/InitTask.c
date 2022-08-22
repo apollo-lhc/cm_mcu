@@ -33,7 +33,14 @@ void InitTask(void *parameters)
   log_info(LOG_SERVICE, "REC register=0x%08x\r\n", restart_reason);
   init_registers_ff(); // initalize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
 
-  init_registers_clk(); // initalize I/O expander for clocks -- with clock monitoring via I2C in other threads, it grabs semaphore inside
+// wait for 3.3V power to come up. Wait indefinitely.
+// in Rev1 the clocks cannot be accessed before the 3.3 V is on.
+#ifdef REV1
+  while (getPowerControlState() != POWER_ON) {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+#endif                  // REV1
+  init_registers_clk(); // initalize I/O expander for clocks
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
 #ifdef REV2
   for (int i = 0 ; i < 5; ++i) {

@@ -65,7 +65,7 @@ IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 
 # GIT 
-GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
+GIT_VERSION="$(shell git --no-pager  show -s --format="commit date %ci  %d"  ; git describe  --dirty --always --tags )"
 
 CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
 
