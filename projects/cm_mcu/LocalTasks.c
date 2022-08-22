@@ -279,9 +279,9 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", PM_STATUS},   // page 0x00
     // internal statuses on page 0 : table 16.8 and 16.9
-    {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", PM_STATUS}, // page 0x00
+    {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", PM_STATUS},   // page 0x00
     {1, 0x00, 0x0D, 1, "LOSOFF_IN", 0xff, "", PM_STATUS}, // page 0x00
-    {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},     // page 0x00
+    {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},       // page 0x00
 };
 
 uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
@@ -313,8 +313,8 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", PM_STATUS},   // page 0x00
     // internal statuses on page 0 : table 4.5
-    {1, 0x00, 0x0C, 1, "REG_0x0C", 0x35, "", PM_STATUS},       // page 0x00
-    {1, 0x00, 0x0D, 1, "REG_0x0D", 0x15, "", PM_STATUS},       // page 0x00
+    {1, 0x00, 0x0C, 1, "REG_0x0C", 0x35, "", PM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "REG_0x0D", 0x15, "", PM_STATUS}, // page 0x00
 };
 
 uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
@@ -351,7 +351,8 @@ bool isEnabledFF(int ff)
     return true;
 }
 
-int getFFcheckStale(){
+int getFFcheckStale()
+{
   TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
   TickType_t last[4];
   last[0] = ffl12_f1_args.updateTick;
@@ -360,30 +361,30 @@ int getFFcheckStale(){
   last[3] = ffldaq_f2_args.updateTick;
 
   int ff_t = 0;
-  for (; ff_t < 4; ++ff_t)
-  {
-    if (!checkStale(pdTICKS_TO_MS(last[ff_t]) / 1000, now)){
+  for (; ff_t < 4; ++ff_t) {
+    if (!checkStale(pdTICKS_TO_MS(last[ff_t]) / 1000, now)) {
       ff_t -= 4;
       break;
     }
   }
 
-  return (ff_t-3); // convert ff_t to exit codes -7,-6,-5 -4, 0 with no stale, stale at least 1, 2 and 3, or all stale
+  return (ff_t - 3); // convert ff_t to exit codes -7,-6,-5 -4, 0 with no stale, stale at least 1, 2 and 3, or all stale
 }
 
-TickType_t getFFupdateTick(int ff_t){
+TickType_t getFFupdateTick(int ff_t)
+{
   ff_t += 7; // convert exit codes -7,-6,-5,-4 back to ff_t
   log_debug(LOG_SERVICE, "ff_updateTick is ff_t = %d \r\n", ff_t);
-  if (ff_t == 0){
+  if (ff_t == 0) {
     return ffl12_f1_args.updateTick;
   }
-  else if (ff_t == 1){
+  else if (ff_t == 1) {
     return ffldaq_f1_args.updateTick;
   }
-  else if (ff_t == 2){
+  else if (ff_t == 2) {
     return ffl12_f2_args.updateTick;
   }
-  else{
+  else {
     return ffldaq_f2_args.updateTick;
   }
 }
@@ -417,7 +418,6 @@ int8_t getFFtemp(const uint8_t i)
 
 void getFFpart()
 {
-
 
   while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
     ;
@@ -507,7 +507,6 @@ void getFFpart()
 
   xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }
-
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2

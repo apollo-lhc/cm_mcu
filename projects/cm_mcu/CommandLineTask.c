@@ -608,9 +608,9 @@ static struct command_t commands[] = {
      "Resets the eeprom error logger.\r\n", 0},
     {"fpga_reset", fpga_reset, "Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
     {"ff", ff_ctl,
-    "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
-    " Firefly controlling and monitoring commands\r\n",
-    -1},
+     "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
+     " Firefly controlling and monitoring commands\r\n",
+     -1},
     {
         "ff_status",
         ff_status,

@@ -22,7 +22,7 @@
 #include "common/softuart.h"
 #elif defined(REV2)
 #include "driverlib/uart.h"
-#endif 
+#endif
 
 #include "Tasks.h"
 #include "MonitorTask.h"
@@ -43,7 +43,7 @@
 #define SENSOR_MESSAGE_DATA_FRAME_NIB     0
 #define SENSOR_MESSAGE_HEADER_OFFSET      6
 #define SENSOR_SIX_BITS                   0x3F
-#define SENSOR_MESSAGE_START_OF_FRAME                                                              \
+#define SENSOR_MESSAGE_START_OF_FRAME \
   (SENSOR_MESSAGE_START_OF_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 #define SENSOR_MESSAGE_DATA_FRAME (SENSOR_MESSAGE_DATA_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 
@@ -106,9 +106,7 @@ unsigned long g_ulBitTime;
 
 #define TARGET_BAUD_RATE 115200
 
-
 QueueHandle_t xZynqMonQueue;
-
 
 // category | count
 // -------- | -----
@@ -195,8 +193,7 @@ void InitSUART()
   SoftUARTIntEnable(&g_sUART, SOFTUART_INT_TX);
 }
 
-void
-ZMUartCharPut(unsigned char c)
+void ZMUartCharPut(unsigned char c)
 {
   SoftUARTCharPut(&g_sUART, c);
 }
@@ -231,10 +228,10 @@ void zm_set_gitversion(struct zynqmon_data_t data[], int start)
   strncpy(buff, gitVersion(), ZM_GIT_VERSION_LENGTH);
   // loop over the buffer and copy it into the data struct
   // each data word consists of two chars.
-  for (int j = 0; j < ZM_GIT_VERSION_LENGTH; j+=2) {
-    data[j/2].sensor = start + (j/2);
-    data[j/2].data.c[0] = buff[j];
-    data[j/2].data.c[1] = buff[j+1];
+  for (int j = 0; j < ZM_GIT_VERSION_LENGTH; j += 2) {
+    data[j / 2].sensor = start + (j / 2);
+    data[j / 2].data.c[0] = buff[j];
+    data[j / 2].data.c[1] = buff[j + 1];
   }
 }
 
@@ -252,21 +249,20 @@ void zm_set_uptime(struct zynqmon_data_t data[], int start)
 }
 
 // wasting half the data packet here; could repack it
-// updated once per loop. Store the firefly temperature data 
+// updated once per loop. Store the firefly temperature data
 void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
   for (int i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
-    if ( getFFcheckStale() ) {
+    if (getFFcheckStale()) {
       data[i].data.i = getFFtemp(i); // sensor value and type
     }
     else {
       data[i].data.i = -56; // special stale value
     }
   }
-
 }
 
 // store the zynqmon ADCMon data
@@ -274,7 +270,7 @@ void zm_set_adcmon(struct zynqmon_data_t data[], int start)
 {
   // update the data for ZMON
   for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-    data[i].sensor = i + start;  // sensor id
+    data[i].sensor = i + start;      // sensor id
     data[i].data.f = getADCvalue(i); // sensor value and type
   }
 }
@@ -292,7 +288,7 @@ void zm_set_psmon_legacy(struct zynqmon_data_t data[], int start)
 
   bool stale = checkStale(last, now);
 
-  for (int j = 0; j < 5; ++j) { // loop over supplies FIXME hardcoded value
+  for (int j = 0; j < 5; ++j) {                   // loop over supplies FIXME hardcoded value
     for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
       for (int k = 0; k < 5; ++k) {               // loop over FIRST FIVE commands
         int index =
@@ -323,10 +319,10 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
 
   int ll = 0;
 
-  for (int j = 0; j < dcdc_args.n_devices; ++j) { // loop over supplies
-    for (int l = 0; l < dcdc_args.n_pages; ++l) { // loop over register pages
+  for (int j = 0; j < dcdc_args.n_devices; ++j) {      // loop over supplies
+    for (int l = 0; l < dcdc_args.n_pages; ++l) {      // loop over register pages
       for (int k = 0; k < dcdc_args.n_commands; ++k) { // loop over FIRST SIX commands
-        if ( k >= 6 ) {
+        if (k >= 6) {
           break; // only consider first six commands
         }
         int index =
@@ -403,25 +399,21 @@ void zm_fill_structs()
   zm_set_gitversion(&zynqmon_data[127], 118);
   // fpga, size 8
   zm_set_fpga(&zynqmon_data[137], 150);
-
-
 }
 #define ZMON_VALID_ENTRIES 145
 #endif
 
-
 void zm_send_data(struct zynqmon_data_t data[])
 {
   // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
-  for ( int i = 0; i < ZMON_VALID_ENTRIES; ++i) {
+  for (int i = 0; i < ZMON_VALID_ENTRIES; ++i) {
     uint8_t message[4];
     format_data(data[i].sensor, data[i].data.us, message);
-    for ( int j = 0; j < 4; ++j) {
+    for (int j = 0; j < 4; ++j) {
       ZMUartCharPut(message[j]);
     }
   }
 }
-
 
 void ZynqMonTask(void *parameters)
 {
@@ -436,7 +428,7 @@ void ZynqMonTask(void *parameters)
 #endif // ZYNQMON_TEST_MODE
 
   // reset the data we will send
-  memset(zynqmon_data, 0, ZM_NUM_ENTRIES*sizeof(struct zynqmon_data_t));
+  memset(zynqmon_data, 0, ZM_NUM_ENTRIES * sizeof(struct zynqmon_data_t));
 
   bool enable = true;
   // initialize to the current tick time
@@ -497,7 +489,7 @@ void ZynqMonTask(void *parameters)
         if (testmode == 0) {
           format_data(testaddress, testdata, message);
           for (int i = 0; i < 4; ++i) {
-            ZMUartCharPut( message[i]);
+            ZMUartCharPut(message[i]);
           }
           // one shot mode -- disable
           if (qmessage == ZYNQMON_TEST_SEND_ONE)
@@ -510,13 +502,13 @@ void ZynqMonTask(void *parameters)
             testaddress++;
             format_data(testaddress, testdata, message);
             for (int i = 0; i < 4; ++i) {
-              ZMUartCharPut( message[i]);
+              ZMUartCharPut(message[i]);
             }
           }
         }
         else if (testmode == 2) { // test mode, no formatting
           for (int i = 0; i < 4; ++i) {
-            ZMUartCharPut( message[i]);
+            ZMUartCharPut(message[i]);
           }
         }
 #endif       // ZYNQMON_TEST_MODE

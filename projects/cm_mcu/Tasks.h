@@ -128,11 +128,11 @@ void MonitorI2CTask(void *parameters);
 
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
 enum pm_type { PM_VOLTAGE,
-  PM_NONVOLTAGE,
-  PM_STATUS,
-  PM_LINEAR11,
-  PM_LINEAR16U,
-  PM_LINEAR16S };
+               PM_NONVOLTAGE,
+               PM_STATUS,
+               PM_LINEAR11,
+               PM_LINEAR16U,
+               PM_LINEAR16S };
 
 struct dev_moni2c_addr_t {
   char *name;
@@ -185,7 +185,6 @@ void LedTask(void *parameters);
 #define FFLY_TEST_READ           (9)
 #define FFLY_SUSPEND             (10)
 #define FFLY_RESUME              (11)
-
 
 // ---- version info
 const char *buildTime();

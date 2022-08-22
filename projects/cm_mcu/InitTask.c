@@ -43,8 +43,8 @@ void InitTask(void *parameters)
   init_registers_clk(); // initalize I/O expander for clocks
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
 #ifdef REV2
-  for (int i = 0 ; i < 5; ++i) {
-    if (i==1 || i==4)
+  for (int i = 0; i < 5; ++i) {
+    if (i == 1 || i == 4)
       continue;
     init_load_clk(i); // load each clock config from EEPROM
   }
