@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: Code checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
       id:   cache-toolchain
       uses: actions/cache@v2
@@ -77,7 +77,7 @@ jobs:
 
     steps:
     - name: Code checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
@@ -124,10 +124,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Code checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.ref }}
+        fetch-depth: 0 
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v23
+      uses: tj-actions/changed-files@v28.0.0
       with:
         files_ignore: |
           **/*.yml
@@ -143,5 +146,11 @@ jobs:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
         clangFormatVersion: 11
-        inplace: false
+        inplace: true
         style: file
+    - name: Commit changed files
+      uses: EndBug/add-and-commit@v9
+      with:
+        default_author: github_actions
+        message: "clang-format-lint changes"
+
