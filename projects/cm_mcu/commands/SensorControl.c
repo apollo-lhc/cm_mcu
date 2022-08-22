@@ -895,16 +895,14 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
   // argument handling
   int copied = 0;
   int whichFF = 0;
-  if (whichFF == 0) {
-    // check for stale data
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+  // check for stale data
+  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
-    if (getFFcheckStale() == 0) {
-      TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
+  if (getFFcheckStale() == 0) {
+    TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
+    int mins = (now - last) / 60;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
   }
   if (argc == 2) {
 
