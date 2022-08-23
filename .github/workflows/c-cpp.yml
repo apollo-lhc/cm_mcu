@@ -125,6 +125,8 @@ jobs:
     steps:
     - name: Code checkout
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
     - name: Get changed files
       id: changed-files
       uses: tj-actions/changed-files@v23
@@ -145,3 +147,7 @@ jobs:
         clangFormatVersion: 11
         inplace: false
         style: file
+    - name: Commit clang-formatted files
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Apply clang-format changes

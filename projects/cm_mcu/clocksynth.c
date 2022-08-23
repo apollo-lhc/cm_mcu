@@ -12,7 +12,6 @@
 #include "Tasks.h"
 
 int snprintf(char *buf, unsigned int count, const char *format, ...);
-// clang-format off
 int PreambleList[][2] = {{ 0x0B24 , 0xC0 },
                          { 0x0B25 , 0x00 },
                          { 0x0502 , 0x01 },
@@ -68,7 +67,6 @@ int RegisterList[][2] = {{ 0x000B , 0x74 },
                          { 0x0B57 , 0x0E },
                          { 0x0B58 , 0x01 },
                          };
-// clang-format on
 
 int initialize_clock()
 {
