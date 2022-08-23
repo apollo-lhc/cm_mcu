@@ -145,7 +145,7 @@ jobs:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
         clangFormatVersion: 11
-        inplace: false
+        inplace: true
         style: file
     - name: Commit clang-formatted files
       uses: stefanzweifel/git-auto-commit-action@v4
