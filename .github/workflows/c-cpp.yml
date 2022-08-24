@@ -124,10 +124,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Code checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v23
+      uses: tj-actions/changed-files@v28.0.0
       with:
         files_ignore: |
           **/*.yml
