@@ -2,7 +2,7 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master clang_format_commit ]
   pull_request:
     branches: [ master ]
   schedule:
@@ -138,6 +138,7 @@ jobs:
           **/Makefile
           makedefs
     - name: Format changed files
+      if: steps.changed-files.outputs.any_changed == 'true'
       uses: DoozyX/clang-format-lint-action@v0.14
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}

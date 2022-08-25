@@ -25,6 +25,7 @@ jobs:
           makedefs
     - name: Format changed files
       uses: DoozyX/clang-format-lint-action@v0.14
+      if: steps.changed-files.outputs.any_changed == 'true'
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
