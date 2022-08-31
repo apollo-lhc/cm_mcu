@@ -912,7 +912,7 @@ static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
   if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff){
     //int copied = 0;
     snprintf(m, SCRATCH_SIZE,
-             "First-time MCU: Enter board # :\r\n");
+             "Enter board # :\r\n");
 #ifdef REV1
     UARTPrint(cli_uart4.uart_base, m);
 #elif defined(REV2)
@@ -923,24 +923,6 @@ static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
     microrl_init(&rl, &rl_config);
     microrl_set_execute_callback(&rl, execute);
     microrl_insert_char(&rl, ' '); // for setting a board id (block 0x40-0x41)
-    microrl_insert_char(&rl, 's');
-    microrl_insert_char(&rl, 'e');
-    microrl_insert_char(&rl, 't');
-    microrl_insert_char(&rl, '_');
-    microrl_insert_char(&rl, 'i');
-    microrl_insert_char(&rl, 'd');
-    microrl_insert_char(&rl, ' ');
-    microrl_insert_char(&rl, '1');
-    microrl_insert_char(&rl, '2');
-    microrl_insert_char(&rl, '3');
-    microrl_insert_char(&rl, '4');
-    microrl_insert_char(&rl, '5');
-    microrl_insert_char(&rl, '6');
-    microrl_insert_char(&rl, '7');
-    microrl_insert_char(&rl, '8');
-    microrl_insert_char(&rl, ' ');
-    microrl_insert_char(&rl, '4');
-    microrl_insert_char(&rl, '0');
 
     for (;;) {
       /* This implementation reads a single character at a time.  Wait in the
@@ -948,18 +930,32 @@ static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
       xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
       microrl_insert_char(&rl, cRxedChar);
       // monitor stack usage for this task
-      return pdTRUE;
 #ifdef REV1
       CHECK_TASK_STACK_USAGE(cli_uart4.tack_size);
 #elif defined(REV2)
       CHECK_TASK_STACK_USAGE(cli_uart.stack_size);
 #endif
     }
-    microrl_insert_char(&rl, 'f');
-    microrl_insert_char(&rl, 'f');
-    microrl_insert_char(&rl, 'f');
-    microrl_insert_char(&rl, 'f');
-    microrl_insert_char(&rl, ' ');
+
+    uint64_t pass, addr, data;
+    pass = 0x12345678;
+    addr = 0x40; // internal eeprom black for board id
+    char str_data[1];
+    char str_tail[] = "ffff";
+    sprintf(str_data, "%x", cRxedChar);
+
+    data = strtoul(strcat(str_data,str_tail), NULL, 16);
+    uint64_t block = EEPROMBlockFromAddr(addr);
+
+    uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
+    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr, data);
+    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+    uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
+    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
   }
   return pdFALSE;
 }
