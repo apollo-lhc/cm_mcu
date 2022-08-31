@@ -608,7 +608,7 @@ static struct command_t commands[] = {
      "Prints information about the eeprom error logger.\r\n", 0},
     {"errorlog_reset", errbuff_reset,
      "Resets the eeprom error logger.\r\n", 0},
-    {"first_mcu", first_mcu_ctl, "Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 0},
+    {"first_mcu", first_mcu_ctl, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 2},
     {"fpga_reset", fpga_reset, "Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
     {"ff", ff_ctl,
      "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
@@ -853,98 +853,19 @@ static int execute(void *p, int argc, char **argv)
 
 static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
 {
-
-  CommandLineTaskArgs_t cli_uart;
-#ifdef REV1
-  CommandLineTaskArgs_t cli_uart4;
-#endif // REV1
-
-#ifdef REV1
-  // There are two buffers for the two CLIs (front panel and Zynq)
-  StreamBufferHandle_t xUART4StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
-      1);  // number of items before a trigger is sent
-  cli_uart4.uart_base = FP_UART;
-  cli_uart4.UartStreamBuffer = xUART4StreamBuffer;
-  cli_uart4.stack_size = 4096U;
-  configASSERT(&cli_uart4 != 0);
-  StreamBufferHandle_t uartStreamBuffer = cli_uart4.UartStreamBuffer;
-  uint32_t uart_base = cli_uart4.uart_base;
-#elif defined(REV2)
-  // There is one buffer for the CLI (shared front panel and Zynq)
-  StreamBufferHandle_t xUART0StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
-      1);  // number of items before a trigger is sent
-
-  cli_uart.uart_base = ZQ_UART;
-  cli_uart.UartStreamBuffer = xUART0StreamBuffer;
-  cli_uart.stack_size = 4096U;
-  configASSERT(&cli_uart != 0);
-  StreamBufferHandle_t uartStreamBuffer = cli_uart.UartStreamBuffer;
-  uint32_t uart_base = cli_uart.uart_base;
-
-#endif // REV1
-
-  struct microrl_user_data_t rl_userdata = {
-      .uart_base = uart_base,
-  };
-
-
-#ifdef REV1
-  void (*printer)(const char *) = U4Print;
-#elif defined(REV2)
-  void (*printer)(const char *) = U0Print;
-#endif
-
-  struct microrl_config rl_config = {
-      .print = printer, // default to front panel
-      // set callback for execute
-      .execute = execute,
-      .prompt_str = "% ",
-      .prompt_length = 2,
-      .userdata = &rl_userdata,
-  };
-#ifdef REV1
-  // this is a hack
-  if (uart_base == UART1_BASE) {
-    rl_config.print = U1Print; // switch to Zynq
-  }
-#endif // REV1
-
   if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff){
-    //int copied = 0;
+
+    uint32_t board_id, rev, data;
+    uint64_t pass, addr;
+    board_id = strtoul(argv[1], NULL, 16);
+    rev = strtoul(argv[2], NULL, 16);
     snprintf(m, SCRATCH_SIZE,
-             "Enter board # :\r\n");
-#ifdef REV1
-    UARTPrint(cli_uart4.uart_base, m);
-#elif defined(REV2)
-    UARTPrint(cli_uart.uart_base, m);
-#endif
-    uint8_t cRxedChar;
-    microrl_t rl;
-    microrl_init(&rl, &rl_config);
-    microrl_set_execute_callback(&rl, execute);
-    microrl_insert_char(&rl, ' '); // for setting a board id (block 0x40-0x41)
+             "Registering board_id %lx revision %lx \r\n", board_id, rev);
 
-    for (;;) {
-      /* This implementation reads a single character at a time.  Wait in the
-           Blocked state until a character is received. */
-      xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1, portMAX_DELAY);
-      microrl_insert_char(&rl, cRxedChar);
-      // monitor stack usage for this task
-#ifdef REV1
-      CHECK_TASK_STACK_USAGE(cli_uart4.tack_size);
-#elif defined(REV2)
-      CHECK_TASK_STACK_USAGE(cli_uart.stack_size);
-#endif
-    }
-
-    uint64_t pass, addr, data;
     pass = 0x12345678;
     addr = 0x40; // internal eeprom black for board id
-    char str_data[1];
-    char str_tail[] = "ffff";
-    sprintf(str_data, "%x", cRxedChar);
 
-    data = strtoul(strcat(str_data,str_tail), NULL, 16);
+    data = (board_id << 16) + rev;
     uint64_t block = EEPROMBlockFromAddr(addr);
 
     uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
@@ -957,6 +878,14 @@ static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
     xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
 
   }
+  else {
+    uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
+
+    uint32_t num = (uint32_t)sn >> 16;
+    uint32_t rev = ((uint32_t)sn) & 0xff;
+    snprintf(m, SCRATCH_SIZE, "This is not the first-time loading MCU FW to board #%lx (rev %lx) \r\n", num, rev);
+  }
+
   return pdFALSE;
 }
 
