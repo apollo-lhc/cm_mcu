@@ -19,6 +19,7 @@
 #include "common/printf.h"
 #include "common/log.h"
 
+
 static char m[SCRATCH_SIZE];
 
 // this command takes no arguments and never returns.
@@ -608,7 +609,7 @@ static struct command_t commands[] = {
      "Prints information about the eeprom error logger.\r\n", 0},
     {"errorlog_reset", errbuff_reset,
      "Resets the eeprom error logger.\r\n", 0},
-    {"first_mcu", first_mcu_ctl, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 2},
+    {"first_mcu", first_mcu_ctl, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 3},
     {"fpga_reset", fpga_reset, "Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
     {"ff", ff_ctl,
      "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
@@ -855,27 +856,44 @@ static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
 {
   if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff){
 
-    uint32_t board_id, rev, data;
-    uint64_t pass, addr;
+    // argument handling
+    int copied = 0;
+    uint32_t board_id, rev, ps_mask, data;
+    uint64_t pass, addr_id, addr_ps;
     board_id = strtoul(argv[1], NULL, 16);
     rev = strtoul(argv[2], NULL, 16);
-    snprintf(m, SCRATCH_SIZE,
-             "Registering board_id %lx revision %lx \r\n", board_id, rev);
+    ps_mask = strtoul(argv[3], NULL, 16);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+             "Registering board_id %lx revision %lx and PS ignore mask %lx \r\n", board_id, rev, ps_mask);
 
     pass = 0x12345678;
-    addr = 0x40; // internal eeprom black for board id
+    addr_id = 0x40; // internal eeprom block for board id
+    addr_ps = 0x48; // internal eeprom block for board id
 
     data = (board_id << 16) + rev;
-    uint64_t block = EEPROMBlockFromAddr(addr);
+    uint64_t block = EEPROMBlockFromAddr(addr_id);
 
     uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
     xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
 
-    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr, data);
+    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_id, data);
     xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
     uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
     xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
+    data = ps_mask;
+    block = EEPROMBlockFromAddr(addr_ps);
+
+    unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
+    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_ps, data);
+    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+    lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
+    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
 
   }
   else {
@@ -889,6 +907,7 @@ static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
 // The actual task
 void vCommandLineTask(void *pvParameters)

@@ -351,6 +351,50 @@ bool isEnabledFF(int ff)
     return true;
 }
 
+void setFFmask()
+{
+  int whichff = 0;
+  uint64_t addr_ff = 0x44; // internal eeprom block for ff mask
+  uint32_t data = 0;
+  uint64_t pass = 0x12345678;
+
+  log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
+
+  for (; whichff < NFIREFLIES; ++whichff) {
+    uint8_t val;
+    if (isEnabledFF(whichff)) {
+      val = 1;
+      data += 1 << whichff;
+    }
+    else // dummy value
+    {
+      val = 0;
+    }
+    log_info(LOG_SERVICE,"%17s: %d", ff_moni2c_addrs[whichff].name, val);
+    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
+
+    if (isTx)
+      log_info(LOG_SERVICE, "\t");
+    else
+      log_info(LOG_SERVICE, "\r\n");
+
+  }
+
+  uint64_t block = EEPROMBlockFromAddr(addr_ff);
+
+  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
+  xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_ff, data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+  uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
+  xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
+  return;
+
+}
+
 int getFFcheckStale()
 {
   TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;

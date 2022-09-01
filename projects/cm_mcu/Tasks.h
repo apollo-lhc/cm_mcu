@@ -16,6 +16,7 @@
 #include "queue.h"
 #include "semphr.h"
 #include "common/log.h"
+#include "driverlib/eeprom.h"
 
 #include "common/printf.h"
 
@@ -146,6 +147,7 @@ extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
+void setFFmask();
 int8_t getFFtemp(const uint8_t i);
 void getFFpart();
 uint8_t getFFstatus(const uint8_t i);
