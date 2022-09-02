@@ -351,7 +351,7 @@ bool isEnabledFF(int ff)
     return true;
 }
 
-void setFFmask()
+void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t present_FFLDAQ_F2, uint32_t present_FFL12_F2)
 {
   int whichff = 0;
   uint64_t addr_ff = 0x44; // internal eeprom block for ff mask
@@ -362,24 +362,25 @@ void setFFmask()
 
   for (; whichff < NFIREFLIES; ++whichff) {
     uint8_t val;
-    if (isEnabledFF(whichff)) {
-      val = 1;
-      data += 1 << whichff;
+    if (0 <= whichff && whichff < NFIREFLIES_IT_F1) {
+      val = (present_FFL12_F1 >> (whichff)) & 0x01;
     }
-    else // dummy value
-    {
-      val = 0;
+
+    else if (NFIREFLIES_IT_F1 <= whichff && whichff < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
+      val = (present_FFLDAQ_F1 >> (whichff - NFIREFLIES_IT_F1 + 4)) & 0x01;
     }
-    log_info(LOG_SERVICE,"%17s: %d", ff_moni2c_addrs[whichff].name, val);
-    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
 
-    if (isTx)
-      log_info(LOG_SERVICE, "\t");
-    else
-      log_info(LOG_SERVICE, "\r\n");
-
+    else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+      val = (present_FFL12_F2 >> (whichff - NFIREFLIES_F1 )) & 0x01;
+    }
+    else {
+      val = (present_FFLDAQ_F2 >> (whichff - NFIREFLIES_F1 - NFIREFLIES_IT_F2 + 4)) & 0x01;
+    }
+    log_debug(LOG_SERVICE,"%17s: %x", ff_moni2c_addrs[whichff].name, val);
+    data += (val << whichff);
   }
 
+  data = (~data) & 0xffff;
   uint64_t block = EEPROMBlockFromAddr(addr_ff);
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
@@ -982,7 +983,6 @@ void init_registers_ff()
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); // 11111111 [P17..P10]
-
   // 3b) U102 default output values (I2C address 0x20 on I2C channel #4)
   // All signals are inputs so nothing needs to be done.
 
@@ -1133,11 +1133,13 @@ void init_registers_ff()
   while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
     ;
 
+  uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
   // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
 
+  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
   // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
   // All signals are inputs so nothing needs to be done.
 
@@ -1150,6 +1152,8 @@ void init_registers_ff()
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
 
   // 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
   // The output on P10 should default to "1".
@@ -1173,6 +1177,7 @@ void init_registers_ff()
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
 
   // 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
   // All signals are inputs so nothing needs to be done.
@@ -1186,6 +1191,7 @@ void init_registers_ff()
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
 
   // 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
   // The output on P10 should default to "1".
@@ -1198,6 +1204,8 @@ void init_registers_ff()
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+
+  setFFmask(present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2);
 
   xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
 }

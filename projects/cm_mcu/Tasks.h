@@ -147,7 +147,7 @@ extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
-void setFFmask();
+void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t present_FFLDAQ_F2, uint32_t present_FFL12_F2);
 int8_t getFFtemp(const uint8_t i);
 void getFFpart();
 uint8_t getFFstatus(const uint8_t i);

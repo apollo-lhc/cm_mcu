@@ -246,8 +246,6 @@ int main(void)
   SystemInit();
 
   initFPGAMon();
-  // set the FF mask
-  setFFmask();
 
   // all facilities start at INFO
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
