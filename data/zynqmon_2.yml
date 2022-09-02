@@ -40,8 +40,8 @@ config:
     type: fp16
     extra: Table=CM_MON;Status=2
     names: 
-      - 3V3
       - 1V8
+      - 3V3
       - F1VCCINT1_1
       - F1VCCINT1_2
       - F1VCCINT2_1
@@ -99,7 +99,7 @@ config:
       - MCU_UPTIME
   - name: gitversion
     start: 118
-    count: 20
+    count: 10
     type: char
     size: 5
     mcu_call: gitversion
