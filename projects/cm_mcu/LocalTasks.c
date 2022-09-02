@@ -1481,3 +1481,36 @@ int init_load_clk(int clk_n)
   return status_w;
 }
 #endif // REV2
+
+#ifdef REV2
+// Enable or disable the 3.8V power supplies for the SamTec Fireflies
+// In Rev2 we write to the I/O expander(s) (one on each I2C bus for each
+// FPGA) to set these bits. In Rev2 we don't need to do a read/modify/write
+// cycle because the other relevant bits are either inputs and the write does not
+// affect them, or active high resets (bit0). See schematic pages 4.05 and 4.06.
+int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
+{
+  // i2cw 4 0x71 1 0x40
+  // i2cwr 4 0x21 1 0x03 1 0x0f
+
+  //
+  for (int i = 0; i < 2; ++i) { // loop over i2c modules
+    // grab the relevant semaphore
+    xSemaphoreTake(ffl12_f1_args.xSem, 0); // blocks eternally
+
+    int result = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, 71, 1, 0x40);
+    if (result) {
+      log_warn(LOG_I2C, "semaphore error %d\r\n", result);
+    }
+    else {
+      result = apollo_i2c_ctl_reg_w(4, 21, 1, 0x03, 1, ffmask[i]);
+      if (result) {
+        log_warn(LOG_I2C, "expander write %d\r\n", result);
+      }
+    }
+    // release the semaphore
+    xSemaphoreGive(ffl12_f2_args.xSem); 
+  }
+  return 0;
+}
+#endif // REV2
