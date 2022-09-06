@@ -974,7 +974,7 @@ void init_registers_ff()
   // 3a) U102 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
   // All signals are inputs.
 
-  // grab the semaphore to ensure unique access to I2C controller
+  // grab the i2c4 semaphore to ensure unique access to I2C controller
 
   while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
     ;
@@ -1005,6 +1005,22 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); // 00000011 [P17..P10]
 
+  // 7b) U6 default output values (I2C address 0x22 on I2C channel #3)
+    // The outputs on P10 and P11 should default to "1".
+    // This negates the active-lo "RESET" inputs on the VU7P FireFlys.
+    // The outputs on P12 should default to "0" to enable the optical output.
+    // The output on P13 should default to "0" until determined otherwise.
+  // # set third I2C switch on channel 3 (U4, address 0x72) to port 2
+  apollo_i2c_ctl_w(4, 0x72, 1, 0x04);
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
+  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x03); // 00000011 [P17..P10]
+
+  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+
+  // grab the i2c3 semaphore to ensure unique access to I2C controller
+
+  while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
 
@@ -1040,18 +1056,7 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x07, 1, 0xf0); // 11110000 [P17..P10]
 
-  // 7b) U6 default output values (I2C address 0x22 on I2C channel #3)
-  // The outputs on P10 and P11 should default to "1".
-  // This negates the active-lo "RESET" inputs on the VU7P FireFlys.
-  // The outputs on P12 should default to "0" to enable the optical output.
-  // The output on P13 should default to "0" until determined otherwise.
-
-  // # set third I2C switch on channel 3 (U4, address 0x72) to port 2
-  apollo_i2c_ctl_w(4, 0x72, 1, 0x04);
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x03); // 00000011 [P17..P10]
-
-  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(ffldaq_f2_args.xSem); // if we have a semaphore, give it
 }
 #endif // REV1
 #ifdef REV2
@@ -1128,7 +1133,7 @@ void init_registers_ff()
   // 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
   // All signals are inputs.
 
-  // grab the semaphore to ensure unique access to I2C controller
+  // grab the i2c4 semaphore to ensure unique access to I2C controller
 
   while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
     ;
@@ -1167,6 +1172,12 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
+  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+
+  // grab the i2c3 semaphore to ensure unique access to I2C controller
+
+  while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
 
@@ -1207,7 +1218,7 @@ void init_registers_ff()
 
   setFFmask(present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2);
 
-  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(ffldaq_f2_args.xSem); // if we have a semaphore, give it
 }
 #endif // REV2
 
