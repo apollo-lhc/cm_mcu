@@ -368,7 +368,7 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
       shift = whichff - NFIREFLIES_F1 - NFIREFLIES_IT_F2 + 4;
       val = (present_FFLDAQ_F2 >> (shift)) & 0x01;
     }
-    log_debug(LOG_SERVICE,"%17s: %x", ff_moni2c_addrs[whichff].name, val);
+    log_debug(LOG_SERVICE, "%17s: %x", ff_moni2c_addrs[whichff].name, val);
     data += (val << whichff);
   }
 
@@ -387,7 +387,6 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
   xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
 
   return;
-
 }
 
 bool isEnabledFF(int ff)
@@ -398,11 +397,11 @@ bool isEnabledFF(int ff)
     configured = true;
   }
 
-  if (!((1 << ff) & ff_PRESENT_mask) || !((1 << ff) & ff_USER_mask)){
+  if (!((1 << ff) & ff_PRESENT_mask) || !((1 << ff) & ff_USER_mask)) {
     return false;
   }
   else {
-      return true;
+    return true;
   }
 }
 
@@ -1016,10 +1015,10 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); // 00000011 [P17..P10]
 
   // 7b) U6 default output values (I2C address 0x22 on I2C channel #3)
-    // The outputs on P10 and P11 should default to "1".
-    // This negates the active-lo "RESET" inputs on the VU7P FireFlys.
-    // The outputs on P12 should default to "0" to enable the optical output.
-    // The output on P13 should default to "0" until determined otherwise.
+  // The outputs on P10 and P11 should default to "1".
+  // This negates the active-lo "RESET" inputs on the VU7P FireFlys.
+  // The outputs on P12 should default to "0" to enable the optical output.
+  // The output on P13 should default to "0" until determined otherwise.
   // # set third I2C switch on channel 3 (U4, address 0x72) to port 2
   apollo_i2c_ctl_w(4, 0x72, 1, 0x04);
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]

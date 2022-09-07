@@ -41,9 +41,9 @@ BaseType_t set_board_id(int argc, char **argv, char *m)
   }
 
   if (pass != 0x12345678) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "Wrong password. Type eeprom_info to get password.");
-    } // data not printing correctly?
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Wrong password. Type eeprom_info to get password.");
+  } // data not printing correctly?
   else {
     uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
     xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
@@ -54,7 +54,6 @@ BaseType_t set_board_id(int argc, char **argv, char *m)
     uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
     xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
   }
-
 
   return pdFALSE;
 }
