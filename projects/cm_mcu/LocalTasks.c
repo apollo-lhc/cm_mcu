@@ -340,7 +340,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
 
 void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t present_FFLDAQ_F2, uint32_t present_FFL12_F2)
 {
-  int whichff = 0;
+  uint8_t whichff = 0;
   uint64_t addr_ff = 0x44; // internal eeprom block for ff mask
   uint32_t data = 0;
   uint64_t pass = 0x12345678;
@@ -349,19 +349,24 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
 
   for (; whichff < NFIREFLIES; ++whichff) {
     uint8_t val;
+    uint8_t shift;
     if (0 <= whichff && whichff < NFIREFLIES_IT_F1) {
-      val = (present_FFL12_F1 >> (whichff)) & 0x01;
+      shift = whichff;
+      val = (present_FFL12_F1 >> (shift)) & 0x01;
     }
 
     else if (NFIREFLIES_IT_F1 <= whichff && whichff < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-      val = (present_FFLDAQ_F1 >> (whichff - NFIREFLIES_IT_F1 + 4)) & 0x01;
+      shift = whichff - NFIREFLIES_IT_F1 + 4;
+      val = (present_FFLDAQ_F1 >> (shift)) & 0x01;
     }
 
     else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-      val = (present_FFL12_F2 >> (whichff - NFIREFLIES_F1 )) & 0x01;
+      shift = whichff - NFIREFLIES_F1;
+      val = (present_FFL12_F2 >> (shift)) & 0x01;
     }
     else {
-      val = (present_FFLDAQ_F2 >> (whichff - NFIREFLIES_F1 - NFIREFLIES_IT_F2 + 4)) & 0x01;
+      shift = whichff - NFIREFLIES_F1 - NFIREFLIES_IT_F2 + 4;
+      val = (present_FFLDAQ_F2 >> (shift)) & 0x01;
     }
     log_debug(LOG_SERVICE,"%17s: %x", ff_moni2c_addrs[whichff].name, val);
     data += (val << whichff);
