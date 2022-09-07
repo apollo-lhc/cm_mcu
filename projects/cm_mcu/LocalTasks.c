@@ -365,9 +365,11 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
       val = (present_FFL12_F2 >> (shift)) & 0x01;
     }
 
-    else if (NFIREFLIES_F1 + NFIREFLIES_IT_F2 <= whichff) {
-      shift = whichff - NFIREFLIES_F1 - NFIREFLIES_IT_F2 + 4;
-      val = (present_FFLDAQ_F2 >> (shift)) & 0x01;
+    else {
+      if (NFIREFLIES_F1 + NFIREFLIES_IT_F2 <= whichff) {
+        shift = whichff - NFIREFLIES_F1 - NFIREFLIES_IT_F2 + 4;
+        val = (present_FFLDAQ_F2 >> (shift)) & 0x01;
+      }
     }
 
     log_debug(LOG_SERVICE, "%17s: %x", ff_moni2c_addrs[whichff].name, val);
