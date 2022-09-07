@@ -23,6 +23,7 @@
 #include "MonitorTask.h"
 #include "MonitorI2CTask.h"
 #include "InterruptHandlers.h"
+#include "Semaphore.h"
 
 #include "common/pinsel.h"
 #include "common/smbus_units.h"
@@ -34,8 +35,8 @@
 // local prototype
 void Print(const char *str);
 
-uint32_t ff_PRESENT_mask = 0xff;
-uint32_t ff_USER_mask = 0xff;
+uint32_t ff_PRESENT_mask = 0;
+uint32_t ff_USER_mask = 0;
 
 #ifdef REV1
 // -------------------------------------------------
@@ -341,9 +342,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
 void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t present_FFLDAQ_F2, uint32_t present_FFL12_F2)
 {
   uint32_t whichff = 0;
-  uint64_t addr_ff = 0x44; // internal eeprom block for ff mask
   uint32_t data = 0;
-  uint64_t pass = 0x12345678;
 
   log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
 
@@ -381,12 +380,12 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
   data = (~data) & 0xffff;
   ff_PRESENT_mask = data;
   ff_USER_mask = data;
-  uint64_t block = EEPROMBlockFromAddr(addr_ff);
+  uint64_t block = EEPROMBlockFromAddr(ADDR_FF);
 
-  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
+  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
   xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
 
-  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_ff, data);
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
@@ -479,7 +478,7 @@ int8_t getFFtemp(const uint8_t i)
 void getFFpart()
 {
 
-  while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
     ;
 
   // Write device vendor part for identifying FF devices
@@ -565,7 +564,7 @@ void getFFpart()
     ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
   }
 
-  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 }
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
@@ -711,7 +710,7 @@ struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
 
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
-  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c1_sem, (TickType_t)10) == pdFALSE)
     ;
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
@@ -745,7 +744,7 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
       log_error(LOG_SERVICE, "error reset\r\n");
     }
   }
-  xSemaphoreGive(dcdc_args.xSem);
+  xSemaphoreGive(i2c1_sem);
 }
 
 // Initialization function for the LGA80D. These settings
@@ -753,7 +752,7 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
 // this is currently not ensured in this code.
 void LGA80D_init(void)
 {
-  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c1_sem, (TickType_t)10) == pdFALSE)
     ;
   log_info(LOG_SERVICE, "LGA80D_init\r\n");
   // set up the switching frequency
@@ -792,7 +791,7 @@ void LGA80D_init(void)
       }
     }
   }
-  xSemaphoreGive(dcdc_args.xSem);
+  xSemaphoreGive(i2c1_sem);
 
   return;
 }
@@ -936,7 +935,7 @@ void init_registers_clk()
   // All unused signals should be inputs [P07..P04], [P17..P15].
 
   // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
     ;
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6
@@ -978,7 +977,7 @@ void init_registers_clk()
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
 
-  xSemaphoreGive(clock_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(i2c2_sem); // if we have a semaphore, give it
 }
 void init_registers_ff()
 {
@@ -991,7 +990,7 @@ void init_registers_ff()
 
   // grab the i2c4 semaphore to ensure unique access to I2C controller
 
-  while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
     ;
 
   // # set first I2C switch on channel 4 (U100, address 0x70) to port 7
@@ -1030,11 +1029,11 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x03); // 00000011 [P17..P10]
 
-  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 
   // grab the i2c3 semaphore to ensure unique access to I2C controller
 
-  while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
     ;
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
@@ -1071,7 +1070,7 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x07, 1, 0xf0); // 11110000 [P17..P10]
 
-  xSemaphoreGive(ffldaq_f2_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
 }
 #endif // REV1
 #ifdef REV2
@@ -1089,7 +1088,7 @@ void init_registers_clk()
 
   // grab the semaphore to ensure unique access to I2C controller
 
-  while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
     ;
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
@@ -1137,7 +1136,7 @@ void init_registers_clk()
   apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
   apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
-  xSemaphoreGive(clock_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(i2c2_sem); // if we have a semaphore, give it
 }
 void init_registers_ff()
 {
@@ -1150,7 +1149,7 @@ void init_registers_ff()
 
   // grab the i2c4 semaphore to ensure unique access to I2C controller
 
-  while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
     ;
 
   uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
@@ -1187,11 +1186,11 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  xSemaphoreGive(ffldaq_f1_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 
   // grab the i2c3 semaphore to ensure unique access to I2C controller
 
-  while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
     ;
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
@@ -1233,7 +1232,7 @@ void init_registers_ff()
 
   setFFmask(present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2);
 
-  xSemaphoreGive(ffldaq_f2_args.xSem); // if we have a semaphore, give it
+  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
 }
 #endif // REV2
 
@@ -1259,7 +1258,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
                                           packed_reg0_address, 3, &triplet); // read triplet from eeprom
       if (status_r != 0) {
         log_error(LOG_SERVICE, "read failed: %s\r\n", SMBUS_get_error(status_r));
-        xSemaphoreGive(clock_args.xSem);
+        xSemaphoreGive(i2c2_sem);
         return status_r;
       }
       // organize the three bytes
@@ -1272,7 +1271,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
         status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, 0x01, 1, reg0); // write a page change to a clock chip
         if (status_w != 0) {
           log_error(LOG_SERVICE, "write failed: %s\r\n", SMBUS_get_error(status_w));
-          xSemaphoreGive(clock_args.xSem);
+          xSemaphoreGive(i2c2_sem);
           return status_w; // fail writing and exit
         }
         HighByte = reg0; // update the current high byte or page
@@ -1281,7 +1280,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, reg1, 1, data); // write data to a clock chip
       if (status_w != 0) {
         log_error(LOG_SERVICE, "write status is %d \r\n", status_w);
-        xSemaphoreGive(clock_args.xSem);
+        xSemaphoreGive(i2c2_sem);
         return status_w; // fail writing and exit
       }
     }
@@ -1302,7 +1301,7 @@ int init_load_clk(int clk_n)
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
 
   // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
     ;
 
   int status_r = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
@@ -1318,7 +1317,7 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PreL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(clock_args.xSem);
+    xSemaphoreGive(i2c2_sem);
     return status_r; // fail reading and exit
   }
 
@@ -1331,7 +1330,7 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "RL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(clock_args.xSem);
+    xSemaphoreGive(i2c2_sem);
     return status_r; // fail reading and exit
   }
 
@@ -1344,7 +1343,7 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PosL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(clock_args.xSem);
+    xSemaphoreGive(i2c2_sem);
     return status_r; // fail reading and exit
   }
 
@@ -1358,7 +1357,7 @@ int init_load_clk(int clk_n)
   int status_w = load_clk_registers(PreambleList_row, init_preamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PreL write error %d\r\n", status_w);
-    xSemaphoreGive(clock_args.xSem);
+    xSemaphoreGive(i2c2_sem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
@@ -1366,7 +1365,7 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(RegisterList_row, init_register_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "RegL write error %d\r\n", status_w);
-    xSemaphoreGive(clock_args.xSem);
+    xSemaphoreGive(i2c2_sem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
@@ -1374,11 +1373,11 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(PostambleList_row, init_postamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PosL write error %d\r\n", status_w);
-    xSemaphoreGive(clock_args.xSem);
+    xSemaphoreGive(i2c2_sem);
     return status_w;
   }
 
-  xSemaphoreGive(clock_args.xSem);
+  xSemaphoreGive(i2c2_sem);
 
   return status_w;
 }

@@ -60,9 +60,6 @@
 
 uint32_t g_ui32SysClock = 0;
 
-// Mutex for UART -- should really have one for each UART
-static SemaphoreHandle_t xUARTMutex = NULL;
-
 void Print(const char *str)
 {
   xSemaphoreTake(xUARTMutex, portMAX_DELAY);
@@ -254,7 +251,6 @@ int main(void)
   }
 
   // mutex for the UART output
-  xUARTMutex = xSemaphoreCreateMutex();
   initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   ffl12_f1_args.xSem = i2c4_sem;

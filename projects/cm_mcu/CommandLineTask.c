@@ -340,8 +340,6 @@ static BaseType_t watchdog_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-static BaseType_t first_mcu_ctl(int argc, char **argv, char *m);
-
 static BaseType_t zmon_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -850,72 +848,6 @@ static int execute(void *p, int argc, char **argv)
 
   return 0;
 }
-
-static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
-{
-
-  if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff) {
-    uint32_t board_id, rev, ps_mask, data;
-    uint64_t pass, addr_id, addr_ff, addr_ps;
-    board_id = strtoul(argv[1], NULL, 16);
-    rev = strtoul(argv[2], NULL, 16);
-    ff_USER_mask = strtoul(argv[3], NULL, 16);
-    ps_mask = strtoul(argv[4], NULL, 16);
-    snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mass %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
-
-    pass = 0x12345678;
-    addr_id = 0x40; // internal eeprom block for board id
-    addr_ff = 0x44; // internal eeprom block for ps ignore fail
-    addr_ps = 0x48; // internal eeprom block for ps ignore fail
-
-    data = (board_id << 16) + rev;
-    uint64_t block = EEPROMBlockFromAddr(addr_id);
-
-    uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
-    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
-
-    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_id, data);
-    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-    uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
-    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
-
-    data = ff_USER_mask;
-    block = EEPROMBlockFromAddr(addr_ff);
-
-    unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
-    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
-
-    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_ff, data);
-    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-    lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
-    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
-
-    data = ps_mask;
-    block = EEPROMBlockFromAddr(addr_ps);
-
-    unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
-    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
-
-    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_ps, data);
-    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-    lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
-    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
-  }
-  else {
-    uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
-
-    uint32_t num = (uint32_t)sn >> 16;
-    uint32_t rev = ((uint32_t)sn) & 0xff;
-    snprintf(m, SCRATCH_SIZE, "This is not the first-time loading MCU FW to board #%lx (rev %lx) \r\n", num, rev);
-  }
-
-  return pdFALSE;
-}
-
-extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
 // The actual task
 void vCommandLineTask(void *pvParameters)
