@@ -349,8 +349,8 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
 
   for (; whichff < NFIREFLIES; ++whichff) {
     uint8_t val;
-    uint8_t shift;
-    if (0 <= whichff && whichff < NFIREFLIES_IT_F1) {
+    uint32_t shift;
+    if (whichff < NFIREFLIES_IT_F1) {
       shift = whichff;
       val = (present_FFL12_F1 >> (shift)) & 0x01;
     }
