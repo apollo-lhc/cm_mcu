@@ -340,7 +340,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
 
 void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t present_FFLDAQ_F2, uint32_t present_FFL12_F2)
 {
-  uint8_t whichff = 0;
+  uint32_t whichff = 0;
   uint64_t addr_ff = 0x44; // internal eeprom block for ff mask
   uint32_t data = 0;
   uint64_t pass = 0x12345678;
