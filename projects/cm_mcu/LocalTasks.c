@@ -389,20 +389,14 @@ bool isEnabledFF(int ff)
 {
   // firefly config stored in on-board EEPROM
   static bool configured = false;
-  static uint32_t ff_config;
   if (!configured) {
-    ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
     configured = true;
   }
 
-  if (!((1 << ff) & ff_PRESENT_mask) != !((1 << ff) & ff_USER_mask)){
-    log_debug(LOG_SERVICE, "PRESENT is not USER ff mask at ff = %d \r\n", ff);
+  if (!((1 << ff) & ff_PRESENT_mask) || !((1 << ff) & ff_USER_mask)){
     return false;
   }
   else {
-    if (!((1 << ff) & ff_config))
-      return false;
-    else
       return true;
   }
 }
