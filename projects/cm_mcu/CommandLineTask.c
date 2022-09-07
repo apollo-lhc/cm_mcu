@@ -854,18 +854,15 @@ static int execute(void *p, int argc, char **argv)
 
 static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
 {
+  int copied = 0;
   if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff){
-
-    // argument handling
-    int copied = 0;
     uint32_t board_id, rev, ps_mask, data;
     uint64_t pass, addr_id, addr_ff, addr_ps;
     board_id = strtoul(argv[1], NULL, 16);
     rev = strtoul(argv[2], NULL, 16);
     ff_USER_mask = strtoul(argv[3], NULL, 16);
     ps_mask = strtoul(argv[4], NULL, 16);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-             "Registering board_id %lx revision %lx, USER ff mass %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
+    copied = snprintf(m + copied, SCRATCH_SIZE -copied,"Registering board_id %lx revision %lx, USER ff mass %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
 
     pass = 0x12345678;
     addr_id = 0x40; // internal eeprom block for board id
@@ -915,7 +912,7 @@ static BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
 
     uint32_t num = (uint32_t)sn >> 16;
     uint32_t rev = ((uint32_t)sn) & 0xff;
-    snprintf(m, SCRATCH_SIZE, "This is not the first-time loading MCU FW to board #%lx (rev %lx) \r\n", num, rev);
+    copied = snprintf(m + copied, SCRATCH_SIZE - copied, "This is not the first-time loading MCU FW to board #%lx (rev %lx) \r\n", num, rev);
   }
 
   return pdFALSE;
