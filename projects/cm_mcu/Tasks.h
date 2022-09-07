@@ -155,6 +155,9 @@ int getFFcheckStale();
 TickType_t getFFupdateTick(int ff_t);
 void init_registers_ff();
 
+extern uint32_t ff_PRESENT_mask;
+extern uint32_t ff_USER_mask;
+
 // ff_ctl
 // control the LED
 void LedTask(void *parameters);
@@ -174,19 +177,6 @@ void LedTask(void *parameters);
 #define GREEN_LED_TOGGLE  (32)
 #define GREEN_LED_TOGGLE3 (33)
 #define GREEN_LED_TOGGLE4 (34)
-
-// messages for FF task
-#define FFLY_DISABLE_TRANSMITTER (1)
-#define FFLY_ENABLE_TRANSMITTER  (2)
-#define FFLY_ENABLE_CDR          (3)
-#define FFLY_DISABLE_CDR         (4)
-#define FFLY_DISABLE             (5)
-#define FFLY_ENABLE              (6)
-#define FFLY_WRITE_REGISTER      (7)
-#define FFLY_READ_REGISTER       (8)
-#define FFLY_TEST_READ           (9)
-#define FFLY_SUSPEND             (10)
-#define FFLY_RESUME              (11)
 
 // ---- version info
 const char *buildTime();

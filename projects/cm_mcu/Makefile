@@ -141,6 +141,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/list.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/stream_buffer.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/heap_4.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/printf.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/Semaphore.o
 ## TivaWare
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/uart.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/sysctl.o

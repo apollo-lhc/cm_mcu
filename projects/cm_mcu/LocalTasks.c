@@ -34,6 +34,9 @@
 // local prototype
 void Print(const char *str);
 
+uint32_t ff_PRESENT_mask = 0xff;
+uint32_t ff_USER_mask = 0xff;
+
 #ifdef REV1
 // -------------------------------------------------
 //
@@ -335,22 +338,6 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .stack_size = 4096U,
 };
 
-bool isEnabledFF(int ff)
-{
-  // firefly config stored in on-board EEPROM
-  static bool configured = false;
-
-  static uint32_t ff_config;
-  if (!configured) {
-    ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
-    configured = true;
-  }
-  if (!((1 << ff) & ff_config))
-    return false;
-  else
-    return true;
-}
-
 void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t present_FFLDAQ_F2, uint32_t present_FFL12_F2)
 {
   int whichff = 0;
@@ -381,6 +368,8 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
   }
 
   data = (~data) & 0xffff;
+  ff_PRESENT_mask = data;
+  ff_USER_mask = data;
   uint64_t block = EEPROMBlockFromAddr(addr_ff);
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
@@ -394,6 +383,28 @@ void setFFmask(uint32_t present_FFLDAQ_F1, uint32_t present_FFL12_F1, uint32_t p
 
   return;
 
+}
+
+bool isEnabledFF(int ff)
+{
+  // firefly config stored in on-board EEPROM
+  static bool configured = false;
+  static uint32_t ff_config;
+  if (!configured) {
+    ff_config = read_eeprom_single(EEPROM_ID_FF_ADDR);
+    configured = true;
+  }
+
+  if (!((1 << ff) & ff_PRESENT_mask) != !((1 << ff) & ff_USER_mask)){
+    log_debug(LOG_SERVICE, "PRESENT is not USER ff mask at ff = %d \r\n", ff);
+    return false;
+  }
+  else {
+    if (!((1 << ff) & ff_config))
+      return false;
+    else
+      return true;
+  }
 }
 
 int getFFcheckStale()
