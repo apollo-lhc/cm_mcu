@@ -158,7 +158,9 @@ void init_registers_ff();
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;
+#define ADDR_ID 0x40 // internal eeprom block for board number & rev
 #define ADDR_FF 0x44 // internal eeprom block for ff mask
+#define ADDR_PS 0x48 // internal eeprom block for ps ignore fail
 #define PASS    0x12345678
 
 // ff_ctl

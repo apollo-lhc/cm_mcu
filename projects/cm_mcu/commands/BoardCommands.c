@@ -15,6 +15,7 @@
 #include "common/pinsel.h"
 #include "inc/hw_hibernate.h"
 #include "driverlib/hibernate.h"
+#include "Tasks.h"
 
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char *m)
@@ -67,7 +68,7 @@ BaseType_t set_board_id_password(int argc, char **argv, char *m)
 {
   int copied = 0;
 
-  uint64_t message = EPRMMessage((uint64_t)EPRM_PASS_SET, 0, 0x12345678);
+  uint64_t message = EPRMMessage((uint64_t)EPRM_PASS_SET, 0, PASS);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Block locked\r\n");
@@ -103,35 +104,29 @@ BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
 
   if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff) {
     uint32_t board_id, rev, ps_mask, data;
-    uint64_t pass, addr_id, addr_ff, addr_ps;
     board_id = strtoul(argv[1], NULL, 16);
     rev = strtoul(argv[2], NULL, 16);
     ff_USER_mask = strtoul(argv[3], NULL, 16);
     ps_mask = strtoul(argv[4], NULL, 16);
     snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mask %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
 
-    pass = 0x12345678;
-    addr_id = 0x40; // internal eeprom block for board id
-    addr_ff = 0x44; // internal eeprom block for ps ignore fail
-    addr_ps = 0x48; // internal eeprom block for ps ignore fail
-
     data = (board_id << 16) + rev;
-    uint64_t block = EEPROMBlockFromAddr(addr_id);
+    uint64_t block = EEPROMBlockFromAddr(ADDR_ID);
 
-    uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
+    uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
     xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
 
-    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_id, data);
+    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_ID, data);
     xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
     data = ff_USER_mask;
 
-    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_ff, data);
+    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
     xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
     data = ps_mask;
 
-    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr_ps, data);
+    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_PS, data);
     xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
     uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
