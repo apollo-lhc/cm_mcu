@@ -366,7 +366,7 @@ void setFFmask(uint32_t ff_combined_mask)
 
     else if (NFIREFLIES_F1 + NFIREFLIES_IT_F2 <= whichff) {
       shift = whichff - NFIREFLIES_F1 - NFIREFLIES_IT_F2 + 4;
-      val = ((ff_combined_mask & 0xff ) >> (shift)) & 0x01;
+      val = ((ff_combined_mask & 0xff) >> (shift)) & 0x01;
     }
 
     else {
@@ -410,7 +410,7 @@ void readFFpresent()
   xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 
   while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-      ;
+    ;
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
 
@@ -421,7 +421,6 @@ void readFFpresent()
 
   uint32_t ff_combined_mask = ((present_FFL12_F1) << 24) + ((present_FFLDAQ_F1) << 16) + ((present_FFL12_F2) << 8) + (present_FFLDAQ_F2);
   setFFmask(ff_combined_mask);
-
 }
 
 bool isEnabledFF(int ff)
@@ -1255,7 +1254,6 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
   xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
-
 }
 #endif // REV2
 

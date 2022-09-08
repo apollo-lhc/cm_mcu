@@ -158,8 +158,8 @@ void init_registers_ff();
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;
-#define ADDR_FF 0x44  // internal eeprom block for ff mask
-#define PASS 0x12345678
+#define ADDR_FF 0x44 // internal eeprom block for ff mask
+#define PASS    0x12345678
 
 // ff_ctl
 // control the LED
