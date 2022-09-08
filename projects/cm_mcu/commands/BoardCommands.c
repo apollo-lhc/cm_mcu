@@ -108,7 +108,7 @@ BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
     rev = strtoul(argv[2], NULL, 16);
     ff_USER_mask = strtoul(argv[3], NULL, 16);
     ps_mask = strtoul(argv[4], NULL, 16);
-    snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mass %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
+    snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mask %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
 
     pass = 0x12345678;
     addr_id = 0x40; // internal eeprom block for board id

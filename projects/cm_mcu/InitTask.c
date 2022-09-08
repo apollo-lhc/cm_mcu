@@ -32,7 +32,6 @@ void InitTask(void *parameters)
   errbuffer_put(EBUF_RESTART, restart_reason);
   log_info(LOG_SERVICE, "REC register=0x%08x\r\n", restart_reason);
   init_registers_ff(); // initalize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
-
 // wait for 3.3V power to come up. Wait indefinitely.
 // in Rev1 the clocks cannot be accessed before the 3.3 V is on.
 #ifdef REV1
@@ -49,10 +48,10 @@ void InitTask(void *parameters)
     init_load_clk(i); // load each clock config from EEPROM
   }
   log_info(LOG_SERVICE, "Clocks configured\r\n");
+  readFFpresent();
   getFFpart(); // the order of where to check FF part matters -- it won't be able to read anything if check sooner
 #endif         // REV2
   vTaskSuspend(NULL);
-
   // Delete this task
   vTaskDelete(xTaskGetCurrentTaskHandle());
 }
