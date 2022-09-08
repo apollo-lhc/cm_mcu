@@ -54,7 +54,7 @@ BaseType_t set_board_id(int argc, char **argv, char *m)
     uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
     xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
 
-    if (addr == ADDR_FF){
+    if (addr == ADDR_FF) {
       ff_USER_mask = data;
     }
   }

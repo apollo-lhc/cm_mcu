@@ -384,7 +384,7 @@ void readFFpresent()
   xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 
   while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-      ;
+    ;
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
 
@@ -404,7 +404,6 @@ void readFFpresent()
                               ((present_FFL12_F1)); // 6 bits
 
   setFFmask(ff_combined_mask);
-
 }
 
 bool isEnabledFF(int ff)
@@ -1238,7 +1237,6 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
   xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
-
 }
 #endif // REV2
 
