@@ -347,7 +347,7 @@ void setFFmask(uint32_t ff_combined_mask)
   log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
 
   for (; whichff < NFIREFLIES; ++whichff) {
-    uint8_t val = ( ff_combined_mask >> (whichff)) & 0x01;
+    uint8_t val = (ff_combined_mask >> (whichff)) & 0x01;
     log_debug(LOG_SERVICE, "%17s: %x", ff_moni2c_addrs[whichff].name, val);
     data += (!val << whichff);
   }
@@ -393,15 +393,15 @@ void readFFpresent()
 
   xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
 
-  present_FFL12_F1 = present_FFL12_F1 & 0x3FU; // bottom 6 bits
-  present_FFL12_F2 = present_FFL12_F2 & 0x3FU; // bottom 6 bits
+  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
+  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;         // bottom 6 bits
   present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU; // bits 4-7
   present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU; // bits 4-7
 
   uint32_t ff_combined_mask = ((present_FFLDAQ_F2) << 16) | // 4 bits
-                              ((present_FFL12_F2) << 10) | // 6 bits
-                              (present_FFLDAQ_F1) << 6 | // 4 bits
-                              ((present_FFL12_F1)); // 6 bits
+                              ((present_FFL12_F2) << 10) |  // 6 bits
+                              (present_FFLDAQ_F1) << 6 |    // 4 bits
+                              ((present_FFL12_F1));         // 6 bits
 
   setFFmask(ff_combined_mask);
 }
