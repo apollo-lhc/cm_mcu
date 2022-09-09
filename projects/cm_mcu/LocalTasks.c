@@ -352,8 +352,8 @@ void setFFmask(uint32_t ff_combined_mask)
     data += (!val << whichff);
   }
 
+  ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
   ff_PRESENT_mask = data;
-  ff_USER_mask = data;
   uint64_t block = EEPROMBlockFromAddr(ADDR_FF);
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
