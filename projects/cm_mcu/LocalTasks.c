@@ -349,17 +349,18 @@ void setFFmask(uint32_t ff_combined_mask)
   for (; whichff < NFIREFLIES; ++whichff) {
     uint8_t val = (ff_combined_mask >> (whichff)) & 0x01;
     log_debug(LOG_SERVICE, "%17s: %x", ff_moni2c_addrs[whichff].name, val);
-    data += (!val << whichff);
+    data += (val << whichff);
   }
+  uint32_t new_data = (~data) & 0xFFFFFU;
 
   ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
-  ff_PRESENT_mask = data;
+  ff_PRESENT_mask = new_data;
   uint64_t block = EEPROMBlockFromAddr(ADDR_FF);
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
   xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
 
-  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, new_data);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
@@ -408,12 +409,9 @@ void readFFpresent()
 
 bool isEnabledFF(int ff)
 {
-  // firefly config stored in on-board EEPROM
-  static bool configured = false;
-  if (!configured) {
-    configured = true;
-  }
-
+  // firefly config stored in on-board EEPROM via user input
+  // and firefly config via PRESENT signals at the first boot
+  // must be true for a firefly to be enabled.
   if (!((1 << ff) & ff_PRESENT_mask) || !((1 << ff) & ff_USER_mask)) {
     return false;
   }
