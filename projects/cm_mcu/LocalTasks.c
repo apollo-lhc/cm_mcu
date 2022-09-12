@@ -367,7 +367,7 @@ void readFFpresent()
   while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
     ;
 #ifdef REV1
-  uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0x20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0x21_F2;
+  uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
 #elif defined(REV2)
   uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
 #endif
@@ -415,15 +415,15 @@ void readFFpresent()
   uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
   uint32_t present_FFL12_TOP_F1 = (present_FFL12_F1 >> 6) & 0x3U;         // top 2 bits
   present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 5) & 0x7U; // bits 5-7
-  present_FFL12_0x20_F2 = (present_FFL12_0x20_F2 >> 6) & 0x3U;  // bit 6-7
-  present_FFLDAQ_0x20_F2 = present_FFLDAQ_F1 & 0x3FU; // bottom 6 bits
-  present_FFL12_0x21_F2 = (present_FFL12_F2 >> 4) & 0x3U;  // bit 4-5
-  present_FFLDAQ_0x21_F2 = present_FFLDAQ_F1 & 0xFU; // bottom 4 bits
+  present_FFL12_0X20_F2 = (present_FFL12_0X20_F2 >> 6) & 0x3U;  // bit 6-7
+  present_FFLDAQ_0X20_F2 = present_FFLDAQ_0X20_F2 & 0x3FU; // bottom 6 bits
+  present_FFL12_0X21_F2 = (present_FFL12_0X21_F2 >> 4) & 0x3U;  // bit 4-5
+  present_FFLDAQ_0X21_F2 = present_FFLDAQ_0X21_F2 & 0xFU; // bottom 4 bits
 
-  uint32_t ff_combined_present = ((present_FFL12_0x21_F2) << 23) | // 2 bits
-      ((present_FFL12_0x20_F2) << 21) | // 2 bits
-      ((present_FFLDAQ_0x21_F2) << 17 ) |  // 4 bits
-      ((present_FFLDAQ_0x20_F2) << 11 ) |  // 6 bits
+  uint32_t ff_combined_present = ((present_FFL12_0X21_F2) << 23) | // 2 bits
+      ((present_FFL12_0X20_F2) << 21) | // 2 bits
+      ((present_FFLDAQ_0X21_F2) << 17 ) |  // 4 bits
+      ((present_FFLDAQ_0X20_F2) << 11 ) |  // 6 bits
       ((present_FFL12_TOP_F1) << 9) |  // 2 bits
       (present_FFLDAQ_F1) << 6 |    // 3 bits
       ((present_FFL12_BOTTOM_F1));         // 6 bits
