@@ -393,9 +393,9 @@ void readFFpresent()
   present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU; // bits 4-7
 
   uint32_t ff_combined_present = ((present_FFLDAQ_F2) << 16) | // 4 bits
-                              ((present_FFL12_F2) << 10) |  // 6 bits
-                              (present_FFLDAQ_F1) << 6 |    // 4 bits
-                              ((present_FFL12_F1));         // 6 bits
+                                 ((present_FFL12_F2) << 10) |  // 6 bits
+                                 (present_FFLDAQ_F1) << 6 |    // 4 bits
+                                 ((present_FFL12_F1));         // 6 bits
 
   setFFmask(ff_combined_present);
 }
