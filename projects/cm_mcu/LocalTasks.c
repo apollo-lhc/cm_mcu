@@ -366,36 +366,78 @@ void readFFpresent()
 {
   while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
     ;
-
+#ifdef REV1
+  uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0x20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0x21_F2;
+#elif defined(REV2)
   uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
-  // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
+#endif
+
+#ifdef REV1
+  // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
-
+  // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+#elif defined(REV2)
+  // to port 7
+  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
+  // to port 6
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+#endif
 
   xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 
   while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
     ;
+#ifdef REV1
+  // to port 0
+  apollo_i2c_ctl_w(3, 0x72, 1, 0x01);
+  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_0X20_F2);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_FFL12_0X21_F2);
+  // to port 1
+  apollo_i2c_ctl_w(3, 0x72, 1, 0x04);
+  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFLDAQ_0X20_F2);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_FFLDAQ_0X21_F2);
+#elif defined(REV2)
+  // to port 7
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
-
+  // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
-
+#endif
   xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
 
+#ifdef REV1
+  uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
+  uint32_t present_FFL12_TOP_F1 = (present_FFL12_F1 >> 6) & 0x3U;         // top 2 bits
+  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 5) & 0x7U; // bits 5-7
+  present_FFL12_0x20_F2 = (present_FFL12_0x20_F2 >> 6) & 0x3U;  // bit 6-7
+  present_FFLDAQ_0x20_F2 = present_FFLDAQ_F1 & 0x3FU; // bottom 6 bits
+  present_FFL12_0x21_F2 = (present_FFL12_F2 >> 4) & 0x3U;  // bit 4-5
+  present_FFLDAQ_0x21_F2 = present_FFLDAQ_F1 & 0xFU; // bottom 4 bits
+
+  uint32_t ff_combined_present = ((present_FFL12_0x21_F2) << 23) | // 2 bits
+      ((present_FFL12_0x20_F2) << 21) | // 2 bits
+      ((present_FFLDAQ_0x21_F2) << 17 ) |  // 4 bits
+      ((present_FFLDAQ_0x20_F2) << 11 ) |  // 6 bits
+      ((present_FFL12_TOP_F1) << 9) |  // 2 bits
+      (present_FFLDAQ_F1) << 6 |    // 3 bits
+      ((present_FFL12_BOTTOM_F1));         // 6 bits
+#elif defined(REV2)
   present_FFL12_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
   present_FFL12_F2 = present_FFL12_F2 & 0x3FU;         // bottom 6 bits
   present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU; // bits 4-7
   present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU; // bits 4-7
 
   uint32_t ff_combined_present = ((present_FFLDAQ_F2) << 16) | // 4 bits
-                                 ((present_FFL12_F2) << 10) |  // 6 bits
-                                 (present_FFLDAQ_F1) << 6 |    // 4 bits
-                                 ((present_FFL12_F1));         // 6 bits
+      ((present_FFL12_F2) << 10) |  // 6 bits
+      (present_FFLDAQ_F1) << 6 |    // 4 bits
+      ((present_FFL12_F1));         // 6 bits
+#endif
 
   setFFmask(ff_combined_present);
 }
