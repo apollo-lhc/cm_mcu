@@ -339,28 +339,21 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .stack_size = 4096U,
 };
 
-void setFFmask(uint32_t ff_combined_mask)
+void setFFmask(uint32_t ff_combined_present)
 {
-  uint32_t whichff = 0;
-  uint32_t data = 0;
 
   log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
 
-  for (; whichff < NFIREFLIES; ++whichff) {
-    uint8_t val = (ff_combined_mask >> (whichff)) & 0x01;
-    log_debug(LOG_SERVICE, "%17s: %x", ff_moni2c_addrs[whichff].name, val);
-    data += (val << whichff);
-  }
-  uint32_t new_data = (~data) & 0xFFFFFU;
+  uint32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
 
   ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
-  ff_PRESENT_mask = new_data;
+  ff_PRESENT_mask = data;
   uint64_t block = EEPROMBlockFromAddr(ADDR_FF);
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
   xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
 
-  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, new_data);
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
@@ -399,12 +392,12 @@ void readFFpresent()
   present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU; // bits 4-7
   present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU; // bits 4-7
 
-  uint32_t ff_combined_mask = ((present_FFLDAQ_F2) << 16) | // 4 bits
+  uint32_t ff_combined_present = ((present_FFLDAQ_F2) << 16) | // 4 bits
                               ((present_FFL12_F2) << 10) |  // 6 bits
                               (present_FFLDAQ_F1) << 6 |    // 4 bits
                               ((present_FFL12_F1));         // 6 bits
 
-  setFFmask(ff_combined_mask);
+  setFFmask(ff_combined_present);
 }
 
 bool isEnabledFF(int ff)
