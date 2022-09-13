@@ -364,6 +364,7 @@ void setFFmask(uint32_t ff_combined_present)
 
 void readFFpresent()
 {
+  
   while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
     ;
 #ifdef REV1
