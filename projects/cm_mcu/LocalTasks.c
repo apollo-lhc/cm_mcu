@@ -278,7 +278,6 @@ struct sm_command_t sm_command_fflot_f2[] = {
 
 };
 
-
 #ifdef REV1
 struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"V11  12 Tx GTY", FF_I2CMUX_1_ADDR, 6, 0x50}, //
