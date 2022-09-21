@@ -592,11 +592,38 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   }
 
   for (; whichff < NFIREFLIES; ++whichff) {
-    if (!isEnabledFF(whichff)) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s   --", ff_moni2c_addrs[whichff].name);
-    }
-    else {
+    if (isEnabledFF(whichff)) {
       int i1 = 0; // 0 for status
+#ifdef REV1
+        if (0 <= whichff && whichff < NFIREFLIES_IT_F1 - 2) {
+          int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+          uint8_t val = ffl12_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+
+        else if (NFIREFLIES_IT_F1 - 2 <= whichff && whichff < NFIREFLIES_IT_F1 - 2 + NFIREFLIES_DAQ_F1) {
+          int index = (whichff - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
+          uint8_t val = ffldaq_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+
+        else if (NFIREFLIES_IT_F1 - 2 + NFIREFLIES_DAQ_F1 <= whichff && whichff < NFIREFLIES_F1) {
+          int index = (whichff - NFIREFLIES_IT_F1 + 2 - NFIREFLIES_DAQ_F1) * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+          uint8_t val = ffl12_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+
+        else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_DAQ_F2) {
+          int index = (whichff - NFIREFLIES_F1) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+          uint8_t val = ffldaq_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+        else {
+          int index = (whichff - NFIREFLIES_F1 - NFIREFLIES_DAQ_F2) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
+          uint8_t val = ffl12_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+#elif defined(REV2)
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1) {
         int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
         uint16_t val = ffl12_f1_args.sm_values[index];
@@ -618,17 +645,27 @@ BaseType_t ff_status(int argc, char **argv, char *m)
         uint16_t val = ffldaq_f2_args.sm_values[index];
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
       }
+#else
+#error "Define either Rev1 or Rev2"
+#endif
     }
+    else // dummy value
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
     if (isTx)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
     else
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
 
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+    if ((SCRATCH_SIZE - copied) < 20) {
       ++whichff;
       return pdTRUE;
     }
+  }
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
   }
   whichff = 0;
   return pdFALSE;
@@ -660,6 +697,71 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
     else {
       int i1 = 2; // 2 for los_alarm
       uint8_t i2cdata[2];
+#ifdef REV1
+      if (0 <= whichff && whichff < NFIREFLIES_IT_F1 - 2) {
+        int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1 - i] = (ffl12_f1_args.sm_values[index] >> (1 - i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+        for (size_t i = 8; i < 12; i++) {
+          int alarm = getFFch_high(i2cdata[1], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+      else if (NFIREFLIES_IT_F1 - 2 <= whichff && whichff < NFIREFLIES_IT_F1 - 2 + NFIREFLIES_DAQ_F1) {
+        int index = (whichff - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1 - i] = (ffldaq_f1_args.sm_values[index] >> (1 - i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+      else if (NFIREFLIES_IT_F1 - 2 + NFIREFLIES_DAQ_F1 <= whichff && whichff < NFIREFLIES_F1) {
+        int index = (whichff - NFIREFLIES_IT_F1 + 2 - NFIREFLIES_DAQ_F1) * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1 - i] = (ffl12_f1_args.sm_values[index] >> (1 - i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+        for (size_t i = 8; i < 12; i++) {
+          int alarm = getFFch_high(i2cdata[1], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+        int index = (whichff - NFIREFLIES_F1) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1 - i] = (ffldaq_f2_args.sm_values[index] >> (1 - i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+
+      }
+      else {
+        int index = (whichff - NFIREFLIES_F1 - NFIREFLIES_DAQ_F2) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
+        for (int i = 0; i < 2; ++i) {
+          i2cdata[1 - i] = (ffl12_f2_args.sm_values[index] >> (1 - i) * 8) & 0xFFU;
+        }
+        for (size_t i = 0; i < 8; i++) {
+          int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+        for (size_t i = 8; i < 12; i++) {
+          int alarm = getFFch_high(i2cdata[1], i) ? 1 : 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
+        }
+      }
+#elif defined(REV2)
       if (0 <= whichff && whichff < NFIREFLIES_IT_F1) {
         int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
@@ -708,6 +810,9 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
       }
+#else
+#error "Define either Rev1 or Rev2"
+#endif
     }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
     if (isTx)
@@ -841,6 +946,36 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
     for (; whichff < NFIREFLIES; ++whichff) {
       if (isEnabledFF(whichff)) {
         int i1 = 1; // 1 for temperature
+#ifdef REV1
+        if (0 <= whichff && whichff < NFIREFLIES_IT_F1 - 2) {
+          int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+          uint8_t val = ffl12_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+
+        else if (NFIREFLIES_IT_F1 - 2 <= whichff && whichff < NFIREFLIES_IT_F1 - 2 + NFIREFLIES_DAQ_F1) {
+          int index = (whichff - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
+          uint8_t val = ffldaq_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+
+        else if (NFIREFLIES_IT_F1 - 2 + NFIREFLIES_DAQ_F1 <= whichff && whichff < NFIREFLIES_F1) {
+          int index = (whichff - NFIREFLIES_IT_F1 + 2 - NFIREFLIES_DAQ_F1) * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+          uint8_t val = ffl12_f1_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+
+        else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_DAQ_F2) {
+          int index = (whichff - NFIREFLIES_F1) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+          uint8_t val = ffldaq_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+        else {
+          int index = (whichff - NFIREFLIES_F1 - NFIREFLIES_DAQ_F2) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
+          uint8_t val = ffl12_f2_args.sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        }
+#elif defined(REV2)
         if (0 <= whichff && whichff < NFIREFLIES_IT_F1) {
           int index = whichff * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
           uint8_t val = ffl12_f1_args.sm_values[index];
@@ -863,6 +998,9 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
           uint8_t val = ffldaq_f2_args.sm_values[index];
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
         }
+#else
+#error "Define either Rev1 or Rev2"
+#endif
       }
       else // dummy value
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");

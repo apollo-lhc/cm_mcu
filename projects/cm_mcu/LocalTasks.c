@@ -102,13 +102,23 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 #endif
 
 // FFDAQ arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA1
-
+#ifdef REV1
+struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
+    {"K04 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"K05 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"K06 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
     {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
+
 struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
@@ -116,6 +126,7 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
 
 };
+
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
@@ -154,6 +165,18 @@ struct sm_command_t sm_command_fflot_f1[] = {
 
 };
 
+#ifdef REV1
+struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
+    {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"K01  12 Rx GTH", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"K02  12 Tx GTH", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"K02  12 Rx GTH", FF_I2CMUX_1_ADDR, 3, 0x54}, //
+    {"K03  12 Tx GTH", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"K03  12 Rx GTH", FF_I2CMUX_1_ADDR, 5, 0x54}, //
+    {"K07  12 Tx GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"K07  12 Rx GTY", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"F1_1  12 Tx",
      FF_I2CMUX_1_ADDR, 0, 0x50},                //
@@ -163,6 +186,9 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
     {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
 
@@ -183,13 +209,29 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
 };
 
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
-
+#ifdef REV1
+struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
+    {"V01 4 XCVR GTY", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"V02 4 XCVR GTY", FF_I2CMUX_1_ADDR, 1, 0x50}, //
+    {"V03 4 XCVR GTY", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"V04 4 XCVR GTY", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"V05 4 XCVR GTY", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"V06 4 XCVR GTY", FF_I2CMUX_1_ADDR, 5, 0x50}, //
+    {"V07 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"V08 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"V09 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"V10 4 XCVR GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
     {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
     {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 
 struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
@@ -236,6 +278,15 @@ struct sm_command_t sm_command_fflot_f2[] = {
 
 };
 
+
+#ifdef REV1
+struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
+    {"V11  12 Tx GTY", FF_I2CMUX_1_ADDR, 6, 0x50}, //
+    {"V11  12 Rx GTY", FF_I2CMUX_1_ADDR, 7, 0x54}, //
+    {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
+    {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
@@ -244,6 +295,9 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
     {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 
 uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
 
