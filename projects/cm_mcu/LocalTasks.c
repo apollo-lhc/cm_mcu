@@ -963,6 +963,8 @@ void init_registers_ff()
 
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
+  while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
 
   // 5a) U103 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
   // All signals are inputs.
@@ -995,6 +997,10 @@ void init_registers_ff()
   apollo_i2c_ctl_w(3, 0x72, 1, 0x04);
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x07, 1, 0xf0); // 11110000 [P17..P10]
+  xSemaphoreGive(ffldaq_f2_args.xSem);
+
+  while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
 
   // 7b) U6 default output values (I2C address 0x22 on I2C channel #3)
   // The outputs on P10 and P11 should default to "1".

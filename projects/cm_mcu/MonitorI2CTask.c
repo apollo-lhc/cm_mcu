@@ -37,14 +37,6 @@
 
 void Print(const char *str);
 
-// break out of loop, releasing semaphore if we have it
-
-#define release_break()         \
-  {                             \
-    xSemaphoreGive(args->xSem); \
-    break;                      \
-  }
-
 // read-only accessor functions for Firefly names and values.
 
 bool getFFch_low(uint8_t val, int channel)
@@ -139,7 +131,7 @@ void MonitorI2CTask(void *parameters)
       int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ps].mux_addr, 1, data);
       if (res != 0) {
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
-        release_break();
+        break;
       }
 
       // Read I2C registers/commands
@@ -163,7 +155,7 @@ void MonitorI2CTask(void *parameters)
           log_warn(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
                    args->commands[c].name, SMBUS_get_error(res), ps);
           args->sm_values[index] = 0xffff;
-          release_break();
+          break;
         }
         else {
           args->sm_values[index] = (uint16_t)masked_output;
