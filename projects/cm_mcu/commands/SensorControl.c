@@ -736,7 +736,7 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
       }
-      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_DAQ_F2) {
         int index = (whichff - NFIREFLIES_F1) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
           i2cdata[1 - i] = (ffldaq_f2_args.sm_values[index] >> (1 - i) * 8) & 0xFFU;
@@ -819,10 +819,15 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
     else
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
 
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+    if ((SCRATCH_SIZE - copied) < 20) {
       ++whichff;
       return pdTRUE;
     }
+  }
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
   }
   whichff = 0;
   return pdFALSE;
@@ -894,7 +899,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
       }
-      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+      else if (NFIREFLIES_F1 <= whichff && whichff < NFIREFLIES_F1 + NFIREFLIES_DAQ_F2) {
         int index = (whichff - NFIREFLIES_F1) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
         for (int i = 0; i < 2; ++i) {
           i2cdata[1 - i] = (ffldaq_f2_args.sm_values[index] >> (1 - i) * 8) & 0xFFU;
@@ -978,10 +983,15 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
     else
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
 
-    if ((SCRATCH_SIZE - copied) < 20 && (whichff < 25)) {
+    if ((SCRATCH_SIZE - copied) < 20) {
       ++whichff;
       return pdTRUE;
     }
+  }
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
   }
   whichff = 0;
   return pdFALSE;
