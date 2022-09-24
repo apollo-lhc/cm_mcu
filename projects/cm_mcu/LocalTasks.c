@@ -68,6 +68,15 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
+
+struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
+    {"FFL12", &ffl12_f1_args, 0, 0, 6}, //
+    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 3}, //
+    {"FFL12", &ffl12_f1_args, 9, 6, 2}, //
+    {"FFLDAQ", &ffldaq_f2_args, 11, 0, 10}, //
+    {"FFL12", &ffl12_f2_args, 21, 0, 4}, //
+};
+
 #elif defined(REV2)
 // -------------------------------------------------
 //
@@ -96,6 +105,13 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 
+};
+
+struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
+    {"FFL12", &ffl12_f1_args, 0, 0, 6}, //
+    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 4}, //
+    {"FFL12", &ffl12_f2_args, 10, 0, 6}, //
+    {"FFLDAQ", &ffldaq_f2_args, 16, 0, 4}, //
 };
 #else
 #error "Define either Rev1 or Rev2"
@@ -190,7 +206,9 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #error "Define either Rev1 or Rev2"
 #endif
 
+
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
+
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .name = "FF12",
@@ -491,6 +509,7 @@ void getFFpart()
 
   // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
   uint8_t data1;
+
   data1 = 0x1U << ffl12_f1_args.devices[3].mux_bit;
   log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data1);
   int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data1);
