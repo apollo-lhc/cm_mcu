@@ -105,7 +105,6 @@ void MonitorI2CTask(void *parameters);
 #define FF_I2CMUX_2_ADDR 0x71
 #define I2C_DEVICE_CLK   2
 
-
 // REV1
 #ifndef REV2
 #define NFIREFLY_ARG      5
@@ -149,11 +148,11 @@ struct dev_moni2c_addr_t {
 };
 
 struct arg_moni2c_ff_t {
-  char *ff_part; // ff part
+  char *ff_part;                    // ff part
   struct MonitorI2CTaskArgs_t *arg; // ff arg
-  uint8_t int_idx; // start idx of this arg in ff_moni2c_addrs
-  uint8_t dev_int_idx;  // start idx of the device in its arg
-  uint8_t num_dev; // number of devices in this ff arg.
+  uint8_t int_idx;                  // start idx of this arg in ff_moni2c_addrs
+  uint8_t dev_int_idx;              // start idx of the device in its arg
+  uint8_t num_dev;                  // number of devices in this ff arg.
 };
 
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];

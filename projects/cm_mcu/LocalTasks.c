@@ -70,11 +70,11 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 };
 
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
-    {"FFL12", &ffl12_f1_args, 0, 0, 6}, //
-    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 3}, //
-    {"FFL12", &ffl12_f1_args, 9, 6, 2}, //
+    {"FFL12", &ffl12_f1_args, 0, 0, 6},     //
+    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 3},   //
+    {"FFL12", &ffl12_f1_args, 9, 6, 2},     //
     {"FFLDAQ", &ffldaq_f2_args, 11, 0, 10}, //
-    {"FFL12", &ffl12_f2_args, 21, 0, 4}, //
+    {"FFL12", &ffl12_f2_args, 21, 0, 4},    //
 };
 
 #elif defined(REV2)
@@ -108,9 +108,9 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 };
 
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
-    {"FFL12", &ffl12_f1_args, 0, 0, 6}, //
-    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 4}, //
-    {"FFL12", &ffl12_f2_args, 10, 0, 6}, //
+    {"FFL12", &ffl12_f1_args, 0, 0, 6},    //
+    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 4},  //
+    {"FFL12", &ffl12_f2_args, 10, 0, 6},   //
     {"FFLDAQ", &ffldaq_f2_args, 16, 0, 4}, //
 };
 #else
@@ -206,9 +206,7 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #error "Define either Rev1 or Rev2"
 #endif
 
-
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
-
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .name = "FF12",
