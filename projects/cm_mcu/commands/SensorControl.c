@@ -224,7 +224,7 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
   for (; i < imax; ++i) {
 
     if (num_ff == i)
-          break;
+      break;
   }
 
   if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
