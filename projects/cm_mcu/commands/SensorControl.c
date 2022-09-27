@@ -600,8 +600,8 @@ BaseType_t ff_status(int argc, char **argv, char *m)
       int dev = whichff - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
       if (isEnabledFF(ff_moni2c_arg[n].int_idx + dev)) {
         int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
-        uint8_t val = ffldaq_f1_args.sm_values[index];
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        uint8_t val = ff_arg->sm_values[index];
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
       }
       else // dummy value
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
@@ -663,9 +663,8 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
       }
       else {
         int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
-        for (int i = 0; i < 2; ++i) {
-          i2cdata[1 - i] = (ff_arg->sm_values[index] >> (1 - i) * 8) & 0xFFU;
-        }
+        i2cdata[0] = (ff_arg->sm_values[index]) & 0xFFU;
+        i2cdata[1] = (ff_arg->sm_values[index] >> 8) & 0xFFU;
         for (size_t i = 0; i < 8; i++) {
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
@@ -733,9 +732,8 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
       }
       else {
         int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
-        for (int i = 0; i < 2; ++i) {
-          i2cdata[1 - i] = (ff_arg->sm_values[index] >> (1 - i) * 8) & 0xFFU;
-        }
+        i2cdata[0] = (ff_arg->sm_values[index]) & 0xFFU;
+        i2cdata[1] = (ff_arg->sm_values[index] >> 8) & 0xFFU;
         for (size_t i = 0; i < 8; i++) {
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
@@ -798,8 +796,8 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
       int dev = whichff - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
       if (isEnabledFF(ff_moni2c_arg[n].int_idx + dev)) {
         int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
-        uint8_t val = ffldaq_f1_args.sm_values[index];
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %02d", ff_moni2c_addrs[whichff].name, val);
+        uint8_t val = ff_arg->sm_values[index];
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
       }
       else // dummy value
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
