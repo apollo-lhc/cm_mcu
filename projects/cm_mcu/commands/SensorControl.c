@@ -687,7 +687,6 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
         return pdTRUE;
       }
     }
-
   }
   if (whichff % 2 == 1) {
     m[copied++] = '\r';
@@ -741,7 +740,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
           int alarm = getFFch_low(i2cdata[0], i) ? 1 : 0;
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
         }
-        if (strstr(ff_moni2c_arg[n].ff_part, "FFL12") != NULL){
+        if (strstr(ff_moni2c_arg[n].ff_part, "FFL12") != NULL) {
           for (size_t i = 8; i < 12; i++) {
             int alarm = getFFch_high(i2cdata[1], i) ? 1 : 0;
             copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d", alarm);
@@ -758,8 +757,6 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
         return pdTRUE;
       }
     }
-
-
   }
   if (whichff % 2 == 1) {
     m[copied++] = '\r';
