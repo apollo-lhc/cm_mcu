@@ -223,21 +223,23 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
   int i2c_dev;
   for (; i < imax; ++i) {
 
-    if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
-      log_warn(LOG_SERVICE, "Skip writing to disabled FF %d\r\n", i);
-      continue;
-    }
-    if (i < NFIREFLIES_F1) {
-      i2c_dev = I2C_DEVICE_F1;
-    }
-    else {
-      i2c_dev = I2C_DEVICE_F2;
-    }
-    int ret1 = write_ff_register(ff_moni2c_addrs[i].name, regnumber, value, 1, i2c_dev);
-    if (ret1) {
-      log_warn(LOG_SERVICE, "%s: error %s\r\n", __func__, SMBUS_get_error(ret1));
-      ret += ret1;
-    }
+    if (num_ff == i)
+          break;
+  }
+
+  if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
+    log_warn(LOG_SERVICE, "Skip writing to disabled FF %d\r\n", i);
+  }
+  if (i < NFIREFLIES_F1) {
+    i2c_dev = I2C_DEVICE_F1;
+  }
+  else {
+    i2c_dev = I2C_DEVICE_F2;
+  }
+  int ret1 = write_ff_register(ff_moni2c_addrs[i].name, regnumber, value, 1, i2c_dev);
+  if (ret1) {
+    log_warn(LOG_SERVICE, "%s: error %s\r\n", __func__, SMBUS_get_error(ret1));
+    ret += ret1;
   }
   return ret;
 }
