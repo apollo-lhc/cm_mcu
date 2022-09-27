@@ -167,8 +167,8 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 struct sm_command_t sm_command_fflit_f1[] = {
     {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
@@ -176,8 +176,8 @@ struct sm_command_t sm_command_fflit_f1[] = {
 struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 
@@ -280,8 +280,8 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 struct sm_command_t sm_command_fflit_f2[] = {
     {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
@@ -289,8 +289,8 @@ struct sm_command_t sm_command_fflit_f2[] = {
 struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 
