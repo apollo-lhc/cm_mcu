@@ -720,7 +720,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY CDR LOL ALARM:\r\n");
   }
 
-  int i1 = 3; // 2 for cdr_lol_alarm
+  int i1 = 3; // 3 for cdr_lol_alarm
   uint8_t i2cdata[2];
 
   for (; n < NFIREFLY_ARG; ++n) {

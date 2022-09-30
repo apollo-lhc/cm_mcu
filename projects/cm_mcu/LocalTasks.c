@@ -136,8 +136,8 @@ struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
 #endif
 
 struct sm_command_t sm_command_ffldaq_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
 
@@ -165,8 +165,8 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
@@ -174,8 +174,8 @@ struct sm_command_t sm_command_fflit_f1[] = {
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
@@ -250,8 +250,8 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 #endif
 
 struct sm_command_t sm_command_ffldaq_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
 
@@ -278,8 +278,8 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
@@ -287,8 +287,8 @@ struct sm_command_t sm_command_fflit_f2[] = {
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
