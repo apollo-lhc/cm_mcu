@@ -322,7 +322,7 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
   for (int j = 0; j < dcdc_args.n_devices; ++j) {      // loop over supplies
     for (int l = 0; l < dcdc_args.n_pages; ++l) {      // loop over register pages
       for (int k = 0; k < dcdc_args.n_commands; ++k) { // loop over FIRST SIX commands
-        if (k >= 6) {
+        if (k > 5) {
           break; // only consider first six commands
         }
         int index =

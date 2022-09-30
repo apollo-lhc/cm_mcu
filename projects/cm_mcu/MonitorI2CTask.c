@@ -37,14 +37,6 @@
 
 void Print(const char *str);
 
-// break out of loop, releasing semaphore if we have it
-
-#define release_break()         \
-  {                             \
-    xSemaphoreGive(args->xSem); \
-    break;                      \
-  }
-
 // read-only accessor functions for Firefly names and values.
 
 bool getFFch_low(uint8_t val, int channel)
@@ -86,9 +78,9 @@ void MonitorI2CTask(void *parameters)
   // wait for the power to come up
   vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(2500));
 
-  int IsCLK = (strstr(args->name, "CLK") != NULL);   // the instance is of CLK-device type
-  int IsFF12 = (strstr(args->name, "FF12") != NULL); // the instance is of FF 12-ch part type
-  // int IsFFDAQ =  (strstr(args->name, "FFDAQ") != NULL);  //the instance is of FF 4-ch part type (DAQ links) -- not being used currently
+  int IsCLK = (strstr(args->name, "CLK") != NULL);     // the instance is of CLK-device type
+  int IsFF12 = (strstr(args->name, "FF12") != NULL);   // the instance is of FF 12-ch part type
+  int IsFFDAQ = (strstr(args->name, "FFDAQ") != NULL); // the instance is of FF 4-ch part type (DAQ links) -- not being used currently
 
   // reset the wake time to account for the time spent in any work in i2c tasks
 
@@ -105,10 +97,30 @@ void MonitorI2CTask(void *parameters)
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
 
-      if (!IsCLK) { // Fireflies need to be checked if the links are connected or not
-        int offsetFF12 = 1 - IsFF12;
-        if (!isEnabledFF(ps + (offsetFF12 * (NFIREFLIES_IT_F1)) + ((args->i2c_dev - I2C_DEVICE_F1) * (-1) * (NFIREFLIES_F2)))) // skip the FF if it's not enabled via the FF config
-          continue;
+      if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
+        if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
+#ifdef REV1
+          int NFIREFLIES_IT_F1_P1 = NFIREFLIES_IT_F1 - 2;
+          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (ps < NFIREFLIES_IT_F1 - 3) * (ps)) + (IsFF12 * (ps > NFIREFLIES_IT_F1 - 3) * (ps + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
+            continue;
+#elif defined(REV2)
+          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1)) + (IsFF12 * (ps)))) // skip the FF if it's not enabled via the FF config
+            continue;
+#else
+#error "Define either Rev1 or Rev2"
+#endif
+        }
+        if (args->i2c_dev == I2C_DEVICE_F2) { // FPGA #2
+#ifdef REV1
+          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (ps)) + (IsFF12 * (ps + NFIREFLIES_DAQ_F2)))) // skip the FF if it's not enabled via the FF config
+            continue;
+#elif defined(REV2)
+          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (ps + NFIREFLIES_IT_F2)) + (IsFF12 * (ps)))) // skip the FF if it's not enabled via the FF config
+            continue;
+#else
+#error "Define either Rev1 or Rev2"
+#endif
+        }
         args->updateTick = xTaskGetTickCount();
       }
 
@@ -139,7 +151,7 @@ void MonitorI2CTask(void *parameters)
       int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ps].mux_addr, 1, data);
       if (res != 0) {
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
-        release_break();
+        break;
       }
 
       // Read I2C registers/commands
@@ -163,7 +175,7 @@ void MonitorI2CTask(void *parameters)
           log_warn(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
                    args->commands[c].name, SMBUS_get_error(res), ps);
           args->sm_values[index] = 0xffff;
-          release_break();
+          break;
         }
         else {
           args->sm_values[index] = (uint16_t)masked_output;

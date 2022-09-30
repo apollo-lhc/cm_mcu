@@ -68,6 +68,15 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
+
+struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
+    {"FFL12", &ffl12_f1_args, 0, 0, 6},     //
+    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 3},   //
+    {"FFL12", &ffl12_f1_args, 9, 6, 2},     //
+    {"FFLDAQ", &ffldaq_f2_args, 11, 0, 10}, //
+    {"FFL12", &ffl12_f2_args, 21, 0, 4},    //
+};
+
 #elif defined(REV2)
 // -------------------------------------------------
 //
@@ -97,25 +106,43 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 
 };
+
+struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
+    {"FFL12", &ffl12_f1_args, 0, 0, 6},    //
+    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 4},  //
+    {"FFL12", &ffl12_f2_args, 10, 0, 6},   //
+    {"FFLDAQ", &ffldaq_f2_args, 16, 0, 4}, //
+};
 #else
 #error "Define either Rev1 or Rev2"
 #endif
 
 // FFDAQ arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA1
-
+#ifdef REV1
+struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
+    {"K04 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"K05 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"K06 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
     {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
+
 struct sm_command_t sm_command_ffldaq_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
 
 };
+
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
@@ -138,22 +165,34 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f1[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 
+#ifdef REV1
+struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
+    {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"K01  12 Rx GTH", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"K02  12 Tx GTH", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"K02  12 Rx GTH", FF_I2CMUX_1_ADDR, 3, 0x54}, //
+    {"K03  12 Tx GTH", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"K03  12 Rx GTH", FF_I2CMUX_1_ADDR, 5, 0x54}, //
+    {"K07  12 Tx GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"K07  12 Rx GTY", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"F1_1  12 Tx",
      FF_I2CMUX_1_ADDR, 0, 0x50},                //
@@ -163,6 +202,9 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
     {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
 
@@ -183,17 +225,33 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
 };
 
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
-
+#ifdef REV1
+struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
+    {"V01 4 XCVR GTY", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"V02 4 XCVR GTY", FF_I2CMUX_1_ADDR, 1, 0x50}, //
+    {"V03 4 XCVR GTY", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"V04 4 XCVR GTY", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"V05 4 XCVR GTY", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"V06 4 XCVR GTY", FF_I2CMUX_1_ADDR, 5, 0x50}, //
+    {"V07 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"V08 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"V09 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"V10 4 XCVR GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
     {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
     {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 
 struct sm_command_t sm_command_ffldaq_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
 
@@ -220,22 +278,30 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 
 // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
 struct sm_command_t sm_command_fflit_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f2[] = {
-    {1, 0x00, 0x02, 1, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 1, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
 
 };
 
+#ifdef REV1
+struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
+    {"V11  12 Tx GTY", FF_I2CMUX_1_ADDR, 6, 0x50}, //
+    {"V11  12 Rx GTY", FF_I2CMUX_1_ADDR, 7, 0x54}, //
+    {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
+    {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
+};
+#elif defined(REV2)
 struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
@@ -244,6 +310,9 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
     {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
+#else
+#error "Define either Rev1 or Rev2"
+#endif
 
 uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
 
@@ -438,6 +507,7 @@ void getFFpart()
 
   // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
   uint8_t data1;
+
   data1 = 0x1U << ffl12_f1_args.devices[3].mux_bit;
   log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data1);
   int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data1);
@@ -963,6 +1033,8 @@ void init_registers_ff()
 
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
+  while (xSemaphoreTake(ffldaq_f2_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
 
   // 5a) U103 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
   // All signals are inputs.
@@ -995,6 +1067,10 @@ void init_registers_ff()
   apollo_i2c_ctl_w(3, 0x72, 1, 0x04);
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x07, 1, 0xf0); // 11110000 [P17..P10]
+  xSemaphoreGive(ffldaq_f2_args.xSem);
+
+  while (xSemaphoreTake(ffldaq_f1_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
 
   // 7b) U6 default output values (I2C address 0x22 on I2C channel #3)
   // The outputs on P10 and P11 should default to "1".

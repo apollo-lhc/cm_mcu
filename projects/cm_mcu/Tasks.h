@@ -107,19 +107,25 @@ void MonitorI2CTask(void *parameters);
 
 // REV1
 #ifndef REV2
-#define NFIREFLIES_F1 11
-#define NFIREFLIES_F2 14
+#define NFIREFLY_ARG      5
+#define NFIREFLIES_F1     11
+#define NFIREFLIES_F2     14
+#define NFIREFLIES_IT_F1  8
+#define NFIREFLIES_DAQ_F1 3
+#define NFIREFLIES_IT_F2  4
+#define NFIREFLIES_DAQ_F2 10
 #else // REV2
 // REV 2
-#define NFIREFLIES_F1 10
-#define NFIREFLIES_F2 10
-#endif // REV 2
+#define NFIREFLY_ARG      4
+#define NFIREFLIES_F1     10
+#define NFIREFLIES_F2     10
 #define NFIREFLIES_IT_F1  6
 #define NFIREFLIES_DAQ_F1 4
 #define NFIREFLIES_IT_F2  6
 #define NFIREFLIES_DAQ_F2 4
-#define CLK_PAGE_COMMAND  1
-#define NFIREFLIES        (NFIREFLIES_F1 + NFIREFLIES_F2)
+#endif // REV 2
+#define CLK_PAGE_COMMAND 1
+#define NFIREFLIES       (NFIREFLIES_F1 + NFIREFLIES_F2)
 
 #define VENDOR_START_BIT_FFDAQ 168
 #define VENDOR_STOP_BIT_FFDAQ  184
@@ -141,7 +147,16 @@ struct dev_moni2c_addr_t {
   uint8_t dev_addr; // I2C address of device.
 };
 
+struct arg_moni2c_ff_t {
+  char *ff_part;                    // ff part
+  struct MonitorI2CTaskArgs_t *arg; // ff arg
+  uint8_t int_idx;                  // start idx of this arg in ff_moni2c_addrs
+  uint8_t dev_int_idx;              // start idx of the device in its arg
+  uint8_t num_dev;                  // number of devices in this ff arg.
+};
+
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
+extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
