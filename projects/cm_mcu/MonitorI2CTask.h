@@ -42,19 +42,35 @@ struct MonitorI2CTaskArgs_t {
   UBaseType_t stack_size;              // stack size of task
 };
 
+#ifndef REV2
+#define NSUPPLIES_FFLDAQ_F1 (3)
+#else // REV2
 #define NSUPPLIES_FFLDAQ_F1 (4)
+#endif                        // REV 2
 #define NCOMMANDS_FFLDAQ_F1 4 // number of commands
 #define NPAGES_FFLDAQ_F1    1 // number of pages on the 4-channel firefly ports
 
+#ifndef REV2
+#define NSUPPLIES_FFL12_F1 (8)
+#else // REV1
 #define NSUPPLIES_FFL12_F1 (6)
+#endif                       // REV 2
 #define NCOMMANDS_FFL12_F1 4 // number of commands
 #define NPAGES_FFL12_F1    1 // number of pages on the 12-channel firefly ports
 
+#ifndef REV2
+#define NSUPPLIES_FFLDAQ_F2 (10)
+#else // REV1
 #define NSUPPLIES_FFLDAQ_F2 (4)
+#endif                        // REV 2
 #define NCOMMANDS_FFLDAQ_F2 4 // number of commands
 #define NPAGES_FFLDAQ_F2    1 // number of pages on the 4-channel firefly ports
 
+#ifndef REV2
+#define NSUPPLIES_FFL12_F2 (4)
+#else // REV1
 #define NSUPPLIES_FFL12_F2 (6)
+#endif                       // REV 2
 #define NCOMMANDS_FFL12_F2 4 // number of commands
 #define NPAGES_FFL12_F2    1 // number of pages on the 12-channel firefly ports
 

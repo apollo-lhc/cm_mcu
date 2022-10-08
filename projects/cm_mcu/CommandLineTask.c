@@ -587,7 +587,9 @@ static struct command_t commands[] = {
     {"alm", alarm_ctl, "args: (clear|status|settemp #)\r\nGet or clear status of alarm task.\r\n",
      -1},
     {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
+#ifdef REV2
     {"clkmon", clkmon_ctl, "Displays a table showing the clock chips' statuses given the clock chip id option\r\n", 1},
+#endif // REV2
     {"clock", clock_ctl,
      "args: (1|2)\r\nReset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n", 1},
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM.\r\n", 0},

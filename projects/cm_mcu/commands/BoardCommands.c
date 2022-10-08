@@ -89,7 +89,7 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08lx\r\n", (uint32_t)sn);
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lx\r\n", num);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lu\r\n", num);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lx\r\n", rev);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly USER config: %lx\r\n", ff_USER_mask);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly PRESENT config: %lx\r\n", ff_PRESENT_mask);
