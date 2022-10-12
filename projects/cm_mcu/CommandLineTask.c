@@ -106,7 +106,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s is programming clock %s. \r\n", argv[0], clk_ids[i]);
-  int status = -1;           // shut up clang compiler warning
+  int status = -1; // shut up clang compiler warning
   // grab the semaphore to ensure unique access to I2C controller
   while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
     ;
