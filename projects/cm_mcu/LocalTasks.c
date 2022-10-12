@@ -1299,10 +1299,6 @@ int init_load_clk(int clk_n)
   if (clk_n == 0)
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
 
-  // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
-    ;
-
   int status_r = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "Mux error: %s\r\n", SMBUS_get_error(status_r));
@@ -1321,8 +1317,8 @@ int init_load_clk(int clk_n)
   }
 
   if (PreambleList_row == 0xff) {
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM PreL\r\n");
-    return status_r; // fail reading and exit
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PreL\r\n", clk_ids[clk_n]);
+    return status_r+1; // fail reading and exit
   }
 
   uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
@@ -1334,8 +1330,8 @@ int init_load_clk(int clk_n)
   }
 
   if (RegisterList_row == 0xffff) {
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM RegL\r\n");
-    return status_r; // fail reading and exit
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s RegL\r\n", clk_ids[clk_n]);
+    return status_r+1; // fail reading and exit
   }
 
   uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
@@ -1347,8 +1343,8 @@ int init_load_clk(int clk_n)
   }
 
   if (PostambleList_row == 0xff) {
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM PostL\r\n");
-    return status_r; // fail reading and exit
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PostL\r\n", clk_ids[clk_n]);
+    return status_r+1; // fail reading and exit
   }
 
   log_debug(LOG_SERVICE, "Start programming clock %s\r\n", clk_ids[clk_n]);
@@ -1375,8 +1371,6 @@ int init_load_clk(int clk_n)
     xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
-
-  xSemaphoreGive(clock_args.xSem);
 
   return status_w;
 }

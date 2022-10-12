@@ -107,7 +107,11 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s is programming clock %s. \r\n", argv[0], clk_ids[i]);
   int status = -1;           // shut up clang compiler warning
+  // grab the semaphore to ensure unique access to I2C controller
+  while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
+    ;
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
+  xSemaphoreGive(clock_args.xSem);
   if (status == 0) {
     snprintf(m + copied, SCRATCH_SIZE - copied,
              "clock synthesizer with id %s successfully programmed. \r\n", clk_ids[i]);
