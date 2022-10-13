@@ -163,7 +163,7 @@ void MonitorI2CTask(void *parameters)
         uint8_t page_reg_value = args->commands[c].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, 0x01, 1, page_reg_value);
         if (r != 0) {
-          log_warn(LOG_MONI2C, "SMBUS page failed %s\r\n", SMBUS_get_error(r));
+          log_error(LOG_MONI2C, "SMBUS page failed %s\r\n", SMBUS_get_error(r));
           Print("SMBUS command failed  (setting page)\r\n");
         }
 
@@ -172,8 +172,8 @@ void MonitorI2CTask(void *parameters)
         uint16_t masked_output = output_raw & args->commands[c].bit_mask;
 
         if (res != 0) {
-          log_warn(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
-                   args->commands[c].name, SMBUS_get_error(res), ps);
+          log_error(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
+                    args->commands[c].name, SMBUS_get_error(res), ps);
           args->sm_values[index] = 0xffff;
           break;
         }

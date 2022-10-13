@@ -413,11 +413,11 @@ void setFFmask(uint32_t ff_combined_present)
 
   log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
 
-  //int32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
+  // int32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
 #ifdef REV1
-  uint32_t data = (~ff_combined_present ) & 0x1FFFFFFU;
+  uint32_t data = (~ff_combined_present) & 0x1FFFFFFU;
 #elif defined(REV2)
-  uint32_t data = (~ff_combined_present ) & 0xFFFFFU;
+  uint32_t data = (~ff_combined_present) & 0xFFFFFU;
 #endif // REV1
   ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
   ff_PRESENT_mask = data;
@@ -487,9 +487,9 @@ void readFFpresent()
   uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;    // bottom 6 bits
   uint32_t present_FFL12_TOP_F1 = (present_FFL12_F1 >> 6) & 0x3U; // top 2 bits
   present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 5) & 0x7U;            // bits 5-7
-  present_FFL12_0X20_F2 = (present_0X20_F2 >> 6) & 0x3U;    // bit 6-7
-  present_FFLDAQ_0X20_F2 = present_0X20_F2 & 0x3FU;        // bottom 6 bits
-  present_FFL12_0X21_F2 = (present_0X21_F2 >> 4) & 0x3U;    // bit 4-5
+  present_FFL12_0X20_F2 = (present_0X20_F2 >> 6) & 0x3U;          // bit 6-7
+  present_FFLDAQ_0X20_F2 = present_0X20_F2 & 0x3FU;               // bottom 6 bits
+  present_FFL12_0X21_F2 = (present_0X21_F2 >> 4) & 0x3U;          // bit 4-5
   present_FFLDAQ_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;         // bit 4 bits
 
   uint32_t ff_combined_present = ((present_FFL12_0X21_F2) << 23) |  // 2 bits
@@ -499,9 +499,6 @@ void readFFpresent()
                                  ((present_FFL12_TOP_F1) << 9) |    // 2 bits
                                  (present_FFLDAQ_F1) << 6 |         // 3 bits
                                  ((present_FFL12_BOTTOM_F1));       // 6 bits
-
-
-
 
 #elif defined(REV2)
   present_FFL12_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
