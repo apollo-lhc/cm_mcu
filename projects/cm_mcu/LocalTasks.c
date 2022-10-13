@@ -1289,7 +1289,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
 
 int init_load_clk(int clk_n)
 {
-
+  // this function requires semaphore give/take at a larger scope to handle its task.
   while (getPowerControlState() != POWER_ON) {
     vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
   }
@@ -1312,39 +1312,36 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PreL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(clock_args.xSem);
     return status_r; // fail reading and exit
   }
 
   if (PreambleList_row == 0xff) {
     log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PreL\r\n", clk_ids[clk_n]);
-    return status_r + 1; // fail reading and exit
+    return 1; // fail reading and exit
   }
 
   uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "RL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(clock_args.xSem);
     return status_r; // fail reading and exit
   }
 
   if (RegisterList_row == 0xffff) {
     log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s RegL\r\n", clk_ids[clk_n]);
-    return status_r + 1; // fail reading and exit
+    return 1; // fail reading and exit
   }
 
   uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PosL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(clock_args.xSem);
     return status_r; // fail reading and exit
   }
 
   if (PostambleList_row == 0xff) {
     log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PostL\r\n", clk_ids[clk_n]);
-    return status_r + 1; // fail reading and exit
+    return 1; // fail reading and exit
   }
 
   log_debug(LOG_SERVICE, "Start programming clock %s\r\n", clk_ids[clk_n]);
@@ -1352,7 +1349,6 @@ int init_load_clk(int clk_n)
   int status_w = load_clk_registers(PreambleList_row, init_preamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PreL write error %d\r\n", status_w);
-    xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
@@ -1360,7 +1356,6 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(RegisterList_row, init_register_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "RegL write error %d\r\n", status_w);
-    xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
@@ -1368,7 +1363,6 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(PostambleList_row, init_postamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PosL write error %d\r\n", status_w);
-    xSemaphoreGive(clock_args.xSem);
     return status_w;
   }
 
