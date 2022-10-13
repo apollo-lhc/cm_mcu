@@ -15,6 +15,7 @@
 #include "common/pinsel.h"
 #include "inc/hw_hibernate.h"
 #include "driverlib/hibernate.h"
+#include "Tasks.h"
 
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char *m)
@@ -40,19 +41,24 @@ BaseType_t set_board_id(int argc, char **argv, char *m)
     return pdFALSE;
   }
 
-  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
-  xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
-
-  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr, data);
-  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-  uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
-  xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
-
   if (pass != 0x12345678) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "Wrong password. Type eeprom_info to get password.");
   } // data not printing correctly?
+  else {
+    uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, pass);
+    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, addr, data);
+    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+    uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
+    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+
+    if (addr == ADDR_FF) {
+      ff_USER_mask = data;
+    }
+  }
 
   return pdFALSE;
 }
@@ -62,7 +68,7 @@ BaseType_t set_board_id_password(int argc, char **argv, char *m)
 {
   int copied = 0;
 
-  uint64_t message = EPRMMessage((uint64_t)EPRM_PASS_SET, 0, 0x12345678);
+  uint64_t message = EPRMMessage((uint64_t)EPRM_PASS_SET, 0, PASS);
   xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Block locked\r\n");
@@ -76,7 +82,6 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
   ;
 
   uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
-  uint32_t ff = read_eeprom_single(EEPROM_ID_FF_ADDR);
   uint32_t ps = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
 
   uint32_t num = (uint32_t)sn >> 16;
@@ -86,12 +91,58 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lu\r\n", num);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lx\r\n", rev);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly config: %lx\r\n", ff);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly USER config: %lx\r\n", ff_USER_mask);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly PRESENT config: %lx\r\n", ff_PRESENT_mask);
   // copied += // this is here to remind you to update `copied` if you add more lines
   snprintf(m + copied, SCRATCH_SIZE - copied, "PS ignore mask: %lx\r\n", ps);
 
   return pdFALSE;
 }
+
+BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
+{
+
+  if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff) {
+    uint32_t board_id, rev, ps_mask, data;
+    board_id = strtoul(argv[1], NULL, 16);
+    rev = strtoul(argv[2], NULL, 16);
+    ff_USER_mask = strtoul(argv[3], NULL, 16);
+    ps_mask = strtoul(argv[4], NULL, 16);
+    snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mask %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
+
+    data = (board_id << 16) + rev;
+    uint64_t block = EEPROMBlockFromAddr(ADDR_ID);
+
+    uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
+    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_ID, data);
+    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+    data = ff_USER_mask;
+
+    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
+    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+    data = ps_mask;
+
+    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_PS, data);
+    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+    uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
+    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+  }
+  else {
+    uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
+
+    uint32_t num = (uint32_t)sn >> 16;
+    uint32_t rev = ((uint32_t)sn) & 0xff;
+    snprintf(m, SCRATCH_SIZE, "This is not the first-time loading MCU FW to board #%lx (rev %lx) \r\n", num, rev);
+  }
+
+  return pdFALSE;
+}
+
 #if defined(REV2)
 BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
 {

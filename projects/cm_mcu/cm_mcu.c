@@ -54,13 +54,11 @@
 #include "stream_buffer.h"
 #include "semphr.h"
 #include "portmacro.h"
+#include "Semaphore.h"
 
 #define I2C0_SLAVE_ADDRESS 0x40
 
 uint32_t g_ui32SysClock = 0;
-
-// Mutex for UART -- should really have one for each UART
-static SemaphoreHandle_t xUARTMutex = NULL;
 
 void Print(const char *str)
 {
@@ -253,20 +251,14 @@ int main(void)
   }
 
   // mutex for the UART output
-  xUARTMutex = xSemaphoreCreateMutex();
-  // mutex for I2C controller for the power supplies
-  dcdc_args.xSem = xSemaphoreCreateMutex();
-
-  SemaphoreHandle_t i2c4_sem = xSemaphoreCreateMutex();
+  initSemaphores();
+  dcdc_args.xSem = i2c1_sem;
   ffl12_f1_args.xSem = i2c4_sem;
   ffldaq_f1_args.xSem = i2c4_sem;
-  SemaphoreHandle_t i2c3_sem = xSemaphoreCreateMutex();
   ffl12_f2_args.xSem = i2c3_sem;
   ffldaq_f2_args.xSem = i2c3_sem;
-  SemaphoreHandle_t i2c2_sem = xSemaphoreCreateMutex();
   clock_args.xSem = i2c2_sem;
   clockr0a_args.xSem = i2c2_sem;
-
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
 #ifdef REV1
@@ -335,6 +327,7 @@ int main(void)
   // -------------------------------------------------
   // Initialize all the queues
   // queue for the LED
+
   xLedQueue = xQueueCreate(3,                 // The maximum number of items the queue can hold.
                            sizeof(uint32_t)); // The size of each item.
   configASSERT(xLedQueue != NULL);

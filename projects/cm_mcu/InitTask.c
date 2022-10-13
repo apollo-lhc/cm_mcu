@@ -20,6 +20,7 @@
 #include "common/log.h"
 #include "Tasks.h"
 #include "MonitorI2CTask.h"
+#include "Semaphore.h"
 
 void InitTask(void *parameters)
 {
@@ -41,20 +42,20 @@ void InitTask(void *parameters)
 #endif                  // REV1
   init_registers_ff();  // initalize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
   init_registers_clk(); // initalize I/O expander for clocks
+  readFFpresent();
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
 #ifdef REV2
   // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(clock_args.xSem, (TickType_t)10) == pdFALSE)
+  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
     ;
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM
   }
-  xSemaphoreGive(clock_args.xSem);
+  xSemaphoreGive(i2c2_sem);
   log_info(LOG_SERVICE, "Clocks configured\r\n");
   getFFpart(); // the order of where to check FF part matters -- it won't be able to read anything if check sooner
 #endif         // REV2
   vTaskSuspend(NULL);
-
   // Delete this task
   vTaskDelete(xTaskGetCurrentTaskHandle());
 }
