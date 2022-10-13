@@ -1401,7 +1401,7 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
 
 int init_load_clk(int clk_n)
 {
-
+  // this function requires semaphore give/take at a larger scope to handle its task.
   while (getPowerControlState() != POWER_ON) {
     vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
   }
@@ -1428,8 +1428,8 @@ int init_load_clk(int clk_n)
   }
 
   if (PreambleList_row == 0xff) {
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM PreL\r\n");
-    return status_r; // fail reading and exit
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PreL\r\n", clk_ids[clk_n]);
+    return 1; // fail reading and exit
   }
 
   uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
@@ -1440,8 +1440,8 @@ int init_load_clk(int clk_n)
   }
 
   if (RegisterList_row == 0xffff) {
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM RegL\r\n");
-    return status_r; // fail reading and exit
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s RegL\r\n", clk_ids[clk_n]);
+    return 1; // fail reading and exit
   }
 
   uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
@@ -1452,8 +1452,8 @@ int init_load_clk(int clk_n)
   }
 
   if (PostambleList_row == 0xff) {
-    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM PostL\r\n");
-    return status_r; // fail reading and exit
+    log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PostL\r\n", clk_ids[clk_n]);
+    return 1; // fail reading and exit
   }
 
   log_debug(LOG_SERVICE, "Start programming clock %s\r\n", clk_ids[clk_n]);
