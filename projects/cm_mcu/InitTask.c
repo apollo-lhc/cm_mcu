@@ -20,6 +20,7 @@
 #include "common/log.h"
 #include "Tasks.h"
 #include "MonitorI2CTask.h"
+#include "Semaphore.h"
 
 void InitTask(void *parameters)
 {
@@ -44,11 +45,13 @@ void InitTask(void *parameters)
   readFFpresent();
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
 #ifdef REV2
+  // grab the semaphore to ensure unique access to I2C controller
+  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
+    ;
   for (int i = 0; i < 5; ++i) {
-    if (i == 1 || i == 4)
-      continue;
     init_load_clk(i); // load each clock config from EEPROM
   }
+  xSemaphoreGive(i2c2_sem);
   log_info(LOG_SERVICE, "Clocks configured\r\n");
   getFFpart(); // the order of where to check FF part matters -- it won't be able to read anything if check sooner
 #endif         // REV2

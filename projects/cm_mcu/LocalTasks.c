@@ -1411,10 +1411,6 @@ int init_load_clk(int clk_n)
   if (clk_n == 0)
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
 
-  // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
-    ;
-
   int status_r = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "Mux error: %s\r\n", SMBUS_get_error(status_r));
@@ -1428,7 +1424,6 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PreL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(i2c2_sem);
     return status_r; // fail reading and exit
   }
 
@@ -1441,7 +1436,6 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "RL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(i2c2_sem);
     return status_r; // fail reading and exit
   }
 
@@ -1454,7 +1448,6 @@ int init_load_clk(int clk_n)
   status_r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "PosL read error: %s\r\n", SMBUS_get_error(status_r));
-    xSemaphoreGive(i2c2_sem);
     return status_r; // fail reading and exit
   }
 
@@ -1468,7 +1461,6 @@ int init_load_clk(int clk_n)
   int status_w = load_clk_registers(PreambleList_row, init_preamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PreL write error %d\r\n", status_w);
-    xSemaphoreGive(i2c2_sem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
@@ -1476,7 +1468,6 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(RegisterList_row, init_register_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "RegL write error %d\r\n", status_w);
-    xSemaphoreGive(i2c2_sem);
     return status_w;
   }
   vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum delay
@@ -1484,11 +1475,8 @@ int init_load_clk(int clk_n)
   status_w = load_clk_registers(PostambleList_row, init_postamble_page, i2c_addrs);
   if (status_w != 0) {
     log_error(LOG_SERVICE, "PosL write error %d\r\n", status_w);
-    xSemaphoreGive(i2c2_sem);
     return status_w;
   }
-
-  xSemaphoreGive(i2c2_sem);
 
   return status_w;
 }
