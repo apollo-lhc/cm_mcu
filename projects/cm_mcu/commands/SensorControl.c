@@ -870,12 +870,11 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         if (strncmp(argv[2], "on", 2) == 0) {
           val = 0xFF;
         }
-        set_xcvr_cdr(val, channel); 
+        set_xcvr_cdr(val, channel);
         return pdFALSE;
       }
       else if (strncmp(argv[1], "xmit", 4) == 0) {
         bool disable = true;
-        return pdFALSE;
         if (strncmp(argv[2], "on", 2) == 0) {
           disable = false;
         }
