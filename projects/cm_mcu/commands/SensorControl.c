@@ -866,28 +866,29 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
       if (channel > NFIREFLIES)
         channel = NFIREFLIES;
       if (strncmp(argv[1], "cdr", 3) == 0) {
-        set_xcvr_cdr(0x00, channel); // default: disable
-        return pdFALSE;
+        uint8_t val = 0x00U; // default to off
         if (strncmp(argv[2], "on", 2) == 0) {
-          set_xcvr_cdr(0xff, channel);
-          return pdFALSE;
+          val = 0xFF;
         }
+        set_xcvr_cdr(val, channel); 
+        return pdFALSE;
       }
       else if (strncmp(argv[1], "xmit", 4) == 0) {
-        disable_transmit(true, channel);
+        bool disable = true;
         return pdFALSE;
         if (strncmp(argv[2], "on", 2) == 0) {
-          disable_transmit(false, channel);
-          return pdFALSE;
+          disable = false;
         }
+        disable_transmit(disable, channel);
+        return pdFALSE;
       }
       else if (strncmp(argv[1], "rcvr", 4) == 0) {
-        disable_receivers(true, channel);
-        return pdFALSE;
+        bool disable = true;
         if (strncmp(argv[2], "on", 2) == 0) {
-          disable_receivers(false, channel);
-          return pdFALSE;
+          disable = false;
         }
+        disable_receivers(disable, channel);
+        return pdFALSE;
       }
       // Add here
       else if (strncmp(argv[1], "regr", 4) == 0) {
