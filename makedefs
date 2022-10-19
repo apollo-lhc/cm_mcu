@@ -246,6 +246,7 @@ CFLAGS=                     \
        -fno-rtti            \
        -fomit-frame-pointer \
        -Wno-format          \
+       -Wunreachable-code   \
        -c
 
 ifdef DEBUG
@@ -377,5 +378,3 @@ ${COMPILER}${SUFFIX}/%.axf:
 	      '${LIBM}' '${LIBC}'  '${LIBGCC}' 
 	@${OBJCOPY} -O binary ${@} ${@:.axf=.bin}
 	@${SIZE} ${@}
-
-
