@@ -155,7 +155,7 @@ float getADCtargetValue(const int i)
 
 // there is a lot of copy-paste in the following functions,
 // but it makes it very clear what's going on here.
-static void initADC1FirstSequence()
+static void initADC1FirstSequence(void)
 {
 
   ROM_ADCSequenceDisable(ADC1_BASE, 0);
@@ -176,7 +176,7 @@ static void initADC1FirstSequence()
   ROM_ADCIntClear(ADC1_BASE, 0);
 }
 
-static void initADC1SecondSequence()
+static void initADC1SecondSequence(void)
 {
   ROM_ADCSequenceDisable(ADC1_BASE, 0);
 
@@ -190,7 +190,7 @@ static void initADC1SecondSequence()
   ROM_ADCIntClear(ADC1_BASE, 0);
 }
 
-static void initADC0FirstSequence()
+static void initADC0FirstSequence(void)
 {
   ROM_ADCSequenceDisable(ADC0_BASE, 1);
   ROM_ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
@@ -202,7 +202,7 @@ static void initADC0FirstSequence()
   ROM_ADCIntClear(ADC0_BASE, 1);
 }
 
-static void initADC0SecondSequence()
+static void initADC0SecondSequence(void)
 {
   ROM_ADCSequenceDisable(ADC0_BASE, 1);
   ROM_ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
