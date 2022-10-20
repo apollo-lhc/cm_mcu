@@ -22,8 +22,7 @@
 #include "FreeRTOSConfig.h"
 #include "InterruptHandlers.h"
 
-
-        // Prototypes/Declarations:
+// Prototypes/Declarations:
 static void IntDefaultHandler(void);
 
 //*****************************************************************************
@@ -39,14 +38,14 @@ const uint32_t *getSystemStack(void)
 }
 
 //
-// Macros: 
+// Macros:
 
 // Macro to create a weakly aliased placeholder interrupt that points to the
 // default interrupt handler.
 // This allows us to define proper strongly defined interrupt handlers
 // anywhere in the project and have them override the default interrupt
 // handler (taken care of by the linker) without us having to edit this file.
-#define DEFINE_HANDLER(NAME)                                                                       \
+#define DEFINE_HANDLER(NAME) \
   void NAME##_handler(void) __attribute__((used, weak, alias("__default_int_handler")))
 
 // Macro to generate function name of an aliased placeholder interrupt.
@@ -334,7 +333,7 @@ extern int main(void);
 // (i.e. one that does not have a strongly defined interrupt handler) is
 // triggered.
 void __default_int_handler(void)
-{ 
+{
   while (1)
     ;
 }

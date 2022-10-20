@@ -991,7 +991,7 @@ void initFPGAMon(void)
   write_gpio_pin(JTAG_FROM_SM, 1);
   write_gpio_pin(FPGA_CFG_FROM_FLASH, 0);
   write_gpio_pin(F1_FPGA_PROGRAM, 0);
-#endif        // not REV1
+#endif // not REV1
 #ifndef DEBUG // todo: just log this
   configASSERT(f1_enable || f2_enable);
 #endif // DEBUG
@@ -1489,7 +1489,7 @@ int init_load_clk(int clk_n)
 // FPGA) to set these bits. In Rev2 we don't need to do a read/modify/write
 // cycle because the other relevant bits are either inputs and the write does not
 // affect them, or active high resets (bit0). See schematic pages 4.05 and 4.06.
-// For each FPGA (F1 and F2), 
+// For each FPGA (F1 and F2),
 // FF_1-FF3 are selectable. bit mask is 0x0e
 
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
@@ -1505,7 +1505,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
   static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
   // loop over 2 i2c modules
   for (int i = 0; i < 2; ++i) {
-    if ( ffmask[i] == 0 ) { // this device is not selected
+    if (ffmask[i] == 0) { // this device is not selected
       continue;
     }
     // grab the relevant semaphore

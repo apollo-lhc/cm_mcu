@@ -292,7 +292,7 @@ static void init_event(log_Event *ev, void *udata)
 {
 #ifdef REV1 // no RTC in Rev1
   ev->time = xTaskGetTickCount();
-#else  // REV2 and later
+#else // REV2 and later
   struct tm now;
   ROM_HibernateCalendarGet(&now);
   if (now.tm_year < 120) { // RTC not yet set

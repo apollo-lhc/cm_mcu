@@ -335,15 +335,15 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
 BaseType_t v38_ctl(int argc, char **argv, char *m)
 {
   bool turnOn = true;
-  if ( strncmp(argv[1], "off", 3)==0)
+  if (strncmp(argv[1], "off", 3) == 0)
     turnOn = false;
   BaseType_t whichFF = atoi(argv[2]);
-  if ( whichFF<1 || whichFF>2 ) {
+  if (whichFF < 1 || whichFF > 2) {
     snprintf(m, SCRATCH_SIZE, "%s: should be 1 or 2 for F1/F2 (got %s)\r\n", argv[0], argv[2]);
     return pdFALSE;
   }
-  UBaseType_t ffmask[2] = {0,0};
-  ffmask[whichFF-1] = 0xe;
+  UBaseType_t ffmask[2] = {0, 0};
+  ffmask[whichFF - 1] = 0xe;
   enable_3v8(ffmask, !turnOn);
   snprintf(m, SCRATCH_SIZE, "%s: 3V8 turned %s for F%ld\r\n", argv[0],
            turnOn == true ? "on" : "off", whichFF);
