@@ -329,6 +329,7 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#ifdef REV2
 // interface to 3.8 V
 // interface: v38 on|off 1|2
 BaseType_t v38_ctl(int argc, char **argv, char *m)
@@ -348,3 +349,4 @@ BaseType_t v38_ctl(int argc, char **argv, char *m)
            turnOn == true ? "on" : "off", whichFF);
   return pdFALSE;
 }
+#endif // REV2
