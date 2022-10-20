@@ -159,6 +159,7 @@ struct arg_moni2c_ff_t {
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 
+// Samtec firefly specific commands
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
@@ -178,7 +179,10 @@ extern uint32_t ff_USER_mask;
 #define ADDR_PS 0x48 // internal eeprom block for ps ignore fail
 #define PASS    0x12345678
 
-// ff_ctl
+// Enable or disable the 3.8V power supplies for the SamTec Fireflies
+int enable_3v8(UBaseType_t ffmask[2], bool turnOff);
+
+// ff_ctl end
 // control the LED
 void LedTask(void *parameters);
 

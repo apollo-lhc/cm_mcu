@@ -31,6 +31,7 @@
 #include "I2CCommunication.h"
 #include "common/log.h"
 #include "common/printf.h"
+#include "inc/hw_memmap.h"
 
 // local prototype
 void Print(const char *str);
@@ -1488,28 +1489,44 @@ int init_load_clk(int clk_n)
 // FPGA) to set these bits. In Rev2 we don't need to do a read/modify/write
 // cycle because the other relevant bits are either inputs and the write does not
 // affect them, or active high resets (bit0). See schematic pages 4.05 and 4.06.
+// For each FPGA (F1 and F2), 
+// FF_1-FF3 are selectable. bit mask is 0x0e
+
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
 {
   // i2cw 4 0x71 1 0x40
   // i2cwr 4 0x21 1 0x03 1 0x0f
-
-  //
-  for (int i = 0; i < 2; ++i) { // loop over i2c modules
+  SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
+  uint32_t i2c_device[2] = {4, 3};
+  static const UBaseType_t mask = 0xeU;    // which bits in the i/o expander
+  static const uint8_t muxbit = 0x1U << 6; // which output of the mux
+  static const uint8_t muxaddr = 0x71;     // address of mux on i2c bus
+  static const uint8_t ioexp_addr = 0x21;  // address of i/o expander on i2c bus
+  static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
+  // loop over 2 i2c modules
+  for (int i = 0; i < 2; ++i) {
+    if ( ffmask[i] == 0 ) { // this device is not selected
+      continue;
+    }
     // grab the relevant semaphore
-    xSemaphoreTake(ffl12_f1_args.xSem, 0); // blocks eternally
+    xSemaphoreTake(semaphores[i], 0); // blocks eternally
 
-    int result = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, 71, 1, 0x40);
+    // mux setting
+    int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
     if (result) {
-      log_warn(LOG_I2C, "semaphore error %d\r\n", result);
+      log_warn(LOG_I2C, "mux err %d\r\n", result);
     }
     else {
-      result = apollo_i2c_ctl_reg_w(4, 21, 1, 0x03, 1, ffmask[i]);
+      // mask out extra bits
+      UBaseType_t val = ffmask[i] & mask;
+      val |= 0x1; // make sure active low reset bit stays deasserted
+      result = apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
       if (result) {
-        log_warn(LOG_I2C, "expander write %d\r\n", result);
+        log_warn(LOG_I2C, "expand wr %d\r\n", result);
       }
     }
     // release the semaphore
-    xSemaphoreGive(ffl12_f2_args.xSem); 
+    xSemaphoreGive(semaphores[i]);
   }
   return 0;
 }
