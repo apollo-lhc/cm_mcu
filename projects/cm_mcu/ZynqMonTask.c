@@ -73,17 +73,17 @@ void setZYNQMonTestData(uint8_t sensor, uint16_t value)
   testdata = value;
 }
 
-uint8_t getZYNQMonTestMode()
+uint8_t getZYNQMonTestMode(void)
 {
   return testmode;
 }
 
-uint8_t getZYNQMonTestSensor()
+uint8_t getZYNQMonTestSensor(void)
 {
   return testaddress;
 }
 
-uint16_t getZYNQMonTestData()
+uint16_t getZYNQMonTestData(void)
 {
   return testdata;
 }
@@ -121,7 +121,7 @@ extern uint32_t g_ui32SysClock;
 tSoftUART g_sUART;
 
 // For REV 1
-void InitSUART()
+void InitSUART(void)
 {
 
   // Initialize the software UART instance data.
@@ -367,7 +367,7 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
 
 #ifdef REV1
 // this code will ultimately be generated from the YAML file
-void zm_fill_structs()
+void zm_fill_structs(void)
 {
   // firefly, size 25
   zm_set_firefly_temps(&zynqmon_data[0], 0);
