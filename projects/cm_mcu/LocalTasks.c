@@ -1509,7 +1509,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       continue;
     }
     // grab the relevant semaphore
-    xSemaphoreTake(semaphores[i], 0); // blocks eternally
+    xSemaphoreTake(semaphores[i], portMAX_DELAY); // blocks eternally
 
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);

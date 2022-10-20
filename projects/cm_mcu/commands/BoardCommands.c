@@ -341,7 +341,7 @@ BaseType_t v38_ctl(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "%s: should be 1 or 2 for F1/F2 (got %s)\r\n", argv[0], argv[2]);
     return pdFALSE;
   }
-  UBaseType_t ffmask[2];
+  UBaseType_t ffmask[2] = {0,0};
   ffmask[whichFF-1] = 0xe;
   enable_3v8(ffmask, !turnOn);
   snprintf(m, SCRATCH_SIZE, "%s: 3V8 turned %s for F%ld\r\n", argv[0],
