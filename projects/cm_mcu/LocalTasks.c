@@ -435,7 +435,7 @@ void setFFmask(uint32_t ff_combined_present)
   return;
 }
 
-void readFFpresent()
+void readFFpresent(void)
 {
 
   while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
@@ -528,7 +528,7 @@ bool isEnabledFF(int ff)
   }
 }
 
-int getFFcheckStale()
+int getFFcheckStale(void)
 {
   TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
   TickType_t last[4];
@@ -593,7 +593,7 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-void getFFpart()
+void getFFpart(void)
 {
 
   while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
@@ -962,11 +962,11 @@ struct MonitorTaskArgs_t dcdc_args = {
 
 static int fpga_f1 = -1;
 static int fpga_f2 = -1;
-int get_f1_index()
+int get_f1_index(void)
 {
   return fpga_f1;
 }
-int get_f2_index()
+int get_f2_index(void)
 {
   return fpga_f2;
 }
@@ -981,7 +981,7 @@ void set_f2_index(int index)
   return;
 }
 
-void initFPGAMon()
+void initFPGAMon(void)
 {
   // check if we are to include both FPGAs or not
   bool f1_enable = isFPGAF1_PRESENT();

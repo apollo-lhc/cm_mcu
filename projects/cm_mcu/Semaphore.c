@@ -16,7 +16,7 @@ SemaphoreHandle_t i2c4_sem = 0;
 SemaphoreHandle_t i2c5_sem = 0;
 SemaphoreHandle_t i2c6_sem = 0;
 
-void initSemaphores()
+void initSemaphores(void)
 {
   xUARTMutex = xSemaphoreCreateMutex();
   i2c1_sem = xSemaphoreCreateMutex();

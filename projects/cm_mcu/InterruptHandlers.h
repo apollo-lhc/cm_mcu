@@ -51,13 +51,13 @@ void SMBusMasterIntHandler6(void);
 
 // I2C Slave
 extern TaskHandle_t TaskNotifyI2CSlave;
-void I2CSlave0Interrupt();
+void I2CSlave0Interrupt(void);
 
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
 
-void ADCSeq0Interrupt();
-void ADCSeq1Interrupt();
+void ADCSeq0Interrupt(void);
+void ADCSeq1Interrupt(void);
 
 #ifdef REV1
 // soft UART

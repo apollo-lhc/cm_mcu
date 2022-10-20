@@ -820,8 +820,9 @@ static BaseType_t help_command_fcn(int argc, char **argv, char *m)
 static int execute(void *p, int argc, char **argv)
 {
   struct microrl_user_data_t *userdata = p;
+  uint32_t base = userdata->uart_base;
 
-  UARTPrint(userdata->uart_base, "\r\n"); // the microrl does not terminate the active command
+  UARTPrint(base, "\r\n"); // the microrl does not terminate the active command
 
   // find the command in the list
   // argc here includes the actual command itself, so the
@@ -831,11 +832,11 @@ static int execute(void *p, int argc, char **argv)
       if ((argc == commands[i].num_args + 1) || commands[i].num_args < 0) {
         int retval = commands[i].interpreter(argc, argv, m);
         if (m[0] != '\0')
-          UARTPrint(userdata->uart_base, m);
+          UARTPrint(base, m);
         while (retval == pdTRUE) {
           retval = commands[i].interpreter(argc, argv, m);
           if (m[0] != '\0')
-            UARTPrint(userdata->uart_base, m);
+            UARTPrint(base, m);
         }
         m[0] = '\0';
         return 0;
@@ -844,14 +845,14 @@ static int execute(void *p, int argc, char **argv)
         snprintf(m, SCRATCH_SIZE,
                  "Wrong number of arguments for command %s: %d expected, got %d\r\n", argv[0],
                  commands[i].num_args, argc - 1);
-        UARTPrint(userdata->uart_base, m);
+        UARTPrint(base, m);
         return 0;
       }
     }
   }
-  UARTPrint(userdata->uart_base, "Command unknown: ");
-  UARTPrint(userdata->uart_base, argv[0]);
-  UARTPrint(userdata->uart_base, "\r\n");
+  UARTPrint(base, "Command unknown: ");
+  UARTPrint(base, argv[0]);
+  UARTPrint(base, "\r\n");
 
   return 0;
 }

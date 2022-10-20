@@ -87,20 +87,20 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_ENTRY_TIMESTAMP_MINS(w)  (EBUF_ENTRY_TIMESTAMP(w) % 60) // minutes in the hour
 
 void errbuffer_init(uint8_t minblk, uint8_t maxblk);
-void errbuffer_reset();
+void errbuffer_reset(void);
 void errbuffer_put(uint16_t errcode, uint16_t errdata);
 void errbuffer_get(const uint32_t num, uint32_t (*arrptr)[num]);
 
 // this version bypasses the gatekeeper task and should only be used in ISR only
 void errbuffer_put_raw(uint16_t errcode, uint16_t errdata);
 
-uint32_t errbuffer_capacity();
-uint32_t errbuffer_minaddr();
-uint32_t errbuffer_maxaddr();
-uint32_t errbuffer_head();
-uint16_t errbuffer_last();
-uint16_t errbuffer_counter();
-uint16_t errbuffer_continue();
+uint32_t errbuffer_capacity(void);
+uint32_t errbuffer_minaddr(void);
+uint32_t errbuffer_maxaddr(void);
+uint32_t errbuffer_head(void);
+uint16_t errbuffer_last(void);
+uint16_t errbuffer_counter(void);
+uint16_t errbuffer_continue(void);
 
 uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata);
 
@@ -111,11 +111,11 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s);
 // specific error functions
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);
 void errbuffer_power_fail(uint16_t failmask);
-void errbuffer_power_fail_clear();
+void errbuffer_power_fail_clear(void);
 
 // timers used for FreeRTOS accounting
 void stopwatch_reset(void);
-uint32_t stopwatch_getticks();
+uint32_t stopwatch_getticks(void);
 
 // freertos tick compare including rollover
 bool checkStale(int oldTime, int newTime);

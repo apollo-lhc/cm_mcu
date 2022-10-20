@@ -9,8 +9,8 @@
 #ifndef PROJECTS_CM_MCU_CLOCKSYNTH_H_
 #define PROJECTS_CM_MCU_CLOCKSYNTH_H_
 
-int initialize_clock();
-int load_clock();
+int initialize_clock(void);
+int load_clock(void);
 
 #define CLOCK_I2C_BASE                                2
 #define CLOCK_SYNTH_I2C_ADDRESS                       0x77

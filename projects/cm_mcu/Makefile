@@ -41,7 +41,8 @@ CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 ifeq (${COMPILER}, clang)
 ## for clang complaining about FreeRTOS code
 ## this is not the right way to solve this
-CFLAGS+=-Wno-int-in-bool-context
+CFLAGS+= -Wno-int-in-bool-context \
+         -Wstrict-prototypes
 endif
 
 #

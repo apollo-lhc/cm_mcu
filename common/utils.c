@@ -218,7 +218,7 @@ static error_buffer_t errbuf = {
     .minaddr = 0, .maxaddr = 0, .head = 0, .capacity = 0, .last = 0, .counter = 0};
 const errbuf_handle_t ebuf = &errbuf;
 
-uint32_t decrease_head()
+uint32_t decrease_head(void)
 {
   uint32_t head = ebuf->head - 4;
   if (head < ebuf->minaddr) {
@@ -226,7 +226,7 @@ uint32_t decrease_head()
   }
   return head;
 }
-uint32_t increase_head()
+uint32_t increase_head(void)
 {
   uint32_t head = ebuf->head + 4;
   if (head > ebuf->maxaddr) {
@@ -235,7 +235,7 @@ uint32_t increase_head()
   return head;
 }
 
-uint32_t errbuffer_findhead()
+uint32_t errbuffer_findhead(void)
 {
   uint32_t ahead = ebuf->minaddr, head = ahead, cap = ebuf->capacity;
   uint32_t previous = 1, i = 0;
@@ -397,31 +397,31 @@ void errbuffer_get(const uint32_t num, uint32_t (*arrptr)[num])
   return;
 }
 
-uint32_t errbuffer_capacity()
+uint32_t errbuffer_capacity(void)
 {
   return ebuf->capacity;
 }
-uint32_t errbuffer_minaddr()
+uint32_t errbuffer_minaddr(void)
 {
   return ebuf->minaddr;
 }
-uint32_t errbuffer_maxaddr()
+uint32_t errbuffer_maxaddr(void)
 {
   return ebuf->maxaddr;
 }
-uint32_t errbuffer_head()
+uint32_t errbuffer_head(void)
 {
   return ebuf->head;
 }
-uint16_t errbuffer_last()
+uint16_t errbuffer_last(void)
 {
   return ebuf->last;
 }
-uint16_t errbuffer_counter()
+uint16_t errbuffer_counter(void)
 {
   return ebuf->counter;
 }
-uint16_t errbuffer_continue()
+uint16_t errbuffer_continue(void)
 {
   return ebuf->n_continue;
 }
@@ -455,7 +455,7 @@ void errbuffer_power_fail(uint16_t failmask)
   errbuffer_put(EBUF_CONTINUATION, failmask & 0xFFU);
 }
 
-void errbuffer_power_fail_clear()
+void errbuffer_power_fail_clear(void)
 {
   errbuffer_put(EBUF_PWR_FAILURE_CLR, 0);
 }
@@ -484,7 +484,7 @@ void stopwatch_reset(void)
   counter = prev_count = 0U;
 }
 
-uint32_t stopwatch_getticks()
+uint32_t stopwatch_getticks(void)
 {
   uint32_t curr_count = CPU_CYCLES;
   uint32_t diff = curr_count - prev_count;

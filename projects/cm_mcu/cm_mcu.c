@@ -87,7 +87,7 @@ void __error__(char *pcFilename, uint32_t ui32Line)
 }
 #endif
 
-void SystemInit()
+void SystemInit(void)
 {
   //
   // Run from the PLL, internal oscillator, at the defined clock speed configCPU_CLOCK_HZ
@@ -100,7 +100,7 @@ void SystemInit()
 }
 // This set of functions partially contains calls that require
 // the FreeRTOS to be further configured.
-void SystemInitInterrupts()
+void SystemInitInterrupts(void)
 {
   // Set up the UARTs for the CLI
   // this also sets up the interrupts
@@ -216,18 +216,18 @@ CommandLineTaskArgs_t cli_uart;
 CommandLineTaskArgs_t cli_uart4;
 #endif // REV1
 
-void ShortDelay()
+void ShortDelay(void)
 {
   vTaskDelay(pdMS_TO_TICKS(25));
 }
 
-const char *buildTime()
+const char *buildTime(void)
 {
   const char *btime = __TIME__ ", " __DATE__;
   return btime;
 }
 
-const char *gitVersion()
+const char *gitVersion(void)
 {
 #ifdef DEBUG
 #define BUILD_TYPE "DEBUG build"
@@ -388,7 +388,7 @@ void __stack_chk_fail(void)
     ;
 }
 
-int SystemStackWaterHighWaterMark()
+int SystemStackWaterHighWaterMark(void)
 {
   int i;
   const uint32_t *stack = getSystemStack();
@@ -454,7 +454,7 @@ void vApplicationIdleHook(void)
 #endif
 
 #if (configUSE_MALLOC_FAILED_HOOK == 1)
-void vApplicationMallocFailedHook()
+void vApplicationMallocFailedHook(void)
 {
   for (;;)
     ;

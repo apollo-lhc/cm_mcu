@@ -33,7 +33,7 @@ static void IntDefaultHandler(void);
 //*****************************************************************************
 static uint32_t pui32Stack[SYSTEM_STACK_SIZE];
 
-const uint32_t *getSystemStack()
+const uint32_t *getSystemStack(void)
 {
   return pui32Stack;
 }
@@ -47,7 +47,7 @@ const uint32_t *getSystemStack()
 // anywhere in the project and have them override the default interrupt
 // handler (taken care of by the linker) without us having to edit this file.
 #define DEFINE_HANDLER(NAME)                                                                       \
-  void NAME##_handler() __attribute__((used, weak, alias("__default_int_handler")))
+  void NAME##_handler(void) __attribute__((used, weak, alias("__default_int_handler")))
 
 // Macro to generate function name of an aliased placeholder interrupt.
 // (Generating these allows us to avoid hardcoding the function names)
@@ -56,7 +56,7 @@ const uint32_t *getSystemStack()
 // Define weakly aliased interrupt handlers:
 
 // Reset is a special case:
-void ResetISR() __attribute__((used, weak));
+void ResetISR(void) __attribute__((used, weak));
 
 DEFINE_HANDLER(NmiSR);
 DEFINE_HANDLER(HardFault);
@@ -323,7 +323,7 @@ extern uint32_t _bss;
 extern uint32_t _ebss;
 
 // Link to project's entry point
-extern int main();
+extern int main(void);
 
 // Interrupt Handlers:
 

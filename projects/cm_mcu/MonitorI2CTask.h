@@ -9,6 +9,7 @@
 #define PROJECTS_CM_MCU_MONITORI2CTASK_H_
 
 #include "common/smbus.h"
+#include "FreeRTOS.h"
 #include "semphr.h"
 #include "Tasks.h"
 
