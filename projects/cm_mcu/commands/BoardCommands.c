@@ -88,7 +88,7 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn) & 0xff;
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08ld\r\n", sn);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08lu\r\n", sn);
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lu\r\n", num);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lx\r\n", rev);
