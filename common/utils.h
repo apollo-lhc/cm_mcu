@@ -81,7 +81,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_DATA(w)    (EBUF_ENTRY(w) & ERRDATA_MASK)
 #define EBUF_COUNTER(w) (EBUF_ENTRY(w) >> (16 - COUNTER_OFFSET))
 
-#define EBUF_ENTRY_TIMESTAMP(w)       (0xFFFF & ((w) >> 16)) // time in minutes
+#define EBUF_ENTRY_TIMESTAMP(w)       (0xFFFF & ((w) >> 16))           // time in minutes
 #define EBUF_ENTRY_TIMESTAMP_DAYS(w)  (EBUF_ENTRY_TIMESTAMP(w) / 1440) // 1440 minutes/day
 #define EBUF_ENTRY_TIMESTAMP_HOURS(w) (EBUF_ENTRY_TIMESTAMP(w) / 60 % 24)
 #define EBUF_ENTRY_TIMESTAMP_MINS(w)  (EBUF_ENTRY_TIMESTAMP(w) % 60) // minutes in the hour

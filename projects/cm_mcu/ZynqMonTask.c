@@ -87,7 +87,7 @@ uint16_t getZYNQMonTestData(void)
 {
   return testdata;
 }
-#else //
+#else  //
 const static bool inTestMode = false;
 #endif // ZYNQMON_TEST_MODE
 //
@@ -511,7 +511,7 @@ void ZynqMonTask(void *parameters)
             ZMUartCharPut(message[i]);
           }
         }
-#endif // ZYNQMON_TEST_MODE
+#endif       // ZYNQMON_TEST_MODE
       }      // end test mode
       else { // normal mode
         zm_fill_structs();
@@ -528,7 +528,7 @@ void ZynqMonTask(void *parameters)
 
       MAP_IntDisable(INT_TIMER0A);
 #endif // REV1
-    } // if ( enabled)
+    }  // if ( enabled)
 
     // monitor stack usage for this task
     static UBaseType_t vv = 4096;
