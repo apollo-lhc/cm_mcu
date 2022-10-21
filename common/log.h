@@ -71,7 +71,7 @@ const char *log_facility_string(int level);
 void log_set_lock(log_LockFn fn, void *udata);
 void log_set_level(int level, int facility);
 void log_set_quiet(bool enable);
-bool log_get_quiet();
+bool log_get_quiet(void);
 int log_get_current_level(int facility);
 int log_add_callback(log_LogFn fn, void *udata, int level);
 // int log_add_fp(FILE *fp, int level);

@@ -31,6 +31,7 @@
 #include "I2CCommunication.h"
 #include "common/log.h"
 #include "common/printf.h"
+#include "inc/hw_memmap.h"
 
 // local prototype
 void Print(const char *str);
@@ -435,7 +436,7 @@ void setFFmask(uint32_t ff_combined_present)
   return;
 }
 
-void readFFpresent()
+void readFFpresent(void)
 {
 
   while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
@@ -528,7 +529,7 @@ bool isEnabledFF(int ff)
   }
 }
 
-int getFFcheckStale()
+int getFFcheckStale(void)
 {
   TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
   TickType_t last[4];
@@ -593,7 +594,7 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-void getFFpart()
+void getFFpart(void)
 {
 
   while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
@@ -962,11 +963,11 @@ struct MonitorTaskArgs_t dcdc_args = {
 
 static int fpga_f1 = -1;
 static int fpga_f2 = -1;
-int get_f1_index()
+int get_f1_index(void)
 {
   return fpga_f1;
 }
-int get_f2_index()
+int get_f2_index(void)
 {
   return fpga_f2;
 }
@@ -981,7 +982,7 @@ void set_f2_index(int index)
   return;
 }
 
-void initFPGAMon()
+void initFPGAMon(void)
 {
   // check if we are to include both FPGAs or not
   bool f1_enable = isFPGAF1_PRESENT();
@@ -1479,5 +1480,54 @@ int init_load_clk(int clk_n)
   }
 
   return status_w;
+}
+#endif // REV2
+
+#ifdef REV2
+// Enable or disable the 3.8V power supplies for the SamTec Fireflies
+// In Rev2 we write to the I/O expander(s) (one on each I2C bus for each
+// FPGA) to set these bits. In Rev2 we don't need to do a read/modify/write
+// cycle because the other relevant bits are either inputs and the write does not
+// affect them, or active high resets (bit0). See schematic pages 4.05 and 4.06.
+// For each FPGA (F1 and F2),
+// FF_1-FF3 are selectable. bit mask is 0x0e
+
+int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
+{
+  // i2cw 4 0x71 1 0x40
+  // i2cwr 4 0x21 1 0x03 1 0x0f
+  SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
+  uint32_t i2c_device[2] = {4, 3};
+  static const UBaseType_t mask = 0xeU;    // which bits in the i/o expander
+  static const uint8_t muxbit = 0x1U << 6; // which output of the mux
+  static const uint8_t muxaddr = 0x71;     // address of mux on i2c bus
+  static const uint8_t ioexp_addr = 0x21;  // address of i/o expander on i2c bus
+  static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
+  // loop over 2 i2c modules
+  for (int i = 0; i < 2; ++i) {
+    if (ffmask[i] == 0) { // this device is not selected
+      continue;
+    }
+    // grab the relevant semaphore
+    xSemaphoreTake(semaphores[i], portMAX_DELAY); // blocks eternally
+
+    // mux setting
+    int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
+    if (result) {
+      log_warn(LOG_I2C, "mux err %d\r\n", result);
+    }
+    else {
+      // mask out extra bits
+      UBaseType_t val = ffmask[i] & mask;
+      val |= 0x1; // make sure active low reset bit stays deasserted
+      result = apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
+      if (result) {
+        log_warn(LOG_I2C, "expand wr %d\r\n", result);
+      }
+    }
+    // release the semaphore
+    xSemaphoreGive(semaphores[i]);
+  }
+  return 0;
 }
 #endif // REV2

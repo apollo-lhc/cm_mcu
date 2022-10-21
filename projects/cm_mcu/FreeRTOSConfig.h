@@ -26,7 +26,7 @@ extern "C" {
 //  * See http://www.freertos.org/a00110.html
 //  *----------------------------------------------------------
 
-uint32_t stopwatch_getticks();
+uint32_t stopwatch_getticks(void);
 void stopwatch_reset(void);
 
 #define configUSE_PREEMPTION                    1
@@ -63,8 +63,8 @@ void stopwatch_reset(void);
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() stopwatch_reset()
 #define portGET_RUN_TIME_COUNTER_VALUE()         stopwatch_getticks()
 #define configRECORD_STACK_HIGH_ADDRESS          1
-#define configUSE_HEAP_SCHEME                                                                      \
-  4 /* either 1 (only alloc), 2 (alloc/free), 3 (malloc), 4 (coalesc blocks), 5 (multiple blocks)  \
+#define configUSE_HEAP_SCHEME                                                                     \
+  4 /* either 1 (only alloc), 2 (alloc/free), 3 (malloc), 4 (coalesc blocks), 5 (multiple blocks) \
      */
 /* This demo makes use of one or more example stats formatting functions.  These
 format the raw data provided by the uxTaskGetSystemState() function in to human
@@ -122,11 +122,11 @@ PRIORITY THAN THIS! (higher priorities are lower numeric values. */
 
 /* Interrupt priorities used by the kernel port layer itself.  These are generic
 to all Cortex-M ports, and do not rely on any particular library functions. */
-#define configKERNEL_INTERRUPT_PRIORITY                                                            \
+#define configKERNEL_INTERRUPT_PRIORITY \
   (configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 /* !!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
 See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY                                                       \
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY \
   (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 
 /* Normal assert() semantics without relying on the provision of an assert.h
@@ -136,38 +136,38 @@ header file. */
 // This returns the link register; it's a GCC builtin
 #define GET_LR() __builtin_return_address(0)
 // This is ARM and GCC specific syntax and returns the program counter
-#define GET_PC(_a) __asm volatile("mov %0, pc" : "=r"(_a))
+#define GET_PC(_a) __asm volatile("mov %0, pc" \
+                                  : "=r"(_a))
 // void apollo_log_assert(void *pc, void * lr);
 // const void *lr = GET_LR();
 
 // assert handling
-#define APOLLO_ASSERT_RECORD()                                                                     \
-  volatile void *pc;                                                                               \
-  GET_PC(pc);                                                                                      \
-  errbuffer_put_raw(EBUF_ASSERT, ((uint32_t)pc >> 24) & 0xFFU);                                    \
-  errbuffer_put_raw(EBUF_CONTINUATION, ((uint32_t)pc >> 16) & 0xFFU);                              \
-  errbuffer_put_raw(EBUF_CONTINUATION, ((uint32_t)pc >> 8) & 0xFFU);                               \
+#define APOLLO_ASSERT_RECORD()                                        \
+  volatile void *pc;                                                  \
+  GET_PC(pc);                                                         \
+  errbuffer_put_raw(EBUF_ASSERT, ((uint32_t)pc >> 24) & 0xFFU);       \
+  errbuffer_put_raw(EBUF_CONTINUATION, ((uint32_t)pc >> 16) & 0xFFU); \
+  errbuffer_put_raw(EBUF_CONTINUATION, ((uint32_t)pc >> 8) & 0xFFU);  \
   errbuffer_put_raw(EBUF_CONTINUATION, (uint32_t)pc & 0xFFU)
 
 #ifdef DEBUG
-#define APOLLO_ASSERT(exp)                                                                         \
-  if (!(exp)) {                                                                                    \
-    taskDISABLE_INTERRUPTS();                                                                      \
-    APOLLO_ASSERT_RECORD();                                                                        \
-    for (;;)                                                                                       \
-      ;                                                                                            \
+#define APOLLO_ASSERT(exp)    \
+  if (!(exp)) {               \
+    taskDISABLE_INTERRUPTS(); \
+    APOLLO_ASSERT_RECORD();   \
+    for (;;)                  \
+      ;                       \
   }
 #else
-#define APOLLO_ASSERT(exp)                                                                         \
-  if (!(exp)) {                                                                                    \
-    taskDISABLE_INTERRUPTS();                                                                      \
-    APOLLO_ASSERT_RECORD();                                                                        \
-    ROM_SysCtlReset();                                                                             \
+#define APOLLO_ASSERT(exp)    \
+  if (!(exp)) {               \
+    taskDISABLE_INTERRUPTS(); \
+    APOLLO_ASSERT_RECORD();   \
+    ROM_SysCtlReset();        \
   }
 #endif
 
 #define configASSERT(x) APOLLO_ASSERT((x))
-
 
 // non-standard, park this here for now
 #ifdef REV1
@@ -177,15 +177,14 @@ header file. */
 #define ZQ_UART UART0_BASE // single UART in Rev 2
 #endif
 
-
 #define SYSTEM_STACK_SIZE 128
 // these need thought re Rev1/Rev2
 #ifndef NO_ECN001
 #define ECN001
 #endif // NO_ECN001
 
-#define pdTICKS_TO_MS(xTicks) ((TickType_t)(xTicks) * (1000u/ configTICK_RATE_HZ))
-#define pdTICKS_TO_S(xTicks) ((TickType_t)(xTicks) / configTICK_RATE_HZ)
+#define pdTICKS_TO_MS(xTicks) ((TickType_t)(xTicks) * (1000u / configTICK_RATE_HZ))
+#define pdTICKS_TO_S(xTicks)  ((TickType_t)(xTicks) / configTICK_RATE_HZ)
 
 #ifdef __cplusplus
 }

@@ -21,6 +21,6 @@ extern SemaphoreHandle_t i2c4_sem;
 extern SemaphoreHandle_t i2c5_sem;
 extern SemaphoreHandle_t i2c6_sem;
 
-void initSemaphores();
+void initSemaphores(void);
 
 #endif /* PROJECTS_CM_MCU_SEMAPHORE_H_ */

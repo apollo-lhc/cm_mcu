@@ -257,7 +257,7 @@ void log_set_quiet(bool enable)
   L.quiet = enable;
 }
 
-bool log_get_quiet()
+bool log_get_quiet(void)
 {
   return L.quiet;
 }

@@ -172,8 +172,8 @@ void MonitorI2CTask(void *parameters)
         uint16_t masked_output = output_raw & args->commands[c].bit_mask;
 
         if (res != 0) {
-          log_error(LOG_MONI2C, "%s read Error %s, break (ps=%d)\r\n",
-                    args->commands[c].name, SMBUS_get_error(res), ps);
+          log_error(LOG_MONI2C, "%s: %s read Error %s, break (ps=%d)\r\n",
+                    args->name, args->commands[c].name, SMBUS_get_error(res), ps);
           args->sm_values[index] = 0xffff;
           break;
         }

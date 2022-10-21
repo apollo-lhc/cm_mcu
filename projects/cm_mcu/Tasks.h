@@ -72,10 +72,10 @@ enum power_system_state {
   POWER_L5ON,
   POWER_ON,
 };
-enum power_system_state getPowerControlState();
+enum power_system_state getPowerControlState(void);
 const char *getPowerControlStateName(enum power_system_state);
-const bool getPowerControlExternalAlarmState();
-const uint16_t getPowerControlIgnoreMask();
+const bool getPowerControlExternalAlarmState(void);
+const uint16_t getPowerControlIgnoreMask(void);
 
 void LGA80D_init(void);
 
@@ -159,17 +159,18 @@ struct arg_moni2c_ff_t {
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 
+// Samtec firefly specific commands
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
-void readFFpresent();
+void readFFpresent(void);
 int8_t getFFtemp(const uint8_t i);
-void getFFpart();
+void getFFpart(void);
 uint8_t getFFstatus(const uint8_t i);
-int getFFcheckStale();
+int getFFcheckStale(void);
 TickType_t getFFupdateTick(int ff_t);
-void init_registers_ff();
+void init_registers_ff(void);
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;
@@ -178,7 +179,10 @@ extern uint32_t ff_USER_mask;
 #define ADDR_PS 0x48 // internal eeprom block for ps ignore fail
 #define PASS    0x12345678
 
-// ff_ctl
+// Enable or disable the 3.8V power supplies for the SamTec Fireflies
+int enable_3v8(UBaseType_t ffmask[2], bool turnOff);
+
+// ff_ctl end
 // control the LED
 void LedTask(void *parameters);
 
@@ -199,8 +203,8 @@ void LedTask(void *parameters);
 #define GREEN_LED_TOGGLE4 (34)
 
 // ---- version info
-const char *buildTime();
-const char *gitVersion();
+const char *buildTime(void);
+const char *gitVersion(void);
 
 // ---- ALARMS
 
@@ -224,7 +228,7 @@ void GenericAlarmTask(void *parameters);
 
 float getAlarmTemperature(enum device device_name);
 void setAlarmTemperature(enum device device_name, const float newtemp);
-uint32_t getAlarmStatus();
+uint32_t getAlarmStatus(void);
 
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
@@ -277,17 +281,17 @@ extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
 
 #ifdef ZYNQMON_TEST_MODE
 void setZYNQMonTestData(uint8_t sensor, uint16_t value);
-uint8_t getZYNQMonTestMode();
-uint8_t getZYNQMonTestSensor();
-uint16_t getZYNQMonTestData();
+uint8_t getZYNQMonTestMode(void);
+uint8_t getZYNQMonTestSensor(void);
+uint16_t getZYNQMonTestData(void);
 #endif // ZYNQMON_TEST_MODE
 
 // utility functions
-const uint32_t *getSystemStack();
-int SystemStackWaterHighWaterMark();
+const uint32_t *getSystemStack(void);
+int SystemStackWaterHighWaterMark(void);
 
 // clock IO expander initalization
-void init_registers_clk();
+void init_registers_clk(void);
 #ifdef REV2
 
 #define CLOCK_CHIP_COMMON_I2C_ADDR 0x6b
@@ -300,16 +304,16 @@ void init_registers_clk();
 int init_load_clk(int clk_n);
 
 // hibernate/RTC
-void InitRTC();
+void InitRTC(void);
 #endif // REV2
 
 struct dev_i2c_addr_t; // forward reference
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
 
 // Xilinx MonitorTask
-int get_f1_index();
-int get_f2_index();
-void initFPGAMon();
+int get_f1_index(void);
+int get_f2_index(void);
+void initFPGAMon(void);
 
 // Watchdog Task
 void WatchdogTask(void *parameters);
@@ -322,7 +326,7 @@ enum WatchdogTaskLabel {
 void task_watchdog_register_task(uint16_t task_id);
 void task_watchdog_unregister_task(uint16_t task_id);
 void task_watchdog_feed_task(uint16_t task_id);
-uint16_t task_watchdog_get_status();
+uint16_t task_watchdog_get_status(void);
 
 // general
 // monitor stack usage for this task

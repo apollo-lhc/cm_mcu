@@ -19,9 +19,9 @@ float getAlarmTemperature(enum device theDevice);
 void setAlarmTemperature(enum device theDevice, float temperature);
 void getAlarmTemperatureStatus(void);
 //    callback functions
-int TempStatus();
-void TempErrorLog();
-void TempClearErrorLog();
+int TempStatus(void);
+void TempErrorLog(void);
+void TempClearErrorLog(void);
 
 // voltage alarms
 

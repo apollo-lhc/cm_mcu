@@ -9,8 +9,8 @@
 #ifndef PROJECTS_CM_MCU_CLOCKSYNTH_H_
 #define PROJECTS_CM_MCU_CLOCKSYNTH_H_
 
-int initialize_clock();
-int load_clock();
+int initialize_clock(void);
+int load_clock(void);
 
 #define CLOCK_I2C_BASE                                2
 #define CLOCK_SYNTH_I2C_ADDRESS                       0x77
@@ -30,6 +30,6 @@ int load_clock();
 #define CLOCK_EXPANDER_ENABLE_CLOCKSYNTH              0x13
 #define CLOCK_EXPANDER_RESET_CLOCKSYNTH               0x1b
 #define CLOCK_EXPANDER_CONFIGURATION_PORT_0           0x06 // configuration port to set I/O port as input or output
-#define CLOCK_CHANGEPAGE_REG_ADDR                           0x01
+#define CLOCK_CHANGEPAGE_REG_ADDR                     0x01
 
 #endif /* PROJECTS_CM_MCU_CLOCKSYNTH_H_ */

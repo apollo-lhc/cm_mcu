@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 #include <stdlib.h>
+#include "commands/parameters.h"
 #include "common/utils.h"
 #include "driverlib/gpio.h"
 #include "BoardCommands.h"
@@ -87,10 +88,10 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
   uint32_t num = (uint32_t)sn >> 16;
   uint32_t rev = ((uint32_t)sn) & 0xff;
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08lx\r\n", (uint32_t)sn);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08lx\r\n", sn);
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lu\r\n", num);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lx\r\n", rev);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lu\r\n", rev);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly USER config: %lx\r\n", ff_USER_mask);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly PRESENT config: %lx\r\n", ff_PRESENT_mask);
   // copied += // this is here to remind you to update `copied` if you add more lines
@@ -327,3 +328,25 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   m[0] = '\0';
   return pdFALSE;
 }
+
+#ifdef REV2
+// interface to 3.8 V
+// interface: v38 on|off 1|2
+BaseType_t v38_ctl(int argc, char **argv, char *m)
+{
+  bool turnOn = true;
+  if (strncmp(argv[1], "off", 3) == 0)
+    turnOn = false;
+  BaseType_t whichFF = atoi(argv[2]);
+  if (whichFF < 1 || whichFF > 2) {
+    snprintf(m, SCRATCH_SIZE, "%s: should be 1 or 2 for F1/F2 (got %s)\r\n", argv[0], argv[2]);
+    return pdFALSE;
+  }
+  UBaseType_t ffmask[2] = {0, 0};
+  ffmask[whichFF - 1] = 0xe;
+  enable_3v8(ffmask, !turnOn);
+  snprintf(m, SCRATCH_SIZE, "%s: 3V8 turned %s for F%ld\r\n", argv[0],
+           turnOn == true ? "on" : "off", whichFF);
+  return pdFALSE;
+}
+#endif // REV2
