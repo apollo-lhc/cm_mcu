@@ -12,6 +12,7 @@ BaseType_t watchdog_ctl(int argc, char **argv, char *m);
 BaseType_t zmon_ctl(int argc, char **argv, char *m);
 BaseType_t log_ctl(int argc, char **argv, char *m);
 BaseType_t ver_ctl(int argc, char **argv, char *m);
+BaseType_t sem_ctl(int argc, char **argv, char *m);
 portBASE_TYPE taskInfo(int argc, char *argv[], char *m);
 
 #endif // SOFTWARECOMMANDS_H

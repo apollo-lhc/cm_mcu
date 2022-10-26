@@ -4,6 +4,9 @@
 #include "commands/SoftwareCommands.h"
 #include "FreeRTOS.h"
 #include "Tasks.h"
+#include "portmacro.h"
+#include "Semaphore.h"
+#include "projdefs.h"
 #define SCRATCH_SIZE 512
 
 // takes no arguments
@@ -371,5 +374,63 @@ portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
   configASSERT(len < SCRATCH_SIZE);
   /* There is no more data to return after this single string, so return
   pdFALSE. */
+  return pdFALSE;
+}
+
+
+// take or release one of the i2c semaphores
+BaseType_t sem_ctl(int argc, char **argv, char *m)
+{
+  // which semaphore
+  int number = atoi(argv[1]);
+  SemaphoreHandle_t s = 0;
+  switch (number) {
+    case 1:
+      s = i2c1_sem;
+      break;
+    case 2:
+      s = i2c2_sem;
+      break;
+    case 3:
+      s = i2c3_sem;
+      break;
+    case 4:
+      s = i2c4_sem;
+      break;
+    case 5:
+      s = i2c5_sem;
+      break;
+    case 6:
+      s = i2c6_sem;
+      break;
+    default:
+      snprintf(m, SCRATCH_SIZE, "%s: value must be between 1-6 (got %s)\r\n", argv[0], argv[1]);
+      return pdFALSE;
+      break;
+  }
+  // options are
+  // take or release
+  if ( strncmp(argv[2], "release", 5) == 0 ) {
+    // check if we have the semaphore
+    if ( xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
+      xSemaphoreGive(s);
+      snprintf(m, SCRATCH_SIZE, "%s: releasing semaphore %d\r\n", argv[0], number);
+    }
+    else { // we don't hold this semaphore
+      snprintf(m, SCRATCH_SIZE, "%s: trying to release a semaphore %d we don't hold\r\n", argv[0], number);
+    }
+  }
+  else if (strncmp(argv[2], "take", 5) == 0) {
+    // try to acquire the semaphore. Wait a finite amount of time.
+    if ( xSemaphoreTake(i2c1_sem, (TickType_t)50) == pdTRUE ) {
+      snprintf(m, SCRATCH_SIZE, "%s: taking semaphore %d\r\n", argv[0], number);
+    }
+    else {
+      snprintf(m, SCRATCH_SIZE, "%s: failed to acquire semaphore %d in time\r\n", argv[0], number);
+    }
+  }
+  else {
+    snprintf(m, SCRATCH_SIZE, "%s: argument must be 'release' or 'take' (got %s)\r\n", argv[0], argv[2]);
+  }
   return pdFALSE;
 }
