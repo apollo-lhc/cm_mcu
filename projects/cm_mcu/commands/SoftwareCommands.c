@@ -419,7 +419,7 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
       snprintf(m, SCRATCH_SIZE, "%s: trying to release a semaphore %d we don't hold\r\n", argv[0], number);
     }
   }
-  else if (strncmp(argv[2], "take", 5) == 0) {
+  else if (strncmp(argv[2], "take", 4) == 0) {
     // try to acquire the semaphore. Wait a finite amount of time.
     if (xSemaphoreTake(i2c1_sem, (TickType_t)50) == pdTRUE) {
       snprintf(m, SCRATCH_SIZE, "%s: taking semaphore %d\r\n", argv[0], number);
