@@ -5,10 +5,11 @@
  *      Author: fatimayousuf
  */
 
-#include "parameters.h"
 
 #ifndef BOARD_COMMANDS_H_
 #define BOARD_COMMANDS_H_
+
+#include "parameters.h"
 
 BaseType_t restart_mcu(int argc, char **argv, char *m);
 BaseType_t set_board_id(int argc, char **argv, char *m);

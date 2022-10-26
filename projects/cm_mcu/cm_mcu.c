@@ -250,7 +250,7 @@ int main(void)
     log_set_level(LOG_INFO, i);
   }
 
-  // mutex for the UART output
+  // Initialize all semaphores
   initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   ffl12_f1_args.xSem = i2c4_sem;
