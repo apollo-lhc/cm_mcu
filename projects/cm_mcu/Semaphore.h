@@ -11,7 +11,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-// Mutex for UART 
+// Mutex for UART
 extern SemaphoreHandle_t xUARTMutex;
 
 extern SemaphoreHandle_t i2c1_sem;

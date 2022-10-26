@@ -209,7 +209,6 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-
 static BaseType_t help_command_fcn(int argc, char **, char *m);
 
 ////////////////////////////////////////////////////////////////////////

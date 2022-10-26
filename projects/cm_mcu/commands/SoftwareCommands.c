@@ -377,7 +377,6 @@ portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
   return pdFALSE;
 }
 
-
 // take or release one of the i2c semaphores
 BaseType_t sem_ctl(int argc, char **argv, char *m)
 {
@@ -410,9 +409,9 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
   }
   // options are
   // take or release
-  if ( strncmp(argv[2], "release", 5) == 0 ) {
+  if (strncmp(argv[2], "release", 5) == 0) {
     // check if we have the semaphore
-    if ( xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
+    if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(s);
       snprintf(m, SCRATCH_SIZE, "%s: releasing semaphore %d\r\n", argv[0], number);
     }
@@ -422,7 +421,7 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
   }
   else if (strncmp(argv[2], "take", 5) == 0) {
     // try to acquire the semaphore. Wait a finite amount of time.
-    if ( xSemaphoreTake(i2c1_sem, (TickType_t)50) == pdTRUE ) {
+    if (xSemaphoreTake(i2c1_sem, (TickType_t)50) == pdTRUE) {
       snprintf(m, SCRATCH_SIZE, "%s: taking semaphore %d\r\n", argv[0], number);
     }
     else {
