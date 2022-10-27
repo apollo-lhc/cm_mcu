@@ -35,9 +35,6 @@
 #include "MonitorTask.h"
 #include "Tasks.h"
 
-// prototype of mutex'd print
-void Print(const char *str);
-
 // Todo: rewrite to get away from awkward/bad SMBUS implementation from TI
 
 // the PAGE command is an SMBUS standard at register 0
@@ -51,7 +48,6 @@ void Print(const char *str);
     break;                        \
   }
 
-#define TMPBUFFER_SZ 96
 void MonitorTask(void *parameters)
 {
   // initialize to the current tick time
@@ -70,7 +66,6 @@ void MonitorTask(void *parameters)
 
   bool isFullyPowered = false; // assume not fully powered
   for (;;) {
-    char tmp[TMPBUFFER_SZ];
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
       while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
@@ -84,7 +79,6 @@ void MonitorTask(void *parameters)
         enum power_system_state power_state = getPowerControlState();
         if (power_state != POWER_ON) { // if the power state is not fully on
           if (isFullyPowered) {        // was previously on
-            snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
             log_info(LOG_MON, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
             isFullyPowered = false;
           }
@@ -92,7 +86,6 @@ void MonitorTask(void *parameters)
         }
         else {                   // if the power state is fully on
           if (!isFullyPowered) { // was previously off
-            snprintf(tmp, TMPBUFFER_SZ, "MON(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
             log_info(LOG_MON, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
             isFullyPowered = true;
           }
@@ -105,8 +98,7 @@ void MonitorTask(void *parameters)
       log_trace(LOG_MON, "%s: mux to 0x%02x\r\n", args->name, data[0]);
       tSMBusStatus r = SMBusMasterI2CWrite(args->smbus, args->devices[ps].mux_addr, data, 1);
       if (r != SMBUS_OK) {
-        snprintf(tmp, TMPBUFFER_SZ, "MON(%s): I2CBus command failed  (setting mux)\r\n",
-                 args->name);
+        log_debug(LOG_MON, "%s: I2CBus command failed  (setting mux)\r\n", args->name);
         continue;
       }
       int tries = 0;
@@ -119,9 +111,6 @@ void MonitorTask(void *parameters)
         }
       }
       if (*args->smbus_status != SMBUS_OK) {
-        snprintf(tmp, TMPBUFFER_SZ,
-                 "MON(%s): Mux writing error %d, break out of loop (ps=%d) ...\r\n", args->name,
-                 *args->smbus_status, ps);
         log_trace(LOG_MON, "%s:Mux w error %d, break (ps=%d)\r\n", args->name, *args->smbus_status,
                   ps);
         release_break();
@@ -133,15 +122,13 @@ void MonitorTask(void *parameters)
                                      1);
         if (r != SMBUS_OK) {
           log_warn(LOG_MON, "SMBUS page failed %s\r\n", args->name);
-          Print("SMBUS command failed  (setting page)\r\n");
         }
         while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
         }
         // this is checking the return from the interrupt
         if (*args->smbus_status != SMBUS_OK) {
-          snprintf(tmp, TMPBUFFER_SZ, "MON(%s): Page SMBUS ERROR: %d\r\n", args->name,
-                   *args->smbus_status);
+          log_warn(LOG_MON, "%s: Page SMBUS ERROR: %d\r\n", args->name, *args->smbus_status);
         }
         log_trace(LOG_MON, "%s: Page %d\r\n", args->name, page);
 
@@ -155,8 +142,7 @@ void MonitorTask(void *parameters)
           r = SMBusMasterByteWordRead(args->smbus, args->devices[ps].dev_addr,
                                       args->commands[c].command, data, args->commands[c].size);
           if (r != SMBUS_OK) {
-            snprintf(tmp, TMPBUFFER_SZ,
-                     "MON(%s): SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\r\n", args->name,
+            log_warn(LOG_MON, "%s: SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\r\n", args->name,
                      ps, c, page);
             continue; // abort reading this register
           }
@@ -170,8 +156,7 @@ void MonitorTask(void *parameters)
             }
           }
           if (*args->smbus_status != SMBUS_OK) {
-            snprintf(tmp, TMPBUFFER_SZ,
-                     "MON(%s): Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
+            log_warn(LOG_MON, "%s: Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
                      *args->smbus_status, ps, c, page);
             // abort reading this device
             if (log)
