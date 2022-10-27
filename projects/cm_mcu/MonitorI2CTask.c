@@ -35,8 +35,6 @@
 
 // local prototype
 
-void Print(const char *str);
-
 // read-only accessor functions for Firefly names and values.
 
 bool getFFch_low(uint8_t val, int channel)
@@ -157,8 +155,8 @@ void MonitorI2CTask(void *parameters)
         uint8_t page_reg_value = args->commands[c].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, 0x01, 1, page_reg_value);
         if (r != 0) {
-          log_error(LOG_MONI2C, "SMBUS page failed %s\r\n", SMBUS_get_error(r));
-          Print("SMBUS command failed  (setting page)\r\n");
+          log_error(LOG_MONI2C, "%s: page fail %s\r\n", args->name, SMBUS_get_error(r));
+          break;
         }
 
         uint32_t output_raw;

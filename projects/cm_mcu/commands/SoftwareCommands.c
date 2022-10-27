@@ -308,7 +308,6 @@ portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
 
   /* Generate a table of task stats. */
   unsigned int copied = snprintf(m, SCRATCH_SIZE, "%s", pcHeader);
-  //unsigned int copied = strlen(m);
 
   /* Take a snapshot of the number of tasks in case it changes while this
     function is executing. */
