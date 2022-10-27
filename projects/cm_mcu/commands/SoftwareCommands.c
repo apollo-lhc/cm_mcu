@@ -12,17 +12,15 @@
 // takes no arguments
 BaseType_t stack_ctl(int argc, char **argv, char *m)
 {
-  int copied = 0;
   int i = SystemStackWaterHighWaterMark();
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "stack: %d of %d untouched\r\n", i,
-                     SYSTEM_STACK_SIZE);
+  snprintf(m, SCRATCH_SIZE, "stack: %d of %d untouched\r\n", i, SYSTEM_STACK_SIZE);
   return pdFALSE;
 }
 
 BaseType_t mem_ctl(int argc, char **argv, char *m)
 {
   size_t heapSize = xPortGetFreeHeapSize();
-  snprintf(m, SCRATCH_SIZE, "heap: %d bytes\r\n", heapSize);
+  snprintf(m, SCRATCH_SIZE, "heap: %u bytes\r\n", heapSize);
   return pdFALSE;
 }
 
@@ -84,9 +82,8 @@ void TaskGetRunTimeStats(char *pcWriteBuffer, size_t bufferLength)
 
 BaseType_t uptime(int argc, char **argv, char *m)
 {
-  int s = SCRATCH_SIZE;
   TickType_t now = xTaskGetTickCount() / (configTICK_RATE_HZ * 60); // time in minutes
-  snprintf(m, s, "%s: MCU uptime %ld minutes\r\n", argv[0], now);
+  snprintf(m, SCRATCH_SIZE, "%s: MCU uptime %ld minutes\r\n", argv[0], now);
   return pdFALSE;
 }
 
@@ -94,14 +91,13 @@ BaseType_t uptime(int argc, char **argv, char *m)
 // ensure that there are no overwrites to pcCommandString.
 BaseType_t TaskStatsCommand(int argc, char **argv, char *m)
 {
-  int s = SCRATCH_SIZE;
   const char *const pcHeader = "            Time     %\r\n"
                                "********************************\r\n";
   BaseType_t xSpacePadding;
   unsigned int copied = 0;
   char *mm = m;
   /* Generate a table of task stats. */
-  strncpy(mm, "Task", s);
+  strncpy(mm, "Task", SCRATCH_SIZE);
   mm += strlen(m);
   copied += strlen(m);
 
@@ -131,9 +127,8 @@ BaseType_t TaskStatsCommand(int argc, char **argv, char *m)
 
 BaseType_t watchdog_ctl(int argc, char **argv, char *m)
 {
-  int copied = 0;
   uint16_t stat = task_watchdog_get_status();
-  copied = snprintf(m + copied, SCRATCH_SIZE - copied, "%s: status 0x%08x\r\n", argv[0], stat);
+  snprintf(m, SCRATCH_SIZE, "%s: status 0x%08x\r\n", argv[0], stat);
   return pdFALSE;
 }
 
@@ -215,8 +210,7 @@ BaseType_t zmon_ctl(int argc, char **argv, char *m)
   }
 
   if (message) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Sending message %s\r\n", argv[0], argv[1]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Sending message %s\r\n", argv[0], argv[1]);
     // Send a message to the zmon task
     xQueueSendToBack(xZynqMonQueue, &message, pdMS_TO_TICKS(10));
   }
@@ -283,7 +277,7 @@ BaseType_t log_ctl(int argc, char **argv, char *m)
     for (int i = 1; i < argc; ++i) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", argv[i]);
     }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "not understood\r\n");
+    snprintf(m + copied, SCRATCH_SIZE - copied, "not understood\r\n");
   }
 
   return pdFALSE;
@@ -313,9 +307,8 @@ portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
   const char *const pcHeader = "Task   State  Priority  Stack  #\r\n*********************************\r\n";
 
   /* Generate a table of task stats. */
-  static_assert(sizeof(m) >= sizeof(pcHeader), "m too small");
-  strcpy(m, pcHeader);
-  unsigned int copied = strlen(m);
+  unsigned int copied = snprintf(m, SCRATCH_SIZE, "%s", pcHeader);
+  //unsigned int copied = strlen(m);
 
   /* Take a snapshot of the number of tasks in case it changes while this
     function is executing. */
