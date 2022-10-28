@@ -108,6 +108,11 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s is programming clock %s. \r\n", argv[0], clk_ids[i]);
   int status = -1; // shut up clang compiler warning
+  enum power_system_state power_state = getPowerControlState();
+  if (power_state != POWER_ON) { // if the power state is not fully on
+    snprintf(m + copied, SCRATCH_SIZE - copied, " 3V3 died. skip loadclock\r\n");
+    return pdFALSE; // skip this iteration
+  }
   // grab the semaphore to ensure unique access to I2C controller
   while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
     ;
