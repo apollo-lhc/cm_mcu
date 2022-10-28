@@ -111,8 +111,8 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   bool isFullyPowered = false; // assume not fully powered
   enum power_system_state power_state = getPowerControlState();
   if (power_state != POWER_ON) { // if the power state is not fully on
-    if (isFullyPowered) {        // was previously on
-      snprintf(m + copied, SCRATCH_SIZE - copied," 3V3 died. Skipping loading clock.\r\n");
+    if (!isFullyPowered) {        // was previously on
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied," 3V3 died. skip loadclock\r\n");
       isFullyPowered = false;
     }
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
