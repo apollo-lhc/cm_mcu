@@ -271,7 +271,7 @@ void SMBusMasterIntHandler6(void)
 // ADC conversion is complete.
 TaskHandle_t TaskNotifyADC = NULL;
 
-void ADCSeq0Interrupt()
+void ADCSeq0Interrupt(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -295,7 +295,7 @@ void ADCSeq0Interrupt()
   return;
 }
 
-void ADCSeq1Interrupt()
+void ADCSeq1Interrupt(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -322,7 +322,7 @@ void ADCSeq1Interrupt()
 // -----------------------------------------
 TaskHandle_t TaskNotifyI2CSlave = NULL;
 
-void I2CSlave0Interrupt()
+void I2CSlave0Interrupt(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
