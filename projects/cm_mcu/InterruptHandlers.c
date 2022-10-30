@@ -254,7 +254,6 @@ void SMBusMasterIntHandler5(void)
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-
 void SMBusMasterIntHandler6(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
