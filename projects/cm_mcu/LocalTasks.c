@@ -630,8 +630,8 @@ void getFFpart(void)
       vendor_part1[i - ven_addr_start] = 0;
       break;
     }
-    for (int i = 0; i < 4; ++i) {
-      vendor_data1[i] = (vendor_char1 >> (3 - i) * 8) & 0xFF;
+    for (int j = 0; j < 4; ++j) {
+      vendor_data1[j] = (vendor_char1 >> (3 - j) * 8) & 0xFF;
     }
 
     typedef union {
@@ -642,6 +642,7 @@ void getFFpart(void)
 
     tmp1.us = vendor_data1[3]; // change from uint_8 to int8_t, preserving bit pattern
     vendor_part1[i - ven_addr_start] = tmp1.s;
+    vendor_part1[i - ven_addr_start + 1] = '\0'; // null-terminated
   }
 
   char *vendor_string1 = (char *)vendor_part1;
@@ -665,8 +666,8 @@ void getFFpart(void)
       vendor_part2[i - ven_addr_start] = 0;
       break;
     }
-    for (int i = 0; i < 4; ++i) {
-      vendor_data2[i] = (vendor_char2 >> (3 - i) * 8) & 0xFF;
+    for (int j = 0; j < 4; ++j) {
+      vendor_data2[j] = (vendor_char2 >> (3 - j) * 8) & 0xFF;
     }
     typedef union {
       uint8_t us;
@@ -676,7 +677,9 @@ void getFFpart(void)
 
     tmp1.us = vendor_data2[3]; // change from uint_8 to int8_t, preserving bit pattern
     vendor_part2[i - ven_addr_start] = tmp1.s;
+    vendor_part2[i - ven_addr_start + 1] = '\0'; // null-terminated
   }
+
 
   char *vendor_string2 = (char *)vendor_part2;
   log_info(LOG_SERVICE, "Getting Firefly 4-ch part (FPGA2) : %s \r\n:", vendor_string2);
