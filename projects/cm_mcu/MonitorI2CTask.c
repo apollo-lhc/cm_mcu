@@ -82,7 +82,7 @@ void MonitorI2CTask(void *parameters)
 
   bool good = false;
   for (;;) {
-
+    log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
     // grab the semaphore to ensure unique access to I2C controller
     while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
       ;
@@ -91,6 +91,7 @@ void MonitorI2CTask(void *parameters)
     // loop over devices in the device-type instance
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
+      log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
 
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
@@ -118,6 +119,7 @@ void MonitorI2CTask(void *parameters)
         }
         args->updateTick = xTaskGetTickCount();
       }
+      log_debug(LOG_MONI2C, "%s: powercheck\r\n", args->name);
 
       if (getPowerControlState() != POWER_ON) {
         if (good) {
@@ -151,7 +153,7 @@ void MonitorI2CTask(void *parameters)
       for (int c = 0; c < args->n_commands; ++c) {
         int index = ps * (args->n_commands * args->n_pages) + c;
 
-        log_debug(LOG_MONI2C, "%s: command %s.\r\n", args->name, args->commands[c].name);
+        log_debug(LOG_MONI2C, "%s: command page %s.\r\n", args->name, args->commands[c].name);
         uint8_t page_reg_value = args->commands[c].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, 0x01, 1, page_reg_value);
         if (r != 0) {
@@ -159,6 +161,7 @@ void MonitorI2CTask(void *parameters)
           break;
         }
 
+        log_debug(LOG_MONI2C, "%s: command %s.\r\n", args->name, args->commands[c].name);
         uint32_t output_raw;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size,
                                        args->commands[c].command, args->commands[c].size, &output_raw);
@@ -175,6 +178,7 @@ void MonitorI2CTask(void *parameters)
         }
 
       } // loop over commands
+      log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
 
     } // loop over devices
 

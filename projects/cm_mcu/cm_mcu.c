@@ -309,7 +309,7 @@ int main(void)
 #ifdef REV2
   xTaskCreate(MonitorI2CTask, "CLKSI", 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "CLKR0A", 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, "CLKR0", 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
               NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, "PSMON", 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
@@ -371,8 +371,9 @@ int main(void)
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
-
+  __builtin_unreachable();
   // should never get here
+  Print("Scheduler start failed\r\n");
   for (;;)
     ;
 }
@@ -381,7 +382,11 @@ uintptr_t __stack_chk_guard = 0xdeadbeef;
 
 void __stack_chk_fail(void)
 {
-  log_fatal(LOG_SERVICE, "Stack smashing detected\r\n");
+  // log_fatal(LOG_SERVICE, "Stack smashing detected\r\n");
+  UARTPrint(ZQ_UART, "Stack smashing detected\r\n");
+  while (MAP_UARTBusy(ZQ_UART))
+    ;
+
   __asm volatile("cpsid i"); /* disable interrupts */
   __asm volatile("bkpt #0"); /* break target */
   for (;;)
@@ -456,6 +461,10 @@ void vApplicationIdleHook(void)
 #if (configUSE_MALLOC_FAILED_HOOK == 1)
 void vApplicationMallocFailedHook(void)
 {
+  UARTPrint(ZQ_UART, "vApplicationMallocFailedHook\r\n");
+  while (MAP_UARTBusy(ZQ_UART))
+    ;
+
   for (;;)
     ;
 }

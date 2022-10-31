@@ -54,7 +54,7 @@ extern int main(void);
 //*****************************************************************************
 static uint32_t pui32Stack[SYSTEM_STACK_SIZE];
 
-const uint32_t *getSystemStack()
+const uint32_t *getSystemStack(void)
 {
   return pui32Stack;
 }
@@ -297,8 +297,7 @@ static void NmiSR(void)
   //
   // Enter an infinite loop.
   //
-  while (1) {
-  }
+  configASSERT(1==0);
 }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
@@ -375,9 +374,6 @@ static void HardFault_Handler(void)
 //*****************************************************************************
 static void IntDefaultHandler(void)
 {
-  //
-  // Go into an infinite loop.
-  //
-  while (1) {
-  }
+  // we should never get here
+  APOLLO_ASSERT(0==1);
 }

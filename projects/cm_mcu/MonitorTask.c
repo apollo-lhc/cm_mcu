@@ -58,7 +58,7 @@ void MonitorTask(void *parameters)
 
   configASSERT(args->name != 0);
 
-  bool log = true;
+  bool log = false;
   args->updateTick = xLastWakeTime; // initial value
 
   // wait for the power to come up
