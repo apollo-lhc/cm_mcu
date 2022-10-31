@@ -8,6 +8,7 @@
 #include <strings.h>
 #include "parameters.h"
 #include "SensorControl.h"
+#include "Semaphore.h"
 #include "common/smbus_helper.h"
 
 // Register definitions
@@ -43,9 +44,9 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
   }
 
   int res;
-  SemaphoreHandle_t s = ffldaq_f1_args.xSem;
+  SemaphoreHandle_t s = i2c4_sem;
   if (i2c_device == I2C_DEVICE_F2) {
-    s = ffldaq_f2_args.xSem;
+    s = i2c3_sem;
   }
   while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
     ;
@@ -91,9 +92,9 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   }
 
   int res;
-  SemaphoreHandle_t s = ffldaq_f1_args.xSem;
+  SemaphoreHandle_t s = i2c4_sem;
   if (i2c_device == I2C_DEVICE_F2) {
-    s = ffldaq_f2_args.xSem;
+    s = i2c3_sem;
   }
   while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
     ;
