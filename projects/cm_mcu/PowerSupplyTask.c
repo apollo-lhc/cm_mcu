@@ -32,7 +32,7 @@ QueueHandle_t xPwrQueue = NULL;
 
 enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
 
-enum power_system_state getPowerControlState()
+enum power_system_state getPowerControlState(void)
 {
   return currentState;
 }
@@ -49,7 +49,7 @@ static uint16_t check_ps_oks(void)
   return status;
 }
 
-static int16_t getPSFailMask()
+static uint16_t getPSFailMask(void)
 {
   // PS ignore mask stored in on-board EEPROM
   static bool configured = false;
@@ -64,7 +64,7 @@ static int16_t getPSFailMask()
     }
     configured = true;
   }
-  return (0xFFFFU & ps_ignore_mask); // 16 bit
+  return (uint16_t)(0xFFFFU & ps_ignore_mask); // 16 bit
 }
 
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
@@ -92,13 +92,13 @@ const char *getPowerControlStateName(enum power_system_state s)
 
 // alarm from outside this task
 static bool external_alarm = false;
-const bool getPowerControlExternalAlarmState()
+const bool getPowerControlExternalAlarmState(void)
 {
   return external_alarm;
 }
 // which power supply OKs to ignore
 static uint16_t ignore_mask;
-const uint16_t getPowerControlIgnoreMask()
+const uint16_t getPowerControlIgnoreMask(void)
 {
   return ignore_mask;
 }
@@ -375,7 +375,7 @@ void PowerSupplyTask(void *parameters)
     // update the ps_state variables, for external display
     // as well as for usage in ensuring the I2C pullups are on.
     supply_bitset = check_ps_oks();
-    for (size_t i = 0; i < N_PS_OKS; i++) {
+    for (int i = 0; i < N_PS_OKS; i++) {
       if ((1U << i) & supply_bitset) {
         // OK bit is on -- PS is on
         setPSStatus(i, PWR_ON);
