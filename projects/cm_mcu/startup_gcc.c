@@ -68,52 +68,52 @@ const uint32_t *getSystemStack(void)
 __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     (void (*)(void))((uint32_t)pui32Stack + sizeof(pui32Stack)),
     // The initial stack pointer
-    ResetISR,               // The reset handler
-    NmiSR,                  // The NMI handler
-    HardFault_Handler,      // The hard fault handler -- was FaultISR
-    IntDefaultHandler,      // The MPU fault handler
-    IntDefaultHandler,      // The bus fault handler
-    IntDefaultHandler,      // The usage fault handler
-    0,                      // Reserved
-    0,                      // Reserved
-    0,                      // Reserved
-    0,                      // Reserved
-    vPortSVCHandler,        // SVCall handler
-    IntDefaultHandler,      // Debug monitor handler
-    0,                      // Reserved
-    xPortPendSVHandler,     // The PendSV handler
-    xPortSysTickHandler,    // The SysTick handler
-    IntDefaultHandler,      // GPIO Port A
-    IntDefaultHandler,      // GPIO Port B
-    IntDefaultHandler,      // GPIO Port C
-    IntDefaultHandler,      // GPIO Port D
-    IntDefaultHandler,      // GPIO Port E
+    ResetISR,            // The reset handler
+    NmiSR,               // The NMI handler
+    HardFault_Handler,   // The hard fault handler -- was FaultISR
+    IntDefaultHandler,   // The MPU fault handler
+    IntDefaultHandler,   // The bus fault handler
+    IntDefaultHandler,   // The usage fault handler
+    0,                   // Reserved
+    0,                   // Reserved
+    0,                   // Reserved
+    0,                   // Reserved
+    vPortSVCHandler,     // SVCall handler
+    IntDefaultHandler,   // Debug monitor handler
+    0,                   // Reserved
+    xPortPendSVHandler,  // The PendSV handler
+    xPortSysTickHandler, // The SysTick handler
+    IntDefaultHandler,   // GPIO Port A
+    IntDefaultHandler,   // GPIO Port B
+    IntDefaultHandler,   // GPIO Port C
+    IntDefaultHandler,   // GPIO Port D
+    IntDefaultHandler,   // GPIO Port E
 #ifdef REV2
-    UART0IntHandler,        // UART0 Rx and Tx
+    UART0IntHandler, // UART0 Rx and Tx
 #else
-    IntDefaultHandler,      // UART0 Rx and Tx
+    IntDefaultHandler, // UART0 Rx and Tx
 #endif
 #ifdef REV1
-    UART1IntHandler,        // UART1 Rx and Tx -- ZYNQ UART
+    UART1IntHandler, // UART1 Rx and Tx -- ZYNQ UART
 #else
-    IntDefaultHandler,      // UART1 Rx and Tx
+    IntDefaultHandler, // UART1 Rx and Tx
 #endif
-    IntDefaultHandler,      // SSI0 Rx and Tx
-    I2CSlave0Interrupt,     // I2C0 Master and Slave
-    IntDefaultHandler,      // PWM Fault
-    IntDefaultHandler,      // PWM Generator 0
-    IntDefaultHandler,      // PWM Generator 1
-    IntDefaultHandler,      // PWM Generator 2
-    IntDefaultHandler,      // Quadrature Encoder 0
-    IntDefaultHandler,      // ADC Sequence 0
-    ADCSeq1Interrupt,       // ADC Sequence 1
-    IntDefaultHandler,      // ADC Sequence 2
-    IntDefaultHandler,      // ADC Sequence 3
-    IntDefaultHandler,      // Watchdog timer
+    IntDefaultHandler,  // SSI0 Rx and Tx
+    I2CSlave0Interrupt, // I2C0 Master and Slave
+    IntDefaultHandler,  // PWM Fault
+    IntDefaultHandler,  // PWM Generator 0
+    IntDefaultHandler,  // PWM Generator 1
+    IntDefaultHandler,  // PWM Generator 2
+    IntDefaultHandler,  // Quadrature Encoder 0
+    IntDefaultHandler,  // ADC Sequence 0
+    ADCSeq1Interrupt,   // ADC Sequence 1
+    IntDefaultHandler,  // ADC Sequence 2
+    IntDefaultHandler,  // ADC Sequence 3
+    IntDefaultHandler,  // Watchdog timer
 #ifdef REV1
-    Timer0AIntHandler,      // Timer 0 subtimer A
-#else // not REV1
-    IntDefaultHandler,      // Timer 0 subtimer A
+    Timer0AIntHandler, // Timer 0 subtimer A
+#else                  // not REV1
+    IntDefaultHandler, // Timer 0 subtimer A
 #endif
     IntDefaultHandler,      // Timer 0 subtimer B
     IntDefaultHandler,      // Timer 1 subtimer A
@@ -153,9 +153,9 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler,      // SSI3 Rx and Tx
     IntDefaultHandler,      // UART3 Rx and Tx
 #ifdef REV1
-    UART4IntHandler,        // UART4 Rx and Tx -- FRONT PANEL
+    UART4IntHandler, // UART4 Rx and Tx -- FRONT PANEL
 #else
-    IntDefaultHandler,      // UART4 Rx and Tx
+    IntDefaultHandler, // UART4 Rx and Tx
 #endif
     IntDefaultHandler,      // UART5 Rx and Tx
     IntDefaultHandler,      // UART6 Rx and Tx
@@ -297,7 +297,7 @@ static void NmiSR(void)
   //
   // Enter an infinite loop.
   //
-  configASSERT(1==0);
+  configASSERT(1 == 0);
 }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
@@ -307,12 +307,11 @@ static void NmiSR(void)
 //
 // This is the code that gets called when the processor receives a fault
 // interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger, except in production code, where it just 
+// for examination by a debugger, except in production code, where it just
 // invokes a restart.
 //
 //*****************************************************************************
-void
-GetRegistersFromStack(uint32_t *pulFaultStackAddress) //
+void GetRegistersFromStack(uint32_t *pulFaultStackAddress) //
 {
   /* These are volatile to try and prevent the compiler/linker optimizing them
 away as the variables never actually get used.  If the debugger won't show the
@@ -375,5 +374,5 @@ static void HardFault_Handler(void)
 static void IntDefaultHandler(void)
 {
   // we should never get here
-  APOLLO_ASSERT(0==1);
+  APOLLO_ASSERT(0 == 1);
 }

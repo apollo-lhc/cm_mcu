@@ -374,7 +374,7 @@ int main(void)
   vTaskStartScheduler();
   // should never get here
   Print("Scheduler start failed\r\n");
-  configASSERT(1==0);
+  configASSERT(1 == 0);
   __builtin_unreachable();
   return 0;
 }
