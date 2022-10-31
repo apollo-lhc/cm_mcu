@@ -17,6 +17,7 @@
 #include <string.h>
 
 // local includes
+#include "FreeRTOSConfig.h"
 #include "common/LocalUart.h"
 #include "common/utils.h"
 #include "common/power_ctl.h"
@@ -371,26 +372,22 @@ int main(void)
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
-  __builtin_unreachable();
   // should never get here
   Print("Scheduler start failed\r\n");
-  for (;;)
-    ;
+  configASSERT(1==0);
+  __builtin_unreachable();
+  return 0;
 }
 
 uintptr_t __stack_chk_guard = 0xdeadbeef;
 
 void __stack_chk_fail(void)
 {
-  // log_fatal(LOG_SERVICE, "Stack smashing detected\r\n");
+  // fall back to lower-level routine since if we get here things are broken
   UARTPrint(ZQ_UART, "Stack smashing detected\r\n");
   while (MAP_UARTBusy(ZQ_UART))
     ;
-
-  __asm volatile("cpsid i"); /* disable interrupts */
-  __asm volatile("bkpt #0"); /* break target */
-  for (;;)
-    ;
+  configASSERT(1 == 0);
 }
 
 int SystemStackWaterHighWaterMark(void)
