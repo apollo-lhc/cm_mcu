@@ -129,6 +129,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/WatchdogTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LocalTasks.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/BoardCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/SoftwareCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/BufferCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommands.o
