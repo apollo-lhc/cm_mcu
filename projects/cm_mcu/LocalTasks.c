@@ -1354,6 +1354,7 @@ void init_registers_ff()
 
 #define EEPROM_MAX_PER_PAGE 126
 
+// You must claim the semaphore at a higher level than this
 static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_addrs)
 {
   int8_t HighByte = -1; // keep track when reg0 is changed
@@ -1372,7 +1373,6 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
                                           packed_reg0_address, 3, &triplet); // read triplet from eeprom
       if (status_r != 0) {
         log_error(LOG_SERVICE, "read failed: %s\r\n", SMBUS_get_error(status_r));
-        xSemaphoreGive(i2c2_sem);
         return status_r;
       }
       // organize the three bytes
@@ -1385,7 +1385,6 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
         status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, 0x01, 1, reg0); // write a page change to a clock chip
         if (status_w != 0) {
           log_error(LOG_SERVICE, "write failed: %s\r\n", SMBUS_get_error(status_w));
-          xSemaphoreGive(i2c2_sem);
           return status_w; // fail writing and exit
         }
         HighByte = reg0; // update the current high byte or page
@@ -1394,7 +1393,6 @@ static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_add
       status_w = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, i2c_addrs, 1, reg1, 1, data); // write data to a clock chip
       if (status_w != 0) {
         log_error(LOG_SERVICE, "write status is %d \r\n", status_w);
-        xSemaphoreGive(i2c2_sem);
         return status_w; // fail writing and exit
       }
     }
