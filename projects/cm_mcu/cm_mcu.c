@@ -250,6 +250,7 @@ int main(void)
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
     log_set_level(LOG_INFO, i);
   }
+  log_set_level(LOG_ERROR, LOG_MON); // for now
 
   // Initialize all semaphores
   initSemaphores();
