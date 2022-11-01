@@ -83,6 +83,7 @@ void MonitorI2CTask(void *parameters)
   bool good = false;
   for (;;) {
     log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
+	uint8_t count_pwrnoton_ps = 0;
 	// grab the semaphore to ensure unique access to I2C controller
     while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
       ;
@@ -93,7 +94,7 @@ void MonitorI2CTask(void *parameters)
     for (int ps = 0; ps < args->n_devices; ++ps) {
       log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
 	  if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) {
-		  log_info(LOG_MONI2C, "# pwroff ps: %d/%d.\r\n", count_pwroff_ps, args->n_devices);
+		  log_info(LOG_MONI2C, "# pwroff ps: %d/%d.\r\n", count_pwrnoton_ps, args->n_devices);
 		  break;
 	  }
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
@@ -103,7 +104,7 @@ void MonitorI2CTask(void *parameters)
           if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (ps < NFIREFLIES_IT_F1 - 3) * (ps)) + (IsFF12 * (ps > NFIREFLIES_IT_F1 - 3) * (ps + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
             continue;
 #elif defined(REV2)
-          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1)) + (IsFF12 * (ps)))) {// skip the FF if it's not enabled via the FF config	  
+          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1)) + (IsFF12 * (ps)))) // skip the FF if it's not enabled via the FF config	  
             continue;
 #else
 #error "Define either Rev1 or Rev2"
@@ -131,6 +132,7 @@ void MonitorI2CTask(void *parameters)
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
 		vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
+		count_pwrnoton_ps++;
 		continue;
       }
       else if (getPowerControlState() == POWER_ON) { // power is on, and ...
@@ -145,6 +147,7 @@ void MonitorI2CTask(void *parameters)
         log_info(LOG_MONI2C, "%s: power state %d unknown\r\n", args->name,
             getPowerControlState());
         vTaskDelay(10);
+		count_pwrnoton_ps++;
         continue;
       }
 	  // select the appropriate output for the mux
