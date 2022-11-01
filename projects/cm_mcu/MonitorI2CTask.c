@@ -94,7 +94,7 @@ void MonitorI2CTask(void *parameters)
     for (int ps = 0; ps < args->n_devices; ++ps) {
       log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
 	  if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) {
-		  log_info(LOG_MONI2C, "# pwroff ps: %d/%d.\r\n", count_pwrnoton_ps, args->n_devices);
+		  log_debug(LOG_MONI2C, "# pwroff/weird ps: %d/%d.\r\n", count_pwrnoton_ps, args->n_devices);
 		  break;
 	  }
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
