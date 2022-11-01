@@ -82,7 +82,8 @@ void MonitorI2CTask(void *parameters)
 
   bool good = false;
   for (;;) {
-    log_info(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
+    log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
+	uint8_t count_pwroff_ps = 0;
     // grab the semaphore to ensure unique access to I2C controller
     while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
       ;
@@ -91,7 +92,7 @@ void MonitorI2CTask(void *parameters)
     // loop over devices in the device-type instance
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
-      log_info(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
+      log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
 
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
@@ -127,10 +128,13 @@ void MonitorI2CTask(void *parameters)
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
-		log_info(LOG_MONI2C, "pwr off + good = false before delay\r\n");
-        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
-		log_info(LOG_MONI2C, "pwr off + good = false after delay\r\n");
-        continue;
+		vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
+		count_pwroff_ps++;
+		if (ps == args->n_devices - 1) {
+			log_info(LOG_MONI2C, "# pwroff ps: %d/%d.\r\n", count_pwroff_ps, args->n_devices);
+			break;
+		}
+		continue;
       }
       else if (getPowerControlState() == POWER_ON) { // power is on, and ...
         if (!good) {                                 // ... was not good, but is now good
@@ -146,8 +150,7 @@ void MonitorI2CTask(void *parameters)
         vTaskDelay(10);
         continue;
       }
-	  log_info(LOG_MONI2C, "about to set mux\r\n");
-      // select the appropriate output for the mux
+	  // select the appropriate output for the mux
       uint8_t data;
       data = 0x1U << args->devices[ps].mux_bit;
       log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
@@ -156,8 +159,7 @@ void MonitorI2CTask(void *parameters)
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
         break;
       }
-	  log_info(LOG_MONI2C, "about to store moni2c vals\r\n");
-      // Read I2C registers/commands
+	  // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
         int index = ps * (args->n_commands * args->n_pages) + c;
 
@@ -186,11 +188,10 @@ void MonitorI2CTask(void *parameters)
         }
 
       } // loop over commands
-      log_info(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
+      log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
 
     } // loop over devices
-	log_info(LOG_MONI2C, "about to release sem\r\n");
-    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
+	if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
     }
     else {
