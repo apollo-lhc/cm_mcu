@@ -140,7 +140,7 @@ void MonitorI2CTask(void *parameters)
       // if the power state is unknown, don't do anything
       else {
         log_info(LOG_MONI2C, "%s: power state %d unknown\r\n", args->name,
-            getPowerControlState());
+                 getPowerControlState());
         vTaskDelay(10);
         continue;
       }
