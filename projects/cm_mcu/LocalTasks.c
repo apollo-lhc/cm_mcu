@@ -264,7 +264,7 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
-    .name = "FFDAQV",
+    .name = "FFDAV",
     .devices = ffldaq_f2_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F2,
     .n_devices = NSUPPLIES_FFLDAQ_F2,

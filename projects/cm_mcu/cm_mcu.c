@@ -17,6 +17,7 @@
 #include <string.h>
 
 // local includes
+#include "FreeRTOSConfig.h"
 #include "common/LocalUart.h"
 #include "common/utils.h"
 #include "common/power_ctl.h"
@@ -250,7 +251,7 @@ int main(void)
     log_set_level(LOG_INFO, i);
   }
 
-  // mutex for the UART output
+  // Initialize all semaphores
   initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   ffl12_f1_args.xSem = i2c4_sem;
@@ -303,13 +304,13 @@ int main(void)
               NULL);
   xTaskCreate(MonitorI2CTask, "FF12V", 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "FFDAQV", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, "FFDAV", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
 
 #ifdef REV2
   xTaskCreate(MonitorI2CTask, "CLKSI", 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "CLKR0A", 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, "CLKR0", 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
               NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, "PSMON", 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
@@ -371,21 +372,22 @@ int main(void)
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
-
   // should never get here
-  for (;;)
-    ;
+  Print("Scheduler start failed\r\n");
+  configASSERT(1 == 0);
+  __builtin_unreachable();
+  return 0;
 }
 
 uintptr_t __stack_chk_guard = 0xdeadbeef;
 
 void __stack_chk_fail(void)
 {
-  log_fatal(LOG_SERVICE, "Stack smashing detected\r\n");
-  __asm volatile("cpsid i"); /* disable interrupts */
-  __asm volatile("bkpt #0"); /* break target */
-  for (;;)
+  // fall back to lower-level routine since if we get here things are broken
+  UARTPrint(ZQ_UART, "Stack smashing detected\r\n");
+  while (MAP_UARTBusy(ZQ_UART))
     ;
+  configASSERT(1 == 0);
 }
 
 int SystemStackWaterHighWaterMark(void)
@@ -456,6 +458,10 @@ void vApplicationIdleHook(void)
 #if (configUSE_MALLOC_FAILED_HOOK == 1)
 void vApplicationMallocFailedHook(void)
 {
+  UARTPrint(ZQ_UART, "vApplicationMallocFailedHook\r\n");
+  while (MAP_UARTBusy(ZQ_UART))
+    ;
+
   for (;;)
     ;
 }

@@ -35,8 +35,6 @@
 
 // local prototype
 
-void Print(const char *str);
-
 // read-only accessor functions for Firefly names and values.
 
 bool getFFch_low(uint8_t val, int channel)
@@ -58,8 +56,6 @@ bool getFFch_high(uint8_t val, int channel)
 }
 
 extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
-
-#define TMPBUFFER_SZ 96
 
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
 void MonitorI2CTask(void *parameters)
@@ -86,8 +82,7 @@ void MonitorI2CTask(void *parameters)
 
   bool good = false;
   for (;;) {
-    char tmp[TMPBUFFER_SZ];
-
+    log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
     // grab the semaphore to ensure unique access to I2C controller
     while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
       ;
@@ -96,6 +91,7 @@ void MonitorI2CTask(void *parameters)
     // loop over devices in the device-type instance
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
+      log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
 
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
@@ -123,10 +119,10 @@ void MonitorI2CTask(void *parameters)
         }
         args->updateTick = xTaskGetTickCount();
       }
+      log_debug(LOG_MONI2C, "%s: powercheck\r\n", args->name);
 
       if (getPowerControlState() != POWER_ON) {
         if (good) {
-          snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 died. Skipping I2C monitoring.\r\n", args->name);
           log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
@@ -137,7 +133,6 @@ void MonitorI2CTask(void *parameters)
       else if (getPowerControlState() == POWER_ON) { // power is on, and ...
         if (!good) {                                 // ... was not good, but is now good
           task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
-          snprintf(tmp, TMPBUFFER_SZ, "MONI2C(%s): 3V3 came back. Restarting I2C monitoring.\r\n", args->name);
           log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
           good = true;
         }
@@ -158,17 +153,18 @@ void MonitorI2CTask(void *parameters)
       for (int c = 0; c < args->n_commands; ++c) {
         int index = ps * (args->n_commands * args->n_pages) + c;
 
-        char tmp[64];
-        snprintf(tmp, 64, "Debug: name = %s.\r\n", args->commands[c].name);
+        log_debug(LOG_MONI2C, "%s: command page %s.\r\n", args->name, args->commands[c].name);
         uint8_t page_reg_value = args->commands[c].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, 0x01, 1, page_reg_value);
         if (r != 0) {
-          log_error(LOG_MONI2C, "SMBUS page failed %s\r\n", SMBUS_get_error(r));
-          Print("SMBUS command failed  (setting page)\r\n");
+          log_error(LOG_MONI2C, "%s: page fail %s\r\n", args->name, SMBUS_get_error(r));
+          break;
         }
 
+        log_debug(LOG_MONI2C, "%s: command %s.\r\n", args->name, args->commands[c].name);
         uint32_t output_raw;
-        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size, args->commands[c].command, args->commands[c].size, &output_raw);
+        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size,
+                                       args->commands[c].command, args->commands[c].size, &output_raw);
         uint16_t masked_output = output_raw & args->commands[c].bit_mask;
 
         if (res != 0) {
@@ -182,6 +178,7 @@ void MonitorI2CTask(void *parameters)
         }
 
       } // loop over commands
+      log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
 
     } // loop over devices
 

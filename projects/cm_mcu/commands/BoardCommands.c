@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 #include <stdlib.h>
+#include "FreeRTOSConfig.h"
 #include "commands/parameters.h"
 #include "common/utils.h"
 #include "driverlib/gpio.h"
@@ -80,7 +81,6 @@ BaseType_t set_board_id_password(int argc, char **argv, char *m)
 BaseType_t board_id_info(int argc, char **argv, char *m)
 {
   int copied = 0;
-  ;
 
   uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
   uint32_t ps = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
