@@ -83,8 +83,7 @@ void MonitorI2CTask(void *parameters)
   bool good = false;
   for (;;) {
     log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
-	uint8_t count_pwrnoton_ps = 0;
-	// grab the semaphore to ensure unique access to I2C controller
+    // grab the semaphore to ensure unique access to I2C controller
     while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
       ;
     args->updateTick = xTaskGetTickCount(); // current time in ticks
@@ -93,10 +92,10 @@ void MonitorI2CTask(void *parameters)
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
       log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
-	  if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) {
-		  log_debug(LOG_MONI2C, "# pwroff/weird ps: %d/%d.\r\n", count_pwrnoton_ps, args->n_devices);
-		  break;
-	  }
+      
+      if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) { // avoid continues to infinite loops due to multi-threading when pwr is not on 
+          break;
+      }
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1
@@ -104,7 +103,7 @@ void MonitorI2CTask(void *parameters)
           if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (ps < NFIREFLIES_IT_F1 - 3) * (ps)) + (IsFF12 * (ps > NFIREFLIES_IT_F1 - 3) * (ps + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
             continue;
 #elif defined(REV2)
-          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1)) + (IsFF12 * (ps)))) // skip the FF if it's not enabled via the FF config	  
+          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1)) + (IsFF12 * (ps)))) // skip the FF if it's not enabled via the FF config
             continue;
 #else
 #error "Define either Rev1 or Rev2"
@@ -131,9 +130,8 @@ void MonitorI2CTask(void *parameters)
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
-		vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
-		count_pwrnoton_ps++;
-		continue;
+        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
+        continue;
       }
       else if (getPowerControlState() == POWER_ON) { // power is on, and ...
         if (!good) {                                 // ... was not good, but is now good
@@ -145,12 +143,11 @@ void MonitorI2CTask(void *parameters)
       // if the power state is unknown, don't do anything
       else {
         log_info(LOG_MONI2C, "%s: power state %d unknown\r\n", args->name,
-            getPowerControlState());
+                 getPowerControlState());
         vTaskDelay(10);
-		count_pwrnoton_ps++;
         continue;
       }
-	  // select the appropriate output for the mux
+      // select the appropriate output for the mux
       uint8_t data;
       data = 0x1U << args->devices[ps].mux_bit;
       log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
@@ -159,7 +156,8 @@ void MonitorI2CTask(void *parameters)
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
         break;
       }
-	  // Read I2C registers/commands
+
+      // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
         int index = ps * (args->n_commands * args->n_pages) + c;
 
@@ -191,7 +189,8 @@ void MonitorI2CTask(void *parameters)
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
 
     } // loop over devices
-	if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
+
+    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
     }
     else {
