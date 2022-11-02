@@ -92,7 +92,7 @@ void MonitorI2CTask(void *parameters)
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
       log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
-
+	  
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1
@@ -107,6 +107,10 @@ void MonitorI2CTask(void *parameters)
 #endif
         }
         if (args->i2c_dev == I2C_DEVICE_F2) { // FPGA #2
+			log_debug(LOG_MONI2C, "ff %d\r\n", NFIREFLIES_F1 + (IsFFDAQ * (ps + NFIREFLIES_IT_F2)) + (IsFF12 * (ps)));
+			log_debug(LOG_MONI2C, "nff_f1 %d\r\n", NFIREFLIES_F1);
+			log_debug(LOG_MONI2C, "nff_it_f2 %d\r\n", NFIREFLIES_IT_F2);
+			log_debug(LOG_MONI2C, "isffdaq %d or isff12 %d\r\n", IsFFDAQ, IsFF12);
 #ifdef REV1
           if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (ps)) + (IsFF12 * (ps + NFIREFLIES_DAQ_F2)))) // skip the FF if it's not enabled via the FF config
             continue;
