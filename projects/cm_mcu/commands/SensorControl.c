@@ -1006,7 +1006,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   int copied = 0;
   static int c = 0;
   BaseType_t i = strtol(argv[1], NULL, 10);
-  if (c == 0) {
+  if (c == 0 && !(i < 0 || i > 4)) {
     char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id : %s \r\n",
                        clk_ids[i]);
