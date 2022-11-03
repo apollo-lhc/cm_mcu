@@ -604,12 +604,12 @@ void getFFpart(void)
   // FF connecting to FPGA1
   uint8_t vendor_data1[4];
   uint32_t vendor_char1;
-  int8_t vendor_part1[16];
+  int8_t vendor_part1[17];
 
   // FF connecting to FPGA2
   uint8_t vendor_data2[4];
   uint32_t vendor_char2;
-  int8_t vendor_part2[16];
+  int8_t vendor_part2[17];
 
   uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
   uint8_t ven_addr_stop = VENDOR_STOP_BIT_FF12;
