@@ -680,7 +680,6 @@ void getFFpart(void)
     vendor_part2[i - ven_addr_start + 1] = '\0'; // null-terminated
   }
 
-
   char *vendor_string2 = (char *)vendor_part2;
   log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2) : %s \r\n:", vendor_string2);
   if ((strstr(vendor_string2, "14") != NULL)) {
