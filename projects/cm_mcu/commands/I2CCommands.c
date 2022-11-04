@@ -11,7 +11,7 @@
 #include "Semaphore.h"
 #include "projdefs.h"
 
-static SemaphoreHandle_t getSemaphore(int number)
+SemaphoreHandle_t getSemaphore(int number)
 {
   SemaphoreHandle_t s;
   switch (number) {

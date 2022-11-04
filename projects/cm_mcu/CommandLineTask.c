@@ -336,7 +336,7 @@ static struct command_t commands[] = {
     {"psmon", psmon_ctl, "Displays a table showing the state of power supplies.\r\n", 1},
     {"psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2},
     {"restart_mcu", restart_mcu, "Restart the microcontroller\r\n", 0},
-    {"semaphore", sem_ctl, "args: <i2cdev 1-6> <take|release>\r\nTake or release a semaphore\r\n", 2},
+    {"semaphore", sem_ctl, "args: (none)|<i2cdev 1-6> <take|release>\r\nTake or release a semaphore\r\n", -1},
     {"snapshot", snapshot,
      "args:# (0|1)\r\nDump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
      "if to reset snapshot.\r\n",

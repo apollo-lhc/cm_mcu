@@ -4,6 +4,7 @@
 #include "commands/SoftwareCommands.h"
 #include "FreeRTOS.h"
 #include "Tasks.h"
+#include "commands/parameters.h"
 #include "portmacro.h"
 #include "Semaphore.h"
 #include "projdefs.h"
@@ -372,56 +373,51 @@ portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
 // take or release one of the i2c semaphores
 BaseType_t sem_ctl(int argc, char **argv, char *m)
 {
-  // which semaphore
-  int number = atoi(argv[1]);
-  SemaphoreHandle_t s = 0;
-  switch (number) {
-    case 1:
-      s = i2c1_sem;
-      break;
-    case 2:
-      s = i2c2_sem;
-      break;
-    case 3:
-      s = i2c3_sem;
-      break;
-    case 4:
-      s = i2c4_sem;
-      break;
-    case 5:
-      s = i2c5_sem;
-      break;
-    case 6:
-      s = i2c6_sem;
-      break;
-    default:
-      snprintf(m, SCRATCH_SIZE, "%s: value must be between 1-6 (got %s)\r\n", argv[0], argv[1]);
-      return pdFALSE;
-      break;
+  static uint16_t sem_status = 0U;
+  if ( argc == 1 ) { // print out status of the semaphores as maintained locally
+                     // this shows which semaphores have been accessed via this mechanism only
+    snprintf(m, SCRATCH_SIZE, "%s: semaphore status is %u\r\n", argv[0], sem_status);
+    return pdFALSE;
   }
-  // options are
-  // take or release
-  if (strncmp(argv[2], "release", 5) == 0) {
-    // check if we have the semaphore
-    if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
-      xSemaphoreGive(s);
-      snprintf(m, SCRATCH_SIZE, "%s: releasing semaphore %d\r\n", argv[0], number);
+  else if (argc == 3) { // take/release a semaphore
+    // which semaphore
+    int number = atoi(argv[1]);
+    SemaphoreHandle_t s = getSemaphore(number);
+    if ( s == NULL) {
+        snprintf(m, SCRATCH_SIZE, "%s: value must be between 1-6 (got %s)\r\n", argv[0], argv[1]);
+        return pdFALSE;
     }
-    else { // we don't hold this semaphore
-      snprintf(m, SCRATCH_SIZE, "%s: trying to release a semaphore %d we don't hold\r\n", argv[0], number);
+    // options are
+    // take or release
+    if (strncmp(argv[2], "release", 5) == 0) {
+      // check if we have the semaphore
+      if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
+        xSemaphoreGive(s);
+        // unset bit in mask
+        sem_status &= ~(0x1U << number);
+        snprintf(m, SCRATCH_SIZE, "%s: releasing semaphore %d (mask %u)\r\n", argv[0], number, sem_status);
+      }
+      else { // we don't hold this semaphore
+        snprintf(m, SCRATCH_SIZE, "%s: trying to release a semaphore %d we don't hold\r\n", argv[0], number);
+      }
     }
-  }
-  else if (strncmp(argv[2], "take", 4) == 0) {
-    // try to acquire the semaphore. Wait a finite amount of time.
-    if (xSemaphoreTake(s, (TickType_t)50) == pdTRUE) {
-      snprintf(m, SCRATCH_SIZE, "%s: taking semaphore %d\r\n", argv[0], number);
+    else if (strncmp(argv[2], "take", 4) == 0) {
+      // try to acquire the semaphore. Wait a finite amount of time.
+      if (xSemaphoreTake(s, (TickType_t)50) == pdTRUE) {
+        snprintf(m, SCRATCH_SIZE, "%s: taking semaphore %d\r\n", argv[0], number);
+        sem_status |= 0x1U << number;
+      }
+      else {
+        snprintf(m, SCRATCH_SIZE, "%s: failed to acquire semaphore %d in time\r\n", argv[0], number);
+      }
     }
     else {
-      snprintf(m, SCRATCH_SIZE, "%s: failed to acquire semaphore %d in time\r\n", argv[0], number);
+      snprintf(m, SCRATCH_SIZE, "%s: argument must be 'release' or 'take' (got %s)\r\n", argv[0], argv[2]);
     }
+    return pdFALSE;
   }
   else {
-    snprintf(m, SCRATCH_SIZE, "%s: argument must be 'release' or 'take' (got %s)\r\n", argv[0], argv[2]);
+    snprintf(m, SCRATCH_SIZE, "%s: unknown argument(s), expect 0 or 2\r\n", argv[0]);
+    return pdFAIL;
   }
-  return pdFALSE;
 }
