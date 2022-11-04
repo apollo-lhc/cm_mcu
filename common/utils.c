@@ -266,7 +266,7 @@ void errbuffer_init(uint8_t minblk, uint8_t maxblk)
   ebuf->n_continue = 0;
 }
 
-void errbuffer_reset()
+void errbuffer_reset(void)
 {
   uint32_t addr = ebuf->minaddr;
   uint32_t maddr = ebuf->maxaddr;
@@ -501,7 +501,7 @@ void float_to_ints(float val, int *tens, int *fraction)
   return;
 }
 
-bool checkStale(int oldTime, int newTime)
+bool checkStale(unsigned oldTime, unsigned newTime)
 {
   return ((oldTime < newTime) && (newTime - oldTime) > 60);
 }
