@@ -374,8 +374,8 @@ portBASE_TYPE taskInfo(int argc, char *argv[], char *m)
 BaseType_t sem_ctl(int argc, char **argv, char *m)
 {
   static uint16_t sem_status = 0U;
-  if ( argc == 1 ) { // print out status of the semaphores as maintained locally
-                     // this shows which semaphores have been accessed via this mechanism only
+  if (argc == 1) { // print out status of the semaphores as maintained locally
+                   // this shows which semaphores have been accessed via this mechanism only
     snprintf(m, SCRATCH_SIZE, "%s: semaphore status is 0x%02x\r\n", argv[0], sem_status);
     return pdFALSE;
   }
@@ -383,9 +383,9 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
     // which semaphore
     int number = atoi(argv[1]);
     SemaphoreHandle_t s = getSemaphore(number);
-    if ( s == NULL) {
-        snprintf(m, SCRATCH_SIZE, "%s: value must be between 1-6 (got %s)\r\n", argv[0], argv[1]);
-        return pdFALSE;
+    if (s == NULL) {
+      snprintf(m, SCRATCH_SIZE, "%s: value must be between 1-6 (got %s)\r\n", argv[0], argv[1]);
+      return pdFALSE;
     }
     // options are
     // take or release

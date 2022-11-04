@@ -43,13 +43,13 @@ SemaphoreHandle_t getSemaphore(int number)
 static int acquireI2CSemaphore(SemaphoreHandle_t s)
 {
   int retval = pdTRUE;
-  if ( s == NULL ) {
+  if (s == NULL) {
     return pdFAIL;
   }
   int tries = 0;
   while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE) {
     ++tries;
-    if (tries > MAX_TRIES ) {
+    if (tries > MAX_TRIES) {
       retval = pdFAIL;
       break;
     }
@@ -82,11 +82,11 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
     return pdFALSE;
   }
   SemaphoreHandle_t s = getSemaphore(device);
-  if ( s == NULL ) {
+  if (s == NULL) {
     snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore\r\n", argv[0]);
     return pdFALSE;
   }
-  if ( acquireI2CSemaphore(s) == pdFAIL ) {
+  if (acquireI2CSemaphore(s) == pdFAIL) {
     snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
