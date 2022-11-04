@@ -376,7 +376,7 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
   static uint16_t sem_status = 0U;
   if ( argc == 1 ) { // print out status of the semaphores as maintained locally
                      // this shows which semaphores have been accessed via this mechanism only
-    snprintf(m, SCRATCH_SIZE, "%s: semaphore status is %u\r\n", argv[0], sem_status);
+    snprintf(m, SCRATCH_SIZE, "%s: semaphore status is 0x%02x\r\n", argv[0], sem_status);
     return pdFALSE;
   }
   else if (argc == 3) { // take/release a semaphore
@@ -395,7 +395,7 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
         xSemaphoreGive(s);
         // unset bit in mask
         sem_status &= ~(0x1U << number);
-        snprintf(m, SCRATCH_SIZE, "%s: releasing semaphore %d (mask %u)\r\n", argv[0], number, sem_status);
+        snprintf(m, SCRATCH_SIZE, "%s: releasing semaphore %d (mask 0x%02x)\r\n", argv[0], number, sem_status);
       }
       else { // we don't hold this semaphore
         snprintf(m, SCRATCH_SIZE, "%s: trying to release a semaphore %d we don't hold\r\n", argv[0], number);
@@ -403,7 +403,7 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
     }
     else if (strncmp(argv[2], "take", 4) == 0) {
       // try to acquire the semaphore. Wait a finite amount of time.
-      if (xSemaphoreTake(s, (TickType_t)50) == pdTRUE) {
+      if (xSemaphoreTake(s, pdMS_TO_TICKS(500)) == pdTRUE) {
         snprintf(m, SCRATCH_SIZE, "%s: taking semaphore %d\r\n", argv[0], number);
         sem_status |= 0x1U << number;
       }
