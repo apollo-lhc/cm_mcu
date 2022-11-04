@@ -1006,13 +1006,6 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   int copied = 0;
   static int c = 0;
   BaseType_t i = strtol(argv[1], NULL, 10);
-  if (c == 0 && !(i < 0 || i > 4)) {
-    char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id : %s \r\n",
-                       clk_ids[i]);
-    char *header = "REG_TABLE";
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
-  }
   if (i < 0 || i > 4) {
     snprintf(m + copied, SCRATCH_SIZE - copied,
              "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, "
@@ -1020,7 +1013,15 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
              i);
     return pdFALSE;
   }
-
+  else {
+    if (c == 0) {
+      char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id : %s \r\n",
+                         clk_ids[i]);
+      char *header = "REG_TABLE";
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
+    }
+  }
   if (i == 0) {
 
     // update times, in seconds
