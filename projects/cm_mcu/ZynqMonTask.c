@@ -271,7 +271,7 @@ void zm_set_adcmon(struct zynqmon_data_t data[], int start)
   // update the data for ZMON
   for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
     data[i].sensor = i + start;      // sensor id
-    data[i].data.f = getADCvalue(i); // sensor value and type
+    data[i].data.f = (__fp16)getADCvalue(i); // sensor value and type
   }
 }
 
@@ -295,14 +295,14 @@ void zm_set_psmon_legacy(struct zynqmon_data_t data[], int start)
             j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
 
         if (stale) {
-          data[index].data.f = __builtin_nanf("");
+          data[index].data.f = (__fp16)__builtin_nanf("");
         }
         else {
-          data[index].data.f = dcdc_args.pm_values[index];
+          data[index].data.f = (__fp16)dcdc_args.pm_values[index];
           if (data[index].data.f < -900.f)
-            data[index].data.f = __builtin_nanf("");
+            data[index].data.f = (__fp16)__builtin_nanf("");
         }
-        int reg = offsets[j * 2 + l] + k;
+        uint8_t reg = offsets[j * 2 + l] + k;
         data[index].sensor = reg;
       }
     }
@@ -329,12 +329,12 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
             j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
 
         if (stale) {
-          data[ll].data.f = __builtin_nanf("");
+          data[ll].data.f = (__fp16)__builtin_nanf("");
         }
         else {
-          data[ll].data.f = dcdc_args.pm_values[index];
+          data[ll].data.f = (__fp16)dcdc_args.pm_values[index];
           if (data[l].data.f < -900.f)
-            data[ll].data.f = __builtin_nanf("");
+            data[ll].data.f = (__fp16)__builtin_nanf("");
         }
         data[ll].sensor = ll + start;
         ++ll;
@@ -354,12 +354,12 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
   for (int j = 0; j < fpga_args.n_commands * fpga_args.n_devices; ++j) {
 
     if (stale) {
-      data[j].data.f = __builtin_nanf("");
+      data[j].data.f = (__fp16)__builtin_nanf("");
     }
     else {
-      data[j].data.f = fpga_args.pm_values[j];
+      data[j].data.f = (__fp16)fpga_args.pm_values[j];
       if (data[j].data.f < -900.f)
-        data[j].data.f = __builtin_nanf("");
+        data[j].data.f = (__fp16)__builtin_nanf("");
     }
     data[j].sensor = j + start;
   }
