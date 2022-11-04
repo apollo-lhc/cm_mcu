@@ -270,7 +270,7 @@ void zm_set_adcmon(struct zynqmon_data_t data[], int start)
 {
   // update the data for ZMON
   for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-    data[i].sensor = i + start;      // sensor id
+    data[i].sensor = i + start;              // sensor id
     data[i].data.f = (__fp16)getADCvalue(i); // sensor value and type
   }
 }
