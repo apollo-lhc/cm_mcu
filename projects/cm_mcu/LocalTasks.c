@@ -604,12 +604,12 @@ void getFFpart(void)
   // FF connecting to FPGA1
   uint8_t vendor_data1[4];
   uint32_t vendor_char1;
-  int8_t vendor_part1[16];
+  int8_t vendor_part1[17];
 
   // FF connecting to FPGA2
   uint8_t vendor_data2[4];
   uint32_t vendor_char2;
-  int8_t vendor_part2[16];
+  int8_t vendor_part2[17];
 
   uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
   uint8_t ven_addr_stop = VENDOR_STOP_BIT_FF12;
@@ -630,8 +630,8 @@ void getFFpart(void)
       vendor_part1[i - ven_addr_start] = 0;
       break;
     }
-    for (int i = 0; i < 4; ++i) {
-      vendor_data1[i] = (vendor_char1 >> (3 - i) * 8) & 0xFF;
+    for (int j = 0; j < 4; ++j) {
+      vendor_data1[j] = (vendor_char1 >> (3 - j) * 8) & 0xFF;
     }
 
     typedef union {
@@ -642,10 +642,11 @@ void getFFpart(void)
 
     tmp1.us = vendor_data1[3]; // change from uint_8 to int8_t, preserving bit pattern
     vendor_part1[i - ven_addr_start] = tmp1.s;
+    vendor_part1[i - ven_addr_start + 1] = '\0'; // null-terminated
   }
 
   char *vendor_string1 = (char *)vendor_part1;
-  log_info(LOG_SERVICE, "Getting Firefly 4-ch part (FPGA1): %s \r\n:", vendor_string1);
+  log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string1);
   if ((strstr(vendor_string1, "14") != NULL)) {
     ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
   }
@@ -665,8 +666,8 @@ void getFFpart(void)
       vendor_part2[i - ven_addr_start] = 0;
       break;
     }
-    for (int i = 0; i < 4; ++i) {
-      vendor_data2[i] = (vendor_char2 >> (3 - i) * 8) & 0xFF;
+    for (int j = 0; j < 4; ++j) {
+      vendor_data2[j] = (vendor_char2 >> (3 - j) * 8) & 0xFF;
     }
     typedef union {
       uint8_t us;
@@ -676,10 +677,11 @@ void getFFpart(void)
 
     tmp1.us = vendor_data2[3]; // change from uint_8 to int8_t, preserving bit pattern
     vendor_part2[i - ven_addr_start] = tmp1.s;
+    vendor_part2[i - ven_addr_start + 1] = '\0'; // null-terminated
   }
 
   char *vendor_string2 = (char *)vendor_part2;
-  log_info(LOG_SERVICE, "Getting Firefly 4-ch part (FPGA2) : %s \r\n:", vendor_string2);
+  log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2) : %s \r\n:", vendor_string2);
   if ((strstr(vendor_string2, "14") != NULL)) {
     ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
   }
