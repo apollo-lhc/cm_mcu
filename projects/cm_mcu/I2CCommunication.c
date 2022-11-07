@@ -169,7 +169,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   return r;
 }
 
-int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, int value)
+int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned int value)
 {
   tSMBus *p_sMaster = pSMBus[device];
   tSMBusStatus *p_eStatus = eStatus[device];

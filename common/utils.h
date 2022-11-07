@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <sys/_types.h>
 
 #include "math.h"
 #include "stdlib.h"
@@ -118,7 +119,7 @@ void stopwatch_reset(void);
 uint32_t stopwatch_getticks(void);
 
 // freertos tick compare including rollover
-bool checkStale(int oldTime, int newTime);
+bool checkStale(unsigned oldTime, unsigned newTime);
 
 void float_to_ints(float val, int *tens, int *fraction);
 // this will suffer from the double evaluation bug
