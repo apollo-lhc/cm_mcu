@@ -81,15 +81,7 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "%s: invalid device %ld\r\n", argv[0], device);
     return pdFALSE;
   }
-  SemaphoreHandle_t s = getSemaphore(device);
-  if (s == NULL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore\r\n", argv[0]);
-    return pdFALSE;
-  }
-  if (acquireI2CSemaphore(s) == pdFAIL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    return pdFALSE;
-  }
+
   int status = apollo_i2c_ctl_r(device, address, nbytes, data);
   if (status == 0) {
     snprintf(m, SCRATCH_SIZE, "%s: dev %ld, addr 0x%02lx: val=0x%02x %02x %02x %02x\r\n", argv[0],
@@ -98,7 +90,7 @@ BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
   else {
     snprintf(m, SCRATCH_SIZE, "%s: failure %d (%s)\r\n", argv[0], status, SMBUS_get_error(status));
   }
-  xSemaphoreGive(s);
+
   return pdFALSE;
 }
 
@@ -122,15 +114,6 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "%s: nbytes or nbytes_addr is zero\r\n", argv[0]);
     return pdFALSE;
   }
-  SemaphoreHandle_t s = getSemaphore(device);
-  if (s == NULL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore\r\n", argv[0]);
-    return pdFALSE;
-  }
-  if (acquireI2CSemaphore(s) == pdFAIL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    return pdFALSE;
-  }
 
   int status = apollo_i2c_ctl_reg_r(device, address, nbytes_addr, packed_reg_address,
                                     nbytes, &packed_data);
@@ -144,7 +127,7 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: failure %d (%s)\r\n", argv[0], status,
              SMBUS_get_error(status));
   }
-  xSemaphoreGive(s);
+
   return pdFALSE;
 }
 
@@ -168,16 +151,6 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
     return pdFALSE;
   }
 
-  SemaphoreHandle_t s = getSemaphore(device);
-  if (s == NULL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore\r\n", argv[0]);
-    return pdFALSE;
-  }
-  if (acquireI2CSemaphore(s) == pdFAIL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    return pdFALSE;
-  }
-
   int status = apollo_i2c_ctl_reg_w(device, address, nbytes_addr, packed_reg_address, nbytes, packed_data);
   if (status == 0) {
     snprintf(m, SCRATCH_SIZE, "%s: W to addr 0x%lx, reg 0x%lx, val=0x%08lx (%ld bytes)\r\n", argv[0],
@@ -187,7 +160,6 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "%s: failure %d (%s)\r\n", argv[0], status, SMBUS_get_error(status));
   }
 
-  xSemaphoreGive(s);
   return pdFALSE;
 }
 
@@ -210,16 +182,6 @@ BaseType_t i2c_ctl_w(int argc, char **argv, char *m)
     return pdFALSE;
   }
 
-  SemaphoreHandle_t s = getSemaphore(device);
-  if (s == NULL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore\r\n", argv[0]);
-    return pdFALSE;
-  }
-  if (acquireI2CSemaphore(s) == pdFAIL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    return pdFALSE;
-  }
-
   int status = apollo_i2c_ctl_w(device, address, nbytes, value);
   if (status == 0) {
     snprintf(m, SCRATCH_SIZE, "i2cwr: Wrote to addr 0x%lx, val=0x%08lx (%ld bytes)\r\n", address,
@@ -228,7 +190,6 @@ BaseType_t i2c_ctl_w(int argc, char **argv, char *m)
   else {
     snprintf(m, SCRATCH_SIZE, "%s: failure %d (%s)\r\n", argv[0], status, SMBUS_get_error(status));
   }
-  xSemaphoreGive(s);
   return pdFALSE;
 }
 
