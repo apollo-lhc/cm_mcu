@@ -74,9 +74,9 @@ void MonitorI2CTask(void *parameters)
   // wait for the power to come up
   vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(2500));
 
-  int IsCLK = (strstr(args->name, "CLK") != NULL);     // the instance is of CLK-device type
-  int IsFF12 = (strstr(args->name, "FF12") != NULL);   // the instance is of FF 12-ch part type
-  int IsFFDAQ = (strstr(args->name, "FFDAQ") != NULL); // the instance is of FF 4-ch part type (DAQ links) -- not being used currently
+  int IsCLK = (strstr(args->name, "CLK") != NULL);    // the instance is of CLK-device type
+  int IsFF12 = (strstr(args->name, "FF12") != NULL);  // the instance is of FF 12-ch part type
+  int IsFFDAQ = (strstr(args->name, "FFDA") != NULL); // the instance is of FF 4-ch part type (DAQ links) -- not being used currently
 
   // reset the wake time to account for the time spent in any work in i2c tasks
 
@@ -93,6 +93,9 @@ void MonitorI2CTask(void *parameters)
     for (int ps = 0; ps < args->n_devices; ++ps) {
       log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
 
+      if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) { // avoid continues to infinite loops due to multi-threading when pwr is not on
+        break;
+      }
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1
