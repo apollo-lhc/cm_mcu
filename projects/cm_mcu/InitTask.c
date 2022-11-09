@@ -40,8 +40,8 @@ void InitTask(void *parameters)
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 #endif                  // REV1
-  init_registers_ff();  // initalize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
-  init_registers_clk(); // initalize I/O expander for clocks
+  init_registers_ff();  // initialize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
+  init_registers_clk(); // initialize I/O expander for clocks
   readFFpresent();
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
 #ifdef REV2
@@ -51,7 +51,14 @@ void InitTask(void *parameters)
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM
   }
-  xSemaphoreGive(i2c2_sem);
+  // check if we have the semaphore
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
+  else {
+    log_info(LOG_SERVICE, "tried to release semaphore I don't own\r\n");
+  }
+  //xSemaphoreGive(i2c2_sem);
   log_info(LOG_SERVICE, "Clocks configured\r\n");
   getFFpart(); // the order of where to check FF part matters -- it won't be able to read anything if check sooner
 #endif         // REV2

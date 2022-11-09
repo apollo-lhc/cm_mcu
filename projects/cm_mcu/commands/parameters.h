@@ -73,3 +73,5 @@ extern tSMBus g_sMaster5;
 extern tSMBusStatus eStatus5;
 extern tSMBus g_sMaster6;
 extern tSMBusStatus eStatus6;
+
+SemaphoreHandle_t getSemaphore(int number);

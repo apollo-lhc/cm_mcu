@@ -93,6 +93,9 @@ void MonitorI2CTask(void *parameters)
     for (int ps = 0; ps < args->n_devices; ++ps) {
       log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
 
+      if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) { // avoid continues to infinite loops due to multi-threading when pwr is not on
+        break;
+      }
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1
@@ -138,7 +141,12 @@ void MonitorI2CTask(void *parameters)
         }
       }
       // if the power state is unknown, don't do anything
-
+      else {
+        log_info(LOG_MONI2C, "%s: power state %d unknown\r\n", args->name,
+                 getPowerControlState());
+        vTaskDelay(10);
+        continue;
+      }
       // select the appropriate output for the mux
       uint8_t data;
       data = 0x1U << args->devices[ps].mux_bit;
@@ -182,7 +190,14 @@ void MonitorI2CTask(void *parameters)
 
     } // loop over devices
 
-    xSemaphoreGive(args->xSem);
+    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
+      xSemaphoreGive(args->xSem);
+    }
+    else {
+      log_info(LOG_MONI2C, "tried to release semaphore I don't own\r\n");
+    }
+
+    //xSemaphoreGive(args->xSem);
 
     // monitor stack usage for this task
     CHECK_TASK_STACK_USAGE(args->stack_size);
