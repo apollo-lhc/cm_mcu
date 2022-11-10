@@ -34,6 +34,7 @@
 #include "common/power_ctl.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
+#include "Semaphore.h"
 
 // Todo: rewrite to get away from awkward/bad SMBUS implementation from TI
 
@@ -68,8 +69,9 @@ void MonitorTask(void *parameters)
   for (;;) {
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
-      while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
-        ;
+    	if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
+    		log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    	}
     }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices

@@ -48,8 +48,11 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
   if (i2c_device == I2C_DEVICE_F2) {
     s = i2c3_sem;
   }
-  while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
-    ;
+
+  if (acquireI2CSemaphore(s) == pdFAIL) {
+	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+	  return -2;
+  }
 
   // write to the mux
   // select the appropriate output for the mux
@@ -96,8 +99,11 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   if (i2c_device == I2C_DEVICE_F2) {
     s = i2c3_sem;
   }
-  while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
-    ;
+
+  if (acquireI2CSemaphore(s) == pdFAIL) {
+      log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+      return -2;
+  }
 
   // write to the mux
   // select the appropriate output for the mux

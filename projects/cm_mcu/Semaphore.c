@@ -73,3 +73,4 @@ int acquireI2CSemaphore(SemaphoreHandle_t s)
   }
   return retval;
 }
+

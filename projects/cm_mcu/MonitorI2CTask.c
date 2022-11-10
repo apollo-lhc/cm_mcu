@@ -32,6 +32,7 @@
 #include "common/log.h"
 #include "Tasks.h"
 #include "I2CCommunication.h"
+#include "Semaphore.h"
 
 // local prototype
 
@@ -84,8 +85,10 @@ void MonitorI2CTask(void *parameters)
   for (;;) {
     log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
     // grab the semaphore to ensure unique access to I2C controller
-    while (xSemaphoreTake(args->xSem, (TickType_t)10) == pdFALSE)
-      ;
+    if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
+    	log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    }
+
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // -------------------------------
     // loop over devices in the device-type instance

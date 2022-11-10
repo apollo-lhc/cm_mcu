@@ -438,9 +438,10 @@ void setFFmask(uint32_t ff_combined_present)
 
 void readFFpresent(void)
 {
-
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
+	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
 #ifdef REV1
   uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
 #elif defined(REV2)
@@ -464,9 +465,10 @@ void readFFpresent(void)
 #endif
 
   xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
-
-  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
+	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
 #ifdef REV1
   // to port 0
   apollo_i2c_ctl_w(3, 0x72, 1, 0x01);
@@ -596,10 +598,10 @@ int8_t getFFtemp(const uint8_t i)
 
 void getFFpart(void)
 {
-
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
-
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
+	log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // Write device vendor part for identifying FF devices
   // FF connecting to FPGA1
   uint8_t vendor_data1[4];
@@ -832,8 +834,10 @@ struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
 
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
-  while (xSemaphoreTake(i2c1_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
+  	log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
@@ -874,8 +878,10 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
 // this is currently not ensured in this code.
 void LGA80D_init(void)
 {
-  while (xSemaphoreTake(i2c1_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
+     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   log_info(LOG_SERVICE, "LGA80D_init\r\n");
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
@@ -1057,9 +1063,9 @@ void init_registers_clk()
   // All unused signals should be inputs [P07..P04], [P17..P15].
 
   // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
-    ;
-
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
   apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0xf0); // 11110000 [P07..P00]
@@ -1110,11 +1116,10 @@ void init_registers_ff()
   // 3a) U102 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
   // All signals are inputs.
 
-  // grab the i2c4 semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
-
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // # set first I2C switch on channel 4 (U100, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
@@ -1153,10 +1158,10 @@ void init_registers_ff()
 
   xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 
-  // grab the i2c3 semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
 
@@ -1209,10 +1214,9 @@ void init_registers_clk()
   // The remaining 10 signals are outputs.
 
   // grab the semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
-    ;
-
+  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
   apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
@@ -1269,11 +1273,10 @@ void init_registers_ff()
   // 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
   // All signals are inputs.
 
-  // grab the i2c4 semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
-
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
@@ -1306,10 +1309,10 @@ void init_registers_ff()
 
   xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 
-  // grab the i2c3 semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
 

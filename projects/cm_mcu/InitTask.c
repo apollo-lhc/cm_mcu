@@ -46,8 +46,9 @@ void InitTask(void *parameters)
   log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
 #ifdef REV2
   // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
-    ;
+  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  }
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM
   }
