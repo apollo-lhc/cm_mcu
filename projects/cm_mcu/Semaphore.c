@@ -56,7 +56,6 @@ SemaphoreHandle_t getSemaphore(int number)
   return s;
 }
 
-
 #define MAX_TRIES 50
 int acquireI2CSemaphore(SemaphoreHandle_t s)
 {
