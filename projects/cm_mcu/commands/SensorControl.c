@@ -1220,7 +1220,7 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
 
   // release the semaphore
   if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {
-	  xSemaphoreGive(dcdc_args.xSem);
+    xSemaphoreGive(dcdc_args.xSem);
   }
   return pdFALSE;
 }
