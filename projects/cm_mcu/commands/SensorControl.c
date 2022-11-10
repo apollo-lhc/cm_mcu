@@ -77,7 +77,9 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
     }
   }
 
-  xSemaphoreGive(s);
+  // release the semaphore
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(s);
   return res;
 }
 
@@ -124,7 +126,9 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     }
   }
 
-  xSemaphoreGive(s);
+  // release the semaphore
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(s);
   return res;
 }
 
@@ -1204,7 +1208,7 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
 
   // acquire the semaphore
   if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
   uint8_t ui8page = page;

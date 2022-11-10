@@ -87,6 +87,7 @@ void MonitorI2CTask(void *parameters)
     // grab the semaphore to ensure unique access to I2C controller
     if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
     	log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    	//break;
     }
 
     args->updateTick = xTaskGetTickCount(); // current time in ticks
@@ -193,14 +194,10 @@ void MonitorI2CTask(void *parameters)
 
     } // loop over devices
 
+    // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
     }
-    else {
-      log_info(LOG_MONI2C, "tried to release semaphore I don't own\r\n");
-    }
-
-    //xSemaphoreGive(args->xSem);
 
     // monitor stack usage for this task
     CHECK_TASK_STACK_USAGE(args->stack_size);

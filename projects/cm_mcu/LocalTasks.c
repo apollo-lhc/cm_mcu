@@ -464,7 +464,11 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
 #endif
 
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
+
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
 	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
@@ -484,7 +488,10 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
 #endif
-  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c3_sem);
+  }
 
 #ifdef REV1
   uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;    // bottom 6 bits
@@ -687,8 +694,10 @@ void getFFpart(void)
   if ((strstr(vendor_string2, "14") != NULL)) {
     ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
   }
-
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
 }
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
@@ -870,7 +879,11 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
       log_error(LOG_SERVICE, "error reset\r\n");
     }
   }
-  xSemaphoreGive(i2c1_sem);
+
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c1_sem);
+  }
 }
 
 // Initialization function for the LGA80D. These settings
@@ -919,8 +932,11 @@ void LGA80D_init(void)
       }
     }
   }
-  xSemaphoreGive(i2c1_sem);
 
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c1_sem);
+  }
   return;
 }
 
@@ -1105,7 +1121,10 @@ void init_registers_clk()
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
 
-  xSemaphoreGive(i2c2_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
 }
 void init_registers_ff()
 {
@@ -1156,7 +1175,10 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x03); // 00000011 [P17..P10]
 
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
 
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
@@ -1197,7 +1219,11 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x07, 1, 0xf0); // 11110000 [P17..P10]
 
-  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c3_sem);
+  }
+
 }
 #endif // REV1
 #ifdef REV2
@@ -1262,7 +1288,10 @@ void init_registers_clk()
   apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
   apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
-  xSemaphoreGive(i2c2_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
 }
 void init_registers_ff()
 {
@@ -1307,7 +1336,10 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
 
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
@@ -1349,7 +1381,10 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c3_sem);
+  }
 }
 #endif // REV2
 
@@ -1512,8 +1547,10 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       continue;
     }
     // grab the relevant semaphore
-    xSemaphoreTake(semaphores[i], portMAX_DELAY); // blocks eternally
-
+    // grab the semaphore to ensure unique access to I2C controller
+      if (acquireI2CSemaphore(semaphores[i]) == pdFAIL) {
+        log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+      }
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
     if (result) {
@@ -1528,8 +1565,12 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
         log_warn(LOG_I2C, "expand wr %d\r\n", result);
       }
     }
-    // release the semaphore
-    xSemaphoreGive(semaphores[i]);
+
+    // if we have a semaphore, give it
+    if (xSemaphoreGetMutexHolder(semaphores[i]) == xTaskGetCurrentTaskHandle()) {
+      xSemaphoreGive(semaphores[i]);
+    }
+
   }
   return 0;
 }

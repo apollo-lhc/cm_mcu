@@ -56,10 +56,7 @@ void InitTask(void *parameters)
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c2_sem);
   }
-  else {
-    log_info(LOG_SERVICE, "tried to release semaphore I don't own\r\n");
-  }
-  //xSemaphoreGive(i2c2_sem);
+
   log_info(LOG_SERVICE, "Clocks configured\r\n");
   getFFpart(); // the order of where to check FF part matters -- it won't be able to read anything if check sooner
 #endif         // REV2

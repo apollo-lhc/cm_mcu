@@ -44,7 +44,7 @@
 // break out of loop, releasing semaphore if we have it
 #define release_break()           \
   {                               \
-    if (args->xSem != NULL)       \
+    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle())       \
       xSemaphoreGive(args->xSem); \
     break;                        \
   }
@@ -71,6 +71,7 @@ void MonitorTask(void *parameters)
     if (args->xSem != NULL) {
     	if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
     		log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    		//break;
     	}
     }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
@@ -188,8 +189,10 @@ void MonitorTask(void *parameters)
         }                   // loop over commands
       }                     // loop over pages
     }                       // loop over power supplies
-    if (args->xSem != NULL) // if we have a semaphore, give it
+    // if we have a semaphore, give it
+    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
+    }
 
     CHECK_TASK_STACK_USAGE(args->stack_size);
 
