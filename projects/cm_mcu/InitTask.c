@@ -47,7 +47,7 @@ void InitTask(void *parameters)
 #ifdef REV2
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
   }
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM

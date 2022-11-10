@@ -42,11 +42,11 @@
 #define PAGE_COMMAND 0x0
 
 // break out of loop, releasing semaphore if we have it
-#define release_break()           \
-  {                               \
-    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle())       \
-      xSemaphoreGive(args->xSem); \
-    break;                        \
+#define release_break()                                                      \
+  {                                                                          \
+    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) \
+      xSemaphoreGive(args->xSem);                                            \
+    break;                                                                   \
   }
 
 void MonitorTask(void *parameters)
@@ -69,10 +69,10 @@ void MonitorTask(void *parameters)
   for (;;) {
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
-    	if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
-    		log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    		//break;
-    	}
+      if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
+        log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+        // break;
+      }
     }
     args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
@@ -186,9 +186,9 @@ void MonitorTask(void *parameters)
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
-        }                   // loop over commands
-      }                     // loop over pages
-    }                       // loop over power supplies
+        } // loop over commands
+      }   // loop over pages
+    }     // loop over power supplies
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);

@@ -50,8 +50,8 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
   }
 
   if (acquireI2CSemaphore(s) == pdFAIL) {
-	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-	  return -2;
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return -2;
   }
 
   // write to the mux
@@ -103,8 +103,8 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   }
 
   if (acquireI2CSemaphore(s) == pdFAIL) {
-      log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-      return -2;
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return -2;
   }
 
   // write to the mux

@@ -115,7 +115,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   }
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-    snprintf(m + copied , SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
     status = -1;
     return pdFALSE;
   }

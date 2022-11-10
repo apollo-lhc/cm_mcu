@@ -86,8 +86,8 @@ void MonitorI2CTask(void *parameters)
     log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
     // grab the semaphore to ensure unique access to I2C controller
     if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
-    	log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    	//break;
+      log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+      // break;
     }
 
     args->updateTick = xTaskGetTickCount(); // current time in ticks

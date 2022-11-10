@@ -440,7 +440,7 @@ void readFFpresent(void)
 {
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
-	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
   }
 #ifdef REV1
   uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
@@ -471,7 +471,7 @@ void readFFpresent(void)
 
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
-	  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
   }
 #ifdef REV1
   // to port 0
@@ -607,7 +607,7 @@ void getFFpart(void)
 {
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
-	log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
   }
   // Write device vendor part for identifying FF devices
   // FF connecting to FPGA1
@@ -845,7 +845,7 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
 {
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
-  	log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
   }
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
@@ -893,7 +893,7 @@ void LGA80D_init(void)
 {
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
-     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
   }
   log_info(LOG_SERVICE, "LGA80D_init\r\n");
   // set up the switching frequency
@@ -1223,7 +1223,6 @@ void init_registers_ff()
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c3_sem);
   }
-
 }
 #endif // REV1
 #ifdef REV2
@@ -1548,9 +1547,9 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     }
     // grab the relevant semaphore
     // grab the semaphore to ensure unique access to I2C controller
-      if (acquireI2CSemaphore(semaphores[i]) == pdFAIL) {
-        log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-      }
+    if (acquireI2CSemaphore(semaphores[i]) == pdFAIL) {
+      log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    }
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
     if (result) {
@@ -1570,7 +1569,6 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     if (xSemaphoreGetMutexHolder(semaphores[i]) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(semaphores[i]);
     }
-
   }
   return 0;
 }
