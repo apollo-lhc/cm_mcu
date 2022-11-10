@@ -403,7 +403,7 @@ BaseType_t sem_ctl(int argc, char **argv, char *m)
     }
     else if (strncmp(argv[2], "take", 4) == 0) {
       // try to acquire the semaphore. Wait a finite amount of time.
-      if (xSemaphoreTake(s, pdMS_TO_TICKS(500)) == pdTRUE) {
+      if (xSemaphoreTake(s, pdMS_TO_TICKS(5000)) == pdTRUE) {
         snprintf(m, SCRATCH_SIZE, "%s: taking semaphore %d\r\n", argv[0], number);
         sem_status |= 0x1U << number;
       }

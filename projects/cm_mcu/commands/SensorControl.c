@@ -1197,8 +1197,10 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
                      page, pm_addrs_dcdc[which].name, regAddress);
 
   // acquire the semaphore
-  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
-    ;
+  if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
+    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    return pdFALSE;
+  }
   uint8_t ui8page = page;
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which], &extra_cmds[0], &ui8page);
@@ -1217,6 +1219,8 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
                      argv[0], vv);
 
   // release the semaphore
-  xSemaphoreGive(dcdc_args.xSem);
+  if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(dcdc_args.xSem);
+  }
   return pdFALSE;
 }
