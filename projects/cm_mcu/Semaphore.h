@@ -23,4 +23,8 @@ extern SemaphoreHandle_t i2c6_sem;
 
 void initSemaphores(void);
 
+SemaphoreHandle_t getSemaphore(int number);
+
+int acquireI2CSemaphore(SemaphoreHandle_t s);
+
 #endif /* PROJECTS_CM_MCU_SEMAPHORE_H_ */

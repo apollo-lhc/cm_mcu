@@ -1197,13 +1197,10 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
                      page, pm_addrs_dcdc[which].name, regAddress);
 
   // acquire the semaphore
-  int tries = 0;
-  while (xSemaphoreTake(dcdc_args.xSem, (TickType_t)10) == pdFALSE)
-	  if (++tries > 500) {
-		  Print("error in psmon_reg sem Take\r\n");
-		  break;
-	  }
-  ;
+  if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
+	  snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+	  return pdFALSE;
+  }
   uint8_t ui8page = page;
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which], &extra_cmds[0], &ui8page);
