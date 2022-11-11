@@ -213,7 +213,7 @@ void PowerSupplyTask(void *parameters)
     // ON1 .. ON5 are the five states of the turn-on sequence
     // OFF1 .. OFF5 are the five states of the turn-off sequence
     // in the transition to FAIL we turn off all the supplies in sequence,
-    // even if they were not yet tured on (i.e., transition from ON3 -> FAIL)
+    // even if they were not yet turned on (i.e., transition from ON3 -> FAIL)
     //                     +-------------------+
     //              +------+       FAIL        +<-----+
     // +-------+    |      +--+-------------+--+      |
@@ -222,8 +222,9 @@ void PowerSupplyTask(void *parameters)
     //     |     ---+--+   +--+-+         +-+--+  +---+--+
     //     +---->+ OFF +---> ON1+-> ....  | ON5+->+  ON  |
     //           +--+--+   +----+         +----+  +---+--+
-    //              |                                 |
-    //              +---------------------------------+
+    //              |            +------+             |
+    //              +-----<------| DOWN <-------------+
+    //                           +------+
 
     // Nota Bene:
     // ON3 does not have a FAIL transition because those supplies
@@ -259,13 +260,18 @@ void PowerSupplyTask(void *parameters)
         }
         else if (!blade_power_enable || cli_powerdown_request) {
           log_info(LOG_PWRCTL, "power-down requested\r\n");
-          disable_ps();
-          errbuffer_put(EBUF_POWER_OFF, 0);
-          nextState = POWER_OFF;
+          nextState = POWER_DOWN;
         }
         else {
           nextState = POWER_ON;
         }
+        break;
+      }
+      case POWER_DOWN: {
+        disable_ps();
+        errbuffer_put(EBUF_POWER_OFF, 0);
+        log_info(LOG_PWRCTL, "power-down completed\r\n");
+        nextState = POWER_OFF;
         break;
       }
       case POWER_OFF: {
