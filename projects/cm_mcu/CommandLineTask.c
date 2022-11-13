@@ -116,7 +116,6 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
     snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    status = -1;
     return pdFALSE;
   }
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
