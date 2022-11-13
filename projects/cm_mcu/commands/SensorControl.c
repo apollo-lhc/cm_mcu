@@ -1208,7 +1208,7 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
 
   // acquire the semaphore
   if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
-    snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
   uint8_t ui8page = page;

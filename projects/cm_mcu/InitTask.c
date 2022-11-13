@@ -48,6 +48,7 @@ void InitTask(void *parameters)
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
   }
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM
