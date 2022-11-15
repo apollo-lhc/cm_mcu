@@ -64,6 +64,7 @@ extern QueueHandle_t xPwrQueue;
 enum power_system_state {
   POWER_FAILURE,
   POWER_INIT,
+  POWER_DOWN,
   POWER_OFF,
   POWER_L1ON,
   POWER_L2ON,
