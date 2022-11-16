@@ -441,7 +441,7 @@ void readFFpresent(void)
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
 #ifdef REV1
   uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
@@ -473,7 +473,7 @@ void readFFpresent(void)
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
 #ifdef REV1
   // to port 0
@@ -610,7 +610,7 @@ void getFFpart(void)
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // Write device vendor part for identifying FF devices
   // FF connecting to FPGA1
@@ -849,7 +849,7 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
@@ -898,7 +898,7 @@ void LGA80D_init(void)
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   log_info(LOG_SERVICE, "LGA80D_init\r\n");
   // set up the switching frequency
@@ -1086,7 +1086,7 @@ void init_registers_clk()
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
@@ -1144,7 +1144,7 @@ void init_registers_ff()
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // # set first I2C switch on channel 4 (U100, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
@@ -1190,7 +1190,7 @@ void init_registers_ff()
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
@@ -1249,7 +1249,7 @@ void init_registers_clk()
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
@@ -1313,7 +1313,7 @@ void init_registers_ff()
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c4_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
@@ -1353,7 +1353,7 @@ void init_registers_ff()
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c3_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+    return;
   }
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
@@ -1560,7 +1560,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     // grab the semaphore to ensure unique access to I2C controller
     if (acquireI2CSemaphore(semaphores[i]) == pdFAIL) {
       log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-      vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
+      return -2;
     }
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
