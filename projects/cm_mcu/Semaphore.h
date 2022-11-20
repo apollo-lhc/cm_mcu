@@ -25,6 +25,12 @@ void initSemaphores(void);
 
 SemaphoreHandle_t getSemaphore(int number);
 
-int acquireI2CSemaphore(SemaphoreHandle_t s);
+int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits);
+
+#define acquireI2CSemaphore(s) \
+  acquireI2CSemaphoreTime(s, 10)
+
+#define acquireI2CSemaphoreBlock(s) \
+  acquireI2CSemaphoreTime(s, 0)
 
 #endif /* PROJECTS_CM_MCU_SEMAPHORE_H_ */

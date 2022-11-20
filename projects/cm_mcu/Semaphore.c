@@ -57,14 +57,16 @@ SemaphoreHandle_t getSemaphore(int number)
 }
 
 #define MAX_TRIES 500
-int acquireI2CSemaphore(SemaphoreHandle_t s)
+
+
+int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits)
 {
   int retval = pdTRUE;
   if (s == NULL) {
     return pdFAIL;
   }
   int tries = 0;
-  while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE) {
+  while (xSemaphoreTake(s, tickWaits) == pdFALSE) {
     ++tries;
     if (tries > MAX_TRIES) {
       retval = pdFAIL;
