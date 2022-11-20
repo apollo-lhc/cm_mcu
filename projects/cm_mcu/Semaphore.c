@@ -58,7 +58,6 @@ SemaphoreHandle_t getSemaphore(int number)
 
 #define MAX_TRIES 500
 
-
 int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits)
 {
   int retval = pdTRUE;
