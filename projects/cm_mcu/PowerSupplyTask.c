@@ -76,6 +76,7 @@ void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bi
 static const char *const power_system_state_names[] = {
     "FAIL",
     "INIT",
+    "DOWN",
     "OFF",
     "L1ON",
     "L2ON",
