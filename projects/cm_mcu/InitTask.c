@@ -64,7 +64,7 @@ void InitTask(void *parameters)
   getFFpart_FPGA1();
   getFFpart_FPGA2();
 
-#endif         // REV2
+#endif // REV2
   vTaskSuspend(NULL);
   // Delete this task
   vTaskDelete(xTaskGetCurrentTaskHandle());

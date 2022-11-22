@@ -169,9 +169,9 @@ void readFFpresent(void);
 int8_t getFFtemp(const uint8_t i);
 void getFFpart(int which_fpga);
 #define getFFpart_FPGA1(void) \
-    getFFpart(1);
+  getFFpart(1);
 #define getFFpart_FPGA2(void) \
-    getFFpart(2);
+  getFFpart(2);
 
 uint8_t getFFstatus(const uint8_t i);
 int getFFcheckStale(void);

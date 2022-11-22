@@ -611,14 +611,12 @@ void getFFpart(int which_fpga)
   uint32_t vendor_char;
   int8_t vendor_part[17];
 
-
   uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
   uint8_t ven_addr_stop = VENDOR_STOP_BIT_FF12;
 
   uint8_t data;
 
-
-  if (which_fpga == 1){ // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
+  if (which_fpga == 1) { // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
 
     // grab the semaphore to ensure unique access to I2C controller
     // otherwise, block its operations indefinitely until it's available
@@ -663,7 +661,7 @@ void getFFpart(int which_fpga)
       xSemaphoreGive(i2c4_sem);
     }
   }
-  else{ // checking the FF 12-ch part connected to FPGA2 (need to check from Rx devices (i.e devices[odd]))
+  else { // checking the FF 12-ch part connected to FPGA2 (need to check from Rx devices (i.e devices[odd]))
 
     // grab the semaphore to ensure unique access to I2C controller
     // otherwise, block its operations indefinitely until it's available
@@ -706,10 +704,7 @@ void getFFpart(int which_fpga)
     if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(i2c3_sem);
     }
-
   }
-
-
 }
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
