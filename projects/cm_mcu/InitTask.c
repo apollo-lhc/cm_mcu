@@ -47,20 +47,23 @@ void InitTask(void *parameters)
 
 #ifdef REV2
   // grab the semaphore to ensure unique access to I2C controller
-  // if it is not available, continue indefinitely until we can grab one
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c2_sem);
 
-  if (acquireI2CSemaphoreBlock(i2c2_sem) != pdFAIL) {
-    for (int i = 0; i < 5; ++i) {
-      init_load_clk(i); // load each clock config from EEPROM
-    }
-    // check if we have the semaphore
-    if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
-      xSemaphoreGive(i2c2_sem);
-    }
-
-    log_info(LOG_SERVICE, "Clocks configured\r\n");
+  for (int i = 0; i < 5; ++i) {
+    init_load_clk(i); // load each clock config from EEPROM
   }
-  getFFpart(); // the order of where to check FF part matters -- it won't be able to read anything if check sooner
+  // check if we have the semaphore
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
+
+  log_info(LOG_SERVICE, "Clocks configured\r\n");
+
+  // check 4-ch FF parts from vendors on FPGA1/2
+  getFFpart_FPGA1();
+  getFFpart_FPGA2();
+
 #endif         // REV2
   vTaskSuspend(NULL);
   // Delete this task
