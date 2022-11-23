@@ -149,10 +149,10 @@ struct GenericAlarmParams_t tempAlarmTask = {
 #define INITIAL_ALARM_VOLT_TM4C 70.0f // FIXME : copy from temp
 #define ALM_OVERVOLT_THRESHOLD  5.0f  // FIXME : copy from temp
 // current value of the thresholds
-static float alarmVolt[2] = {INITIAL_ALARM_VOLT_DCDC,
-                             INITIAL_ALARM_VOLT_TM4C};
+static float alarmVolt[4] = {0.f, INITIAL_ALARM_VOLT_DCDC,
+                             INITIAL_ALARM_VOLT_TM4C, 0.f};
 // current value of voltages
-static float currentVolt[2] = {0.f, 0.f}; // FIXME : copy from temp
+static float currentVolt[4] = {0.f, 0.f, 0.f, 0.f}; // FIXME : copy from temp
 
 // Status flags of the voltage alarm task
 static uint32_t status_V = 0x0;
