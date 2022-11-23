@@ -453,6 +453,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
   if (strncmp(argv[1], "clear", 4) == 0) {
     message = ALM_CLEAR_ALL; // clear all alarms
     xQueueSendToBack(tempAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
+    xQueueSendToBack(voltAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
     m[0] = '\0'; // no output from this command
 
     return pdFALSE;
@@ -460,7 +461,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ALARM status\r\n", argv[0]);
-    uint32_t stat = getAlarmStatus();
+    uint32_t stat = getTempAlarmStatus();
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08lx\r\n", stat);
 
     float ff_val = getAlarmTemperature(FF);
@@ -487,6 +488,18 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
                  (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
+
+    float dcdc_volt_val = getAlarmVoltage(DCDC);
+    float_to_ints(dcdc_volt_val, &tens, &frac);
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT DCDC: %s \t Threshold: %02d.%02d\r\n",
+                 (stat & ALM_STAT_DCDC_OVERVOLT) ? "ALARM" : "GOOD", tens, frac);
+
+    float tm4c_volt_val = getAlarmVoltage(TM4C);
+    float_to_ints(tm4c_volt_val, &tens, &frac);
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT TM4C: %s \t Threshold: %02d.%02d\r\n",
+                 (stat & ALM_STAT_TM4C_OVERVOLT) ? "ALARM" : "GOOD", tens, frac);
     configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
@@ -516,6 +529,28 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     if (!strncasecmp(device, "tm4c", 4)) {
       setAlarmTemperature(TM4C, newtemp);
       snprintf(m, s, "%s: set TM4C alarm temperature to %s\r\n", argv[0], argv[3]);
+      return pdFALSE;
+    }
+    else {
+      snprintf(m, s, "%s is not a valid device.\r\n", argv[2]);
+      return pdFALSE;
+    }
+  }
+  else if (strcmp(argv[1], "setvolt") == 0) {
+    if (argc != 4) {
+      snprintf(m, s, "Invalid command\r\n");
+      return pdFALSE;
+    }
+    float newvolt = (float)strtol(argv[3], NULL, 10);
+    char *device = argv[2];
+    if (!strncasecmp(device, "dcdc", 4)) {
+      setAlarmVoltage(DCDC, newvolt);
+      snprintf(m, s, "%s: set DCDC alarm voltage to %s\r\n", argv[0], argv[3]);
+      return pdFALSE;
+    }
+    if (!strncasecmp(device, "tm4c", 4)) {
+      setAlarmVoltage(TM4C, newvolt);
+      snprintf(m, s, "%s: set TM4C alarm voltage to %s\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
     else {

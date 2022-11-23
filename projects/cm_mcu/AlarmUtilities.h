@@ -12,6 +12,8 @@ struct GenericAlarmParams_t {
 };
 
 extern struct GenericAlarmParams_t tempAlarmTask;
+extern struct GenericAlarmParams_t voltAlarmTask;
+extern struct GenericAlarmParams_t currAlarmTask;
 
 // temperature alarms
 //    first some commands for setting/getting the thresholds
@@ -24,5 +26,25 @@ void TempErrorLog(void);
 void TempClearErrorLog(void);
 
 // voltage alarms
+//    first some commands for setting/getting the thresholds
+float getAlarmVoltage(enum device theDevice);
+void setAlarmVoltage(enum device theDevice, float voltage);
+void getAlarmVoltageStatus(void);
+//    callback functions
+int VoltStatus(void);
+void VoltErrorLog(void);
+void VoltClearErrorLog(void);
+
+// current alarms
+//    first some commands for setting/getting the thresholds
+/*
+float getAlarmCurrent(enum device theDevice);
+void setAlarmCurrent(enum device theDevice, float current);
+void getAlarmCurrentStatus(void);
+//    callback functions
+int CurrStatus(void);
+void CurrErrorLog(void);
+void CurrClearErrorLog(void);
+*/
 
 #endif // PROJECTS_CM_MCU_ALARMUTILITIES_H_
