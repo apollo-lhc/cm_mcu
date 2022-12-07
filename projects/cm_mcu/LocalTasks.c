@@ -1558,7 +1558,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     // grab the semaphore to ensure unique access to I2C controller
     if (acquireI2CSemaphore(semaphores[i]) == pdFAIL) {
       log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-      return -2;
+      return 5;
     }
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
