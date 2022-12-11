@@ -162,7 +162,6 @@ BaseType_t i2c_scan(int argc, char **argv, char *m)
   }
   if (acquireI2CSemaphore(s) == pdFAIL) {
     snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    vTaskDelay(pdMS_TO_TICKS(330)); // delay 300 ms
     return pdFALSE;
   }
 
