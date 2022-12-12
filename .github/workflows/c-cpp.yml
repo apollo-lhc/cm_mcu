@@ -2,7 +2,7 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ master clang_format_commit ]
+    branches: [ master github_actions_fix ]
   pull_request:
     branches: [ master ]
   schedule:
@@ -79,9 +79,9 @@ jobs:
     - name: Code checkout
       uses: actions/checkout@v2
     - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v1
+      uses: KyleMayes/install-llvm-action@v1.6.1
       with:
-       version: "11.0"
+       version: "14.0"
        directory: ${{ runner.temp }}/llvm
     - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
       id:   cache-toolchain
