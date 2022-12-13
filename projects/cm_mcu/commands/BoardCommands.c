@@ -334,6 +334,8 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
 // interface: v38 on|off 1|2
 BaseType_t v38_ctl(int argc, char **argv, char *m)
 {
+  // argument handling
+  int copied = 0;
   bool turnOn = true;
   if (strncmp(argv[1], "off", 3) == 0)
     turnOn = false;
@@ -344,8 +346,14 @@ BaseType_t v38_ctl(int argc, char **argv, char *m)
   }
   UBaseType_t ffmask[2] = {0, 0};
   ffmask[whichFF - 1] = 0xe;
-  enable_3v8(ffmask, !turnOn);
-  snprintf(m, SCRATCH_SIZE, "%s: 3V8 turned %s for F%ld\r\n", argv[0],
+  int ret = enable_3v8(ffmask, !turnOn);
+  if (ret != 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "enable 3v8 failed with %d\r\n", ret);
+    if (ret == 5)
+      snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
+    return pdFALSE;
+  }
+  snprintf(m + copied, SCRATCH_SIZE - copied, "%s: 3V8 turned %s for F%ld\r\n", argv[0],
            turnOn == true ? "on" : "off", whichFF);
   return pdFALSE;
 }

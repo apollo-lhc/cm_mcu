@@ -438,9 +438,10 @@ void setFFmask(uint32_t ff_combined_present)
 
 void readFFpresent(void)
 {
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c4_sem);
 
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
 #ifdef REV1
   uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
 #elif defined(REV2)
@@ -463,10 +464,15 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
 #endif
 
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
 
-  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c3_sem);
+
 #ifdef REV1
   // to port 0
   apollo_i2c_ctl_w(3, 0x72, 1, 0x01);
@@ -482,7 +488,10 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
 #endif
-  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c3_sem);
+  }
 
 #ifdef REV1
   uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;    // bottom 6 bits
@@ -594,99 +603,108 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-void getFFpart(void)
+void getFFpart(int which_fpga)
 {
 
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
-
   // Write device vendor part for identifying FF devices
-  // FF connecting to FPGA1
-  uint8_t vendor_data1[4];
-  uint32_t vendor_char1;
-  int8_t vendor_part1[17];
-
-  // FF connecting to FPGA2
-  uint8_t vendor_data2[4];
-  uint32_t vendor_char2;
-  int8_t vendor_part2[17];
+  uint8_t vendor_data[4];
+  uint32_t vendor_char;
+  int8_t vendor_part[17];
 
   uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
   uint8_t ven_addr_stop = VENDOR_STOP_BIT_FF12;
 
-  // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
-  uint8_t data1;
+  uint8_t data;
 
-  data1 = 0x1U << ffl12_f1_args.devices[3].mux_bit;
-  log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data1);
-  int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data1);
-  if (rmux != 0) {
-    log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-  }
-  for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
-    int res = apollo_i2c_ctl_reg_r(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char1);
-    if (res != 0) {
-      log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
-      vendor_part1[i - ven_addr_start] = 0;
-      break;
+  if (which_fpga == 1) { // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
+
+    // grab the semaphore to ensure unique access to I2C controller
+    // otherwise, block its operations indefinitely until it's available
+    acquireI2CSemaphoreBlock(i2c4_sem);
+
+    data = 0x1U << ffl12_f1_args.devices[3].mux_bit;
+    log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
+    int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data);
+    if (rmux != 0) {
+      log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
     }
-    for (int j = 0; j < 4; ++j) {
-      vendor_data1[j] = (vendor_char1 >> (3 - j) * 8) & 0xFF;
+    for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+      int res = apollo_i2c_ctl_reg_r(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
+      if (res != 0) {
+        log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
+        vendor_part[i - ven_addr_start] = 0;
+        break;
+      }
+      for (int j = 0; j < 4; ++j) {
+        vendor_data[j] = (vendor_char >> (3 - j) * 8) & 0xFF;
+      }
+
+      typedef union {
+        uint8_t us;
+        int8_t s;
+      } convert_8_t;
+      convert_8_t tmp1;
+
+      tmp1.us = vendor_data[3]; // change from uint_8 to int8_t, preserving bit pattern
+      vendor_part[i - ven_addr_start] = tmp1.s;
+      vendor_part[i - ven_addr_start + 1] = '\0'; // null-terminated
     }
 
-    typedef union {
-      uint8_t us;
-      int8_t s;
-    } convert_8_t;
-    convert_8_t tmp1;
-
-    tmp1.us = vendor_data1[3]; // change from uint_8 to int8_t, preserving bit pattern
-    vendor_part1[i - ven_addr_start] = tmp1.s;
-    vendor_part1[i - ven_addr_start + 1] = '\0'; // null-terminated
-  }
-
-  char *vendor_string1 = (char *)vendor_part1;
-  log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string1);
-  if ((strstr(vendor_string1, "14") != NULL)) {
-    ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
-  }
-
-  // checking the FF 12-ch part connected to FPGA2 (need to check from Rx devices (i.e devices[odd]))
-  uint8_t data2;
-  data2 = 0x1U << ffl12_f2_args.devices[3].mux_bit; // mux_bit
-  log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data2);
-  rmux = apollo_i2c_ctl_w(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].mux_addr, 1, data2);
-  if (rmux != 0) {
-    log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-  }
-  for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
-    int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char2);
-    if (res != 0) {
-      log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res)); // expected ACK_ADDR_ERR because of no devices[3] for FPGA2 connection as of 08.04.22
-      vendor_part2[i - ven_addr_start] = 0;
-      break;
+    char *vendor_string = (char *)vendor_part;
+    log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string);
+    if ((strstr(vendor_string, "14") != NULL)) {
+      ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
     }
-    for (int j = 0; j < 4; ++j) {
-      vendor_data2[j] = (vendor_char2 >> (3 - j) * 8) & 0xFF;
+
+    // if we have a semaphore, give it
+    if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+      xSemaphoreGive(i2c4_sem);
     }
-    typedef union {
-      uint8_t us;
-      int8_t s;
-    } convert_8_t;
-    convert_8_t tmp1;
-
-    tmp1.us = vendor_data2[3]; // change from uint_8 to int8_t, preserving bit pattern
-    vendor_part2[i - ven_addr_start] = tmp1.s;
-    vendor_part2[i - ven_addr_start + 1] = '\0'; // null-terminated
   }
+  else { // checking the FF 12-ch part connected to FPGA2 (need to check from Rx devices (i.e devices[odd]))
 
-  char *vendor_string2 = (char *)vendor_part2;
-  log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2) : %s \r\n:", vendor_string2);
-  if ((strstr(vendor_string2, "14") != NULL)) {
-    ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
+    // grab the semaphore to ensure unique access to I2C controller
+    // otherwise, block its operations indefinitely until it's available
+    acquireI2CSemaphoreBlock(i2c3_sem);
+
+    data = 0x1U << ffl12_f2_args.devices[3].mux_bit; // mux_bit
+    log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
+    int rmux = apollo_i2c_ctl_w(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].mux_addr, 1, data);
+    if (rmux != 0) {
+      log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+    }
+    for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+      int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
+      if (res != 0) {
+        log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res)); // expected ACK_ADDR_ERR because of no devices[3] for FPGA2 connection as of 08.04.22
+        vendor_part[i - ven_addr_start] = 0;
+        break;
+      }
+      for (int j = 0; j < 4; ++j) {
+        vendor_data[j] = (vendor_char >> (3 - j) * 8) & 0xFF;
+      }
+      typedef union {
+        uint8_t us;
+        int8_t s;
+      } convert_8_t;
+      convert_8_t tmp1;
+
+      tmp1.us = vendor_data[3]; // change from uint_8 to int8_t, preserving bit pattern
+      vendor_part[i - ven_addr_start] = tmp1.s;
+      vendor_part[i - ven_addr_start + 1] = '\0'; // null-terminated
+    }
+
+    char *vendor_string = (char *)vendor_part;
+    log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2) : %s \r\n:", vendor_string);
+    if ((strstr(vendor_string, "14") != NULL)) {
+      ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
+    }
+
+    // if we have a semaphore, give it
+    if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+      xSemaphoreGive(i2c3_sem);
+    }
   }
-
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
 }
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
@@ -832,8 +850,11 @@ struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
 
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
-  while (xSemaphoreTake(i2c1_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return;
+  }
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
@@ -866,7 +887,11 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
       log_error(LOG_SERVICE, "error reset\r\n");
     }
   }
-  xSemaphoreGive(i2c1_sem);
+
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c1_sem);
+  }
 }
 
 // Initialization function for the LGA80D. These settings
@@ -874,8 +899,11 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
 // this is currently not ensured in this code.
 void LGA80D_init(void)
 {
-  while (xSemaphoreTake(i2c1_sem, (TickType_t)10) == pdFALSE)
-    ;
+
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c1_sem);
+
   log_info(LOG_SERVICE, "LGA80D_init\r\n");
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
@@ -913,8 +941,11 @@ void LGA80D_init(void)
       }
     }
   }
-  xSemaphoreGive(i2c1_sem);
 
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c1_sem);
+  }
   return;
 }
 
@@ -1057,8 +1088,8 @@ void init_registers_clk()
   // All unused signals should be inputs [P07..P04], [P17..P15].
 
   // grab the semaphore to ensure unique access to I2C controller
-  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c1_sem);
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
@@ -1099,7 +1130,10 @@ void init_registers_clk()
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
 
-  xSemaphoreGive(i2c2_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
 }
 void init_registers_ff()
 {
@@ -1110,10 +1144,9 @@ void init_registers_ff()
   // 3a) U102 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
   // All signals are inputs.
 
-  // grab the i2c4 semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c4_sem);
 
   // # set first I2C switch on channel 4 (U100, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
@@ -1151,12 +1184,15 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); // 00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x03); // 00000011 [P17..P10]
 
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
 
-  // grab the i2c3 semaphore to ensure unique access to I2C controller
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c3_sem);
 
-  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-    ;
   // =====================================================
   // CMv1 Schematic 4.06 I2C VU7P OPTICS
 
@@ -1192,7 +1228,10 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x22, 1, 0x07, 1, 0xf0); // 11110000 [P17..P10]
 
-  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c3_sem);
+  }
 }
 #endif // REV1
 #ifdef REV2
@@ -1209,9 +1248,8 @@ void init_registers_clk()
   // The remaining 10 signals are outputs.
 
   // grab the semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c2_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c2_sem);
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
   apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
@@ -1258,7 +1296,10 @@ void init_registers_clk()
   apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
   apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
-  xSemaphoreGive(i2c2_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
 }
 void init_registers_ff()
 {
@@ -1269,10 +1310,9 @@ void init_registers_ff()
   // 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
   // All signals are inputs.
 
-  // grab the i2c4 semaphore to ensure unique access to I2C controller
-
-  while (xSemaphoreTake(i2c4_sem, (TickType_t)10) == pdFALSE)
-    ;
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c4_sem);
 
   // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
@@ -1304,12 +1344,15 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  xSemaphoreGive(i2c4_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
 
-  // grab the i2c3 semaphore to ensure unique access to I2C controller
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c3_sem);
 
-  while (xSemaphoreTake(i2c3_sem, (TickType_t)10) == pdFALSE)
-    ;
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
 
@@ -1346,7 +1389,10 @@ void init_registers_ff()
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  xSemaphoreGive(i2c3_sem); // if we have a semaphore, give it
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c3_sem);
+  }
 }
 #endif // REV2
 
@@ -1509,8 +1555,11 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       continue;
     }
     // grab the relevant semaphore
-    xSemaphoreTake(semaphores[i], portMAX_DELAY); // blocks eternally
-
+    // grab the semaphore to ensure unique access to I2C controller
+    if (acquireI2CSemaphore(semaphores[i]) == pdFAIL) {
+      log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+      return 5;
+    }
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
     if (result) {
@@ -1525,8 +1574,11 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
         log_warn(LOG_I2C, "expand wr %d\r\n", result);
       }
     }
-    // release the semaphore
-    xSemaphoreGive(semaphores[i]);
+
+    // if we have a semaphore, give it
+    if (xSemaphoreGetMutexHolder(semaphores[i]) == xTaskGetCurrentTaskHandle()) {
+      xSemaphoreGive(semaphores[i]);
+    }
   }
   return 0;
 }

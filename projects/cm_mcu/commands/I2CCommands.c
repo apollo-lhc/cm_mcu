@@ -185,6 +185,10 @@ BaseType_t i2c_scan(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
   configASSERT(copied < SCRATCH_SIZE);
 
-  xSemaphoreGive(s);
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(s);
+  }
+
   return pdFALSE;
 }

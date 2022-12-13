@@ -176,7 +176,12 @@ bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
 int8_t getFFtemp(const uint8_t i);
-void getFFpart(void);
+void getFFpart(int which_fpga);
+#define getFFpart_FPGA1(void) \
+  getFFpart(1);
+#define getFFpart_FPGA2(void) \
+  getFFpart(2);
+
 uint8_t getFFstatus(const uint8_t i);
 int getFFcheckStale(void);
 TickType_t getFFupdateTick(int ff_t);

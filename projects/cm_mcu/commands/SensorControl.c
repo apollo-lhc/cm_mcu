@@ -48,8 +48,11 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
   if (i2c_device == I2C_DEVICE_F2) {
     s = i2c3_sem;
   }
-  while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
-    ;
+
+  if (acquireI2CSemaphore(s) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return 5;
+  }
 
   // write to the mux
   // select the appropriate output for the mux
@@ -74,7 +77,9 @@ static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t 
     }
   }
 
-  xSemaphoreGive(s);
+  // release the semaphore
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(s);
   return res;
 }
 
@@ -96,8 +101,11 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   if (i2c_device == I2C_DEVICE_F2) {
     s = i2c3_sem;
   }
-  while (xSemaphoreTake(s, (TickType_t)10) == pdFALSE)
-    ;
+
+  if (acquireI2CSemaphore(s) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return 5;
+  }
 
   // write to the mux
   // select the appropriate output for the mux
@@ -118,7 +126,9 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     }
   }
 
-  xSemaphoreGive(s);
+  // release the semaphore
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(s);
   return res;
 }
 
@@ -938,7 +948,13 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
             snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reading FF %s, register 0x%x\r\n",
                      argv[0], ff_moni2c_addrs[whichFF].name, regnum);
         uint8_t value;
-        uint16_t ret = read_arbitrary_ff_register(regnum, channel, &value, 1);
+        int ret = read_arbitrary_ff_register(regnum, channel, &value, 1);
+        if (ret != 0) {
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "read_ff_reg failed with %d\r\n", ret);
+          if (ret == 5)
+            snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
+          return pdFALSE;
+        }
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                            "%s: Command returned 0x%x (ret %d - \"%s\").\r\n", argv[0], value,
                            ret, SMBUS_get_error(ret));
@@ -964,7 +980,13 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         if (channel == NFIREFLIES) {
           channel = 0; // silently fall back to first channel
         }
-        write_arbitrary_ff_register(regnum, value, channel);
+        int ret = write_arbitrary_ff_register(regnum, value, channel);
+        if (ret != 0) {
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "write_ff_reg failed with %d\r\n", ret);
+          if (ret == 5)
+            snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
+          return pdFALSE;
+        }
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "%s: write val 0x%x to register 0x%x, FF %d.\r\n", argv[0], value, regnum,
                  channel);
@@ -1233,7 +1255,7 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
 
   // acquire the semaphore
   if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
   uint8_t ui8page = page;
