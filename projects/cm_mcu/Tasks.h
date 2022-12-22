@@ -31,11 +31,15 @@ void InitTask(void *parameters);
 #define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 #ifdef REV1
-#define ADC_INFO_VCC_INIT_CH 0
-#define ADC_INFO_VCC_FIN_CH  5
+#define ADC_INFO_TM4C_VCC_INIT_CH 0
+#define ADC_INFO_TM4C_VCC_FIN_CH  5
+#define ADC_INFO_FPGA_VCC_INIT_CH 6
+#define ADC_INFO_FPGA_VCC_FIN_CH  7
 #elif defined(REV2) // REV2
-#define ADC_INFO_VCC_INIT_CH 0
-#define ADC_INFO_VCC_FIN_CH  4
+#define ADC_INFO_TM4C_VCC_INIT_CH 0
+#define ADC_INFO_TM4C_VCC_FIN_CH  4
+#define ADC_INFO_FPGA_VCC_INIT_CH 5
+#define ADC_INFO_FPGA_VCC_FIN_CH  12
 #define ADC_INFO_CUR_INIT_CH 13
 #define ADC_INFO_CUR_FIN_CH  17
 #endif
@@ -231,9 +235,7 @@ const char *gitVersion(void);
 // status register bits
 // FIXME : copy from temp
 #define ALM_STAT_TM4C_OVERVOLT    0x1
-#define ALM_STAT_FIREFLY_OVERVOLT 0x2
 #define ALM_STAT_FPGA_OVERVOLT    0x4
-#define ALM_STAT_DCDC_OVERVOLT    0x8
 // messages
 #define ALM_CLEAR_ALL     1
 #define ALM_CLEAR_TEMP    2

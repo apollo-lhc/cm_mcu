@@ -499,17 +499,11 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
         snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
                  (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
 
-    float dcdc_volt_val = getAlarmVoltage(DCDC);
-    float_to_ints(dcdc_volt_val, &tens, &frac);
+    uint32_t adc_volt_stat = getVoltAlarmStatus();
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT DCDC: %s \t Threshold: %02d.%02d\r\n",
-                 (stat & ALM_STAT_DCDC_OVERVOLT) ? "ALARM" : "GOOD", tens, frac);
+        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s \t (TM4C + FPGAs)\r\n",
+            (adc_volt_stat) ? "ALARM" : "GOOD");
 
-    float tm4c_volt_val = getAlarmVoltage(TM4C);
-    float_to_ints(tm4c_volt_val, &tens, &frac);
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT TM4C: %s \t Threshold: %02d.%02d\r\n",
-                 (stat & ALM_STAT_TM4C_OVERVOLT) ? "ALARM" : "GOOD", tens, frac);
     configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
@@ -547,26 +541,8 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     }
   }
   else if (strcmp(argv[1], "setvolt") == 0) {
-    if (argc != 4) {
-      snprintf(m, s, "Invalid command\r\n");
-      return pdFALSE;
-    }
-    float newvolt = (float)strtol(argv[3], NULL, 10);
-    char *device = argv[2];
-    if (!strncasecmp(device, "dcdc", 4)) {
-      setAlarmVoltage(DCDC, newvolt);
-      snprintf(m, s, "%s: set DCDC alarm voltage to %s\r\n", argv[0], argv[3]);
-      return pdFALSE;
-    }
-    if (!strncasecmp(device, "tm4c", 4)) {
-      setAlarmVoltage(TM4C, newvolt);
-      snprintf(m, s, "%s: set TM4C alarm voltage to %s\r\n", argv[0], argv[3]);
-      return pdFALSE;
-    }
-    else {
-      snprintf(m, s, "%s is not a valid device.\r\n", argv[2]);
-      return pdFALSE;
-    }
+    snprintf(m, s, "alarm voltages are fixed to ADC thresholds\r\n");
+    return pdFALSE;
   }
   else {
     snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1]);

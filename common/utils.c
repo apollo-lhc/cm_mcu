@@ -144,12 +144,14 @@ static const char *ebuf_errstrings[] = {
     "Hard fault",
     "Assertion failed",
     "Stack Overflow",
+    "Volt Normal",
     "(continue)", // item 10
     "Power Failure",
     "Temp High (TM4C FPGA FF DCDC)",
     "MARK",
     "I2C error",
     "Power Failure CLEAR",
+    "Volt High (TM4C DCDC)",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -449,10 +451,10 @@ void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc)
   return;
 }
 
-void errbuffer_volt_high(uint8_t tm4c, uint8_t dcdc)
+void errbuffer_volt_high(uint8_t tm4c, uint8_t fpga)
 {
-  errbuffer_put(EBUF_CONTINUATION, tm4c);
-  errbuffer_put(EBUF_CONTINUATION, dcdc);
+  errbuffer_put(EBUF_VOLT_HIGH, tm4c);
+  errbuffer_put(EBUF_CONTINUATION, fpga);
   return;
 }
 
