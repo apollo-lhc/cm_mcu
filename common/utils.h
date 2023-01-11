@@ -59,7 +59,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_HARDFAULT      7
 #define EBUF_ASSERT         8
 #define EBUF_STACKOVERFLOW  9
-#define EBUF_VOLT_NORMAL    10 //FIXME it is now item 10, is it an issue?
+#define EBUF_VOLT_NORMAL    10 // FIXME it is now item 10, is it an issue?
 
 // error codes with data
 #define EBUF_WITH_DATA       10 // value used to determine which codes have data

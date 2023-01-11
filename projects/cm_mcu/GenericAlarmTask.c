@@ -14,7 +14,10 @@
 
 #include "AlarmUtilities.h"
 
-enum alarm_task_state { ALM_INIT, ALM_NORMAL, ALM_WARN, ALM_ERROR };
+enum alarm_task_state { ALM_INIT,
+                        ALM_NORMAL,
+                        ALM_WARN,
+                        ALM_ERROR };
 
 // ALARM TASK STATE MACHINE
 // +------+
@@ -124,8 +127,7 @@ void GenericAlarmTask(void *parameters)
     currentState = nextState;
 
     // monitor stack usage for this task
-    static UBaseType_t vv = 4096;
-    CHECK_TASK_STACK_USAGE(vv);
+    CHECK_TASK_STACK_USAGE(params->stack_size);
   }
   return;
 }

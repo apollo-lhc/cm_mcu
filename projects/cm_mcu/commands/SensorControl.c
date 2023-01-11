@@ -502,7 +502,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     uint32_t adc_volt_stat = getVoltAlarmStatus();
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s \t (TM4C + FPGAs)\r\n",
-            (adc_volt_stat) ? "ALARM" : "GOOD");
+                 (adc_volt_stat) ? "ALARM" : "GOOD");
 
     configASSERT(copied < SCRATCH_SIZE);
 

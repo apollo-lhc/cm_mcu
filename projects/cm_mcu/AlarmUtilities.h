@@ -9,6 +9,7 @@ struct GenericAlarmParams_t {
   int (*checkStatus)(void); // return 0 for normal, 1 for warn, >1 for error
   void (*errorlog_registererror)(void);
   void (*errorlog_clearerror)(void);
+  UBaseType_t stack_size; // stack size of task
 };
 
 extern struct GenericAlarmParams_t tempAlarmTask;
