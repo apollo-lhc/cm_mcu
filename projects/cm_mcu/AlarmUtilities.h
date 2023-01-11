@@ -36,16 +36,4 @@ int VoltStatus(void);
 void VoltErrorLog(void);
 void VoltClearErrorLog(void);
 
-// current alarms
-//    first some commands for setting/getting the thresholds
-/*
-float getAlarmCurrent(enum device theDevice);
-void setAlarmCurrent(enum device theDevice, float current);
-void getAlarmCurrentStatus(void);
-//    callback functions
-int CurrStatus(void);
-void CurrErrorLog(void);
-void CurrClearErrorLog(void);
-*/
-
 #endif // PROJECTS_CM_MCU_ALARMUTILITIES_H_
