@@ -113,7 +113,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s);
 
 // specific error functions
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);
-void errbuffer_volt_high(uint8_t tm4c, uint8_t dcdc);
+void errbuffer_volt_high(uint8_t tm4c, uint8_t fpga);
 void errbuffer_power_fail(uint16_t failmask);
 void errbuffer_power_fail_clear(void);
 
