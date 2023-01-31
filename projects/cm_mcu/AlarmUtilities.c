@@ -185,14 +185,15 @@ int VoltStatus()
 
     float threshold = getADCtargetValue(ch) * 0.10f;
     float now_value = getADCvalue(ch);
-    if (now_value - getADCtargetValue(ch) > threshold) {           // if this ADC voltage is greater than a target value by 10%
+    float excess = now_value - getADCtargetValue(ch);
+    if (excess > threshold) {                                      // if this ADC voltage is greater than a target value by 10%
       tm4c_bitmask += (1 << (ch - ADC_INFO_TM4C_VCC_INIT_CH + 1)); // first to last bit corresponds to status of low to high ADC voltage channel of tm4c
       is_alarm_volt = 1;
       debug_ch = ch;
     }
   }
 
-  if (is_alarm_volt) { // over voltage among one of tm4c power supplies by +/-5% of its threshold
+  if (is_alarm_volt) { // over voltage among one of tm4c power supplies by +10% of its threshold
     log_debug(LOG_ALM, "alarm volt at ADC ch : %d\r\n", debug_ch);
     status_V |= ALM_STAT_TM4C_OVERVOLT;
     retval++;
@@ -205,14 +206,15 @@ int VoltStatus()
 
     float threshold = getADCtargetValue(ch) * 0.10f;
     float now_value = getADCvalue(ch);
-    if (now_value - getADCtargetValue(ch) > threshold) {           // if this ADC voltage is greater than a target value by 10%
+    float excess = now_value - getADCtargetValue(ch);
+    if (excess > threshold) {                                      // if this ADC voltage is greater than a target value by 10%
       fpga_bitmask += (1 << (ch - ADC_INFO_FPGA_VCC_INIT_CH + 1)); // first to last bit corresponds to status of low to high ADC voltage channel of tm4c
       is_alarm_volt = 1;
       debug_ch = ch;
     }
   }
 
-  if (is_alarm_volt) { // over voltage among one of tm4c power supplies by +/-5% of its threshold
+  if (is_alarm_volt) { // over voltage among one of tm4c power supplies by +10% of its threshold
     log_debug(LOG_ALM, "alarm volt at ADC ch : %d\r\n", debug_ch);
     status_V |= ALM_STAT_FPGA_OVERVOLT;
     retval++;
