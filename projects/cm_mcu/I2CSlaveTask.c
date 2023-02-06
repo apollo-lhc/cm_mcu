@@ -56,7 +56,7 @@ static uint8_t getSlaveData(uint8_t address)
       value = testreg;
       break;
     case 0x10U:                                // MCU temperature
-      value = (uint8_t)getADCvalue(20) + 0.5f; // always valid
+      value = (uint8_t)(getADCvalue(20) + 0.5f); // always valid
       break;
     case 0x12U: // FPGA F2 temp
       value = (uint8_t)(local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U);
