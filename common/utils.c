@@ -151,7 +151,7 @@ static const char *ebuf_errstrings[] = {
     "MARK",
     "I2C error",
     "Power Failure CLEAR",
-    "Volt High (TM4C DCDC)",
+    "Volt High (GENFPGA FPGA1 FPGA2)",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -451,10 +451,11 @@ void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc)
   return;
 }
 
-void errbuffer_volt_high(uint8_t tm4c, uint8_t fpga)
+void errbuffer_volt_high(uint8_t genfpga, uint8_t fpga1, uint8_t fpga2)
 {
-  errbuffer_put(EBUF_VOLT_HIGH, tm4c);
-  errbuffer_put(EBUF_CONTINUATION, fpga);
+  errbuffer_put(EBUF_VOLT_HIGH, genfpga);
+  errbuffer_put(EBUF_CONTINUATION, fpga1);
+  errbuffer_put(EBUF_CONTINUATION, fpga2);
   return;
 }
 

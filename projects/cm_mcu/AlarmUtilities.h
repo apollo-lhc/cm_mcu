@@ -28,8 +28,8 @@ void TempClearErrorLog(void);
 
 // voltage alarms
 //    first some commands for setting/getting the thresholds
-float getAlarmVoltage(enum device theDevice);
-void setAlarmVoltage(enum device theDevice, float voltage);
+float getAlarmVoltages();
+void setAlarmVoltage(float voltthres);
 void getAlarmVoltageStatus(void);
 //    callback functions
 int VoltStatus(void);

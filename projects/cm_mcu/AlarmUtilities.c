@@ -3,6 +3,7 @@
 #include "MonitorTask.h"
 
 #include "common/log.h"
+#include "common/pinsel.h"
 
 ///////////////////////////////////////////////////////////
 //
@@ -146,8 +147,21 @@ struct GenericAlarmParams_t tempAlarmTask = {
 //
 ///////////////////////////////////////////////////////////
 
+// current value of the thresholds
+#define INITIAL_ALARM_VOLT_PERCENT 0.05f // +/-5% from the ADC thresholds
+static float alarmVolt = INITIAL_ALARM_VOLT_PERCENT;
+
+float getAlarmVoltage()
+{
+  return alarmVolt;
+}
+void setAlarmVoltage(float voltthres)
+{
+  alarmVolt = voltthres;
+}
+
 // current status of voltages
-static uint8_t currentVoltStatus[4] = {0.0, 0.0, 0.0, 0.0}; // FIXME : bitmasks for voltage statuses
+static uint8_t currentVoltStatus[3] = {0.0, 0.0, 0.0}; // FIXME : bitmasks for voltage statuses
 
 // Status flags of the voltage alarm task
 static uint32_t status_V = 0x0;
@@ -160,67 +174,96 @@ uint32_t getVoltAlarmStatus()
 // returns +1 for warning, +2 or higher for error
 int VoltStatus()
 {
-#ifndef REV2                      // REV1
-  uint8_t TM4C_VOLTAGE_MASK = 63; // 0b111111 by default
-#else                             // REV2
-  uint8_t TM4C_VOLTAGE_MASK = 31; // 0b11111 by default
-#endif                            // REV 2
+  bool f1_enable = isFPGAF1_PRESENT();
+  bool f2_enable = isFPGAF2_PRESENT();
+#ifndef REV2                         // REV1
+  uint8_t GENFPGA_VOLTAGE_MASK = 63; // 0b111111 by default
+#else                                // REV2
+  uint8_t GENFPGA_VOLTAGE_MASK = 31; // 0b11111 by default
+#endif                               // REV 2
   int retval = 0;
   status_V = 0x0U;
-  uint8_t tm4c_bitmask = 0;
-  uint8_t fpga_bitmask = 0;
-  // bool is_excess_volt = 0;
-  bool is_alarm_volt = 0;
-  int debug_ch = -1; // FIX ME
+  uint8_t genfpga_bitmask = 0;
+  uint8_t fpga1_bitmask = 0;
+  uint8_t fpga2_bitmask = 0;
+  uint8_t is_alarm_volt = 0;
 
-  // microcontroller
+  // microcontroller and general power
   if (getPowerControlState() != POWER_ON) {
-#ifndef REV2               // REV1
-    TM4C_VOLTAGE_MASK = 5; // 0b000101 only allows other powers off except M3V3 and 12V
-#else                      // REV2
-    TM4C_VOLTAGE_MASK = 3;        // 0b00011 only allows other powers off except M3V3 and 12V
-#endif                     // REV 2
+#ifndef REV2                  // REV1
+    GENFPGA_VOLTAGE_MASK = 5; // 0b000101 only allows other powers off except M3V3 and 12V
+#else                         // REV2
+    GENFPGA_VOLTAGE_MASK = 3;        // 0b00011 only allows other powers off except M3V3 and 12V
+#endif                        // REV 2
   }
-  for (int ch = ADC_INFO_TM4C_VCC_INIT_CH; ch < ADC_INFO_TM4C_VCC_FIN_CH; ++ch) {
+  for (int ch = ADC_INFO_GENFPGA_VCC_INIT_CH; ch < ADC_INFO_GENFPGA_VCC_FIN_CH; ++ch) {
 
-    float threshold = getADCtargetValue(ch) * 0.10f;
+    float threshold = getADCtargetValue(ch) * getAlarmVoltage();
     float now_value = getADCvalue(ch);
     float excess = now_value - getADCtargetValue(ch);
-    if (excess > threshold) {                                  // if this ADC voltage is greater than a target value by 10%
-      tm4c_bitmask += (1 << (ch - ADC_INFO_TM4C_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of tm4c
+    int tens, frac;
+    float_to_ints(excess / getADCtargetValue(ch), &tens, &frac);
+    if (excess > 0.f) {
       is_alarm_volt = 1;
-      debug_ch = ch;
+    }
+    if (excess > threshold || excess < -1 * threshold) {             // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
+      genfpga_bitmask += (1 << (ch - ADC_INFO_GENFPGA_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of mcu/general
+      is_alarm_volt = 2;
+      log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now %02d.%02d off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/- getAlarmVoltage()*100%% of its threshold
     }
   }
 
-  if (is_alarm_volt) { // over voltage among one of tm4c power supplies by +10% of its threshold
-    log_debug(LOG_ALM, "alarm volt at ADC ch : %d\r\n", debug_ch);
-    status_V |= ALM_STAT_TM4C_OVERVOLT;
+  if (is_alarm_volt > 0) {
     retval++;
+    if (is_alarm_volt == 2) {
+      status_V |= ALM_STAT_GENFPGA_OVERVOLT;
+      ++retval;
+    }
   }
 
-  currentVoltStatus[TM4C] = tm4c_bitmask & TM4C_VOLTAGE_MASK; // applies a mask with power-off exceptions
+  currentVoltStatus[GENFPGA] = genfpga_bitmask & GENFPGA_VOLTAGE_MASK; // applies a mask with power-off exceptions
 
   is_alarm_volt = 0;
+  retval = 0;
+  int n_fpga_half_ch = (ADC_INFO_FPGA_VCC_FIN_CH - ADC_INFO_FPGA_VCC_INIT_CH + 1) / 2;
+  int ADC_INFO_FPGA2_VCC_INIT_CH = n_fpga_half_ch + ADC_INFO_FPGA_VCC_INIT_CH;
   for (int ch = ADC_INFO_FPGA_VCC_INIT_CH; ch < ADC_INFO_FPGA_VCC_FIN_CH; ++ch) {
-
-    float threshold = getADCtargetValue(ch) * 0.10f;
+    if ((!f1_enable) || (!f2_enable && ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1))) // check if fpga1/2 is on the board. currently fpga1 takes the first half of adc outputs in this indexing
+      break;
+    float threshold = getADCtargetValue(ch) * getAlarmVoltage();
     float now_value = getADCvalue(ch);
     float excess = now_value - getADCtargetValue(ch);
-    if (excess > threshold) {                                  // if this ADC voltage is greater than a target value by 10%
-      fpga_bitmask += (1 << (ch - ADC_INFO_FPGA_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of tm4c
+    int tens, frac;
+    float_to_ints(excess / getADCtargetValue(ch), &tens, &frac);
+    if (excess > 0.f) {
       is_alarm_volt = 1;
-      debug_ch = ch;
+    }
+    if (ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1)) {
+      if (excess > threshold || excess < -1 * threshold) {         // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
+        fpga2_bitmask += (1 << (ch - ADC_INFO_FPGA2_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of fpga2
+        is_alarm_volt = 2;
+        log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now +/- %02d.%02d off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/-getAlarmVoltage()*100% of its threshold
+      }
+    }
+    else {
+      if (excess > threshold || excess < -1 * threshold) {        // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
+        fpga1_bitmask += (1 << (ch - ADC_INFO_FPGA_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of fpga2
+        is_alarm_volt = 2;
+        log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now +/- %02d.%02d off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/-getAlarmVoltage()*100% of its threshold
+      }
     }
   }
 
-  if (is_alarm_volt) { // over voltage among one of tm4c power supplies by +10% of its threshold
-    log_debug(LOG_ALM, "alarm volt at ADC ch : %d\r\n", debug_ch);
-    status_V |= ALM_STAT_FPGA_OVERVOLT;
+  if (is_alarm_volt > 0) {
     retval++;
+    if (is_alarm_volt == 2) {
+      status_V |= ALM_STAT_FPGA_OVERVOLT;
+      ++retval;
+    }
   }
 
-  currentVoltStatus[FPGA] = fpga_bitmask;
+  currentVoltStatus[FPGA1] = fpga1_bitmask;
+  currentVoltStatus[FPGA2] = fpga2_bitmask;
 
   return retval;
 }
@@ -228,8 +271,8 @@ int VoltStatus()
 void VoltErrorLog()
 {
   log_warn(LOG_ALM, "Voltage high: status: 0x%04x MCU: %d FPGAs:%d\r\n",
-           status_V, (int)currentVoltStatus[TM4C], (int)currentVoltStatus[FPGA]);
-  errbuffer_volt_high((uint8_t)currentVoltStatus[TM4C], (uint8_t)currentVoltStatus[FPGA]); // add voltage status as a data field in eeprom rather than its value
+           status_V, (int)currentVoltStatus[GENFPGA], (int)currentVoltStatus[FPGA1], (int)currentVoltStatus[FPGA2]);
+  errbuffer_volt_high((uint8_t)currentVoltStatus[GENFPGA], (uint8_t)currentVoltStatus[FPGA1], (uint8_t)currentVoltStatus[FPGA2]); // add voltage status as a data field in eeprom rather than its value
 }
 
 void VoltClearErrorLog()

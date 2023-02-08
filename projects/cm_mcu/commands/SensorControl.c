@@ -501,7 +501,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
 
     uint32_t adc_volt_stat = getVoltAlarmStatus();
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s \t (TM4C + FPGAs)\r\n",
+        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s \t (for FPGAs)\r\n",
                  (adc_volt_stat) ? "ALARM" : "GOOD");
 
     configASSERT(copied < SCRATCH_SIZE);
@@ -542,6 +542,16 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
   }
   else if (strcmp(argv[1], "setvolt") == 0) {
     snprintf(m, s, "alarm voltages are fixed to ADC thresholds\r\n");
+    return pdFALSE;
+  }
+  else if (strcmp(argv[1], "setvoltthres") == 0) {
+    if (argc != 3) {
+      snprintf(m, s, "Invalid command\r\n");
+      return pdFALSE;
+    }
+    float voltthres = (float)strtol(argv[2], NULL, 10);
+    setAlarmVoltage(voltthres);
+    snprintf(m, s, "alarm voltages are set their threshold by +/-%s \r\n", argv[2]);
     return pdFALSE;
   }
   else {
