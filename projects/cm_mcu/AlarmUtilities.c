@@ -151,7 +151,7 @@ struct GenericAlarmParams_t tempAlarmTask = {
 #define INITIAL_ALARM_VOLT_PERCENT 0.05f // +/-5% from the ADC thresholds
 static float alarmVolt = INITIAL_ALARM_VOLT_PERCENT;
 
-float getAlarmVoltage()
+float getAlarmVoltage(void)
 {
   return alarmVolt;
 }
