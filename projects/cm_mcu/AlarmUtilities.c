@@ -222,9 +222,11 @@ int VoltStatus()
   }
 
   currentVoltStatus[GENFPGA] = genfpga_bitmask & GENFPGA_VOLTAGE_MASK; // applies a mask with power-off exceptions
-
   is_alarm_volt = 0;
-  retval = 0;
+  if (retval > 0)
+    return retval;
+  else
+    retval = 0;
   int n_fpga_half_ch = (ADC_INFO_FPGA_VCC_FIN_CH - ADC_INFO_FPGA_VCC_INIT_CH + 1) / 2;
   int ADC_INFO_FPGA2_VCC_INIT_CH = n_fpga_half_ch + ADC_INFO_FPGA_VCC_INIT_CH;
   for (int ch = ADC_INFO_FPGA_VCC_INIT_CH; ch < ADC_INFO_FPGA_VCC_FIN_CH; ++ch) {
