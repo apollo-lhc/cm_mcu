@@ -131,8 +131,6 @@ void TempClearErrorLog()
   errbuffer_put(EBUF_TEMP_NORMAL, 0);
 }
 
-
-
 struct GenericAlarmParams_t tempAlarmTask = {
     //.xAlmQueue = xALMQueue,
     .checkStatus = &TempStatus,
@@ -176,11 +174,11 @@ int VoltStatus()
 {
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
-#ifndef REV2                         // REV1
+#ifndef REV2                       // REV1
   uint8_t GEN_VOLTAGE_MASK = 0x3f; // 0b111111 by default
-#else                                // REV2
+#else                              // REV2
   uint8_t GEN_VOLTAGE_MASK = 0x1f; // 0b11111 by default
-#endif                               // REV 2
+#endif                             // REV 2
   int retval = 0;
   status_V = 0x0U;
   uint8_t gen_bitmask = 0;
@@ -190,11 +188,11 @@ int VoltStatus()
 
   // microcontroller and general power
   if (getPowerControlState() != POWER_ON) {
-#ifndef REV2                  // REV1
+#ifndef REV2                // REV1
     GEN_VOLTAGE_MASK = 0x5; // 0b000101 only allows other powers off except M3V3 and 12V
-#else                         // REV2
+#else                       // REV2
     GEN_VOLTAGE_MASK = 0x3;        // 0b00011 only allows other powers off except M3V3 and 12V
-#endif                        // REV 2
+#endif                      // REV 2
   }
   for (int ch = ADC_INFO_GEN_VCC_INIT_CH; ch < ADC_INFO_GEN_VCC_FIN_CH; ++ch) {
 
@@ -206,7 +204,7 @@ int VoltStatus()
     if (excess > 0.f) {
       is_alarm_volt = 1;
     }
-    if (excess > threshold || excess < -1 * threshold) {             // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
+    if (excess > threshold || excess < -1 * threshold) {     // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
       gen_bitmask += (1 << (ch - ADC_INFO_GEN_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of mcu/general
       is_alarm_volt = 2;
       log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now %02d.%02d off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/- getAlarmVoltage()*100%% of its threshold

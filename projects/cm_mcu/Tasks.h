@@ -31,17 +31,17 @@ void InitTask(void *parameters);
 #define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
 #ifdef REV1
-#define ADC_INFO_GEN_VCC_INIT_CH 0
-#define ADC_INFO_GEN_VCC_FIN_CH  5
-#define ADC_INFO_FPGA_VCC_INIT_CH    6
-#define ADC_INFO_FPGA_VCC_FIN_CH     7
+#define ADC_INFO_GEN_VCC_INIT_CH  0
+#define ADC_INFO_GEN_VCC_FIN_CH   5
+#define ADC_INFO_FPGA_VCC_INIT_CH 6
+#define ADC_INFO_FPGA_VCC_FIN_CH  7
 #elif defined(REV2) // REV2
-#define ADC_INFO_GEN_VCC_INIT_CH 0
-#define ADC_INFO_GEN_VCC_FIN_CH  4
-#define ADC_INFO_FPGA_VCC_INIT_CH    5
-#define ADC_INFO_FPGA_VCC_FIN_CH     12
-#define ADC_INFO_CUR_INIT_CH         13
-#define ADC_INFO_CUR_FIN_CH          17
+#define ADC_INFO_GEN_VCC_INIT_CH  0
+#define ADC_INFO_GEN_VCC_FIN_CH   4
+#define ADC_INFO_FPGA_VCC_INIT_CH 5
+#define ADC_INFO_FPGA_VCC_FIN_CH  12
+#define ADC_INFO_CUR_INIT_CH      13
+#define ADC_INFO_CUR_FIN_CH       17
 #endif
 
 const char *const getADCname(const int i);
@@ -235,8 +235,8 @@ extern QueueHandle_t xALMQueue;
 #define ALM_STAT_FPGA_OVERTEMP    0x4
 #define ALM_STAT_DCDC_OVERTEMP    0x8
 // status register bits
-#define ALM_STAT_GEN_OVERVOLT 0x1
-#define ALM_STAT_FPGA_OVERVOLT    0x4
+#define ALM_STAT_GEN_OVERVOLT  0x1
+#define ALM_STAT_FPGA_OVERVOLT 0x4
 // messages
 #define ALM_CLEAR_ALL     1
 #define ALM_CLEAR_TEMP    2

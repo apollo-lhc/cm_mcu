@@ -38,7 +38,6 @@ enum alarm_task_state { ALM_INIT,
 
 QueueHandle_t xALMQueue = NULL;
 
-
 void GenericAlarmTask(void *parameters)
 {
   struct GenericAlarmParams_t *params = parameters;
