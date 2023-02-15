@@ -344,11 +344,8 @@ int main(void)
   xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
   configASSERT(xEPRMQueue_out != NULL);
 
-  tempAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // temperature ALARM queue
-  configASSERT(tempAlarmTask.xAlmQueue != NULL);
-
-  voltAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // voltage ALARM queue
-  configASSERT(voltAlarmTask.xAlmQueue != NULL);
+  xALMQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
+  configASSERT(xALMQueue != NULL);
 
   xZynqMonQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
   configASSERT(xZynqMonQueue != NULL);

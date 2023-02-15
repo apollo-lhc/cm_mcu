@@ -131,10 +131,10 @@ void TempClearErrorLog()
   errbuffer_put(EBUF_TEMP_NORMAL, 0);
 }
 
-static QueueHandle_t const xTempAlarmQueue = 0;
+
 
 struct GenericAlarmParams_t tempAlarmTask = {
-    .xAlmQueue = xTempAlarmQueue,
+    //.xAlmQueue = xALMQueue,
     .checkStatus = &TempStatus,
     .errorlog_registererror = &TempErrorLog,
     .errorlog_clearerror = &TempClearErrorLog,
@@ -161,7 +161,7 @@ void setAlarmVoltage(float voltthres)
 }
 
 // current status of voltages
-static uint8_t currentVoltStatus[3] = {0.0, 0.0, 0.0}; // FIXME : bitmasks for voltage statuses
+static uint8_t currentVoltStatus[3] = {0U, 0U, 0U};
 
 // Status flags of the voltage alarm task
 static uint32_t status_V = 0x0;
@@ -177,13 +177,13 @@ int VoltStatus()
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
 #ifndef REV2                         // REV1
-  uint8_t GENFPGA_VOLTAGE_MASK = 63; // 0b111111 by default
+  uint8_t GEN_VOLTAGE_MASK = 0x3f; // 0b111111 by default
 #else                                // REV2
-  uint8_t GENFPGA_VOLTAGE_MASK = 31; // 0b11111 by default
+  uint8_t GEN_VOLTAGE_MASK = 0x1f; // 0b11111 by default
 #endif                               // REV 2
   int retval = 0;
   status_V = 0x0U;
-  uint8_t genfpga_bitmask = 0;
+  uint8_t gen_bitmask = 0;
   uint8_t fpga1_bitmask = 0;
   uint8_t fpga2_bitmask = 0;
   uint8_t is_alarm_volt = 0;
@@ -191,12 +191,12 @@ int VoltStatus()
   // microcontroller and general power
   if (getPowerControlState() != POWER_ON) {
 #ifndef REV2                  // REV1
-    GENFPGA_VOLTAGE_MASK = 5; // 0b000101 only allows other powers off except M3V3 and 12V
+    GEN_VOLTAGE_MASK = 0x5; // 0b000101 only allows other powers off except M3V3 and 12V
 #else                         // REV2
-    GENFPGA_VOLTAGE_MASK = 3;        // 0b00011 only allows other powers off except M3V3 and 12V
+    GEN_VOLTAGE_MASK = 0x3;        // 0b00011 only allows other powers off except M3V3 and 12V
 #endif                        // REV 2
   }
-  for (int ch = ADC_INFO_GENFPGA_VCC_INIT_CH; ch < ADC_INFO_GENFPGA_VCC_FIN_CH; ++ch) {
+  for (int ch = ADC_INFO_GEN_VCC_INIT_CH; ch < ADC_INFO_GEN_VCC_FIN_CH; ++ch) {
 
     float threshold = getADCtargetValue(ch) * getAlarmVoltage();
     float now_value = getADCvalue(ch);
@@ -207,7 +207,7 @@ int VoltStatus()
       is_alarm_volt = 1;
     }
     if (excess > threshold || excess < -1 * threshold) {             // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
-      genfpga_bitmask += (1 << (ch - ADC_INFO_GENFPGA_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of mcu/general
+      gen_bitmask += (1 << (ch - ADC_INFO_GEN_VCC_INIT_CH)); // first to last bit corresponds to status of low to high ADC voltage channel of mcu/general
       is_alarm_volt = 2;
       log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now %02d.%02d off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/- getAlarmVoltage()*100%% of its threshold
     }
@@ -216,13 +216,14 @@ int VoltStatus()
   if (is_alarm_volt > 0) {
     retval++;
     if (is_alarm_volt == 2) {
-      status_V |= ALM_STAT_GENFPGA_OVERVOLT;
+      status_V |= ALM_STAT_GEN_OVERVOLT;
       ++retval;
     }
   }
 
-  currentVoltStatus[GENFPGA] = genfpga_bitmask & GENFPGA_VOLTAGE_MASK; // applies a mask with power-off exceptions
+  currentVoltStatus[GEN] = gen_bitmask & GEN_VOLTAGE_MASK; // applies a mask with power-off exceptions
   is_alarm_volt = 0;
+  status_V = 0x0U;
   if (retval > 0)
     return retval;
   else
@@ -273,8 +274,8 @@ int VoltStatus()
 void VoltErrorLog()
 {
   log_warn(LOG_ALM, "Voltage high: status: 0x%04x MCU: %d FPGAs:%d\r\n",
-           status_V, (int)currentVoltStatus[GENFPGA], (int)currentVoltStatus[FPGA1], (int)currentVoltStatus[FPGA2]);
-  errbuffer_volt_high((uint8_t)currentVoltStatus[GENFPGA], (uint8_t)currentVoltStatus[FPGA1], (uint8_t)currentVoltStatus[FPGA2]); // add voltage status as a data field in eeprom rather than its value
+           status_V, (int)currentVoltStatus[GEN], (int)currentVoltStatus[FPGA1], (int)currentVoltStatus[FPGA2]);
+  errbuffer_volt_high((uint8_t)currentVoltStatus[GEN], (uint8_t)currentVoltStatus[FPGA1], (uint8_t)currentVoltStatus[FPGA2]); // add voltage status as a data field in eeprom rather than its value
 }
 
 void VoltClearErrorLog()
@@ -283,10 +284,10 @@ void VoltClearErrorLog()
   errbuffer_put(EBUF_VOLT_NORMAL, 0);
 }
 
-static QueueHandle_t const xVoltAlarmQueue = 0;
+// set queue to zero?
 
 struct GenericAlarmParams_t voltAlarmTask = {
-    .xAlmQueue = xVoltAlarmQueue,
+    //.xAlmQueue = xALMQueue, //voltage and temperature alarms use the same queue
     .checkStatus = &VoltStatus,
     .errorlog_registererror = &VoltErrorLog,
     .errorlog_clearerror = &VoltClearErrorLog,

@@ -36,6 +36,9 @@ enum alarm_task_state { ALM_INIT,
 // sent to the CLI.
 //
 
+QueueHandle_t xALMQueue = NULL;
+
+
 void GenericAlarmTask(void *parameters)
 {
   struct GenericAlarmParams_t *params = parameters;
@@ -48,8 +51,7 @@ void GenericAlarmTask(void *parameters)
   enum alarm_task_state currentState = ALM_INIT;
   for (;;) {
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));
-
-    if (xQueueReceive(params->xAlmQueue, &message, 0)) {
+    if (xQueueReceive(xALMQueue, &message, 0)) {
       switch (message) {
         case ALM_CLEAR_ALL: // clear all alarms
           alarming = false;

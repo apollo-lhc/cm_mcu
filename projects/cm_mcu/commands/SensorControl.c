@@ -10,6 +10,7 @@
 #include "SensorControl.h"
 #include "Semaphore.h"
 #include "common/smbus_helper.h"
+#include "Tasks.h"
 
 // Register definitions
 // -------------------------------------------------
@@ -462,8 +463,8 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
   uint32_t message;
   if (strncmp(argv[1], "clear", 4) == 0) {
     message = ALM_CLEAR_ALL; // clear all alarms
-    xQueueSendToBack(tempAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
-    xQueueSendToBack(voltAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
+    xQueueSendToBack(xALMQueue, &message, pdMS_TO_TICKS(10));
+    //xQueueSendToBack(voltAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
     m[0] = '\0'; // no output from this command
 
     return pdFALSE;
