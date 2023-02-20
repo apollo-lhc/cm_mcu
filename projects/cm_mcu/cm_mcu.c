@@ -184,8 +184,6 @@ void SystemInitInterrupts(void)
 #endif
 
   // I2C slave
-  ROM_I2CSlaveDisable(I2C0_BASE); // I don't understand why this is neeeded
-
   ROM_I2CSlaveAddressSet(I2C0_BASE, 0, I2C0_SLAVE_ADDRESS);
 
   ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
