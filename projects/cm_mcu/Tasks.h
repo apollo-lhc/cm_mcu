@@ -37,6 +37,7 @@ void InitTask(void *parameters);
 #define ADC_INFO_FPGA_VCC_FIN_CH  7
 #elif defined(REV2) // REV2
 #define ADC_INFO_GEN_VCC_INIT_CH  0
+#define ADC_INFO_GEN_VCC_4V0_CH   3
 #define ADC_INFO_GEN_VCC_FIN_CH   4
 #define ADC_INFO_FPGA_VCC_INIT_CH 5
 #define ADC_INFO_FPGA_VCC_FIN_CH  12

@@ -151,7 +151,7 @@ static const char *ebuf_errstrings[] = {
     "MARK",
     "I2C error",
     "Power Failure CLEAR",
-    "Volt High (GENFPGA FPGA1 FPGA2)",
+    "Volt High (GEN FPGA1 FPGA2)",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
