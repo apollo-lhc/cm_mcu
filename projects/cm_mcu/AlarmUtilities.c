@@ -163,6 +163,9 @@ static uint8_t currentVoltStatus[3] = {0U, 0U, 0U};
 
 // Status flags of the voltage alarm task
 static uint32_t status_V = 0x0;
+// fractional value of a high voltage than an expected ADC value
+static float excess_volt = 0.0;
+static int excess_volt_which_ch = 0;
 // read-only, so no need to use queue
 uint32_t getVoltAlarmStatus()
 {
@@ -213,6 +216,8 @@ int VoltStatus()
     float_to_ints(excess, &tens, &frac);
     if (excess > 0.0f) {
       is_alarm_volt = 1;
+      excess_volt = excess * 100;
+      excess_volt_which_ch = ch;
     }
 
     if ((excess > threshold && excess > 0.0f) || (excess * -1.0f > threshold && excess < 0.0f)) { // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
@@ -252,6 +257,8 @@ int VoltStatus()
     float_to_ints(excess, &tens, &frac);
     if (excess > 0.0f) {
       is_alarm_volt = 1;
+      excess_volt = excess * 100;
+      excess_volt_which_ch = ch;
     }
     if (ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1)) {
       if ((excess > threshold && excess > 0.0f) || (excess * -1.0f > threshold && excess < 0.0f)) { // if this ADC voltage is greater/lower than a target value by getAlarmVoltage()*100%
@@ -285,8 +292,10 @@ int VoltStatus()
 
 void VoltErrorLog()
 {
-  log_warn(LOG_ALM, "Voltage high: status: 0x%04x GEN: %d FPGAs:%d\r\n",
-           status_V, (int)currentVoltStatus[GEN], (int)currentVoltStatus[FPGA1], (int)currentVoltStatus[FPGA2]);
+  int tens, frac;
+  float_to_ints(excess_volt, &tens, &frac);
+  log_warn(LOG_ALM, "Voltage high: status: 0x%04x at ADC ch %02d now +%02d.%02d percent off\r\n",
+           status_V, excess_volt_which_ch, tens, frac);
   errbuffer_volt_high((uint8_t)currentVoltStatus[GEN], (uint8_t)currentVoltStatus[FPGA1], (uint8_t)currentVoltStatus[FPGA2]); // add voltage status as a data field in eeprom rather than its value
 }
 
