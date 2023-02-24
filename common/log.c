@@ -182,6 +182,7 @@ void log_dump(void (*f)(const char *s))
 {
   f(b.data + b.last + 1);
   f(b.data);
+  f("\033[0m\r\n"); // turn off color and add a newline to ensure that everything is cleaned up.
 }
 
 void ApolloLog(log_Event *ev)
