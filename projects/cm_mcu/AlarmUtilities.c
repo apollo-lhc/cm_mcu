@@ -31,7 +31,7 @@ static float currentTemp[4] = {0.f, 0.f, 0.f, 0.f};
 static uint32_t status_T = 0x0;
 
 // read-only, so no need to use queue
-uint32_t getTempAlarmStatus()
+uint32_t getTempAlarmStatus(void)
 {
   return status_T;
 }
@@ -47,7 +47,7 @@ void setAlarmTemperature(enum device theDevice, float temperature)
 
 // check the current temperature status.
 // returns +1 for warning, +2 or higher for error
-int TempStatus()
+int TempStatus(void)
 {
   int retval = 0;
   status_T = 0x0U;
@@ -116,7 +116,7 @@ int TempStatus()
   return retval;
 }
 
-void TempErrorLog()
+void TempErrorLog(void)
 {
   log_warn(LOG_ALM, "Temperature high: status: 0x%04x MCU: %d F: %d FF:%d PS:%d\r\n",
            status_T, (int)currentTemp[TM4C], (int)currentTemp[FPGA],
@@ -125,18 +125,17 @@ void TempErrorLog()
                       (uint8_t)currentTemp[FF], (uint8_t)currentTemp[DCDC]);
 }
 
-void TempClearErrorLog()
+void TempClearErrorLog(void)
 {
   log_info(LOG_ALM, "Temperature normal\r\n");
   errbuffer_put(EBUF_TEMP_NORMAL, 0);
 }
 
 struct GenericAlarmParams_t tempAlarmTask = {
-    //.xAlmQueue = xALMQueue,
     .checkStatus = &TempStatus,
     .errorlog_registererror = &TempErrorLog,
     .errorlog_clearerror = &TempClearErrorLog,
-    .stack_size = 176,
+    .stack_size = 4096,
 };
 
 ///////////////////////////////////////////////////////////
@@ -164,16 +163,16 @@ static uint8_t currentVoltStatus[3] = {0U, 0U, 0U};
 // Status flags of the voltage alarm task
 static uint32_t status_V = 0x0;
 // fractional value of a high voltage than an expected ADC value
-static float excess_volt = 0.0;
+static float excess_volt = 0.0f;
 static int excess_volt_which_ch = 0;
 // read-only, so no need to use queue
-uint32_t getVoltAlarmStatus()
+uint32_t getVoltAlarmStatus(void)
 {
   return status_V;
 }
 // check the current voltage status.
 // returns +1 for warning, +2 or higher for error
-int VoltStatus()
+int VoltStatus(void)
 {
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
@@ -290,7 +289,7 @@ int VoltStatus()
   return retval;
 }
 
-void VoltErrorLog()
+void VoltErrorLog(void)
 {
   int tens, frac;
   float_to_ints(excess_volt, &tens, &frac);
@@ -299,20 +298,17 @@ void VoltErrorLog()
   errbuffer_volt_high((uint8_t)currentVoltStatus[GEN], (uint8_t)currentVoltStatus[FPGA1], (uint8_t)currentVoltStatus[FPGA2]); // add voltage status as a data field in eeprom rather than its value
 }
 
-void VoltClearErrorLog()
+void VoltClearErrorLog(void)
 {
   log_info(LOG_ALM, "Voltage normal\r\n");
   errbuffer_put(EBUF_VOLT_NORMAL, 0);
 }
 
-// set queue to zero?
-
 struct GenericAlarmParams_t voltAlarmTask = {
-    //.xAlmQueue = xALMQueue, //voltage and temperature alarms use the same queue
     .checkStatus = &VoltStatus,
     .errorlog_registererror = &VoltErrorLog,
     .errorlog_clearerror = &VoltClearErrorLog,
-    .stack_size = 35,
+    .stack_size = 4096,
 };
 
 ///////////////////////////////////////////////////////////

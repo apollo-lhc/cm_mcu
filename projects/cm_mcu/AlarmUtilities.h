@@ -4,8 +4,6 @@
 #include "Tasks.h"
 
 struct GenericAlarmParams_t {
-  // this queue is used to receive messages
-  // QueueHandle_t xAlmQueue;
   int (*checkStatus)(void); // return 0 for normal, 1 for warn, >1 for error
   void (*errorlog_registererror)(void);
   void (*errorlog_clearerror)(void);

@@ -228,7 +228,7 @@ const char *gitVersion(void);
 
 // ---- ALARMS
 
-extern QueueHandle_t xALMQueue;
+extern QueueHandle_t xAlmQueue;
 
 // status register bits
 #define ALM_STAT_TM4C_OVERTEMP    0x1
