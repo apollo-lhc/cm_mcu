@@ -541,10 +541,6 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       return pdFALSE;
     }
   }
-  else if (strcmp(argv[1], "setvolt") == 0) {
-    snprintf(m, s, "alarm voltages are fixed to ADC thresholds\r\n");
-    return pdFALSE;
-  }
   else if (strcmp(argv[1], "setvoltthres") == 0) {
     if (argc != 3) {
       snprintf(m, s, "Invalid command\r\n");
