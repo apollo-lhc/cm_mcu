@@ -1094,7 +1094,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     c = 0;
   }
   // get and print out the file name
-  char progname[CLOCK_PROGNAME_REG_COUNT];
+  char progname[CLOCK_PROGNAME_REG_NAME];
   getClockProgram(i, progname);
   snprintf(m+copied, SCRATCH_SIZE-copied, "Program: %s\r\n", progname);
 
