@@ -337,6 +337,8 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .stack_size = 4096U,
 };
 
+
+#ifdef REV2
 // Clock arguments for monitoring task
 
 struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
@@ -408,6 +410,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .xSem = NULL,
     .stack_size = 4096U,
 };
+#endif // REV2
 
 void setFFmask(uint32_t ff_combined_present)
 {
