@@ -173,6 +173,8 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
   }
   // extract info about device
   uint8_t mux_addr, mux_bit, dev_addr;
+  // In Rev2 device 0 and devices 1-5 are different and hence are stored in different arrays
+  // for monitoring purposes
   if ( device == 0 ) {
     mux_addr = clkr0a_moni2c_addrs[0].mux_addr;
     mux_bit = clkr0a_moni2c_addrs[0].mux_bit;
