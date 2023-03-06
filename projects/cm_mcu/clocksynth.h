@@ -32,9 +32,9 @@ int load_clock(void);
 #define CLOCK_EXPANDER_CONFIGURATION_PORT_0           0x06 // configuration port to set I/O port as input or output
 #define CLOCK_CHANGEPAGE_REG_ADDR                     0x01
 
-#define CLOCK_PROGNAME_REG_ADDR_START                 0x26B
-#define CLOCK_PROGNAME_REG_COUNT                      8
-#define CLOCK_PROGNAME_REG_NAME                       (CLOCK_PROGNAME_REG_COUNT+1)
+#define CLOCK_PROGNAME_REG_ADDR_START 0x26B
+#define CLOCK_PROGNAME_REG_COUNT      8
+#define CLOCK_PROGNAME_REG_NAME       (CLOCK_PROGNAME_REG_COUNT + 1)
 
 void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME]);
 

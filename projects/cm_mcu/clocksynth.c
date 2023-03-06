@@ -162,8 +162,8 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
 {
   // first clear out the return value
   memset(progname, '\0', CLOCK_PROGNAME_REG_NAME);
-  // ensure that the device is in the right range 0-5 
-  if ( device < 0 || device > 4 )
+  // ensure that the device is in the right range 0-5
+  if (device < 0 || device > 4)
     return;
 
   // grab the semaphore to ensure unique access to I2C controller
@@ -175,7 +175,7 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
   uint8_t mux_addr, mux_bit, dev_addr;
   // In Rev2 device 0 and devices 1-5 are different and hence are stored in different arrays
   // for monitoring purposes
-  if ( device == 0 ) {
+  if (device == 0) {
     mux_addr = clkr0a_moni2c_addrs[0].mux_addr;
     mux_bit = clkr0a_moni2c_addrs[0].mux_bit;
     dev_addr = clkr0a_moni2c_addrs[0].dev_addr;
@@ -186,21 +186,21 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
     dev_addr = clk_moni2c_addrs[device - 1].dev_addr;
   }
   // set mux bit
-  int status = apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 1<<mux_bit);
-  if ( status != 0 ) {
+  int status = apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 1 << mux_bit);
+  if (status != 0) {
     log_debug(LOG_I2C, "mux write stat=%d\r\n", status); // can't return due to semaphore
   }
   else {
     // set the page
-    uint8_t page = (CLOCK_PROGNAME_REG_ADDR_START>>8) & 0xFF;
-    status = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, dev_addr, 1, 
-        CLOCK_CHANGEPAGE_REG_ADDR, 1, page);
-    
+    uint8_t page = (CLOCK_PROGNAME_REG_ADDR_START >> 8) & 0xFF;
+    status = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, dev_addr, 1,
+                                  CLOCK_CHANGEPAGE_REG_ADDR, 1, page);
+
     // now read out the six bytes of data in two reads
-    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START) & 0xFF;
+    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START)&0xFF;
     uint32_t data[2];
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
-    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg+4, 4, data+1);
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
     memcpy(progname, data, CLOCK_PROGNAME_REG_COUNT);
   }
 
