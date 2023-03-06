@@ -339,7 +339,7 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
 
 // Clock arguments for monitoring task
 
-struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
+struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
     {"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA
     {"r1a", 0x70, 2, 0x6b}, // CLK R1A : Si5395-REVA
     {"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
@@ -376,7 +376,7 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .stack_size = 4096U,
 };
 
-struct dev_moni2c_addr_t clkr0a_moni2c_addrs[] = {
+struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
     {"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD
 };
 
@@ -583,21 +583,21 @@ int8_t getFFtemp(const uint8_t i)
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
-    val = ffl12_f1_args.sm_values[index];
+    val = (int8_t)ffl12_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     int index = (i - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
-    val = ffldaq_f1_args.sm_values[index];
+    val = (int8_t)ffldaq_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     int index = (i - NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
-    val = ffl12_f2_args.sm_values[index];
+    val = (int8_t)ffl12_f2_args.sm_values[index];
   }
   else {
     int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-    val = ffldaq_f2_args.sm_values[index];
+    val = (int8_t)ffldaq_f2_args.sm_values[index];
   }
 
   return val;
@@ -1060,7 +1060,7 @@ void initFPGAMon(void)
 // initialize the real-time clock, which lives in the Hibernate Module in the TM4C1294NCPDT
 extern uint32_t g_ui32SysClock;
 
-void InitRTC()
+void InitRTC(void)
 {
   // Enable the RTC module
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_HIBERNATE);
@@ -1235,7 +1235,7 @@ void init_registers_ff()
 }
 #endif // REV1
 #ifdef REV2
-void init_registers_clk()
+void init_registers_clk(void)
 {
   // initialize the external I2C registers for the clocks and for the optical devices.
 
@@ -1301,7 +1301,7 @@ void init_registers_clk()
     xSemaphoreGive(i2c2_sem);
   }
 }
-void init_registers_ff()
+void init_registers_ff(void)
 {
 
   // =====================================================

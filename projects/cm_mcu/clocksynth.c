@@ -5,7 +5,9 @@
  *      Author: rzou
  */
 #include <assert.h>
+#include <string.h>
 
+#include "Semaphore.h"
 #include "clocksynth.h"
 #include "common/utils.h"
 #include "I2CCommunication.h"
@@ -69,7 +71,7 @@ int RegisterList[][2] = {
     {0x0B58, 0x01},
 };
 
-int initialize_clock()
+int initialize_clock(void)
 {
   static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
                  (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
@@ -135,7 +137,7 @@ static int write_register(int RegList[][2], int n_row)
   return status;
 }
 
-int load_clock()
+int load_clock(void)
 {
   initialize_clock();
   int row = sizeof(PreambleList) / sizeof(PreambleList[0]);
@@ -153,3 +155,52 @@ int load_clock()
   status = write_register(PostambleList, row);
   return status;
 }
+
+#ifdef REV2
+// return the string that corresponds to the programmed file. If
+// there is an error, an empty string is returned.
+void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_COUNT])
+{
+  // first clear out the return value
+  memset(progname, '\0', CLOCK_PROGNAME_REG_COUNT);
+  // ensure that the device is in the right range 0-5 
+  if ( device < 0 || device > 4 )
+    return;
+
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return;
+  }
+  // extract info about device
+  uint8_t mux_addr, mux_bit, dev_addr;
+  if ( device == 0 ) {
+    mux_addr = clkr0a_moni2c_addrs[0].mux_addr;
+    mux_bit = clkr0a_moni2c_addrs[0].mux_bit;
+    dev_addr = clkr0a_moni2c_addrs[0].dev_addr;
+  }
+  else {
+    mux_addr = clk_moni2c_addrs[device - 1].mux_addr;
+    mux_bit = clk_moni2c_addrs[device - 1].mux_bit;
+    dev_addr = clk_moni2c_addrs[device - 1].dev_addr;
+  }
+  // set mux bit
+  int status = apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 1<<mux_bit);
+  if ( status != 0 ) {
+    log_debug(LOG_I2C, "mux write stat=%d\r\n", status); // can't return due to semaphore
+  }
+  else {
+    // now read out the six bytes of data in two reads
+    uint32_t data[2];
+    status = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, CLOCK_PROGNAME_REG_ADDR_START, 4, data);
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, CLOCK_PROGNAME_REG_ADDR_START+4, 2, data+1);
+    memcpy(progname, data, 6);
+  }
+
+  // release the semaphore
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
+}
+#endif // REV2
