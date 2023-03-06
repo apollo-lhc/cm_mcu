@@ -13,7 +13,6 @@
 #include "I2CCommunication.h"
 #include "Tasks.h"
 
-int snprintf(char *buf, unsigned int count, const char *format, ...);
 int PreambleList[][2] = {{0x0B24, 0xC0},
                          {0x0B25, 0x00},
                          {0x0502, 0x01},
@@ -159,10 +158,10 @@ int load_clock(void)
 #ifdef REV2
 // return the string that corresponds to the programmed file. If
 // there is an error, an empty string is returned.
-void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_COUNT])
+void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
 {
   // first clear out the return value
-  memset(progname, '\0', CLOCK_PROGNAME_REG_COUNT);
+  memset(progname, '\0', CLOCK_PROGNAME_REG_NAME);
   // ensure that the device is in the right range 0-5 
   if ( device < 0 || device > 4 )
     return;
@@ -190,11 +189,17 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_COUNT])
     log_debug(LOG_I2C, "mux write stat=%d\r\n", status); // can't return due to semaphore
   }
   else {
+    // set the page
+    uint8_t page = (CLOCK_PROGNAME_REG_ADDR_START>>8) & 0xFF;
+    status = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, dev_addr, 1, 
+        CLOCK_CHANGEPAGE_REG_ADDR, 1, page);
+    
     // now read out the six bytes of data in two reads
+    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START) & 0xFF;
     uint32_t data[2];
-    status = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, CLOCK_PROGNAME_REG_ADDR_START, 4, data);
-    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, CLOCK_PROGNAME_REG_ADDR_START+4, 2, data+1);
-    memcpy(progname, data, 6);
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg+4, 2, data+1);
+    memcpy(progname, data, CLOCK_PROGNAME_REG_COUNT);
   }
 
   // release the semaphore

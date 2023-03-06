@@ -34,7 +34,8 @@ int load_clock(void);
 
 #define CLOCK_PROGNAME_REG_ADDR_START                 0x26B
 #define CLOCK_PROGNAME_REG_COUNT                      6
+#define CLOCK_PROGNAME_REG_NAME                       (CLOCK_PROGNAME_REG_COUNT+1)
 
-void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_COUNT]);
+void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME]);
 
 #endif /* PROJECTS_CM_MCU_CLOCKSYNTH_H_ */
