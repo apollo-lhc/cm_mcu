@@ -1056,26 +1056,25 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
              i);
     return pdFALSE;
   }
-  else {
-    if (c == 0) {
-      char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id : %s \r\n",
-                         clk_ids[i]);
-      char *header = "REG_TABLE";
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
-    }
+  // print out header once
+  if (c == 0) {
+    const char *clk_ids[5]  = {"r0a", "r0b", "r1a", "r1b", "r1c"};
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id %s\r\n",
+                       clk_ids[i]);
+    char *header = "REG_TABLE";
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
   }
+  // update times, in seconds
+  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+  TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
+
+  if (checkStale(last, now)) {
+    int mins = (now - last) / 60;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+  }
+  // i = 0 corresponds to SI5341, others to SI5395
   if (i == 0) {
-
-    // update times, in seconds
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-    TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
-
-    if (checkStale(last, now)) {
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
 
     for (; c < clockr0a_args.n_commands; ++c) {
       uint8_t val = clockr0a_args.sm_values[c];
@@ -1094,17 +1093,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     }
     c = 0;
   }
+  // i = 0 corresponds to SI5341, others to SI5395
   else {
-
-    // update times, in seconds
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-    TickType_t last = pdTICKS_TO_MS(clock_args.updateTick) / 1000;
-
-    if (checkStale(last, now)) {
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
 
     for (; c < clock_args.n_commands; ++c) {
       uint8_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
@@ -1123,6 +1113,10 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     }
     c = 0;
   }
+  // get and print out the file name
+  char progname[CLOCK_PROGNAME_REG_COUNT];
+  getClockProgram(i, progname);
+  snprintf(m+copied, SCRATCH_SIZE-copied, "Program: %s\r\n", progname);
 
   return pdFALSE;
 }

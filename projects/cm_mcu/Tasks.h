@@ -332,6 +332,11 @@ void init_registers_clk(void);
 #define CLOCK_I2C_MUX_ADDR         0x70
 #define CLOCK_I2C_EEPROM_ADDR      0x50
 
+#define CLOCK_NUM_SI5341 1
+#define CLOCK_NUM_SI5395 4
+extern struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341];
+extern struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395];
+
 // configuring clock initalization
 int init_load_clk(int clk_n);
 
