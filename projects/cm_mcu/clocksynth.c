@@ -200,7 +200,7 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
     const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START) & 0xFF;
     uint32_t data[2];
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
-    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg+4, 2, data+1);
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg+4, 4, data+1);
     memcpy(progname, data, CLOCK_PROGNAME_REG_COUNT);
   }
 
