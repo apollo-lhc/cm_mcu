@@ -337,7 +337,6 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .stack_size = 4096U,
 };
 
-
 #ifdef REV2
 // Clock arguments for monitoring task
 
