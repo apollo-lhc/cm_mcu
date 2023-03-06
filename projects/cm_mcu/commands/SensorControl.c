@@ -1038,7 +1038,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   }
   // print out header once
   if (c == 0) {
-    const char *clk_ids[5]  = {"r0a", "r0b", "r1a", "r1b", "r1c"};
+    const char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id %s\r\n",
                        clk_ids[i]);
     char *header = "REG_TABLE";
@@ -1096,7 +1096,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   // get and print out the file name
   char progname[CLOCK_PROGNAME_REG_NAME];
   getClockProgram(i, progname);
-  snprintf(m+copied, SCRATCH_SIZE-copied, "Program: %s\r\n", progname);
+  snprintf(m + copied, SCRATCH_SIZE - copied, "Program: %s\r\n", progname);
 
   return pdFALSE;
 }
