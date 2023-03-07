@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <string.h> // memset
 #include <sys/_types.h>
-#include <time.h>   // struct tm
+#include <time.h> // struct tm
 
 // ROM header must come before MAP header
 #include "driverlib/rom.h"
@@ -551,7 +551,7 @@ unsigned isFFStale(void)
   unsigned mask = 0U;
   for (int ff_t = 0; ff_t < 4; ++ff_t) {
     if (checkStale(last[ff_t], now)) {
-      mask |= (1U<< ff_t);
+      mask |= (1U << ff_t);
     }
   }
 
@@ -562,7 +562,7 @@ unsigned isFFStale(void)
 TickType_t getFFupdateTick(int mask)
 {
   log_debug(LOG_SERVICE, "mask = %x\r\n", mask);
-  if ( __builtin_popcount(mask) == 0 ) {
+  if (__builtin_popcount(mask) == 0) {
     log_warn(LOG_SERVICE, "empty mask\r\n");
   }
   if (mask & 0x1U) {
