@@ -1015,6 +1015,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#if 0
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
@@ -1022,7 +1023,7 @@ extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
 extern struct MonitorI2CTaskArgs_t ffl12_f1_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
-
+#endif // 0
 // dump clock monitor information
 BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 {

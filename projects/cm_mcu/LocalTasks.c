@@ -561,7 +561,7 @@ unsigned isFFStale(void)
 // this will return the tick of the _lowest_ set bit.
 TickType_t getFFupdateTick(int mask)
 {
-  log_debug(LOG_SERVICE, "%s mask = %x\r\n", __func__, mask);
+  log_debug(LOG_SERVICE, "mask = %x\r\n", mask);
   if ( __builtin_popcount(mask) == 0 ) {
     log_warn(LOG_SERVICE, "empty mask\r\n");
   }

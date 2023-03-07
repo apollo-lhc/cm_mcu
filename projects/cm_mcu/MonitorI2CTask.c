@@ -132,7 +132,7 @@ void MonitorI2CTask(void *parameters)
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
-        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(500));
         continue;
       }
       else if (getPowerControlState() == POWER_ON) { // power is on, and ...
@@ -189,6 +189,7 @@ void MonitorI2CTask(void *parameters)
 
       } // loop over commands
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
+      args->updateTick = xTaskGetTickCount(); // current time in ticks
 
     } // loop over devices
 
@@ -196,7 +197,6 @@ void MonitorI2CTask(void *parameters)
     if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
     }
-    args->updateTick = xTaskGetTickCount(); // current time in ticks
 
     // monitor stack usage for this task
     CHECK_TASK_STACK_USAGE(args->stack_size);
