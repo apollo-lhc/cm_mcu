@@ -501,6 +501,8 @@ void float_to_ints(float val, int *tens, int *fraction)
   return;
 }
 
+// compare two times in seconds and make sure they are within the last 60 seconds
+// if not the value is 'stale' and the function returns true
 bool checkStale(unsigned oldTime, unsigned newTime)
 {
   return ((oldTime < newTime) && (newTime - oldTime) > 60);
