@@ -90,7 +90,6 @@ void MonitorI2CTask(void *parameters)
       continue;
     }
 
-    args->updateTick = xTaskGetTickCount(); // current time in ticks
     // -------------------------------
     // loop over devices in the device-type instance
     // -------------------------------
@@ -124,7 +123,6 @@ void MonitorI2CTask(void *parameters)
 #error "Define either Rev1 or Rev2"
 #endif
         }
-        args->updateTick = xTaskGetTickCount();
       }
       log_debug(LOG_MONI2C, "%s: powercheck\r\n", args->name);
 
@@ -198,6 +196,7 @@ void MonitorI2CTask(void *parameters)
     if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
     }
+    args->updateTick = xTaskGetTickCount(); // current time in ticks
 
     // monitor stack usage for this task
     CHECK_TASK_STACK_USAGE(args->stack_size);

@@ -75,7 +75,6 @@ void MonitorTask(void *parameters)
       }
     }
 
-    args->updateTick = xTaskGetTickCount(); // current time in ticks
     // loop over devices
     for (int ps = 0; ps < args->n_devices; ++ps) {
       // handle case where only management power is on
@@ -186,6 +185,7 @@ void MonitorTask(void *parameters)
           }
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
+          args->updateTick = xTaskGetTickCount(); // current time in ticks
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
         } // loop over commands
       }   // loop over pages
@@ -194,6 +194,7 @@ void MonitorTask(void *parameters)
     if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
     }
+    args->updateTick = xTaskGetTickCount(); // current time in ticks
 
     CHECK_TASK_STACK_USAGE(args->stack_size);
 
