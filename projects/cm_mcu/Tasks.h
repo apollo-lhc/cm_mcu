@@ -367,14 +367,14 @@ uint16_t task_watchdog_get_status(void);
 
 // general
 // monitor stack usage for this task
-#define CHECK_TASK_STACK_USAGE(vv)                                                   \
-  {                                                                                  \
-    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                             \
-    if (val < vv) {                                                                  \
-      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
-               vv);                                                                  \
-    }                                                                                \
-    vv = val;                                                                        \
+#define CHECK_TASK_STACK_USAGE(vv)                                                    \
+  {                                                                                   \
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                              \
+    if (val < vv) {                                                                   \
+      log_debug(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
+                vv);                                                                  \
+    }                                                                                 \
+    vv = val;                                                                         \
   }
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */
