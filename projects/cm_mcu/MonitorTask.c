@@ -185,7 +185,7 @@ void MonitorTask(void *parameters)
           }
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
-          args->updateTick = xTaskGetTickCount(); // current time in ticks
+          args->updateTick = xTaskGetTickCount(); // current time in ticks, for the sake of stale data
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
         } // loop over commands
       }   // loop over pages
@@ -194,7 +194,6 @@ void MonitorTask(void *parameters)
     if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
     }
-    args->updateTick = xTaskGetTickCount(); // current time in ticks
 
     CHECK_TASK_STACK_USAGE(args->stack_size);
 
