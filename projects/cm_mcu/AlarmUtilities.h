@@ -26,8 +26,8 @@ void TempClearErrorLog(void);
 
 // voltage alarms
 //    first some commands for setting/getting the thresholds
-float getAlarmVoltages(void);
-void setAlarmVoltage(float voltthres);
+float getAlarmVoltageThres(void);
+void setAlarmVoltageThres(float voltthres);
 void getAlarmVoltageStatus(void);
 //    callback functions
 int VoltStatus(void);

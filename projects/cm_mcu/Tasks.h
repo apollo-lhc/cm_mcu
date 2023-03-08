@@ -258,8 +258,8 @@ void GenericAlarmTask(void *parameters);
 float getAlarmTemperature(enum device device_name);
 void setAlarmTemperature(enum device device_name, const float newtemp);
 uint32_t getTempAlarmStatus(void);
-float getAlarmVoltages(void);
-void setAlarmVoltage(const float voltthres);
+float getAlarmVoltageThres(void);
+void setAlarmVoltageThres(const float voltthres);
 uint32_t getVoltAlarmStatus(void);
 
 // Monitoring using the ADC inputs
