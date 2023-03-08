@@ -501,7 +501,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
                  (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
 
     uint32_t adc_volt_stat = getVoltAlarmStatus();
-    float voltthres = getAlarmVoltageThres()*100;
+    float voltthres = getAlarmVoltageThres() * 100;
     float_to_ints(voltthres, &tens, &frac);
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s (for FPGAs) \t Threshold: +/-%02d.%02d %%\r\n",

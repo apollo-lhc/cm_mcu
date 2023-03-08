@@ -212,7 +212,7 @@ int VoltStatus(void)
     float now_value = getADCvalue(ch);
     float excess = (now_value - getADCtargetValue(ch)) / getADCtargetValue(ch);
     int tens, frac;
-    float_to_ints(excess*100, &tens, &frac);
+    float_to_ints(excess * 100, &tens, &frac);
     if (excess > 0.0f) {
       is_alarm_volt = 1;
       excess_volt = excess * 100;
@@ -253,7 +253,7 @@ int VoltStatus(void)
     float now_value = getADCvalue(ch);
     float excess = (now_value - getADCtargetValue(ch)) / getADCtargetValue(ch);
     int tens, frac;
-    float_to_ints(excess*100, &tens, &frac);
+    float_to_ints(excess * 100, &tens, &frac);
     if (excess > 0.0f) {
       is_alarm_volt = 1;
       excess_volt = excess * 100;
