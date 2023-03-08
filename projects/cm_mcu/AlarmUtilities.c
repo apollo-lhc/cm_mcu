@@ -234,7 +234,6 @@ int VoltStatus(void)
     }
   }
 
-  
   currentVoltStatus[GEN] = gen_bitmask & GEN_VOLTAGE_MASK; // applies a mask with power-off exceptions
 
   if (retval > 0)
