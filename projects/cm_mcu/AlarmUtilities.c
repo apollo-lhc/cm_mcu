@@ -222,7 +222,7 @@ int VoltStatus(void)
     if ((excess > threshold && excess > 0.0f) || (excess * -1.0f > threshold && excess < 0.0f)) { // if this ADC voltage is greater/lower than a target value by getAlarmVoltageThres()*100%
       gen_bitmask += (1 << (ch - ADC_INFO_GEN_VCC_INIT_CH));                                      // first to last bit corresponds to status of low to high ADC voltage channel of mcu/general
       is_alarm_volt = 2;
-      log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now %02d.%02d %% off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/- getAlarmVoltageThres()*100%% of its threshold
+      log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now %02d.%02d %% off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/- getAlarmVoltageThres()*100% of its threshold
     }
   }
 
