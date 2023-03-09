@@ -322,6 +322,8 @@ int main(void)
   xTaskCreate(ZynqMonTask, "ZMON", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(GenericAlarmTask, "VALM", configMINIMAL_STACK_SIZE, &voltAlarmTask,
+              tskIDLE_PRIORITY + 5, NULL);
   //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------
@@ -340,8 +342,8 @@ int main(void)
   xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
   configASSERT(xEPRMQueue_out != NULL);
 
-  tempAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
-  configASSERT(tempAlarmTask.xAlmQueue != NULL);
+  xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
+  configASSERT(xAlmQueue != NULL);
 
   xZynqMonQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
   configASSERT(xZynqMonQueue != NULL);

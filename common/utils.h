@@ -59,15 +59,17 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_HARDFAULT      7
 #define EBUF_ASSERT         8
 #define EBUF_STACKOVERFLOW  9
+#define EBUF_VOLT_NORMAL    10
 
 // error codes with data
-#define EBUF_WITH_DATA       10 // value used to determine which codes have data
-#define EBUF_CONTINUATION    10
-#define EBUF_PWR_FAILURE     11
-#define EBUF_TEMP_HIGH       12
-#define EBUF_MARK            13
-#define EBUF_I2C             14
-#define EBUF_PWR_FAILURE_CLR 15
+#define EBUF_WITH_DATA       11 // value used to determine which codes have data
+#define EBUF_CONTINUATION    11
+#define EBUF_PWR_FAILURE     12
+#define EBUF_TEMP_HIGH       13
+#define EBUF_MARK            14
+#define EBUF_I2C             15
+#define EBUF_PWR_FAILURE_CLR 16
+#define EBUF_VOLT_HIGH       17
 
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT
@@ -111,6 +113,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s);
 
 // specific error functions
 void errbuffer_temp_high(uint8_t tm4c, uint8_t fpga, uint8_t ffly, uint8_t dcdc);
+void errbuffer_volt_high(uint8_t genfpga, uint8_t fpga1, uint8_t fpga2);
 void errbuffer_power_fail(uint16_t failmask);
 void errbuffer_power_fail_clear(void);
 
