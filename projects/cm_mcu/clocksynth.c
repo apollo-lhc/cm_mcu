@@ -198,10 +198,25 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
 
     // now read out the six bytes of data in two reads
     const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START)&0xFF;
-    uint32_t data[2];
-    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
-    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
-    memcpy(progname, data, CLOCK_PROGNAME_REG_COUNT);
+    uint16_t init_postamble_page = 32 * (device + 1) - 1;
+
+    uint32_t PreambleList_row; // the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
+    uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
+    uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
+
+    if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff){ // check if a clock has been programmed or not from a set of three registers
+      char str[] = "notfound";
+      memcpy(progname, str, CLOCK_PROGNAME_REG_COUNT);
+    }
+    else{
+      uint32_t data[2];
+      status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
+      status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
+      memcpy(progname, data, CLOCK_PROGNAME_REG_COUNT);
+    }
   }
 
   // release the semaphore
