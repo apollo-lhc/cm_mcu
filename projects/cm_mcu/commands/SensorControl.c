@@ -10,6 +10,7 @@
 #include "SensorControl.h"
 #include "Semaphore.h"
 #include "common/smbus_helper.h"
+#include "Tasks.h"
 
 // Register definitions
 // -------------------------------------------------
@@ -462,7 +463,8 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
   uint32_t message;
   if (strncmp(argv[1], "clear", 4) == 0) {
     message = ALM_CLEAR_ALL; // clear all alarms
-    xQueueSendToBack(tempAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
+    xQueueSendToBack(xAlmQueue, &message, pdMS_TO_TICKS(10));
+    // xQueueSendToBack(voltAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
     m[0] = '\0'; // no output from this command
 
     return pdFALSE;
@@ -470,7 +472,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ALARM status\r\n", argv[0]);
-    uint32_t stat = getAlarmStatus();
+    uint32_t stat = getTempAlarmStatus();
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08lx\r\n", stat);
 
     float ff_val = getAlarmTemperature(FF);
@@ -497,6 +499,14 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
                  (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
+
+    uint32_t adc_volt_stat = getVoltAlarmStatus();
+    float voltthres = getAlarmVoltageThres() * 100;
+    float_to_ints(voltthres, &tens, &frac);
+    copied +=
+        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s (for FPGAs) \t Threshold: +/-%02d.%02d %%\r\n",
+                 (adc_volt_stat) ? "ALARM" : "GOOD", tens, frac);
+
     configASSERT(copied < SCRATCH_SIZE);
 
     return pdFALSE;
@@ -532,6 +542,16 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       snprintf(m, s, "%s is not a valid device.\r\n", argv[2]);
       return pdFALSE;
     }
+  }
+  else if (strcmp(argv[1], "setvoltthres") == 0) {
+    if (argc != 3) {
+      snprintf(m, s, "Invalid command\r\n");
+      return pdFALSE;
+    }
+    float voltthres = (float)strtol(argv[2], NULL, 10);
+    setAlarmVoltageThres(voltthres);
+    snprintf(m, s, "alarm voltages are set their threshold by +/-%s %% \r\n", argv[2]);
+    return pdFALSE;
   }
   else {
     snprintf(m, s, "%s: invalid argument %s received\r\n", argv[0], argv[1]);
