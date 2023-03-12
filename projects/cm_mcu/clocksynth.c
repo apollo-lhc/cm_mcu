@@ -158,10 +158,11 @@ int load_clock(void)
 #ifdef REV2
 // return the string that corresponds to the programmed file. If
 // there is an error, an empty string is returned.
-void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
+void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME], char progname_eeprom[CLOCK_PROGNAME_REG_NAME])
 {
   // first clear out the return value
-  memset(progname, '\0', CLOCK_PROGNAME_REG_NAME);
+  memset(progname_clkdesgid, '\0', CLOCK_PROGNAME_REG_NAME);
+  memset(progname_eeprom, '\0', CLOCK_PROGNAME_REG_NAME);
   // ensure that the device is in the right range 0-5
   if (device < 0 || device > 4)
     return;
@@ -173,17 +174,20 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
   }
   // extract info about device
   uint8_t mux_addr, mux_bit, dev_addr;
+  uint16_t eeprom_progname_reg;
   // In Rev2 device 0 and devices 1-5 are different and hence are stored in different arrays
   // for monitoring purposes
   if (device == 0) {
     mux_addr = clkr0a_moni2c_addrs[0].mux_addr;
     mux_bit = clkr0a_moni2c_addrs[0].mux_bit;
     dev_addr = clkr0a_moni2c_addrs[0].dev_addr;
+    eeprom_progname_reg = clkr0a_moni2c_addrs[0].eeprom_progname_reg;
   }
   else {
     mux_addr = clk_moni2c_addrs[device - 1].mux_addr;
     mux_bit = clk_moni2c_addrs[device - 1].mux_bit;
     dev_addr = clk_moni2c_addrs[device - 1].dev_addr;
+    eeprom_progname_reg = clk_moni2c_addrs[device - 1].eeprom_progname_reg;
   }
   // set mux bit
   int status = apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 1 << mux_bit);
@@ -208,15 +212,23 @@ void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME])
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
 
     if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff) { // check if a clock has been programmed or not from a set of three registers
-      char str[] = "notfound";
-      memcpy(progname, str, CLOCK_PROGNAME_REG_COUNT);
+      char str[] = "X";
+      memcpy(progname_eeprom, str, CLOCK_PROGNAME_REG_COUNT);
     }
-    else {
+    else{
       uint32_t data[2];
-      status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
-      status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
-      memcpy(progname, data, CLOCK_PROGNAME_REG_COUNT);
+      status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg, 1, data);
+      //data[0] = (data[0])&0xF;
+      memcpy(progname_eeprom, data, CLOCK_PROGNAME_REG_COUNT);
     }
+
+    uint32_t data[2];
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
+    status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
+    memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
+
+
+
   }
 
   // release the semaphore

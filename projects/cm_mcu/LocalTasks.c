@@ -341,10 +341,10 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
 // Clock arguments for monitoring task
 
 struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
-    {"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA
-    {"r1a", 0x70, 2, 0x6b}, // CLK R1A : Si5395-REVA
-    {"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
-    {"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA
+    {"r0b", 0x70, 1, 0x6b, 0x2665}, // CLK R0B : Si5395-REVA
+    {"r1a", 0x70, 2, 0x6b, 0x4665}, // CLK R1A : Si5395-REVA
+    {"r1b", 0x70, 3, 0x6b, 0x6665}, // CLK R1B : Si5395-REVA
+    {"r1c", 0x70, 4, 0x6b, 0x8665}, // CLK R1C : Si5395-REVA
 };
 
 struct sm_command_t sm_command_clk[] = {
@@ -378,7 +378,7 @@ struct MonitorI2CTaskArgs_t clock_args = {
 };
 
 struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
-    {"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD
+    {"r0a", 0x70, 0, 0x77, 0x474}, // CLK R0A : Si5341-REVD
 };
 
 struct sm_command_t sm_command_clkr0a[] = {

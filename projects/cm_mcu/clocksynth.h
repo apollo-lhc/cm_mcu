@@ -36,6 +36,6 @@ int load_clock(void);
 #define CLOCK_PROGNAME_REG_COUNT      8
 #define CLOCK_PROGNAME_REG_NAME       (CLOCK_PROGNAME_REG_COUNT + 1)
 
-void getClockProgram(int device, char progname[CLOCK_PROGNAME_REG_NAME]);
+void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME], char progname_eeprom[CLOCK_PROGNAME_REG_NAME]);
 
 #endif /* PROJECTS_CM_MCU_CLOCKSYNTH_H_ */

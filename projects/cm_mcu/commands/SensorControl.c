@@ -1049,6 +1049,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   int copied = 0;
   static int c = 0;
   BaseType_t i = strtol(argv[1], NULL, 10);
+  const char *clk_ids[5] = {"R0A", "R0B", "R1A", "R1B", "R1C"};
+
   if (i < 0 || i > 4) {
     snprintf(m + copied, SCRATCH_SIZE - copied,
              "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, "
@@ -1058,7 +1060,6 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   }
   // print out header once
   if (c == 0) {
-    const char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id %s\r\n",
                        clk_ids[i]);
     char *header = "REG_TABLE";
@@ -1114,9 +1115,15 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     c = 0;
   }
   // get and print out the file name
-  char progname[CLOCK_PROGNAME_REG_NAME];
-  getClockProgram(i, progname);
-  snprintf(m + copied, SCRATCH_SIZE - copied, "Program: %s\r\n", progname);
+  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME]; // program name from DESIGN_ID register of a clock chip
+  char progname_eeprom[CLOCK_PROGNAME_REG_NAME]; // program name from registers in eeprom where a clock chip config located
+  getClockProgram(i, progname_clkdesgid, progname_eeprom);
+  if (strncmp(progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(progname_clkdesgid, "5341ABP1", 3) == 0){
+    char str[] = "notfound";
+    memcpy(progname_clkdesgid, str, CLOCK_PROGNAME_REG_COUNT);
+  }
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s\r\n", progname_clkdesgid);
+  snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from eeprom): %sv000%s\r\n", clk_ids[i], progname_eeprom);
 
   return pdFALSE;
 }

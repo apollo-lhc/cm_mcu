@@ -161,6 +161,7 @@ struct dev_moni2c_addr_t {
   uint8_t mux_addr; // I2C address of the Mux
   uint8_t mux_bit;  // port of the mux; write value 0x1U<<mux_bit to the mux register
   uint8_t dev_addr; // I2C address of device.
+  uint16_t eeprom_progname_reg; // register on eeprom for reading program version
 };
 
 struct arg_moni2c_ff_t {
