@@ -212,13 +212,12 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
 
     if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff) { // check if a clock has been programmed or not from a set of three registers
-      char str[] = "X";
-      memcpy(progname_eeprom, str, CLOCK_PROGNAME_REG_COUNT);
+      uint32_t data = 0x58; //supposed to be an "X" for an unprogrammed clock
+      memcpy(progname_eeprom, &data, CLOCK_PROGNAME_REG_COUNT);
     }
     else{
       uint32_t data[2];
-      status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg, 1, data);
-      //data[0] = (data[0])&0xF;
+      apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg, 1, data);
       memcpy(progname_eeprom, data, CLOCK_PROGNAME_REG_COUNT);
     }
 
