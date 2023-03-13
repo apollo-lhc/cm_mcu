@@ -162,7 +162,7 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
 {
   // first clear out the return value
   memset(progname_clkdesgid, '\0', CLOCK_PROGNAME_REG_NAME);
-  memset(progname_eeprom, '\0', CLOCK_PROGNAME_REG_NAME);
+  memset(progname_eeprom, '\0', CLOCK_EEPROM_PROGNAME_REG_NAME);
   // ensure that the device is in the right range 0-5
   if (device < 0 || device > 4)
     return;
