@@ -232,7 +232,7 @@ struct command_t {
 #define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
 static struct command_t commands[] = {
     {"adc", adc_ctl, "Displays a table showing the state of ADC inputs.\r\n", 0},
-    {"alm", alarm_ctl, "args: (clear|status|settemp #)\r\nGet or clear status of alarm task.\r\n",
+    {"alm", alarm_ctl, "args: (clear|status|settemp|setvoltthres|#)\r\nGet or clear status of alarm task.\r\n",
      -1},
     {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
 #ifdef REV2

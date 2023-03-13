@@ -31,6 +31,20 @@ void InitTask(void *parameters);
 // ADC task
 #define ADC_CHANNEL_COUNT   21
 #define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
+#ifdef REV1
+#define ADC_INFO_GEN_VCC_INIT_CH  0
+#define ADC_INFO_GEN_VCC_FIN_CH   5
+#define ADC_INFO_FPGA_VCC_INIT_CH 6
+#define ADC_INFO_FPGA_VCC_FIN_CH  7
+#elif defined(REV2) // REV2
+#define ADC_INFO_GEN_VCC_INIT_CH  0
+#define ADC_INFO_GEN_VCC_4V0_CH   3
+#define ADC_INFO_GEN_VCC_FIN_CH   4
+#define ADC_INFO_FPGA_VCC_INIT_CH 5
+#define ADC_INFO_FPGA_VCC_FIN_CH  12
+#define ADC_INFO_CUR_INIT_CH      13
+#define ADC_INFO_CUR_FIN_CH       17
+#endif
 
 const char *const getADCname(const int i);
 float getADCvalue(const int i);
@@ -215,11 +229,16 @@ const char *gitVersion(void);
 
 // ---- ALARMS
 
+extern QueueHandle_t xAlmQueue;
+
 // status register bits
 #define ALM_STAT_TM4C_OVERTEMP    0x1
 #define ALM_STAT_FIREFLY_OVERTEMP 0x2
 #define ALM_STAT_FPGA_OVERTEMP    0x4
 #define ALM_STAT_DCDC_OVERTEMP    0x8
+// status register bits
+#define ALM_STAT_GEN_OVERVOLT  0x1
+#define ALM_STAT_FPGA_OVERVOLT 0x4
 // messages
 #define ALM_CLEAR_ALL     1
 #define ALM_CLEAR_TEMP    2
@@ -231,11 +250,18 @@ enum device { FF,
               TM4C,
               FPGA };
 
+enum powdevice { GEN,
+                 FPGA1,
+                 FPGA2 };
+
 void GenericAlarmTask(void *parameters);
 
 float getAlarmTemperature(enum device device_name);
 void setAlarmTemperature(enum device device_name, const float newtemp);
-uint32_t getAlarmStatus(void);
+uint32_t getTempAlarmStatus(void);
+float getAlarmVoltageThres(void);
+void setAlarmVoltageThres(const float voltthres);
+uint32_t getVoltAlarmStatus(void);
 
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
