@@ -1115,10 +1115,10 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     c = 0;
   }
   // get and print out the file name
-  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME]; // program name from DESIGN_ID register of a clock chip
+  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of a clock chip
   char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from registers in eeprom where a clock chip config located
   getClockProgram(i, progname_clkdesgid, progname_eeprom);
-  if (strncmp(progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(progname_clkdesgid, "5341ABP1", 3) == 0){
+  if (strncmp(progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(progname_clkdesgid, "5341ABP1", 3) == 0) {
     char str[] = "notfound";
     memcpy(progname_clkdesgid, str, CLOCK_PROGNAME_REG_COUNT);
   }

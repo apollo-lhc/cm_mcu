@@ -213,10 +213,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
 
     uint32_t eepromdata[2];
     if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff) { // check if a clock has been programmed or not from a set of three registers
-      eepromdata[0] = 0x58; //supposed to be an "X" for an unprogrammed clock
+      eepromdata[0] = 0x58;                                                                    //supposed to be an "X" for an unprogrammed clock
       eepromdata[1] = 0x00;
     }
-    else{
+    else {
       apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg, 1, eepromdata);
     }
     memcpy(progname_eeprom, eepromdata, CLOCK_EEPROM_PROGNAME_REG_NAME);
@@ -225,9 +225,6 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
     memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
-
-
-
   }
 
   // release the semaphore
