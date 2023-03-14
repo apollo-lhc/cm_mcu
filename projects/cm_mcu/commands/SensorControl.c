@@ -6,6 +6,7 @@
  */
 
 #include <strings.h>
+#include <sys/_types.h>
 #include "parameters.h"
 #include "SensorControl.h"
 #include "Semaphore.h"
@@ -1070,9 +1071,9 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
 
   if (checkStale(last, now)) {
-    int mins = (now - last) / 60;
+    unsigned mins = (now - last) / 60;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+                       "%s: stale data, last update %u minutes ago\r\n", argv[0], mins);
   }
   // i = 0 corresponds to SI5341, others to SI5395
   if (i == 0) {
@@ -1118,12 +1119,11 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of a clock chip
   char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from registers in eeprom where a clock chip config located
   getClockProgram(i, progname_clkdesgid, progname_eeprom);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", progname_clkdesgid);
   if (strncmp(progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(progname_clkdesgid, "5341ABP1", 3) == 0) {
-    char str[] = "notfound";
-    memcpy(progname_clkdesgid, str, CLOCK_PROGNAME_REG_COUNT);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
   }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s\r\n", progname_clkdesgid);
-  snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from eeprom): %sv000%s\r\n", clk_ids[i], progname_eeprom);
+  snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %sv000%s\r\n", clk_ids[i], progname_eeprom);
 
   return pdFALSE;
 }

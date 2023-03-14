@@ -224,7 +224,8 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     uint32_t data[2];
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
-    memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
+    if (!status) // only copy if there were no errors on any reads
+      memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
   }
 
   // release the semaphore
