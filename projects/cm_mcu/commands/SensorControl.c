@@ -614,10 +614,10 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 
   if (whichff == 0) {
     // check for stale data
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
 
-    if (getFFcheckStale() == 0) {
-      TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
+    if (isFFStale()) {
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
@@ -671,10 +671,10 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
 
   if (whichff == 0) {
     // check for stale data
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
 
-    if (getFFcheckStale() == 0) {
-      TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
+    if (isFFStale()) {
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
@@ -740,10 +740,10 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
 
   if (whichff == 0) {
     // check for stale data
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
 
-    if (getFFcheckStale() == 0) {
-      TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
+    if (isFFStale()) {
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
@@ -810,10 +810,10 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
 
   if (whichff == 0) {
     // check for stale data
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
 
-    if (getFFcheckStale() == 0) {
-      TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
+    if (isFFStale()) {
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
       int mins = (now - last) / 60;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
@@ -866,8 +866,8 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
   // check for stale data
   TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
-  if (getFFcheckStale() == 0) {
-    TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
+  if (isFFStale()) {
+    TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
     int mins = (now - last) / 60;
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
@@ -1035,6 +1035,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#if 0
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
@@ -1042,7 +1043,7 @@ extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
 extern struct MonitorI2CTaskArgs_t ffl12_f1_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
-
+#endif // 0
 // dump clock monitor information
 BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 {
@@ -1068,7 +1069,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   if (i == 0) {
 
     // update times, in seconds
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
     TickType_t last = pdTICKS_TO_MS(clockr0a_args.updateTick) / 1000;
 
     if (checkStale(last, now)) {
@@ -1097,7 +1099,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   else {
 
     // update times, in seconds
-    TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
     TickType_t last = pdTICKS_TO_MS(clock_args.updateTick) / 1000;
 
     if (checkStale(last, now)) {
@@ -1154,9 +1157,10 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
     static int whichfpga = 0;
     int howmany = fpga_args.n_devices * fpga_args.n_pages;
     if (whichfpga == 0) {
-      TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-      if (getFFcheckStale() == 0) {
-        TickType_t last = pdTICKS_TO_MS(getFFupdateTick(getFFcheckStale())) / 1000;
+      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+      if (isFFStale()) {
+        TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
         int mins = (now - last) / 60;
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                            "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
