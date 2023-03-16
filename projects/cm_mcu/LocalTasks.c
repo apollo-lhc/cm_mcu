@@ -12,7 +12,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h> // memset
-#include <time.h>   // struct tm
+#include <sys/_types.h>
+#include <time.h> // struct tm
 
 // ROM header must come before MAP header
 #include "driverlib/rom.h"
@@ -540,37 +541,39 @@ bool isEnabledFF(int ff)
   }
 }
 
-int getFFcheckStale(void)
+unsigned isFFStale(void)
 {
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
   TickType_t last[4];
-  last[0] = ffl12_f1_args.updateTick;
-  last[1] = ffldaq_f1_args.updateTick;
-  last[2] = ffl12_f2_args.updateTick;
-  last[3] = ffldaq_f2_args.updateTick;
+  last[0] = pdTICKS_TO_S(ffl12_f1_args.updateTick);
+  last[1] = pdTICKS_TO_S(ffldaq_f1_args.updateTick);
+  last[2] = pdTICKS_TO_S(ffl12_f2_args.updateTick);
+  last[3] = pdTICKS_TO_S(ffldaq_f2_args.updateTick);
 
-  int ff_t = 0;
-  for (; ff_t < 4; ++ff_t) {
-    if (!checkStale(pdTICKS_TO_MS(last[ff_t]) / 1000, now)) {
-      ff_t -= 4;
-      break;
+  unsigned mask = 0U;
+  for (int ff_t = 0; ff_t < 4; ++ff_t) {
+    if (checkStale(last[ff_t], now)) {
+      mask |= (1U << ff_t);
     }
   }
 
-  return (ff_t - 3); // convert ff_t to exit codes -7,-6,-5 -4, 0 with no stale, stale at least 1, 2 and 3, or all stale
+  return mask; // bits set for stale tasks. no bits set == not stale.
 }
 
-TickType_t getFFupdateTick(int ff_t)
+// this will return the tick of the _lowest_ set bit.
+TickType_t getFFupdateTick(int mask)
 {
-  ff_t += 7; // convert exit codes -7,-6,-5,-4 back to ff_t
-  log_debug(LOG_SERVICE, "ff_updateTick is ff_t = %d \r\n", ff_t);
-  if (ff_t == 0) {
+  log_debug(LOG_SERVICE, "mask = %x\r\n", mask);
+  if (__builtin_popcount(mask) == 0) {
+    log_warn(LOG_SERVICE, "empty mask\r\n");
+  }
+  if (mask & 0x1U) {
     return ffl12_f1_args.updateTick;
   }
-  else if (ff_t == 1) {
+  else if (mask & 0x02U) {
     return ffldaq_f1_args.updateTick;
   }
-  else if (ff_t == 2) {
+  else if (mask & 0x04U) {
     return ffl12_f2_args.updateTick;
   }
   else {
@@ -1080,7 +1083,7 @@ void InitRTC(void)
 }
 #endif // REV2
 #ifdef REV1
-void init_registers_clk()
+void init_registers_clk(void)
 {
   // =====================================================
   // CMv1 Schematic 4.03 I2C CLOCK SOURCE CONTROL
@@ -1137,7 +1140,7 @@ void init_registers_clk()
     xSemaphoreGive(i2c2_sem);
   }
 }
-void init_registers_ff()
+void init_registers_ff(void)
 {
 
   // =====================================================
