@@ -19,6 +19,7 @@
 #include "driverlib/eeprom.h"
 
 #include "common/printf.h"
+#include <sys/_types.h>
 
 #ifdef __INTELLISENSE__
 #define __fp16 float
@@ -189,7 +190,7 @@ void getFFpart(int which_fpga);
   getFFpart(2);
 
 uint8_t getFFstatus(const uint8_t i);
-int getFFcheckStale(void);
+unsigned isFFStale(void);
 TickType_t getFFupdateTick(int ff_t);
 void init_registers_ff(void);
 

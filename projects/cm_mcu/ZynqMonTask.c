@@ -256,7 +256,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   // update the data for ZMON
   for (int i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
-    if (getFFcheckStale()) {
+    if (!isFFStale()) {
       data[i].data.i = getFFtemp(i); // sensor value and type
     }
     else {

@@ -90,7 +90,6 @@ void MonitorI2CTask(void *parameters)
       continue;
     }
 
-    args->updateTick = xTaskGetTickCount(); // current time in ticks
     // -------------------------------
     // loop over devices in the device-type instance
     // -------------------------------
@@ -124,7 +123,6 @@ void MonitorI2CTask(void *parameters)
 #error "Define either Rev1 or Rev2"
 #endif
         }
-        args->updateTick = xTaskGetTickCount();
       }
       log_debug(LOG_MONI2C, "%s: powercheck\r\n", args->name);
 
@@ -134,7 +132,7 @@ void MonitorI2CTask(void *parameters)
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
-        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(500));
         continue;
       }
       else if (getPowerControlState() == POWER_ON) { // power is on, and ...
@@ -191,6 +189,7 @@ void MonitorI2CTask(void *parameters)
 
       } // loop over commands
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
+      args->updateTick = xTaskGetTickCount(); // current time in ticks
 
     } // loop over devices
 
