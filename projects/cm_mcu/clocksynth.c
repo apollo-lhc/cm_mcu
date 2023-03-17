@@ -217,7 +217,16 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
       eepromdata[1] = 0x00;
     }
     else {
-      apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg, 1, eepromdata);
+      eepromdata[0] = 0UL;
+      eepromdata[1] = 0UL;
+      uint32_t tempdata[2];
+      for (int i = 0; i < 4; ++i) {
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i)*3), 3, tempdata);
+        eepromdata[0] |= ((tempdata[0] >> (16)) & 0xFF) << (i*8);
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i)*3), 3, tempdata);
+        eepromdata[1] |= ((tempdata[0] >> (16)) & 0xFF) << (i*8);
+      }
+
     }
     memcpy(progname_eeprom, eepromdata, CLOCK_EEPROM_PROGNAME_REG_NAME);
 

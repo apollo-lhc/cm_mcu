@@ -1123,7 +1123,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   if (strncmp(progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(progname_clkdesgid, "5341ABP1", 3) == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
   }
-  snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %sv000%s\r\n", clk_ids[i], progname_eeprom);
+  progname_eeprom[strlen(progname_eeprom)-1] = '\0'; //somehow there is an unwanted '/' character
+  snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", progname_eeprom);
 
   return pdFALSE;
 }
