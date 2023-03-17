@@ -228,7 +228,7 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
       }
 
     }
-    memcpy(progname_eeprom, eepromdata, CLOCK_EEPROM_PROGNAME_REG_NAME);
+    memcpy(progname_eeprom, eepromdata, CLOCK_EEPROM_PROGNAME_REG_COUNT);
 
     uint32_t data[2];
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
