@@ -144,7 +144,7 @@ int load_clock(void)
   status = write_register(PreambleList, row);
   if (status != 0)
     return status;
-  vTaskDelay(pdMS_TO_TICKS(330)); //300 ms minimum
+  vTaskDelay(pdMS_TO_TICKS(330)); // 300 ms minimum
   row = sizeof(RegisterList) / sizeof(RegisterList[0]);
   status = write_register(RegisterList, row);
   if (status != 0)
@@ -213,7 +213,7 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
 
     uint32_t eepromdata[2];
     if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff) { // check if a clock has been programmed or not from a set of three registers
-      eepromdata[0] = 0x58;                                                                    //supposed to be an "X" for an unprogrammed clock
+      eepromdata[0] = 0x58;                                                                    // supposed to be an "X" for an unprogrammed clock
       eepromdata[1] = 0x00;
     }
     else {
@@ -222,11 +222,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
       uint32_t tempdata[2];
       for (int i = 0; i < 4; ++i) {
         apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i)*3), 3, tempdata);
-        eepromdata[0] |= ((tempdata[0] >> (16)) & 0xFF) << (i*8);
+        eepromdata[0] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
         apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i)*3), 3, tempdata);
-        eepromdata[1] |= ((tempdata[0] >> (16)) & 0xFF) << (i*8);
+        eepromdata[1] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
       }
-
     }
     memcpy(progname_eeprom, eepromdata, CLOCK_EEPROM_PROGNAME_REG_COUNT);
 
