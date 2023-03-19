@@ -161,98 +161,94 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   _Static_assert(sizeof(snapshot_t) == 32, "sizeof snapshot_t");
   int copied = 0;
   int page = strtol(argv[1], NULL, 10); // which LGA08D
-  if (page == 0){
-      if (strncmp(argv[1], "all", 3) == 0 ){
-        static int which = 0;
-        static int page_d = 0;
-        if (which == 0) {
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "snapshot all power supplies' outputs page 1-2\r\n");
-        }
-        for (; which < N_PM_ADDRS_DCDC; ++which) {
-          for (; page_d < 2; ++page_d) {  // for reading two pages per device
-            if (page_d < 0 || page_d > 1) {
-              copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 1-2\r\n",
-                  argv[0], page_d+1);
-              return pdFALSE;
-            }
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
-                page_d, pm_addrs_dcdc[which].name);
-
-            bool reset = false;
-            int ireset = strtol(argv[2], NULL, 10);
-            if (ireset == 1)
-              reset = true;
-
-            uint8_t sn[32];
-            snapdump(&pm_addrs_dcdc[which], page_d, sn, reset);
-            snapshot_t *p0 = (snapshot_t *)&sn[0];
-            int tens, fraction;
-            float_to_ints(linear11_to_float(p0->v_in), &tens, &fraction);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VIN  = %d.%02d\r\n", tens, fraction);
-            float_to_ints(linear16u_to_float(p0->v_out), &tens, &fraction);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VOUT = %d.%02d\r\n", tens, fraction);
-            float_to_ints(linear11_to_float(p0->i_out), &tens, &fraction);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT = %d.%02d\r\n", tens, fraction);
-            float_to_ints(linear11_to_float(p0->i_out_max), &tens, &fraction);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT MAX = %d.%02d\r\n", tens, fraction);
-            float_to_ints(linear11_to_float(p0->duty_cycle), &tens, &fraction);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "duty cycle = %d.%02d\r\n", tens, fraction);
-            float_to_ints(linear11_to_float(p0->temperature), &tens, &fraction);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP = %d.%02d\r\n", tens, fraction);
-            float_to_ints(linear11_to_float(p0->freq), &tens, &fraction);
-            copied +=
-                snprintf(m + copied, SCRATCH_SIZE - copied, "switching freq = %d.%02d\r\n", tens, fraction);
-            copied +=
-                snprintf(m + copied, SCRATCH_SIZE - copied, "VOUT  STATUS: 0x%02x\r\n", p0->v_out_status);
-            copied +=
-                snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT  STATUS: 0x%02x\r\n", p0->i_out_status);
-            copied +=
-                snprintf(m + copied, SCRATCH_SIZE - copied, "INPUT STATUS: 0x%02x\r\n", p0->input_status);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP  STATUS: 0x%02x\r\n",
-                p0->temperature_status);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CML   STATUS: 0x%02x\r\n", p0->cml_status);
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MFR   STATUS: 0x%02x\r\n", p0->mfr_status);
-            copied +=
-                snprintf(m + copied, SCRATCH_SIZE - copied, "flash STATUS: 0x%02x\r\n", p0->flash_status);
-            if ((SCRATCH_SIZE - copied) < 500) {
-              ++page_d;
-              return pdTRUE;
-            }
-
+  if (page == 0) {
+    if (strncmp(argv[1], "all", 3) == 0) {
+      static int which = 0;
+      static int page_d = 0;
+      if (which == 0) {
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "snapshot all power supplies' outputs page 1-2\r\n");
+      }
+      for (; which < N_PM_ADDRS_DCDC; ++which) {
+        for (; page_d < 2; ++page_d) { // for reading two pages per device
+          if (page_d < 0 || page_d > 1) {
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 1-2\r\n",
+                               argv[0], page_d + 1);
+            return pdFALSE;
           }
-          if (page_d % 2 == 1) {
-            m[copied++] = '\r';
-            m[copied++] = '\n';
-            m[copied] = '\0';
-          }
-          page_d = 0;
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
+                             page_d, pm_addrs_dcdc[which].name);
+
+          bool reset = false;
+          int ireset = strtol(argv[2], NULL, 10);
+          if (ireset == 1)
+            reset = true;
+
+          uint8_t sn[32];
+          snapdump(&pm_addrs_dcdc[which], page_d, sn, reset);
+          snapshot_t *p0 = (snapshot_t *)&sn[0];
+          int tens, fraction;
+          float_to_ints(linear11_to_float(p0->v_in), &tens, &fraction);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VIN  = %d.%02d\r\n", tens, fraction);
+          float_to_ints(linear16u_to_float(p0->v_out), &tens, &fraction);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VOUT = %d.%02d\r\n", tens, fraction);
+          float_to_ints(linear11_to_float(p0->i_out), &tens, &fraction);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT = %d.%02d\r\n", tens, fraction);
+          float_to_ints(linear11_to_float(p0->i_out_max), &tens, &fraction);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT MAX = %d.%02d\r\n", tens, fraction);
+          float_to_ints(linear11_to_float(p0->duty_cycle), &tens, &fraction);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "duty cycle = %d.%02d\r\n", tens, fraction);
+          float_to_ints(linear11_to_float(p0->temperature), &tens, &fraction);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP = %d.%02d\r\n", tens, fraction);
+          float_to_ints(linear11_to_float(p0->freq), &tens, &fraction);
+          copied +=
+              snprintf(m + copied, SCRATCH_SIZE - copied, "switching freq = %d.%02d\r\n", tens, fraction);
+          copied +=
+              snprintf(m + copied, SCRATCH_SIZE - copied, "VOUT  STATUS: 0x%02x\r\n", p0->v_out_status);
+          copied +=
+              snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT  STATUS: 0x%02x\r\n", p0->i_out_status);
+          copied +=
+              snprintf(m + copied, SCRATCH_SIZE - copied, "INPUT STATUS: 0x%02x\r\n", p0->input_status);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP  STATUS: 0x%02x\r\n",
+                             p0->temperature_status);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CML   STATUS: 0x%02x\r\n", p0->cml_status);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MFR   STATUS: 0x%02x\r\n", p0->mfr_status);
+          copied +=
+              snprintf(m + copied, SCRATCH_SIZE - copied, "flash STATUS: 0x%02x\r\n", p0->flash_status);
           if ((SCRATCH_SIZE - copied) < 500) {
-            ++which;
+            ++page_d;
             return pdTRUE;
           }
-
         }
-        if (which % 2 == 1) {
+        if (page_d % 2 == 1) {
           m[copied++] = '\r';
           m[copied++] = '\n';
           m[copied] = '\0';
         }
-        which = 0;
-        return pdFALSE;
-
-
+        page_d = 0;
+        if ((SCRATCH_SIZE - copied) < 500) {
+          ++which;
+          return pdTRUE;
+        }
       }
-      else{
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "please enter page+1 (e.g. 1 for page 0) or 'all', but not %s\r\n", argv[1]);
-        return pdFALSE;
+      if (which % 2 == 1) {
+        m[copied++] = '\r';
+        m[copied++] = '\n';
+        m[copied] = '\0';
       }
+      which = 0;
+      return pdFALSE;
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "please enter page+1 (e.g. 1 for page 0) or 'all', but not %s\r\n", argv[1]);
+      return pdFALSE;
+    }
   }
   page = page - 1;
   int which = page / 10;
   page = page % 10;
   if (page < 0 || page > 1) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 1-2\r\n",
-                       argv[0], page+1);
+                       argv[0], page + 1);
     return pdFALSE;
   }
   if (which < 0 || which > (NSUPPLIES_PS - 1)) {
