@@ -171,7 +171,7 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
       for (; which < N_PM_ADDRS_DCDC; ++which) {
         for (; page_d < 2; ++page_d) { // for reading two pages per device
           if (page_d < 0 || page_d > 1) {
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 1-2\r\n",
+            snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 1-2\r\n",
                                argv[0], page_d + 1);
             return pdFALSE;
           }
@@ -239,7 +239,7 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
       return pdFALSE;
     }
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "please enter page+1 (e.g. 1 for page 0) or 'all', but not %s\r\n", argv[1]);
+      snprintf(m + copied, SCRATCH_SIZE - copied, "please enter page+1 (e.g. 1 for page 0) or 'all', but not %s\r\n", argv[1]);
       return pdFALSE;
     }
   }
@@ -247,12 +247,12 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   int which = page / 10;
   page = page % 10;
   if (page < 0 || page > 1) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 1-2\r\n",
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 1-2\r\n",
                        argv[0], page + 1);
     return pdFALSE;
   }
   if (which < 0 || which > (NSUPPLIES_PS - 1)) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
                        argv[0], which, (NSUPPLIES_PS - 1));
     return pdFALSE;
   }
