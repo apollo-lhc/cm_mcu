@@ -204,16 +204,19 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START)&0xFF;
     uint16_t init_postamble_page = 32 * (device + 1) - 1;
 
-    uint32_t PreambleList_row; // the size of preamble list in a clock config file store at the end of the last eeprom page of a clock
+    // read the addresses in EEPROM that store the number of registers in Preamble-register, Register, and Postamble-register list per a clock config file
+    uint32_t PreambleList_row; // the size of preamble-register list of a given clock
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007C, 1, &PreambleList_row);
-    uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
+    uint32_t RegisterList_row; // the size of register list of a given clock
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007D, 2, &RegisterList_row);
-    uint32_t PostambleList_row; // the size of postamble list in a clock config file store at the end of the last eeprom page of a clock
+    uint32_t PostambleList_row; // the size of postamble-register list of a given clock
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, (init_postamble_page << 8) + 0x007F, 1, &PostambleList_row);
 
     uint32_t eepromdata[2];
-    if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff) { // check if a clock has been programmed or not from a set of three registers
-      eepromdata[0] = 0x58;                                                                    // supposed to be an "X" for an unprogrammed clock
+    // check if a given clock has been programmed or not from above set of three register values
+    if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff) {
+      // for an unprogrammed clock, an "X" will be shown in clkmon info
+      eepromdata[0] = 0x58;
       eepromdata[1] = 0x00;
     }
     else {
@@ -221,8 +224,13 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
       eepromdata[1] = 0UL;
       uint32_t tempdata[2];
       for (int i = 0; i < 4; ++i) {
+        // four I2C transactions to read four value bytes of DESIGN_ID0-3 and DESIGN_ID4-7 clock chip addresses
+        // as eepromdata[0] and eepromdat[1],respectively
+
+        // third byte from three addresses in EEPROM is a value byte
         apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i)*3), 3, tempdata);
         eepromdata[0] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
+        // third byte from three addresses in EEPROM is a value byte
         apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i)*3), 3, tempdata);
         eepromdata[1] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
       }
