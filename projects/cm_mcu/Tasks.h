@@ -159,9 +159,10 @@ enum pm_type { PM_VOLTAGE,
 
 struct dev_moni2c_addr_t {
   char *name;
-  uint8_t mux_addr; // I2C address of the Mux
-  uint8_t mux_bit;  // port of the mux; write value 0x1U<<mux_bit to the mux register
-  uint8_t dev_addr; // I2C address of device.
+  uint8_t mux_addr;             // I2C address of the Mux
+  uint8_t mux_bit;              // port of the mux; write value 0x1U<<mux_bit to the mux register
+  uint8_t dev_addr;             // I2C address of device.
+  uint16_t eeprom_progname_reg; // register on eeprom for reading program version
 };
 
 struct arg_moni2c_ff_t {
@@ -333,6 +334,11 @@ void init_registers_clk(void);
 #define CLOCK_I2C_MUX_ADDR         0x70
 #define CLOCK_I2C_EEPROM_ADDR      0x50
 
+#define CLOCK_NUM_SI5341 1
+#define CLOCK_NUM_SI5395 4
+extern struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341];
+extern struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395];
+
 // configuring clock initalization
 int init_load_clk(int clk_n);
 
@@ -363,14 +369,14 @@ uint16_t task_watchdog_get_status(void);
 
 // general
 // monitor stack usage for this task
-#define CHECK_TASK_STACK_USAGE(vv)                                                   \
-  {                                                                                  \
-    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                             \
-    if (val < vv) {                                                                  \
-      log_info(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
-               vv);                                                                  \
-    }                                                                                \
-    vv = val;                                                                        \
+#define CHECK_TASK_STACK_USAGE(vv)                                                    \
+  {                                                                                   \
+    UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                              \
+    if (val < vv) {                                                                   \
+      log_debug(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
+                vv);                                                                  \
+    }                                                                                 \
+    vv = val;                                                                         \
   }
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

@@ -257,8 +257,10 @@ int main(void)
   ffldaq_f1_args.xSem = i2c4_sem;
   ffl12_f2_args.xSem = i2c3_sem;
   ffldaq_f2_args.xSem = i2c3_sem;
+#ifdef REV2
   clock_args.xSem = i2c2_sem;
   clockr0a_args.xSem = i2c2_sem;
+#endif // REV2
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
 #ifdef REV1

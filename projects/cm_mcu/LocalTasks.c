@@ -338,13 +338,14 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .stack_size = 4096U,
 };
 
+#ifdef REV2
 // Clock arguments for monitoring task
 
-struct dev_moni2c_addr_t clk_moni2c_addrs[] = {
-    {"r0b", 0x70, 1, 0x6b}, // CLK R0B : Si5395-REVA
-    {"r1a", 0x70, 2, 0x6b}, // CLK R1A : Si5395-REVA
-    {"r1b", 0x70, 3, 0x6b}, // CLK R1B : Si5395-REVA
-    {"r1c", 0x70, 4, 0x6b}, // CLK R1C : Si5395-REVA
+struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
+    {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
+    {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
+    {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
+    {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
 
 struct sm_command_t sm_command_clk[] = {
@@ -377,8 +378,8 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .stack_size = 4096U,
 };
 
-struct dev_moni2c_addr_t clkr0a_moni2c_addrs[] = {
-    {"r0a", 0x70, 0, 0x77}, // CLK R0A : Si5341-REVD
+struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
+    {"r0a", 0x70, 0, 0x77, 0x45D}, // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
 };
 
 struct sm_command_t sm_command_clkr0a[] = {
@@ -409,6 +410,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .xSem = NULL,
     .stack_size = 4096U,
 };
+#endif // REV2
 
 void setFFmask(uint32_t ff_combined_present)
 {
@@ -586,21 +588,21 @@ int8_t getFFtemp(const uint8_t i)
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
-    val = ffl12_f1_args.sm_values[index];
+    val = (int8_t)ffl12_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     int index = (i - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
-    val = ffldaq_f1_args.sm_values[index];
+    val = (int8_t)ffldaq_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     int index = (i - NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
-    val = ffl12_f2_args.sm_values[index];
+    val = (int8_t)ffl12_f2_args.sm_values[index];
   }
   else {
     int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-    val = ffldaq_f2_args.sm_values[index];
+    val = (int8_t)ffldaq_f2_args.sm_values[index];
   }
 
   return val;
