@@ -284,7 +284,7 @@ static struct command_t commands[] = {
         "ff_temp",
         ff_temp,
         "Displays a table showing the temperature of the I2C fireflies.\r\n",
-        -1,
+        0,
     },
     {"fpga", fpga_ctl, "Displays a table showing the state of FPGAs.\r\n",
      -1},

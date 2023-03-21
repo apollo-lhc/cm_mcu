@@ -1036,33 +1036,21 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-#if 0
-extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
-
-extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
-extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
-extern struct MonitorI2CTaskArgs_t ffl12_f1_args;
-extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
-extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
-#endif // 0
 // dump clock monitor information
 BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   static int c = 0;
   BaseType_t i = strtol(argv[1], NULL, 10);
-  const char *clk_ids[5] = {"R0A", "R0B", "R1A", "R1B", "R1C"};
 
   if (i < 0 || i > 4) {
-    snprintf(m + copied, SCRATCH_SIZE - copied,
-             "Invalid clock chip %ld , the clock id options are r0a:0, r0b:1, r1a:2, "
-             "r1b:3 and r1c:4 \r\n",
-             i);
+    snprintf(m, SCRATCH_SIZE, "%s: Invalid argument %s\r\n", argv[0], argv[1]);
     return pdFALSE;
   }
   // print out header once
   if (c == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id %s\r\n",
+    const char *clk_ids[5] = {"0A", "0B", "1A", "1B", "1C"};
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Monitoring SI clock with id R%s\r\n",
                        clk_ids[i]);
     char *header = "REG_TABLE";
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s REG_ADDR BIT_MASK  VALUE \r\n", header);
@@ -1102,8 +1090,6 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     for (; c < clock_args.n_commands; ++c) {
       uint8_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%02x    0x%04x\r\n", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
-
-      // copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
       if ((SCRATCH_SIZE - copied) < 50) {
         ++c;
         return pdTRUE;
@@ -1117,8 +1103,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     c = 0;
   }
   // get and print out the file name
-  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of a clock chip
-  char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from registers in eeprom where a clock chip config located
+  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
+  char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom 
   getClockProgram(i, progname_clkdesgid, progname_eeprom);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", progname_clkdesgid);
   if (strncmp(progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(progname_clkdesgid, "5341ABP1", 3) == 0) {

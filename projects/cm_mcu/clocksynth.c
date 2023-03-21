@@ -158,7 +158,8 @@ int load_clock(void)
 #ifdef REV2
 // return the string that corresponds to the programmed file. If
 // there is an error, an empty string is returned.
-void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME], char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME])
+void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME],
+                     char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME])
 {
   // first clear out the return value
   memset(progname_clkdesgid, '\0', CLOCK_PROGNAME_REG_NAME);
@@ -216,8 +217,8 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     // check if a given clock has been programmed or not from above set of three register values
     if (PreambleList_row == 0xff && RegisterList_row == 0xffff && PostambleList_row == 0xff) {
       // for an unprogrammed clock, an "X" will be shown in clkmon info
-      eepromdata[0] = 0x58;
-      eepromdata[1] = 0x00;
+      eepromdata[0] = 'X';
+      eepromdata[1] = '\0';
     }
     else {
       eepromdata[0] = 0UL;
@@ -237,6 +238,7 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     }
     memcpy(progname_eeprom, eepromdata, CLOCK_EEPROM_PROGNAME_REG_COUNT);
 
+    // read out the six bytes directly from the DESIGN_ID register
     uint32_t data[2];
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg, 4, data);
     status += apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, reg + 4, 4, data + 1);
