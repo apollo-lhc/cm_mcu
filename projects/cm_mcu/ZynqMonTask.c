@@ -234,7 +234,7 @@ void zm_set_gitversion(struct zynqmon_data_t data[], int start)
       break; // success, I found the string
     ++v;
   }
-  // on failure I send an empty string 
+  // on failure I send an empty string
 
   // get the git version and copy it into the buffer
   strncpy(buff, v, ZM_GIT_VERSION_LENGTH);
