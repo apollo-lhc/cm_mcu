@@ -288,7 +288,7 @@ BaseType_t log_ctl(int argc, char **argv, char *m)
 BaseType_t ver_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Version %s built at %s.\r\n", gitVersion(),
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s built at %s.\r\n", gitVersion(),
                      buildTime());
   configASSERT(copied < SCRATCH_SIZE);
 

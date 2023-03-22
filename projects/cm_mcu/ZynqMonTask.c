@@ -238,6 +238,8 @@ void zm_set_gitversion(struct zynqmon_data_t data[], int start)
 
   // get the git version and copy it into the buffer
   strncpy(buff, v, ZM_GIT_VERSION_LENGTH);
+  // make sure our string is well-terminated
+  buff[ZM_GIT_VERSION_LENGTH-1] ='\0';
   // loop over the buffer and copy it into the data struct
   // each data word consists of two chars.
   for (int j = 0; j < ZM_GIT_VERSION_LENGTH; j += 2) {

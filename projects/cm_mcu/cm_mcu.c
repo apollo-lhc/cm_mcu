@@ -233,7 +233,7 @@ const char *gitVersion(void)
 #else
 #define BUILD_TYPE "regular build"
 #endif
-  const char *gitVersion = FIRMWARE_VERSION "\r\n" BUILD_TYPE "\r\n";
+  const char *gitVersion = BUILD_TYPE "\r\n" FIRMWARE_VERSION;
   return gitVersion;
 }
 
