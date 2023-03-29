@@ -211,8 +211,8 @@ void PowerSupplyTask(void *parameters)
     }
 
     // MAIN POWER SUPPLY TASK STATE MACHINE
-    // ON1 .. ON5 are the five states of the turn-on sequence
-    // OFF1 .. OFF5 are the five states of the turn-off sequence
+    // ON1 .. ON6 are the six states of the turn-on sequence
+    // OFF1 .. OFF6 are the six states of the turn-off sequence
     // in the transition to FAIL we turn off all the supplies in sequence,
     // even if they were not yet turned on (i.e., transition from ON3 -> FAIL)
     //                     +-------------------+
@@ -221,7 +221,7 @@ void PowerSupplyTask(void *parameters)
     // | INIT  |    |         ^             ^         |
     // +---+---+    v         |             |         |
     //     |     ---+--+   +--+-+         +-+--+  +---+--+
-    //     +---->+ OFF +---> ON1+-> ....  | ON5+->+  ON  |
+    //     +---->+ OFF +---> ON1+-> ....  | ON6+->+  ON  |
     //           +--+--+   +----+         +----+  +---+--+
     //              |            +------+             |
     //              +-----<------| DOWN <-------------+
