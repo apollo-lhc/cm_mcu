@@ -178,16 +178,16 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   page = page % 10;
   if (page < 0 || page > 1) {
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
-        argv[0], page + 1);
+             argv[0], page + 1);
     return pdFALSE;
   }
   if (which < 0 || which > (NSUPPLIES_PS - 1)) {
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
-        argv[0], which, (NSUPPLIES_PS - 1));
+             argv[0], which, (NSUPPLIES_PS - 1));
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
-      page, pm_addrs_dcdc[which].name);
+                     page, pm_addrs_dcdc[which].name);
 
   bool reset = false;
   int ireset = strtol(argv[2], NULL, 10);
@@ -220,7 +220,7 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   copied +=
       snprintf(m + copied, SCRATCH_SIZE - copied, "INPUT STATUS: 0x%02x\r\n", p0->input_status);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP  STATUS: 0x%02x\r\n",
-      p0->temperature_status);
+                     p0->temperature_status);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CML   STATUS: 0x%02x\r\n", p0->cml_status);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MFR   STATUS: 0x%02x\r\n", p0->mfr_status);
   copied +=
