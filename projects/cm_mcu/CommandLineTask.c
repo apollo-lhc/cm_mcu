@@ -6,7 +6,6 @@
  */
 
 // Include commands
-
 #include <strings.h>
 #include <errno.h>
 #include "commands/BoardCommands.h"
