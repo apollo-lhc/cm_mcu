@@ -102,6 +102,7 @@ struct gpio_pin_t oks[N_PS_OKS] = {
     { PG_F2_AVCC, "PG_F2_AVCC", 4},
     { PG_F1_AVTT,  "PG_F1_AVTT", 5},
     { PG_F2_AVTT, "PG_F2_AVTT", 5},
+    { PG_4V0, "PG_4V0",   6},
 };
 
 #else
