@@ -156,8 +156,8 @@ extern struct dev_i2c_addr_t pm_addrs_dcdc[];
 
 static BaseType_t sn_all(int argc, char **argv, char *m)
 {
-  static int which = 0;
-  static int page_d = 0;
+  int which = 0;
+  int page_d = 0;
   for (; which < N_PM_ADDRS_DCDC; ++which) {
     for (; page_d < 2; ++page_d) { // for reading two pages per device
       bool reset = false;
