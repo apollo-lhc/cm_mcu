@@ -6,9 +6,7 @@
  */
 
 // Include commands
-
 #include <strings.h>
-
 #include "commands/BoardCommands.h"
 #include "commands/BufferCommands.h"
 #include "commands/EEPROMCommands.h"
@@ -156,6 +154,21 @@ typedef struct __attribute__((packed)) {
 
 extern struct dev_i2c_addr_t pm_addrs_dcdc[];
 
+static BaseType_t sn_all(int argc, char **argv, char *m)
+{
+  int which = 0;
+  int page_d = 0;
+  for (; which < N_PM_ADDRS_DCDC; ++which) {
+    for (; page_d < 2; ++page_d) { // for reading two pages per device
+      bool reset = false;
+      reset = true;
+      uint8_t sn[32];
+      snapdump(&pm_addrs_dcdc[which], page_d, sn, reset);
+    }
+  }
+  return pdFALSE;
+}
+
 static BaseType_t snapshot(int argc, char **argv, char *m)
 {
   _Static_assert(sizeof(snapshot_t) == 32, "sizeof snapshot_t");
@@ -164,13 +177,13 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   int which = page / 10;
   page = page % 10;
   if (page < 0 || page > 1) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
-                       argv[0], page);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
+             argv[0], page + 1);
     return pdFALSE;
   }
   if (which < 0 || which > (NSUPPLIES_PS - 1)) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
-                       argv[0], which, (NSUPPLIES_PS - 1));
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+             argv[0], which, (NSUPPLIES_PS - 1));
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
@@ -212,6 +225,7 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MFR   STATUS: 0x%02x\r\n", p0->mfr_status);
   copied +=
       snprintf(m + copied, SCRATCH_SIZE - copied, "flash STATUS: 0x%02x\r\n", p0->flash_status);
+
   return pdFALSE;
 }
 
@@ -347,6 +361,7 @@ static struct command_t commands[] = {
      "args:# (0|1)\r\nDump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
      "if to reset snapshot.\r\n",
      2},
+    {"sn_all", sn_all, "reset all LGA80Ds snapshot registers\r\n", 0},
     {
         "set_id",
         set_board_id,
