@@ -224,8 +224,22 @@ void zm_set_gitversion(struct zynqmon_data_t data[], int start)
   char buff[ZM_GIT_VERSION_LENGTH];
   // clear the buffer
   memset(buff, 0, ZM_GIT_VERSION_LENGTH); // technically not needed
+
+  const char *v = gitVersion();
+  // find v[0-9] in this string and assume this is where the actual git tag starts
+  // version is a semver version string like v0.99.1
+  while (*v != '\0') { // assumes this c string is well-terminated
+    char n = *(v + 1); // char after 'v' should be a number 0-9
+    if (*v == 'v' && (n >= '0' && n <= '9'))
+      break; // success, I found the string
+    ++v;
+  }
+  // on failure I send an empty string
+
   // get the git version and copy it into the buffer
-  strncpy(buff, gitVersion(), ZM_GIT_VERSION_LENGTH);
+  strncpy(buff, v, ZM_GIT_VERSION_LENGTH);
+  // make sure our string is well-terminated
+  buff[ZM_GIT_VERSION_LENGTH - 1] = '\0';
   // loop over the buffer and copy it into the data struct
   // each data word consists of two chars.
   for (int j = 0; j < ZM_GIT_VERSION_LENGTH; j += 2) {
