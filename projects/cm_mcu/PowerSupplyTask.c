@@ -402,7 +402,7 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
-#endif // REV1
+#endif                                                // REV1
       case POWER_FAILURE: {                           // we go through POWER_OFF state before turning on.
         if (!power_supply_alarm && !external_alarm) { // errors cleared
           nextState = POWER_OFF;
