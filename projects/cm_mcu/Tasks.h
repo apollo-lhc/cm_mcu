@@ -86,6 +86,7 @@ enum power_system_state {
   POWER_L3ON,
   POWER_L4ON,
   POWER_L5ON,
+  POWER_L6ON,
   POWER_ON,
 };
 enum power_system_state getPowerControlState(void);

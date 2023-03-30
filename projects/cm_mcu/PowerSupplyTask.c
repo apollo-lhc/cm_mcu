@@ -57,10 +57,10 @@ static uint16_t getPSFailMask(void)
   static uint32_t ps_ignore_mask;
   if (!configured) {
     ps_ignore_mask = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
-    if (ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5)) {
+    if (ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F1_MASK_L6 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 | PS_OKS_F2_MASK_L6)) {
       log_warn(LOG_PWRCTL, "Warning: mask 0x%x included masks at below L4; ignoring\r\n", ps_ignore_mask);
       // mask out supplies at startup L1, L2 or L3. We do not allow those to fail.
-      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5);
+      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F1_MASK_L6 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 | PS_OKS_F2_MASK_L6);
     }
     configured = true;
   }
@@ -83,6 +83,7 @@ static const char *const power_system_state_names[] = {
     "L3ON",
     "L4ON",
     "L5ON",
+    "L6ON",
     "ON",
 };
 
@@ -118,7 +119,7 @@ void PowerSupplyTask(void *parameters)
   // masks to enable/check appropriate supplies
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
-           supply_ok_mask_L5 = 0U;
+           supply_ok_mask_L5 = 0U, supply_ok_mask_L6 = 0U;
 
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
@@ -135,6 +136,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_F1_MASK_L2;
     supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
     supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_F1_MASK_L5;
+    supply_ok_mask_L6 = supply_ok_mask_L5 | PS_OKS_F1_MASK_L6;
   }
   if (f2_enable) {
     supply_ok_mask |= PS_OKS_F2_MASK;
@@ -142,6 +144,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_F2_MASK_L2;
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
+    supply_ok_mask_L6 |= supply_ok_mask_L5 | PS_OKS_F2_MASK_L6;
   }
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
   ignore_mask = getPSFailMask();
@@ -160,6 +163,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L4 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L5 &= ~ignore_mask; // mask out the ignored bits.
+    supply_ok_mask_L6 &= ~ignore_mask; // mask out the ignored bits.
   }
 
 #if defined(ECN001) || defined(REV2)
@@ -211,8 +215,8 @@ void PowerSupplyTask(void *parameters)
     }
 
     // MAIN POWER SUPPLY TASK STATE MACHINE
-    // ON1 .. ON5 are the five states of the turn-on sequence
-    // OFF1 .. OFF5 are the five states of the turn-off sequence
+    // ON1 .. ON6 are the six states of the turn-on sequence
+    // OFF1 .. OFF6 are the six states of the turn-off sequence
     // in the transition to FAIL we turn off all the supplies in sequence,
     // even if they were not yet turned on (i.e., transition from ON3 -> FAIL)
     //                     +-------------------+
@@ -221,7 +225,7 @@ void PowerSupplyTask(void *parameters)
     // | INIT  |    |         ^             ^         |
     // +---+---+    v         |             |         |
     //     |     ---+--+   +--+-+         +-+--+  +---+--+
-    //     +---->+ OFF +---> ON1+-> ....  | ON5+->+  ON  |
+    //     +---->+ OFF +---> ON1+-> ....  | ON6+->+  ON  |
     //           +--+--+   +----+         +----+  +---+--+
     //              |            +------+             |
     //              +-----<------| DOWN <-------------+
@@ -345,6 +349,7 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
+#ifdef REV1
       case POWER_L5ON: {
         if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
@@ -362,6 +367,42 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
+#elif defined(REV2)
+      case POWER_L5ON: {
+        if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
+          failed_mask = (~supply_bitset) & supply_ok_mask_L5;
+          printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
+          errbuffer_power_fail(failed_mask);
+
+          disable_ps();
+          power_supply_alarm = true;
+          nextState = POWER_FAILURE;
+        }
+        else {
+          turn_on_ps_at_prio(f2_enable, f1_enable, 6);
+          nextState = POWER_L6ON;
+        }
+
+        break;
+      }
+      case POWER_L6ON: {
+        if (((supply_bitset & supply_ok_mask_L6) != supply_ok_mask_L6) && !ignorefail) {
+          failed_mask = (~supply_bitset) & supply_ok_mask_L6;
+          printfail(failed_mask, supply_ok_mask_L6, supply_bitset);
+          errbuffer_power_fail(failed_mask);
+
+          disable_ps();
+          power_supply_alarm = true;
+          nextState = POWER_FAILURE;
+        }
+        else {
+          blade_power_ok(true);
+          nextState = POWER_ON;
+        }
+
+        break;
+      }
+#endif // REV1
       case POWER_FAILURE: {                           // we go through POWER_OFF state before turning on.
         if (!power_supply_alarm && !external_alarm) { // errors cleared
           nextState = POWER_OFF;
