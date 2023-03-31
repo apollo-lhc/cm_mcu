@@ -42,14 +42,14 @@ config:
     names: 
       - 1V8
       - 3V3
-      - F1VCCINT1_1
-      - F1VCCINT1_2
-      - F1VCCINT2_1
-      - F1VCCINT2_2
-      - F2VCCINT1_1
-      - F2VCCINT1_2
-      - F2VCCINT2_1
-      - F2VCCINT2_2
+      - F1VCCINT1_S1
+      - F1VCCINT1_S2
+      - F1VCCINT2_S1
+      - F1VCCINT2_S2
+      - F2VCCINT1_S1
+      - F2VCCINT1_S2
+      - F2VCCINT2_S1
+      - F2VCCINT2_S2
       - F1AVTT
       - F1AVCC
       - F2AVTT
@@ -60,7 +60,7 @@ config:
       - VIN
       - VOUT
       - IOUT
-#      - STATUS_WORD
+      - STATUS_WORD
   - name: adcmon
     start: 128
     count: 21
