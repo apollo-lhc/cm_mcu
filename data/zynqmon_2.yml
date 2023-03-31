@@ -120,3 +120,33 @@ config:
       - F2_TEMP_SLR1
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
+  - name: clocks
+    start: 158
+    count: 24
+    type: int16
+    extra: Table=CM_MON;Column=Temp_C;Status=2;
+    mcu_call: clocks
+    names: 
+      - ROA
+    postfixes:
+      - PN_BASE
+      - DEVICE_REV
+      - STATUS
+      - LOS_IN
+  - name: clocks
+    start: 172
+    count: 5
+    type: int16
+    extra: Table=CM_MON;Column=Temp_C;Status=2;
+    mcu_call: clocks
+    names: 
+      - ROB
+      - R1A
+      - R1B
+      - R1C
+    postfixes:
+      - PN_BASE
+      - DEVICE_REV
+      - STATUS
+      - LOSOFF_IN
+      - LOL

@@ -162,4 +162,38 @@
 	<node id="F2_TEMP_SLR1" address="0x4d" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2_TEMP_SLR1;Table=CM_MON;Column=Temp_C;Status=2;" />
 	<node id="F2_TEMP_SLR2" address="0x4e" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_TEMP_SLR2;Table=CM_MON;Column=Temp_C;Status=2;" />
 	<node id="F2_TEMP_SLR3" address="0x4e" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2_TEMP_SLR3;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="ROA" address="0x4f">
+		<node id="PN_BASE" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=ROA;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="DEVICE_REV" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=ROA;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="STATUS" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=ROA;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOS_IN" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=ROA;Table=CM_MON;Column=Temp_C;Status=2;" />
+	</node>
+	<node id="ROB" address="0x56">
+		<node id="PN_BASE" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=ROB;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="DEVICE_REV" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=ROB;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="STATUS" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=ROB;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOSOFF_IN" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=ROB;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOL" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=ROB;Table=CM_MON;Column=Temp_C;Status=2;" />
+	</node>
+	<node id="R1A" address="0x58">
+		<node id="PN_BASE" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1A;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="DEVICE_REV" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=R1A;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="STATUS" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1A;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOSOFF_IN" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=R1A;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOL" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1A;Table=CM_MON;Column=Temp_C;Status=2;" />
+	</node>
+	<node id="R1B" address="0x5b">
+		<node id="PN_BASE" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1B;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="DEVICE_REV" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=R1B;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="STATUS" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1B;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOSOFF_IN" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=R1B;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOL" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1B;Table=CM_MON;Column=Temp_C;Status=2;" />
+	</node>
+	<node id="R1C" address="0x5d">
+		<node id="PN_BASE" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1C;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="DEVICE_REV" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=R1C;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="STATUS" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1C;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOSOFF_IN" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=d16;Row=R1C;Table=CM_MON;Column=Temp_C;Status=2;" />
+		<node id="LOL" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=d16;Row=R1C;Table=CM_MON;Column=Temp_C;Status=2;" />
+	</node>
 </node>
