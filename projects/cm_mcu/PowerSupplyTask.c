@@ -119,7 +119,10 @@ void PowerSupplyTask(void *parameters)
   // masks to enable/check appropriate supplies
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
-           supply_ok_mask_L5 = 0U, supply_ok_mask_L6 = 0U;
+           supply_ok_mask_L5 = 0U;
+#ifdef REV2
+  uint16_t supply_ok_mask_L6 = 0U;
+#endif // REV2
 
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
@@ -136,7 +139,9 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_F1_MASK_L2;
     supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
     supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_F1_MASK_L5;
+#ifdef REV2
     supply_ok_mask_L6 = supply_ok_mask_L5 | PS_OKS_F1_MASK_L6;
+#endif // REV2
   }
   if (f2_enable) {
     supply_ok_mask |= PS_OKS_F2_MASK;
@@ -144,7 +149,9 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_F2_MASK_L2;
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
+#ifdef REV2
     supply_ok_mask_L6 |= supply_ok_mask_L5 | PS_OKS_F2_MASK_L6;
+#endif // REV2
   }
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
   ignore_mask = getPSFailMask();
@@ -163,7 +170,9 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L4 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L5 &= ~ignore_mask; // mask out the ignored bits.
+#ifdef REV2
     supply_ok_mask_L6 &= ~ignore_mask; // mask out the ignored bits.
+#endif                                 // REV2
   }
 
 #if defined(ECN001) || defined(REV2)
