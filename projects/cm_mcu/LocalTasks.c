@@ -164,6 +164,7 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
+    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -227,6 +228,7 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
+    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -277,6 +279,7 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
+    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -335,6 +338,7 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
+    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -375,6 +379,7 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
+    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -408,6 +413,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
+    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 #endif // REV2
@@ -611,15 +617,13 @@ int8_t getFFtemp(const uint8_t i)
 void getFFpart(int which_fpga)
 {
 
-  // Write device vendor part for identifying FF devices
-  uint8_t vendor_data[4];
+  // Write device vendor part for identifying FF device
   uint32_t vendor_char;
-  int8_t vendor_part[17];
-
   uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
   uint8_t ven_addr_stop = VENDOR_STOP_BIT_FF12;
 
   uint8_t data;
+  int ret = 0;
 
   if (which_fpga == 1) { // checking the FF 12-ch part connected to FPGA1 (need to check from Rx devices (i.e devices[odd]))
 
@@ -627,38 +631,60 @@ void getFFpart(int which_fpga)
     // otherwise, block its operations indefinitely until it's available
     acquireI2CSemaphoreBlock(i2c4_sem);
 
-    data = 0x1U << ffl12_f1_args.devices[3].mux_bit;
-    log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
-    int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].mux_addr, 1, data);
-    if (rmux != 0) {
-      log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-    }
-    for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
-      int res = apollo_i2c_ctl_reg_r(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
-      if (res != 0) {
-        log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
-        vendor_part[i - ven_addr_start] = 0;
+    for (uint8_t n = 0; n < NSUPPLIES_FFL12_F1 / 2; n++) {
+      uint8_t vendor_data_rxch[4];
+      uint32_t vendor_char_rxch;
+      int8_t vendor_part_rxch[17];
+
+      data = 0x1U << ffl12_f1_args.devices[(2 * n) + 1].mux_bit;
+      log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
+      int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[(2 * n) + 1].mux_addr, 1, data);
+      if (rmux != 0) {
+        log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+      }
+      for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+        int res = apollo_i2c_ctl_reg_r(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
+        if (res != 0) {
+          log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
+          vendor_part_rxch[i - ven_addr_start] = 0;
+          ret = 1;
+          break;
+        }
+        for (int j = 0; j < 4; ++j) {
+          vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
+        }
+
+        typedef union {
+          uint8_t us;
+          int8_t s;
+        } convert_8_t;
+        convert_8_t tmp1;
+
+        tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
+        vendor_part_rxch[i - ven_addr_start] = tmp1.s;
+        vendor_part_rxch[i - ven_addr_start + 1] = '\0'; // null-terminated
+      }
+      if (ret == 1)
         break;
+      char *vendor_string = (char *)vendor_part_rxch;
+      if (strlen(vendor_string) > 0) {
+        if ((strstr(vendor_string, "14") != NULL)) {
+          ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
+        }
+        if (n == 0) {
+          vendor_char = vendor_char_rxch;
+          log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string);
+        }
+        else {
+          if (vendor_char_rxch == vendor_char) {
+            ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n);
+          }
+          else {
+            log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA1) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1].name);
+            log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string); // FIXME
+          }
+        }
       }
-      for (int j = 0; j < 4; ++j) {
-        vendor_data[j] = (vendor_char >> (3 - j) * 8) & 0xFF;
-      }
-
-      typedef union {
-        uint8_t us;
-        int8_t s;
-      } convert_8_t;
-      convert_8_t tmp1;
-
-      tmp1.us = vendor_data[3]; // change from uint_8 to int8_t, preserving bit pattern
-      vendor_part[i - ven_addr_start] = tmp1.s;
-      vendor_part[i - ven_addr_start + 1] = '\0'; // null-terminated
-    }
-
-    char *vendor_string = (char *)vendor_part;
-    log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string);
-    if ((strstr(vendor_string, "14") != NULL)) {
-      ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
     }
 
     // if we have a semaphore, give it
@@ -671,38 +697,62 @@ void getFFpart(int which_fpga)
     // grab the semaphore to ensure unique access to I2C controller
     // otherwise, block its operations indefinitely until it's available
     acquireI2CSemaphoreBlock(i2c3_sem);
+    ret = 0;
 
-    data = 0x1U << ffl12_f2_args.devices[3].mux_bit; // mux_bit
-    log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
-    int rmux = apollo_i2c_ctl_w(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].mux_addr, 1, data);
-    if (rmux != 0) {
-      log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-    }
-    for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
-      int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[3].dev_addr, 1, (uint16_t)i, 1, &vendor_char);
-      if (res != 0) {
-        log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res)); // expected ACK_ADDR_ERR because of no devices[3] for FPGA2 connection as of 08.04.22
-        vendor_part[i - ven_addr_start] = 0;
+    for (uint8_t n = 0; n < NSUPPLIES_FFL12_F2 / 2; n++) {
+      uint8_t vendor_data_rxch[4];
+      uint32_t vendor_char_rxch;
+      int8_t vendor_part_rxch[17];
+
+      data = 0x1U << ffl12_f2_args.devices[(2 * n) + 1].mux_bit;
+      log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
+      int rmux = apollo_i2c_ctl_w(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[(2 * n) + 1].mux_addr, 1, data);
+      if (rmux != 0) {
+        log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+      }
+      for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+        int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
+        if (res != 0) {
+          log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
+          vendor_part_rxch[i - ven_addr_start] = 0;
+          ret = 1;
+          break;
+        }
+        for (int j = 0; j < 4; ++j) {
+          vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
+        }
+
+        typedef union {
+          uint8_t us;
+          int8_t s;
+        } convert_8_t;
+        convert_8_t tmp1;
+
+        tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
+        vendor_part_rxch[i - ven_addr_start] = tmp1.s;
+        vendor_part_rxch[i - ven_addr_start + 1] = '\0'; // null-terminated
+      }
+      if (ret == 1)
         break;
+      char *vendor_string = (char *)vendor_part_rxch;
+      if (strlen(vendor_string) > 0) {
+        if ((strstr(vendor_string, "14") != NULL)) {
+          ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
+        }
+        if (n == 0) {
+          vendor_char = vendor_char_rxch;
+          log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2): %s \r\n:", vendor_string);
+        }
+        else {
+          if (vendor_char_rxch == vendor_char) {
+            ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << (n + NSUPPLIES_FFL12_F1 / 2));
+          }
+          else {
+            log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA2) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1 + NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1].name);
+            log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2): %s \r\n:", vendor_string); // FIXME
+          }
+        }
       }
-      for (int j = 0; j < 4; ++j) {
-        vendor_data[j] = (vendor_char >> (3 - j) * 8) & 0xFF;
-      }
-      typedef union {
-        uint8_t us;
-        int8_t s;
-      } convert_8_t;
-      convert_8_t tmp1;
-
-      tmp1.us = vendor_data[3]; // change from uint_8 to int8_t, preserving bit pattern
-      vendor_part[i - ven_addr_start] = tmp1.s;
-      vendor_part[i - ven_addr_start + 1] = '\0'; // null-terminated
-    }
-
-    char *vendor_string = (char *)vendor_part;
-    log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2) : %s \r\n:", vendor_string);
-    if ((strstr(vendor_string, "14") != NULL)) {
-      ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
     }
 
     // if we have a semaphore, give it
