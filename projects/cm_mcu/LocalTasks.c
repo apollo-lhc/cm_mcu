@@ -739,7 +739,7 @@ void getFFpart(int which_fpga)
           ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
         }
         if (n == 0) {
-          if ((strstr(vendor_string_rxch, "14") != NULL)) {
+          if ((strstr(vendor_string_rxch, "14") == NULL)) {
             ffl12_f2_args.ffpart_bit_mask = 0x1U; // the first 25Gbs 12-ch detected on FPGA2
           }
           log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2): %s \r\n:", vendor_string_rxch);
