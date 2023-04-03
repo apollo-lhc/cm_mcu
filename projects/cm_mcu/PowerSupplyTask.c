@@ -25,6 +25,9 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
+// getFFpart includes
+#include "MonitorI2CTask.h"
+
 void Print(const char *);
 
 // Holds the handle of the created queue for the power supply task.

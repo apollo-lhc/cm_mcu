@@ -61,6 +61,7 @@ void InitTask(void *parameters)
   log_info(LOG_SERVICE, "Clocks configured\r\n");
 
   // check 4-ch FF parts from vendors on FPGA1/2
+  vTaskDelay(pdMS_TO_TICKS(500));
   getFFpart_FPGA1();
   getFFpart_FPGA2();
 
