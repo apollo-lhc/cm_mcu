@@ -391,8 +391,14 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          turn_on_ps_at_prio(f2_enable, f1_enable, 6);
-          nextState = POWER_L6ON;
+          if (ffl12_f1_args.ffpart_bit_mask > 0U || ffl12_f1_args.ffpart_bit_mask > 0U) {
+            turn_on_ps_at_prio(f2_enable, f1_enable, 6);
+            nextState = POWER_L6ON;
+          }
+          else {
+            blade_power_ok(true);
+            nextState = POWER_ON;
+          }
         }
 
         break;

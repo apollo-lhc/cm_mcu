@@ -73,7 +73,7 @@ void setPSStatus(int i, enum ps_state theState);
 #define PS_OKS_F2_MASK_L2 PS_OKS_F1_MASK_L2
 #define PS_OKS_F2_MASK_L4 0x00C0U
 #define PS_OKS_F2_MASK_L5 0x3000U
-#define PS_OKS_F2_MASK_L6 0x0C00U // no 4v0 pin in REV1
+#define PS_OKS_F2_MASK_L6 0x0000U // no 4v0 pin in REV1
 
 #elif defined(REV2) // Rev 2
 // -----------------------------------------------------

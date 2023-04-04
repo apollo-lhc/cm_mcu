@@ -665,12 +665,12 @@ void getFFpart(int which_fpga)
 
       char *vendor_string_rxch = (char *)vendor_part_rxch;
       if (strlen(vendor_string_rxch) > 0) { // check that there is a FF installed in this ch
-        if ((strstr(vendor_string_rxch, "14") != NULL)) {
-          ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
-        }
         if (n == 0) {
           if ((strstr(vendor_string_rxch, "14") == NULL)) { // the first 25Gbs 12-ch detected on FPGA1
             ffl12_f1_args.ffpart_bit_mask = 0x1U;
+          }
+          else {
+            ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
           }
           log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string_rxch);
           strncpy(vendor_string, vendor_string_rxch, 10);
@@ -735,12 +735,12 @@ void getFFpart(int which_fpga)
 
       char *vendor_string_rxch = (char *)vendor_part_rxch;
       if (strlen(vendor_string_rxch) > 0) { // check that there is a FF installed in this ch
-        if ((strstr(vendor_string_rxch, "14") != NULL)) {
-          ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
-        }
         if (n == 0) {
           if ((strstr(vendor_string_rxch, "14") == NULL)) {
             ffl12_f2_args.ffpart_bit_mask = 0x1U; // the first 25Gbs 12-ch detected on FPGA2
+          }
+          else {
+            ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
           }
           log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2): %s \r\n:", vendor_string_rxch);
           strncpy(vendor_string, vendor_string_rxch, 10);
