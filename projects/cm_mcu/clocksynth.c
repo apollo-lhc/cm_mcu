@@ -115,7 +115,7 @@ int initialize_clock(void)
       break;
     }
     for (uint8_t c = 0; c < NCOMMANDS_FLG_CLKR0A; c++) {
-      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, clockr0a_args.commands[clockr0a_args.n_commands-c-1].command, 1, 0);
+      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, clockr0a_args.commands[clockr0a_args.n_commands - c - 1].command, 1, 0);
       if (status != 0)
         return status;
     }
@@ -129,7 +129,7 @@ int initialize_clock(void)
       break;
     }
     for (uint8_t c = 0; c < NCOMMANDS_FLG_CLK; c++) {
-      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5395_I2C_ADDRESS, 1, clock_args.commands[clock_args.n_commands-c-1].command, 1, 0);
+      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5395_I2C_ADDRESS, 1, clock_args.commands[clock_args.n_commands - c - 1].command, 1, 0);
       if (status != 0)
         return status;
     }

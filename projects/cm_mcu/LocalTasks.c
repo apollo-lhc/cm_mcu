@@ -359,11 +359,11 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x0D, 1, "LOSOOF_IN", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},       // page 0x00
     // internal error flags : table 16.12
-    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS},// page 0x00
+    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS}, // page 0x00
     // sticky OOF and LOF flags : table 16.13
-    {1, 0x00, 0x12, 1, "LOSOOF_FLG", 0xff, "", PM_STATUS},// page 0x00
+    {1, 0x00, 0x12, 1, "LOSOOF_FLG", 0xff, "", PM_STATUS}, // page 0x00
     // sticky Holdover and LOL flags : table 16.14
-    {1, 0x00, 0x13, 1, "LOLHOLD_FLG", 0x22, "", PM_STATUS},// page 0x00
+    {1, 0x00, 0x13, 1, "LOLHOLD_FLG", 0x22, "", PM_STATUS}, // page 0x00
 
 };
 
