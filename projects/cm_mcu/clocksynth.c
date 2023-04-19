@@ -7,10 +7,12 @@
 #include <assert.h>
 #include <string.h>
 
+#include "common/smbus_helper.h"
 #include "Semaphore.h"
 #include "clocksynth.h"
 #include "common/utils.h"
 #include "I2CCommunication.h"
+#include "MonitorI2CTask.h"
 #include "Tasks.h"
 
 int PreambleList[][2] = {{0x0B24, 0xC0},
@@ -104,8 +106,34 @@ int initialize_clock(void)
                                 CLOCK_EXPANDER_RESET_CLOCKSYNTH);
   if (status != 0)
     return status;
-  // Clear sticky flags of clock synth status monitor (raised high after reset)
-  status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH_I2C_ADDRESS, 1, CLOCK_SYNTH_STICKY_FLAG_REGISTER, 1, 0);
+  // Clear sticky flags of clock synth 5341 status monitor (raised high after reset)
+  for (uint8_t i = 0; i < NSUPPLIES_CLKR0A; i++) {
+    uint8_t data = 0x1U << clkr0a_moni2c_addrs[i].mux_bit;
+    int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clkr0a_moni2c_addrs[i].mux_addr, 1, data);
+    if (res != 0) {
+      log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), clkr0a_moni2c_addrs[i].name, i);
+      break;
+    }
+    for (uint8_t c = 0; c < NCOMMANDS_FLG_CLKR0A; c++) {
+      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, clockr0a_args.commands[clockr0a_args.n_commands-c-1].command, 1, 0);
+      if (status != 0)
+        return status;
+    }
+  }
+  // Clear sticky flags of clock synth 5395 status monitor (raised high after reset)
+  for (uint8_t i = 0; i < NSUPPLIES_CLK; i++) {
+    uint8_t data = 0x1U << clk_moni2c_addrs[i].mux_bit;
+    int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].mux_addr, 1, data);
+    if (res != 0) {
+      log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), clk_moni2c_addrs[i].name, i);
+      break;
+    }
+    for (uint8_t c = 0; c < NCOMMANDS_FLG_CLK; c++) {
+      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5395_I2C_ADDRESS, 1, clock_args.commands[clock_args.n_commands-c-1].command, 1, 0);
+      if (status != 0)
+        return status;
+    }
+  }
   return status;
 }
 
@@ -127,11 +155,11 @@ static int write_register(int RegList[][2], int n_row)
     uint16_t LowByte_reg_addr = LowByte;
 
     if (ChangePage) {
-      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH_I2C_ADDRESS, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, NewHighByte);
+      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, NewHighByte);
       if (status != 0)
         return status;
     }
-    status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH_I2C_ADDRESS, 1, LowByte_reg_addr, 1, RegList[i][1]);
+    status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, LowByte_reg_addr, 1, RegList[i][1]);
   }
   return status;
 }

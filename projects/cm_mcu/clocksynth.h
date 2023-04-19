@@ -13,7 +13,8 @@ int initialize_clock(void);
 int load_clock(void);
 
 #define CLOCK_I2C_BASE                                2
-#define CLOCK_SYNTH_I2C_ADDRESS                       0x77
+#define CLOCK_SYNTH5341_I2C_ADDRESS                   0x77
+#define CLOCK_SYNTH5395_I2C_ADDRESS                   0x6b
 #define CLOCK_SYNTH_STICKY_FLAG_REGISTER              0x11 // sticky flags for internal status register
 #define CLOCK_SWITCH_I2C_ADDRESS                      0x70 // TCA9548A
 #define CLOCK_SWITCH_ENABLEMAP                        0xc1

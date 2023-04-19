@@ -356,8 +356,15 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", PM_STATUS},   // page 0x00
     // internal statuses on page 0 : table 16.8 and 16.9
     {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", PM_STATUS},   // page 0x00
-    {1, 0x00, 0x0D, 1, "LOSOFF_IN", 0xff, "", PM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOSOOF_IN", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},       // page 0x00
+    // internal error flags : table 16.12
+    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS},// page 0x00
+    // sticky OOF and LOF flags : table 16.13
+    {1, 0x00, 0x12, 1, "LOSOOF_FLG", 0xff, "", PM_STATUS},// page 0x00
+    // sticky Holdover and LOL flags : table 16.14
+    {1, 0x00, 0x13, 1, "LOLHOLD_FLG", 0x22, "", PM_STATUS},// page 0x00
+
 };
 
 uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
@@ -388,9 +395,13 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x03, 1, "PN_BASE", 0xff, "", PM_STATUS},    // page 0x00
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", PM_STATUS},   // page 0x00
-    // internal statuses on page 0 : table 4.5
+    // internal statuses on page 0 : table 14.5
     {1, 0x00, 0x0C, 1, "REG_0x0C", 0x35, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "REG_0x0D", 0x15, "", PM_STATUS}, // page 0x00
+    // sticky bits of status bits : table 14.12
+    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
+    // sticky bits of INx LOS bits : table 14.13
+    {1, 0x00, 0x12, 1, "LOSIN_FLG", 0xf, "", PM_STATUS}, // page 0x00
 };
 
 uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
