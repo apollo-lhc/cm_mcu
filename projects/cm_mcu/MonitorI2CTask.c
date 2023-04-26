@@ -84,11 +84,13 @@ void MonitorI2CTask(void *parameters)
   bool good = false;
   for (;;) {
     log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
+
     // grab the semaphore to ensure unique access to I2C controller
     if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
       log_warn(LOG_SERVICE, "%s could not get semaphore in time; continue\r\n", args->name);
       continue;
     }
+
 
     // -------------------------------
     // loop over devices in the device-type instance

@@ -10,6 +10,7 @@
 #define PROJECTS_CM_MCU_CLOCKSYNTH_H_
 
 int initialize_clock(void);
+int clear_clk_stickybits(void);
 int load_clock(void);
 
 #define CLOCK_I2C_BASE                                2

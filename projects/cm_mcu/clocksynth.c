@@ -105,52 +105,57 @@ int initialize_clock(void)
     return status;
   status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_WRITE_EXPANDER_I2C_ADDRESS, 1, CLOCK_EXPANDER_OUTPUT_PORT_1, 1,
                                 CLOCK_EXPANDER_RESET_CLOCKSYNTH);
-  if (status != 0)
-    return status;
+
+  return status;
+}
+
+int clear_clk_stickybits(void)
+{
+  static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
+                 (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
+                "Invalid I2C base");
 
   // Clear sticky flags of clock synth 5341 status monitor (raised high after reset)
-  /*
+  int status = -99;
   for (uint8_t i = 0; i < NSUPPLIES_CLKR0A; i++) {
     uint8_t data = 0x1U << clkr0a_moni2c_addrs[i].mux_bit;
     int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clkr0a_moni2c_addrs[i].mux_addr, 1, data);
     if (res != 0) {
       log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), clkr0a_moni2c_addrs[i].name, i);
-      status-=1;
     }
-    if (status != 0)
-      return status;
     for (uint8_t c = 0; c < NCOMMANDS_FLG_CLKR0A; c++) {
       uint8_t page_reg_value = clockr0a_args.commands[clockr0a_args.n_commands - c - 1].page;
-      int res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, 0x01, 1, page_reg_value);
+      int res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, page_reg_value);
       if (res != 0) {
         log_error(LOG_SERVICE, "%s: page fail %s\r\n", clockr0a_args.name, SMBUS_get_error(res));
-        status-=1;
       }
-      if (status != 0)
-        return status;
       status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, clockr0a_args.commands[clockr0a_args.n_commands - c - 1].command, 1, 0);
       if (status != 0)
         return status;
     }
   }
-  */
-  /*
+
+
   // Clear sticky flags of clock synth 5395 status monitor (raised high after reset)
   for (uint8_t i = 0; i < NSUPPLIES_CLK; i++) {
     uint8_t data = 0x1U << clk_moni2c_addrs[i].mux_bit;
     int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].mux_addr, 1, data);
     if (res != 0) {
       log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), clk_moni2c_addrs[i].name, i);
-      break;
     }
     for (uint8_t c = 0; c < NCOMMANDS_FLG_CLK; c++) {
+      uint8_t page_reg_value = clock_args.commands[clock_args.n_commands - c - 1].page;
+      int res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5395_I2C_ADDRESS, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, page_reg_value);
+      if (res != 0) {
+        log_error(LOG_SERVICE, "%s: page fail %s\r\n", clock_args.name, SMBUS_get_error(res));
+      }
       status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5395_I2C_ADDRESS, 1, clock_args.commands[clock_args.n_commands - c - 1].command, 1, 0);
       if (status != 0)
         return status;
     }
   }
-  */
   return status;
+
 }
 
 static int write_register(int RegList[][2], int n_row)

@@ -69,11 +69,13 @@ static BaseType_t clock_ctl(int argc, char **argv, char *m)
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s mode set to %ld. \r\n", argv[0], i);
-  // grab the semaphore to ensure unique access to I2C controller
-  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-    snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    return pdFALSE;
+
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
   }
+
+
   if (i == 1) {
     status = initialize_clock();
     if (status == 0)
@@ -87,16 +89,24 @@ static BaseType_t clock_ctl(int argc, char **argv, char *m)
                          "clock synthesizer successfully programmed. \r\n");
   }
 
+  if (i == 1) {
+    status = clear_clk_stickybits();
+    if (status == 0)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+          "clock synthesizer successfully clear sticky flags. \r\n");
+  }
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
+
   if (status == -1)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (1). \r\n", argv[0]);
   else if (status == -2)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (2). \r\n", argv[0]);
   else if (status != 0)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s invalid return value. \r\n", argv[0]);
-  // if we have a semaphore, give it
-  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(i2c2_sem);
-  }
+
   return pdFALSE;
 }
 
@@ -121,11 +131,16 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
     snprintf(m + copied, SCRATCH_SIZE - copied, " 3V3 died. skip loadclock\r\n");
     return pdFALSE; // skip this iteration
   }
+  /*
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
     snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
+  */
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c2_sem);
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
