@@ -69,6 +69,11 @@ static BaseType_t clock_ctl(int argc, char **argv, char *m)
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s mode set to %ld. \r\n", argv[0], i);
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+    snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    return pdFALSE;
+  }
   if (i == 1) {
     status = initialize_clock();
     if (status == 0)
@@ -81,12 +86,17 @@ static BaseType_t clock_ctl(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "clock synthesizer successfully programmed. \r\n");
   }
+
   if (status == -1)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (1). \r\n", argv[0]);
   else if (status == -2)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (2). \r\n", argv[0]);
   else if (status != 0)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s invalid return value. \r\n", argv[0]);
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
   return pdFALSE;
 }
 
