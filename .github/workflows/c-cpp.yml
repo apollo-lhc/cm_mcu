@@ -38,19 +38,6 @@ jobs:
         release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
         # Directory to unpack GCC to. Defaults to a temporary directory.
         directory: ${{ runner.temp }}/arm-none-eabi
-    - name: FreeRTOS download
-      run: |
-         cd ${{runner.temp}}
-         mkdir freertos-lts
-         cd freertos-lts
-         curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
-         unzip -q freertos_code.zip 
-         echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
-         export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
-         echo $FREERTOS_ROOT
-         pwd
-    - name: test
-      run: echo $FREERTOS_ROOT; echo $PATH; ls -d ~/work/_temp/*
     - name: make with GCC, debug build, Rev1
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
@@ -101,16 +88,6 @@ jobs:
         # Directory to unpack GCC to. Defaults to a temporary directory.
         directory: ${{ runner.temp }}/arm-none-eabi
 
-    - name: FreeRTOS download
-      run: |
-         mkdir freertos-lts
-         cd freertos-lts
-         curl -L -o freertos_code.zip https://github.com/FreeRTOS/FreeRTOS-LTS/releases/download/202012.01-LTS/FreeRTOSv202012.01-LTS.zip
-         unzip -q freertos_code.zip 
-         echo "FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel" >> $GITHUB_ENV
-         export FREERTOS_ROOT=`pwd`/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel
-         echo $FREERTOS_ROOT
-         pwd
     - name: make with CLANG, Rev 1
       run: |
          export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
