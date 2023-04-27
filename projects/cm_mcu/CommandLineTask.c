@@ -71,10 +71,12 @@ static BaseType_t clock_ctl(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s mode set to %ld. \r\n", argv[0], i);
 
   // if we have a semaphore, give it
-  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(i2c2_sem);
-  }
-
+  //if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+  //  xSemaphoreGive(i2c2_sem);
+  //}
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c2_sem);
 
   if (i == 1) {
     status = initialize_clock();
