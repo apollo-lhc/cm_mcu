@@ -1,4 +1,5 @@
-# cm_mcu ![CI Status](https://github.com/apollo-lhc/cm_mcu/actions/workflows/c-cpp.yml/badge.svg)
+#cm_mcu ![CI Status](https \
+                     :                                                             // github.com/apollo-lhc/cm_mcu/actions/workflows/c-cpp.yml/badge.svg)
 Microcontroller source code, initially targeting the [TI Tiva TM4C1290NCPDT](https://www.ti.com/product/TM4C1290NCPDT) on the Apollo command module. This is a Cortex-M4F 32 bit processor.
 
 ## Project
@@ -17,6 +18,7 @@ If the build fails remember you have to initialize the submodule.
 ```
 % git submodule update --remote --recursive
 ```
+In theory the makefile should take care of this on the first build.
 
 The code uses the Tivaware driver library since this is stored in the ROM of the TM4C devices. (No install is required.)
 
