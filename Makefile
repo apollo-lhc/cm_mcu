@@ -18,7 +18,7 @@ endif
 DIRS=projects 
 DIRSCLEAN=$(addsuffix .clean,$(DIRS))
 
-all:  $(DIRS)
+all:  check-and-reinit-submodules $(DIRS) 
 
 $(DIRS):
 	@$(MAKE) -C $@
