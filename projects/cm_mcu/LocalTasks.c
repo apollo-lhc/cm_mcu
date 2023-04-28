@@ -538,8 +538,6 @@ void readFFpresent(void)
 
   f1_ff12xmit_4v0_sel = present_F1_FFL_XMIT_4V0_SEL & 0xEU;         // bits 5-7
   f2_ff12xmit_4v0_sel = present_F2_FFL_XMIT_4V0_SEL & 0xEU;         // bits 5-7
-  log_info(LOG_SERVICE, "Test 12-ch FFL1 XMIT 4V0 Sel Bits: %d \r\n:", f1_ff12xmit_4v0_sel);
-  log_info(LOG_SERVICE, "Test 12-ch FFL2 XMIT 4V0 Sel Bits: %d \r\n:", f2_ff12xmit_4v0_sel);
 #endif
 
   setFFmask(ff_combined_present);
@@ -677,7 +675,7 @@ void getFFpart(int which_fpga)
       char *vendor_string_rxch = (char *)vendor_part_rxch;
       if (strlen(vendor_string_rxch) > 0) { // check that there is a FF installed in this ch
         if (n == 0) {
-          if ((strstr(vendor_string_rxch, "14") == NULL )) { // the first 25Gbs 12-ch detected on FPGA1
+          if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL ) { // the first 25Gbs 12-ch detected on FPGA1
             ffl12_f1_args.ffpart_bit_mask = 0x1U;
           }
           else {
@@ -687,19 +685,25 @@ void getFFpart(int which_fpga)
           strncpy(vendor_string, vendor_string_rxch, 10);
         }
         else {
-          if (strncmp(vendor_string_rxch, vendor_string, 10) == 0 && (strstr(vendor_string_rxch, "14") == NULL)) {
+          if (strncmp(vendor_string_rxch, vendor_string, 10) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL )) {
             ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // the other 25Gbs 12-ch detected on FPGA1
           }
           else {
-            log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA1) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1].name);
-            log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
+            if (strncmp(vendor_string_rxch, vendor_string, 10) != 0){
+              log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA1) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1].name);
+              log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
+            }
           }
         }
       }
     }
 
-    log_info(LOG_SERVICE, "Bit-mask Firefly 12-ch part (FPGA1): %x \r\n:", ffl12_f1_args.ffpart_bit_mask);
-
+    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): %x \r\n:", ffl12_f1_args.ffpart_bit_mask); //FIXME
+    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA1): %x \r\n:", f1_ff12xmit_4v0_sel); // FIXME
+    // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
+    if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0U){
+      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask %x \r\n", f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask);
+    }
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(i2c4_sem);
@@ -747,7 +751,7 @@ void getFFpart(int which_fpga)
       char *vendor_string_rxch = (char *)vendor_part_rxch;
       if (strlen(vendor_string_rxch) > 0) { // check that there is a FF installed in this ch
         if (n == 0) {
-          if ((strstr(vendor_string_rxch, "14") == NULL)) {
+          if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL ) {
             ffl12_f2_args.ffpart_bit_mask = 0x1U; // the first 25Gbs 12-ch detected on FPGA2
           }
           else {
@@ -757,19 +761,25 @@ void getFFpart(int which_fpga)
           strncpy(vendor_string, vendor_string_rxch, 10);
         }
         else {
-          if (strncmp(vendor_string_rxch, vendor_string, 10) == 0 && (strstr(vendor_string_rxch, "14") == NULL)) {
+          if (strncmp(vendor_string_rxch, vendor_string, 10) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL )) {
             ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << (n)); // the other 25Gbs 12-ch detected on FPGA1
           }
           else {
-            log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA2) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1 + NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1].name);
-            log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
+            if (strncmp(vendor_string_rxch, vendor_string, 10) != 0){
+              log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA2) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1 + NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1].name);
+              log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
+            }
           }
         }
       }
     }
 
-    log_info(LOG_SERVICE, "Bit-mask Firefly 12-ch part (FPGA2): %x \r\n:", ffl12_f2_args.ffpart_bit_mask); // FIXME
-
+    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): %x \r\n:", ffl12_f2_args.ffpart_bit_mask); // FIXME 000
+    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA2): %x \r\n:", f2_ff12xmit_4v0_sel); // FIXME                  000
+    // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
+    if ((f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0U){
+      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask %x \r\n", f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask);
+    }
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(i2c3_sem);

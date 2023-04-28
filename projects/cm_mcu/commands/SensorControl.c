@@ -645,9 +645,9 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 #ifdef REV2
         uint8_t ff_4v0_sel_mask = 1 << (n % (NFIREFLY_ARG/2));
         if (n < NFIREFLY_ARG/2)
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8?(%lx)", f1_ff12xmit_4v0_sel & ff_4v0_sel_mask);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%lx)", f1_ff12xmit_4v0_sel & ff_4v0_sel_mask);
         else
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8?(%lx)", f2_ff12xmit_4v0_sel & ff_4v0_sel_mask);
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%lx)", f2_ff12xmit_4v0_sel & ff_4v0_sel_mask);
 #endif // REV2
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
       }

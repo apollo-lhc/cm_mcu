@@ -391,7 +391,7 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          if (ffl12_f1_args.ffpart_bit_mask != 0U || ffl12_f2_args.ffpart_bit_mask != 0U) {
+          if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask)!= 0x0U && (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask)!= 0x0U) {
             turn_on_ps_at_prio(f2_enable, f1_enable, 6);
             nextState = POWER_L6ON;
           }
