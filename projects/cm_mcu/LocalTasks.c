@@ -39,6 +39,10 @@ void Print(const char *str);
 
 uint32_t ff_PRESENT_mask = 0;
 uint32_t ff_USER_mask = 0;
+#ifdef REV2
+uint32_t f1_ff12xmit_4v0_sel = 0;
+uint32_t f2_ff12xmit_4v0_sel = 0;
+#endif
 
 #ifdef REV1
 // -------------------------------------------------
@@ -454,7 +458,7 @@ void readFFpresent(void)
 #ifdef REV1
   uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
 #elif defined(REV2)
-  uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
+  uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2, present_F1_FFL_XMIT_4V0_SEL, present_F2_FFL_XMIT_4V0_SEL;
 #endif
 
 #ifdef REV1
@@ -471,6 +475,7 @@ void readFFpresent(void)
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &present_F1_FFL_XMIT_4V0_SEL);
 #endif
 
   // if we have a semaphore, give it
@@ -496,6 +501,7 @@ void readFFpresent(void)
   // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_F2_FFL_XMIT_4V0_SEL);
 #endif
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
@@ -529,6 +535,11 @@ void readFFpresent(void)
                                  ((present_FFL12_F2) << 10) |  // 6 bits
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
+
+  f1_ff12xmit_4v0_sel = present_F1_FFL_XMIT_4V0_SEL & 0xEU;         // bits 5-7
+  f2_ff12xmit_4v0_sel = present_F2_FFL_XMIT_4V0_SEL & 0xEU;         // bits 5-7
+  log_info(LOG_SERVICE, "Test 12-ch FFL1 XMIT 4V0 Sel Bits: %d \r\n:", f1_ff12xmit_4v0_sel);
+  log_info(LOG_SERVICE, "Test 12-ch FFL2 XMIT 4V0 Sel Bits: %d \r\n:", f2_ff12xmit_4v0_sel);
 #endif
 
   setFFmask(ff_combined_present);
@@ -666,7 +677,7 @@ void getFFpart(int which_fpga)
       char *vendor_string_rxch = (char *)vendor_part_rxch;
       if (strlen(vendor_string_rxch) > 0) { // check that there is a FF installed in this ch
         if (n == 0) {
-          if ((strstr(vendor_string_rxch, "14") == NULL)) { // the first 25Gbs 12-ch detected on FPGA1
+          if ((strstr(vendor_string_rxch, "14") == NULL )) { // the first 25Gbs 12-ch detected on FPGA1
             ffl12_f1_args.ffpart_bit_mask = 0x1U;
           }
           else {

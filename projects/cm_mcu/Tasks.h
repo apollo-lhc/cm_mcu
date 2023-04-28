@@ -197,6 +197,10 @@ void init_registers_ff(void);
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;
+#ifdef REV2
+extern uint32_t f1_ff12xmit_4v0_sel;
+extern uint32_t f2_ff12xmit_4v0_sel;
+#endif // REV2
 #define ADDR_ID 0x40 // internal eeprom block for board number & rev
 #define ADDR_FF 0x44 // internal eeprom block for ff mask
 #define ADDR_PS 0x48 // internal eeprom block for ps ignore fail

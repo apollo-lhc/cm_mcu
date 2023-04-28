@@ -641,10 +641,19 @@ BaseType_t ff_status(int argc, char **argv, char *m)
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
 
       bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
-      if (isTx)
+      if (isTx){
+#ifdef REV2
+        uint8_t ff_4v0_sel_mask = 1 << (n % (NFIREFLY_ARG/2));
+        if (n < NFIREFLY_ARG/2)
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8?(%lx)", f1_ff12xmit_4v0_sel & ff_4v0_sel_mask);
+        else
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8?(%lx)", f2_ff12xmit_4v0_sel & ff_4v0_sel_mask);
+#endif // REV2
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-      else
+      }
+      else{
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+      }
       if ((SCRATCH_SIZE - copied) < 20) {
         ++whichff;
         return pdTRUE;
