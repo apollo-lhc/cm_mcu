@@ -698,12 +698,14 @@ void getFFpart(int which_fpga)
       }
     }
 
-    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): %x \r\n:", ffl12_f1_args.ffpart_bit_mask); // FIXME
-    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA1): %x \r\n:", f1_ff12xmit_4v0_sel);                  // FIXME
+    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): %x \r\n:", ffl12_f1_args.ffpart_bit_mask);
+#ifdef REV2
+    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA1): %x \r\n:", f1_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0U) {
       log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask %x \r\n", f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask);
     }
+#endif
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(i2c4_sem);
@@ -774,12 +776,14 @@ void getFFpart(int which_fpga)
       }
     }
 
-    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): %x \r\n:", ffl12_f2_args.ffpart_bit_mask); // FIXME 000
-    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA2): %x \r\n:", f2_ff12xmit_4v0_sel);                  // FIXME                  000
+    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): %x \r\n:", ffl12_f2_args.ffpart_bit_mask);
+#ifdef REV2
+    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA2): %x \r\n:", f2_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0U) {
       log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask %x \r\n", f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask);
     }
+#endif
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(i2c3_sem);
