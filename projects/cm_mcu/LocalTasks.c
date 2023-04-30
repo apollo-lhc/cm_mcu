@@ -628,7 +628,7 @@ int8_t getFFtemp(const uint8_t i)
 
 void getFFpart(int which_fpga)
 {
-
+#ifdef REV2
   // Write device vendor part for identifying FF device
   char vendor_string[10];
   uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
@@ -804,6 +804,7 @@ void getFFpart(int which_fpga)
       xSemaphoreGive(i2c3_sem);
     }
   }
+#endif // REV2
 }
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
