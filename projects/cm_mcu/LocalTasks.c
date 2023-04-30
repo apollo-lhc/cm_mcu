@@ -43,6 +43,11 @@ uint32_t ff_USER_mask = 0;
 uint32_t f1_ff12xmit_4v0_sel = 0;
 uint32_t f2_ff12xmit_4v0_sel = 0;
 #endif
+#ifdef REV1
+uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2 = 0;
+#elif defined(REV2)
+uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2 = 0;
+#endif // REV2
 
 #ifdef REV1
 // -------------------------------------------------
@@ -455,10 +460,8 @@ void readFFpresent(void)
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c4_sem);
 
-#ifdef REV1
-  uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
-#elif defined(REV2)
-  uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2, present_F1_FFL_XMIT_4V0_SEL, present_F2_FFL_XMIT_4V0_SEL;
+#ifdef REV2
+  uint32_t present_F1_FFL_XMIT_4V0_SEL, present_F2_FFL_XMIT_4V0_SEL;
 #endif
 
 #ifdef REV1
@@ -638,10 +641,9 @@ void getFFpart(int which_fpga)
     // grab the semaphore to ensure unique access to I2C controller
     // otherwise, block its operations indefinitely until it's available
     acquireI2CSemaphoreBlock(i2c4_sem);
-
+    bool detect_ff = false;
     for (uint8_t n = 0; n < NSUPPLIES_FFL12_F1 / 2; n++) {
       uint8_t vendor_data_rxch[4];
-      uint32_t vendor_char_rxch;
       int8_t vendor_part_rxch[17];
 
       data = 0x1U << ffl12_f1_args.devices[(2 * n) + 1].mux_bit;
@@ -651,6 +653,7 @@ void getFFpart(int which_fpga)
         log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
       }
       for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+        uint32_t vendor_char_rxch;
         int res = apollo_i2c_ctl_reg_r(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
         if (res != 0) {
           log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
@@ -673,8 +676,9 @@ void getFFpart(int which_fpga)
       }
 
       char *vendor_string_rxch = (char *)vendor_part_rxch;
-      if (strlen(vendor_string_rxch) > 0) { // check that there is a FF installed in this ch
-        if (n == 0) {
+      if ((present_FFL12_F1 & (1 << (2 * n))) == 0) { // check that there is a FF installed in this ch
+        if (!detect_ff) {
+          detect_ff = true;
           if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) { // the first 25Gbs 12-ch detected on FPGA1
             ffl12_f1_args.ffpart_bit_mask = 0x1U;
           }
@@ -696,6 +700,11 @@ void getFFpart(int which_fpga)
           }
         }
       }
+      else {
+        log_info(LOG_SERVICE, "No Firefly 12-ch part(FPGA1) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1].name);
+      }
+      memset(vendor_data_rxch, 0, sizeof(vendor_data_rxch));
+      memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
     }
 
     log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): %x \r\n:", ffl12_f1_args.ffpart_bit_mask);
@@ -716,10 +725,9 @@ void getFFpart(int which_fpga)
     // grab the semaphore to ensure unique access to I2C controller
     // otherwise, block its operations indefinitely until it's available
     acquireI2CSemaphoreBlock(i2c3_sem);
-
+    bool detect_ff = false;
     for (uint8_t n = 0; n < NSUPPLIES_FFL12_F2 / 2; n++) {
       uint8_t vendor_data_rxch[4];
-      uint32_t vendor_char_rxch;
       int8_t vendor_part_rxch[17];
 
       data = 0x1U << ffl12_f2_args.devices[(2 * n) + 1].mux_bit;
@@ -729,6 +737,7 @@ void getFFpart(int which_fpga)
         log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
       }
       for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+        uint32_t vendor_char_rxch;
         int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
         if (res != 0) {
           log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
@@ -751,8 +760,9 @@ void getFFpart(int which_fpga)
       }
 
       char *vendor_string_rxch = (char *)vendor_part_rxch;
-      if (strlen(vendor_string_rxch) > 0) { // check that there is a FF installed in this ch
-        if (n == 0) {
+      if ((present_FFL12_F2 & (1 << (2 * n))) == 0) { // check that there is a FF installed in this ch
+        if (!detect_ff) {
+          detect_ff = true;
           if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) {
             ffl12_f2_args.ffpart_bit_mask = 0x1U; // the first 25Gbs 12-ch detected on FPGA2
           }
@@ -774,6 +784,11 @@ void getFFpart(int which_fpga)
           }
         }
       }
+      else {
+        log_info(LOG_SERVICE, "No Firefly 12-ch part(FPGA1) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1 + NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1].name);
+      }
+      memset(vendor_data_rxch, 0, sizeof(vendor_data_rxch));
+      memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
     }
 
     log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): %x \r\n:", ffl12_f2_args.ffpart_bit_mask);

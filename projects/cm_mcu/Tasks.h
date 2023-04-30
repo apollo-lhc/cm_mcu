@@ -200,6 +200,12 @@ extern uint32_t ff_USER_mask;
 #ifdef REV2
 extern uint32_t f1_ff12xmit_4v0_sel;
 extern uint32_t f2_ff12xmit_4v0_sel;
+#endif
+
+#ifdef REV1
+extern uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
+#elif defined(REV2)
+extern uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
 #endif               // REV2
 #define ADDR_ID 0x40 // internal eeprom block for board number & rev
 #define ADDR_FF 0x44 // internal eeprom block for ff mask
