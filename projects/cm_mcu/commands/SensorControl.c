@@ -642,14 +642,16 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 
       bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
       if (isTx) {
-#ifdef REV2
-        uint8_t ff_4v0_sel_mask = 1 << (n % (NFIREFLY_ARG / 2));
-        if (n < NFIREFLY_ARG / 2)
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%lx)", f1_ff12xmit_4v0_sel & ff_4v0_sel_mask);
-        else
-          copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%lx)", f2_ff12xmit_4v0_sel & ff_4v0_sel_mask);
-#endif // REV2
+#ifdef REV1
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+#elif defined(REV2) // REV1
+        uint8_t ff_4v0_sel = 1 << (n % (NFIREFLY_ARG / 2));
+        if (n < NFIREFLY_ARG / 2)
+          ff_4v0_sel &= f1_ff12xmit_4v0_sel;
+        else
+          ff_4v0_sel &= f2_ff12xmit_4v0_sel;
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%x) \t", ff_4v0_sel);
+#endif              // REV2
       }
       else {
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");

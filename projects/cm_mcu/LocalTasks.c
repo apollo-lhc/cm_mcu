@@ -37,16 +37,24 @@
 // local prototype
 void Print(const char *str);
 
-uint32_t ff_PRESENT_mask = 0;
-uint32_t ff_USER_mask = 0;
+uint32_t ff_PRESENT_mask = 0; // global variable from getting combined ff signals
+uint32_t ff_USER_mask = 0;    // global variable of ff signals from user input
 #ifdef REV2
-uint32_t f1_ff12xmit_4v0_sel = 0;
-uint32_t f2_ff12xmit_4v0_sel = 0;
+uint32_t f1_ff12xmit_4v0_sel = 0; // global variable for FPGA1 12-ch xmit ff's power-supply physical selection
+uint32_t f2_ff12xmit_4v0_sel = 0; // global variable for FPGA2 12-ch xmit ff's power-supply physical selection
 #endif
+// outputs from *_PRESENT pins for constructing ff_PRESENT_mask
 #ifdef REV1
-uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2 = 0;
+//      4.05 I2C KU15P OPTICS
+uint32_t present_FFLDAQ_F1, present_FFL12_F1,
+    //      4.06 I2C VU7P OPTICS (the I/O expanders at 0x20 and 0x21 have mixed 4-ch (FFLDAQ) and 12-ch (FFL12) pins)
+    present_0X20_F2, present_0X21_F2, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2,
+    present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2 = 0;
 #elif defined(REV2)
-uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2 = 0;
+//      4.05 I2C FPGA31 OPTICS
+uint32_t present_FFLDAQ_F1, present_FFL12_F1,
+    //      4.06 I2C FPGA2 OPTICS
+    present_FFLDAQ_F2, present_FFL12_F2 = 0;
 #endif // REV2
 
 #ifdef REV1
@@ -460,10 +468,6 @@ void readFFpresent(void)
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c4_sem);
 
-#ifdef REV2
-  uint32_t present_F1_FFL_XMIT_4V0_SEL, present_F2_FFL_XMIT_4V0_SEL;
-#endif
-
 #ifdef REV1
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
@@ -478,7 +482,7 @@ void readFFpresent(void)
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &present_F1_FFL_XMIT_4V0_SEL);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
 #endif
 
   // if we have a semaphore, give it
@@ -504,7 +508,8 @@ void readFFpresent(void)
   // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_F2_FFL_XMIT_4V0_SEL);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
+
 #endif
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
@@ -529,18 +534,18 @@ void readFFpresent(void)
                                  ((present_FFL12_BOTTOM_F1));       // 6 bits
 
 #elif defined(REV2)
-  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
-  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;         // bottom 6 bits
-  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU; // bits 4-7
-  present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU; // bits 4-7
+  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;                     // bottom 6 bits
+  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;                     // bottom 6 bits
+  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU;             // bits 4-7
+  present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU;             // bits 4-7
 
   uint32_t ff_combined_present = ((present_FFLDAQ_F2) << 16) | // 4 bits
                                  ((present_FFL12_F2) << 10) |  // 6 bits
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
-  f1_ff12xmit_4v0_sel = present_F1_FFL_XMIT_4V0_SEL & 0xEU; // bits 5-7
-  f2_ff12xmit_4v0_sel = present_F2_FFL_XMIT_4V0_SEL & 0xEU; // bits 5-7
+  f1_ff12xmit_4v0_sel &= 0xEU; // bits 5-7
+  f2_ff12xmit_4v0_sel &= 0xEU; // bits 5-7
 #endif
 
   setFFmask(ff_combined_present);
@@ -631,8 +636,6 @@ void getFFpart(int which_fpga)
 #ifdef REV2
   // Write device vendor part for identifying FF device
   char vendor_string[10];
-  uint8_t ven_addr_start = VENDOR_START_BIT_FF12;
-  uint8_t ven_addr_stop = VENDOR_STOP_BIT_FF12;
 
   uint8_t data;
 
@@ -652,27 +655,21 @@ void getFFpart(int which_fpga)
       if (rmux != 0) {
         log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
       }
-      for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+      for (uint8_t i = VENDOR_START_BIT_FF12; i < VENDOR_STOP_BIT_FF12; i++) {
         uint32_t vendor_char_rxch;
         int res = apollo_i2c_ctl_reg_r(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
         if (res != 0) {
           log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
-          vendor_part_rxch[i - ven_addr_start] = 0;
+          vendor_part_rxch[i - VENDOR_START_BIT_FF12] = 0;
           break;
         }
         for (int j = 0; j < 4; ++j) {
           vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
         }
 
-        typedef union {
-          uint8_t us;
-          int8_t s;
-        } convert_8_t;
-        convert_8_t tmp1;
-
         tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
-        vendor_part_rxch[i - ven_addr_start] = tmp1.s;
-        vendor_part_rxch[i - ven_addr_start + 1] = '\0'; // null-terminated
+        vendor_part_rxch[i - VENDOR_START_BIT_FF12] = tmp1.s;
+        vendor_part_rxch[i - VENDOR_START_BIT_FF12 + 1] = '\0'; // null-terminated
       }
 
       char *vendor_string_rxch = (char *)vendor_part_rxch;
@@ -736,27 +733,21 @@ void getFFpart(int which_fpga)
       if (rmux != 0) {
         log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
       }
-      for (uint8_t i = ven_addr_start; i < ven_addr_stop; i++) {
+      for (uint8_t i = VENDOR_START_BIT_FF12; i < VENDOR_STOP_BIT_FF12; i++) {
         uint32_t vendor_char_rxch;
         int res = apollo_i2c_ctl_reg_r(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
         if (res != 0) {
           log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
-          vendor_part_rxch[i - ven_addr_start] = 0;
+          vendor_part_rxch[i - VENDOR_START_BIT_FF12] = 0;
           break;
         }
         for (int j = 0; j < 4; ++j) {
           vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
         }
 
-        typedef union {
-          uint8_t us;
-          int8_t s;
-        } convert_8_t;
-        convert_8_t tmp1;
-
         tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
-        vendor_part_rxch[i - ven_addr_start] = tmp1.s;
-        vendor_part_rxch[i - ven_addr_start + 1] = '\0'; // null-terminated
+        vendor_part_rxch[i - VENDOR_START_BIT_FF12] = tmp1.s;
+        vendor_part_rxch[i - VENDOR_START_BIT_FF12 + 1] = '\0'; // null-terminated
       }
 
       char *vendor_string_rxch = (char *)vendor_part_rxch;

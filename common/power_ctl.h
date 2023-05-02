@@ -38,7 +38,6 @@ enum ps_state { PWR_UNKNOWN,
                 PWR_FAILED };
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
-// int getLowestEnabledPSPriority();
 
 #ifdef REV1
 // -----------------------------------------------------
