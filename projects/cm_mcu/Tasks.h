@@ -30,7 +30,6 @@ typedef union {
   uint8_t us;
   int8_t s;
 } convert_8_t;
-convert_8_t tmp1;
 
 // INIT task
 void InitTask(void *parameters);

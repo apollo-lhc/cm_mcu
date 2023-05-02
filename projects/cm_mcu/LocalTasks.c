@@ -34,6 +34,8 @@
 #include "common/printf.h"
 #include "inc/hw_memmap.h"
 
+convert_8_t tmp1;
+
 // local prototype
 void Print(const char *str);
 
