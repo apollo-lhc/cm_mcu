@@ -43,7 +43,6 @@
 #include "I2CCommunication.h"
 #include "common/smbus_helper.h"
 
-
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
 extern tSMBus g_sMaster2;
