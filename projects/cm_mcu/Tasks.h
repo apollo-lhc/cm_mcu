@@ -25,6 +25,7 @@
 #define __fp16 float
 #endif // __INTELLISENSE
 
+// Local task
 typedef union {
   uint8_t us;
   int8_t s;
