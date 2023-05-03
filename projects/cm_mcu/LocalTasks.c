@@ -360,11 +360,6 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},       // page 0x00
     // internal error flags : table 16.12
     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS}, // page 0x00
-    // sticky OOF and LOF flags : table 16.13
-    {1, 0x00, 0x12, 1, "LOSOOF_FLG", 0xff, "", PM_STATUS}, // page 0x00
-    // sticky Holdover and LOL flags : table 16.14
-    {1, 0x00, 0x13, 1, "LOLHOLD_FLG", 0x22, "", PM_STATUS}, // page 0x00
-
 };
 
 uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
@@ -1094,7 +1089,7 @@ void InitRTC(void)
 }
 #endif // REV2
 #ifdef REV1
-void init_registers_clk(void)
+int init_registers_clk(void)
 {
   // =====================================================
   // CMv1 Schematic 4.03 I2C CLOCK SOURCE CONTROL
@@ -1108,9 +1103,9 @@ void init_registers_clk(void)
   acquireI2CSemaphoreBlock(i2c1_sem);
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0xf0); // 11110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xe0); // 11100000 [P17..P10]
+  int status = apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0xf0); // 11110000 [P07..P00]
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xe0); // 11100000 [P17..P10]
 
   // 1b) U93 default output values (I2C address 0x20 on I2C channel #2)
   // The outputs on P00, P01, P02, and P03 should default to "0".
@@ -1129,9 +1124,9 @@ void init_registers_clk(void)
   // active-lo "RESET" input on the synthesizer and the legacy TTC logic.
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 6
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0xf0); // 11110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0xf8); // 11111000 [P17..P10]
+  status += apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0xf0); // 11110000 [P07..P00]
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0xf8); // 11111000 [P17..P10]
 
   // 2a) U92 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
   // The signals on P00, P01, and P02 are inputs.
@@ -1139,9 +1134,9 @@ void init_registers_clk(void)
   // There are no outputs.
 
   // # set I2C switch on channel 2 (U94, address 0x70) to port 7
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0xff); // 11111111 [P17..P10]
+  status += apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+  status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0xff); // 11111111 [P07..P00]
+  status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0xff); // 11111111 [P17..P10]
 
   // 2b) U92 default output values (I2C address 0x21 on I2C channel #2)
   // All signals are inputs so nothing needs to be done.
@@ -1150,6 +1145,7 @@ void init_registers_clk(void)
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c2_sem);
   }
+  return status;
 }
 void init_registers_ff(void)
 {
@@ -1251,7 +1247,7 @@ void init_registers_ff(void)
 }
 #endif // REV1
 #ifdef REV2
-void init_registers_clk(void)
+int init_registers_clk(void)
 {
   // initialize the external I2C registers for the clocks and for the optical devices.
 
@@ -1268,9 +1264,9 @@ void init_registers_clk(void)
   acquireI2CSemaphoreBlock(i2c2_sem);
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xc2); //  11000010 [P17..P10]
+  int status = apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xc2); //  11000010 [P17..P10]
 
   // 1b) U88 default output values (I2C address 0x20 on I2C channel #2)
   // The outputs on P00, P01, P02, and P03 should default to "0".
@@ -1283,9 +1279,9 @@ void init_registers_clk(void)
   // switchable under program control.
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  status += apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
+  status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
   // 2a) U83 inputs vs. outputs (I2C address 0x21 on I2C channel #2)
   // The "/INT..." signals on P04, P05, and P06 are inputs.
@@ -1293,9 +1289,9 @@ void init_registers_clk(void)
   // The remaining 13 signals are outputs.
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 7
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0x00); //  00000000 [P17..P10]
+  status += apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+  status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
+  status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x07, 1, 0x00); //  00000000 [P17..P10]
 
   // 2b) U88 default output values (I2C address 0x21 on I2C channel #2)
   // The outputs on P00, P01, P02, and P03 should default to "0".
@@ -1308,14 +1304,15 @@ void init_registers_clk(void)
   // not be switchable under program control.
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 7
-  apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
+  status += apollo_i2c_ctl_w(2, 0x70, 1, 0x80);
+  status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
+  status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c2_sem);
   }
+  return status;
 }
 void init_registers_ff(void)
 {

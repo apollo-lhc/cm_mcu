@@ -15,51 +15,16 @@
 #include "MonitorI2CTask.h"
 #include "Tasks.h"
 
-int initialize_clock(void)
-{
-  static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
-                 (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
-                "Invalid I2C base");
-
-  // Enable clocksynth, two i/o expanders via switch
-  int status = apollo_i2c_ctl_w(CLOCK_I2C_BASE, CLOCK_SWITCH_I2C_ADDRESS, 1, CLOCK_SWITCH_ENABLEMAP);
-  if (status != 0)
-    return status;
-  // Setting clock write expander to have all I/O ports (P0-7,P10-17) set as outputs
-  status =
-      apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_WRITE_EXPANDER_I2C_ADDRESS, 1, CLOCK_EXPANDER_CONFIGURATION_PORT_0, 1,
-                           CLOCK_EXPANDER_CONFIGURATION_PORT_SETASOUTPUT);
-  if (status != 0)
-    return status;
-  status =
-      apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_WRITE_EXPANDER_I2C_ADDRESS, 1, CLOCK_EXPANDER_CONFIGURATION_PORT_1, 1,
-                           CLOCK_EXPANDER_CONFIGURATION_PORT_SETASOUTPUT);
-  if (status != 0)
-    return status;
-  // Make clock buffer for xcvrs pick synthesized clock
-  status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_WRITE_EXPANDER_I2C_ADDRESS, 1, CLOCK_EXPANDER_OUTPUT_PORT_0, 1,
-                                CLOCK_EXPANDER_CHOOSE_CLOCKSYNTH_4XCVR);
-  if (status != 0)
-    return status;
-  // Configuring Clock Synthesizer chip (enable and reset) via expander
-  status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_WRITE_EXPANDER_I2C_ADDRESS, 1, CLOCK_EXPANDER_OUTPUT_PORT_1, 1,
-                                CLOCK_EXPANDER_ENABLE_CLOCKSYNTH);
-  if (status != 0)
-    return status;
-  status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_WRITE_EXPANDER_I2C_ADDRESS, 1, CLOCK_EXPANDER_OUTPUT_PORT_1, 1,
-                                CLOCK_EXPANDER_RESET_CLOCKSYNTH);
-
-  return status;
-}
-
 int clear_clk_stickybits(void)
 {
   static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
                  (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
                 "Invalid I2C base");
-
-  // Clear sticky flags of clock synth 5341 status monitor (raised high after reset)
+  while (getPowerControlState() != POWER_ON) {
+    vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
+  }
   int status = -99;
+  // Clear sticky flags of clock synth 5341 status monitor (raised high after reset)
   for (uint8_t i = 0; i < NSUPPLIES_CLKR0A; i++) {
     uint8_t data = 0x1U << clkr0a_moni2c_addrs[i].mux_bit;
     int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clkr0a_moni2c_addrs[i].mux_addr, 1, data);
@@ -77,7 +42,6 @@ int clear_clk_stickybits(void)
         return status;
     }
   }
-
 
   // Clear sticky flags of clock synth 5395 status monitor (raised high after reset)
   for (uint8_t i = 0; i < NSUPPLIES_CLK; i++) {
@@ -98,7 +62,6 @@ int clear_clk_stickybits(void)
     }
   }
   return status;
-
 }
 
 #ifdef REV2

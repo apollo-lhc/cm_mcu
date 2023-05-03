@@ -85,11 +85,11 @@ extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
 #define NSUPPLIES_CLK        (4)
-#define NCOMMANDS_CLK        10 // number of commands FIXME 7+3
-#define NCOMMANDS_FLG_CLK    3  // number of sticky commands
-#define NPAGES_CLK           1  //
+#define NCOMMANDS_CLK        8 // number of commands
+#define NCOMMANDS_FLG_CLK    1 // number of sticky commands
+#define NPAGES_CLK           1 //
 #define NSUPPLIES_CLKR0A     (1)
-#define NCOMMANDS_CLKR0A     8 // number of commands FIXME 6+2
+#define NCOMMANDS_CLKR0A     8 // number of commands
 #define NCOMMANDS_FLG_CLKR0A 2 // number of sticky commands
 #define NPAGES_CLKR0A        1 //
 

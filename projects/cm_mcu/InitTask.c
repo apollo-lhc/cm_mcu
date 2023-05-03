@@ -21,6 +21,7 @@
 #include "Tasks.h"
 #include "MonitorI2CTask.h"
 #include "Semaphore.h"
+#include "clocksynth.h"
 
 void InitTask(void *parameters)
 {
@@ -39,12 +40,15 @@ void InitTask(void *parameters)
   while (getPowerControlState() != POWER_ON) {
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
-#endif                  // REV1
-  init_registers_ff();  // initialize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
-  init_registers_clk(); // initialize I/O expander for clocks
+#endif                               // REV1
+  init_registers_ff();               // initialize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
+  int status = init_registers_clk(); // initialize I/O expander for clocks
   readFFpresent();
-  log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
-
+  if (status == 0)
+    log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
+  else {
+    log_info(LOG_SERVICE, "Clock I/O expander failed\r\n");
+  }
 #ifdef REV2
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
@@ -52,6 +56,12 @@ void InitTask(void *parameters)
 
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM
+  }
+  status = clear_clk_stickybits();
+  if (status == 0)
+    log_info(LOG_SERVICE, "Clear clock sticky bits\r\n");
+  else {
+    log_info(LOG_SERVICE, "Clear clock sticky bits failed\r\n");
   }
   // check if we have the semaphore
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {

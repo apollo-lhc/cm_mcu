@@ -73,7 +73,7 @@ void MonitorI2CTask(void *parameters)
   args->updateTick = xTaskGetTickCount();
 
   // wait for the power to come up
-  vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(2500));
+  vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(5000));
 
   int IsCLK = (strstr(args->name, "CLK") != NULL);    // the instance is of CLK-device type
   int IsFF12 = (strstr(args->name, "FF12") != NULL);  // the instance is of FF 12-ch part type
@@ -90,7 +90,6 @@ void MonitorI2CTask(void *parameters)
       log_warn(LOG_SERVICE, "%s could not get semaphore in time; continue\r\n", args->name);
       continue;
     }
-
 
     // -------------------------------
     // loop over devices in the device-type instance

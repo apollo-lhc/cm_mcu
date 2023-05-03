@@ -325,7 +325,7 @@ const uint32_t *getSystemStack(void);
 int SystemStackWaterHighWaterMark(void);
 
 // clock IO expander initalization
-void init_registers_clk(void);
+int init_registers_clk(void);
 #ifdef REV2
 
 #define CLOCK_CHIP_COMMON_I2C_ADDR 0x6b
