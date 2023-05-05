@@ -626,8 +626,8 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF STATUS:\r\n");
   }
 
-  int i1 = 0; // 0 for status
-
+  int i1 = 0;   // 0 for status
+  int nTx = -1; // order of Tx ch
   for (; n < NFIREFLY_ARG; ++n) {
     struct MonitorI2CTaskArgs_t *ff_arg = ff_moni2c_arg[n].arg;
     for (; whichff < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev; ++whichff) {
@@ -642,15 +642,16 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 
       bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
       if (isTx) {
+        nTx += 1;
 #ifdef REV1
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
 #elif defined(REV2) // REV1
-        uint8_t ff_4v0_sel = 1 << (n % (NFIREFLY_ARG / 2));
-        if (n < NFIREFLY_ARG / 2)
+        uint8_t ff_4v0_sel = 1 << (nTx % (NFIREFLIES_IT_F1 / 2));
+        if (nTx < (NFIREFLIES_IT_F1 / 2))
           ff_4v0_sel &= f1_ff12xmit_4v0_sel;
         else
           ff_4v0_sel &= f2_ff12xmit_4v0_sel;
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%x) \t", ff_4v0_sel);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%x) \t", ff_4v0_sel >> (nTx % (NFIREFLIES_IT_F1 / 2)));
 #endif              // REV2
       }
       else {

@@ -546,8 +546,8 @@ void readFFpresent(void)
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
-  f1_ff12xmit_4v0_sel &= 0xEU; // bits 5-7
-  f2_ff12xmit_4v0_sel &= 0xEU; // bits 5-7
+  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
+  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
 #endif
 
   setFFmask(ff_combined_present);
@@ -637,7 +637,8 @@ void getFFpart(int which_fpga)
 {
 #ifdef REV2
   // Write device vendor part for identifying FF device
-  char vendor_string[10];
+  uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;
+  char vendor_string[nstring];
 
   uint8_t data;
 
@@ -679,20 +680,20 @@ void getFFpart(int which_fpga)
         if (!detect_ff) {
           detect_ff = true;
           if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) { // the first 25Gbs 12-ch detected on FPGA1
-            ffl12_f1_args.ffpart_bit_mask = 0x1U;
+            ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n);                 // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
             ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
           }
           log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA1): %s \r\n:", vendor_string_rxch);
-          strncpy(vendor_string, vendor_string_rxch, 10);
+          strncpy(vendor_string, vendor_string_rxch, nstring);
         }
         else {
-          if (strncmp(vendor_string_rxch, vendor_string, 10) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
-            ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // the other 25Gbs 12-ch detected on FPGA1
+          if (strncmp(vendor_string_rxch, vendor_string, nstring) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
+            ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
-            if (strncmp(vendor_string_rxch, vendor_string, 10) != 0) {
+            if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
               log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA1) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1].name);
               log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
             }
@@ -757,20 +758,20 @@ void getFFpart(int which_fpga)
         if (!detect_ff) {
           detect_ff = true;
           if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) {
-            ffl12_f2_args.ffpart_bit_mask = 0x1U; // the first 25Gbs 12-ch detected on FPGA2
+            ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << (n)); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
             ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
           }
           log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA2): %s \r\n:", vendor_string_rxch);
-          strncpy(vendor_string, vendor_string_rxch, 10);
+          strncpy(vendor_string, vendor_string_rxch, nstring);
         }
         else {
-          if (strncmp(vendor_string_rxch, vendor_string, 10) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
-            ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << (n)); // the other 25Gbs 12-ch detected on FPGA1
+          if (strncmp(vendor_string_rxch, vendor_string, nstring) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
+            ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << (n)); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
-            if (strncmp(vendor_string_rxch, vendor_string, 10) != 0) {
+            if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
               log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA2) on %s \r\n:", ff_moni2c_addrs[(2 * n) + 1 + NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1].name);
               log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
             }

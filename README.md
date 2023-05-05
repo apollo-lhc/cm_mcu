@@ -1,4 +1,5 @@
-# cm_mcu ![CI Status](https://github.com/apollo-lhc/cm_mcu/actions/workflows/c-cpp.yml/badge.svg)
+#cm_mcu ![CI Status](https \
+                     :                                                             // github.com/apollo-lhc/cm_mcu/actions/workflows/c-cpp.yml/badge.svg)
 Microcontroller source code, initially targeting the [TI Tiva TM4C1290NCPDT](https://www.ti.com/product/TM4C1290NCPDT) on the Apollo command module. This is a Cortex-M4F 32 bit processor.
 
 ## Project
