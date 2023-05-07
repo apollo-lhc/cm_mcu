@@ -707,12 +707,12 @@ void getFFpart(int which_fpga)
       memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
     }
 
-    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): %x \r\n:", ffl12_f1_args.ffpart_bit_mask);
+    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): 0x%02x \r\n:", ffl12_f1_args.ffpart_bit_mask);
 #ifdef REV2
-    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA1): %x \r\n:", f1_ff12xmit_4v0_sel);
+    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA1): 0x%02x \r\n:", f1_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0U) {
-      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask %x \r\n", f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask);
+      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask 0x%02x \r\n", f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask);
     }
 #endif
     // if we have a semaphore, give it
@@ -785,12 +785,12 @@ void getFFpart(int which_fpga)
       memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
     }
 
-    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): %x \r\n:", ffl12_f2_args.ffpart_bit_mask);
+    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): 0x%02x \r\n:", ffl12_f2_args.ffpart_bit_mask);
 #ifdef REV2
-    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA2): %x \r\n:", f2_ff12xmit_4v0_sel);
+    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA2): 0x%02x \r\n:", f2_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0U) {
-      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask %x \r\n", f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask);
+      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask 0x%02x \r\n", f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask);
     }
 #endif
     // if we have a semaphore, give it
@@ -1662,7 +1662,8 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     else {
       // mask out extra bits
       UBaseType_t val = ffmask[i] & mask;
-      val |= 0x1; // make sure active low reset bit stays deasserted
+      if (!turnOff)
+        val |= 0x01; // make sure active low reset bit stays deasserted
       result = apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
       if (result) {
         log_warn(LOG_I2C, "expand wr %d\r\n", result);

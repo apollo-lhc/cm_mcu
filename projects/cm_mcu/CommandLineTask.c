@@ -407,7 +407,7 @@ static struct command_t commands[] = {
     {"uptime", uptime, "Display uptime in minutes\r\n", 0},
     {"version", ver_ctl, "Display information about MCU firmware version\r\n", 0},
 #ifdef REV2
-    {"v38", v38_ctl, "Control 3V8 FF supply\r\n", 2},
+    {"v38", v38_ctl, "Control 3V8 FF supply args: on|off 1|2\r\n", 2},
 #endif // REV2
     {"watchdog", watchdog_ctl, "Display status of the watchdog task\r\n", 0},
     {

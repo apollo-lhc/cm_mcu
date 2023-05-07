@@ -391,14 +391,8 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0x0U && (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0x0U) {
-            turn_on_ps_at_prio(f2_enable, f1_enable, 6);
-            nextState = POWER_L6ON;
-          }
-          else {
-            blade_power_ok(true);
-            nextState = POWER_ON;
-          }
+          blade_power_ok(true);
+          nextState = POWER_L6ON;
         }
 
         break;
@@ -414,13 +408,34 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          blade_power_ok(true);
-          nextState = POWER_ON;
+          // check 12-ch FF parts from vendors on FPGA1/2
+          getFFpart_FPGA1();
+          getFFpart_FPGA2();
+          UBaseType_t ffmask[2] = {0xe, 0xe};
+          if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) == 0x0U && (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) == 0x0U) {
+            int ret = enable_3v8(ffmask, false);
+            if (ret != 0)
+              log_info(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
+            else
+              log_info(LOG_PWRCTL, "enable 3v8 \r\n");
+            blade_power_ok(true);
+            nextState = POWER_ON;
+          }
+          else {
+            int ret = enable_3v8(ffmask, true);
+            // write_gpio_pin(oks[N_PS_OKS-1].pin_number, 0x1); this pin is read only
+            if (ret == 0)
+              log_info(LOG_PWRCTL, "disable 3v8\r\n");
+            else
+              log_info(LOG_PWRCTL, "disable 3v8 failed with %d\r\n", ret);
+            power_supply_alarm = true;
+            nextState = POWER_FAILURE;
+          }
         }
 
         break;
       }
-#endif                                                // REV1
+#endif                                                // REV2
       case POWER_FAILURE: {                           // we go through POWER_OFF state before turning on.
         if (!power_supply_alarm && !external_alarm) { // errors cleared
           nextState = POWER_OFF;
@@ -478,6 +493,10 @@ void PowerSupplyTask(void *parameters)
         }
       }
     }
+#ifdef REV2
+    if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0x0U || (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0x0U)
+      setPSStatus(N_PS_OKS - 1, PWR_OFF);
+#endif
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);

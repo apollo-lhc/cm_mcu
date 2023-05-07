@@ -110,7 +110,7 @@ struct gpio_pin_t oks[N_PS_OKS] = {
 #endif // REV2
 
 // clang-format on
-#define PS_NUM_PRIORITIES 5
+#define PS_NUM_PRIORITIES 6
 
 // these arrays hold the current and old status of these power supplies
 static enum ps_state states[N_PS_OKS] = {PWR_UNKNOWN};
