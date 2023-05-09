@@ -159,7 +159,7 @@ void MonitorI2CTask(void *parameters)
         break;
       }
 
-      // Read I2C registers/commands
+      // Check v38 on/off for FF before I2C operations
       if (!IsCLK) {
         static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
         uint32_t val;
@@ -173,6 +173,7 @@ void MonitorI2CTask(void *parameters)
         }
       }
 
+      // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
         int index = ps * (args->n_commands * args->n_pages) + c;
 
