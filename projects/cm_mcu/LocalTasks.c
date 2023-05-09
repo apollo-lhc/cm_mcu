@@ -1660,10 +1660,12 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       log_warn(LOG_I2C, "mux err %d\r\n", result);
     }
     else {
-      // mask out extra bits
-      UBaseType_t val = ffmask[i] & mask;
-      if (!turnOff)
-        val |= 0x01; // make sure active low reset bit stays deasserted
+      UBaseType_t val = ffmask[i];
+      if (turnOff) {
+        val = ~val; // invert bits when turning off 
+      }
+      val &= mask; // mask out extra bits extraneously set
+      val |= 0x01; // make sure active low reset bit stays deasserted (i.e., LSB is high)
       result = apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
       if (result) {
         log_warn(LOG_I2C, "expand wr %d\r\n", result);
