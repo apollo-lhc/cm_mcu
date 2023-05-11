@@ -159,13 +159,14 @@ void MonitorI2CTask(void *parameters)
         break;
       }
 
-      // Check v38 on/off for FF before I2C operations
+      // The output on P10 on this address should default to "1" before I2C operations.
+      // This negates the active-low "RESET" input on the FPGA#1 and FPGA#2 FireFlys
       if (!IsCLK) {
         static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
         uint32_t val;
         res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, 1, ioexp_reg_addr, 1, &val);
         if (res) {
-          log_warn(LOG_MONI2C, "%s read v38 enabled bit failed %d\r\n", args->name, res);
+          log_warn(LOG_MONI2C, "%s read reset-FF pin failed %d\r\n", args->name, res);
           break;
         }
         if ((val & 0x1) != 0x1) {

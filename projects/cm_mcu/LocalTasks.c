@@ -1662,7 +1662,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     else {
       UBaseType_t val = ffmask[i];
       if (turnOff) {
-        val = ~val; // invert bits when turning off 
+        val = ~val; // invert bits when turning off
       }
       val &= mask; // mask out extra bits extraneously set
       val |= 0x01; // make sure active low reset bit stays deasserted (i.e., LSB is high)
