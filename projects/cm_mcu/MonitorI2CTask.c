@@ -150,8 +150,7 @@ void MonitorI2CTask(void *parameters)
         continue;
       }
 
-
-      if (!IsCLK){
+      if (!IsCLK) {
         // mux setting
         int result = apollo_i2c_ctl_w(args->i2c_dev, 0x71, 1, 0x40);
         if (result) {
@@ -159,13 +158,13 @@ void MonitorI2CTask(void *parameters)
           break;
         }
         uint32_t val;
-        //reading reset-FF pin
+        // reading reset-FF pin
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, 0x21, 1, 0x3, 1, &val);
         if (res) {
-          log_warn(LOG_MONI2C, "%s read reset-FF pin failed %d\r\n", args->name,res);
+          log_warn(LOG_MONI2C, "%s read reset-FF pin failed %d\r\n", args->name, res);
           break;
         }
-        if ((val & 0x1) != 0x1){
+        if ((val & 0x1) != 0x1) {
           log_warn(LOG_MONI2C, "%s reset-FF pin is down \r\n", args->name);
           break;
         }
@@ -219,7 +218,6 @@ void MonitorI2CTask(void *parameters)
         break;
       }
       log_debug(LOG_MONI2C, "%s: reset mux\r\n", args->name);
-
 
     } // loop over devices
 
