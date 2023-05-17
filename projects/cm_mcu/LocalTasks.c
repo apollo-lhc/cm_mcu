@@ -1657,7 +1657,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
     if (result) {
-      log_warn(LOG_I2C, "mux err %d\r\n", result);
+      log_warn(LOG_SERVICE, "mux err %d\r\n", result);
     }
     else {
       UBaseType_t val = ffmask[i];
@@ -1668,7 +1668,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       val |= 0x01; // make sure active low reset bit stays deasserted (i.e., LSB is high)
       result = apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
       if (result) {
-        log_warn(LOG_I2C, "expand wr %d\r\n", result);
+        log_warn(LOG_SERVICE, "expand wr %d\r\n", result);
       }
     }
 
