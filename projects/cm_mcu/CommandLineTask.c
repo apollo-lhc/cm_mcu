@@ -464,13 +464,21 @@ static BaseType_t help_command_fcn(int argc, char **argv, char *m)
   }
   else { // help on a specific command.
     // help for any command that matches the entered command
-    for (int j = 0; j < NUM_COMMANDS; ++j) {
+    static int j = 0;
+    for (; j < NUM_COMMANDS; ++j) {
       if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0) {
+        int left = SCRATCH_SIZE - copied;
+        // need room for command string, help string, newlines, etc, and trailing \0
+        unsigned int len = strlen(commands[j].helpstr) + strlen(commands[j].commandstr) + 7;
+        if (left < len) {
+          return pdTRUE;
+        }
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
                            commands[j].commandstr, commands[j].helpstr);
-        // return pdFALSE;
       }
     }
+    j = 0;
+    return pdFALSE;
   }
   if (copied == 0) {
     snprintf(m + copied, SCRATCH_SIZE - copied,
