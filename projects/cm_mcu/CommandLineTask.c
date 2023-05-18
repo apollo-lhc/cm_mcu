@@ -478,13 +478,12 @@ static BaseType_t help_command_fcn(int argc, char **argv, char *m)
       }
     }
     j = 0;
+    if (copied == 0) {
+      snprintf(m + copied, SCRATCH_SIZE - copied,
+               "%s: No command starting with %s found\r\n", argv[0], argv[1]);
+    }
     return pdFALSE;
   }
-  if (copied == 0) {
-    snprintf(m + copied, SCRATCH_SIZE - copied,
-             "%s: No command starting with %s found\r\n", argv[0], argv[1]);
-  }
-  return pdFALSE;
 }
 
 static int execute(void *p, int argc, char **argv)
