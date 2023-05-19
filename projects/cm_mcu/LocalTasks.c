@@ -653,10 +653,10 @@ void getFFpart(int which_fpga)
       int8_t vendor_part_rxch[17];
 
       data = 0x1U << ffl12_f1_args.devices[(2 * n) + 1].mux_bit;
-      log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
+      log_debug(LOG_SERVICE, "Mux set to 0x%02x\r\n", data);
       int rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[(2 * n) + 1].mux_addr, 1, data);
       if (rmux != 0) {
-        log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
       }
       for (uint8_t i = VENDOR_START_BIT_FF12; i < VENDOR_STOP_BIT_FF12; i++) {
         uint32_t vendor_char_rxch;
@@ -705,6 +705,11 @@ void getFFpart(int which_fpga)
       }
       memset(vendor_data_rxch, 0, sizeof(vendor_data_rxch));
       memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
+      rmux = apollo_i2c_ctl_w(ffl12_f1_args.i2c_dev, ffl12_f1_args.devices[(2 * n) + 1].mux_addr, 1, 0);
+      if (rmux != 0) {
+        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+      }
+      log_debug(LOG_SERVICE, "%s: reset mux\r\n", ffl12_f1_args.devices[(2 * n) + 1].name);
     }
 
     log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): 0x%02x \r\n:", ffl12_f1_args.ffpart_bit_mask);
@@ -712,7 +717,7 @@ void getFFpart(int which_fpga)
     log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA1): 0x%02x \r\n:", f1_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0U) {
-      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask 0x%02x \r\n", f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask);
+      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f1_ff12xmit_4v0_sel, ffl12_f1_args.ffpart_bit_mask);
     }
 #endif
     // if we have a semaphore, give it
@@ -731,10 +736,10 @@ void getFFpart(int which_fpga)
       int8_t vendor_part_rxch[17];
 
       data = 0x1U << ffl12_f2_args.devices[(2 * n) + 1].mux_bit;
-      log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
+      log_debug(LOG_SERVICE, "Mux set to 0x%02x\r\n", data);
       int rmux = apollo_i2c_ctl_w(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[(2 * n) + 1].mux_addr, 1, data);
       if (rmux != 0) {
-        log_warn(LOG_MONI2C, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
       }
       for (uint8_t i = VENDOR_START_BIT_FF12; i < VENDOR_STOP_BIT_FF12; i++) {
         uint32_t vendor_char_rxch;
@@ -783,6 +788,11 @@ void getFFpart(int which_fpga)
       }
       memset(vendor_data_rxch, 0, sizeof(vendor_data_rxch));
       memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
+      rmux = apollo_i2c_ctl_w(ffl12_f2_args.i2c_dev, ffl12_f2_args.devices[(2 * n) + 1].mux_addr, 1, 0);
+      if (rmux != 0) {
+        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+      }
+      log_debug(LOG_SERVICE, "%s: reset mux\r\n", ffl12_f2_args.devices[(2 * n) + 1].name);
     }
 
     log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): 0x%02x \r\n:", ffl12_f2_args.ffpart_bit_mask);
@@ -790,7 +800,7 @@ void getFFpart(int which_fpga)
     log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA2): 0x%02x \r\n:", f2_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0U) {
-      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel with a bit-mask 0x%02x \r\n", f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask);
+      log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f2_ff12xmit_4v0_sel, ffl12_f2_args.ffpart_bit_mask);
     }
 #endif
     // if we have a semaphore, give it

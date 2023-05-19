@@ -409,6 +409,7 @@ void PowerSupplyTask(void *parameters)
         }
         else {
           // check 12-ch FF parts from vendors on FPGA1/2
+          vTaskDelay(pdMS_TO_TICKS(1000));
           getFFpart_FPGA1();
           getFFpart_FPGA2();
           UBaseType_t ffmask[2] = {0xe, 0xe};
