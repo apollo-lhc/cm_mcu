@@ -102,6 +102,7 @@ struct gpio_pin_t oks[N_PS_OKS] = {
     { PG_F2_AVCC, "PG_F2_AVCC", 4},
     { PG_F1_AVTT,  "PG_F1_AVTT", 5},
     { PG_F2_AVTT, "PG_F2_AVTT", 5},
+    { PG_4V0, "PG_4V0", 6},  // enable_3v8(true/false) won't change PG_4V0. Only within 10s after 4.0V off, PG_4V0 can be 0x0.
 };
 
 #else
@@ -109,7 +110,7 @@ struct gpio_pin_t oks[N_PS_OKS] = {
 #endif // REV2
 
 // clang-format on
-#define PS_NUM_PRIORITIES 5
+#define PS_NUM_PRIORITIES 6
 
 // these arrays hold the current and old status of these power supplies
 static enum ps_state states[N_PS_OKS] = {PWR_UNKNOWN};

@@ -31,10 +31,13 @@
 #define HUH (99)
 
 // power supply state
-enum ps_state { PWR_UNKNOWN, PWR_ON, PWR_OFF, PWR_DISABLED, PWR_FAILED };
+enum ps_state { PWR_UNKNOWN,
+                PWR_ON,
+                PWR_OFF,
+                PWR_DISABLED,
+                PWR_FAILED };
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
-//int getLowestEnabledPSPriority();
 
 #ifdef REV1
 // -----------------------------------------------------
@@ -61,13 +64,15 @@ void setPSStatus(int i, enum ps_state theState);
 // these are indices into the oks[] array
 // L1-L5, note NO L3!!! no PG on the L3 supplies
 #define PS_OKS_F1_MASK_L1 0x0003U
-#define PS_OKS_F1_MASK_L2 0x0030U // these are common to VU and KU
+#define PS_OKS_F1_MASK_L2 0x0030U // these two pins are common to VU and KU
 #define PS_OKS_F1_MASK_L4 0x0300U
 #define PS_OKS_F1_MASK_L5 0x0C00U
+#define PS_OKS_F1_MASK_L6 0x0000U // no 4v0 pin in REV1
 #define PS_OKS_F2_MASK_L1 0x000CU
 #define PS_OKS_F2_MASK_L2 PS_OKS_F1_MASK_L2
 #define PS_OKS_F2_MASK_L4 0x00C0U
 #define PS_OKS_F2_MASK_L5 0x3000U
+#define PS_OKS_F2_MASK_L6 0x0000U // no 4v0 pin in REV1
 
 #elif defined(REV2) // Rev 2
 // -----------------------------------------------------
@@ -77,37 +82,37 @@ void setPSStatus(int i, enum ps_state theState);
 // -----------------------------------------------------
 // Number of enable and power good/OK pins
 
-#define N_PS_ENABLES    10
-#define N_PS_OKS        12
-#define PS_OKS_MASK     ((1U << N_PS_OKS) - 1)
-#define PS_OKS_F1_MASK  0x543U
-#define PS_OKS_F2_MASK  0xA8CU
-#define PS_OKS_GEN_MASK 0x030U
-#define PS_ENS_MASK     ((1U << N_PS_ENABLES) - 1)
-#define PS_ENS_GEN_MASK 0x00CU
-#define PS_ENS_F1_MASK  0x151U
-#define PS_ENS_F2_MASK  0x2A2U
+#define N_PS_ENABLES      10
+#define N_PS_OKS          13
+#define PS_OKS_MASK       ((1U << N_PS_OKS) - 1)
+#define PS_OKS_F1_MASK    0x543U
+#define PS_OKS_F2_MASK    0xA8CU
+#define PS_OKS_GEN_MASK   0x1030U // includes 4v0 pin
+#define PS_ENS_MASK       ((1U << N_PS_ENABLES) - 1)
+#define PS_ENS_GEN_MASK   0x00CU
+#define PS_ENS_F1_MASK    0x151U
+#define PS_ENS_F2_MASK    0x2A2U
 
 // OK masks for various stages of the turn-on.
 // these are indices into the oks[] array
-// L1-L5
+// L1-L6
 #define PS_OKS_F1_MASK_L1 0x003U
-#define PS_OKS_F1_MASK_L2 0x030U // these are common to F1 and F2
+#define PS_OKS_F1_MASK_L2 0x030U // these two pins are common to F1 and F2
 #define PS_OKS_F1_MASK_L3 0x040U
 #define PS_OKS_F1_MASK_L4 0x100U
 #define PS_OKS_F1_MASK_L5 0x400U
+#define PS_OKS_F1_MASK_L6 0x1000U // this one pin is common to F1 and F2
 #define PS_OKS_F2_MASK_L1 0x00CU
 #define PS_OKS_F2_MASK_L2 PS_OKS_F1_MASK_L2
 #define PS_OKS_F2_MASK_L3 0x080U
 #define PS_OKS_F2_MASK_L4 0x200U
 #define PS_OKS_F2_MASK_L5 0x800U
-
-
+#define PS_OKS_F2_MASK_L6 PS_OKS_F1_MASK_L6
 
 //#error "Missing Rev 2 PS masks"
 #else
 #error "Must define either Rev1 or Rev2"
-#endif // REV 2 
+#endif // REV 2
 
 bool turn_on_ps(uint16_t);
 bool check_ps(void);
