@@ -641,7 +641,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
       }
       else // dummy value
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %4s", ff_moni2c_addrs[whichff].name, "--");
 
       bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
       if (isTx) {
