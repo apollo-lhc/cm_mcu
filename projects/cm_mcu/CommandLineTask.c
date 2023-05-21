@@ -75,10 +75,10 @@ static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
   }
 
   if (status == 0)
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "clock synthesizer successfully clear sticky bits. \r\n");
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "clock synthesizer successfully clear sticky bits. \r\n");
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
   }
   return pdFALSE;
 }
