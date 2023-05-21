@@ -400,7 +400,7 @@ static struct command_t commands[] = {
     {"uptime", uptime, "Display uptime in minutes\r\n", 0},
     {"version", ver_ctl, "Display information about MCU firmware version\r\n", 0},
 #ifdef REV2
-    {"v38", v38_ctl, "Control 3V8 FF supply\r\n", 2},
+    {"v38", v38_ctl, "Control 3V8 FF supply args: on|off 1|2\r\n", 2},
 #endif // REV2
     {"watchdog", watchdog_ctl, "Display status of the watchdog task\r\n", 0},
     {
@@ -457,19 +457,26 @@ static BaseType_t help_command_fcn(int argc, char **argv, char *m)
   }
   else { // help on a specific command.
     // help for any command that matches the entered command
-    for (int j = 0; j < NUM_COMMANDS; ++j) {
+    static int j = 0;
+    for (; j < NUM_COMMANDS; ++j) {
       if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0) {
+        int left = SCRATCH_SIZE - copied;
+        // need room for command string, help string, newlines, etc, and trailing \0
+        unsigned int len = strlen(commands[j].helpstr) + strlen(commands[j].commandstr) + 7;
+        if (left < len) {
+          return pdTRUE;
+        }
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
                            commands[j].commandstr, commands[j].helpstr);
-        // return pdFALSE;
       }
     }
+    j = 0;
+    if (copied == 0) {
+      snprintf(m + copied, SCRATCH_SIZE - copied,
+               "%s: No command starting with %s found\r\n", argv[0], argv[1]);
+    }
+    return pdFALSE;
   }
-  if (copied == 0) {
-    snprintf(m + copied, SCRATCH_SIZE - copied,
-             "%s: No command starting with %s found\r\n", argv[0], argv[1]);
-  }
-  return pdFALSE;
 }
 
 static int execute(void *p, int argc, char **argv)

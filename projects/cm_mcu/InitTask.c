@@ -70,10 +70,6 @@ void InitTask(void *parameters)
 
   log_info(LOG_SERVICE, "Clocks configured\r\n");
 
-  // check 4-ch FF parts from vendors on FPGA1/2
-  getFFpart_FPGA1();
-  getFFpart_FPGA2();
-
 #endif // REV2
   vTaskSuspend(NULL);
   // Delete this task

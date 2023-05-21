@@ -25,6 +25,12 @@
 #define __fp16 float
 #endif // __INTELLISENSE
 
+// Local task
+typedef union {
+  uint8_t us;
+  int8_t s;
+} convert_8_t;
+
 // INIT task
 void InitTask(void *parameters);
 
@@ -86,6 +92,7 @@ enum power_system_state {
   POWER_L3ON,
   POWER_L4ON,
   POWER_L5ON,
+  POWER_L6ON,
   POWER_ON,
 };
 enum power_system_state getPowerControlState(void);
@@ -196,6 +203,16 @@ void init_registers_ff(void);
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;
+#ifdef REV2
+extern uint32_t f1_ff12xmit_4v0_sel;
+extern uint32_t f2_ff12xmit_4v0_sel;
+#endif
+
+#ifdef REV1
+extern uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
+#elif defined(REV2)
+extern uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
+#endif               // REV2
 #define ADDR_ID 0x40 // internal eeprom block for board number & rev
 #define ADDR_FF 0x44 // internal eeprom block for ff mask
 #define ADDR_PS 0x48 // internal eeprom block for ps ignore fail

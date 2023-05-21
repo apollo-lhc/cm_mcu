@@ -15,8 +15,8 @@ PART=TM4C1290NCPDT
 ROOT=../..
 BASE=$(shell cd ../..; pwd)
 
-# if the environment variable is not set, this is used
-FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
+# FreeRTOS submodule
+FREERTOS_ROOT=../../FreeRTOS-Kernel
 
 #
 # Include the common make definitions.
