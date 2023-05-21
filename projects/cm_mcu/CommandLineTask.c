@@ -56,6 +56,7 @@ static BaseType_t bl_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#ifdef REV2
 // this command takes one argument
 static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
 {
@@ -82,7 +83,6 @@ static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-#ifdef REV2
 // this command takes one argument (from triplet version but will take two argument to include an input from config versions for octlet eeprom)
 static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
 {
@@ -242,9 +242,9 @@ static struct command_t commands[] = {
     {"alm", alarm_ctl, "args: (clear|status|settemp|setvoltthres|#)\r\nGet or clear status of alarm task.\r\n",
      -1},
     {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
+#ifdef REV2
     {"clearclk", clearclk_ctl,
      "Reset clock sticky bits.\r\n", 0},
-#ifdef REV2
     {"clkmon", clkmon_ctl, "Displays a table showing the clock chips' statuses given the clock chip id option\r\n", 1},
 #endif // REV2
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM.\r\n", 0},

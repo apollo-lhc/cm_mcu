@@ -15,6 +15,7 @@
 #include "MonitorI2CTask.h"
 #include "Tasks.h"
 
+#ifdef REV2
 int clear_clk_stickybits(void)
 {
   static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
@@ -64,7 +65,6 @@ int clear_clk_stickybits(void)
   return status;
 }
 
-#ifdef REV2
 // return the string that corresponds to the programmed file. If
 // there is an error, an empty string is returned.
 void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME],
