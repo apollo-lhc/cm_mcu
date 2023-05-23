@@ -16,50 +16,51 @@
 #include "Tasks.h"
 
 #ifdef REV2
+#define MAX_TRIES 500
+
 int clear_clk_stickybits(void)
 {
   static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
                  (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
                 "Invalid I2C base");
+
+  int tries = 0;
   while (getPowerControlState() != POWER_ON) {
     vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
-  }
-  int status = -99;
-  // Clear sticky flags of clock synth 5341 status monitor (raised high after reset)
-  for (uint8_t i = 0; i < NSUPPLIES_CLKR0A; i++) {
-    uint8_t data = 0x1U << clkr0a_moni2c_addrs[i].mux_bit;
-    int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clkr0a_moni2c_addrs[i].mux_addr, 1, data);
-    if (res != 0) {
-      log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), clkr0a_moni2c_addrs[i].name, i);
-    }
-    for (uint8_t c = 0; c < NCOMMANDS_FLG_CLKR0A; c++) {
-      uint8_t page_reg_value = clockr0a_args.commands[clockr0a_args.n_commands - c - 1].page;
-      int res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, page_reg_value);
-      if (res != 0) {
-        log_error(LOG_SERVICE, "%s: page fail %s\r\n", clockr0a_args.name, SMBUS_get_error(res));
-      }
-      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5341_I2C_ADDRESS, 1, clockr0a_args.commands[clockr0a_args.n_commands - c - 1].command, 1, 0);
-      if (status != 0)
-        return status;
-    }
+    ++tries;
+    if (tries > MAX_TRIES)
+      break;
   }
 
-  // Clear sticky flags of clock synth 5395 status monitor (raised high after reset)
-  for (uint8_t i = 0; i < NSUPPLIES_CLK; i++) {
-    uint8_t data = 0x1U << clk_moni2c_addrs[i].mux_bit;
-    int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].mux_addr, 1, data);
-    if (res != 0) {
-      log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), clk_moni2c_addrs[i].name, i);
-    }
-    for (uint8_t c = 0; c < NCOMMANDS_FLG_CLK; c++) {
-      uint8_t page_reg_value = clock_args.commands[clock_args.n_commands - c - 1].page;
-      int res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5395_I2C_ADDRESS, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, page_reg_value);
-      if (res != 0) {
-        log_error(LOG_SERVICE, "%s: page fail %s\r\n", clock_args.name, SMBUS_get_error(res));
+  int status = -99;
+
+  uint8_t nsupplies[2] = {NSUPPLIES_CLKR0A, NSUPPLIES_CLK};
+  uint8_t ncommands[2] = {NCOMMANDS_FLG_CLKR0A, NCOMMANDS_FLG_CLK};
+  uint8_t dev_addr[2] = {CLOCK_SYNTH5341_I2C_ADDRESS, CLOCK_SYNTH5395_I2C_ADDRESS};
+
+  struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
+  struct dev_moni2c_addr_t *dev_st[2] = {clkr0a_moni2c_addrs, clk_moni2c_addrs};
+
+  // Clear sticky flags of clock synth 5341 and 5395 status monitor (raised high after reset)
+  for (int n = 0; n < 2; ++n) {
+
+    for (uint8_t i = 0; i < nsupplies[n]; i++) {
+      uint8_t data = 0x1U << dev_st[n][i].mux_bit;
+      int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, dev_st[n][i].mux_addr, 1, data);
+      if (res != 0)
+        log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), dev_st[n][i].name, i);
+
+      for (uint8_t c = 0; c < ncommands[n]; c++) {
+        uint8_t page_reg_value = args_st[n].commands[args_st[n].n_commands - c - 1].page;
+        int res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, dev_addr[n], 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, page_reg_value);
+
+        if (res != 0)
+          log_error(LOG_SERVICE, "%s: page fail %s\r\n", args_st[n].name, SMBUS_get_error(res));
+
+        status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, dev_addr[n], 1, args_st[n].commands[args_st[n].n_commands - c - 1].command, 1, 0);
+        if (status != 0)
+          return status;
       }
-      status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, CLOCK_SYNTH5395_I2C_ADDRESS, 1, clock_args.commands[clock_args.n_commands - c - 1].command, 1, 0);
-      if (status != 0)
-        return status;
     }
   }
   return status;

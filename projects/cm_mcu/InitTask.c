@@ -58,11 +58,9 @@ void InitTask(void *parameters)
     init_load_clk(i); // load each clock config from EEPROM
   }
   status = clear_clk_stickybits();
-  if (status == 0)
-    log_info(LOG_SERVICE, "Clear clock sticky bits\r\n");
-  else {
+  if (status != 0)
     log_info(LOG_SERVICE, "Clear clock sticky bits failed\r\n");
-  }
+
   // check if we have the semaphore
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c2_sem);

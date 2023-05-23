@@ -74,12 +74,9 @@ static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
     xSemaphoreGive(i2c2_sem);
   }
 
-  if (status == 0)
-    snprintf(m + copied, SCRATCH_SIZE - copied,
-             "clock synthesizer successfully clear sticky bits. \r\n");
-  else {
+  if (status != 0)
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
-  }
+
   return pdFALSE;
 }
 
