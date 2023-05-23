@@ -34,9 +34,9 @@ int clear_clk_stickybits(void)
 
   int status = -99;
 
-  uint8_t nsupplies[2] = {NSUPPLIES_CLKR0A, NSUPPLIES_CLK};
-  uint8_t ncommands[2] = {NCOMMANDS_FLG_CLKR0A, NCOMMANDS_FLG_CLK};
-  uint8_t dev_addr[2] = {CLOCK_SYNTH5341_I2C_ADDRESS, CLOCK_SYNTH5395_I2C_ADDRESS};
+  const uint8_t nsupplies[2] = {NSUPPLIES_CLKR0A, NSUPPLIES_CLK};
+  const uint8_t ncommands[2] = {NCOMMANDS_FLG_CLKR0A, NCOMMANDS_FLG_CLK};
+  const uint8_t dev_addr[2] = {CLOCK_SYNTH5341_I2C_ADDRESS, CLOCK_SYNTH5395_I2C_ADDRESS};
 
   struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
   struct dev_moni2c_addr_t *dev_st[2] = {clkr0a_moni2c_addrs, clk_moni2c_addrs};
