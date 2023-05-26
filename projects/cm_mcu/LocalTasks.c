@@ -415,8 +415,8 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", PM_STATUS},   // page 0x00
     // internal statuses on page 0 : table 14.5
-    {1, 0x00, 0x0C, 1, "REG_0x0C", 0x35, "", PM_STATUS}, // page 0x00
-    {1, 0x00, 0x0D, 1, "REG_0x0D", 0x15, "", PM_STATUS}, // page 0x00
+    {1, 0x00, 0x0C, 1, "STATUS", 0x35, "", PM_STATUS}, // page 0x00
+    {1, 0x00, 0x0D, 1, "LOS", 0x15, "", PM_STATUS}, // page 0x00
     // sticky bits of status bits : table 14.12
     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
     // sticky bits of INx LOS bits : table 14.13
