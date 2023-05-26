@@ -184,6 +184,7 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -248,6 +249,7 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -299,6 +301,7 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -358,6 +361,7 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -399,6 +403,7 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .smbus_status = &eStatus2,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -433,6 +438,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .smbus_status = &eStatus2,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 #endif // REV2
@@ -545,6 +551,11 @@ void readFFpresent(void)
                                  ((present_FFL12_F2) << 10) |  // 6 bits
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
+
+  ffldaq_f1_args.present_bit_mask = (~((present_FFLDAQ_F2) << 16)) & 0xFU; // 4 bits
+  ffl12_f1_args.present_bit_mask = (~((present_FFL12_F2) << 10)) & 0x3FU;  // 6 bits
+  ffldaq_f2_args.present_bit_mask = (~((present_FFLDAQ_F2) << 6)) & 0xFU;  // 4 bits
+  ffl12_f2_args.present_bit_mask = (~(present_FFL12_F2)) & 0x3FU;          // 6 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
