@@ -418,6 +418,7 @@ void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
 {
   // MonitorI2CTask values -- clock chips
   // update times, in seconds. If the data is stale, send NaN
+  // n=1 is r0a and n=0 is else
   struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
 
   TickType_t last = pdTICKS_TO_S(args_st[n].updateTick);
@@ -504,9 +505,9 @@ void zm_fill_structs(void)
   // fpga, size 8
   zm_set_fpga(&zynqmon_data[137], 150);
   // clocks, R0A, size 24
-  zm_set_clock(&zynqmon_data[145], 158, 1); // FIXME start: and count: are subjected to change in yml and here
+  zm_set_clock(&zynqmon_data[145], 158, 0); // FIXME start: and count: are subjected to change in yml and here
   // clocks, R0B,R1A,R1B,R1C. size 5
-  zm_set_clock(&zynqmon_data[169], 172, 0); // FIXME start: and count: are subjected to change in yml and here
+  zm_set_clock(&zynqmon_data[169], 172, 1); // FIXME start: and count: are subjected to change in yml and here
   // 12-ch firefly bit-mask part, size 6
   zm_set_firefly_ff12part(&zynqmon_data[174], 204); // FIXME start: and count: are subjected to change in yml and here
   // firefly present or not, size 20
