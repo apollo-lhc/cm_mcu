@@ -255,8 +255,9 @@ extern QueueHandle_t xAlmQueue;
 #define ALM_STAT_FPGA_OVERTEMP    0x4
 #define ALM_STAT_DCDC_OVERTEMP    0x8
 // status register bits
-#define ALM_STAT_GEN_OVERVOLT  0x1
-#define ALM_STAT_FPGA_OVERVOLT 0x4
+#define ALM_STAT_GEN_OVERVOLT   0x5
+#define ALM_STAT_FPGA1_OVERVOLT 0x6
+#define ALM_STAT_FPGA2_OVERVOLT 0x7
 // messages
 #define ALM_CLEAR_ALL     1
 #define ALM_CLEAR_TEMP    2

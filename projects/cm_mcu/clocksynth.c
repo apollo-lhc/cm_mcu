@@ -24,12 +24,8 @@ int clear_clk_stickybits(void)
                  (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
                 "Invalid I2C base");
 
-  int tries = 0;
   while (getPowerControlState() != POWER_ON) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
-    ++tries;
-    if (tries > MAX_TRIES)
-      break;
+    return 1;
   }
 
   int status = -99;

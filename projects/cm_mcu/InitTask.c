@@ -48,6 +48,7 @@ void InitTask(void *parameters)
     log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
   else {
     log_info(LOG_SERVICE, "Clock I/O expander failed\r\n");
+    errbuffer_put(EBUF_CLKINIT_FAILURE, 0);
   }
 #ifdef REV2
   // grab the semaphore to ensure unique access to I2C controller
