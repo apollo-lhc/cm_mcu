@@ -499,21 +499,21 @@ void zm_fill_structs(void)
   // adcmon, size 21
   zm_set_adcmon(&zynqmon_data[104], 128);
   // uptime, size 2
-  zm_set_uptime(&zynqmon_data[125], 192);
+  zm_set_uptime(&zynqmon_data[125], 225);
   // gitversion, size 10
   zm_set_gitversion(&zynqmon_data[127], 118);
   // fpga, size 8
-  zm_set_fpga(&zynqmon_data[137], 150);
-  // clocks, R0A, size 24
-  zm_set_clock(&zynqmon_data[145], 158, 0); // FIXME start: and count: are subjected to change in yml and here
-  // clocks, R0B,R1A,R1B,R1C. size 5
-  zm_set_clock(&zynqmon_data[169], 172, 1); // FIXME start: and count: are subjected to change in yml and here
+  zm_set_fpga(&zynqmon_data[137], 149);
+  // clocks, R0A, size 10
+  zm_set_clock(&zynqmon_data[145], 157, 0);
+  // clocks, R0B,R1A,R1B,R1C. size 40
+  zm_set_clock(&zynqmon_data[155], 167, 1);
   // 12-ch firefly bit-mask part, size 6
-  zm_set_firefly_ff12part(&zynqmon_data[174], 204); // FIXME start: and count: are subjected to change in yml and here
-  // firefly present or not, size 20
-  zm_set_firefly_presentbit(&zynqmon_data[180], 218); // FIXME start: and count: are subjected to change in yml and here
+  zm_set_firefly_ff12part(&zynqmon_data[195], 207);
+  // firefly present or not, size 12
+  zm_set_firefly_presentbit(&zynqmon_data[201], 213);
 }
-#define ZMON_VALID_ENTRIES 200 // FIXME
+#define ZMON_VALID_ENTRIES 213
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])
