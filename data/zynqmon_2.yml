@@ -35,7 +35,7 @@ config:
       - F2_P7 XCVR4
   - name: psmon
     start: 32
-    count: 80
+    count: 84
     mcu_call: psmon
     type: fp16
     extra: Table=CM_MON;Status=2
@@ -90,7 +90,7 @@ config:
       - F2_TEMP
       - TM4C_TEMP
   - name: uptime
-    start: 192
+    start: 225
     count: 1
     type: uint32_t
     mcu_call: uptime
@@ -121,23 +121,26 @@ config:
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
   - name: clocks
-    start: 158
-    count: 24
+    start: 157
+    count: 10
     type: int16
-    extra: Table=CM_MON;Column=Temp_C;Status=2;
+    extra: Table=CM_MON;Column=CLK_REG;Status=2;
     mcu_call: clocks
     names: 
       - ROA
     postfixes:
-      - PN_BASE
+      - PN_BASE0
+      - PN_BASE1
       - DEVICE_REV
+      - I2C_ADDR
       - STATUS
-      - LOS_IN
+      - LOS
+      - CONFIG_V
   - name: clocks
-    start: 172
-    count: 5
+    start: 167
+    count: 40
     type: int16
-    extra: Table=CM_MON;Column=Temp_C;Status=2;
+    extra: Table=CM_MON;Column=CLK_REG;Status=2;
     mcu_call: clocks
     names: 
       - ROB
@@ -145,8 +148,51 @@ config:
       - R1B
       - R1C
     postfixes:
-      - PN_BASE
+      - PN_BASE0
+      - PN_BASE1
       - DEVICE_REV
-      - STATUS
-      - LOSOFF_IN
+      - I2C_ADDR
+      - LOSXAXB
+      - LOSO0F_IN
       - LOL
+      - CONFIG_V 
+  - name: firefly12part
+    start: 207
+    count: 6
+    type: int8
+    extra: Table=CM_FF_MON;Column=12PARTT_BIT;Status=1;
+    mcu_call: firefly_12part
+    names:
+      - F1_P1 Rx12 25Gbs
+      - F1_P2 Rx12 25Gbs
+      - F1_P3 Rx12 25Gbs
+      - F2_P1 Rx12 25Gbs
+      - F2_P2 Rx12 25Gbs
+      - F2_P3 Rx12 25Gbs
+  - name: fireflypresent
+    start: 213
+    count: 12
+    type: int8
+    extra: Table=CM_FF_MON;Column=PRESENT_BIT;Status=1;
+    mcu_call: firefly_present
+    names:
+      - F1_P1 Tx12 
+      - F1_P1 Rx12
+      - F1_P2 Tx12 
+      - F1_P2 Rx12
+      - F1_P3 Tx12
+      - F1_P3 Rx12 
+      - F1_P4 XCVR4
+      - F1_P5 XCVR4 
+      - F1_P6 XCVR4
+      - F1_P7 XCVR4
+      - F2_P1 Tx12
+      - F2_P1 Rx12 
+      - F2_P2 Tx12 
+      - F2_P2 Rx12 
+      - F2_P3 Tx12 
+      - F2_P3 Rx12 
+      - F2_P4 XCVR4
+      - F2_P5 XCVR4 
+      - F2_P6 XCVR4
+      - F2_P7 XCVR4
