@@ -16,7 +16,6 @@
 #include "Tasks.h"
 
 #ifdef REV2
-#define MAX_TRIES 500
 
 int clear_clk_stickybits(void)
 {
