@@ -640,7 +640,8 @@ int8_t getFFtemp(const uint8_t i)
 }
 
 #ifdef REV2
-void getFFpart(){
+void getFFpart()
+{
   // Write device vendor part for identifying FF device
   uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;
   char vendor_string[nstring];
@@ -696,7 +697,6 @@ void getFFpart(){
               ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
             else
               ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
-
           }
           else {
             if (f == 0)
@@ -709,7 +709,7 @@ void getFFpart(){
         }
         else {
           if (strncmp(vendor_string_rxch, vendor_string, nstring) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
-            if (f==0)
+            if (f == 0)
               ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
             else
               ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
