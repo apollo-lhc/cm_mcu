@@ -185,12 +185,14 @@ int VoltStatus(void)
 
   int retval = 0;
   status_V = 0x0U;
-  uint8_t gen_bitmask = 0;
-  uint8_t fpga1_bitmask = 0;
-  uint8_t fpga2_bitmask = 0;
-  uint8_t is_gen_alarm_volt = 0;
-  uint8_t is_fpga1_alarm_volt = 0;
-  uint8_t is_fpga2_alarm_volt = 0;
+
+  int n_fpga_half_ch = (ADC_INFO_FPGA_VCC_FIN_CH - ADC_INFO_FPGA_VCC_INIT_CH + 1) / 2;
+  int ADC_INFO_FPGA2_VCC_INIT_CH = n_fpga_half_ch + ADC_INFO_FPGA_VCC_INIT_CH;
+
+  const int adc_vcc_int_ch[3] = {ADC_INFO_GEN_VCC_INIT_CH, ADC_INFO_FPGA_VCC_INIT_CH, ADC_INFO_FPGA2_VCC_INIT_CH};
+  const int adc_vcc_fin_ch[3] = {ADC_INFO_GEN_VCC_FIN_CH, ADC_INFO_FPGA2_VCC_INIT_CH - 1, ADC_INFO_FPGA_VCC_FIN_CH};
+  uint8_t dev_bitmask[3] = {0, 0, 0};
+  uint8_t is_dev_alarm_volt[3] = {0, 0, 0};
 
   // microcontroller and general power
 
@@ -202,95 +204,58 @@ int VoltStatus(void)
 #endif                      // REV 2
   }
 
-#ifdef REV2
-  // while (getADCvalue(ADC_INFO_GEN_VCC_4V0_CH) < 0.5f) { // somehow the initial value of VCC 4V0 is 0 after reboot and can screw up the logic below
-  // vTaskDelay(pdMS_TO_TICKS(10));                       // delay 10 ms
-  //}
-#endif
+  for (int n = 0; n < 3; ++n) {
+    for (int ch = adc_vcc_int_ch[n]; ch < adc_vcc_fin_ch[n] + 1; ++ch) {
 
-  for (int ch = ADC_INFO_GEN_VCC_INIT_CH; ch < ADC_INFO_GEN_VCC_FIN_CH + 1; ++ch) {
+      if (n != 0) {
+        if ((!f1_enable) || (!f2_enable && ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1))) // check if fpga1/2 is on the board. currently fpga1 takes the first half of adc outputs in this indexing
+          break;
+      }
 
-    while (getADCvalue(ch) < 0.5f) {  // wait for delay from ADC outputs and actual reading
-      vTaskDelay(pdMS_TO_TICKS(100)); // delay 100 ms
-    }
-    float threshold = getAlarmVoltageThres();
-    float now_value = getADCvalue(ch);
-    float excess = (now_value - getADCtargetValue(ch)) / getADCtargetValue(ch);
-    int tens, frac;
-    float_to_ints(excess * 100, &tens, &frac);
-    if (excess > 0.0f) {
-      is_gen_alarm_volt = 1;
-      excess_volt = excess * 100;
-      excess_volt_which_ch = ch;
-    }
+      if (getADCvalue(ch) < 0.5f)       // wait for delay from ADC outputs and actual reading
+        vTaskDelay(pdMS_TO_TICKS(100)); // delay 100 ms
 
-    if ((excess > threshold && excess > 0.0f) || (excess * -1.0f > threshold && excess < 0.0f)) { // if this ADC voltage is greater/lower than a target value by getAlarmVoltageThres()*100%
-      gen_bitmask += (1 << (ch - ADC_INFO_GEN_VCC_INIT_CH));                                      // first to last bit corresponds to status of low to high ADC voltage channel of mcu/general
-      is_gen_alarm_volt = 2;
-      log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now %02d.%02d %% off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/- getAlarmVoltageThres()*100% of its threshold
-    }
-  }
-
-  currentVoltStatus[GEN] = gen_bitmask & GEN_VOLTAGE_MASK; // applies a mask with power-off exceptions
-
-  int n_fpga_half_ch = (ADC_INFO_FPGA_VCC_FIN_CH - ADC_INFO_FPGA_VCC_INIT_CH + 1) / 2;
-  int ADC_INFO_FPGA2_VCC_INIT_CH = n_fpga_half_ch + ADC_INFO_FPGA_VCC_INIT_CH;
-  for (int ch = ADC_INFO_FPGA_VCC_INIT_CH; ch < ADC_INFO_FPGA_VCC_FIN_CH + 1; ++ch) {
-    if ((!f1_enable) || (!f2_enable && ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1))) // check if fpga1/2 is on the board. currently fpga1 takes the first half of adc outputs in this indexing
-      break;
-    while (getADCvalue(ch) < 0.5f) {  // wait for delay from ADC outputs and actual reading
-      vTaskDelay(pdMS_TO_TICKS(100)); // delay 100 ms
-    }
-    float threshold = getAlarmVoltageThres();
-    float now_value = getADCvalue(ch);
-    float excess = (now_value - getADCtargetValue(ch)) / getADCtargetValue(ch);
-    int tens, frac;
-    float_to_ints(excess * 100, &tens, &frac);
-
-    if (ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1)) {
+      float threshold = getAlarmVoltageThres();
+      float now_value = getADCvalue(ch);
+      float excess = (now_value - getADCtargetValue(ch)) / getADCtargetValue(ch);
+      int tens, frac;
+      float_to_ints(excess * 100, &tens, &frac);
       if (excess > 0.0f) {
-        is_fpga2_alarm_volt = 1;
+        is_dev_alarm_volt[n] = 1;
         excess_volt = excess * 100;
         excess_volt_which_ch = ch;
       }
+
       if ((excess > threshold && excess > 0.0f) || (excess * -1.0f > threshold && excess < 0.0f)) { // if this ADC voltage is greater/lower than a target value by getAlarmVoltageThres()*100%
-        fpga2_bitmask += (1 << (ch - ADC_INFO_FPGA2_VCC_INIT_CH));                                  // first to last bit corresponds to status of low to high ADC voltage channel of fpga2
-        is_fpga1_alarm_volt = 2;
-        log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now +/- %02d.%02d %% off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/-getAlarmVoltageThres()*100% of its threshold
+        dev_bitmask[n] += (1 << (ch - adc_vcc_int_ch[n]));                                          // first to last bit corresponds to status of low to high ADC voltage channel
+        is_dev_alarm_volt[n] = 2;
+        log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now %02d.%02d %% off target\r\n", ch, tens, frac); // over voltage among one of power supplies by +/- getAlarmVoltageThres()*100% of its threshold
       }
     }
-    else {
-      if (excess > 0.0f) {
-        is_fpga1_alarm_volt = 1;
-        excess_volt = excess * 100;
-        excess_volt_which_ch = ch;
-      }
-      if ((excess > threshold && excess > 0.0f) || (excess * -1.0f > threshold && excess < 0.0f)) { // if this ADC voltage is greater/lower than a target value by getAlarmVoltageThres()*100%
-        fpga1_bitmask += (1 << (ch - ADC_INFO_FPGA_VCC_INIT_CH));                                   // first to last bit corresponds to status of low to high ADC voltage channel of fpga2
-        is_fpga1_alarm_volt = 2;
-        log_debug(LOG_ALM, "alarm volt at ADC ch : %02d now +/- %02d.%02d %% off target\r\n", ch, tens, frac); // over voltage among one of fpga power supplies by +/-getAlarmVoltageThres()*100% of its threshold
-      }
-    }
+
+    if (n == 0)
+      currentVoltStatus[GEN] = dev_bitmask[n] & GEN_VOLTAGE_MASK; // applies a mask with power-off exceptions
+    else if (n == 1)
+      currentVoltStatus[FPGA1] = dev_bitmask[n];
+    else
+      currentVoltStatus[FPGA2] = dev_bitmask[n];
   }
 
-  if (is_gen_alarm_volt > 0 || is_fpga1_alarm_volt > 0 || is_fpga2_alarm_volt > 0) {
+  if (is_dev_alarm_volt[0] > 0 || is_dev_alarm_volt[1] > 0 || is_dev_alarm_volt[2] > 0) {
     retval++;
-    if (is_gen_alarm_volt == 2) {
+    if (is_dev_alarm_volt[0] == 2) {
       status_V |= ALM_STAT_GEN_OVERVOLT;
       ++retval;
     }
-    else if (is_fpga1_alarm_volt == 2) {
+    else if (is_dev_alarm_volt[1] == 2) {
       status_V |= ALM_STAT_FPGA1_OVERVOLT;
       ++retval;
     }
-    else if (is_fpga2_alarm_volt == 2) {
+    else if (is_dev_alarm_volt[2] == 2) {
       status_V |= ALM_STAT_FPGA2_OVERVOLT;
       ++retval;
     }
   }
-
-  currentVoltStatus[FPGA1] = fpga1_bitmask;
-  currentVoltStatus[FPGA2] = fpga2_bitmask;
 
   return retval;
 }
