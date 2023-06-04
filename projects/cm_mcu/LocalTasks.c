@@ -639,17 +639,16 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-void getFFpart()
-{
 #ifdef REV2
+void getFFpart(){
   // Write device vendor part for identifying FF device
   uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;
   char vendor_string[nstring];
   uint8_t data;
 
   SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
-  int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
-  uint32_t ndevices[2] = {NSUPPLIES_FFL12_F1 / 2, NSUPPLIES_FFL12_F2 / 2};
+  const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
+  const uint32_t ndevices[2] = {NSUPPLIES_FFL12_F1 / 2, NSUPPLIES_FFL12_F2 / 2};
   uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
   uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
   struct MonitorI2CTaskArgs_t args_st[2] = {ffl12_f1_args, ffl12_f2_args};
@@ -693,20 +692,27 @@ void getFFpart()
         if (!detect_ff) {
           detect_ff = true;
           if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) { // the first 25Gbs 12-ch detected on FPGA1(2)
-            args_st[f].ffpart_bit_mask = args_st[f].ffpart_bit_mask | (0x1U << n);                       // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+            if (f == 0)
+              ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+            else
+              ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+
           }
           else {
             if (f == 0)
-              args_st[f].commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
+              ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
             else
-              args_st[f].commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
+              ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
           }
           log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA%d): %s \r\n:", f + 1, vendor_string_rxch);
           strncpy(vendor_string, vendor_string_rxch, nstring);
         }
         else {
           if (strncmp(vendor_string_rxch, vendor_string, nstring) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
-            args_st[f].ffpart_bit_mask = args_st[f].ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+            if (f==0)
+              ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+            else
+              ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
             if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
@@ -741,9 +747,8 @@ void getFFpart()
       xSemaphoreGive(semaphores[f]);
     }
   }
-
-#endif // REV2
 }
+#endif
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2
