@@ -211,13 +211,14 @@ int VoltStatus(void)
         if ((!f1_enable) || (!f2_enable && ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1))) // check if fpga1/2 is on the board. currently fpga1 takes the first half of adc outputs in this indexing
           break;
       }
-
-      if (getADCvalue(ch) < 0.5f)       // wait for delay from ADC outputs and actual reading
-        vTaskDelay(pdMS_TO_TICKS(100)); // delay 100 ms
-
       float threshold = getAlarmVoltageThres();
+      float target_value = getADCtargetValue(ch);
+
+      if (getADCvalue(ch) < 0.7f * target_value) // wait for delay from ADC outputs and actual reading
+        vTaskDelay(pdMS_TO_TICKS(500));          // delay 1000 ms
+
       float now_value = getADCvalue(ch);
-      float excess = (now_value - getADCtargetValue(ch)) / getADCtargetValue(ch);
+      float excess = (now_value - target_value) / target_value;
       int tens, frac;
       float_to_ints(excess * 100, &tens, &frac);
       if (excess > 0.0f) {

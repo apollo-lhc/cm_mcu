@@ -650,8 +650,9 @@ void getFFpart()
   SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
   const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
   const uint32_t ndevices[2] = {NSUPPLIES_FFL12_F1 / 2, NSUPPLIES_FFL12_F2 / 2};
-  uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
-  uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
+  const uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
+  const uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
+
   struct MonitorI2CTaskArgs_t args_st[2] = {ffl12_f1_args, ffl12_f2_args};
 
   for (int f = 0; f < 2; ++f) {
@@ -659,6 +660,7 @@ void getFFpart()
     // grab the semaphore to ensure unique access to I2C controller
     // otherwise, block its operations indefinitely until it's available
     acquireI2CSemaphoreBlock(semaphores[f]);
+    uint32_t tmp_ffpart_bit_mask = 0U;
     bool detect_ff = false;
     for (uint8_t n = 0; n < ndevices[f]; n++) {
       uint8_t vendor_data_rxch[4];
@@ -693,10 +695,7 @@ void getFFpart()
         if (!detect_ff) {
           detect_ff = true;
           if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) { // the first 25Gbs 12-ch detected on FPGA1(2)
-            if (f == 0)
-              ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
-            else
-              ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+            tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n);                                     // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
             if (f == 0)
@@ -709,10 +708,7 @@ void getFFpart()
         }
         else {
           if (strncmp(vendor_string_rxch, vendor_string, nstring) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
-            if (f == 0)
-              ffl12_f1_args.ffpart_bit_mask = ffl12_f1_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
-            else
-              ffl12_f2_args.ffpart_bit_mask = ffl12_f2_args.ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+            tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
             if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
@@ -734,13 +730,18 @@ void getFFpart()
       log_debug(LOG_SERVICE, "%s: reset mux\r\n", args_st[f].devices[(2 * n) + 1].name);
     }
 
-    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA%d): 0x%02x \r\n:", f + 1, args_st[f].ffpart_bit_mask);
+    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA%d): 0x%02x \r\n:", f + 1, tmp_ffpart_bit_mask);
 
     log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA%d): 0x%02x \r\n:", f + 1, dev_xmit_4v0_sel[f]);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
-    if ((dev_xmit_4v0_sel[f] ^ args_st[f].ffpart_bit_mask) != 0U) {
-      log_warn(LOG_SERVICE, "FPGA%d 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f + 1, dev_xmit_4v0_sel[f], args_st[f].ffpart_bit_mask);
+    if ((dev_xmit_4v0_sel[f] ^ tmp_ffpart_bit_mask) != 0U) {
+      log_warn(LOG_SERVICE, "FPGA%d 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f + 1, dev_xmit_4v0_sel[f], tmp_ffpart_bit_mask);
     }
+
+    if (f == 0)
+      ffl12_f1_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
+    else
+      ffl12_f2_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
 
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(semaphores[f]) == xTaskGetCurrentTaskHandle()) {
