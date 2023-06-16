@@ -40,6 +40,7 @@ struct MonitorI2CTaskArgs_t {
   volatile tSMBusStatus *smbus_status; // pointer to I2C status
   TickType_t updateTick;               // last update time, in ticks
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
+  uint8_t ffpart_bit_mask;             // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
   UBaseType_t stack_size;              // stack size of task
 };
 
@@ -84,12 +85,14 @@ extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
 extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
-#define NSUPPLIES_CLK    (4)
-#define NCOMMANDS_CLK    7 // number of commands
-#define NPAGES_CLK       1 //
-#define NSUPPLIES_CLKR0A (1)
-#define NCOMMANDS_CLKR0A 6 // number of commands
-#define NPAGES_CLKR0A    1 //
+#define NSUPPLIES_CLK        (4)
+#define NCOMMANDS_CLK        8 // number of commands
+#define NCOMMANDS_FLG_CLK    1 // number of sticky commands
+#define NPAGES_CLK           1 //
+#define NSUPPLIES_CLKR0A     (1)
+#define NCOMMANDS_CLKR0A     8 // number of commands
+#define NCOMMANDS_FLG_CLKR0A 2 // number of sticky commands
+#define NPAGES_CLKR0A        1 //
 
 extern struct MonitorI2CTaskArgs_t clock_args;
 extern struct MonitorI2CTaskArgs_t clockr0a_args;

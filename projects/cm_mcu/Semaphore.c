@@ -3,7 +3,7 @@
  *
  *  Created on: September 06, 2022
  *      Author: pkotamnives
- *      declare and create semaphores utilized aross the cm_mcu project
+ *      declare and create semaphores utilized across the cm_mcu project
  */
 
 #include "Semaphore.h"

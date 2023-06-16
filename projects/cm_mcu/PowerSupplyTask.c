@@ -25,6 +25,9 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
+// getFFpart includes
+#include "MonitorI2CTask.h"
+
 void Print(const char *);
 
 // Holds the handle of the created queue for the power supply task.
@@ -57,10 +60,10 @@ static uint16_t getPSFailMask(void)
   static uint32_t ps_ignore_mask;
   if (!configured) {
     ps_ignore_mask = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
-    if (ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5)) {
+    if (ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F1_MASK_L6 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 | PS_OKS_F2_MASK_L6)) {
       log_warn(LOG_PWRCTL, "Warning: mask 0x%x included masks at below L4; ignoring\r\n", ps_ignore_mask);
       // mask out supplies at startup L1, L2 or L3. We do not allow those to fail.
-      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5);
+      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F1_MASK_L6 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 | PS_OKS_F2_MASK_L6);
     }
     configured = true;
   }
@@ -83,6 +86,7 @@ static const char *const power_system_state_names[] = {
     "L3ON",
     "L4ON",
     "L5ON",
+    "L6ON",
     "ON",
 };
 
@@ -119,6 +123,9 @@ void PowerSupplyTask(void *parameters)
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
            supply_ok_mask_L5 = 0U;
+#ifdef REV2
+  uint16_t supply_ok_mask_L6 = 0U;
+#endif // REV2
 
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
@@ -135,6 +142,9 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_F1_MASK_L2;
     supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
     supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_F1_MASK_L5;
+#ifdef REV2
+    supply_ok_mask_L6 = supply_ok_mask_L5 | PS_OKS_F1_MASK_L6;
+#endif // REV2
   }
   if (f2_enable) {
     supply_ok_mask |= PS_OKS_F2_MASK;
@@ -142,6 +152,9 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_F2_MASK_L2;
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
+#ifdef REV2
+    supply_ok_mask_L6 |= supply_ok_mask_L5 | PS_OKS_F2_MASK_L6;
+#endif // REV2
   }
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
   ignore_mask = getPSFailMask();
@@ -160,6 +173,9 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L4 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L5 &= ~ignore_mask; // mask out the ignored bits.
+#ifdef REV2
+    supply_ok_mask_L6 &= ~ignore_mask; // mask out the ignored bits.
+#endif                                 // REV2
   }
 
 #if defined(ECN001) || defined(REV2)
@@ -211,8 +227,8 @@ void PowerSupplyTask(void *parameters)
     }
 
     // MAIN POWER SUPPLY TASK STATE MACHINE
-    // ON1 .. ON5 are the five states of the turn-on sequence
-    // OFF1 .. OFF5 are the five states of the turn-off sequence
+    // ON1 .. ON6 are the six states of the turn-on sequence
+    // OFF1 .. OFF6 are the six states of the turn-off sequence
     // in the transition to FAIL we turn off all the supplies in sequence,
     // even if they were not yet turned on (i.e., transition from ON3 -> FAIL)
     //                     +-------------------+
@@ -221,7 +237,7 @@ void PowerSupplyTask(void *parameters)
     // | INIT  |    |         ^             ^         |
     // +---+---+    v         |             |         |
     //     |     ---+--+   +--+-+         +-+--+  +---+--+
-    //     +---->+ OFF +---> ON1+-> ....  | ON5+->+  ON  |
+    //     +---->+ OFF +---> ON1+-> ....  | ON6+->+  ON  |
     //           +--+--+   +----+         +----+  +---+--+
     //              |            +------+             |
     //              +-----<------| DOWN <-------------+
@@ -345,6 +361,7 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
+#ifdef REV1
       case POWER_L5ON: {
         if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
@@ -362,6 +379,62 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
+#elif defined(REV2)
+      case POWER_L5ON: {
+        if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
+          failed_mask = (~supply_bitset) & supply_ok_mask_L5;
+          printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
+          errbuffer_power_fail(failed_mask);
+
+          disable_ps();
+          power_supply_alarm = true;
+          nextState = POWER_FAILURE;
+        }
+        else {
+          blade_power_ok(true);
+          nextState = POWER_L6ON;
+        }
+
+        break;
+      }
+      case POWER_L6ON: {
+        if (((supply_bitset & supply_ok_mask_L6) != supply_ok_mask_L6) && !ignorefail) {
+          failed_mask = (~supply_bitset) & supply_ok_mask_L6;
+          printfail(failed_mask, supply_ok_mask_L6, supply_bitset);
+          errbuffer_power_fail(failed_mask);
+
+          disable_ps();
+          power_supply_alarm = true;
+          nextState = POWER_FAILURE;
+        }
+        else {
+          // check 12-ch FF parts from vendors on FPGA1/2
+          vTaskDelay(pdMS_TO_TICKS(1000));
+          getFFpart();
+          UBaseType_t ffmask[2] = {0xe, 0xe};
+          if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) == 0x0U && (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) == 0x0U) {
+            int ret = enable_3v8(ffmask, false); // enable v38
+            if (ret != 0)
+              log_info(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
+            else
+              log_info(LOG_PWRCTL, "enable 3v8 \r\n");
+            blade_power_ok(true);
+            nextState = POWER_ON;
+          }
+          else {
+            int ret = enable_3v8(ffmask, true); // disable v38
+            if (ret == 0)
+              log_info(LOG_PWRCTL, "disable 3v8\r\n");
+            else
+              log_info(LOG_PWRCTL, "disable 3v8 failed with %d\r\n", ret);
+            power_supply_alarm = true;
+            nextState = POWER_FAILURE;
+          }
+        }
+
+        break;
+      }
+#endif                                                // REV2
       case POWER_FAILURE: {                           // we go through POWER_OFF state before turning on.
         if (!power_supply_alarm && !external_alarm) { // errors cleared
           nextState = POWER_OFF;
@@ -419,6 +492,10 @@ void PowerSupplyTask(void *parameters)
         }
       }
     }
+#ifdef REV2 // PG_4V0 is not helpful to read from. assert that PWR_FAILED
+    if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0x0U || (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0x0U)
+      setPSStatus(N_PS_OKS - 1, PWR_FAILED);
+#endif
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);

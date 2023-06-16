@@ -6,9 +6,7 @@
  */
 
 // Include commands
-
 #include <strings.h>
-
 #include "commands/BoardCommands.h"
 #include "commands/BufferCommands.h"
 #include "commands/EEPROMCommands.h"
@@ -58,41 +56,30 @@ static BaseType_t bl_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#ifdef REV2
 // this command takes one argument
-static BaseType_t clock_ctl(int argc, char **argv, char *m)
+static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   int status = -1; // shut up clang compiler warning
-  BaseType_t i = strtol(argv[1], NULL, 10);
-  if (!((i == 1) || (i == 2))) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "Invalid mode %ld for clock, only 1 (reset) and 2 (program) supported\r\n", i);
+
+  // acquire the semaphore
+  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: couldn't get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s mode set to %ld. \r\n", argv[0], i);
-  if (i == 1) {
-    status = initialize_clock();
-    if (status == 0)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "clock synthesizer successfully initialized. \r\n");
+  status = clear_clk_stickybits();
+  // check if we have the semaphore
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
   }
-  else if (i == 2) {
-    status = load_clock();
-    if (status == 0)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "clock synthesizer successfully programmed. \r\n");
-  }
-  if (status == -1)
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (1). \r\n", argv[0]);
-  else if (status == -2)
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (2). \r\n", argv[0]);
-  else if (status != 0)
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s invalid return value. \r\n", argv[0]);
+
+  if (status != 0)
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (%d)\r\n", argv[0], status);
+
   return pdFALSE;
 }
 
-#ifdef REV2
 // this command takes one argument (from triplet version but will take two argument to include an input from config versions for octlet eeprom)
 static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
 {
@@ -113,9 +100,10 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
     snprintf(m + copied, SCRATCH_SIZE - copied, " 3V3 died. skip loadclock\r\n");
     return pdFALSE; // skip this iteration
   }
-  // grab the semaphore to ensure unique access to I2C controller
+
+  // acquire the semaphore
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-    snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
@@ -156,6 +144,21 @@ typedef struct __attribute__((packed)) {
 
 extern struct dev_i2c_addr_t pm_addrs_dcdc[];
 
+static BaseType_t sn_all(int argc, char **argv, char *m)
+{
+  int which = 0;
+  int page_d = 0;
+  for (; which < N_PM_ADDRS_DCDC; ++which) {
+    for (; page_d < 2; ++page_d) { // for reading two pages per device
+      bool reset = false;
+      reset = true;
+      uint8_t sn[32];
+      snapdump(&pm_addrs_dcdc[which], page_d, sn, reset);
+    }
+  }
+  return pdFALSE;
+}
+
 static BaseType_t snapshot(int argc, char **argv, char *m)
 {
   _Static_assert(sizeof(snapshot_t) == 32, "sizeof snapshot_t");
@@ -164,13 +167,13 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   int which = page / 10;
   page = page % 10;
   if (page < 0 || page > 1) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
-                       argv[0], page);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
+             argv[0], page + 1);
     return pdFALSE;
   }
   if (which < 0 || which > (NSUPPLIES_PS - 1)) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
-                       argv[0], which, (NSUPPLIES_PS - 1));
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+             argv[0], which, (NSUPPLIES_PS - 1));
     return pdFALSE;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s\r\n", argv[0],
@@ -212,6 +215,7 @@ static BaseType_t snapshot(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MFR   STATUS: 0x%02x\r\n", p0->mfr_status);
   copied +=
       snprintf(m + copied, SCRATCH_SIZE - copied, "flash STATUS: 0x%02x\r\n", p0->flash_status);
+
   return pdFALSE;
 }
 
@@ -236,10 +240,10 @@ static struct command_t commands[] = {
      -1},
     {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
 #ifdef REV2
+    {"clearclk", clearclk_ctl,
+     "Reset clock sticky bits.\r\n", 0},
     {"clkmon", clkmon_ctl, "Displays a table showing the clock chips' statuses given the clock chip id option\r\n", 1},
 #endif // REV2
-    {"clock", clock_ctl,
-     "args: (1|2)\r\nReset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n", 1},
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM.\r\n", 0},
     {"eeprom_read", eeprom_read,
      "args: <address>\r\nReads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",
@@ -347,6 +351,7 @@ static struct command_t commands[] = {
      "args:# (0|1)\r\nDump snapshot register. #: which of 5 LGA80D (10*dev+page). 0|1 decide "
      "if to reset snapshot.\r\n",
      2},
+    {"sn_all", sn_all, "reset all LGA80Ds snapshot registers\r\n", 0},
     {
         "set_id",
         set_board_id,
@@ -392,7 +397,7 @@ static struct command_t commands[] = {
     {"uptime", uptime, "Display uptime in minutes\r\n", 0},
     {"version", ver_ctl, "Display information about MCU firmware version\r\n", 0},
 #ifdef REV2
-    {"v38", v38_ctl, "Control 3V8 FF supply\r\n", 2},
+    {"v38", v38_ctl, "Control 3V8 FF supply args: on|off 1|2\r\n", 2},
 #endif // REV2
     {"watchdog", watchdog_ctl, "Display status of the watchdog task\r\n", 0},
     {
@@ -449,19 +454,26 @@ static BaseType_t help_command_fcn(int argc, char **argv, char *m)
   }
   else { // help on a specific command.
     // help for any command that matches the entered command
-    for (int j = 0; j < NUM_COMMANDS; ++j) {
+    static int j = 0;
+    for (; j < NUM_COMMANDS; ++j) {
       if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0) {
+        int left = SCRATCH_SIZE - copied;
+        // need room for command string, help string, newlines, etc, and trailing \0
+        unsigned int len = strlen(commands[j].helpstr) + strlen(commands[j].commandstr) + 7;
+        if (left < len) {
+          return pdTRUE;
+        }
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
                            commands[j].commandstr, commands[j].helpstr);
-        // return pdFALSE;
       }
     }
+    j = 0;
+    if (copied == 0) {
+      snprintf(m + copied, SCRATCH_SIZE - copied,
+               "%s: No command starting with %s found\r\n", argv[0], argv[1]);
+    }
+    return pdFALSE;
   }
-  if (copied == 0) {
-    snprintf(m + copied, SCRATCH_SIZE - copied,
-             "%s: No command starting with %s found\r\n", argv[0], argv[1]);
-  }
-  return pdFALSE;
 }
 
 static int execute(void *p, int argc, char **argv)

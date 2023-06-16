@@ -73,7 +73,7 @@ void MonitorI2CTask(void *parameters)
   args->updateTick = xTaskGetTickCount();
 
   // wait for the power to come up
-  vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(2500));
+  vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(5000));
 
   int IsCLK = (strstr(args->name, "CLK") != NULL);    // the instance is of CLK-device type
   int IsFF12 = (strstr(args->name, "FF12") != NULL);  // the instance is of FF 12-ch part type
@@ -84,6 +84,7 @@ void MonitorI2CTask(void *parameters)
   bool good = false;
   for (;;) {
     log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
+
     // grab the semaphore to ensure unique access to I2C controller
     if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
       log_warn(LOG_SERVICE, "%s could not get semaphore in time; continue\r\n", args->name);
@@ -149,6 +150,27 @@ void MonitorI2CTask(void *parameters)
         vTaskDelay(10);
         continue;
       }
+
+      if (!IsCLK) {
+        // mux setting
+        int result = apollo_i2c_ctl_w(args->i2c_dev, 0x71, 1, 0x40);
+        if (result) {
+          log_warn(LOG_MONI2C, "mux err %d\r\n", result);
+          break;
+        }
+        uint32_t val;
+        // reading reset-FF pin
+        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, 0x21, 1, 0x3, 1, &val);
+        if (res) {
+          log_warn(LOG_MONI2C, "%s read reset-FF pin failed %d\r\n", args->name, res);
+          break;
+        }
+        if ((val & 0x1) != 0x1) {
+          log_warn(LOG_MONI2C, "%s reset-FF pin is down \r\n", args->name);
+          break;
+        }
+      }
+
       // select the appropriate output for the mux
       uint8_t data;
       data = 0x1U << args->devices[ps].mux_bit;
@@ -167,7 +189,7 @@ void MonitorI2CTask(void *parameters)
         uint8_t page_reg_value = args->commands[c].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, 0x01, 1, page_reg_value);
         if (r != 0) {
-          log_error(LOG_MONI2C, "%s: page fail %s\r\n", args->name, SMBUS_get_error(r));
+          log_error(LOG_MONI2C, "%s : page fail %s\r\n", args->devices[ps].name, SMBUS_get_error(r));
           break;
         }
 
@@ -190,6 +212,13 @@ void MonitorI2CTask(void *parameters)
       } // loop over commands
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
       args->updateTick = xTaskGetTickCount(); // current time in ticks
+
+      res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ps].mux_addr, 1, 0);
+      if (res != 0) {
+        log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
+        break;
+      }
+      log_debug(LOG_MONI2C, "%s: reset mux\r\n", args->name);
 
     } // loop over devices
 

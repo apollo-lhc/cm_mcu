@@ -1,4 +1,4 @@
-# cm_mcu ![CI Status](https://github.com/apollo-lhc/cm_mcu/actions/workflows/c-cpp.yml/badge.svg)
+#cm_mcu ![CI Status](https://github.com/apollo-lhc/cm_mcu/actions/workflows/c-cpp.yml/badge.svg)
 Microcontroller source code, initially targeting the [TI Tiva TM4C1290NCPDT](https://www.ti.com/product/TM4C1290NCPDT) on the Apollo command module. This is a Cortex-M4F 32 bit processor.
 
 ## Project
@@ -13,15 +13,18 @@ To compile the source code simply type `make` at the top-level directory. To get
 ```
 Note that you should not mix builds w/ and w/o `DEBUG=1`; if you do the build will fail or worse do weird things.
 
+If the build fails remember you have to initialize the submodule.
+```
+% git submodule update --remote --recursive
+```
+In theory the makefile should take care of this on the first build.
+
 The code uses the Tivaware driver library since this is stored in the ROM of the TM4C devices. (No install is required.)
 
 The build has been extensively tested on MacOS and Linux (SC7/RHEL7).  See commments below if you want to compile in Windows.
 
 ### FreeRTOS
-We are also using [FreeRTOS](https://freertos.org) also to provide basic multi-tasking. Install FreeRTOS from the above link somewhere and then set the environment variable as follows:
-```bash
-export FREERTOS_ROOT=/base/of/install/FreeRTOS/Source
-```
+We are also using [FreeRTOS](https://freertos.org) to provide basic multi-tasking. It is included via a Git submodule.
 
 ### microrl
 We are using the microrl library in our project. 
