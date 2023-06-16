@@ -65,7 +65,7 @@ static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
 
   // acquire the semaphore
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: couldn't get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
   status = clear_clk_stickybits();
@@ -75,7 +75,7 @@ static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
   }
 
   if (status != 0)
-    snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed \r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (%d)\r\n", argv[0], status);
 
   return pdFALSE;
 }
