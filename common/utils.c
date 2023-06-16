@@ -152,6 +152,7 @@ static const char *ebuf_errstrings[] = {
     "I2C error",
     "Power Failure CLEAR",
     "Volt High (GEN FPGA1 FPGA2)",
+    "Clock Init failed",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -197,9 +198,12 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
     case EBUF_I2C:
       copied += snprintf(m + copied, s - copied, " (dev = %c)", (char)errdata);
       break;
+    case EBUF_CLKINIT_FAILURE:
+      copied += snprintf(m + copied, s - copied, " ");
+      break;
     default:
       if (errcode > EBUF_WITH_DATA) {
-        copied += snprintf(m + copied, s - copied, "%d", errdata);
+        copied += snprintf(m + copied, s - copied, "0x%02x", errdata);
       }
       break;
   }

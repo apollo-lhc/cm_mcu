@@ -190,11 +190,9 @@ bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
 int8_t getFFtemp(const uint8_t i);
-void getFFpart(int which_fpga);
-#define getFFpart_FPGA1(void) \
-  getFFpart(1);
-#define getFFpart_FPGA2(void) \
-  getFFpart(2);
+#ifdef REV2
+void getFFpart(void);
+#endif
 
 uint8_t getFFstatus(const uint8_t i);
 unsigned isFFStale(void);
@@ -255,8 +253,9 @@ extern QueueHandle_t xAlmQueue;
 #define ALM_STAT_FPGA_OVERTEMP    0x4
 #define ALM_STAT_DCDC_OVERTEMP    0x8
 // status register bits
-#define ALM_STAT_GEN_OVERVOLT  0x1
-#define ALM_STAT_FPGA_OVERVOLT 0x4
+#define ALM_STAT_GEN_OVERVOLT   0x5
+#define ALM_STAT_FPGA1_OVERVOLT 0x6
+#define ALM_STAT_FPGA2_OVERVOLT 0x7
 // messages
 #define ALM_CLEAR_ALL     1
 #define ALM_CLEAR_TEMP    2
@@ -342,7 +341,7 @@ const uint32_t *getSystemStack(void);
 int SystemStackWaterHighWaterMark(void);
 
 // clock IO expander initalization
-void init_registers_clk(void);
+int init_registers_clk(void);
 #ifdef REV2
 
 #define CLOCK_CHIP_COMMON_I2C_ADDR 0x6b
