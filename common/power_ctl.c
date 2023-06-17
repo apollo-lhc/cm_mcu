@@ -156,7 +156,7 @@ bool disable_ps(void)
       bool all_ready = true;
       for (int o = 0; o < N_PS_OKS; ++o) {
         if (oks[o].priority >= prio) {
-          int8_t val = read_gpio_pin(oks[o].pin_number);
+          uint8_t val = read_gpio_pin(oks[o].pin_number);
           if (val == 1) { // all supplies are supposed to be off now
             all_ready = false;
             states[o] = PWR_UNKNOWN;
