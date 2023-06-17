@@ -80,9 +80,7 @@ The vector table is defined in `startup_gcc.c`. Interrupt handlers are either in
 
 ## Building FreeRTOS
 
-For this project you should set the environment variable FREERTOS_ROOT to point to your local FreeRTOS installation. The makefile points to a default location too but that is probably not where your FreeRTOS lives. Specifically the environment variable should point to the FreeRTOS/Source directory from the standard install.
+FreeRTOS is now included as a git submodule. 
 
 ```make
-# if the environment variable is not set, this is used
-FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
 ```
