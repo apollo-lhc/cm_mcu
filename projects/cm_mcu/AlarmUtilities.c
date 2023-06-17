@@ -173,6 +173,21 @@ uint32_t getVoltAlarmStatus(void)
 }
 // check the current voltage status.
 // returns +1 for warning, +2 or higher for error
+#ifdef REV1
+#define VALM_BASE_MASK    0x00025U  // management powers, e.g. 12V and M3V3
+#define VALM_GEN_MASK     0x0001AU // common powers
+#define VALM_F1_MASK      0xCCC80U // F1-specific
+#define VALM_F2_MASK      0x33340U // F2-specific
+#define VALM_ALL_MASK     (VALM_BASE_MASK | VALM_GEN_MASK | VALM_F1_MASK | VALM_F2_MASK)
+#define VALM_HIGHEST_V_CH 19 // highest channel that contains a voltage, 0 based counting#error "fix me "
+#elif REV2
+#define VALM_BASE_MASK    0x003U  // management powers, e.g. 12V and M3V3
+#define VALM_GEN_MASK     0x001CU // common powers
+#define VALM_F1_MASK      0x01E0U // F1-specific
+#define VALM_F2_MASK      0x1E00U // F2-specific
+#define VALM_ALL_MASK     (VALM_BASE_MASK | VALM_GEN_MASK | VALM_F1_MASK | VALM_F2_MASK)
+#define VALM_HIGHEST_V_CH 12 // highest channel that contains a voltage, 0 based counting
+#endif                       // REV2
 int VoltStatus(void)
 {
   bool f1_enable = isFPGAF1_PRESENT();
@@ -181,47 +196,13 @@ int VoltStatus(void)
   int retval = 0;
   status_V = 0x0U;
 
-#if 0
-#ifndef REV2                       // REV1
-  uint8_t genVoltageMask = 0x3f; // 0b111111 by default
-#else                              // REV2
-  uint8_t genVoltageMask = 0x1f; // 0b11111 by default
-#endif                             // REV 2
-
-
-  const int n_fpga_half_ch = (ADC_INFO_FPGA_VCC_FIN_CH - ADC_INFO_FPGA_VCC_INIT_CH + 1) / 2;
-  const int ADC_INFO_FPGA2_VCC_INIT_CH = n_fpga_half_ch + ADC_INFO_FPGA_VCC_INIT_CH;
-
-  const int adc_vcc_int_ch[3] = {ADC_INFO_GEN_VCC_INIT_CH, ADC_INFO_FPGA_VCC_INIT_CH, ADC_INFO_FPGA2_VCC_INIT_CH};
-  const int adc_vcc_fin_ch[3] = {ADC_INFO_GEN_VCC_FIN_CH, ADC_INFO_FPGA2_VCC_INIT_CH - 1, ADC_INFO_FPGA_VCC_FIN_CH};
-  uint8_t dev_bitmask[3] = {0, 0, 0};
-  uint8_t is_dev_alarm_volt[3] = {0, 0, 0};
-#endif 
   // change what we do, if power is on or not.
   enum power_system_state currPsState = getPowerControlState();
   
   if ( !((currPsState == POWER_ON) || (currPsState == POWER_OFF))) { // in flux. Skip.
     return 0;
   }
-#if 0
-  if (currPsState != POWER_ON) {
-#ifndef REV2                // REV1
-    genVoltageMask = 0x5; // 0b000101 only allows other powers off except M3V3 and 12V
-#else                       // REV2
-    genVoltageMask = 0x3; // 0b00011 only allows other powers off except M3V3 and 12V
-#endif                      // REV 2
-  }
-#endif 
-#ifdef REV1
-#error "fix me "
-#elif REV2
-#define VALM_BASE_MASK    0x003U  // management powers, e.g. 12V and M3V3
-#define VALM_GEN_MASK     0x001CU // common powers
-#define VALM_F1_MASK      0x01E0U // F1-specific
-#define VALM_F2_MASK      0x1E00U // F2-specific
-#define VALM_ALL_MASK     (VALM_BASE_MASK | VALM_GEN_MASK | VALM_F1_MASK | VALM_F2_MASK)
-#define VALM_HIGHEST_V_CH 12 // highest channel that contains a voltage, 0 based counting
-#endif // REV2
+
   // set up mask for which channels to worry about
   uint32_t ch_mask = VALM_BASE_MASK; // always true
   if (currPsState == POWER_ON) {
@@ -266,60 +247,6 @@ int VoltStatus(void)
     ++retval;
   }
 
-#if 0
-    for (int n = 0; n < 3; ++n) {
-      for (int ch = adc_vcc_int_ch[n]; ch < adc_vcc_fin_ch[n] + 1; ++ch) {
-
-        if (n != 0) {
-          if ((!f1_enable) || (!f2_enable && ch > (ADC_INFO_FPGA2_VCC_INIT_CH - 1))) // check if fpga1/2 is on the board. currently fpga1 takes the first half of adc outputs in this indexing
-            break;
-        }
-        float target_value = getADCtargetValue(ch);
-
-        if (getADCvalue(ch) < 0.7f * target_value) // wait for delay from ADC outputs and actual reading
-          vTaskDelay(pdMS_TO_TICKS(500));          // delay 1000 ms
-
-        float now_value = getADCvalue(ch);
-        float excess = (now_value - target_value) / target_value;
-        if (excess > 0.0f) {
-          is_dev_alarm_volt[n] = 1;
-          excess_volt = excess * 100;
-          excess_volt_which_ch = ch;
-        }
-
-        if ((excess > threshold && excess > 0.0f) || (excess * -1.0f > threshold && excess < 0.0f)) { // if this ADC voltage is greater/lower than a target value by getAlarmVoltageThres()*100%
-          dev_bitmask[n] += (1 << (ch - adc_vcc_int_ch[n]));                                          // first to last bit corresponds to status of low to high ADC voltage channel
-          is_dev_alarm_volt[n] = 2;
-          int tens, frac;
-          float_to_ints(excess * 100, &tens, &frac);
-          log_debug(LOG_ALM, "VoltAlm: %s: %02d.%02d %% off target\r\n", getADCname(ch), tens, frac); // over voltage among one of power supplies by +/- getAlarmVoltageThres()*100% of its threshold
-        }
-      }
-
-      if (n == 0)
-        currentVoltStatus[GEN] = dev_bitmask[n] & genVoltageMask; // applies a mask with power-off exceptions
-      else if (n == 1)
-        currentVoltStatus[FPGA1] = dev_bitmask[n];
-      else
-        currentVoltStatus[FPGA2] = dev_bitmask[n];
-    }
-
-  if (is_dev_alarm_volt[0] > 0 || is_dev_alarm_volt[1] > 0 || is_dev_alarm_volt[2] > 0) {
-    retval++;
-    if (is_dev_alarm_volt[0] == 2) {
-      status_V |= ALM_STAT_GEN_OVERVOLT;
-      ++retval;
-    }
-    else if (is_dev_alarm_volt[1] == 2) {
-      status_V |= ALM_STAT_FPGA1_OVERVOLT;
-      ++retval;
-    }
-    else if (is_dev_alarm_volt[2] == 2) {
-      status_V |= ALM_STAT_FPGA2_OVERVOLT;
-      ++retval;
-    }
-  }
-#endif
   return retval;
 }
 
