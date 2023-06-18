@@ -87,7 +87,7 @@ void setPSStatus(int i, enum ps_state theState);
 #define PS_OKS_MASK       ((1U << N_PS_OKS) - 1)
 #define PS_OKS_F1_MASK    0x543U
 #define PS_OKS_F2_MASK    0xA8CU
-#define PS_OKS_GEN_MASK   0x030U // includes 4v0 pin
+#define PS_OKS_GEN_MASK   0x030U 
 #define PS_ENS_MASK       ((1U << N_PS_ENABLES) - 1)
 #define PS_ENS_GEN_MASK   0x00CU
 #define PS_ENS_F1_MASK    0x151U
