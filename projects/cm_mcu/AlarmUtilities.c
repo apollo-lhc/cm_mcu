@@ -4,6 +4,7 @@
 
 #include "common/log.h"
 #include "common/pinsel.h"
+#include <assert.h>
 #include <math.h>
 
 ///////////////////////////////////////////////////////////
@@ -173,13 +174,15 @@ uint32_t getVoltAlarmStatus(void)
 }
 // check the current voltage status.
 // returns +1 for warning, +2 or higher for error
+// these flags represent positions into thestruct ADC_Info_t ADCs[] array in 
+// the ADCMonitorTask.c
 #ifdef REV1
-#define VALM_BASE_MASK    0x00025U  // management powers, e.g. 12V and M3V3
+#define VALM_BASE_MASK    0x00025U // management powers, e.g. 12V and M3V3
 #define VALM_GEN_MASK     0x0001AU // common powers
 #define VALM_F1_MASK      0xCCC80U // F1-specific
 #define VALM_F2_MASK      0x33340U // F2-specific
 #define VALM_ALL_MASK     (VALM_BASE_MASK | VALM_GEN_MASK | VALM_F1_MASK | VALM_F2_MASK)
-#define VALM_HIGHEST_V_CH 19 // highest channel that contains a voltage, 0 based counting#error "fix me "
+#define VALM_HIGHEST_V_CH 19 // highest channel that contains a voltage, 0 based counting
 #elif REV2
 #define VALM_BASE_MASK    0x003U  // management powers, e.g. 12V and M3V3
 #define VALM_GEN_MASK     0x001CU // common powers
@@ -190,6 +193,11 @@ uint32_t getVoltAlarmStatus(void)
 #endif                       // REV2
 int VoltStatus(void)
 {
+
+  // compile-time sanity check on the flags being unique. 
+  // I need the +1 in the 1<xx since the highest channel is 0-based counting.
+  static_assert((VALM_BASE_MASK ^ VALM_GEN_MASK ^ VALM_F1_MASK ^ VALM_F2_MASK) == ((1 << (VALM_HIGHEST_V_CH + 1)) - 1), "VALM masks not unique");
+
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
 
