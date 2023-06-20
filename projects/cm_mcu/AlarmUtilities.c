@@ -174,7 +174,7 @@ uint32_t getVoltAlarmStatus(void)
 }
 // check the current voltage status.
 // returns +1 for warning, +2 or higher for error
-// these flags represent positions into thestruct ADC_Info_t ADCs[] array in 
+// these flags represent positions into thestruct ADC_Info_t ADCs[] array in
 // the ADCMonitorTask.c
 #ifdef REV1
 #define VALM_BASE_MASK    0x00025U // management powers, e.g. 12V and M3V3
@@ -194,7 +194,7 @@ uint32_t getVoltAlarmStatus(void)
 int VoltStatus(void)
 {
 
-  // compile-time sanity check on the flags being unique. 
+  // compile-time sanity check on the flags being unique.
   // I need the +1 in the 1<xx since the highest channel is 0-based counting.
   static_assert((VALM_BASE_MASK ^ VALM_GEN_MASK ^ VALM_F1_MASK ^ VALM_F2_MASK) == ((1 << (VALM_HIGHEST_V_CH + 1)) - 1), "VALM masks not unique");
 
@@ -206,15 +206,15 @@ int VoltStatus(void)
 
   // change what we do, if power is on or not.
   enum power_system_state currPsState = getPowerControlState();
-  
-  if ( !((currPsState == POWER_ON) || (currPsState == POWER_OFF))) { // in flux. Skip.
+
+  if (!((currPsState == POWER_ON) || (currPsState == POWER_OFF))) { // in flux. Skip.
     return 0;
   }
 
   // set up mask for which channels to worry about
   uint32_t ch_mask = VALM_BASE_MASK; // always true
   if (currPsState == POWER_ON) {
-    ch_mask |= VALM_GEN_MASK;  // common power
+    ch_mask |= VALM_GEN_MASK; // common power
     if (f1_enable) {
       ch_mask |= VALM_F1_MASK;
     }
@@ -222,26 +222,26 @@ int VoltStatus(void)
       ch_mask |= VALM_F2_MASK;
     }
   }
-  // Loop over ADC values. 
+  // Loop over ADC values.
   const float threshold = getAlarmVoltageThres();
-  uint32_t ch_alm_mask =0x0U;
+  uint32_t ch_alm_mask = 0x0U;
   for (int i = 0; i < VALM_HIGHEST_V_CH; ++i) {
     // check if the current channel contains a voltage measurement we care about
-    if ( !(ch_mask & (0x1U<<i))) {
+    if (!(ch_mask & (0x1U << i))) {
       continue; // if not, continue to then ext loop iteration
     }
     float target_value = getADCtargetValue(i);
     float now_value = getADCvalue(i);
     float excess = (now_value - target_value) / target_value;
 
-    if (ABS(excess) > threshold) { 
-      ch_alm_mask |= (0x1U<<i); // mark bit for failing supply
+    if (ABS(excess) > threshold) {
+      ch_alm_mask |= (0x1U << i); // mark bit for failing supply
       int tens, frac;
       float_to_ints(excess * 100, &tens, &frac);
-      log_debug(LOG_ALM, "VoltAlm: %s: %02d.%02d %% off target\r\n", getADCname(i), tens, frac); 
+      log_debug(LOG_ALM, "VoltAlm: %s: %02d.%02d %% off target\r\n", getADCname(i), tens, frac);
     }
   }
-  status_V  = 0x0U;
+  status_V = 0x0U;
   if (ch_alm_mask & (VALM_BASE_MASK | VALM_GEN_MASK)) {
     status_V |= ALM_STAT_GEN_OVERVOLT;
     ++retval;
