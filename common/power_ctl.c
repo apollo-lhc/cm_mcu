@@ -72,7 +72,6 @@ struct gpio_pin_t oks[] = {
 // REV 2
 //
 // ------------------------------------------
-// add here
 // if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
     {  EN_F1_INT, "EN_F1_INT", 1},
@@ -87,7 +86,11 @@ static const struct gpio_pin_t enables[] = {
     {  EN_F2_AVTT, "EN_F2_AVTT", 5},
 };
 
-//if you update this you need to update N_PS_OKS too
+// if you update this you need to update N_PS_OKS too
+// note we do _not_ include the PG for the 4V0 supply, though it exists.
+// this is because the supply is turned on automatically at L2
+// but only enabled for the fireflies at L6. At L6 we don't actually 
+// turn on the supplies, but instead enable them for the fireflies.
 const
 struct gpio_pin_t oks[N_PS_OKS] = {
     { PG_F1_INT_A, "PG_F1_INT_A", 1},
