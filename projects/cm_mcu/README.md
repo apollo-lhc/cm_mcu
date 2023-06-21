@@ -1,5 +1,4 @@
-# Main project for the Apollo CM microcontroller.
-
+#Main project for the Apollo CM microcontroller.
 
 This project has the source code for the firmware that runs on the microcontroller to provide low-level control of the power supplies, low-level monitoring of temperatures, voltages and currents, monitoring information that is provided the to the Apollo Service Module and to the IPMC via an I2C worker, an error logger to allow basic debugging after-the-fact, and a  UART-based command line interface (CLI), available either from the front panel or from the service module.
 
@@ -40,19 +39,17 @@ Tasks are located in their own C files and are identified by names such as `XXXT
 void Task(void *parameters)
 {
   // do some initialization
-  // ... 
-  
+  // ...
+
   // initialize to the current tick time right before main task loop starts
   TickType_t xLastWakeTime = xTaskGetTickCount();
   for (;;) {
     // do stuff
     // ...
     // wait here for the x msec, where x is 2nd argument below.
-    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));    
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));
   }
-
 }
-
 
 ```
 

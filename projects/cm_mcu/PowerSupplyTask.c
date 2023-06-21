@@ -60,10 +60,10 @@ static uint16_t getPSFailMask(void)
   static uint32_t ps_ignore_mask;
   if (!configured) {
     ps_ignore_mask = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
-    if (ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F1_MASK_L6 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 | PS_OKS_F2_MASK_L6)) {
+    if (ps_ignore_mask & ~(PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5)) {
       log_warn(LOG_PWRCTL, "Warning: mask 0x%x included masks at below L4; ignoring\r\n", ps_ignore_mask);
       // mask out supplies at startup L1, L2 or L3. We do not allow those to fail.
-      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F1_MASK_L6 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5 | PS_OKS_F2_MASK_L6);
+      ps_ignore_mask &= (PS_OKS_F1_MASK_L4 | PS_OKS_F1_MASK_L5 | PS_OKS_F2_MASK_L4 | PS_OKS_F2_MASK_L5);
     }
     configured = true;
   }
@@ -143,7 +143,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
     supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_F1_MASK_L5;
 #ifdef REV2
-    supply_ok_mask_L6 = supply_ok_mask_L5 | PS_OKS_F1_MASK_L6;
+    supply_ok_mask_L6 = supply_ok_mask_L5;
 #endif // REV2
   }
   if (f2_enable) {
@@ -153,7 +153,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
 #ifdef REV2
-    supply_ok_mask_L6 |= supply_ok_mask_L5 | PS_OKS_F2_MASK_L6;
+    supply_ok_mask_L6 |= supply_ok_mask_L5;
 #endif // REV2
   }
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
@@ -391,7 +391,6 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          blade_power_ok(true);
           nextState = POWER_L6ON;
         }
 
@@ -497,8 +496,8 @@ void PowerSupplyTask(void *parameters)
       setPSStatus(N_PS_OKS - 1, PWR_FAILED);
 #endif
     if (currentState != nextState) {
-      log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
-                power_system_state_names[currentState], power_system_state_names[nextState]);
+      log_info(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
+               power_system_state_names[currentState], power_system_state_names[nextState]);
     }
     currentState = nextState;
 
