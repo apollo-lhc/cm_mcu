@@ -496,8 +496,8 @@ void PowerSupplyTask(void *parameters)
       setPSStatus(N_PS_OKS - 1, PWR_FAILED);
 #endif
     if (currentState != nextState) {
-      log_info(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
-               power_system_state_names[currentState], power_system_state_names[nextState]);
+      log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
+                power_system_state_names[currentState], power_system_state_names[nextState]);
     }
     currentState = nextState;
 
