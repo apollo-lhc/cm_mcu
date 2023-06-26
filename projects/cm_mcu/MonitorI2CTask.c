@@ -89,7 +89,8 @@ void MonitorI2CTask(void *parameters)
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
       if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
-        log_warn(LOG_SERVICE, "%s could not get semaphore in time; continue\r\n", args->name);
+        log_warn(LOG_SERVICE, "%s could not get semaphore in time; delay & continue\r\n", args->name);
+        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(10)); // wait
         continue;
       }
     }
@@ -99,14 +100,6 @@ void MonitorI2CTask(void *parameters)
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
       log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
-
-      if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) { // avoid continues to infinite loops due to multi-threading when pwr is not on
-        if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
-          xSemaphoreGive(args->xSem);
-        }
-        break;
-      }
-
       log_debug(LOG_MONI2C, "%s: powercheck\r\n", args->name);
 
       if (getPowerControlState() != POWER_ON) {
