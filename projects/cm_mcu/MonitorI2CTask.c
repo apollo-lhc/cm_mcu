@@ -99,8 +99,7 @@ void MonitorI2CTask(void *parameters)
     // loop over devices in the device-type instance
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
-      log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
-      log_debug(LOG_MONI2C, "%s: powercheck\r\n", args->name);
+      log_debug(LOG_MONI2C, "%s: device %d powercheck\r\n", args->name, ps);
 
       if (getPowerControlState() != POWER_ON) {
         if (good) {
