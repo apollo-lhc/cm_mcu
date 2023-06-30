@@ -56,41 +56,30 @@ static BaseType_t bl_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#ifdef REV2
 // this command takes one argument
-static BaseType_t clock_ctl(int argc, char **argv, char *m)
+static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
   int status = -1; // shut up clang compiler warning
-  BaseType_t i = strtol(argv[1], NULL, 10);
-  if (!((i == 1) || (i == 2))) {
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "Invalid mode %ld for clock, only 1 (reset) and 2 (program) supported\r\n", i);
+
+  // acquire the semaphore
+  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: couldn't get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s mode set to %ld. \r\n", argv[0], i);
-  if (i == 1) {
-    status = initialize_clock();
-    if (status == 0)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "clock synthesizer successfully initialized. \r\n");
+  status = clear_clk_stickybits();
+  // check if we have the semaphore
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
   }
-  else if (i == 2) {
-    status = load_clock();
-    if (status == 0)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "clock synthesizer successfully programmed. \r\n");
-  }
-  if (status == -1)
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (1). \r\n", argv[0]);
-  else if (status == -2)
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (2). \r\n", argv[0]);
-  else if (status != 0)
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s invalid return value. \r\n", argv[0]);
+
+  if (status != 0)
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s operation failed (%d)\r\n", argv[0], status);
+
   return pdFALSE;
 }
 
-#ifdef REV2
 // this command takes one argument (from triplet version but will take two argument to include an input from config versions for octlet eeprom)
 static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
 {
@@ -111,9 +100,10 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
     snprintf(m + copied, SCRATCH_SIZE - copied, " 3V3 died. skip loadclock\r\n");
     return pdFALSE; // skip this iteration
   }
-  // grab the semaphore to ensure unique access to I2C controller
+
+  // acquire the semaphore
   if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-    snprintf(m + copied, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
   status = init_load_clk(i); // status is 0 if all registers can be written to a clock chip. otherwise, it implies that some write registers fail in a certain list.
@@ -250,10 +240,10 @@ static struct command_t commands[] = {
      -1},
     {"bootloader", bl_ctl, "Call the boot loader\r\n", 0},
 #ifdef REV2
+    {"clearclk", clearclk_ctl,
+     "Reset clock sticky bits.\r\n", 0},
     {"clkmon", clkmon_ctl, "Displays a table showing the clock chips' statuses given the clock chip id option\r\n", 1},
 #endif // REV2
-    {"clock", clock_ctl,
-     "args: (1|2)\r\nReset (1) or program the clock synthesizer to 156.25 MHz (2).\r\n", 1},
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM.\r\n", 0},
     {"eeprom_read", eeprom_read,
      "args: <address>\r\nReads 4 bytes from EEPROM. Address should be a multiple of 4.\r\n",

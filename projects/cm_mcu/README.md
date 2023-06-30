@@ -1,4 +1,4 @@
-#Main project for the Apollo CM microcontroller.
+# Main project for the Apollo CM microcontroller.
 
 This project has the source code for the firmware that runs on the microcontroller to provide low-level control of the power supplies, low-level monitoring of temperatures, voltages and currents, monitoring information that is provided the to the Apollo Service Module and to the IPMC via an I2C worker, an error logger to allow basic debugging after-the-fact, and a  UART-based command line interface (CLI), available either from the front panel or from the service module.
 
@@ -77,9 +77,7 @@ The vector table is defined in `startup_gcc.c`. Interrupt handlers are either in
 
 ## Building FreeRTOS
 
-For this project you should set the environment variable FREERTOS_ROOT to point to your local FreeRTOS installation. The makefile points to a default location too but that is probably not where your FreeRTOS lives. Specifically the environment variable should point to the FreeRTOS/Source directory from the standard install.
+FreeRTOS is now included as a git submodule. 
 
 ```make
-#if the environment variable is not set, this is used
-FREERTOS_ROOT?=../../../FreeRTOSv10.2.0/FreeRTOS/Source
 ```

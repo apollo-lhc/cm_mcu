@@ -72,7 +72,6 @@ struct gpio_pin_t oks[] = {
 // REV 2
 //
 // ------------------------------------------
-// add here
 // if you update this you need to update N_PS_ENABLES
 static const struct gpio_pin_t enables[] = {
     {  EN_F1_INT, "EN_F1_INT", 1},
@@ -87,7 +86,11 @@ static const struct gpio_pin_t enables[] = {
     {  EN_F2_AVTT, "EN_F2_AVTT", 5},
 };
 
-//if you update this you need to update N_PS_OKS too
+// if you update this you need to update N_PS_OKS too
+// note we do _not_ include the PG for the 4V0 supply, though it exists.
+// this is because the supply is turned on automatically at L2
+// but only enabled for the fireflies at L6. At L6 we don't actually 
+// turn on the supplies, but instead enable them for the fireflies.
 const
 struct gpio_pin_t oks[N_PS_OKS] = {
     { PG_F1_INT_A, "PG_F1_INT_A", 1},
@@ -102,7 +105,7 @@ struct gpio_pin_t oks[N_PS_OKS] = {
     { PG_F2_AVCC, "PG_F2_AVCC", 4},
     { PG_F1_AVTT,  "PG_F1_AVTT", 5},
     { PG_F2_AVTT, "PG_F2_AVTT", 5},
-    { PG_4V0, "PG_4V0", 6},  // enable_3v8(true/false) won't change PG_4V0. Only within 10s after 4.0V off, PG_4V0 can be 0x0.
+    //{ PG_4V0, "PG_4V0", 6},  // enable_3v8(true/false) won't change PG_4V0. Only within 10s after 4.0V off, PG_4V0 can be 0x0.
 };
 
 #else
@@ -156,7 +159,7 @@ bool disable_ps(void)
       bool all_ready = true;
       for (int o = 0; o < N_PS_OKS; ++o) {
         if (oks[o].priority >= prio) {
-          int8_t val = read_gpio_pin(oks[o].pin_number);
+          uint8_t val = read_gpio_pin(oks[o].pin_number);
           if (val == 1) { // all supplies are supposed to be off now
             all_ready = false;
             states[o] = PWR_UNKNOWN;

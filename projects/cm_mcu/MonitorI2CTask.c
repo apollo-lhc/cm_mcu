@@ -83,22 +83,43 @@ void MonitorI2CTask(void *parameters)
 
   bool good = false;
   for (;;) {
+
     log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
+
     // grab the semaphore to ensure unique access to I2C controller
-    if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
-      log_warn(LOG_SERVICE, "%s could not get semaphore in time; continue\r\n", args->name);
-      continue;
+    if (args->xSem != NULL) {
+      if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
+        log_warn(LOG_SERVICE, "%s could not get semaphore in time; delay & continue\r\n", args->name);
+        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(10)); // wait
+        continue;
+      }
     }
 
     // -------------------------------
     // loop over devices in the device-type instance
     // -------------------------------
     for (int ps = 0; ps < args->n_devices; ++ps) {
-      log_debug(LOG_MONI2C, "%s: device %d\r\n", args->name, ps);
+      log_debug(LOG_MONI2C, "%s: device %d powercheck\r\n", args->name, ps);
 
-      if (ps == args->n_devices - 1 && getPowerControlState() != POWER_ON) { // avoid continues to infinite loops due to multi-threading when pwr is not on
+      if (getPowerControlState() != POWER_ON) {
+        if (good) {
+          log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
+          good = false;
+          task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
+        }
+        if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
+          xSemaphoreGive(args->xSem);
+        }
         break;
       }
+      else if (getPowerControlState() == POWER_ON) { // power is on, and ...
+        if (!good) {                                 // ... was not good, but is now good
+          task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
+          log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
+          good = true;
+        }
+      }
+
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1
@@ -123,31 +144,6 @@ void MonitorI2CTask(void *parameters)
 #error "Define either Rev1 or Rev2"
 #endif
         }
-      }
-      log_debug(LOG_MONI2C, "%s: powercheck\r\n", args->name);
-
-      if (getPowerControlState() != POWER_ON) {
-        if (good) {
-          log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
-          good = false;
-          task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
-        }
-        vTaskDelay(pdMS_TO_TICKS(500));
-        continue;
-      }
-      else if (getPowerControlState() == POWER_ON) { // power is on, and ...
-        if (!good) {                                 // ... was not good, but is now good
-          task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
-          log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
-          good = true;
-        }
-      }
-      // if the power state is unknown, don't do anything
-      else {
-        log_info(LOG_MONI2C, "%s: power state %d unknown\r\n", args->name,
-                 getPowerControlState());
-        vTaskDelay(10);
-        continue;
       }
 
       if (!IsCLK) {

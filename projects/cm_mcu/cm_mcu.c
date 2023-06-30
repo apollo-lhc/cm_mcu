@@ -253,6 +253,7 @@ int main(void)
   // Initialize all semaphores
   initSemaphores();
   dcdc_args.xSem = i2c1_sem;
+  fpga_args.xSem = i2c5_sem;
   ffl12_f1_args.xSem = i2c4_sem;
   ffldaq_f1_args.xSem = i2c4_sem;
   ffl12_f2_args.xSem = i2c3_sem;
