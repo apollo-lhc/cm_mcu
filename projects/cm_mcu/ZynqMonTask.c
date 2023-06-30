@@ -269,7 +269,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
-  for (int i = 0; i < NFIREFLIES; i++) {
+  for (uint8_t i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
       data[i].data.i = getFFtemp(i); // sensor value and type
@@ -285,7 +285,7 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
   // 12-ch Fireflies' bit-mask whether they are 25Gbs or else
   // update the data for ZMON
   // FPGA1
-  for (int rx12 = 0; rx12 < ffl12_f1_args.n_devices / 2; rx12++) {
+  for (uint8_t rx12 = 0; rx12 < ffl12_f1_args.n_devices / 2; rx12++) {
     data[rx12].sensor = rx12 + start; // sensor id
     if (!isFFStale()) {
       data[rx12].data.us = (ffl12_f1_args.ffpart_bit_mask >> rx12) & 0x01; // sensor value and type
@@ -295,7 +295,7 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
     }
   }
   // FPGA2
-  for (int rx12 = ffl12_f1_args.n_devices / 2; rx12 < ffl12_f2_args.n_devices / 2 + ffl12_f1_args.n_devices / 2; rx12++) {
+  for (uint8_t rx12 = ffl12_f1_args.n_devices / 2; rx12 < ffl12_f2_args.n_devices / 2 + ffl12_f1_args.n_devices / 2; rx12++) {
     if (!isFFStale()) {
       data[rx12].data.us = (ffl12_f2_args.ffpart_bit_mask >> (rx12 - ffl12_f1_args.n_devices / 2)) & 0x01; // sensor value and type
     }
@@ -309,10 +309,10 @@ void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
-  for (int ff = 0; ff < NFIREFLIES; ff++) {
+  for (uint8_t ff = 0; ff < NFIREFLIES; ff++) {
     data[ff].sensor = ff + start; // sensor id
     if (!isFFStale()) {
-      int j;
+      uint8_t j;
       if (ff < NFIREFLIES_IT_F1) {
         j = ff;
         data[ff].data.us = ((ffl12_f1_args.present_bit_mask) >> j) & 0x01; // sensor value and type
@@ -341,10 +341,10 @@ void zm_set_firefly_opt_pow(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
-  for (int i = 0; i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F2; i++) {
+  for (uint16_t i = 0; i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F2; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
-      int j;
+      uint16_t j;
       if (i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2)) {
         j = i;
         data[i].data.us = ffl12_f1_args.opt_pow_values[j]; // sensor value and type
