@@ -35,6 +35,7 @@ struct MonitorI2CTaskArgs_t {
   const uint8_t n_commands;          // number of commands
   const int n_values;                // number of results
   const uint8_t n_pages;             // number of pages to loop over
+  const uint16_t selpage_reg;        // register for selecting page
   uint16_t *sm_values;
   tSMBus *smbus;                       // pointer to I2C controller
   volatile tSMBusStatus *smbus_status; // pointer to I2C status
@@ -42,8 +43,17 @@ struct MonitorI2CTaskArgs_t {
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
   uint8_t ffpart_bit_mask;             // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
   uint8_t present_bit_mask;            // this mask is used for all ffs to detect if it is mounted or not
+  const uint8_t n_rxchs;               // the number of optical receiver channels
+  uint16_t *opt_pow_values;            // a set of optical power measurements only from FFs with 25Gbs
   UBaseType_t stack_size;              // stack size of task
 };
+
+#define FF_SELPAGE_REG  0x7f
+#define CLK_SELPAGE_REG 0x1
+
+#define FF_OPT_POW_C 4 // the order of optical power command in sm_command array
+#define FF_DAQ_NRXCH 4
+#define FF_12_NRXCH  12
 
 #ifndef REV2
 #define NSUPPLIES_FFLDAQ_F1 (3)

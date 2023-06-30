@@ -165,10 +165,11 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-
+    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
 };
 
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
+uint16_t ffldaq_f1_opt_pow_values[NSUPPLIES_FFLDAQ_F1 * FF_DAQ_NRXCH];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .name = "FFDAQ",
@@ -179,11 +180,14 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .n_commands = NCOMMANDS_FFLDAQ_F1,
     .n_values = NSUPPLIES_FFLDAQ_F1 * NPAGES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1,
     .n_pages = NPAGES_FFLDAQ_F1,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffldaq_f1_values,
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .n_rxchs = FF_DAQ_NRXCH,
+    .opt_pow_values = ffldaq_f1_opt_pow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -205,7 +209,7 @@ struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-
+    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
 };
 
 #ifdef REV1
@@ -234,6 +238,7 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #endif
 
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
+uint16_t ffl12_f1_opt_pow_values[(NSUPPLIES_FFL12_F1 / 2) * FF_12_NRXCH];
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .name = "FF12",
@@ -244,11 +249,14 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .n_commands = NCOMMANDS_FFL12_F1,
     .n_values = NSUPPLIES_FFL12_F1 * NPAGES_FFL12_F1 * NCOMMANDS_FFL12_F1,
     .n_pages = NPAGES_FFL12_F1,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffl12_f1_values,
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .n_rxchs = FF_12_NRXCH,
+    .opt_pow_values = ffl12_f1_opt_pow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -283,9 +291,10 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-
+    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
+uint16_t ffldaq_f2_opt_pow_values[NSUPPLIES_FFLDAQ_F2 * FF_DAQ_NRXCH];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .name = "FFDAV",
@@ -296,11 +305,14 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .n_commands = NCOMMANDS_FFLDAQ_F2,
     .n_values = NSUPPLIES_FFLDAQ_F2 * NPAGES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2,
     .n_pages = NPAGES_FFLDAQ_F2,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffldaq_f2_values,
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .n_rxchs = FF_DAQ_NRXCH,
+    .opt_pow_values = ffldaq_f2_opt_pow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -322,7 +334,7 @@ struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-
+    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
 };
 
 #ifdef REV1
@@ -346,6 +358,7 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #endif
 
 uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
+uint16_t ffl12_f2_opt_pow_values[NSUPPLIES_FFL12_F2 * (FF_12_NRXCH / 2)];
 
 struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .name = "FF12V",
@@ -356,11 +369,14 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .n_commands = NCOMMANDS_FFL12_F2,
     .n_values = NSUPPLIES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
     .n_pages = NPAGES_FFL12_F2,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffl12_f2_values,
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
+    .n_rxchs = FF_12_NRXCH,
+    .opt_pow_values = ffl12_f2_opt_pow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -398,6 +414,7 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .n_commands = NCOMMANDS_CLK,
     .n_values = NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK,
     .n_pages = NPAGES_CLK,
+    .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clk_values,
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
@@ -433,6 +450,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .n_commands = NCOMMANDS_CLKR0A,
     .n_values = NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A,
     .n_pages = NPAGES_CLKR0A,
+    .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clkr0a_values,
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
@@ -724,13 +742,11 @@ void getFFpart(int which_fpga)
     }
 
     log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA1): 0x%02x \r\n:", ffl12_f1_args.ffpart_bit_mask);
-#ifdef REV2
     log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA1): 0x%02x \r\n:", f1_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0U) {
       log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f1_ff12xmit_4v0_sel, ffl12_f1_args.ffpart_bit_mask);
     }
-#endif
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(i2c4_sem);
@@ -807,13 +823,11 @@ void getFFpart(int which_fpga)
     }
 
     log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA2): 0x%02x \r\n:", ffl12_f2_args.ffpart_bit_mask);
-#ifdef REV2
     log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA2): 0x%02x \r\n:", f2_ff12xmit_4v0_sel);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0U) {
       log_warn(LOG_SERVICE, "Some 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f2_ff12xmit_4v0_sel, ffl12_f2_args.ffpart_bit_mask);
     }
-#endif
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(i2c3_sem);
@@ -1094,14 +1108,11 @@ struct MonitorTaskArgs_t dcdc_args = {
     .name = "PSMON",
     .devices = pm_addrs_dcdc,
     .n_devices = NSUPPLIES_PS,
-    .commands =
-        pm_command_dcdc,
+    .commands = pm_command_dcdc,
     .n_commands = NCOMMANDS_PS,
-    .pm_values =
-        dcdc_values,
+    .pm_values = dcdc_values,
     .n_values = NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS,
-    .n_pages =
-        NPAGES_PS,
+    .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
     .xSem = NULL,
