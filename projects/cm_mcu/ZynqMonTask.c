@@ -543,12 +543,12 @@ void zm_fill_structs(void)
   zm_set_clock(&zynqmon_data[155], 167, 1);
   // 12-ch firefly bit-mask part, size 6
   zm_set_firefly_ff12part(&zynqmon_data[195], 207);
-  // firefly present or not, size 12
+  // firefly present or not, size 20
   zm_set_firefly_presentbit(&zynqmon_data[201], 213);
   // firefly optical power of 25Gbs FFs, size 104
-  zm_set_firefly_opt_pow(&zynqmon_data[213], 225);
+  zm_set_firefly_opt_pow(&zynqmon_data[221], 233);
 }
-#define ZMON_VALID_ENTRIES 317
+#define ZMON_VALID_ENTRIES 325
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])
