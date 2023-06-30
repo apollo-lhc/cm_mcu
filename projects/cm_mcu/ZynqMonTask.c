@@ -285,22 +285,22 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
   // 12-ch Fireflies' bit-mask whether they are 25Gbs or else
   // update the data for ZMON
   // FPGA1
-  for (int i = 0; i < ffl12_f1_args.n_devices / 2; i++) {
-    data[i].sensor = i + start; // sensor id
+  for (int rx12 = 0; rx12 < ffl12_f1_args.n_devices / 2; rx12++) {
+    data[rx12].sensor = rx12 + start; // sensor id
     if (!isFFStale()) {
-      data[i].data.i = (ffl12_f1_args.ffpart_bit_mask >> i) & 0x01; // sensor value and type
+      data[rx12].data.us = (ffl12_f1_args.ffpart_bit_mask >> rx12) & 0x01; // sensor value and type
     }
     else {
-      data[i].data.i = -56; // special stale value
+      data[rx12].data.us = -56; // special stale value
     }
   }
   // FPGA2
-  for (int i = ffl12_f1_args.n_devices / 2; i < ffl12_f2_args.n_devices / 2 + ffl12_f1_args.n_devices / 2; i++) {
+  for (int rx12 = ffl12_f1_args.n_devices / 2; rx12 < ffl12_f2_args.n_devices / 2 + ffl12_f1_args.n_devices / 2; rx12++) {
     if (!isFFStale()) {
-      data[i].data.i = (ffl12_f2_args.ffpart_bit_mask >> (i - ffl12_f1_args.n_devices / 2)) & 0x01; // sensor value and type
+      data[rx12].data.us = (ffl12_f2_args.ffpart_bit_mask >> (rx12 - ffl12_f1_args.n_devices / 2)) & 0x01; // sensor value and type
     }
     else {
-      data[i].data.i = -56; // special stale value
+      data[rx12].data.us = -56; // special stale value
     }
   }
 }
@@ -309,29 +309,29 @@ void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
-  for (int i = 0; i < NFIREFLIES; i++) {
-    data[i].sensor = i + start; // sensor id
+  for (int ff = 0; ff < NFIREFLIES; ff++) {
+    data[ff].sensor = ff + start; // sensor id
     if (!isFFStale()) {
       int j;
-      if (i < NFIREFLIES_IT_F1) {
-        j = i;
-        data[i].data.i = ((ffl12_f1_args.present_bit_mask) >> j) & 0x01; // sensor value and type
+      if (ff < NFIREFLIES_IT_F1) {
+        j = ff;
+        data[ff].data.us = ((ffl12_f1_args.present_bit_mask) >> j) & 0x01; // sensor value and type
       }
-      else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-        j = i - NFIREFLIES_IT_F1;
-        data[i].data.i = ((ffldaq_f1_args.present_bit_mask) >> j) & 0x01; // sensor value and type
+      else if (NFIREFLIES_IT_F1 <= ff && ff < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
+        j = ff - NFIREFLIES_IT_F1;
+        data[ff].data.us = ((ffldaq_f1_args.present_bit_mask) >> j) & 0x01; // sensor value and type
       }
-      else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-        j = i - NFIREFLIES_F1;
-        data[i].data.i = ((ffl12_f2_args.present_bit_mask) >> j) & 0x01; // sensor value and type
+      else if (NFIREFLIES_F1 <= ff && ff < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+        j = ff - NFIREFLIES_F1;
+        data[ff].data.us = ((ffl12_f2_args.present_bit_mask) >> j) & 0x01; // sensor value and type
       }
       else {
-        j = i - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
-        data[i].data.i = ((ffldaq_f2_args.present_bit_mask) >> j) & 0x01; // sensor value and type
+        j = ff - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
+        data[ff].data.us = ((ffldaq_f2_args.present_bit_mask) >> j) & 0x01; // sensor value and type
       }
     }
     else {
-      data[i].data.i = -56; // special stale value
+      data[ff].data.us = -56; // special stale value
     }
   }
 }
