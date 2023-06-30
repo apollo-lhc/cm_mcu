@@ -285,7 +285,7 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
   // 12-ch Fireflies' bit-mask whether they are 25Gbs or else
   // update the data for ZMON
   // FPGA1
-  for (uint8_t rx12 = 0; rx12 < ffl12_f1_args.n_devices / 2; rx12++) {
+  for (int rx12 = 0; rx12 < ffl12_f1_args.n_devices / 2; rx12++) {
     data[rx12].sensor = rx12 + start; // sensor id
     if (!isFFStale()) {
       data[rx12].data.us = (ffl12_f1_args.ffpart_bit_mask >> rx12) & 0x01; // sensor value and type
@@ -295,7 +295,7 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
     }
   }
   // FPGA2
-  for (uint8_t rx12 = ffl12_f1_args.n_devices / 2; rx12 < ffl12_f2_args.n_devices / 2 + ffl12_f1_args.n_devices / 2; rx12++) {
+  for (int rx12 = ffl12_f1_args.n_devices / 2; rx12 < ffl12_f2_args.n_devices / 2 + ffl12_f1_args.n_devices / 2; rx12++) {
     if (!isFFStale()) {
       data[rx12].data.us = (ffl12_f2_args.ffpart_bit_mask >> (rx12 - ffl12_f1_args.n_devices / 2)) & 0x01; // sensor value and type
     }
