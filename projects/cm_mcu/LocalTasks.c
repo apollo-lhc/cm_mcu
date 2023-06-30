@@ -770,7 +770,7 @@ void getFFpart()
       ffl12_f1_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
     else
       ffl12_f2_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
-    
+
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(semaphores[f]) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(semaphores[f]);
