@@ -355,7 +355,7 @@ void zm_set_firefly_opt_pow(struct zynqmon_data_t data[], int start)
       }
       else if (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 <= i && i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F2 / 2)) {
         j = i - (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1);
-        data[i].data.us = ffldaq_f2_args.opt_pow_values[j]; // sensor value and type
+        data[i].data.us = ffl12_f2_args.opt_pow_values[j]; // sensor value and type
       }
       else {
         j = i - (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F2 / 2));
@@ -467,12 +467,10 @@ void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
             (j * args_st[n].n_commands * args_st[n].n_pages) + k;
 
         if (stale) {
-          data[ll].data.f = (__fp16)__builtin_nanf("");
+          data[ll].data.i = -56; // special stale value
         }
         else {
-          data[ll].data.f = (__fp16)args_st[n].sm_values[index];
-          if (data[l].data.f < -900.f)
-            data[ll].data.f = (__fp16)__builtin_nanf("");
+          data[ll].data.i = args_st[n].sm_values[index];
         }
         data[ll].sensor = ll + start;
         ++ll;
@@ -515,7 +513,7 @@ void zm_fill_structs(void)
   zm_set_adcmon(&zynqmon_data[89], 96);
   // uptime, size 2
   zm_set_uptime(&zynqmon_data[110], 192);
-  // gitversion, size 10.0
+  // gitversion, size 10
   zm_set_gitversion(&zynqmon_data[112], 118);
   // fpga, size 4
   zm_set_fpga(&zynqmon_data[122], 128);
