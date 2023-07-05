@@ -315,7 +315,7 @@ void EEPROMTask(void *parameters);
 extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
 // data for zynqmon task to be sent to Zynq
-#define ZM_NUM_ENTRIES 256
+#define ZM_NUM_ENTRIES 512
 struct zynqmon_data_t {
   uint8_t sensor;
   union convert_16_t {
