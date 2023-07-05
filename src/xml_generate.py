@@ -31,14 +31,20 @@ def makeNode(parent: ET.Element, id: str, c: dict, addr2: int, parent_id: str) -
     if (c['type'] == 'int8'):
         width = 8
         format = "d"
+    elif (c['type'] == 'int16'):
+        width = 16
+        format = "d"
     elif (c['type'] == 'fp16'):
         width = 16
         format = "fp16"
     elif (c['type'] == 'char'):
         width = 8
         format = "c"
-    elif (c['type'] == 'uint32_t'):
+    elif (c['type'] == 'uint32'):
         width = 32
+        format = "u"
+    elif (c['type'] == 'uint16'):
+        width = 16
         format = "u"
     else:
         print("ERROR: unknown type", c['type'])
