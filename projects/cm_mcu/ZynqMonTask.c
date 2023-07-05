@@ -539,30 +539,30 @@ void zm_fill_structs(void)
 {
   // firefly, size 20
   zm_set_firefly_temps(&zynqmon_data[0], 0);
-  // psmon, size 84
-  zm_set_psmon(&zynqmon_data[20], 32);
-  // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[104], 128);
   // uptime, size 2
-  zm_set_uptime(&zynqmon_data[125], 225);
+  zm_set_uptime(&zynqmon_data[20], 22);
+  // psmon, size 84
+  zm_set_psmon(&zynqmon_data[22], 32);
   // gitversion, size 10
-  zm_set_gitversion(&zynqmon_data[127], 118);
+  zm_set_gitversion(&zynqmon_data[106], 118);
+  // adcmon, size 21
+  zm_set_adcmon(&zynqmon_data[116], 130);
   // fpga, size 8
-  zm_set_fpga(&zynqmon_data[137], 149);
+  zm_set_fpga(&zynqmon_data[137], 152);
   // clocks, R0A, size 10
-  zm_set_clock(&zynqmon_data[145], 157, 0);
+  zm_set_clock(&zynqmon_data[145], 162, 0);
   // clocks, R0B,R1A,R1B,R1C. size 40
-  zm_set_clock(&zynqmon_data[155], 167, 1);
+  zm_set_clock(&zynqmon_data[155], 189, 1);
   // 12-ch firefly bit-mask part, size 6
-  zm_set_firefly_ff12part(&zynqmon_data[195], 207);
+  zm_set_firefly_ff12part(&zynqmon_data[195], 232);
   // firefly present or not, size 20
-  zm_set_firefly_presentbit(&zynqmon_data[201], 213);
+  zm_set_firefly_presentbit(&zynqmon_data[201], 240);
   // firefly optical power of 25Gbs 12-ch FFs, size 72
-  zm_set_firefly_opt_pow(&zynqmon_data[221], 233, 0);
+  zm_set_firefly_opt_pow(&zynqmon_data[221], 262, 0);
   // firefly optical power of 25Gbs 4-ch FFs, size 32
-  zm_set_firefly_opt_pow(&zynqmon_data[293], 305, 1);
+  zm_set_firefly_opt_pow(&zynqmon_data[293], 336, 1);
 }
-#define ZMON_VALID_ENTRIES 325
+#define ZMON_VALID_ENTRIES 328
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])
