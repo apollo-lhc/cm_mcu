@@ -156,25 +156,25 @@ config:
       - LOSO0F_IN
       - LOL
       - CONFIG_V 
-  - name: firefly12part
+  - name: firefly12bitrate
     start: 207
     count: 6
     type: uint16
-    extra: Table=CM_FF_MON;Column=12PARTT_BIT;Status=1;
-    mcu_call: firefly_12part
+    extra: Table=CM_FF_MON;Column=RX12_IS25GBS;Status=1;
+    mcu_call: firefly_12bitrate
     names:
-      - F1_P1 Rx12 25Gbs
-      - F1_P2 Rx12 25Gbs
-      - F1_P3 Rx12 25Gbs
-      - F2_P1 Rx12 25Gbs
-      - F2_P2 Rx12 25Gbs
-      - F2_P3 Rx12 25Gbs
-  - name: fireflypresent
+      - F1_P1 Rx12
+      - F1_P2 Rx12
+      - F1_P3 Rx12
+      - F2_P1 Rx12
+      - F2_P2 Rx12
+      - F2_P3 Rx12
+  - name: fireflyallpresent
     start: 213
     count: 20
     type: uint16
     extra: Table=CM_FF_MON;Column=PRESENT_BIT;Status=1;
-    mcu_call: firefly_present
+    mcu_call: firefly_allpresent
     names:
       - F1_P1 Tx12 
       - F1_P1 Rx12
@@ -196,3 +196,49 @@ config:
       - F2_P5 XCVR4 
       - F2_P6 XCVR4
       - F2_P7 XCVR4
+  - name: firefly12optpow
+    start: 233
+    count: 72
+    type: uint16
+    extra: Table=CM_FF_MON;Column=RX12_OPTICPOW;Status=1;
+    mcu_call: firefly_12optpow
+    names: 
+      - F1_P1 Rx12 25Gbs
+      - F1_P2 Rx12 25Gbs
+      - F1_P3 Rx12 25Gbs
+      - F2_P1 Rx12 25Gbs
+      - F2_P2 Rx12 25Gbs
+      - F2_P3 Rx12 25Gbs
+    postfixes:
+      - Rx-00
+      - Rx-01
+      - Rx-02
+      - Rx-03
+      - Rx-04
+      - Rx-05
+      - Rx-06
+      - Rx-07
+      - Rx-08
+      - Rx-09
+      - Rx-10
+      - Rx-11
+  - name: firefly4optpow
+    start: 305
+    count: 32
+    type: uint16
+    extra: Table=CM_FF_MON;Column=XCVR4_OPTICPOW;Status=1;
+    mcu_call: firefly_12optpow
+    names: 
+      - F1_P4 XCVR4 25Gbs
+      - F1_P5 XCVR4 25Gbs
+      - F1_P6 XCVR4 25Gbs
+      - F1_P7 XCVR4 25Gbs
+      - F2_P4 XCVR4 25Gbs
+      - F2_P5 XCVR4 25Gbs
+      - F2_P6 XCVR4 25Gbs
+      - F2_P7 XCVR4 25Gbs
+    postfixes:
+      - Rx-00
+      - Rx-01
+      - Rx-02
+      - Rx-03
