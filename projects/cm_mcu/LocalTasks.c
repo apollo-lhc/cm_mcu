@@ -165,7 +165,7 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
 };
 
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
@@ -209,7 +209,7 @@ struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
 };
 
 #ifdef REV1
@@ -291,7 +291,7 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 uint16_t ffldaq_f2_opt_pow_values[NSUPPLIES_FFLDAQ_F2 * FF_DAQ_NRXCH];
@@ -334,7 +334,7 @@ struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "dB", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
 };
 
 #ifdef REV1

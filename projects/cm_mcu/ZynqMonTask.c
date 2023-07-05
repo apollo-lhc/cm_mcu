@@ -337,33 +337,47 @@ void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
 }
 
 #ifdef REV2
-void zm_set_firefly_opt_pow(struct zynqmon_data_t data[], int start)
+void zm_set_firefly_opt_pow(struct zynqmon_data_t data[], int start, int n)
 {
   // Fireflies
   // update the data for ZMON
-  for (uint16_t i = 0; i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F2; i++) {
-    data[i].sensor = i + start; // sensor id
-    if (!isFFStale()) {
-      uint16_t j;
-      if (i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2)) {
-        j = i;
-        data[i].data.us = ffl12_f1_args.opt_pow_values[j]; // sensor value and type
-      }
-      else if (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) <= i && i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1) {
-        j = i - (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2));
-        data[i].data.us = ffldaq_f1_args.opt_pow_values[j]; // sensor value and type
-      }
-      else if (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 <= i && i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F2 / 2)) {
-        j = i - (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1);
-        data[i].data.us = ffl12_f2_args.opt_pow_values[j]; // sensor value and type
+  if (n == 0) {
+    for (uint16_t i = 0; i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F2 / 2); i++) {
+      data[i].sensor = i + start; // sensor id
+      if (!isFFStale()) {
+        uint16_t j;
+        if (i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2)) {
+          j = i;
+          data[i].data.us = ffl12_f1_args.opt_pow_values[j]; // sensor value and type
+        }
+        else {
+          j = i - (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2));
+          data[i].data.us = ffl12_f2_args.opt_pow_values[j]; // sensor value and type
+        }
       }
       else {
-        j = i - (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F2 / 2));
-        data[i].data.us = ffldaq_f2_args.opt_pow_values[j]; // sensor value and type
+        data[i].data.us = -56; // special stale value
       }
     }
-    else {
-      data[i].data.us = -56; // special stale value
+  }
+
+  if (n == 1) {
+    for (uint16_t i = 0; i < ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F2; i++) {
+      data[i].sensor = i + start; // sensor id
+      if (!isFFStale()) {
+        uint16_t j;
+        if (i < ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1) {
+          j = i;
+          data[i].data.us = ffldaq_f1_args.opt_pow_values[j]; // sensor value and type
+        }
+        else {
+          j = i - (ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1);
+          data[i].data.us = ffldaq_f2_args.opt_pow_values[j]; // sensor value and type
+        }
+      }
+      else {
+        data[i].data.us = -56; // special stale value
+      }
     }
   }
 }
@@ -543,8 +557,10 @@ void zm_fill_structs(void)
   zm_set_firefly_ff12part(&zynqmon_data[195], 207);
   // firefly present or not, size 20
   zm_set_firefly_presentbit(&zynqmon_data[201], 213);
-  // firefly optical power of 25Gbs FFs, size 104
-  zm_set_firefly_opt_pow(&zynqmon_data[221], 233);
+  // firefly optical power of 25Gbs 12-ch FFs, size 72
+  zm_set_firefly_opt_pow(&zynqmon_data[221], 233, 0);
+  // firefly optical power of 25Gbs 4-ch FFs, size 32
+  zm_set_firefly_opt_pow(&zynqmon_data[293], 305, 1);
 }
 #define ZMON_VALID_ENTRIES 325
 #endif
