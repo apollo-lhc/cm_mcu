@@ -33,6 +33,14 @@ config:
       - F2_P5 XCVR4 
       - F2_P6 XCVR4
       - F2_P7 XCVR4
+  - name: uptime
+    start: 22
+    count: 1
+    type: uint32_t
+    mcu_call: uptime
+    extra: Table=CM_MON;Column=Minutes;Status=1
+    names:
+      - MCU_UPTIME
   - name: psmon
     start: 32
     count: 84
@@ -61,8 +69,16 @@ config:
       - VOUT
       - IOUT
       - STATUS_WORD
+  - name: gitversion
+    start: 118
+    count: 10
+    type: char
+    size: 5
+    mcu_call: gitversion
+    names:
+      - MCU_FW_VER
   - name: adcmon
-    start: 128
+    start: 130
     count: 21
     mcu_call: adcmon
     type: fp16
@@ -89,24 +105,8 @@ config:
       - F1_TEMP
       - F2_TEMP
       - TM4C_TEMP
-  - name: uptime
-    start: 225
-    count: 1
-    type: uint32_t
-    mcu_call: uptime
-    extra: Table=CM_MON;Column=Minutes;Status=1
-    names:
-      - MCU_UPTIME
-  - name: gitversion
-    start: 118
-    count: 10
-    type: char
-    size: 5
-    mcu_call: gitversion
-    names:
-      - MCU_FW_VER
   - name: fpga
-    start: 150
+    start: 152
     count: 8
     type: fp16
     extra: Table=CM_MON;Column=Temp_C;Status=2;
@@ -121,7 +121,7 @@ config:
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
   - name: clocks
-    start: 157
+    start: 162
     count: 10
     type: int16
     extra: Table=CM_MON;Column=CLK_REG;Status=2;
@@ -137,7 +137,7 @@ config:
       - LOS
       - CONFIG_V
   - name: clocks
-    start: 167
+    start: 189
     count: 40
     type: int16
     extra: Table=CM_MON;Column=CLK_REG;Status=2;
@@ -157,7 +157,7 @@ config:
       - LOL
       - CONFIG_V 
   - name: firefly12bitrate
-    start: 207
+    start: 232
     count: 6
     type: uint16
     extra: Table=CM_FF_MON;Column=RX12_IS25GBS;Status=1;
@@ -170,7 +170,7 @@ config:
       - F2_P2 Rx12
       - F2_P3 Rx12
   - name: fireflyallpresent
-    start: 213
+    start: 240
     count: 20
     type: uint16
     extra: Table=CM_FF_MON;Column=PRESENT_BIT;Status=1;
@@ -197,7 +197,7 @@ config:
       - F2_P6 XCVR4
       - F2_P7 XCVR4
   - name: firefly12optpow
-    start: 233
+    start: 262
     count: 72
     type: uint16
     extra: Table=CM_FF_MON;Column=RX12_OPTICPOW;Status=1;
@@ -223,7 +223,7 @@ config:
       - Rx-10
       - Rx-11
   - name: firefly4optpow
-    start: 305
+    start: 336
     count: 32
     type: uint16
     extra: Table=CM_FF_MON;Column=XCVR4_OPTICPOW;Status=1;
