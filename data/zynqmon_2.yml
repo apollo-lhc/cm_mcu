@@ -159,7 +159,7 @@ config:
   - name: firefly12part
     start: 207
     count: 6
-    type: int8
+    type: uint16
     extra: Table=CM_FF_MON;Column=12PARTT_BIT;Status=1;
     mcu_call: firefly_12part
     names:
@@ -171,8 +171,8 @@ config:
       - F2_P3 Rx12 25Gbs
   - name: fireflypresent
     start: 213
-    count: 12
-    type: int8
+    count: 20
+    type: uint16
     extra: Table=CM_FF_MON;Column=PRESENT_BIT;Status=1;
     mcu_call: firefly_present
     names:
