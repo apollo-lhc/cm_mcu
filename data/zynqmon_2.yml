@@ -123,7 +123,7 @@ config:
   - name: clocks
     start: 162
     count: 10
-    type: int16_t
+    type: int16
     extra: Table=CM_MON;Column=CLK_REG;Status=2;
     mcu_call: clocks
     names: 
@@ -139,7 +139,7 @@ config:
   - name: clocks
     start: 189
     count: 40
-    type: int16_t
+    type: int16
     extra: Table=CM_MON;Column=CLK_REG;Status=2;
     mcu_call: clocks
     names: 
@@ -159,7 +159,7 @@ config:
   - name: firefly12bitrate
     start: 232
     count: 6
-    type: uint16_t
+    type: uint32_t
     extra: Table=CM_FF_MON;Column=RX12_IS25GBS;Status=1;
     mcu_call: firefly_12bitrate
     names:
@@ -172,7 +172,7 @@ config:
   - name: fireflyallpresent
     start: 240
     count: 20
-    type: uint16_t
+    type: uint32_t
     extra: Table=CM_FF_MON;Column=PRESENT_BIT;Status=1;
     mcu_call: firefly_allpresent
     names:
@@ -199,7 +199,7 @@ config:
   - name: firefly12optpow
     start: 262
     count: 72
-    type: uint16_t
+    type: uint32_t
     extra: Table=CM_FF_MON;Column=RX12_OPTICPOW;Status=1;
     mcu_call: firefly_12optpow
     names: 
@@ -225,7 +225,7 @@ config:
   - name: firefly4optpow
     start: 336
     count: 32
-    type: uint16_t
+    type: uint32_t
     extra: Table=CM_FF_MON;Column=XCVR4_OPTICPOW;Status=1;
     mcu_call: firefly_12optpow
     names: 
