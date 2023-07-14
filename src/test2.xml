@@ -238,135 +238,135 @@
 	<node id="F2_P6_XCVR4" address="0x81" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P6_XCVR4;Table=CM_FF_MON;Column=Present_Bit;Status=1;" />
 	<node id="F2_P7_XCVR4" address="0x81" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P7_XCVR4;Table=CM_FF_MON;Column=Present_Bit;Status=1;" />
 	<node id="F1_P1 Rx12" address="0x83">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
+		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-04" />
+		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-05" />
+		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-06" />
+		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-07" />
+		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-08" />
+		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-09" />
+		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-10" />
+		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-11" />
 	</node>
 	<node id="F1_P2 Rx12" address="0x89">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
+		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-04" />
+		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-05" />
+		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-06" />
+		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-07" />
+		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-08" />
+		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-09" />
+		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-10" />
+		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-11" />
 	</node>
 	<node id="F1_P3 Rx12" address="0x8f">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
+		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-04" />
+		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-05" />
+		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-06" />
+		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-07" />
+		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-08" />
+		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-09" />
+		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-10" />
+		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-11" />
 	</node>
 	<node id="F2_P1 Rx12" address="0x95">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
+		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-04" />
+		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-05" />
+		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-06" />
+		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-07" />
+		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-08" />
+		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-09" />
+		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-10" />
+		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-11" />
 	</node>
 	<node id="F2_P2 Rx12" address="0x9b">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
+		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-04" />
+		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-05" />
+		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-06" />
+		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-07" />
+		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-08" />
+		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-09" />
+		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-10" />
+		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-11" />
 	</node>
 	<node id="F2_P3 Rx12" address="0xa1">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
+		<node id="Rx-04" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-04" />
+		<node id="Rx-05" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-05" />
+		<node id="Rx-06" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-06" />
+		<node id="Rx-07" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-07" />
+		<node id="Rx-08" address="0x4" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-08" />
+		<node id="Rx-09" address="0x4" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-09" />
+		<node id="Rx-10" address="0x5" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-10" />
+		<node id="Rx-11" address="0x5" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3 Rx12;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-11" />
 	</node>
 	<node id="F1_P4 XCVR4" address="0xa8">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 	<node id="F1_P5 XCVR4" address="0xaa">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 	<node id="F1_P6 XCVR4" address="0xac">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 	<node id="F1_P7 XCVR4" address="0xae">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 	<node id="F2_P4 XCVR4" address="0xb0">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P4 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 	<node id="F2_P5 XCVR4" address="0xb2">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P5 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 	<node id="F2_P6 XCVR4" address="0xb4">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P6 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 	<node id="F2_P7 XCVR4" address="0xb6">
-		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
-		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_MON;Column=OptPower_dB;Status=1;" />
+		<node id="Rx-00" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-00" />
+		<node id="Rx-01" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-01" />
+		<node id="Rx-02" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-02" />
+		<node id="Rx-03" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P7 XCVR4;Table=CM_FF_OPTPOW;Status=1;;Column=Rx-03" />
 	</node>
 </node>
