@@ -169,7 +169,8 @@
 		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=I2C_ADDR" />
 		<node id="STATUS" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=STATUS" />
 		<node id="LOS" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=LOS" />
-		<node id="CONFIG_V" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=CONFIG_V" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=STICKY_FLG" />
+		<node id="LOSIN_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=LOSIN_FLG" />
 	</node>
 	<node id="ROB" address="0x5e">
 		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
@@ -179,7 +180,7 @@
 		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
 		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
 		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=LOL" />
-		<node id="CONFIG_V" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=CONFIG_V" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
 	<node id="R1A" address="0x62">
 		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
@@ -189,7 +190,7 @@
 		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
 		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
 		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOL" />
-		<node id="CONFIG_V" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=CONFIG_V" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
 	<node id="R1B" address="0x66">
 		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
@@ -199,7 +200,7 @@
 		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
 		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
 		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOL" />
-		<node id="CONFIG_V" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=CONFIG_V" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
 	<node id="R1C" address="0x6a">
 		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
@@ -209,7 +210,7 @@
 		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
 		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
 		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOL" />
-		<node id="CONFIG_V" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=CONFIG_V" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
 	<node id="F1_P1_RX12_IS25GBS" address="0x74" permission="r" mask="0x000000FF" parameters="Format=d;Row=F1_P1_RX12_IS25GBS;Table=CM_FF_IS25GBS;Column=Bit;Status=1;" />
 	<node id="F1_P2_RX12_IS25GBS" address="0x74" permission="r" mask="0x00FF0000" parameters="Format=d;Row=F1_P2_RX12_IS25GBS;Table=CM_FF_IS25GBS;Column=Bit;Status=1;" />

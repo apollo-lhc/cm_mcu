@@ -123,7 +123,7 @@ config:
       - F2_TEMP_SLR3
   - name: clk0mon
     start: 162
-    count: 7
+    count: 8
     type: uint16_t
     extra: Table=CM_CLK0_MON;Status=1
     mcu_call: clk0mon
@@ -136,7 +136,8 @@ config:
       - I2C_ADDR
       - STATUS
       - LOS
-      - CONFIG_V
+      - STICKY_FLG
+      - LOSIN_FLG
   - name: clkmon
     start: 189
     count: 32
@@ -156,7 +157,7 @@ config:
       - LOSXAXB
       - LOSO0F_IN
       - LOL
-      - CONFIG_V 
+      - STICKY_FLG 
   - name: firefly12bitrate
     start: 232
     count: 6 
