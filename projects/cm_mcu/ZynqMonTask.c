@@ -328,19 +328,19 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
   for (int rx12 = 0; rx12 < ffl12_f1_args.n_devices / 2; rx12++) {
     data[rx12].sensor = rx12 + start; // sensor id
     if (!isFFStale()) {
-      data[rx12].data.i = (ffl12_f1_args.ffpart_bit_mask >> rx12) & 0x01; // sensor value and type
+      data[rx12].data.i = (int8_t)((ffl12_f1_args.ffpart_bit_mask >> rx12) & 0x01); // sensor value and type
     }
     else {
       data[rx12].data.i = -56; // special stale value
     }
   }
   // FPGA2
-  for (int rx12 = ffl12_f1_args.n_devices / 2; rx12 < ffl12_f2_args.n_devices / 2 + ffl12_f1_args.n_devices / 2; rx12++) {
+  for (int rx12 = 0; rx12 < ffl12_f2_args.n_devices / 2; rx12++) {
     if (!isFFStale()) {
-      data[rx12].data.i = (ffl12_f2_args.ffpart_bit_mask >> (rx12 - ffl12_f1_args.n_devices / 2)) & 0x01; // sensor value and type
+      data[rx12 + ffl12_f1_args.n_devices / 2].data.i = (int8_t)((ffl12_f2_args.ffpart_bit_mask >> rx12) & 0x01); // sensor value and type
     }
     else {
-      data[rx12].data.i = -56; // special stale value
+      data[rx12 + ffl12_f1_args.n_devices / 2].data.i = -56; // special stale value
     }
   }
 }
@@ -547,29 +547,25 @@ void zm_fill_structs(void)
 void zm_fill_structs(void)
 {
   // firefly, size 20
-  zm_set_firefly_temps(&zynqmon_data[0], 0);
+  zm_set_firefly_temps(&zynqmon_data[0], 1);
   // uptime, size 2
-  zm_set_uptime(&zynqmon_data[20], 22);
+  zm_set_uptime(&zynqmon_data[20], 24);
   // psmon, size 84
-  zm_set_psmon(&zynqmon_data[22], 32);
-  // gitversion, size 10
-  zm_set_gitversion(&zynqmon_data[106], 118);
+  zm_set_psmon(&zynqmon_data[22], 27);
+  // gitversion, size 10.0
+  zm_set_gitversion(&zynqmon_data[106], 112);
   // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[116], 130);
+  zm_set_adcmon(&zynqmon_data[116], 123);
   // fpga, size 8
-  zm_set_fpga(&zynqmon_data[137], 152);
-  // clocks, R0A, size 8
-  zm_set_clock(&zynqmon_data[145], 162, 0);
-  // clocks, R0B,R1A,R1B,R1C. size 32
-  zm_set_clock(&zynqmon_data[153], 189, 1);
-  // 12-ch firefly bit-mask part, size 6
-  zm_set_firefly_ff12part(&zynqmon_data[185], 232);
-  // present-bit, size 20
-  zm_set_firefly_presentbit(&zynqmon_data[191], 240);
-  // firefly optical power of 25Gbs 12-ch FFs, size 72
-  //zm_set_firefly_opt_pow(&zynqmon_data[205], 262, 0);
-  // firefly optical power of 25Gbs 4-ch FFs, size 32
-  //zm_set_firefly_opt_pow(&zynqmon_data[277], 336, 1);
+  zm_set_fpga(&zynqmon_data[137], 145);
+  // clk0mon, size 8
+  zm_set_clock(&zynqmon_data[145], 154, 0);
+  // clkmon, size 32
+  zm_set_clock(&zynqmon_data[153], 170, 1);
+  // firefly_ff12part, size 6
+  zm_set_firefly_ff12part(&zynqmon_data[185], 204);
+  // firefly_presentbit, size 20
+  zm_set_firefly_presentbit(&zynqmon_data[191], 212);
 
 }
 #define ZMON_VALID_ENTRIES 211
