@@ -440,9 +440,9 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x0C, 1, "STATUS", 0x35, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "LOS", 0x15, "", PM_STATUS},    // page 0x00
     // sticky bits of status bits : table 14.12
-    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
-    // sticky bits of INx LOS bits : table 14.13
     {1, 0x00, 0x12, 1, "LOSIN_FLG", 0xf, "", PM_STATUS}, // page 0x00
+    // sticky bits of status bits : table 14.12
+    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
 };
 
 uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
@@ -675,21 +675,21 @@ int8_t getFFpresentbit(const uint8_t i)
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     j = i;
-    val = (int8_t)(((ffl12_f1_args.present_bit_mask) >> (int8_t)j) & 0x01);
+    val = (int8_t)((((int8_t)ffl12_f1_args.present_bit_mask) >> j) & 0x01);
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     j = i - NFIREFLIES_IT_F1;
-    val = (int8_t)(((ffldaq_f1_args.present_bit_mask) >> (int8_t)j) & 0x01);
+    val = (int8_t)((((int8_t)ffldaq_f1_args.present_bit_mask) >> j) & 0x01);
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     j = i - NFIREFLIES_F1;
-    val = (int8_t)(((ffl12_f2_args.present_bit_mask) >> (int8_t)j) & 0x01);
+    val = (int8_t)((((int8_t)ffl12_f2_args.present_bit_mask) >> j) & 0x01);
   }
   else {
     j = i - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
-    val = (int8_t)(((ffldaq_f2_args.present_bit_mask) >> (int8_t)j) & 0x01);
+    val = (int8_t)((((int8_t)ffldaq_f2_args.present_bit_mask) >> j) & 0x01);
   }
 
   return val;
