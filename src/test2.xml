@@ -162,56 +162,57 @@
 	<node id="F2_TEMP_SLR1" address="0x4b" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_TEMP_SLR1;Table=CM_FPGA_MON;Column=Temp_C;Status=1;" />
 	<node id="F2_TEMP_SLR2" address="0x4b" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2_TEMP_SLR2;Table=CM_FPGA_MON;Column=Temp_C;Status=1;" />
 	<node id="F2_TEMP_SLR3" address="0x4c" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_TEMP_SLR3;Table=CM_FPGA_MON;Column=Temp_C;Status=1;" />
-	<node id="ROA" address="0x4d">
-		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=PN_BASE0" />
-		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=PN_BASE1" />
-		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=DEVICE_REV" />
-		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=I2C_ADDR" />
-		<node id="STATUS" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=STATUS" />
-		<node id="LOS" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=LOS" />
-		<node id="STICKY_FLG" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=STICKY_FLG" />
-		<node id="LOSIN_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROA;Table=CM_CLK0_MON;Status=1;Column=LOSIN_FLG" />
+	<node id="R0A" address="0x4d">
+		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
+		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
+		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
+		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
-	<node id="ROB" address="0x55">
-		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
-		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
-		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
-		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
-		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
-		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
-		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=LOL" />
-		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=ROB;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
+	<node id="R0B" address="0x51">
+		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
+		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
+		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
+		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
-	<node id="R1A" address="0x59">
+	<node id="R1A" address="0x55">
 		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
 		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
 		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
 		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
-		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
-		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
-		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOL" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
 		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
-	<node id="R1B" address="0x5d">
+	<node id="R1B" address="0x59">
 		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
 		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
 		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
 		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
-		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
-		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
-		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOL" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
 		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
-	<node id="R1C" address="0x61">
+	<node id="R1C" address="0x5d">
 		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
 		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
 		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
 		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
-		<node id="LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOSXAXB" />
-		<node id="LOSO0F_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOSO0F_IN" />
-		<node id="LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOL" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
 		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
+	<node id="MCU_CLK_VER" address="0x62" permission="r" size="0x5" parameters="Format=c;Row=MCU_CLK_VER;Table=CM_INFO;Column=CONFIGV;Status=1" />
 	<node id="F1_P1_RX12_IS25GBS" address="0x66" permission="r" mask="0x000000FF" parameters="Format=d;Row=F1_P1_RX12_IS25GBS;Table=CM_FF_IS25GBS;Column=Bit;Status=1;" />
 	<node id="F1_P2_RX12_IS25GBS" address="0x66" permission="r" mask="0x00FF0000" parameters="Format=d;Row=F1_P2_RX12_IS25GBS;Table=CM_FF_IS25GBS;Column=Bit;Status=1;" />
 	<node id="F1_P3_RX12_IS25GBS" address="0x67" permission="r" mask="0x000000FF" parameters="Format=d;Row=F1_P3_RX12_IS25GBS;Table=CM_FF_IS25GBS;Column=Bit;Status=1;" />

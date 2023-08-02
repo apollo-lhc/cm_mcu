@@ -121,31 +121,15 @@ config:
       - F2_TEMP_SLR1
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
-  - name: clk0mon
+  - name: allclkmon
     start: 154
-    count: 8
-    type: uint16_t
-    extra: Table=CM_CLK0_MON;Status=1
-    mcu_call: clk0mon
-    names: 
-      - ROA
-    postfixes:
-      - PN_BASE0
-      - PN_BASE1
-      - DEVICE_REV
-      - I2C_ADDR
-      - STATUS
-      - LOS
-      - STICKY_FLG
-      - LOSIN_FLG
-  - name: clkmon
-    start: 170
-    count: 32
+    count: 40
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
-    mcu_call: clkmon
+    mcu_call: allclkmon
     names: 
-      - ROB
+      - R0A
+      - R0B
       - R1A
       - R1B
       - R1C
@@ -154,10 +138,19 @@ config:
       - PN_BASE1
       - DEVICE_REV
       - I2C_ADDR
-      - LOSXAXB
-      - LOSO0F_IN
-      - LOL
-      - STICKY_FLG 
+      - STATUS_OR_LOSXAXB
+      - LOS_OR_LOSOOF_IN
+      - LOSIN_FLG_OR_LOL
+      - STICKY_FLG
+  - name: clkconfigversion
+    start: 196
+    count: 10
+    type: char
+    extra: Table=CM_INFO;Column=CONFIGV;Status=1
+    size: 5
+    mcu_call: clkconfigversion
+    names:
+      - MCU_CLK_VER
   - name: firefly_ff12part
     start: 204
     count: 6 
