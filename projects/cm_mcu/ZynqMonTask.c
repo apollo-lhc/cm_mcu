@@ -347,6 +347,26 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
 }
 
 #ifdef REV2
+#define ZM_CLK_VERSION_LENGTH 20
+void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start)
+{
+  char buff[ZM_CLK_VERSION_LENGTH];
+  // clear the buffer
+  memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
+
+  // get the clock config version and copy it into the buffer
+  strncpy(buff, clkr0a_moni2c_addrs[0].configname, ZM_CLK_VERSION_LENGTH);
+  // make sure our string is well-terminated
+  buff[ZM_CLK_VERSION_LENGTH - 1] = '\0';
+  // loop over the buffer and copy it into the data struct
+  // each data word consists of two chars.
+  for (int j = 0; j < ZM_CLK_VERSION_LENGTH; j += 2) {
+    data[j / 2].sensor = start + (j / 2);
+    data[j / 2].data.c[0] = buff[j];
+    data[j / 2].data.c[1] = buff[j + 1];
+  }
+}
+
 void zm_set_firefly_opt_pow(struct zynqmon_data_t data[], int start, int n)
 {
   // Fireflies
@@ -500,26 +520,6 @@ void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
         ++ll;
       }
     }
-  }
-}
-
-#define ZM_CLK_VERSION_LENGTH 20
-void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start)
-{
-  char buff[ZM_CLK_VERSION_LENGTH];
-  // clear the buffer
-  memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
-
-  // get the clock config version and copy it into the buffer
-  strncpy(buff, clkr0a_moni2c_addrs[0].configname, ZM_CLK_VERSION_LENGTH);
-  // make sure our string is well-terminated
-  buff[ZM_CLK_VERSION_LENGTH - 1] = '\0';
-  // loop over the buffer and copy it into the data struct
-  // each data word consists of two chars.
-  for (int j = 0; j < ZM_CLK_VERSION_LENGTH; j += 2) {
-    data[j / 2].sensor = start + (j / 2);
-    data[j / 2].data.c[0] = buff[j];
-    data[j / 2].data.c[1] = buff[j + 1];
   }
 }
 
