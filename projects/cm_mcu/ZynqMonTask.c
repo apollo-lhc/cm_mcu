@@ -566,7 +566,6 @@ void zm_fill_structs(void)
   zm_set_firefly_ff12part(&zynqmon_data[185], 204);
   // firefly_presentbit, size 20
   zm_set_firefly_presentbit(&zynqmon_data[191], 212);
-
 }
 #define ZMON_VALID_ENTRIES 211
 #endif
