@@ -151,6 +151,13 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
       memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
   }
 
+  if (device == 0) {
+    clkr0a_moni2c_addrs[0].configname = progname_clkdesgid;
+  }
+  else {
+    clk_moni2c_addrs[device - 1].configname = progname_clkdesgid;
+  }
+
   // release the semaphore
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {

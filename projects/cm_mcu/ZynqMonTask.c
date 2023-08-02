@@ -27,6 +27,7 @@
 #include "Tasks.h"
 #include "MonitorTask.h"
 #include "MonitorI2CTask.h"
+#include "clocksynth.h"
 #include "common/log.h"
 
 // Rev 2
@@ -502,6 +503,26 @@ void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
   }
 }
 
+#define ZM_CLK_VERSION_LENGTH 20
+void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start)
+{
+  char buff[ZM_CLK_VERSION_LENGTH];
+  // clear the buffer
+  memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
+
+  // get the clock config version and copy it into the buffer
+  strncpy(buff, clkr0a_moni2c_addrs[0].configname, ZM_CLK_VERSION_LENGTH);
+  // make sure our string is well-terminated
+  buff[ZM_CLK_VERSION_LENGTH - 1] = '\0';
+  // loop over the buffer and copy it into the data struct
+  // each data word consists of two chars.
+  for (int j = 0; j < ZM_CLK_VERSION_LENGTH; j += 2) {
+    data[j / 2].sensor = start + (j / 2);
+    data[j / 2].data.c[0] = buff[j];
+    data[j / 2].data.c[1] = buff[j + 1];
+  }
+}
+
 void zm_set_fpga(struct zynqmon_data_t data[], int start)
 {
   // FPGA values
@@ -561,13 +582,15 @@ void zm_fill_structs(void)
   // clk0mon, size 8
   zm_set_clock(&zynqmon_data[145], 154, 0);
   // clkmon, size 32
-  zm_set_clock(&zynqmon_data[153], 170, 1);
+  zm_set_clock(&zynqmon_data[153], 162, 1);
+  // clkconfigversion, size 10.0
+  zm_set_clkconfigversion(&zynqmon_data[185], 196);
   // firefly_ff12part, size 6
-  zm_set_firefly_ff12part(&zynqmon_data[185], 204);
+  zm_set_firefly_ff12part(&zynqmon_data[195], 204);
   // firefly_presentbit, size 20
-  zm_set_firefly_presentbit(&zynqmon_data[191], 212);
+  zm_set_firefly_presentbit(&zynqmon_data[201], 212);
 }
-#define ZMON_VALID_ENTRIES 211
+#define ZMON_VALID_ENTRIES 221
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])
