@@ -668,28 +668,28 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-int8_t getFFpresentbit(const uint8_t i)
+int8_t getFFpresentbit(const int i)
 {
-  uint8_t j;
+  int j;
   int8_t val;
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     j = i;
-    val = (int8_t)(ffl12_f1_args.present_bit_mask & (0x1U << j));
+    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     j = i - NFIREFLIES_IT_F1;
-    val = (int8_t)(ffl12_f1_args.present_bit_mask & (0x1U << j));
+    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     j = i - NFIREFLIES_F1;
-    val = (int8_t)(ffl12_f1_args.present_bit_mask & (0x1U << j));
+    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
   }
   else {
     j = i - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
-    val = (int8_t)(ffl12_f1_args.present_bit_mask & (0x1U << j));
+    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
   }
 
   return val;
