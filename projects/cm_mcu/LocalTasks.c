@@ -668,6 +668,7 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
+
 uint8_t getFFpresentbit(const uint8_t i)
 {
   uint8_t j;
@@ -676,25 +677,25 @@ uint8_t getFFpresentbit(const uint8_t i)
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     j = i;
-    sel_bit_mask = 1 << j;
-    val = (ffl12_f1_args.present_bit_mask & sel_bit_mask) >> j;
+    sel_bit_mask = (uint64_t)1 << j;
+    val = (ffl12_f1_args.present_bit_mask & sel_bit_mask) && 1;
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     j = i - NFIREFLIES_IT_F1;
-    sel_bit_mask = 1 << j;
-    val = (ffldaq_f1_args.present_bit_mask & sel_bit_mask) >> j;
+    sel_bit_mask = (uint64_t)1 << j;
+    val = (ffldaq_f1_args.present_bit_mask & sel_bit_mask) && 1;
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     j = i - NFIREFLIES_F1;
-    sel_bit_mask = 1 << j;
-    val = (ffl12_f2_args.present_bit_mask & sel_bit_mask) >> j;
+    sel_bit_mask = (uint64_t)1 << j;
+    val = (ffl12_f2_args.present_bit_mask & sel_bit_mask) && 1;
   }
   else {
     j = i - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
-    sel_bit_mask = 1 << j;
-    val = (ffldaq_f2_args.present_bit_mask & sel_bit_mask) >> j;
+    sel_bit_mask = (uint64_t)1 << j;
+    val = (ffldaq_f2_args.present_bit_mask & sel_bit_mask) && 1;
   }
 
   return val;
