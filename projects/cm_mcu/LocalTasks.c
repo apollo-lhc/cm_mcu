@@ -668,7 +668,6 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-
 uint8_t getFFpresentbit(const uint8_t i)
 {
   uint8_t j;
