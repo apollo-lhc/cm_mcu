@@ -576,10 +576,10 @@ void readFFpresent(void)
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
-  ffldaq_f1_args.present_bit_mask = (~((present_FFLDAQ_F2) << 16)) & 0xFU; // 4 bits
-  ffl12_f1_args.present_bit_mask = (~((present_FFL12_F2) << 10)) & 0x3FU;  // 6 bits
-  ffldaq_f2_args.present_bit_mask = (~((present_FFLDAQ_F2) << 6)) & 0xFU;  // 4 bits
-  ffl12_f2_args.present_bit_mask = (~(present_FFL12_F2)) & 0x3FU;          // 6 bits
+  ffldaq_f1_args.present_bit_mask = present_FFLDAQ_F1; // 4 bits
+  ffl12_f1_args.present_bit_mask = present_FFL12_F1;   // 6 bits
+  ffldaq_f2_args.present_bit_mask = present_FFLDAQ_F2; // 4 bits
+  ffl12_f2_args.present_bit_mask = present_FFL12_F2;   // 6 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
@@ -668,33 +668,33 @@ int8_t getFFtemp(const uint8_t i)
   return val;
 }
 
-int8_t getFFpresentbit(const uint8_t i)
+uint8_t getFFpresentbit(const uint8_t i)
 {
   uint8_t j;
-  int8_t val;
-  uint8_t sel_bit_mask;
+  uint8_t val;
+  uint32_t sel_bit_mask;
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     j = i;
-    sel_bit_mask = 0x1U << j;
-    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
+    sel_bit_mask = 1 << j;
+    val = (ffl12_f1_args.present_bit_mask & sel_bit_mask) >> j;
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     j = i - NFIREFLIES_IT_F1;
-    sel_bit_mask = 0x1U << j;
-    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
+    sel_bit_mask = 1 << j;
+    val = (ffldaq_f1_args.present_bit_mask & sel_bit_mask) >> j;
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     j = i - NFIREFLIES_F1;
-    sel_bit_mask = 0x1U << j;
-    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
+    sel_bit_mask = 1 << j;
+    val = (ffl12_f2_args.present_bit_mask & sel_bit_mask) >> j;
   }
   else {
     j = i - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
-    sel_bit_mask = 0x1U << j;
-    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
+    sel_bit_mask = 1 << j;
+    val = (ffldaq_f2_args.present_bit_mask & sel_bit_mask) >> j;
   }
 
   return val;
