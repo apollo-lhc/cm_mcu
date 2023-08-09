@@ -672,24 +672,29 @@ int8_t getFFpresentbit(const uint8_t i)
 {
   uint8_t j;
   int8_t val;
+  uint8_t sel_bit_mask;
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     j = i;
-    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
+    sel_bit_mask = 0x1U << j;
+    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     j = i - NFIREFLIES_IT_F1;
-    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
+    sel_bit_mask = 0x1U << j;
+    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     j = i - NFIREFLIES_F1;
-    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
+    sel_bit_mask = 0x1U << j;
+    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
   }
   else {
     j = i - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
-    val = ffl12_f1_args.present_bit_mask & (0x1U << j);
+    sel_bit_mask = 0x1U << j;
+    val = ffl12_f1_args.present_bit_mask & (uint32_t)sel_bit_mask;
   }
 
   return val;
