@@ -673,9 +673,10 @@ uint16_t getFFpresentbit(const uint8_t i)
   uint8_t j;
   uint16_t val;
   uint32_t sel_bit_mask;
-  if (i > NFIREFLIES)
+  if (i > NFIREFLIES) {
     log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
-  return 56;
+    return 56;
+  }
   if (i < NFIREFLIES_IT_F1) {
     j = i;
     sel_bit_mask = 1 << (uint8_t)j;
