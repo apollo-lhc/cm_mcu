@@ -281,31 +281,6 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   }
 }
 // updated once per loop. Store the firefly temperature and present-bit data
-void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
-{
-  // Fireflies
-  // update the data for ZMON
-  int ll = 0;
-  for (uint8_t i = 0; i < NFIREFLIES; i++) {
-    if (!isFFStale()) {
-      data[ll].data.i = getFFtemp(i); // temperature
-    }
-    else {
-      data[ll].data.i = -56; // special stale value
-    }
-    data[ll].sensor = ll + start; // sensor id
-    ++ll;
-    if (!isFFStale()) {
-      data[ll].data.i = getFFpresentbit(i); // present-bit
-    }
-    else {
-      data[ll].data.i = -56; // special stale value
-    }
-    data[ll].sensor = ll + start; // sensor id
-    ++ll;
-  }
-}
-// updated once per loop. Store the firefly temperature and present-bit data
 void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
@@ -313,10 +288,10 @@ void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
   for (uint8_t i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
-      data[i].data.i = (int8_t)getFFpresentbit(i); // present-bit
+      data[i].data.us = getFFpresentbit(i); // present-bit
     }
     else {
-      data[i].data.i = -56; // special stale value
+      data[i].data.us = 56; // special stale value
     }
   }
 }
