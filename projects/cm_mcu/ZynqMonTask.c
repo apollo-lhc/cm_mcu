@@ -285,7 +285,7 @@ void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
-  for (uint8_t i = 0; i < NFIREFLIES; i++) {
+  for (int i = 0; i < 4; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
       data[i].data.us = getFFpresentbit(i); // present-bit
@@ -328,9 +328,17 @@ void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start)
   char buff[ZM_CLK_VERSION_LENGTH];
   // clear the buffer
   memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
-
+  const char *v = clkr0a_moni2c_addrs[0].configname_chip;
+  // find v[0-9] in this string after R0A for instance.
+  // version is a string like v0004
+  while (*v != '\0') { // assumes this c string is well-terminated
+    char n = *(v + 1); // char after 'v' should be a number 0-9
+    if (*v == 'v' && (n >= '0' && n <= '9'))
+      break; // success, I found the string
+    ++v;
+  }
   // get the clock config version and copy it into the buffer
-  strncpy(buff, clkr0a_moni2c_addrs[0].configname, ZM_CLK_VERSION_LENGTH);
+  strncpy(buff, v, ZM_CLK_VERSION_LENGTH);
   // make sure our string is well-terminated
   buff[ZM_CLK_VERSION_LENGTH - 1] = '\0';
   // loop over the buffer and copy it into the data struct
@@ -562,10 +570,10 @@ void zm_fill_structs(void)
   zm_set_clkconfigversion(&zynqmon_data[185], 196);
   // firefly_ff12part, size 6
   zm_set_firefly_ff12part(&zynqmon_data[195], 204);
-  // firefly_presentbit, size 20
+  // firefly_presentbit, size 4
   zm_set_firefly_presentbit(&zynqmon_data[201], 212);
 }
-#define ZMON_VALID_ENTRIES 221
+#define ZMON_VALID_ENTRIES 205
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])

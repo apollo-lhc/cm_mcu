@@ -1098,6 +1098,13 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       m[copied] = '\0';
     }
     c = 0;
+
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clkr0a_moni2c_addrs[0].configname_chip);
+    if (strncmp(clkr0a_moni2c_addrs[0].configname_chip, "5395ABP1", 3) == 0 || strncmp(clkr0a_moni2c_addrs[0].configname_chip, "5341ABP1", 3) == 0) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
+    }
+
+    snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", clkr0a_moni2c_addrs[0].configname_eeprom);
   }
   // i = 0 corresponds to SI5341, others to SI5395
   else {
@@ -1116,17 +1123,13 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       m[copied] = '\0';
     }
     c = 0;
-  }
-  // get and print out the file name
-  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
-  char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
-  getClockProgram(i, progname_clkdesgid, progname_eeprom);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", progname_clkdesgid);
-  if (strncmp(progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(progname_clkdesgid, "5341ABP1", 3) == 0) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
-  }
 
-  snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", progname_eeprom);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clk_moni2c_addrs[i - 1].configname_chip);
+    if (strncmp(clk_moni2c_addrs[i - 1].configname_chip, "5395ABP1", 3) == 0 || strncmp(clk_moni2c_addrs[i - 1].configname_chip, "5341ABP1", 3) == 0) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
+    }
+    snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", clk_moni2c_addrs[i - 1].configname_eeprom);
+  }
 
   return pdFALSE;
 }

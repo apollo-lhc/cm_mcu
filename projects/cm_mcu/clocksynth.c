@@ -74,10 +74,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     return;
 
   // grab the semaphore to ensure unique access to I2C controller
-  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return;
-  }
+  // if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+  //  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+  //  return;
+  //}
   // extract info about device
   uint8_t mux_addr, mux_bit, dev_addr;
   uint16_t eeprom_progname_reg;
@@ -151,17 +151,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
       memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
   }
 
-  if (device == 0) {
-    clkr0a_moni2c_addrs[0].configname = progname_clkdesgid;
-  }
-  else {
-    clk_moni2c_addrs[device - 1].configname = progname_clkdesgid;
-  }
-
   // release the semaphore
   // if we have a semaphore, give it
-  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(i2c2_sem);
-  }
+  // if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+  //  xSemaphoreGive(i2c2_sem);
+  //}
 }
 #endif // REV2

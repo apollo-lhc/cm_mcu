@@ -670,34 +670,24 @@ int8_t getFFtemp(const uint8_t i)
 
 uint16_t getFFpresentbit(const uint8_t i)
 {
-  uint8_t j;
   uint16_t val;
-  uint32_t sel_bit_mask;
-  if (i > NFIREFLIES) {
+  if (i > 3) {
     log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
     return 56;
   }
-  if (i < NFIREFLIES_IT_F1) {
-    j = i;
-    sel_bit_mask = 1 << (uint8_t)j;
-    val = (ffl12_f1_args.present_bit_mask & sel_bit_mask) && 1;
+  if (i == 0) {
+    val = ffl12_f1_args.present_bit_mask;
   }
 
-  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-    j = i - NFIREFLIES_IT_F1;
-    sel_bit_mask = 1 << (uint8_t)j;
-    val = (ffldaq_f1_args.present_bit_mask & sel_bit_mask) && 1;
+  else if (i == 1) {
+    val = ffldaq_f1_args.present_bit_mask;
   }
 
-  else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-    j = i - NFIREFLIES_F1;
-    sel_bit_mask = 1 << (uint8_t)j;
-    val = (ffl12_f2_args.present_bit_mask & sel_bit_mask) && 1;
+  else if (i == 2) {
+    val = ffl12_f2_args.present_bit_mask;
   }
   else {
-    j = i - (NFIREFLIES_F1 + NFIREFLIES_IT_F2);
-    sel_bit_mask = 1 << (uint8_t)j;
-    val = (ffldaq_f2_args.present_bit_mask & sel_bit_mask) && 1;
+    val = ffldaq_f2_args.present_bit_mask;
   }
 
   return val;
