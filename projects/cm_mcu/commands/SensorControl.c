@@ -1098,13 +1098,14 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       m[copied] = '\0';
     }
     c = 0;
-
+#ifdef REV2
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clkr0a_moni2c_addrs[0].configname_chip);
     if (strncmp(clkr0a_moni2c_addrs[0].configname_chip, "5395ABP1", 3) == 0 || strncmp(clkr0a_moni2c_addrs[0].configname_chip, "5341ABP1", 3) == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
     }
 
     snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", clkr0a_moni2c_addrs[0].configname_eeprom);
+#endif
   }
   // i = 0 corresponds to SI5341, others to SI5395
   else {
@@ -1123,12 +1124,13 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       m[copied] = '\0';
     }
     c = 0;
-
+#ifdef REV2
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clk_moni2c_addrs[i - 1].configname_chip);
     if (strncmp(clk_moni2c_addrs[i - 1].configname_chip, "5395ABP1", 3) == 0 || strncmp(clk_moni2c_addrs[i - 1].configname_chip, "5341ABP1", 3) == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
     }
     snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", clk_moni2c_addrs[i - 1].configname_eeprom);
+#endif
   }
 
   return pdFALSE;
