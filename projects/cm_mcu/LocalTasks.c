@@ -1095,7 +1095,7 @@ void initFPGAMon(void)
 #ifdef REV1
     // previous FPGA has 1 SLR
     set_f1_index(1);
-#else // REV2
+#else  // REV2
     // previous FPGA has 4 SLR
     set_f1_index(4); // this should not be a magic number
 #endif // not REV1
