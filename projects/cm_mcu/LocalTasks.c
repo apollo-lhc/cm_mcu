@@ -1092,7 +1092,7 @@ void initFPGAMon(void)
   }
   else {
     set_f2_index(0);
-    set_f1_index(1);
+    set_f1_index(4); // this should not be a magic number
 #ifndef REV1
     write_gpio_pin(_F1_JTAG_BYPASS, 1);
     write_gpio_pin(_F2_JTAG_BYPASS, 1);
