@@ -207,7 +207,12 @@ void MonitorI2CTask(void *parameters)
 
 #ifdef REV2
       // get optical power information from 25Gbs FFs
-      if (IsFFDAQ || (IsFF12 && (args->ffpart_bit_mask & (0x1U << (int)ps / 2)) && (ps % 2 == 1))) {
+      bool has_opt_pow = false;
+      if (IsFFDAQ)
+        has_opt_pow = true;
+      if (IsFF12)
+        has_opt_pow = 1 & (args->ffpart_bit_mask & (0x1U << (int)ps / 2)) & (ps % 2 == 1);
+      if (has_opt_pow) {
         uint8_t page_reg_value = args->commands[FF_OPT_POW_C].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
         if (r != 0) {
@@ -237,6 +242,7 @@ void MonitorI2CTask(void *parameters)
           }
         }
       }
+
 #endif // REV2
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
       args->updateTick = xTaskGetTickCount(); // current time in ticks
