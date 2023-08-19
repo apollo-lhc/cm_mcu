@@ -1142,7 +1142,13 @@ void initFPGAMon(void)
   }
   else {
     set_f2_index(0);
+#ifdef REV1
+    // previous FPGA has 1 SLR
     set_f1_index(1);
+#else  // REV2
+    // previous FPGA has 4 SLR
+    set_f1_index(4); // this should not be a magic number
+#endif // not REV1
 #ifndef REV1
     write_gpio_pin(_F1_JTAG_BYPASS, 1);
     write_gpio_pin(_F2_JTAG_BYPASS, 1);
