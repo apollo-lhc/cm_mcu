@@ -576,10 +576,10 @@ void readFFpresent(void)
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
-  ffldaq_f1_args.present_bit_mask = present_FFLDAQ_F1; // 4 bits
-  ffl12_f1_args.present_bit_mask = present_FFL12_F1;   // 6 bits
-  ffldaq_f2_args.present_bit_mask = present_FFLDAQ_F2; // 4 bits
-  ffl12_f2_args.present_bit_mask = present_FFL12_F2;   // 6 bits
+  ffldaq_f1_args.present_bit_mask = (~present_FFLDAQ_F1) & 0xFU; // 4 bits
+  ffl12_f1_args.present_bit_mask = (~present_FFL12_F1) & 0x3FU;  // 6 bits
+  ffldaq_f2_args.present_bit_mask = (~present_FFLDAQ_F2) & 0xFU; // 4 bits
+  ffl12_f2_args.present_bit_mask = (~present_FFL12_F2) & 0x3FU;  // 6 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6

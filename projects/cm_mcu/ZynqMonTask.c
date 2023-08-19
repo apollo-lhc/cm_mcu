@@ -285,10 +285,15 @@ void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
+  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+  if (now < 5)
+    readFFpresent();
   for (int i = 0; i < 4; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
-      data[i].data.us = getFFpresentbit(i); // present-bit
+      uint16_t val = getFFpresentbit(i);
+      log_debug(LOG_SERVICE, "present bit %d : 0x%02x\r\n", i, val);
+      data[i].data.us = val; // present-bit
     }
     else {
       data[i].data.us = 56; // special stale value
@@ -305,6 +310,7 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
     data[rx12].sensor = rx12 + start; // sensor id
     if (!isFFStale()) {
       data[rx12].data.i = (int8_t)((ffl12_f1_args.ffpart_bit_mask >> rx12) & 0x01); // sensor value and type
+      log_debug(LOG_SERVICE, "12ch 25gbs bit %d (f1): 0x%02x\r\n", rx12, data[rx12].data.i);
     }
     else {
       data[rx12].data.i = -56; // special stale value
@@ -314,6 +320,7 @@ void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
   for (int rx12 = 0; rx12 < ffl12_f2_args.n_devices / 2; rx12++) {
     if (!isFFStale()) {
       data[rx12 + ffl12_f1_args.n_devices / 2].data.i = (int8_t)((ffl12_f2_args.ffpart_bit_mask >> rx12) & 0x01); // sensor value and type
+      log_debug(LOG_SERVICE, "12ch 25gbs bit %d (f2): 0x%02x\r\n", rx12, data[rx12 + ffl12_f1_args.n_devices / 2].data.i);
     }
     else {
       data[rx12 + ffl12_f1_args.n_devices / 2].data.i = -56; // special stale value
@@ -569,9 +576,9 @@ void zm_fill_structs(void)
   // clkconfigversion, size 10.0
   zm_set_clkconfigversion(&zynqmon_data[185], 196);
   // firefly_ff12part, size 6
-  zm_set_firefly_ff12part(&zynqmon_data[195], 204);
+  zm_set_firefly_ff12part(&zynqmon_data[195], 207);
   // firefly_presentbit, size 4
-  zm_set_firefly_presentbit(&zynqmon_data[201], 212);
+  zm_set_firefly_presentbit(&zynqmon_data[201], 214);
 }
 #define ZMON_VALID_ENTRIES 205
 #endif
