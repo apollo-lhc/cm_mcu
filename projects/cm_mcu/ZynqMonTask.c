@@ -281,50 +281,39 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   }
 }
 // updated once per loop. Store the firefly temperature and present-bit data
-void zm_set_firefly_presentbit(struct zynqmon_data_t data[], int start)
+void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
 {
-  // Fireflies
-  // update the data for ZMON
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-  if (now < 5)
-    readFFpresent();
-  for (int i = 0; i < 4; i++) {
-    data[i].sensor = i + start; // sensor id
-    if (!isFFStale()) {
-      uint16_t val = getFFpresentbit(i);
-      log_debug(LOG_SERVICE, "present bit %d : 0x%02x\r\n", i, val);
-      data[i].data.us = val; // present-bit
-    }
-    else {
-      data[i].data.us = 56; // special stale value
-    }
-  }
-}
 
-void zm_set_firefly_ff12part(struct zynqmon_data_t data[], int start)
-{
-  // 12-ch Fireflies' bit-mask whether they are 25Gbs or else
-  // update the data for ZMON
-  // FPGA1
-  for (int rx12 = 0; rx12 < ffl12_f1_args.n_devices / 2; rx12++) {
-    data[rx12].sensor = rx12 + start; // sensor id
-    if (!isFFStale()) {
-      data[rx12].data.i = (int8_t)((ffl12_f1_args.ffpart_bit_mask >> rx12) & 0x01); // sensor value and type
-      log_debug(LOG_SERVICE, "12ch 25gbs bit %d (f1): 0x%02x\r\n", rx12, data[rx12].data.i);
+  int ll = 0;
+
+  for (int j = 0; j < NFIREFLY_ARG; ++j) { // loop over ff structs
+
+    uint16_t val;
+    if (isFFStale()) {
+      data[ll].data.us = 0xFF; // special stale value
     }
     else {
-      data[rx12].data.i = -56; // special stale value
+      if (j == 0)
+        val = ((ffl12_f1_args.ffpart_bit_mask & 0x1) << 1) | (ffl12_f1_args.ffpart_bit_mask & 0x1) | ((ffl12_f1_args.ffpart_bit_mask & 0x2) << 2) | ((ffl12_f1_args.ffpart_bit_mask & 0x2) << 1) | ((ffl12_f1_args.ffpart_bit_mask & 0x4) << 3) | ((ffl12_f1_args.ffpart_bit_mask & 0x4) << 2);
+      else if (j == 2)
+        val = ((ffl12_f2_args.ffpart_bit_mask & 0x1) << 1) | (ffl12_f2_args.ffpart_bit_mask & 0x1) | ((ffl12_f2_args.ffpart_bit_mask & 0x2) << 2) | ((ffl12_f2_args.ffpart_bit_mask & 0x2) << 1) | ((ffl12_f2_args.ffpart_bit_mask & 0x4) << 3) | ((ffl12_f2_args.ffpart_bit_mask & 0x4) << 2);
+      else
+        val = 0xF;
+      log_debug(LOG_SERVICE, "25GB bits? for ff argv %d: 0x%02x\r\n", j, val);
+      data[ll].data.us = val; // present-bit
     }
-  }
-  // FPGA2
-  for (int rx12 = 0; rx12 < ffl12_f2_args.n_devices / 2; rx12++) {
-    if (!isFFStale()) {
-      data[rx12 + ffl12_f1_args.n_devices / 2].data.i = (int8_t)((ffl12_f2_args.ffpart_bit_mask >> rx12) & 0x01); // sensor value and type
-      log_debug(LOG_SERVICE, "12ch 25gbs bit %d (f2): 0x%02x\r\n", rx12, data[rx12 + ffl12_f1_args.n_devices / 2].data.i);
+    data[ll].sensor = ll + start;
+    ++ll;
+    if (isFFStale()) {
+      data[ll].data.us = 0xFF; // special stale value
     }
     else {
-      data[rx12 + ffl12_f1_args.n_devices / 2].data.i = -56; // special stale value
+      val = getFFpresentbit(j);
+      log_debug(LOG_SERVICE, "present bits? for ff argv %d: 0x%02x\r\n", j, val);
+      data[ll].data.us = val; // present-bit
     }
+    data[ll].sensor = ll + start;
+    ++ll;
   }
 }
 
@@ -575,12 +564,10 @@ void zm_fill_structs(void)
   zm_set_clock(&zynqmon_data[153], 162, 1);
   // clkconfigversion, size 10.0
   zm_set_clkconfigversion(&zynqmon_data[185], 196);
-  // firefly_ff12part, size 6
-  zm_set_firefly_ff12part(&zynqmon_data[195], 207);
-  // firefly_presentbit, size 4
-  zm_set_firefly_presentbit(&zynqmon_data[201], 214);
+  // firefly_bits, size 8
+  zm_set_firefly_bits(&zynqmon_data[195], 210);
 }
-#define ZMON_VALID_ENTRIES 205
+#define ZMON_VALID_ENTRIES 203
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])
