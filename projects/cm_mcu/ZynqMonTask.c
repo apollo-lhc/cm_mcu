@@ -559,20 +559,20 @@ void zm_fill_structs(void)
   zm_set_clock(&zynqmon_data[165], 174, 0);
   // clkmon, size 32
   zm_set_clock(&zynqmon_data[173], 182, 1);
-  // clkconfigversion, size 6.0
+  // clkconfigversion, size 4.0
   zm_set_clkconfigversion(&zynqmon_data[205], 216, 0);
-  // clkconfigversion, size 6.0
-  zm_set_clkconfigversion(&zynqmon_data[211], 223, 1);
-  // clkconfigversion, size 6.0
-  zm_set_clkconfigversion(&zynqmon_data[217], 230, 2);
-  // clkconfigversion, size 6.0
-  zm_set_clkconfigversion(&zynqmon_data[223], 238, 3);
-  // clkconfigversion, size 6.0
-  zm_set_clkconfigversion(&zynqmon_data[229], 246, 4);
+  // clkconfigversion, size 4.0
+  zm_set_clkconfigversion(&zynqmon_data[209], 223, 1);
+  // clkconfigversion, size 4.0
+  zm_set_clkconfigversion(&zynqmon_data[213], 230, 2);
+  // clkconfigversion, size 4.0
+  zm_set_clkconfigversion(&zynqmon_data[217], 235, 3);
+  // clkconfigversion, size 4.0
+  zm_set_clkconfigversion(&zynqmon_data[221], 240, 4);
   // firefly_bits, size 8
-  // zm_set_firefly_bits(&zynqmon_data[235], 254);
+  zm_set_firefly_bits(&zynqmon_data[225], 245);
 }
-#define ZMON_VALID_ENTRIES 235
+#define ZMON_VALID_ENTRIES 233
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])
