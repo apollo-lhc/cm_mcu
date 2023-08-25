@@ -212,8 +212,9 @@ void MonitorI2CTask(void *parameters)
         has_opt_pow = true;
       if (IsFF12 && (ps % 2 == 1))
         has_opt_pow = 0x1U & (args->ffpart_bit_mask >> (int)ps / 2);
-      uint16_t opt_pow_values = 0x0U;
+
       if (has_opt_pow) {
+        uint16_t opt_pow_values = 0x0U;
         uint8_t page_reg_value = args->commands[FF_OPT_POW_C].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
         if (r != 0) {

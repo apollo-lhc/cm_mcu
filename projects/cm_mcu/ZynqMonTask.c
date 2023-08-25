@@ -326,10 +326,8 @@ void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n)
   char buff[ZM_CLK_VERSION_LENGTH];
   // clear the buffer
   memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
-  const char *v;
-  if (n == 0)
-    v = clkr0a_moni2c_addrs[0].configname_chip;
-  else if (n == 1)
+  const char *v = clkr0a_moni2c_addrs[0].configname_chip;
+  if (n == 1)
     v = clk_moni2c_addrs[0].configname_chip;
   else if (n == 2)
     v = clk_moni2c_addrs[1].configname_chip;
