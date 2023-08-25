@@ -147,46 +147,60 @@ config:
       - STICKY_FLG
   - name: clkr0aconfigversion
     start: 216
-    count: 6
+    count: 4
     type: char
     extra: Table=CM_MON;Column=CONFIGV;Status=2
-    size: 3
+    size: 2
     mcu_call: clkr0aconfigversion
     names:
       - MCU_CLKR0A_VER
   - name: clkr0bconfigversion
     start: 223
-    count: 6
+    count: 4
     type: char
     extra: Table=CM_MON;Column=CONFIGV;Status=2
-    size: 3
+    size: 2
     mcu_call: clkr0bconfigversion
     names:
       - MCU_CLKR0B_VER
   - name: clkr1aconfigversion
     start: 230
-    count: 6
+    count: 4
     type: char
     extra: Table=CM_MON;Column=CONFIGV;Status=2
-    size: 3
+    size: 2
     mcu_call: clkr1aconfigversion
     names:
       - MCU_CLKR1A_VER
   - name: clkr1bconfigversion
-    start: 238
-    count: 6
+    start: 235
+    count: 4
     type: char
     extra: Table=CM_MON;Column=CONFIGV;Status=2
-    size: 3
+    size: 2
     mcu_call: clkr1bconfigversion
     names:
       - MCU_CLKR1B_VER
   - name: clkr1cconfigversion
-    start: 246
-    count: 6
+    start: 240
+    count: 4
     type: char
     extra: Table=CM_MON;Column=CONFIGV;Status=2
-    size: 3
+    size: 2
     mcu_call: clkr1cconfigversion
     names:
       - MCU_CLKR1C_VER
+  - name: firefly_bits
+    start: 245
+    count: 8
+    type: uint16_t
+    extra: Table=CM_FFARGV_MON;Status=1
+    mcu_call: firefly_bits
+    names:
+      - F1_FFL12CH
+      - F1_FFLDAQ
+      - F2_FFL12CH
+      - F2_FFLDAQ
+    postfixes:
+      - IS_FF25Gbs
+      - IS_PRESENT
