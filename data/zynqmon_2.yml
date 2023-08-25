@@ -7,34 +7,37 @@ revision: 1
 
 config:
   - name: firefly
-    start: 1
-    count: 20
-    mcu_call: firefly_temps
-    type: int8
-    extra: Table=CM_FF_MON;Column=Temp_C;Status=1;
+    start: 0
+    count: 40
+    mcu_call: firefly_info
+    type: uint16_t
+    extra: Table=CM_FF_MON;Status=1
     names:
-      - F1_P1 Tx12 
-      - F1_P1 Rx12
-      - F1_P2 Tx12 
-      - F1_P2 Rx12
-      - F1_P3 Tx12
-      - F1_P3 Rx12 
-      - F1_P4 XCVR4
-      - F1_P5 XCVR4 
-      - F1_P6 XCVR4
-      - F1_P7 XCVR4
-      - F2_P1 Tx12
-      - F2_P1 Rx12 
-      - F2_P2 Tx12 
-      - F2_P2 Rx12 
-      - F2_P3 Tx12 
-      - F2_P3 Rx12 
-      - F2_P4 XCVR4
-      - F2_P5 XCVR4 
-      - F2_P6 XCVR4
-      - F2_P7 XCVR4
+      - F1_P1_Tx12 
+      - F1_P1_Rx12
+      - F1_P2_Tx12 
+      - F1_P2_Rx12
+      - F1_P3_Tx12
+      - F1_P3_Rx12 
+      - F1_P4_XCVR4
+      - F1_P5_XCVR4 
+      - F1_P6_XCVR4
+      - F1_P7_XCVR4
+      - F2_P1_Tx12
+      - F2_P1_Rx12 
+      - F2_P2_Tx12 
+      - F2_P2_Rx12 
+      - F2_P3_Tx12 
+      - F2_P3_Rx12 
+      - F2_P4_XCVR4
+      - F2_P5_XCVR4 
+      - F2_P6_XCVR4
+      - F2_P7_XCVR4
+    postfixes: 
+      - Temp_C
+      - OptPow
   - name: uptime
-    start: 24
+    start: 44
     count: 1
     type: uint32_t
     mcu_call: uptime
@@ -42,7 +45,7 @@ config:
     names:
       - MCU_UPTIME
   - name: psmon
-    start: 27
+    start: 47
     count: 84
     mcu_call: psmon
     type: fp16
@@ -70,7 +73,7 @@ config:
       - IOUT
       - STATUS_WORD
   - name: gitversion
-    start: 112
+    start: 132
     count: 10
     type: char
     extra: Table=CM_MON;Column=FW;Status=1
@@ -79,7 +82,7 @@ config:
     names:
       - MCU_FW_VER
   - name: adcmon
-    start: 123
+    start: 143
     count: 21
     mcu_call: adcmon
     type: fp16
@@ -107,7 +110,7 @@ config:
       - F2_TEMP
       - TM4C_TEMP
   - name: fpga
-    start: 145
+    start: 165
     count: 8
     type: fp16
     extra: Table=CM_MON;Column=Temp_C;Status=2;
@@ -122,7 +125,7 @@ config:
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
   - name: allclkmon
-    start: 154
+    start: 174
     count: 40
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
@@ -142,26 +145,48 @@ config:
       - LOS_OR_LOSOOF_IN
       - LOSIN_FLG_OR_LOL
       - STICKY_FLG
-  - name: clkconfigversion
-    start: 196
-    count: 10
+  - name: clkr0aconfigversion
+    start: 216
+    count: 6
     type: char
     extra: Table=CM_MON;Column=CONFIGV;Status=2
-    size: 5
-    mcu_call: clkconfigversion
+    size: 3
+    mcu_call: clkr0aconfigversion
     names:
-      - MCU_CLK_VER
-  - name: firefly_bits
-    start: 210
-    count: 8 
-    type: uint16_t
-    extra: Table=CM_FFARGV_MON;Status=1
-    mcu_call: firefly_bits
+      - MCU_CLKR0A_VER
+  - name: clkr0bconfigversion
+    start: 223
+    count: 6
+    type: char
+    extra: Table=CM_MON;Column=CONFIGV;Status=2
+    size: 3
+    mcu_call: clkr0bconfigversion
     names:
-      - F1_FFL12CH
-      - F1_FFLDAQ
-      - F2_FFL12CH
-      - F2_FFLDAQ
-    postfixes:
-      - IS_FF25Gbs
-      - IS_PRESENT
+      - MCU_CLKR0B_VER
+  - name: clkr1aconfigversion
+    start: 230
+    count: 6
+    type: char
+    extra: Table=CM_MON;Column=CONFIGV;Status=2
+    size: 3
+    mcu_call: clkr1aconfigversion
+    names:
+      - MCU_CLKR1A_VER
+  - name: clkr1bconfigversion
+    start: 238
+    count: 6
+    type: char
+    extra: Table=CM_MON;Column=CONFIGV;Status=2
+    size: 3
+    mcu_call: clkr1bconfigversion
+    names:
+      - MCU_CLKR1B_VER
+  - name: clkr1cconfigversion
+    start: 246
+    count: 6
+    type: char
+    extra: Table=CM_MON;Column=CONFIGV;Status=2
+    size: 3
+    mcu_call: clkr1cconfigversion
+    names:
+      - MCU_CLKR1C_VER
