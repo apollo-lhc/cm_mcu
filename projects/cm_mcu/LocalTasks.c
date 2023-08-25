@@ -169,7 +169,7 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
 };
 
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
-uint16_t ffldaq_f1_opt_pow_values[NSUPPLIES_FFLDAQ_F1 * FF_DAQ_NRXCH];
+uint16_t ffldaq_f1_optpow_values[NSUPPLIES_FFLDAQ_F1];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .name = "FFDAQ",
@@ -187,7 +187,7 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
     .n_rxchs = FF_DAQ_NRXCH,
-    .opt_pow_values = ffldaq_f1_opt_pow_values,
+    .opt_pow_values = ffldaq_f1_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -238,7 +238,7 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #endif
 
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
-uint16_t ffl12_f1_opt_pow_values[(NSUPPLIES_FFL12_F1 / 2) * FF_12_NRXCH];
+uint16_t ffl12_f1_optpow_values[NSUPPLIES_FFL12_F1];
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .name = "FF12",
@@ -256,7 +256,7 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
     .n_rxchs = FF_12_NRXCH,
-    .opt_pow_values = ffl12_f1_opt_pow_values,
+    .opt_pow_values = ffl12_f1_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -294,7 +294,7 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
-uint16_t ffldaq_f2_opt_pow_values[NSUPPLIES_FFLDAQ_F2 * FF_DAQ_NRXCH];
+uint16_t ffldaq_f2_optpow_values[NSUPPLIES_FFLDAQ_F2];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .name = "FFDAV",
@@ -312,7 +312,7 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
     .n_rxchs = FF_DAQ_NRXCH,
-    .opt_pow_values = ffldaq_f2_opt_pow_values,
+    .opt_pow_values = ffldaq_f2_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -358,7 +358,7 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #endif
 
 uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
-uint16_t ffl12_f2_opt_pow_values[NSUPPLIES_FFL12_F2 * (FF_12_NRXCH / 2)];
+uint16_t ffl12_f2_optpow_values[NSUPPLIES_FFL12_F2];
 
 struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .name = "FF12V",
@@ -376,7 +376,7 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
     .n_rxchs = FF_12_NRXCH,
-    .opt_pow_values = ffl12_f2_opt_pow_values,
+    .opt_pow_values = ffl12_f2_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -641,28 +641,54 @@ TickType_t getFFupdateTick(int mask)
   }
 }
 
-int8_t getFFtemp(const uint8_t i)
+uint16_t getFFtemp(const uint8_t i)
 {
   int i1 = 1;
   int8_t val;
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
-    val = (int8_t)ffl12_f1_args.sm_values[index];
+    val = ffl12_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     int index = (i - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
-    val = (int8_t)ffldaq_f1_args.sm_values[index];
+    val = ffldaq_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     int index = (i - NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
-    val = (int8_t)ffl12_f2_args.sm_values[index];
+    val = ffl12_f2_args.sm_values[index];
   }
   else {
     int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-    val = (int8_t)ffldaq_f2_args.sm_values[index];
+    val = ffldaq_f2_args.sm_values[index];
+  }
+
+  return val;
+}
+
+uint16_t getFFoptpow(const uint8_t i)
+{
+  uint16_t val;
+  configASSERT(i < NFIREFLIES);
+  if (i < NFIREFLIES_IT_F1) {
+    int index = i;
+    val = ffl12_f1_args.opt_pow_values[index];
+  }
+
+  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
+    int index = i - NFIREFLIES_IT_F1;
+    val = ffldaq_f1_args.opt_pow_values[index];
+  }
+
+  else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
+    int index = i - NFIREFLIES_F1;
+    val = ffl12_f2_args.opt_pow_values[index];
+  }
+  else {
+    int index = i - NFIREFLIES_F1 - NFIREFLIES_IT_F2;
+    val = ffldaq_f2_args.opt_pow_values[index];
   }
 
   return val;

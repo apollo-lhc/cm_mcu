@@ -44,7 +44,7 @@ struct MonitorI2CTaskArgs_t {
   uint8_t ffpart_bit_mask;             // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
   uint32_t present_bit_mask;           // this mask is used for all ffs to detect if it is mounted or not
   const uint8_t n_rxchs;               // the number of optical receiver channels
-  uint16_t *opt_pow_values;            // a set of optical power measurements only from FFs with 25Gbs
+  uint16_t *opt_pow_values;            // optical power measurements from 4/12ch FFs with 25Gbs
   UBaseType_t stack_size;              // stack size of task
 };
 

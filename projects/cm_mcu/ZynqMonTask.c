@@ -278,8 +278,10 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
     else {
       data[i].data.i = -56; // special stale value
     }
+    log_debug(LOG_SERVICE, " ff %d opt pow : 0x%02x\r\n", i, data[i].data.us);
   }
 }
+
 // updated once per loop. Store the firefly temperature and present-bit data
 void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
 {
@@ -319,12 +321,22 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
 
 #ifdef REV2
 #define ZM_CLK_VERSION_LENGTH 20
-void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start)
+void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n)
 {
   char buff[ZM_CLK_VERSION_LENGTH];
   // clear the buffer
   memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
-  const char *v = clkr0a_moni2c_addrs[0].configname_chip;
+  const char *v;
+  if (n == 0)
+    v = clkr0a_moni2c_addrs[0].configname_chip;
+  else if (n == 1)
+    v = clk_moni2c_addrs[0].configname_chip;
+  else if (n == 2)
+    v = clk_moni2c_addrs[1].configname_chip;
+  else if (n == 3)
+    v = clk_moni2c_addrs[2].configname_chip;
+  else if (n == 4)
+    v = clk_moni2c_addrs[3].configname_chip;
   // find v[0-9] in this string after R0A for instance.
   // version is a string like v0004
   while (*v != '\0') { // assumes this c string is well-terminated
@@ -346,50 +358,35 @@ void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start)
   }
 }
 
-void zm_set_firefly_opt_pow(struct zynqmon_data_t data[], int start, int n)
+void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
-  if (n == 0) {
-    for (uint16_t i = 0; i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2) + ffl12_f2_args.n_rxchs * (NSUPPLIES_FFL12_F2 / 2); i++) {
-      data[i].sensor = i + start; // sensor id
-      if (!isFFStale()) {
-        uint16_t j;
-        if (i < ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2)) {
-          j = i;
-          data[i].data.us = ffl12_f1_args.opt_pow_values[j]; // sensor value and type
-        }
-        else {
-          j = i - (ffl12_f1_args.n_rxchs * (NSUPPLIES_FFL12_F1 / 2));
-          data[i].data.us = ffl12_f2_args.opt_pow_values[j]; // sensor value and type
-        }
-      }
-      else {
-        data[i].data.us = -56; // special stale value
-      }
-    }
-  }
+  int ll = 0;
 
-  if (n == 1) {
-    for (uint16_t i = 0; i < ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1 + ffldaq_f2_args.n_rxchs * NSUPPLIES_FFLDAQ_F2; i++) {
-      data[i].sensor = i + start; // sensor id
-      if (!isFFStale()) {
-        uint16_t j;
-        if (i < ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1) {
-          j = i;
-          data[i].data.us = ffldaq_f1_args.opt_pow_values[j]; // sensor value and type
-        }
-        else {
-          j = i - (ffldaq_f1_args.n_rxchs * NSUPPLIES_FFLDAQ_F1);
-          data[i].data.us = ffldaq_f2_args.opt_pow_values[j]; // sensor value and type
-        }
-      }
-      else {
-        data[i].data.us = -56; // special stale value
-      }
+  for (int j = 0; j < NFIREFLIES; ++j) { // loop over ff structs
+
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
     }
+    else {
+      data[ll].data.us = getFFtemp(j); // sensor value and type
+      log_debug(LOG_SERVICE, "temp ? for ff %d: 0x%02x\r\n", j, getFFtemp(j));
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = getFFoptpow(j); // sensor value and type
+      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, getFFoptpow(j));
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
   }
 }
+
 #endif // REV2
 
 // store the zynqmon ADCMon data
@@ -546,28 +543,36 @@ void zm_fill_structs(void)
 // this code will is generated from the YAML file
 void zm_fill_structs(void)
 {
-  // firefly, size 20
-  zm_set_firefly_temps(&zynqmon_data[0], 1);
+  // firefly, size 40
+  zm_set_firefly_info(&zynqmon_data[0], 0);
   // uptime, size 2
-  zm_set_uptime(&zynqmon_data[20], 24);
+  zm_set_uptime(&zynqmon_data[40], 44);
   // psmon, size 84
-  zm_set_psmon(&zynqmon_data[22], 27);
+  zm_set_psmon(&zynqmon_data[42], 47);
   // gitversion, size 10.0
-  zm_set_gitversion(&zynqmon_data[106], 112);
+  zm_set_gitversion(&zynqmon_data[126], 132);
   // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[116], 123);
+  zm_set_adcmon(&zynqmon_data[136], 143);
   // fpga, size 8
-  zm_set_fpga(&zynqmon_data[137], 145);
+  zm_set_fpga(&zynqmon_data[157], 165);
   // clk0mon, size 8
-  zm_set_clock(&zynqmon_data[145], 154, 0);
+  zm_set_clock(&zynqmon_data[165], 174, 0);
   // clkmon, size 32
-  zm_set_clock(&zynqmon_data[153], 162, 1);
-  // clkconfigversion, size 10.0
-  zm_set_clkconfigversion(&zynqmon_data[185], 196);
+  zm_set_clock(&zynqmon_data[173], 182, 1);
+  // clkconfigversion, size 6.0
+  zm_set_clkconfigversion(&zynqmon_data[205], 216, 0);
+  // clkconfigversion, size 6.0
+  zm_set_clkconfigversion(&zynqmon_data[211], 223, 1);
+  // clkconfigversion, size 6.0
+  zm_set_clkconfigversion(&zynqmon_data[217], 230, 2);
+  // clkconfigversion, size 6.0
+  zm_set_clkconfigversion(&zynqmon_data[223], 238, 3);
+  // clkconfigversion, size 6.0
+  zm_set_clkconfigversion(&zynqmon_data[229], 246, 4);
   // firefly_bits, size 8
-  zm_set_firefly_bits(&zynqmon_data[195], 210);
+  // zm_set_firefly_bits(&zynqmon_data[235], 254);
 }
-#define ZMON_VALID_ENTRIES 203
+#define ZMON_VALID_ENTRIES 235
 #endif
 
 void zm_send_data(struct zynqmon_data_t data[])

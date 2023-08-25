@@ -191,7 +191,8 @@ bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
-int8_t getFFtemp(const uint8_t i);
+uint16_t getFFtemp(const uint8_t i);
+uint16_t getFFoptpow(const uint8_t i);
 uint16_t getFFpresentbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);
