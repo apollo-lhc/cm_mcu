@@ -560,15 +560,15 @@ void zm_fill_structs(void)
   // clkconfigversion, size 4.0
   zm_set_clkconfigversion(&zynqmon_data[205], 216, 0);
   // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[209], 223, 1);
+  zm_set_clkconfigversion(&zynqmon_data[209], 220, 1);
   // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[213], 230, 2);
+  zm_set_clkconfigversion(&zynqmon_data[213], 224, 2);
   // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[217], 235, 3);
+  zm_set_clkconfigversion(&zynqmon_data[217], 228, 3);
   // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[221], 240, 4);
+  zm_set_clkconfigversion(&zynqmon_data[221], 232, 4);
   // firefly_bits, size 8
-  zm_set_firefly_bits(&zynqmon_data[225], 245);
+  zm_set_firefly_bits(&zynqmon_data[225], 236);
 }
 #define ZMON_VALID_ENTRIES 233
 #endif
