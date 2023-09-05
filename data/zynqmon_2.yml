@@ -76,7 +76,6 @@ config:
     start: 132
     count: 10
     type: char
-    extra: Table=CM_MON;Column=FW;Status=1
     size: 5
     mcu_call: gitversion
     names:
@@ -149,49 +148,44 @@ config:
     start: 216
     count: 4
     type: char
-    extra: Table=CM_MON;Column=CONFIGV;Status=2
     size: 2
     mcu_call: clkr0aconfigversion
     names:
       - MCU_CLKR0A_VER
   - name: clkr0bconfigversion
-    start: 223
+    start: 220
     count: 4
     type: char
-    extra: Table=CM_MON;Column=CONFIGV;Status=2
     size: 2
     mcu_call: clkr0bconfigversion
     names:
       - MCU_CLKR0B_VER
   - name: clkr1aconfigversion
-    start: 230
+    start: 224
     count: 4
     type: char
-    extra: Table=CM_MON;Column=CONFIGV;Status=2
     size: 2
     mcu_call: clkr1aconfigversion
     names:
       - MCU_CLKR1A_VER
   - name: clkr1bconfigversion
-    start: 235
+    start: 228
     count: 4
     type: char
-    extra: Table=CM_MON;Column=CONFIGV;Status=2
     size: 2
     mcu_call: clkr1bconfigversion
     names:
       - MCU_CLKR1B_VER
   - name: clkr1cconfigversion
-    start: 240
+    start: 232
     count: 4
     type: char
-    extra: Table=CM_MON;Column=CONFIGV;Status=2
     size: 2
     mcu_call: clkr1cconfigversion
     names:
       - MCU_CLKR1C_VER
   - name: firefly_bits
-    start: 245
+    start: 236
     count: 8
     type: uint16_t
     extra: Table=CM_FFARGV_MON;Status=1

@@ -192,7 +192,7 @@
 		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=IOUT" />
 		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=STATUS_WORD" />
 	</node>
-	<node id="MCU_FW_VER" address="0x42" permission="r" size="0x5" parameters="Format=c;Row=MCU_FW_VER;Table=CM_MON;Column=FW;Status=1" />
+	<node id="MCU_FW_VER" address="0x42" permission="r" mode="incremental" size="0x5" parameters="Format=c;" />
 	<node id="VCC_V120" address="0x47" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=VCC_V120;Table=CM_MON;Status=1;Column=ADC" />
 	<node id="VCC_MV33" address="0x48" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=VCC_MV33;Table=CM_MON;Status=1;Column=ADC" />
 	<node id="VCC_V33" address="0x48" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=VCC_V33;Table=CM_MON;Status=1;Column=ADC" />
@@ -272,24 +272,24 @@
 		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
 		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
 	</node>
-	<node id="MCU_CLKR0A_VER" address="0x6c" permission="r" size="0x2" parameters="Format=c;Row=MCU_CLKR0A_VER;Table=CM_MON;Column=CONFIGV;Status=2" />
-	<node id="MCU_CLKR0B_VER" address="0x6f" permission="r" size="0x2" parameters="Format=c;Row=MCU_CLKR0B_VER;Table=CM_MON;Column=CONFIGV;Status=2" />
-	<node id="MCU_CLKR1A_VER" address="0x73" permission="r" size="0x2" parameters="Format=c;Row=MCU_CLKR1A_VER;Table=CM_MON;Column=CONFIGV;Status=2" />
-	<node id="MCU_CLKR1B_VER" address="0x75" permission="r" size="0x2" parameters="Format=c;Row=MCU_CLKR1B_VER;Table=CM_MON;Column=CONFIGV;Status=2" />
-	<node id="MCU_CLKR1C_VER" address="0x78" permission="r" size="0x2" parameters="Format=c;Row=MCU_CLKR1C_VER;Table=CM_MON;Column=CONFIGV;Status=2" />
-	<node id="F1_FFL12CH" address="0x7a">
+	<node id="MCU_CLKR0A_VER" address="0x6c" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR0B_VER" address="0x6e" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR1A_VER" address="0x70" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR1B_VER" address="0x72" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR1C_VER" address="0x74" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="F1_FFL12CH" address="0x76">
 		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
 		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
 	</node>
-	<node id="F1_FFLDAQ" address="0x7b">
+	<node id="F1_FFLDAQ" address="0x77">
 		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
 		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
 	</node>
-	<node id="F2_FFL12CH" address="0x7c">
+	<node id="F2_FFL12CH" address="0x78">
 		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
 		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
 	</node>
-	<node id="F2_FFLDAQ" address="0x7d">
+	<node id="F2_FFLDAQ" address="0x79">
 		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
 		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
 	</node>
