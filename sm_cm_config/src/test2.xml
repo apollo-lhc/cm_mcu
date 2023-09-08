@@ -1,0 +1,296 @@
+<node id="CM" address="0x00000000">
+	<node id="F1_P1_Tx12" address="0x0">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1_Tx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1_Tx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P1_Rx12" address="0x1">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P1_Rx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P1_Rx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P2_Tx12" address="0x2">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2_Tx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2_Tx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P2_Rx12" address="0x3">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P2_Rx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P2_Rx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P3_Tx12" address="0x4">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3_Tx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3_Tx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P3_Rx12" address="0x5">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P3_Rx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P3_Rx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P4_XCVR4" address="0x6">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P4_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P4_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P5_XCVR4" address="0x7">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P5_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P5_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P6_XCVR4" address="0x8">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P6_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P6_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F1_P7_XCVR4" address="0x9">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_P7_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_P7_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P1_Tx12" address="0xa">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1_Tx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1_Tx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P1_Rx12" address="0xb">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P1_Rx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P1_Rx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P2_Tx12" address="0xc">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2_Tx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2_Tx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P2_Rx12" address="0xd">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P2_Rx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P2_Rx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P3_Tx12" address="0xe">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3_Tx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3_Tx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P3_Rx12" address="0xf">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P3_Rx12;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P3_Rx12;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P4_XCVR4" address="0x10">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P4_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P4_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P5_XCVR4" address="0x11">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P5_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P5_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P6_XCVR4" address="0x12">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P6_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P6_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="F2_P7_XCVR4" address="0x13">
+		<node id="Temp_C" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_P7_XCVR4;Table=CM_FF_MON;Status=1;Column=Temp_C" />
+		<node id="OptPow" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_P7_XCVR4;Table=CM_FF_MON;Status=1;Column=OptPow" />
+	</node>
+	<node id="MCU_UPTIME" address="0x16" permission="r" mask="0xFFFFFFFF" parameters="Format=u;Row=MCU_UPTIME;Table=CM_MON;Column=Minutes;Status=1" />
+	<node id="1V8" address="0x17">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=1V8;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=1V8;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=1V8;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=1V8;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=1V8;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=1V8;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="3V3" address="0x1a">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=3V3;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=3V3;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=3V3;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=3V3;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=3V3;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=3V3;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F1VCCINT1_S1" address="0x1d">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT1_S1;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT1_S1;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT1_S1;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT1_S1;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT1_S1;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT1_S1;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F1VCCINT1_S2" address="0x20">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT1_S2;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT1_S2;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT1_S2;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT1_S2;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT1_S2;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT1_S2;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F1VCCINT2_S1" address="0x23">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT2_S1;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT2_S1;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT2_S1;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT2_S1;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT2_S1;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT2_S1;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F1VCCINT2_S2" address="0x26">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT2_S2;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT2_S2;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT2_S2;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT2_S2;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1VCCINT2_S2;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1VCCINT2_S2;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F2VCCINT1_S1" address="0x29">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT1_S1;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT1_S1;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT1_S1;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT1_S1;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT1_S1;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT1_S1;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F2VCCINT1_S2" address="0x2c">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT1_S2;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT1_S2;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT1_S2;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT1_S2;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT1_S2;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT1_S2;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F2VCCINT2_S1" address="0x2f">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT2_S1;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT2_S1;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT2_S1;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT2_S1;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT2_S1;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT2_S1;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F2VCCINT2_S2" address="0x32">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT2_S2;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT2_S2;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT2_S2;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT2_S2;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2VCCINT2_S2;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2VCCINT2_S2;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F1AVTT" address="0x35">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1AVTT;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1AVTT;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1AVTT;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1AVTT;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1AVTT;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1AVTT;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F1AVCC" address="0x38">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1AVCC;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1AVCC;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1AVCC;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1AVCC;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1AVCC;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1AVCC;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F2AVTT" address="0x3b">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2AVTT;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2AVTT;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2AVTT;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2AVTT;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2AVTT;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2AVTT;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="F2AVCC" address="0x3e">
+		<node id="TEMP1" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=TEMP1" />
+		<node id="TEMP3" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=TEMP3" />
+		<node id="VIN" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=VIN" />
+		<node id="VOUT" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=VOUT" />
+		<node id="IOUT" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=IOUT" />
+		<node id="STATUS_WORD" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2AVCC;Table=CM_MON;Status=2;Column=STATUS_WORD" />
+	</node>
+	<node id="MCU_FW_VER" address="0x42" permission="r" mode="incremental" size="0x5" parameters="Format=c;" />
+	<node id="VCC_V120" address="0x47" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=VCC_V120;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="VCC_MV33" address="0x48" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=VCC_MV33;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="VCC_V33" address="0x48" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=VCC_V33;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="VCC_V40" address="0x49" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=VCC_V40;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="VCC_V18" address="0x49" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=VCC_V18;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F1_VCCINT" address="0x4a" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1_VCCINT;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F1_AVCC" address="0x4a" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1_AVCC;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F1_AVTT" address="0x4b" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1_AVTT;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F1_VCCAUX" address="0x4b" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1_VCCAUX;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F2_VCCINT" address="0x4c" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_VCCINT;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F2_AVCC" address="0x4c" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2_AVCC;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F2_AVTT" address="0x4d" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_AVTT;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F2_VCCAUX" address="0x4d" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2_VCCAUX;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="CUR_V_V12" address="0x4e" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=CUR_V_V12;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="CUR_V_MV33" address="0x4e" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=CUR_V_MV33;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="CUR_V_V40" address="0x4f" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=CUR_V_V40;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="CUR_V_F1VCCAUX" address="0x4f" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=CUR_V_F1VCCAUX;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="CUR_V_F2VCCAUX" address="0x50" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=CUR_V_F2VCCAUX;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F1_TEMP" address="0x50" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1_TEMP;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F2_TEMP" address="0x51" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_TEMP;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="TM4C_TEMP" address="0x51" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=TM4C_TEMP;Table=CM_MON;Status=1;Column=ADC" />
+	<node id="F1_TEMP_SLR0" address="0x52" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1_TEMP_SLR0;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="F1_TEMP_SLR1" address="0x53" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1_TEMP_SLR1;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="F1_TEMP_SLR2" address="0x53" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F1_TEMP_SLR2;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="F1_TEMP_SLR3" address="0x54" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F1_TEMP_SLR3;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="F2_TEMP_SLR0" address="0x54" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2_TEMP_SLR0;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="F2_TEMP_SLR1" address="0x55" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_TEMP_SLR1;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="F2_TEMP_SLR2" address="0x55" permission="r" mask="0xFFFF0000" parameters="Format=fp16;Row=F2_TEMP_SLR2;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="F2_TEMP_SLR3" address="0x56" permission="r" mask="0x0000FFFF" parameters="Format=fp16;Row=F2_TEMP_SLR3;Table=CM_MON;Column=Temp_C;Status=2;" />
+	<node id="R0A" address="0x57">
+		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
+		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
+		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
+		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0A;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
+	</node>
+	<node id="R0B" address="0x5b">
+		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
+		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
+		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
+		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R0B;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
+	</node>
+	<node id="R1A" address="0x5f">
+		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
+		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
+		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
+		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1A;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
+	</node>
+	<node id="R1B" address="0x63">
+		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
+		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
+		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
+		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1B;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
+	</node>
+	<node id="R1C" address="0x67">
+		<node id="PN_BASE0" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=PN_BASE0" />
+		<node id="PN_BASE1" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=PN_BASE1" />
+		<node id="DEVICE_REV" address="0x1" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=DEVICE_REV" />
+		<node id="I2C_ADDR" address="0x1" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=I2C_ADDR" />
+		<node id="STATUS_OR_LOSXAXB" address="0x2" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=STATUS_OR_LOSXAXB" />
+		<node id="LOS_OR_LOSOOF_IN" address="0x2" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOS_OR_LOSOOF_IN" />
+		<node id="LOSIN_FLG_OR_LOL" address="0x3" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=LOSIN_FLG_OR_LOL" />
+		<node id="STICKY_FLG" address="0x3" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=R1C;Table=CM_CLK_MON;Status=1;Column=STICKY_FLG" />
+	</node>
+	<node id="MCU_CLKR0A_VER" address="0x6c" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR0B_VER" address="0x6e" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR1A_VER" address="0x70" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR1B_VER" address="0x72" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="MCU_CLKR1C_VER" address="0x74" permission="r" mode="incremental" size="0x2" parameters="Format=c;" />
+	<node id="F1_FFL12CH" address="0x76">
+		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
+		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
+	</node>
+	<node id="F1_FFLDAQ" address="0x77">
+		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F1_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
+		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F1_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
+	</node>
+	<node id="F2_FFL12CH" address="0x78">
+		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
+		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_FFL12CH;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
+	</node>
+	<node id="F2_FFLDAQ" address="0x79">
+		<node id="IS_FF25Gbs" address="0x0" permission="r" mask="0x0000FFFF" parameters="Format=u;Row=F2_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_FF25Gbs" />
+		<node id="IS_PRESENT" address="0x0" permission="r" mask="0xFFFF0000" parameters="Format=u;Row=F2_FFLDAQ;Table=CM_FFARGV_MON;Status=1;Column=IS_PRESENT" />
+	</node>
+</node>
