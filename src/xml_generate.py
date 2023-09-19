@@ -38,7 +38,7 @@ def makeNode(parent: ET.Element, id: str, c: dict, addr2: int, parent_id: str) -
         width = 16
         format = "fp16"
     elif (c['type'] == 'char'):
-        width = 8
+        node.set('mode', "incremental")
         format = "c"
     elif (c['type'] == 'uint32_t'):
         width = 32
@@ -60,7 +60,7 @@ def makeNode(parent: ET.Element, id: str, c: dict, addr2: int, parent_id: str) -
     if 'extra' in c:
         extra = c['extra']
         if not "Column" in extra:
-            extra = extra + ";Column=" + id
+            extra = extra + ";Column=" + id #this semicolon asks for no semicolon in extra when postfixes are included
         if not "Row" in extra :
             if parent_id != "":
                 extra = "Row=" + parent_id + ";" + extra
@@ -222,6 +222,10 @@ class reg:
         if (self.start >= other.start and self.end <= other.end):
             return True
         return False
+    def overloads(self, other):
+        if (self.start >= 237):
+            return True
+        return False
 
 # create a list of objects
 entries = []
@@ -241,11 +245,13 @@ for c in config:  # loop over entries in configuration (sensor category)
     entries.append(reg(c['name'], start, start + thislength - 1, thislength))
 pprint(entries)
 
-# check for overlaps
+# check for overlaps and overloads
 for i in range(len(entries)):
     for j in range(i+1, len(entries)):
         if entries[i].overlaps(entries[j]):
             print(f"{entries[i].name} overlaps with {entries[j].name}")
 
+if entries[len(entries)-1].overloads(entries[len(entries)-1]):
+    print(f"{entries[len(entries)-1].name} overloads")
 
 
