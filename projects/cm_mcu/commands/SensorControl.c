@@ -1279,7 +1279,8 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
   }
 }
 
-// This command takes 1 argument, either k or v
+// This command takes 1 argument, either f1 or f2
+#ifdef REV2
 BaseType_t fpga_flash(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -1305,8 +1306,9 @@ BaseType_t fpga_flash(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
+#endif
 
-// This command takes 1 argument, either k or v
+// This command takes 1 argument, either f1 or f2
 BaseType_t fpga_reset(int argc, char **argv, char *m)
 {
   int copied = 0;
