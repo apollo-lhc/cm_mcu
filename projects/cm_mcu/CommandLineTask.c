@@ -261,6 +261,10 @@ static struct command_t commands[] = {
     {"errorlog_reset", errbuff_reset,
      "Resets the eeprom error logger.\r\n", 0},
     {"first_mcu", first_mcu_ctl, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 4},
+#ifdef REV2
+    {"fpga_flash", fpga_flash, "args # (1|2):  Program FPGA 1(2) via a programmed flash.\r\n",
+     1},
+#endif // REV2
     {"fpga_reset", fpga_reset, "Reset Kintex (k) or Virtex (V) FPGA\r\n", 1},
     {"ff", ff_ctl,
      "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"

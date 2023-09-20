@@ -42,5 +42,6 @@ BaseType_t clkr0amon_ctl(int argc, char **argv, char *m);
 // FPGA
 BaseType_t fpga_ctl(int argc, char **argv, char *m);
 BaseType_t fpga_reset(int argc, char **argv, char *m);
+BaseType_t fpga_flash(int argc, char **argv, char *m);
 
 #endif
