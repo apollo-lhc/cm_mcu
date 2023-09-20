@@ -1304,6 +1304,7 @@ BaseType_t fpga_flash(int argc, char **argv, char *m)
     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA1 has been programmed\r\n");
   }
+  snprintf(m + copied, SCRATCH_SIZE - copied, "via flash\r\n");
   return pdFALSE;
 }
 #endif
