@@ -1,3 +1,7 @@
+# auto-generate c file
+src/zynqmon_addresses.c
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -130,3 +134,4 @@ dmypy.json
 
 # testing xml output
 src/test.xml
+.DS_Store
