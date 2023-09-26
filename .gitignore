@@ -134,3 +134,4 @@ dmypy.json
 
 # testing xml output
 src/test.xml
+.DS_Store
