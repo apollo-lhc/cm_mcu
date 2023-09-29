@@ -1,0 +1,126 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master github_actions_fix ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '30 4 * * 1'
+  workflow_dispatch:
+    branches: [ master ]
+
+#  note that I need to manually set the path for the arm-none-eabi-gcc exe
+#  after it comes out of the cache. I don't understand why I need to do that.
+
+jobs:
+  build-gcc:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Code checkout
+      uses: actions/checkout@v2
+    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
+      id:   cache-toolchain
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-toolchain-10-2020-q4
+      with:
+        path: ${{ runner.temp }}/arm-none-eabi
+        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
+
+    - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
+      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      with:
+        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        # Directory to unpack GCC to. Defaults to a temporary directory.
+        directory: ${{ runner.temp }}/arm-none-eabi
+    - name: make with GCC, debug build, Rev1
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make -k DEBUG=1 REV1=1
+    - name: make with GCC, debug build, Rev2
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make REV1=1 clean
+        make -k DEBUG=1 REV2=1
+    - name: make with GCC, Rev1
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make REV1=1 clean
+        make -k REV1=1 
+    - name: make with GCC, Rev 2
+      run: |
+        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+        make REV1=1 clean
+        make -k REV2=1 
+
+  build-clang: 
+# this build also needs arm-none-eabi-gcc as some of the clang sysroot stuff depends on it.
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Code checkout
+      uses: actions/checkout@v2
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v1.6.1
+      with:
+       version: "14.0"
+       directory: ${{ runner.temp }}/llvm
+    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
+      id:   cache-toolchain
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-toolchain-10-2020-q4
+      with:
+        path: ${{ runner.temp }}/arm-none-eabi
+        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
+        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
+
+    - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
+      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
+      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      with:
+        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        # Directory to unpack GCC to. Defaults to a temporary directory.
+        directory: ${{ runner.temp }}/arm-none-eabi
+
+    - name: make with CLANG, Rev 1
+      run: |
+         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+         make -k COMPILER=clang REV1=1
+    - name: make with CLANG, Rev 2
+      run: |
+         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+         make -k COMPILER=clang REV1=1 clean
+         make -k COMPILER=clang REV2=1
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Code checkout
+      uses: actions/checkout@v3
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v34.5.3
+      with:
+        files_ignore: |
+          **/*.yml
+          .clang*
+          .git*
+          **/*.sh
+          **/*.def
+          **/Makefile
+          makedefs
+          **/*.md
+    - name: Format changed files
+      if: steps.changed-files.outputs.any_changed == 'true'
+      uses: DoozyX/clang-format-lint-action@v0.14
+      with:
+        source: ${{ steps.changed-files.outputs.all_changed_files }}
+        extensions: 'h,c'
+        clangFormatVersion: 11
+        inplace: false
+        style: file
