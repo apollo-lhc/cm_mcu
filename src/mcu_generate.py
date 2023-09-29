@@ -29,6 +29,9 @@ for c in config:
     #if ( c['count'] != expected_length ) :
     #    print(f"// mismatch:  {expected_length}, size {c['count']}")
     print(f"// {c['name']}, size {expected_length}")
-    print(f"zm_set_{c['mcu_call']}(&zynqmon_data[{size}], {c['start']});")
+    if c['mcu_extra_call'] == None : 
+        print(f"zm_set_{c['mcu_call']}(&zynqmon_data[{size}], {c['start']});")
+    else :
+        print(f"zm_set_{c['mcu_call']}(&zynqmon_data[{size}], {c['start']}, {c['mcu_extra_call']});")
     size += int(expected_length)
 print(f"#define ZMON_VALID_ENTRIES {size}")

@@ -10,6 +10,7 @@ config:
     start: 0
     count: 40
     mcu_call: firefly_info
+    mcu_extra_call: null
     type: uint16_t
     extra: Table=CM_FF_MON;Status=1
     names:
@@ -41,6 +42,7 @@ config:
     count: 1
     type: uint32_t
     mcu_call: uptime
+    mcu_extra_call: null
     extra: Table=CM_MON;Column=Minutes;Status=1
     names:
       - MCU_UPTIME
@@ -48,6 +50,7 @@ config:
     start: 47
     count: 84
     mcu_call: psmon
+    mcu_extra_call: null
     type: fp16
     extra: Table=CM_MON;Status=2
     names: 
@@ -78,12 +81,14 @@ config:
     type: char
     size: 5
     mcu_call: gitversion
+    mcu_extra_call: null
     names:
       - MCU_FW_VER
   - name: adcmon
     start: 143
     count: 21
     mcu_call: adcmon
+    mcu_extra_call: null
     type: fp16
     extra: Table=CM_MON;Status=1;Column=ADC
     names:
@@ -114,6 +119,7 @@ config:
     type: fp16
     extra: Table=CM_MON;Column=Temp_C;Status=2;
     mcu_call: fpga
+    mcu_extra_call: null
     names:
       - F1_TEMP_SLR0
       - F1_TEMP_SLR1
@@ -129,6 +135,7 @@ config:
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
     mcu_call: allclkmon
+    mcu_extra_call: null
     names: 
       - R0A
       - R0B
@@ -149,7 +156,8 @@ config:
     count: 4
     type: char
     size: 2
-    mcu_call: clkr0aconfigversion
+    mcu_call: clkconfigversion
+    mcu_extra_call: 0
     names:
       - MCU_CLKR0A_VER
   - name: clkr0bconfigversion
@@ -157,7 +165,8 @@ config:
     count: 4
     type: char
     size: 2
-    mcu_call: clkr0bconfigversion
+    mcu_call: clkconfigversion
+    mcu_extra_call: 1
     names:
       - MCU_CLKR0B_VER
   - name: clkr1aconfigversion
@@ -165,7 +174,8 @@ config:
     count: 4
     type: char
     size: 2
-    mcu_call: clkr1aconfigversion
+    mcu_call: clkconfigversion
+    mcu_extra_call: 2
     names:
       - MCU_CLKR1A_VER
   - name: clkr1bconfigversion
@@ -173,7 +183,8 @@ config:
     count: 4
     type: char
     size: 2
-    mcu_call: clkr1bconfigversion
+    mcu_call: clkconfigversion
+    mcu_extra_call: 3
     names:
       - MCU_CLKR1B_VER
   - name: clkr1cconfigversion
@@ -181,7 +192,8 @@ config:
     count: 4
     type: char
     size: 2
-    mcu_call: clkr1cconfigversion
+    mcu_call: clkconfigversion
+    mcu_extra_call: 4
     names:
       - MCU_CLKR1C_VER
   - name: firefly_bits
@@ -190,6 +202,7 @@ config:
     type: uint16_t
     extra: Table=CM_FFARGV_MON;Status=1
     mcu_call: firefly_bits
+    mcu_extra_call: null
     names:
       - F1_FFL12CH
       - F1_FFLDAQ
