@@ -547,7 +547,7 @@ void zm_fill_structs(void)
 #define ZMON_VALID_ENTRIES 126
 #elif defined REV2
 // this code will is generated from the YAML file
-void zm_fill_structs(void)
+void zm_fill_structs_old(void)
 {
   // firefly, size 40
   zm_set_firefly_info(&zynqmon_data[0], 0);

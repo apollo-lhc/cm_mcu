@@ -56,6 +56,8 @@ VPATH+=${BASE}/common
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
+
+VPATH+=${BASE}/sm_cm_config/src
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -124,6 +126,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmUtilities.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMon_addresses.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/WatchdogTask.o
