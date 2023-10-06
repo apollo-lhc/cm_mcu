@@ -134,7 +134,7 @@ config:
     count: 40
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
-    mcu_call: allclkmon
+    mcu_call: allclk
     mcu_extra_call: null
     names: 
       - R0A
