@@ -10,6 +10,7 @@ config:
     start: 0
     count: 25
     mcu_call: firefly_temps
+    mcu_extra_call: null
     type: int8
     extra: Table=CM_FF_MON;Column=Temp_C;Status=1;
     names:
@@ -42,6 +43,7 @@ config:
     start: 32
     count: 8
     mcu_call: psmon
+    mcu_extra_call: null
     type: fp16
     extra: Table=CM_MON;Status=2
     names: 
@@ -58,6 +60,7 @@ config:
     start: 96
     count: 21
     mcu_call: adcmon
+    mcu_extra_call: null
     type: fp16
     extra: Table=CM_MON;Status=2;Column=ADC
     names:
@@ -87,6 +90,7 @@ config:
     count: 1
     type: uint32_t
     mcu_call: uptime
+    mcu_extra_call: null
     extra: Table=CM_MON;Column=Minutes;Status=1
     names:
       - MCU_UPTIME
@@ -96,6 +100,7 @@ config:
     type: char
     size: 5
     mcu_call: gitversion
+    mcu_extra_call: null
     names:
       - MCU_FW_VER
   - name: fpga
@@ -104,6 +109,7 @@ config:
     type: fp16
     extra: Table=CM_MON;Column=Temp_C;Status=2;
     mcu_call: fpga
+    mcu_extra_call: null
     names:
       - F1_TEMP_SLR0
       - F2_TEMP_SLR0
