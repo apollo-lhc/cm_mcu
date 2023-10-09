@@ -129,15 +129,32 @@ config:
       - F2_TEMP_SLR1
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
-  - name: allclkmon
+  - name: clkmonr0a
     start: 174
-    count: 40
+    count: 8
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
-    mcu_call: allclk
-    mcu_extra_call: null
+    mcu_call: clock
+    mcu_extra_call: 0
     names: 
       - R0A
+    postfixes:
+      - PN_BASE0
+      - PN_BASE1
+      - DEVICE_REV
+      - I2C_ADDR
+      - STATUS_OR_LOSXAXB
+      - LOS_OR_LOSOOF_IN
+      - LOSIN_FLG_OR_LOL
+      - STICKY_FLG
+  - name: clkmon
+    start: 182
+    count: 32
+    type: uint16_t
+    extra: Table=CM_CLK_MON;Status=1
+    mcu_call: clock
+    mcu_extra_call: 1
+    names: 
       - R0B
       - R1A
       - R1B
