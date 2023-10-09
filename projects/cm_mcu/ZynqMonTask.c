@@ -497,14 +497,6 @@ void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
   }
 }
 
-// please update this function manually and in synced with sm_cm_config
-void zm_set_allclk(struct zynqmon_data_t data[], int start)
-{
-  // clk0mon, size 8
-  zm_set_clock(&zynqmon_data[165], start, 0);
-  // clkmon, size 32
-  zm_set_clock(&zynqmon_data[173], start + 8, 1);
-}
 void zm_set_fpga(struct zynqmon_data_t data[], int start)
 {
   // FPGA values
@@ -561,8 +553,10 @@ void zm_fill_structs(void)
   zm_set_adcmon(&zynqmon_data[136], 143);
   // fpga, size 8
   zm_set_fpga(&zynqmon_data[157], 165);
-  // clk0mon, size 40
-  zm_set_allclk(&zynqmon_data[165], 174);
+  // clk0mon, size 8
+  zm_set_clock(&zynqmon_data[165], 174, 0);
+  // clkmon, size 32
+  zm_set_clock(&zynqmon_data[173], 182, 1);
   // clkconfigversion, size 4.0
   zm_set_clkconfigversion(&zynqmon_data[205], 216, 0);
   // clkconfigversion, size 4.0
