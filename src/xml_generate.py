@@ -8,9 +8,9 @@ import xml.etree.ElementTree as ET
 verbose=False
 
 # %%
-with open('../data/zynqmon_2.yml') as f:
+with open('../data/zynqmon_2.yml', encoding='ascii') as f:
     y = yaml.load(f, Loader=yaml.FullLoader)
-    if (verbose) :
+    if verbose:
         pprint(y)
 
 
@@ -28,22 +28,22 @@ def makeNode(parent: ET.Element, id: str, c: dict, addr2: int, parent_id: str) -
     # this appears to be on all the nodes
     node.set("permission", "r")
     # set parameter based on the type
-    if (c['type'] == 'int8'):
+    if c['type'] == 'int8':
         width = 8
         format = "d"
-    elif (c['type'] == 'int16'):
+    elif c['type'] == 'int16':
         width = 16
         format = "d"
-    elif (c['type'] == 'fp16'):
+    elif c['type'] == 'fp16':
         width = 16
         format = "fp16"
-    elif (c['type'] == 'char'):
+    elif c['type'] == 'char':
         node.set('mode', "incremental")
         format = "c"
-    elif (c['type'] == 'uint32_t'):
+    elif c['type'] == 'uint32_t':
         width = 32
         format = "u"
-    elif (c['type'] == 'uint16_t'):
+    elif c['type'] == 'uint16_t':
         width = 16
         format = "u"
     else:
@@ -53,7 +53,7 @@ def makeNode(parent: ET.Element, id: str, c: dict, addr2: int, parent_id: str) -
         node.set('size', str(hex(c['size'])))
     else: 
         mask = (1 << width) - 1
-        if (remain == 0):
+        if remain == 0:
             node.set('mask', "0x{0:08X}".format(mask))
         else:
             node.set('mask', "0x{0:08X}".format(mask << 16))
@@ -253,5 +253,3 @@ for i in range(len(entries)):
 
 if entries[len(entries)-1].overloads(entries[len(entries)-1]):
     print(f"{entries[len(entries)-1].name} overloads")
-
-
