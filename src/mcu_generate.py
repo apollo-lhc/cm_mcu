@@ -87,12 +87,6 @@ with open(args.output, 'w', encoding="ascii") as fout:
         # check to ensure that none of the tuples in pairs overlap
         # this is a sanity check to ensure that the yaml file is correct
         errors=False
-        # for i in range(len(pairs)):
-        #     for j in range(i+1, len(pairs)):
-        #         if ( pairs[i][0] <= pairs[j][0] and pairs[i][1] >= pairs[j][0] ) or \
-        #            ( pairs[i][0] <= pairs[j][1] and pairs[i][1] >= pairs[j][1] ) :
-        #             print(f"ERROR: overlap: {pairs[i]} and {pairs[j]}")
-        #             errors=True
         for a, b in zip(pairs, pairs[1:]):
             if a[0] <= b[0] and a[1] >= b[0] or a[0] <= b[1] and a[1] >= b[1]:
                 print(f"ERROR: overlap: {a} and {b}")

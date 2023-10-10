@@ -7,7 +7,7 @@ import yaml
 parser = argparse.ArgumentParser(description='Process YAML for XML.')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='increase output verbosity')
-parser.add_argument('-o', '--output', type=str, help='output file name',
+parser.add_argument('-d', '--directory', type=str, help='output directory',
                     default="ZynqMon_addresses.c")
 # this argument is required
 parser.add_argument('input_files', metavar='file', type=str,
@@ -181,6 +181,7 @@ class reg:
         return False
 
     def overloads(self):
+        """check if the object overloads the register space"""
         if self.start >= 237:
             return True
         return False
