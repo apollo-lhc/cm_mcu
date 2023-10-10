@@ -41,7 +41,7 @@ config:
       - V12  12 Rx GTY
   - name: psmon
     start: 32
-    count: 8
+    count: 64
     mcu_call: psmon
     mcu_extra_call: null
     type: fp16
@@ -87,7 +87,7 @@ config:
       - TM4C_TEMP
   - name: uptime
     start: 192
-    count: 1
+    count: 2
     type: uint32_t
     mcu_call: uptime
     mcu_extra_call: null
@@ -96,7 +96,7 @@ config:
       - MCU_UPTIME
   - name: gitversion
     start: 118
-    count: 20
+    count: 10
     type: char
     size: 5
     mcu_call: gitversion

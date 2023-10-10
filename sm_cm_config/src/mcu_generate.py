@@ -70,7 +70,8 @@ with open(args.output, 'w', encoding="ascii") as fout:
                 expected_length *= c['size']*4 # size in 4 byte words -- extra factor of 4
             if c['count'] != expected_length:
                 print(f"// mismatch:  {expected_length}, size {c['count']}", file=fout)
-                print(f"Mismatch in size for {c['name']}")
+                print(f"Mismatch in size for {c['name']}, file {fname}")
+                print(f"Mismatch: expected: {expected_length}, size {c['count']}")
                 # close and delete the output file before exiting
                 fout.close()
                 os.remove(args.output)
