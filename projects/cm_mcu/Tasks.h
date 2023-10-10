@@ -349,7 +349,7 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start);
 void zm_set_allclk(struct zynqmon_data_t data[], int start);
 
 #ifdef ZYNQMON_TEST_MODE
-    void setZYNQMonTestData(uint8_t sensor, uint16_t value);
+void setZYNQMonTestData(uint8_t sensor, uint16_t value);
 uint8_t getZYNQMonTestMode(void);
 uint8_t getZYNQMonTestSensor(void);
 uint16_t getZYNQMonTestData(void);

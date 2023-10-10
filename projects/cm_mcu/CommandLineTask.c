@@ -284,12 +284,12 @@ static struct command_t commands[] = {
         "Displays a table showing the CDR loss of lock alarms of the fireflies.\r\n",
         0,
     },
-	{
-	    "ff_optpow",
-	    ff_optpow,
-	    "Displays a table showing the avg. optical power of the I2C fireflies.\r\n",
-	    0,
-	},
+    {
+        "ff_optpow",
+        ff_optpow,
+        "Displays a table showing the avg. optical power of the I2C fireflies.\r\n",
+        0,
+    },
     {
         "ff_temp",
         ff_temp,

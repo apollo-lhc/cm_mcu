@@ -928,7 +928,6 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-
 // this command takes up to two arguments
 BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
