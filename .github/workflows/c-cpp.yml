@@ -108,6 +108,9 @@ jobs:
       with:
         files_ignore: |
           **/*.yml
+          **/*.py
+          **/*.xml
+          **/*.ipynb
           .clang*
           .git*
           **/*.sh
