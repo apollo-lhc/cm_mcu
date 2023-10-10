@@ -57,7 +57,6 @@ VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
 
-VPATH+=${BASE}/sm_cm_config/src
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -83,7 +82,7 @@ all: ${COMPILER}/cm_mcu.axf
 # The rule to clean out all the build products.
 #
 clean:
-	@rm -rf ${COMPILER} ${wildcard *~}
+	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c
 
 #
 # The rule to create the target directory.
@@ -92,6 +91,13 @@ ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
 
+## Zynq address table
+YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/*.yml)
+ZynqMon_addresses.c: ${YAML_FILES}
+	python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES}
+	#python ${ROOT}/sm_cm_config/src/xml_generate.py
+
+ZynqMon_addresses.o: ZynqMon_addresses.c
 #
 # Rules for building the project
 # 
