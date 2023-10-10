@@ -39,7 +39,7 @@ config:
       - OptPow
   - name: uptime
     start: 44
-    count: 1
+    count: 2
     type: uint32_t
     mcu_call: uptime
     mcu_extra_call: null
