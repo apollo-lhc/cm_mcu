@@ -1,5 +1,6 @@
 """ Generate the C code for the microcontroller using the yaml files in the data directory"""
 import subprocess
+import os
 import sys
 import argparse
 import yaml
@@ -47,10 +48,12 @@ with open(args.output, 'w', encoding="ascii") as fout:
         print("void zm_fill_structs(void) \n{", file=fout)
 
         # print the names of the variables
-        print(f"dump variables for iteration {idx}")
+        if args.verbose:
+            print(f"dump variables for iteration {idx}")
         config = data['config']
         for c in config:
-            print(c['name'])
+            if args.verbose:
+                print(c['name'])
 
         pairs = []
         size = 0
@@ -67,7 +70,10 @@ with open(args.output, 'w', encoding="ascii") as fout:
                 expected_length *= c['size']*4 # size in 4 byte words -- extra factor of 4
             if c['count'] != expected_length:
                 print(f"// mismatch:  {expected_length}, size {c['count']}", file=fout)
-                print("Mismatch in size for {c['name']}")
+                print(f"Mismatch in size for {c['name']}")
+                # close and delete the output file before exiting
+                fout.close()
+                os.remove(args.output)
                 sys.exit(1)
             print(f"// {c['name']}, size {expected_length}", file=fout)
             if c['mcu_extra_call'] is None:
@@ -81,12 +87,6 @@ with open(args.output, 'w', encoding="ascii") as fout:
         # check to ensure that none of the tuples in pairs overlap
         # this is a sanity check to ensure that the yaml file is correct
         errors=False
-        # for i in range(len(pairs)):
-        #     for j in range(i+1, len(pairs)):
-        #         if ( pairs[i][0] <= pairs[j][0] and pairs[i][1] >= pairs[j][0] ) or \
-        #            ( pairs[i][0] <= pairs[j][1] and pairs[i][1] >= pairs[j][1] ) :
-        #             print(f"ERROR: overlap: {pairs[i]} and {pairs[j]}")
-        #             errors=True
         for a, b in zip(pairs, pairs[1:]):
             if a[0] <= b[0] and a[1] >= b[0] or a[0] <= b[1] and a[1] >= b[1]:
                 print(f"ERROR: overlap: {a} and {b}")

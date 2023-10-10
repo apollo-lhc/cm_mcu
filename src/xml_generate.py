@@ -1,75 +1,93 @@
-# %%
-import yaml
-from pprint import pprint
+"""Generate XML file from YAML input"""
 import xml.etree.ElementTree as ET
+from pprint import pprint
+import argparse
+import yaml
+
+parser = argparse.ArgumentParser(description='Process YAML for XML.')
+parser.add_argument('-v', '--verbose', action='store_true',
+                    help='increase output verbosity')
+parser.add_argument('-d', '--directory', type=str, help='output directory',
+                    default="ZynqMon_addresses.c")
+# this argument is required
+parser.add_argument('input_files', metavar='file', type=str,
+                    nargs='+', help='input file names')
+
+args = parser.parse_args()
+
+if args.verbose:
+    print('Verbose mode on')
+
+if args.output:
+    print('Output file name:', args.output)
+
+if args.verbose:
+    print('Input file names:', args.input_files)
 
 
-# %%
-verbose=False
-
-# %%
-with open('../data/zynqmon_2.yml', encoding='ascii') as f:
+with open(args.input_files[1], encoding='ascii') as f:
     y = yaml.load(f, Loader=yaml.FullLoader)
-    if verbose:
+    if args.verbose:
         pprint(y)
 
 
 # %%
-def makeNode(parent: ET.Element, id: str, c: dict, addr2: int, parent_id: str) -> ET.Element:
-    node = ET.SubElement(parent, 'node')
-    id = id.replace(' ', '_')
-    start = c['start']
-    count = c['count']
-    node.set('id', id)
+def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int,
+              parent_id: str) -> ET.Element:
+    """create the node to be inserted into the xml tree"""
+    thenode = ET.SubElement(parent, 'node')
+    myid = myid.replace(' ', '_')
+    thenode.set('id', myid)
     # address is half of the sensor address since these are 32 bit addresses
-    addr = int(addr2/2)
+    theaddr = int(addr2/2)
     remain = addr2 % 2
-    node.set('address', str(hex(addr)))
+    thenode.set('address', str(hex(theaddr)))
     # this appears to be on all the nodes
-    node.set("permission", "r")
+    thenode.set("permission", "r")
     # set parameter based on the type
-    if c['type'] == 'int8':
+    if thedict['type'] == 'int8':
         width = 8
-        format = "d"
-    elif c['type'] == 'int16':
+        theformat = "d"
+    elif thedict['type'] == 'int16':
         width = 16
-        format = "d"
-    elif c['type'] == 'fp16':
+        theformat = "d"
+    elif thedict['type'] == 'fp16':
         width = 16
-        format = "fp16"
-    elif c['type'] == 'char':
-        node.set('mode', "incremental")
-        format = "c"
-    elif c['type'] == 'uint32_t':
+        theformat = "fp16"
+    elif thedict['type'] == 'char':
+        thenode.set('mode', "incremental")
+        theformat = "c"
+    elif thedict['type'] == 'uint32_t':
         width = 32
-        format = "u"
-    elif c['type'] == 'uint16_t':
+        theformat = "u"
+    elif thedict['type'] == 'uint16_t':
         width = 16
-        format = "u"
+        theformat = "u"
     else:
-        print("ERROR: unknown type", c['type'])
+        print("ERROR: unknown type", thedict['type'])
         return None
-    if 'size' in c: # if there is a size, it cannot have a mask
-        node.set('size', str(hex(c['size'])))
-    else: 
+    if 'size' in thedict:  # if there is a size, it cannot have a mask
+        thenode.set('size', str(hex(thedict['size'])))
+    else:
         mask = (1 << width) - 1
         if remain == 0:
-            node.set('mask', "0x{0:08X}".format(mask))
+            thenode.set('mask', "0x{0:08X}".format(mask))
         else:
-            node.set('mask', "0x{0:08X}".format(mask << 16))
-    if 'extra' in c:
-        extra = c['extra']
+            thenode.set('mask', "0x{0:08X}".format(mask << 16))
+    if 'extra' in thedict:
+        extra = thedict['extra']
         if not "Column" in extra:
-            extra = extra + ";Column=" + id #this semicolon asks for no semicolon in extra when postfixes are included
-        if not "Row" in extra :
+            # this semicolon asks for no semicolon in extra when postfixes are included
+            extra = extra + ";Column=" + myid
+        if not "Row" in extra:
             if parent_id != "":
                 extra = "Row=" + parent_id + ";" + extra
             else:
-                extra = "Row=" + id + ";" + extra
+                extra = "Row=" + myid + ";" + extra
     else:
         extra = ""
-    node.set('parameters', "Format=" + format + ";" + extra)
-    return node
+    thenode.set('parameters', "Format=" + theformat + ";" + extra)
+    return thenode
 
 
 # %%
@@ -93,9 +111,7 @@ for c in config:  # loop over entries in configuration (sensor category)
             pp.set('id', n)
             start = c['start']
             addr = int((start + i)/2)
-            #addr = int((start + i)/2)
             pp.set('address', str(hex(addr)))
-            #pp.set("mask", "0x{0:08X}".format(0xFFFFFFFF))
             postfixes = c['postfixes']
             j = 0
             for p in postfixes:
@@ -103,95 +119,33 @@ for c in config:  # loop over entries in configuration (sensor category)
                     i += 1
                     j += 1
                     continue
-                if verbose: 
+                if args.verbose:
                     print("adding postfix", p, "to node", n)
-                node = makeNode(pp, p, c, j, n)
+                node = make_node(pp, p, c, j, n)
                 i += 1
                 j += 1
         else:
             start = c['start']
-            makeNode(cm, n, c, start+i, "")
+            make_node(cm, n, c, start+i, "")
             i += 1
-
-# %% [markdown]
-# config = y['config']
-# 
-# for c in config: # loop over entries in configuration (sensor category)
-#     print("here", c['name'])
-#     if not 'start' in c:
-#         pprint(c)
-#     start = c['start']
-#     count = c['count']
-#     i = 0 # counter over the number of sensors within a category
-#     names = c['names']
-#     if 'prefixes' in c:
-#         postfixes = c['postfixes']
-#     else:
-#         postfixes = ' '
-#     for p in prefixes:
-#         for n in names: # loop over sensor names
-#             node = ET.SubElement(cm, 'node')
-#             if ( len(p.lstrip()) > 0 ):
-#                 id = p +"_" +  n.replace(' ', '_')
-#             else:
-#                 id = n.replace(' ', '_')
-#             node.set('id', id)
-#             addr = int((start + i)/2) ## address is half of the sensor address since these are 32 bit addresses
-#             remain = (start + i) % 2
-#             node.set('address', str(hex(addr)))
-#             i += 1 # offset for next sensor
-#             # this appears to be on all the nodes
-#             node.set("permission", "r")
-#             # set parameter based on the type
-#             if ( c['type'] == 'int8' ):
-#                 width=8
-#                 format = "d"
-#             elif ( c['type'] == 'fp16' ):
-#                 width=16
-#                 format = "fp16"
-#             elif ( c['type'] == 'char' ):
-#                 width=8
-#                 format = "c"
-#             elif ( c['type'] == 'uint32_t' ):
-#                 width=32
-#                 format = "u"
-#             else:
-#                 print("ERROR: unknown type", c['type'])
-#                 break
-#             mask = (1 << width) - 1
-#             if (remain == 0):
-#                 node.set('mask', "0x{0:08X}".format(mask))
-#             else:
-#                 node.set('mask', "0x{0:08X}".format(mask<<16))
-#             if 'extra' in c:
-#                 extra = c['extra']
-#             else:
-#                 extra = ""
-#             node.set('parameters', "format=" + format + ";" + extra)
-#         if 'size' in c:
-#             print("size:", c['size'], c['name'])
-#             node.set('size', str(hex(c['size'])))
-# 
-
-# %% [markdown]
-# 
-
-# %%
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
 tree.write("test2.xml")
 
 # %%
-def calcSize(c: dict) -> int:
-    if 'size' in c:
-        size = c['size']*2 # extra factor of 2 for 16 to 32 bit
+
+
+def calc_size(thedict: dict) -> int:
+    """Calculate size based on type"""
+    if 'size' in thedict:
+        sz = thedict['size']*2  # extra factor of 2 for 16 to 32 bit
     else:
-        size = 1
-    if '32' in c['type']:
-        size = size * 2
-    elif 'char' in c['type']:
-        size = size // 2
-    return size
+        sz = 1
+    if '32' in thedict['type']:
+        sz = sz * 2
+    elif 'char' in thedict['type']:
+        sz = sz // 2
+    return sz
 
 
 # %%
@@ -203,18 +157,21 @@ def calcSize(c: dict) -> int:
 # create a class to hold a name, start, end, and size
 # add a method to check if two objects overlap
 # and a pretty print method
-from itertools import chain
 class reg:
-    def __init__(self, name, start, end, size):
+    """create an object with a name, and a start end end register"""
+
+    def __init__(self, name, sta, end, sz):
         self.name = name
-        self.start = start
+        self.start = sta
         self.end = end
-        self.size = size
+        self.size = sz
+
     def __str__(self):
-        return "name: " + self.name + " start: " + str(self.start) + " end: " + str(self.end) + " size: " + str(self.size)
-    def __repr__(self):
-        return "name: " + self.name + " start: " + str(self.start) + " end: " + str(self.end) + " size: " + str(self.size)
+        return "name: " + self.name + " start: " + str(self.start) + \
+            " end: " + str(self.end) + " size: " + str(self.size)
+
     def overlaps(self, other):
+        """calculate overlap between two objects"""
         if (self.start <= other.start and self.end >= other.start):
             return True
         if (self.start <= other.end and self.end >= other.end):
@@ -222,10 +179,13 @@ class reg:
         if (self.start >= other.start and self.end <= other.end):
             return True
         return False
-    def overloads(self, other):
-        if (self.start >= 237):
+
+    def overloads(self):
+        """check if the object overloads the register space"""
+        if self.start >= 237:
             return True
         return False
+
 
 # create a list of objects
 entries = []
@@ -240,7 +200,7 @@ for c in config:  # loop over entries in configuration (sensor category)
         postfixes = c['postfixes']
     else:
         postfixes = ' '
-    size = calcSize(c)    
+    size = calc_size(c)
     thislength = len(postfixes) * len(names)*size
     entries.append(reg(c['name'], start, start + thislength - 1, thislength))
 pprint(entries)
