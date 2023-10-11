@@ -1,5 +1,4 @@
 """ Generate the C code for the microcontroller using the yaml files in the data directory"""
-import subprocess
 import os
 import sys
 import argparse
@@ -12,12 +11,9 @@ parser.add_argument('-o', '--output', type=str, help='output file name',
                     default="ZynqMon_addresses.c")
 # this argument is required
 parser.add_argument('input_files', metavar='file', type=str,
-                    nargs='+', help='input file names')
+                    nargs='+', help='input yaml file names')
 
 args = parser.parse_args()
-
-if args.verbose:
-    print('Verbose mode on')
 
 if args.output:
     print('Output file name:', args.output)
@@ -105,12 +101,3 @@ with open(args.output, 'w', encoding="ascii") as fout:
     print(r"#error No revision defined", file=fout)
     print(r"#endif // REV1", file=fout)
     fout.close()
-
-# reformat the c file using clang-format
-# -style=file:$HOME/src/apollo_cm_mcu/.clang-format
-r = subprocess.run(["clang-format", "-i", args.output], check=False)
-if r.returncode != 0:
-    print('clang-format failed')
-    sys.exit(1)
-if args.verbose:
-    print('clang-format complete')
