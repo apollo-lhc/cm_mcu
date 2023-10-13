@@ -876,83 +876,79 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
 
 BaseType_t ff_optpow(int argc, char **argv, char *m)
 {
-	// argument handling
-	int copied = 0;
+  // argument handling
+  int copied = 0;
 
-	static int whichff = 0;
-	static int n = 0;
-	static int i1 = 4;
+  static int whichff = 0;
+  static int n = 0;
+  static int i1 = 4;
 
-	if (whichff == 0) {
-		// check for stale data
-		TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+  if (whichff == 0) {
+    // check for stale data
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
 
-		if (isFFStale()) {
-			TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-			int mins = (now - last) / 60;
-			copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-					"%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-		}
-		copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF Optical Power:\r\n");
-	}
+    if (isFFStale()) {
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF Optical Power:\r\n");
+  }
 
+  for (; n < NFIREFLY_ARG; ++n) {
+    struct MonitorI2CTaskArgs_t *ff_arg = ff_moni2c_arg[n].arg;
+    for (; whichff < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev; ++whichff) {
 
-	for (; n < NFIREFLY_ARG; ++n) {
-		struct MonitorI2CTaskArgs_t *ff_arg = ff_moni2c_arg[n].arg;
-		for (; whichff < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev; ++whichff) {
+      int dev = whichff - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
 
-			int dev = whichff - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
+      if (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL)
+        continue;
+      if (isEnabledFF(ff_moni2c_arg[n].int_idx + dev)) {
+        i1 = 4;
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: \r\n", ff_moni2c_addrs[whichff].name);
+        for (; i1 < ff_arg->n_commands; ++i1) {
+          int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
+          uint8_t val = ff_arg->sm_values[index];
+          if ((SCRATCH_SIZE - copied) < 20) {
+            return pdTRUE;
+          }
 
-			if (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL)
-				continue;
-			if (isEnabledFF(ff_moni2c_arg[n].int_idx + dev)) {
-				i1 = 4;
-				copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: \r\n", ff_moni2c_addrs[whichff].name);
-				for (; i1 < ff_arg->n_commands; ++i1) {
-					int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
-					uint8_t val = ff_arg->sm_values[index];
-					if ((SCRATCH_SIZE - copied) < 20) {
-						return pdTRUE;
-					}
+          if ((i1 - 4) % 6 == 0)
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
+          else if ((i1 - 4) % 6 == 1)
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
+          else if ((i1 - 4) % 6 == 2)
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
+          else if ((i1 - 4) % 6 == 3)
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
+          else if ((i1 - 4) % 6 == 4)
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
+          else
+            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \r\n", i1 - 3, val);
+        }
 
-					if ((i1-4)%6 == 0)
-						copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-					else if ((i1-4)%6 == 1)
-						copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-					else if ((i1-4)%6 == 2)
-						copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-					else if ((i1-4)%6 == 3)
-						copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-					else if ((i1-4)%6 == 4)
-						copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-					else
-						copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \r\n", i1 - 3, val);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+      }
+      else // dummy value
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s \r\n", ff_moni2c_addrs[whichff].name, "--");
 
-				}
+      if ((SCRATCH_SIZE - copied) < 20) {
+        ++whichff;
+        return pdTRUE;
+      }
+    }
+  }
 
-				copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-
-			}
-			else // dummy value
-				copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s \r\n", ff_moni2c_addrs[whichff].name, "--");
-
-
-			if ((SCRATCH_SIZE - copied) < 20) {
-				++whichff;
-				return pdTRUE;
-			}
-		}
-	}
-
-	if (whichff % 2 == 1) {
-		m[copied++] = '\r';
-		m[copied++] = '\n';
-		m[copied] = '\0';
-	}
-	whichff = 0;
-	n = 0;
-	i1 = 4;
-	return pdFALSE;
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichff = 0;
+  n = 0;
+  i1 = 4;
+  return pdFALSE;
 }
 
 // this command takes up to two arguments
