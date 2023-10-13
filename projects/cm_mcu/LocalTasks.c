@@ -165,11 +165,13 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+	{2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x00, 0x28, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
-uint16_t ffldaq_f1_optpow_values[NSUPPLIES_FFLDAQ_F1];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .name = "FFDAQ",
@@ -186,8 +188,6 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
-    .n_rxchs = FF_DAQ_NRXCH,
-    .opt_pow_values = ffldaq_f1_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -200,6 +200,21 @@ struct sm_command_t sm_command_fflit_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+	// there are no registers to read optical power for 14Gbps ECUO.
+	// registers below are a placeholder with a reading equal to zero
+	// the reason we need them because n_commands is fixed
+	{1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
@@ -209,7 +224,19 @@ struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+	{2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xde, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xdc, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xda, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd8, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd6, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd4, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd2, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd0, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xce, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
+
 };
 
 #ifdef REV1
@@ -238,7 +265,6 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #endif
 
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
-uint16_t ffl12_f1_optpow_values[NSUPPLIES_FFL12_F1];
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .name = "FF12",
@@ -255,8 +281,6 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .smbus_status = &eStatus4,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
-    .n_rxchs = FF_12_NRXCH,
-    .opt_pow_values = ffl12_f1_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -291,10 +315,12 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+	{2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x00, 0x28, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
-uint16_t ffldaq_f2_optpow_values[NSUPPLIES_FFLDAQ_F2];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .name = "FFDAV",
@@ -311,8 +337,6 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
-    .n_rxchs = FF_DAQ_NRXCH,
-    .opt_pow_values = ffldaq_f2_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -325,7 +349,21 @@ struct sm_command_t sm_command_fflit_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-
+	// there are no registers to read optical power for 14Gbps ECUO.
+	// registers below are a placeholder with a reading equal to zero
+	// the reason we need them because n_commands is fixed
+	{1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+	{1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
@@ -334,7 +372,18 @@ struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 1, "FF_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+	{2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xde, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xdc, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xda, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd8, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd6, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd4, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd2, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xd0, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+	{2, 0x01, 0xce, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 
 #ifdef REV1
@@ -358,7 +407,6 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #endif
 
 uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
-uint16_t ffl12_f2_optpow_values[NSUPPLIES_FFL12_F2];
 
 struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .name = "FF12V",
@@ -375,8 +423,6 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .smbus_status = &eStatus3,
     .xSem = NULL,
     .ffpart_bit_mask = 0U,
-    .n_rxchs = FF_12_NRXCH,
-    .opt_pow_values = ffl12_f2_optpow_values,
     .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
@@ -670,28 +716,45 @@ uint16_t getFFtemp(const uint8_t i)
 
 uint16_t getFFoptpow(const uint8_t i)
 {
-  uint16_t val;
+
+  uint16_t avg_val;
+  uint16_t sum_val;
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
-    int index = i;
-    val = ffl12_f1_args.opt_pow_values[index];
+	  for (int i1 = 4; i1 < ffl12_f1_args.n_commands; ++i1) {
+		  int dev = i - ff_moni2c_arg[0].int_idx + ff_moni2c_arg[0].dev_int_idx;
+		  int index = dev * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
+		  sum_val += ffl12_f1_args.sm_values[index];
+	  }
+	  avg_val = sum_val/(ffl12_f1_args.n_commands-4);
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-    int index = i - NFIREFLIES_IT_F1;
-    val = ffldaq_f1_args.opt_pow_values[index];
+	  for (int i1 = 4; i1 < ffldaq_f1_args.n_commands; ++i1) {
+		  int dev = i - ff_moni2c_arg[1].int_idx + ff_moni2c_arg[1].dev_int_idx;
+		  int index = (dev) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
+		  sum_val += ffldaq_f1_args.sm_values[index];
+	  }
+	  avg_val = sum_val/(ffldaq_f1_args.n_commands-4);
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-    int index = i - NFIREFLIES_F1;
-    val = ffl12_f2_args.opt_pow_values[index];
+	  for (int i1 = 4; i1 < ffl12_f2_args.n_commands; ++i1) {
+		  int dev = i - ff_moni2c_arg[2].int_idx + ff_moni2c_arg[2].dev_int_idx;
+		  int index = (dev) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
+		  sum_val += ffl12_f2_args.sm_values[index];
+	  }
+	  avg_val = sum_val/(ffl12_f2_args.n_commands-4);
   }
   else {
-    int index = i - NFIREFLIES_F1 - NFIREFLIES_IT_F2;
-    val = ffldaq_f2_args.opt_pow_values[index];
+	  for (int i1 = 4; i1 < ffldaq_f2_args.n_commands; ++i1) {
+		  int dev = i - ff_moni2c_arg[3].int_idx + ff_moni2c_arg[3].dev_int_idx;
+		  int index = (dev) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
+		  sum_val += ffldaq_f2_args.sm_values[index];
+	  }
+	  avg_val = sum_val/(ffldaq_f2_args.n_commands-4);
   }
-
-  return val;
+  return avg_val;
 }
 
 uint16_t getFFpresentbit(const uint8_t i)

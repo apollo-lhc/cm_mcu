@@ -43,24 +43,18 @@ struct MonitorI2CTaskArgs_t {
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
   uint8_t ffpart_bit_mask;             // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
   uint32_t present_bit_mask;           // this mask is used for all ffs to detect if it is mounted or not
-  const uint8_t n_rxchs;               // the number of optical receiver channels
-  uint16_t *opt_pow_values;            // optical power measurements from 4/12ch FFs with 25Gbs
   UBaseType_t stack_size;              // stack size of task
 };
 
 #define FF_SELPAGE_REG  0x7f
 #define CLK_SELPAGE_REG 0x1
 
-#define FF_OPT_POW_C 4 // the order of optical power command in sm_command array
-#define FF_DAQ_NRXCH 4
-#define FF_12_NRXCH  12
-
 #ifndef REV2
 #define NSUPPLIES_FFLDAQ_F1 (3)
 #else // REV2
 #define NSUPPLIES_FFLDAQ_F1 (4)
 #endif                        // REV 2
-#define NCOMMANDS_FFLDAQ_F1 4 // number of commands
+#define NCOMMANDS_FFLDAQ_F1 8 // number of commands
 #define NPAGES_FFLDAQ_F1    1 // number of pages on the 4-channel firefly ports
 
 #ifndef REV2
@@ -68,7 +62,7 @@ struct MonitorI2CTaskArgs_t {
 #else // REV1
 #define NSUPPLIES_FFL12_F1 (6)
 #endif                       // REV 2
-#define NCOMMANDS_FFL12_F1 4 // number of commands
+#define NCOMMANDS_FFL12_F1 16 // number of commands
 #define NPAGES_FFL12_F1    1 // number of pages on the 12-channel firefly ports
 
 #ifndef REV2
@@ -76,7 +70,7 @@ struct MonitorI2CTaskArgs_t {
 #else // REV1
 #define NSUPPLIES_FFLDAQ_F2 (4)
 #endif                        // REV 2
-#define NCOMMANDS_FFLDAQ_F2 4 // number of commands
+#define NCOMMANDS_FFLDAQ_F2 8 // number of commands
 #define NPAGES_FFLDAQ_F2    1 // number of pages on the 4-channel firefly ports
 
 #ifndef REV2
@@ -84,7 +78,7 @@ struct MonitorI2CTaskArgs_t {
 #else // REV1
 #define NSUPPLIES_FFL12_F2 (6)
 #endif                       // REV 2
-#define NCOMMANDS_FFL12_F2 4 // number of commands
+#define NCOMMANDS_FFL12_F2 16 // number of commands
 #define NPAGES_FFL12_F2    1 // number of pages on the 12-channel firefly ports
 
 extern struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1];

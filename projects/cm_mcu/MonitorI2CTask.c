@@ -178,6 +178,7 @@ void MonitorI2CTask(void *parameters)
 
       // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
+
         int index = ps * (args->n_commands * args->n_pages) + c;
 
         log_debug(LOG_MONI2C, "%s: command %s.\r\n", args->name, args->commands[c].name);
@@ -205,49 +206,6 @@ void MonitorI2CTask(void *parameters)
 
       } // loop over commands
 
-#ifdef REV2
-      // get optical power information from 25Gbs FFs
-      bool has_opt_pow = false;
-      if (IsFFDAQ)
-        has_opt_pow = true;
-      if (IsFF12 && (ps % 2 == 1))
-        has_opt_pow = 0x1U & (args->ffpart_bit_mask >> (int)ps / 2);
-
-      if (has_opt_pow) {
-        uint16_t opt_pow_values = 0x0U;
-        uint8_t page_reg_value = args->commands[FF_OPT_POW_C].page;
-        int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
-        if (r != 0) {
-          log_error(LOG_MONI2C, "%s : page fail %s\r\n", args->devices[ps].name, SMBUS_get_error(r));
-          break;
-        }
-
-        for (int ch = 0; ch < args->n_rxchs; ++ch) {
-          uint32_t output_raw;
-          uint16_t opt_pw_command;
-          if (IsFFDAQ) {
-            opt_pw_command = args->commands[FF_OPT_POW_C].command + 2 * ch;
-          }
-          else {
-            opt_pw_command = args->commands[FF_OPT_POW_C].command - 2 * ch;
-          }
-          int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[FF_OPT_POW_C].reg_size,
-                                         opt_pw_command, args->commands[FF_OPT_POW_C].size, &output_raw);
-
-          if (res != 0) {
-            log_error(LOG_MONI2C, "%s: %s read Error %s, break (ps=%d)\r\n", args->name, args->commands[FF_OPT_POW_C].name, SMBUS_get_error(res), ps);
-            opt_pow_values = 0xff;
-            break;
-          }
-          else {
-            opt_pow_values += output_raw;
-          }
-        }
-        opt_pow_values = opt_pow_values / args->n_rxchs;
-        args->opt_pow_values[ps] = opt_pow_values;
-      }
-
-#endif // REV2
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
       args->updateTick = xTaskGetTickCount(); // current time in ticks
 
