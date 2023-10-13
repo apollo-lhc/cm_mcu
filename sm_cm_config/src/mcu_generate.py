@@ -18,8 +18,12 @@ args = parser.parse_args()
 if args.output:
     print('Output file name:', args.output)
 
+# sort the input file names. Default appears to be random (or order in the filesystem)
+args.input_files.sort()
+
 if args.verbose:
-    print('Input file names:', args.input_files)
+    # pretty-print list of input files
+    print('Input file names:', *args.input_files, sep=', ', end='\n')
 
 # open output text file for writing
 with open(args.output, 'w', encoding="ascii") as fout:
@@ -36,6 +40,8 @@ with open(args.output, 'w', encoding="ascii") as fout:
     # first set the #ifdef for REV1
     print(r"#ifdef REV1", file=fout)
     for idx, fname in enumerate(args.input_files):
+        if args.verbose:
+            print(f"Processing file {fname}")
         with open(fname, encoding="ascii") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
         if idx != 0:
