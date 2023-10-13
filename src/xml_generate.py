@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='Process YAML for XML.')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='increase output verbosity')
 parser.add_argument('-d', '--directory', type=str, help='output directory')
-# this argument is required
+#this argument is required
 parser.add_argument('input_files', metavar='file', type=str,
                     nargs='+', help='input file names')
 
@@ -23,24 +23,22 @@ if args.directory:
 if args.verbose:
     print('Input file names:', args.input_files)
 
-
-
-# %%
+#% %
 def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int,
               parent_id: str) -> ET.Element:
     """create the node to be inserted into the xml tree"""
-    # pylint: disable=too-many-branches
-    # I disable this check because as far as I can tell it's wrong
+#pylint : disable = too - many - branches
+#I disable this check because as far as I can tell it's wrong
     thenode = ET.SubElement(parent, 'node')
     myid = myid.replace(' ', '_')
     thenode.set('id', myid)
-    # address is half of the sensor address since these are 32 bit addresses
+#address is half of the sensor address since these are 32 bit addresses
     theaddr = int(addr2/2)
     remain = addr2 % 2
     thenode.set('address', str(hex(theaddr)))
-    # this appears to be on all the nodes
+#this appears to be on all the nodes
     thenode.set("permission", "r")
-    # set parameter based on the type
+#set parameter based on the type
     if thedict['type'] == 'int8':
         width = 8
         theformat = "d"
@@ -73,7 +71,7 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int,
     if 'extra' in thedict:
         extra = thedict['extra']
         if not "Column" in extra:
-            # this semicolon asks for no semicolon in extra when postfixes are included
+#this semicolon asks for no semicolon in extra when postfixes are included
             extra = extra + ";Column=" + myid
         if not "Row" in extra:
             if parent_id != "":
@@ -98,16 +96,15 @@ def calc_size(thedict: dict) -> int:
         sz = sz // 2
     return sz
 
+#% %
+#check overlaps
+#create an object with a name, and a start end end register
+#do so for every entry
+#then ensure that no two objects overlap
 
-# %%
-# check overlaps
-# create an object with a name, and a start end end register
-# do so for every entry
-# then ensure that no two objects overlap
-
-# create a class to hold a name, start, end, and size
-# add a method to check if two objects overlap
-# and a pretty print method
+#create a class to hold a name, start, end, and size
+#add a method to check if two objects overlap
+#and a pretty print method
 class reg:
     """create an object with a name, and a start end end register"""
     def __init__(self, name, sta, end, sz):
@@ -143,18 +140,15 @@ with open(args.input_files[1], encoding='ascii') as f:
     if args.verbose:
         pprint(y)
 
-
-
-# %%
-# This is the parent (root) tag
-# onto which other tags would be
-# created
+#% %
+#This is the parent(root) tag
+#onto which other tags would be
+#created
 cm = ET.Element('node')
 cm.set('id', 'CM')
 cm.set('address', '0x00000000')
 
-
-# %%
+#% %
 config = y['config']
 
 for c in config:  # loop over entries in configuration (sensor category)
@@ -187,11 +181,9 @@ tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
 tree.write("test2.xml")
 
-# %%
+#% %
 
-
-
-# create a list of objects
+#create a list of objects
 entries = []
 for c in config:  # loop over entries in configuration (sensor category)
     if not 'start' in c:
@@ -209,7 +201,7 @@ for c in config:  # loop over entries in configuration (sensor category)
     entries.append(reg(c['name'], start, start + thislength - 1, thislength))
 pprint(entries)
 
-# check for overlaps and overloads
+#check for overlaps and overloads
 for i in range(len(entries)):
     for j in range(i+1, len(entries)):
         if entries[i].overlaps(entries[j]):
