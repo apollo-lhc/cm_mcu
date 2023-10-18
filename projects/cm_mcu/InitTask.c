@@ -65,8 +65,8 @@ void InitTask(void *parameters)
     char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
     char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
     getClockProgram(i, progname_clkdesgid, progname_eeprom);
-    strcpy(progchip_temp[i], progname_clkdesgid);
-    strcpy(progeeprom_temp[i], progname_eeprom);
+    strncpy(progchip_temp[i], progname_clkdesgid);
+    strncpy(progeeprom_temp[i], progname_eeprom);
     if (i == 0) {
       clkr0a_moni2c_addrs[0].configname_chip = progchip_temp[i];
       clkr0a_moni2c_addrs[0].configname_eeprom = progeeprom_temp[i];
