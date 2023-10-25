@@ -520,56 +520,8 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
 }
 
 #ifdef REV1
-// this code will ultimately be generated from the YAML file
-void zm_fill_structs_old(void)
-{
-  // firefly, size 25
-  zm_set_firefly_temps(&zynqmon_data[0], 0);
-  // psmon, size 64
-  zm_set_psmon(&zynqmon_data[25], 32);
-  // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[89], 96);
-  // uptime, size 2
-  zm_set_uptime(&zynqmon_data[110], 192);
-  // gitversion, size 10
-  zm_set_gitversion(&zynqmon_data[112], 118);
-  // fpga, size 4
-  zm_set_fpga(&zynqmon_data[122], 128);
-}
 #define ZMON_VALID_ENTRIES 126
 #elif defined REV2
-// this code will is generated from the YAML file
-void zm_fill_structs_old(void)
-{
-  // firefly, size 40
-  zm_set_firefly_info(&zynqmon_data[0], 0);
-  // uptime, size 2
-  zm_set_uptime(&zynqmon_data[40], 44);
-  // psmon, size 84
-  zm_set_psmon(&zynqmon_data[42], 47);
-  // gitversion, size 10.0
-  zm_set_gitversion(&zynqmon_data[126], 132);
-  // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[136], 143);
-  // fpga, size 8
-  zm_set_fpga(&zynqmon_data[157], 165);
-  // clk0mon, size 8
-  zm_set_clock(&zynqmon_data[165], 174, 0);
-  // clkmon, size 32
-  zm_set_clock(&zynqmon_data[173], 182, 1);
-  // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[205], 216, 0);
-  // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[209], 220, 1);
-  // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[213], 224, 2);
-  // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[217], 228, 3);
-  // clkconfigversion, size 4.0
-  zm_set_clkconfigversion(&zynqmon_data[221], 232, 4);
-  // firefly_bits, size 8
-  zm_set_firefly_bits(&zynqmon_data[225], 236);
-}
 #define ZMON_VALID_ENTRIES 233
 #endif
 
