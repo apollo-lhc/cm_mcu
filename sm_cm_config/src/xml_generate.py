@@ -129,7 +129,7 @@ class reg:
 
     def overloads(self):
         """check if the object overloads the register space"""
-        if self.start >= 237:
+        if self.start + self.size >= 255:
             return True
         return False
 
@@ -207,5 +207,5 @@ for i in range(len(entries)):
         if entries[i].overlaps(entries[j]):
             print(f"{entries[i].name} overlaps with {entries[j].name}")
 
-if entries[len(entries)-1].overloads(entries[len(entries)-1]):
+if entries[len(entries)-1].overloads():
     print(f"{entries[len(entries)-1].name} overloads")
