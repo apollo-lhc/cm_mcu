@@ -521,7 +521,6 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
   }
 }
 
-
 void zm_send_data(struct zynqmon_data_t data[])
 {
   // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
