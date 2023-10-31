@@ -30,6 +30,8 @@
 #include "clocksynth.h"
 #include "common/log.h"
 
+#include "ZynqMon_addresses.h"
+
 // Rev 2
 // this needs to be split into a SoftUART version (Rev1) and a hard UART version (Rev2)
 
@@ -519,11 +521,6 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
   }
 }
 
-#ifdef REV1
-#define ZMON_VALID_ENTRIES 126
-#elif defined REV2
-#define ZMON_VALID_ENTRIES 233
-#endif
 
 void zm_send_data(struct zynqmon_data_t data[])
 {

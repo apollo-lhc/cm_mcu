@@ -2,6 +2,8 @@
 import os
 import sys
 import argparse
+import subprocess
+
 import yaml
 
 parser = argparse.ArgumentParser(description='Process YAML for MCU.')
@@ -18,17 +20,17 @@ args = parser.parse_args()
 if args.output:
     print('Output file name:', args.output)
 
-#sort the input file names.Default appears to be random(or order in the filesystem)
+# sort the input file names.Default appears to be random(or order in the filesystem)
 args.input_files.sort()
 
 if args.verbose:
-#pretty - print list of input files
+# pretty - print list of input files
     print('Input file names:', *args.input_files, sep=', ', end='\n')
 
 # header output file -- same as output file with .h extension
 header_fname = args.output.replace('.c', '.h')
 
-ZM_VALID_ENTRIES=[]
+ZMON_VALID_ENTRIES=[]
 
 # open output c source file for writing
 with open(args.output, 'w', encoding="ascii") as fout:
@@ -44,7 +46,7 @@ with open(args.output, 'w', encoding="ascii") as fout:
     # include the header file we will write later
     print(f"#include \"{header_fname}\"", file=fout)
 
-#first set the #ifdef for REV1
+    # first set the #ifdef for REV1
     print(r"#ifdef REV1", file=fout)
     for idx, fname in enumerate(args.input_files):
         if args.verbose:
@@ -56,7 +58,7 @@ with open(args.output, 'w', encoding="ascii") as fout:
             print(f"#elif defined(REV{ver}) // REV{ver}", file=fout)
         print("void zm_fill_structs(void) \n{", file=fout)
 
-#print the names of the variables
+        # print the names of the variables
         if args.verbose:
             print(f"dump variables for iteration {idx}")
         config = data['config']
@@ -67,7 +69,7 @@ with open(args.output, 'w', encoding="ascii") as fout:
         pairs = []
         size = 0
         for c in config:
-#generate C call
+            # generate C call
             expected_length = len(c['names'])
             if 'postfixes' in c:
                 expected_length *= len(c['postfixes'])
@@ -81,7 +83,7 @@ with open(args.output, 'w', encoding="ascii") as fout:
                 print(f"// mismatch:  {expected_length}, size {c['count']}", file=fout)
                 print(f"Mismatch in size for {c['name']}, file {fname}")
                 print(f"Mismatch: expected: {expected_length}, size {c['count']}")
-#close and delete the output file before exiting
+                # close and delete the output file before exiting
                 fout.close()
                 os.remove(args.output)
                 sys.exit(1)
@@ -94,8 +96,8 @@ with open(args.output, 'w', encoding="ascii") as fout:
             size += int(expected_length)
             pairs.append((c['start'], c['start'] + int(expected_length)-1))
 
-#check to ensure that none of the tuples in pairs overlap
-#this is a sanity check to ensure that the yaml file is correct
+        # check to ensure that none of the tuples in pairs overlap
+        # this is a sanity check to ensure that the yaml file is correct
         errors=False
         for a, b in zip(pairs, pairs[1:]):
             if a[0] <= b[0] and a[1] >= b[0] or a[0] <= b[1] and a[1] >= b[1]:
@@ -104,13 +106,13 @@ with open(args.output, 'w', encoding="ascii") as fout:
         if errors:
             print("ERRORS FOUND")
             sys.exit(1)
-#close input yaml file
+        # close input yaml file
         f.close()
         print("}", file=fout)
-        ZM_VALID_ENTRIES.append(size)
-    # close output text file
+        ZMON_VALID_ENTRIES.append(size)
+    # end of loop over input files
     print(r"#else // REV1", file=fout)
-#error if no revision is defined
+    # error if no revision is defined
     print(r"#error No revision defined", file=fout)
     print(r"#endif // REV1", file=fout)
 
@@ -125,8 +127,8 @@ if args.verbose:
 
 # open output header file for writing.
 # first chekc that ZM_VALID_ENTRIES has exactly two entries
-if len(ZM_VALID_ENTRIES) != 2:
-    print(f"ERROR: ZM_VALID_ENTRIES has the wrong number of entries: {len(ZM_VALID_ENTRIES)}")
+if len(ZMON_VALID_ENTRIES) != 2:
+    print(f"ERROR: ZM_VALID_ENTRIES has the wrong number of entries: {len(ZMON_VALID_ENTRIES)}")
     sys.exit(1)
 
 with open(header_fname, encoding="ascii", mode='w') as fheader:
@@ -138,8 +140,8 @@ with open(header_fname, encoding="ascii", mode='w') as fheader:
     print("#ifndef ZYNQMON_ADDRESSES_H", file=fheader)
     print("#define ZYNQMON_ADDRESSES_H", file=fheader)
     print("#ifdef REV1", file=fheader)
-    print(f"#define ZMON_VALID_ENTRIES {ZM_VALID_ENTRIES[0]}", file=fheader)
+    print(f"#define ZMON_VALID_ENTRIES {ZMON_VALID_ENTRIES[0]}", file=fheader)
     print("#elif defined(REV2)", file=fheader)
-    print(f"#define ZMON_VALID_ENTRIES {ZM_VALID_ENTRIES[1]}", file=fheader)
+    print(f"#define ZMON_VALID_ENTRIES {ZMON_VALID_ENTRIES[1]}", file=fheader)
     print("#endif // REV1", file=fheader)
     print("#endif // ZYNQMON_ADDRESSES_H", file=fheader)

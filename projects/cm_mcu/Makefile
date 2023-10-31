@@ -93,8 +93,8 @@ ${COMPILER}:
 
 ## Zynq address table -- MCU code
 YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/*.yml)
-ZynqMon_addresses.c: ${YAML_FILES}
-	python ${ROOT}/sm_cm_config/src/mcu_generate.py -v -o $@ ${YAML_FILES}
+ZynqMon_addresses.c ZynqMon_addresses.h : ${YAML_FILES}
+	python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES}
 
 ZynqMon_addresses.o: ZynqMon_addresses.c
 #
