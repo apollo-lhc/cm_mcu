@@ -17,6 +17,7 @@
 
 #ifdef REV2
 
+// must grab and release the semaphore in a larger scope when calling this function
 int clear_clk_stickybits(void)
 {
   static_assert(((CLOCK_I2C_BASE == 1) || (CLOCK_I2C_BASE == 2) || (CLOCK_I2C_BASE == 3) ||
@@ -63,6 +64,7 @@ int clear_clk_stickybits(void)
 
 // return the string that corresponds to the programmed file. If
 // there is an error, an empty string is returned.
+// must grab and release the semaphore in a larger scope when calling this function
 void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME],
                      char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME])
 {
@@ -73,11 +75,6 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
   if (device < 0 || device > 4)
     return;
 
-  // grab the semaphore to ensure unique access to I2C controller
-  // if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
-  //  log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-  //  return;
-  //}
   // extract info about device
   uint8_t mux_addr, mux_bit, dev_addr;
   uint16_t eeprom_progname_reg;
@@ -150,11 +147,5 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
     if (!status) // only copy if there were no errors on any reads
       memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
   }
-
-  // release the semaphore
-  // if we have a semaphore, give it
-  // if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
-  //  xSemaphoreGive(i2c2_sem);
-  //}
 }
 #endif // REV2

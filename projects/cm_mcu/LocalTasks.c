@@ -720,64 +720,28 @@ uint16_t getFFoptpow(const uint8_t i)
   uint16_t avg_val = 0;
   uint16_t sum_val = 0;
   configASSERT(i < NFIREFLIES);
-  if (i < NFIREFLIES_IT_F1) {
-    for (int i1 = 4; i1 < ffl12_f1_args.n_commands; ++i1) {
-      int dev = i - ff_moni2c_arg[0].int_idx + ff_moni2c_arg[0].dev_int_idx;
-      int index = dev * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
-      sum_val += ffl12_f1_args.sm_values[index];
+
+  for (int n = 0; n < 4; ++n) {
+    if (ff_moni2c_arg[n].int_idx <= i && i < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev) {
+      for (int i1 = 4; i1 < ff_moni2c_arg[n].arg->n_commands; ++i1) {
+        int dev = i - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
+        int index = dev * (ff_moni2c_arg[n].arg->n_commands * ff_moni2c_arg[n].arg->n_pages) + i1;
+        sum_val += ff_moni2c_arg[n].arg->sm_values[index];
+      }
+      avg_val = sum_val / (ff_moni2c_arg[n].arg->n_commands - 4);
     }
-    avg_val = sum_val / (ffl12_f1_args.n_commands - 4);
   }
 
-  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-    for (int i1 = 4; i1 < ffldaq_f1_args.n_commands; ++i1) {
-      int dev = i - ff_moni2c_arg[1].int_idx + ff_moni2c_arg[1].dev_int_idx;
-      int index = (dev) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
-      sum_val += ffldaq_f1_args.sm_values[index];
-    }
-    avg_val = sum_val / (ffldaq_f1_args.n_commands - 4);
-  }
-
-  else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-    for (int i1 = 4; i1 < ffl12_f2_args.n_commands; ++i1) {
-      int dev = i - ff_moni2c_arg[2].int_idx + ff_moni2c_arg[2].dev_int_idx;
-      int index = (dev) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
-      sum_val += ffl12_f2_args.sm_values[index];
-    }
-    avg_val = sum_val / (ffl12_f2_args.n_commands - 4);
-  }
-  else {
-    for (int i1 = 4; i1 < ffldaq_f2_args.n_commands; ++i1) {
-      int dev = i - ff_moni2c_arg[3].int_idx + ff_moni2c_arg[3].dev_int_idx;
-      int index = (dev) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-      sum_val += ffldaq_f2_args.sm_values[index];
-    }
-    avg_val = sum_val / (ffldaq_f2_args.n_commands - 4);
-  }
   return avg_val;
 }
 
 uint16_t getFFpresentbit(const uint8_t i)
 {
-  uint16_t val;
   if (i > 3) {
     log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
     return 56;
   }
-  if (i == 0) {
-    val = ffl12_f1_args.present_bit_mask;
-  }
-
-  else if (i == 1) {
-    val = ffldaq_f1_args.present_bit_mask;
-  }
-
-  else if (i == 2) {
-    val = ffl12_f2_args.present_bit_mask;
-  }
-  else {
-    val = ffldaq_f2_args.present_bit_mask;
-  }
+  uint16_t val = ff_moni2c_arg[i].arg->present_bit_mask;
 
   return val;
 }
