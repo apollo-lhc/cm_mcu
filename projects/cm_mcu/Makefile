@@ -82,7 +82,7 @@ all: ${COMPILER}/cm_mcu.axf
 # The rule to clean out all the build products.
 #
 clean:
-	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c
+	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c ZynqMon_addresses.h
 
 #
 # The rule to create the target directory.
@@ -91,13 +91,16 @@ ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
 
-## Zynq address table
+## Zynq address table -- MCU code
 YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/*.yml)
-ZynqMon_addresses.c: ${YAML_FILES}
-	python ${ROOT}/sm_cm_config/src/mcu_generate.py -v -o $@ ${YAML_FILES}
-	#python ${ROOT}/sm_cm_config/src/xml_generate.py
+ZynqMon_addresses.c ZynqMon_addresses.h &: ${YAML_FILES}
+	python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES}
 
-ZynqMon_addresses.o: ZynqMon_addresses.c
+# these rules are required to force the generation of the ZynqMon_addresses.c
+# and .h file. The second one depends on the .h file only, but putting that
+# in as a target causes the rule above to be called 2x. So we lie to make.
+${COMPILER}/ZynqMon_addresses.o: ZynqMon_addresses.c 
+${COMPILER}/ZynqMonTask.o: ZynqMon_addresses.c
 #
 # Rules for building the project
 # 
@@ -131,8 +134,8 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/GenericAlarmTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmUtilities.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMon_addresses.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/WatchdogTask.o

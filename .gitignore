@@ -62,3 +62,4 @@ c_cpp_properties.json
 .cache
 /.metadata/
 projects/cm_mcu/ZynqMon_addresses.c
+projects/cm_mcu/ZynqMon_addresses.h
