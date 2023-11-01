@@ -54,16 +54,16 @@
 static void format_data(const uint8_t sensor, const uint16_t data, uint8_t message[4])
 {
   // header and start of sensor (6 bits, sensor[7:2]
-  message[0] = SENSOR_MESSAGE_START_OF_FRAME | ((sensor >> 2) & SENSOR_SIX_BITS); // 0b10 ssdddd
+  message[0] = SENSOR_MESSAGE_START_OF_FRAME | ((sensor >> 2) & SENSOR_SIX_BITS);
   // data frame 1, rest of sensor[1:0] (2 bits) and start of data[15:12] (4 bits)
   message[1] = SENSOR_MESSAGE_DATA_FRAME;
-  message[1] |= ((sensor & 0x3) << 4) | ((data >> 12) & 0xF); // 0b00 dddddd
+  message[1] |= ((sensor & 0x3) << 4) | ((data >> 12) & 0xF);
   // data frame 2, data[11:6] (6 bits)
   message[2] = SENSOR_MESSAGE_DATA_FRAME;
-  message[2] |= (data >> 6) & 0x3F; // 0b00 dddddd
+  message[2] |= (data >> 6) & 0x3F;
   // data frame 3, data[5:0] ( 6 bits )
   message[3] = SENSOR_MESSAGE_DATA_FRAME;
-  message[3] |= data & 0x3F; // 0b00 dddddd
+  message[3] |= data & 0x3F;
 }
 
 #ifdef ZYNQMON_TEST_MODE
@@ -284,7 +284,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   }
 }
 
-// updated once per loop. Store the firefly temperature and present-bit data
+// updated once per loop. Store the ffpart-bit (1 for 25GBs FFL, else 0) and present-bit data
 void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
 {
 
@@ -298,11 +298,19 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
     }
     else {
       if (j == 0)
+        // 6 bits for ffpart-bits of FFL12 on FPGA1
+        // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
+        // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
+        // e.g. if ffpart_bit_mask  = 101, val = 110011
         val = ((ffl12_f1_args.ffpart_bit_mask & 0x1) << 1) | (ffl12_f1_args.ffpart_bit_mask & 0x1) | ((ffl12_f1_args.ffpart_bit_mask & 0x2) << 2) | ((ffl12_f1_args.ffpart_bit_mask & 0x2) << 1) | ((ffl12_f1_args.ffpart_bit_mask & 0x4) << 3) | ((ffl12_f1_args.ffpart_bit_mask & 0x4) << 2);
       else if (j == 2)
+        // 6 bits for ffpart_bits of FFL12 on FPGA2
+        // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
+        // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
+        // e.g. if ffpart_bit_mask  = 101, val = 110011
         val = ((ffl12_f2_args.ffpart_bit_mask & 0x1) << 1) | (ffl12_f2_args.ffpart_bit_mask & 0x1) | ((ffl12_f2_args.ffpart_bit_mask & 0x2) << 2) | ((ffl12_f2_args.ffpart_bit_mask & 0x2) << 1) | ((ffl12_f2_args.ffpart_bit_mask & 0x4) << 3) | ((ffl12_f2_args.ffpart_bit_mask & 0x4) << 2);
       else
-        val = 0xF;
+        val = 0xF; // default 0b1111 FFLDAG is always 25Gbs
       log_debug(LOG_SERVICE, "25GB bits? for ff argv %d: 0x%02x\r\n", j, val);
       data[ll].data.us = val; // present-bit
     }
