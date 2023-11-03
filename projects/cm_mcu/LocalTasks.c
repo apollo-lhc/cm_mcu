@@ -472,6 +472,14 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .stack_size = 4096U,
 };
 
+struct clk_program_t clkprog_args[] = {
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+};
+
 struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
     {"r0a", 0x70, 0, 0x77, 0x45D}, // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
 };

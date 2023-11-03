@@ -336,15 +336,7 @@ void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n)
   char buff[ZM_CLK_VERSION_LENGTH];
   // clear the buffer
   memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
-  const char *v = clkr0a_moni2c_addrs[0].configname_chip;
-  if (n == 1)
-    v = clk_moni2c_addrs[0].configname_chip;
-  else if (n == 2)
-    v = clk_moni2c_addrs[1].configname_chip;
-  else if (n == 3)
-    v = clk_moni2c_addrs[2].configname_chip;
-  else if (n == 4)
-    v = clk_moni2c_addrs[3].configname_chip;
+  const char *v = clkprog_args[n].progname_clkdesgid;
   // find v[0-9] in this string after R0A for instance.
   // version is a string like v0004
   while (*v != '\0') { // assumes this c string is well-terminated

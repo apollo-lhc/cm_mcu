@@ -21,6 +21,8 @@
 #include "common/printf.h"
 #include <sys/_types.h>
 
+#include "clocksynth.h"
+
 #ifdef __INTELLISENSE__
 #define __fp16 float
 #endif // __INTELLISENSE
@@ -170,8 +172,6 @@ struct dev_moni2c_addr_t {
   uint8_t mux_bit;              // port of the mux; write value 0x1U<<mux_bit to the mux register
   uint8_t dev_addr;             // I2C address of device.
   uint16_t eeprom_progname_reg; // register on eeprom for reading program version
-  const char *configname_chip;
-  const char *configname_eeprom;
 };
 
 struct arg_moni2c_ff_t {
@@ -184,6 +184,13 @@ struct arg_moni2c_ff_t {
 
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
+
+struct clk_program_t {
+  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
+  char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
+};
+
+extern struct clk_program_t clkprog_args[5]; // NSUPPLIES_CLK + NSUPPLIES_CLKR0A = 5
 
 // Samtec firefly specific commands
 bool getFFch_low(uint8_t val, int channel);

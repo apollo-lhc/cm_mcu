@@ -56,25 +56,13 @@ void InitTask(void *parameters)
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c2_sem);
 
-  char progchip_temp[5][CLOCK_PROGNAME_REG_NAME];
-  char progeeprom_temp[5][CLOCK_EEPROM_PROGNAME_REG_NAME];
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM
     // get and print out the file name
     vTaskDelay(pdMS_TO_TICKS(500));
-    char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
-    char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
-    getClockProgram(i, progname_clkdesgid, progname_eeprom);
-    strncpy(progchip_temp[i], progname_clkdesgid, 20);
-    strncpy(progeeprom_temp[i], progname_eeprom, 20);
-    if (i == 0) {
-      clkr0a_moni2c_addrs[0].configname_chip = progchip_temp[i];
-      clkr0a_moni2c_addrs[0].configname_eeprom = progeeprom_temp[i];
-    }
-    else {
-      clk_moni2c_addrs[i - 1].configname_chip = progchip_temp[i];
-      clk_moni2c_addrs[i - 1].configname_eeprom = progeeprom_temp[i];
-    }
+    // char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
+    // char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
+    getClockProgram(i, clkprog_args[i].progname_clkdesgid, clkprog_args[i].progname_eeprom);
   }
   status = clear_clk_stickybits();
   if (status != 0)
