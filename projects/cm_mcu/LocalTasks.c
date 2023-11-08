@@ -718,6 +718,7 @@ uint16_t getFFtemp(const uint8_t i)
   return val;
 }
 
+#ifdef REV2
 uint16_t getFFoptpow(const uint8_t i)
 {
 
@@ -750,7 +751,6 @@ uint16_t getFFpresentbit(const uint8_t i)
   return val;
 }
 
-#ifdef REV2
 void getFFpart()
 {
   // Write device vendor part for identifying FF device

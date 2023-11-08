@@ -284,6 +284,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   }
 }
 
+#ifdef REV2
 // updated once per loop. Store the ffpart-bit (1 for 25GBs FFL, else 0) and present-bit data
 void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
 {
@@ -329,7 +330,6 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
   }
 }
 
-#ifdef REV2
 #define ZM_CLK_VERSION_LENGTH 20
 void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n)
 {
