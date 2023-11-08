@@ -215,6 +215,11 @@ extern uint32_t ff_USER_mask;
 #ifdef REV2
 extern uint32_t f1_ff12xmit_4v0_sel;
 extern uint32_t f2_ff12xmit_4v0_sel;
+struct ff_bit_mask_t {
+  uint8_t ffpart_bit_mask;   // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
+  uint32_t present_bit_mask; // this mask is used for all ffs to detect if it is mounted or not
+};
+extern struct ff_bit_mask_t ff_bitmask_args[NFIREFLY_ARG];
 #endif
 
 #ifdef REV1

@@ -44,6 +44,14 @@ uint32_t ff_USER_mask = 0;    // global variable of ff signals from user input
 #ifdef REV2
 uint32_t f1_ff12xmit_4v0_sel = 0; // global variable for FPGA1 12-ch xmit ff's power-supply physical selection
 uint32_t f2_ff12xmit_4v0_sel = 0; // global variable for FPGA2 12-ch xmit ff's power-supply physical selection
+
+struct ff_bit_mask_t ff_bitmask_args[] = {
+    {0U, 0U}, // {3, 6} bits correspond to ffl12_f1 devices
+    {0U, 0U}, // {0, 4} and bits correspond to ffldaq_f1 devices
+    {0U, 0U}, // {3, 6} bits correspond to ffl12_f2 devices
+    {0U, 0U}, // {0, 4} bits correspond to ffldaq_f2 devices
+};
+
 #endif
 // outputs from *_PRESENT pins for constructing ff_PRESENT_mask
 #ifdef REV1
@@ -187,8 +195,6 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
-    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -280,8 +286,6 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
-    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -336,8 +340,6 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
-    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -422,13 +424,19 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
-    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
 #ifdef REV2
 // Clock arguments for monitoring task
+
+struct clk_program_t clkprog_args[] = {
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+};
 
 struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
@@ -467,17 +475,7 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
-    .present_bit_mask = 0U,
     .stack_size = 4096U,
-};
-
-struct clk_program_t clkprog_args[] = {
-    {"", ""}, //
-    {"", ""}, //
-    {"", ""}, //
-    {"", ""}, //
-    {"", ""}, //
 };
 
 struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
@@ -515,8 +513,6 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
-    .present_bit_mask = 0U,
     .stack_size = 4096U,
 };
 #endif // REV2
@@ -630,10 +626,10 @@ void readFFpresent(void)
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
-  ffldaq_f1_args.present_bit_mask = (~present_FFLDAQ_F1) & 0xFU; // 4 bits
-  ffl12_f1_args.present_bit_mask = (~present_FFL12_F1) & 0x3FU;  // 6 bits
-  ffldaq_f2_args.present_bit_mask = (~present_FFLDAQ_F2) & 0xFU; // 4 bits
-  ffl12_f2_args.present_bit_mask = (~present_FFL12_F2) & 0x3FU;  // 6 bits
+  ff_bitmask_args[1].present_bit_mask = (~present_FFLDAQ_F1) & 0xFU; // 4 bits
+  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFLDAQ_F2) & 0xFU; // 4 bits
+  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
@@ -749,7 +745,7 @@ uint16_t getFFpresentbit(const uint8_t i)
     log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
     return 56;
   }
-  uint16_t val = ff_moni2c_arg[i].arg->present_bit_mask;
+  uint16_t val = ff_bitmask_args[i].present_bit_mask;
 
   return val;
 }
@@ -853,9 +849,9 @@ void getFFpart()
     }
 
     if (f == 0)
-      ffl12_f1_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
+      ff_bitmask_args[0].ffpart_bit_mask = tmp_ffpart_bit_mask;
     else
-      ffl12_f2_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
+      ff_bitmask_args[2].ffpart_bit_mask = tmp_ffpart_bit_mask;
 
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(semaphores[f]) == xTaskGetCurrentTaskHandle()) {

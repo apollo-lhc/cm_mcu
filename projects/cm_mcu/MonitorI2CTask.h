@@ -41,8 +41,6 @@ struct MonitorI2CTaskArgs_t {
   volatile tSMBusStatus *smbus_status; // pointer to I2C status
   TickType_t updateTick;               // last update time, in ticks
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
-  uint8_t ffpart_bit_mask;             // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
-  uint32_t present_bit_mask;           // this mask is used for all ffs to detect if it is mounted or not
   UBaseType_t stack_size;              // stack size of task
 };
 

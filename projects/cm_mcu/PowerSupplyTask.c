@@ -411,7 +411,7 @@ void PowerSupplyTask(void *parameters)
           vTaskDelay(pdMS_TO_TICKS(1000));
           getFFpart();
           UBaseType_t ffmask[2] = {0xe, 0xe};
-          if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) == 0x0U && (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) == 0x0U) {
+          if ((f1_ff12xmit_4v0_sel ^ ff_bitmask_args[0].ffpart_bit_mask) == 0x0U && (f2_ff12xmit_4v0_sel ^ ff_bitmask_args[2].ffpart_bit_mask) == 0x0U) {
             int ret = enable_3v8(ffmask, false); // enable v38
             if (ret != 0)
               log_info(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
@@ -492,7 +492,7 @@ void PowerSupplyTask(void *parameters)
       }
     }
 #ifdef REV2 // PG_4V0 is not helpful to read from. assert that PWR_FAILED
-    if ((f1_ff12xmit_4v0_sel ^ ffl12_f1_args.ffpart_bit_mask) != 0x0U || (f2_ff12xmit_4v0_sel ^ ffl12_f2_args.ffpart_bit_mask) != 0x0U)
+    if ((f1_ff12xmit_4v0_sel ^ ff_bitmask_args[0].ffpart_bit_mask) != 0x0U || (f2_ff12xmit_4v0_sel ^ ff_bitmask_args[2].ffpart_bit_mask) != 0x0U)
       setPSStatus(N_PS_OKS - 1, PWR_FAILED);
 #endif
     if (currentState != nextState) {

@@ -302,13 +302,13 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
         // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
         // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
         // e.g. if ffpart_bit_mask  = 101, val = 110011
-        val = ((ffl12_f1_args.ffpart_bit_mask & 0x1) << 1) | (ffl12_f1_args.ffpart_bit_mask & 0x1) | ((ffl12_f1_args.ffpart_bit_mask & 0x2) << 2) | ((ffl12_f1_args.ffpart_bit_mask & 0x2) << 1) | ((ffl12_f1_args.ffpart_bit_mask & 0x4) << 3) | ((ffl12_f1_args.ffpart_bit_mask & 0x4) << 2);
+        val = ((ff_bitmask_args[0].ffpart_bit_mask & 0x1) << 1) | (ff_bitmask_args[0].ffpart_bit_mask & 0x1) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x2) << 2) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x2) << 1) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x4) << 3) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x4) << 2);
       else if (j == 2)
         // 6 bits for ffpart_bits of FFL12 on FPGA2
         // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
         // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
         // e.g. if ffpart_bit_mask  = 101, val = 110011
-        val = ((ffl12_f2_args.ffpart_bit_mask & 0x1) << 1) | (ffl12_f2_args.ffpart_bit_mask & 0x1) | ((ffl12_f2_args.ffpart_bit_mask & 0x2) << 2) | ((ffl12_f2_args.ffpart_bit_mask & 0x2) << 1) | ((ffl12_f2_args.ffpart_bit_mask & 0x4) << 3) | ((ffl12_f2_args.ffpart_bit_mask & 0x4) << 2);
+        val = ((ff_bitmask_args[2].ffpart_bit_mask & 0x1) << 1) | (ff_bitmask_args[2].ffpart_bit_mask & 0x1) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x2) << 2) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x2) << 1) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x4) << 3) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x4) << 2);
       else
         val = 0xF; // default 0b1111 FFLDAG is always 25Gbs
       log_debug(LOG_SERVICE, "25GB bits? for ff argv %d: 0x%02x\r\n", j, val);
