@@ -8,6 +8,7 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
@@ -57,6 +58,11 @@ void InitTask(void *parameters)
 
   for (int i = 0; i < 5; ++i) {
     init_load_clk(i); // load each clock config from EEPROM
+    // get and print out the file name
+    vTaskDelay(pdMS_TO_TICKS(500));
+    // char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
+    // char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
+    getClockProgram(i, clkprog_args[i].progname_clkdesgid, clkprog_args[i].progname_eeprom);
   }
   status = clear_clk_stickybits();
   if (status != 0)

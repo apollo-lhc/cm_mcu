@@ -21,6 +21,8 @@
 #include "common/printf.h"
 #include <sys/_types.h>
 
+#include "clocksynth.h"
+
 #ifdef __INTELLISENSE__
 #define __fp16 float
 #endif // __INTELLISENSE
@@ -183,13 +185,22 @@ struct arg_moni2c_ff_t {
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 
+struct clk_program_t {
+  char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
+  char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
+};
+
+extern struct clk_program_t clkprog_args[5]; // NSUPPLIES_CLK + NSUPPLIES_CLKR0A = 5
+
 // Samtec firefly specific commands
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
-int8_t getFFtemp(const uint8_t i);
+uint16_t getFFtemp(const uint8_t i);
+uint16_t getFFoptpow(const uint8_t i);
+uint16_t getFFpresentbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);
 #endif
@@ -204,6 +215,11 @@ extern uint32_t ff_USER_mask;
 #ifdef REV2
 extern uint32_t f1_ff12xmit_4v0_sel;
 extern uint32_t f2_ff12xmit_4v0_sel;
+struct ff_bit_mask_t {
+  uint8_t ffpart_bit_mask;   // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
+  uint32_t present_bit_mask; // this mask is used for all ffs to detect if it is mounted or not
+};
+extern struct ff_bit_mask_t ff_bitmask_args[NFIREFLY_ARG];
 #endif
 
 #ifdef REV1
@@ -328,6 +344,21 @@ struct zynqmon_data_t {
 };
 
 extern struct zynqmon_data_t zynqmon_data[ZM_NUM_ENTRIES];
+
+void zm_fill_structs(void);
+void zm_set_firefly_temps(struct zynqmon_data_t data[], int start);
+void zm_set_gitversion(struct zynqmon_data_t data[], int start);
+void zm_set_uptime(struct zynqmon_data_t data[], int start);
+void zm_set_firefly_temps(struct zynqmon_data_t data[], int start);
+void zm_set_firefly_bits(struct zynqmon_data_t data[], int start);
+void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n);
+void zm_set_firefly_info(struct zynqmon_data_t data[], int start);
+void zm_set_adcmon(struct zynqmon_data_t data[], int start);
+void zm_set_psmon_legacy(struct zynqmon_data_t data[], int start);
+void zm_set_psmon(struct zynqmon_data_t data[], int start);
+void zm_set_clock(struct zynqmon_data_t data[], int start, int n);
+void zm_set_fpga(struct zynqmon_data_t data[], int start);
+void zm_set_allclk(struct zynqmon_data_t data[], int start);
 
 #ifdef ZYNQMON_TEST_MODE
 void setZYNQMonTestData(uint8_t sensor, uint16_t value);

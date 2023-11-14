@@ -26,7 +26,11 @@
 
 #include "Tasks.h"
 #include "MonitorTask.h"
+#include "MonitorI2CTask.h"
+#include "clocksynth.h"
 #include "common/log.h"
+
+#include "ZynqMon_addresses.h"
 
 // Rev 2
 // this needs to be split into a SoftUART version (Rev1) and a hard UART version (Rev2)
@@ -268,7 +272,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 {
   // Fireflies
   // update the data for ZMON
-  for (int i = 0; i < NFIREFLIES; i++) {
+  for (uint8_t i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
       data[i].data.i = getFFtemp(i); // sensor value and type
@@ -276,8 +280,114 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
     else {
       data[i].data.i = -56; // special stale value
     }
+    log_debug(LOG_SERVICE, " ff %d opt pow : 0x%02x\r\n", i, data[i].data.us);
   }
 }
+
+#ifdef REV2
+// updated once per loop. Store the ffpart-bit (1 for 25GBs FFL, else 0) and present-bit data
+void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
+{
+
+  int ll = 0;
+
+  for (int j = 0; j < NFIREFLY_ARG; ++j) { // loop over ff structs
+
+    uint16_t val;
+    if (isFFStale()) {
+      data[ll].data.us = 0xFF; // special stale value
+    }
+    else {
+      if (j == 0)
+        // 6 bits for ffpart-bits of FFL12 on FPGA1
+        // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
+        // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
+        // e.g. if ffpart_bit_mask  = 101, val = 110011
+        val = ((ff_bitmask_args[0].ffpart_bit_mask & 0x1) << 1) | (ff_bitmask_args[0].ffpart_bit_mask & 0x1) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x2) << 2) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x2) << 1) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x4) << 3) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x4) << 2);
+      else if (j == 2)
+        // 6 bits for ffpart_bits of FFL12 on FPGA2
+        // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
+        // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
+        // e.g. if ffpart_bit_mask  = 101, val = 110011
+        val = ((ff_bitmask_args[2].ffpart_bit_mask & 0x1) << 1) | (ff_bitmask_args[2].ffpart_bit_mask & 0x1) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x2) << 2) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x2) << 1) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x4) << 3) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x4) << 2);
+      else
+        val = 0xF; // default 0b1111 FFLDAG is always 25Gbs
+      log_debug(LOG_SERVICE, "25GB bits? for ff argv %d: 0x%02x\r\n", j, val);
+      data[ll].data.us = val; // present-bit
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    if (isFFStale()) {
+      data[ll].data.us = 0xFF; // special stale value
+    }
+    else {
+      val = getFFpresentbit(j);
+      log_debug(LOG_SERVICE, "present bits? for ff argv %d: 0x%02x\r\n", j, val);
+      data[ll].data.us = val; // present-bit
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+  }
+}
+
+#define ZM_CLK_VERSION_LENGTH 20
+void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n)
+{
+  char buff[ZM_CLK_VERSION_LENGTH];
+  // clear the buffer
+  memset(buff, 0, ZM_CLK_VERSION_LENGTH); // technically not needed
+  const char *v = clkprog_args[n].progname_clkdesgid;
+  // find v[0-9] in this string after R0A for instance.
+  // version is a string like v0004
+  while (*v != '\0') { // assumes this c string is well-terminated
+    char n = *(v + 1); // char after 'v' should be a number 0-9
+    if (*v == 'v' && (n >= '0' && n <= '9'))
+      break; // success, I found the string
+    ++v;
+  }
+  // get the clock config version and copy it into the buffer
+  strncpy(buff, v, ZM_CLK_VERSION_LENGTH);
+  // make sure our string is well-terminated
+  buff[ZM_CLK_VERSION_LENGTH - 1] = '\0';
+  // loop over the buffer and copy it into the data struct
+  // each data word consists of two chars.
+  for (int j = 0; j < ZM_CLK_VERSION_LENGTH; j += 2) {
+    data[j / 2].sensor = start + (j / 2);
+    data[j / 2].data.c[0] = buff[j];
+    data[j / 2].data.c[1] = buff[j + 1];
+  }
+}
+
+void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
+{
+  // Fireflies
+  // update the data for ZMON
+  int ll = 0;
+
+  for (int j = 0; j < NFIREFLIES; ++j) { // loop over ff structs
+
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = getFFtemp(j); // sensor value and type
+      log_debug(LOG_SERVICE, "temp ? for ff %d: 0x%02x\r\n", j, getFFtemp(j));
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = getFFoptpow(j); // sensor value and type
+      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, getFFoptpow(j));
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+  }
+}
+
+#endif // REV2
 
 // store the zynqmon ADCMon data
 void zm_set_adcmon(struct zynqmon_data_t data[], int start)
@@ -357,6 +467,38 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
   }
 }
 
+void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
+{
+  // MonitorI2CTask values -- clock chips
+  // update times, in seconds. If the data is stale, send NaN
+  // n=1 is r0a and n=0 is else
+  struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
+
+  TickType_t last = pdTICKS_TO_S(args_st[n].updateTick);
+  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+  bool stale = checkStale(last, now);
+
+  int ll = 0;
+
+  for (int j = 0; j < args_st[n].n_devices; ++j) {      // loop over supplies
+    for (int l = 0; l < args_st[n].n_pages; ++l) {      // loop over register pages
+      for (int k = 0; k < args_st[n].n_commands; ++k) { // loop over clock commands FIXME : don't send sticky-bit ones
+        int index =
+            (j * args_st[n].n_commands * args_st[n].n_pages) + k;
+
+        if (stale) {
+          data[ll].data.us = 56; // special stale value
+        }
+        else {
+          data[ll].data.us = args_st[n].sm_values[index];
+        }
+        data[ll].sensor = ll + start;
+        ++ll;
+      }
+    }
+  }
+}
+
 void zm_set_fpga(struct zynqmon_data_t data[], int start)
 {
   // FPGA values
@@ -378,44 +520,6 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
     data[j].sensor = j + start;
   }
 }
-
-#ifdef REV1
-// this code will ultimately be generated from the YAML file
-void zm_fill_structs(void)
-{
-  // firefly, size 25
-  zm_set_firefly_temps(&zynqmon_data[0], 0);
-  // psmon, size 64
-  zm_set_psmon(&zynqmon_data[25], 32);
-  // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[89], 96);
-  // uptime, size 2
-  zm_set_uptime(&zynqmon_data[110], 192);
-  // gitversion, size 10.0
-  zm_set_gitversion(&zynqmon_data[112], 118);
-  // fpga, size 4
-  zm_set_fpga(&zynqmon_data[122], 128);
-}
-#define ZMON_VALID_ENTRIES 126
-#elif defined REV2
-// this code will is generated from the YAML file
-void zm_fill_structs(void)
-{
-  // firefly, size 20
-  zm_set_firefly_temps(&zynqmon_data[0], 0);
-  // psmon, size 80
-  zm_set_psmon(&zynqmon_data[20], 32);
-  // adcmon, size 21
-  zm_set_adcmon(&zynqmon_data[104], 128);
-  // uptime, size 2
-  zm_set_uptime(&zynqmon_data[125], 192);
-  // gitversion, size 20
-  zm_set_gitversion(&zynqmon_data[127], 118);
-  // fpga, size 8
-  zm_set_fpga(&zynqmon_data[137], 150);
-}
-#define ZMON_VALID_ENTRIES 145
-#endif
 
 void zm_send_data(struct zynqmon_data_t data[])
 {

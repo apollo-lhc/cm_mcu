@@ -285,6 +285,12 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_optpow",
+        ff_optpow,
+        "Displays a table showing the per-ch optical power of the I2C fireflies.\r\n",
+        0,
+    },
+    {
         "ff_temp",
         ff_temp,
         "Displays a table showing the temperature of the I2C fireflies.\r\n",

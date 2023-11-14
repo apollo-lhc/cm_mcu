@@ -35,46 +35,49 @@ struct MonitorI2CTaskArgs_t {
   const uint8_t n_commands;          // number of commands
   const int n_values;                // number of results
   const uint8_t n_pages;             // number of pages to loop over
+  const uint16_t selpage_reg;        // register for selecting page
   uint16_t *sm_values;
   tSMBus *smbus;                       // pointer to I2C controller
   volatile tSMBusStatus *smbus_status; // pointer to I2C status
   TickType_t updateTick;               // last update time, in ticks
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
-  uint8_t ffpart_bit_mask;             // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
   UBaseType_t stack_size;              // stack size of task
 };
+
+#define FF_SELPAGE_REG  0x7f
+#define CLK_SELPAGE_REG 0x1
 
 #ifndef REV2
 #define NSUPPLIES_FFLDAQ_F1 (3)
 #else // REV2
 #define NSUPPLIES_FFLDAQ_F1 (4)
 #endif                        // REV 2
-#define NCOMMANDS_FFLDAQ_F1 4 // number of commands
+#define NCOMMANDS_FFLDAQ_F1 8 // number of commands
 #define NPAGES_FFLDAQ_F1    1 // number of pages on the 4-channel firefly ports
 
 #ifndef REV2
 #define NSUPPLIES_FFL12_F1 (8)
 #else // REV1
 #define NSUPPLIES_FFL12_F1 (6)
-#endif                       // REV 2
-#define NCOMMANDS_FFL12_F1 4 // number of commands
-#define NPAGES_FFL12_F1    1 // number of pages on the 12-channel firefly ports
+#endif                        // REV 2
+#define NCOMMANDS_FFL12_F1 16 // number of commands
+#define NPAGES_FFL12_F1    1  // number of pages on the 12-channel firefly ports
 
 #ifndef REV2
 #define NSUPPLIES_FFLDAQ_F2 (10)
 #else // REV1
 #define NSUPPLIES_FFLDAQ_F2 (4)
 #endif                        // REV 2
-#define NCOMMANDS_FFLDAQ_F2 4 // number of commands
+#define NCOMMANDS_FFLDAQ_F2 8 // number of commands
 #define NPAGES_FFLDAQ_F2    1 // number of pages on the 4-channel firefly ports
 
 #ifndef REV2
 #define NSUPPLIES_FFL12_F2 (4)
 #else // REV1
 #define NSUPPLIES_FFL12_F2 (6)
-#endif                       // REV 2
-#define NCOMMANDS_FFL12_F2 4 // number of commands
-#define NPAGES_FFL12_F2    1 // number of pages on the 12-channel firefly ports
+#endif                        // REV 2
+#define NCOMMANDS_FFL12_F2 16 // number of commands
+#define NPAGES_FFL12_F2    1  // number of pages on the 12-channel firefly ports
 
 extern struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1];
 extern struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1];

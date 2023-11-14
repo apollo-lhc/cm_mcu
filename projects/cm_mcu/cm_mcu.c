@@ -237,7 +237,6 @@ const char *gitVersion(void)
   return gitVersion;
 }
 
-//
 int main(void)
 {
   SystemInit();
@@ -360,6 +359,7 @@ int main(void)
   Print("\r\n----------------------------\r\n");
   Print("Staring Apollo CM MCU firmware ");
   Print(gitVersion());
+
 #ifdef REV1
   Print("\r\nRev1 build\r\n");
 #elif defined(REV2)

@@ -108,6 +108,9 @@ jobs:
       with:
         files_ignore: |
           **/*.yml
+          **/*.py
+          **/*.xml
+          **/*.ipynb
           .clang*
           .git*
           **/*.sh
@@ -115,6 +118,10 @@ jobs:
           **/Makefile
           makedefs
           **/*.md
+          **/.pylintrc
+          **/.gitignore
+          **/.git*
+          **/LICENSE 
     - name: Format changed files
       if: steps.changed-files.outputs.any_changed == 'true'
       uses: DoozyX/clang-format-lint-action@v0.14

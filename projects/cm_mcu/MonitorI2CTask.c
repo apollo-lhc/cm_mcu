@@ -178,17 +178,17 @@ void MonitorI2CTask(void *parameters)
 
       // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
+
         int index = ps * (args->n_commands * args->n_pages) + c;
 
-        log_debug(LOG_MONI2C, "%s: command page %s.\r\n", args->name, args->commands[c].name);
+        log_debug(LOG_MONI2C, "%s: command %s.\r\n", args->name, args->commands[c].name);
         uint8_t page_reg_value = args->commands[c].page;
-        int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, 0x01, 1, page_reg_value);
+        int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
         if (r != 0) {
           log_error(LOG_MONI2C, "%s : page fail %s\r\n", args->devices[ps].name, SMBUS_get_error(r));
           break;
         }
 
-        log_debug(LOG_MONI2C, "%s: command %s.\r\n", args->name, args->commands[c].name);
         uint32_t output_raw;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size,
                                        args->commands[c].command, args->commands[c].size, &output_raw);
@@ -205,6 +205,7 @@ void MonitorI2CTask(void *parameters)
         }
 
       } // loop over commands
+
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
       args->updateTick = xTaskGetTickCount(); // current time in ticks
 

@@ -44,6 +44,14 @@ uint32_t ff_USER_mask = 0;    // global variable of ff signals from user input
 #ifdef REV2
 uint32_t f1_ff12xmit_4v0_sel = 0; // global variable for FPGA1 12-ch xmit ff's power-supply physical selection
 uint32_t f2_ff12xmit_4v0_sel = 0; // global variable for FPGA2 12-ch xmit ff's power-supply physical selection
+
+struct ff_bit_mask_t ff_bitmask_args[] = {
+    {0U, 0U}, // {3, 6} bits correspond to ffl12_f1 devices
+    {0U, 0U}, // {0, 4} and bits correspond to ffldaq_f1 devices
+    {0U, 0U}, // {3, 6} bits correspond to ffl12_f2 devices
+    {0U, 0U}, // {0, 4} bits correspond to ffldaq_f2 devices
+};
+
 #endif
 // outputs from *_PRESENT pins for constructing ff_PRESENT_mask
 #ifdef REV1
@@ -165,7 +173,10 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-
+    {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x28, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
@@ -179,11 +190,11 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .n_commands = NCOMMANDS_FFLDAQ_F1,
     .n_values = NSUPPLIES_FFLDAQ_F1 * NPAGES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1,
     .n_pages = NPAGES_FFLDAQ_F1,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffldaq_f1_values,
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -195,6 +206,21 @@ struct sm_command_t sm_command_fflit_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    // there are no registers to read optical power for 14Gbps ECUO.
+    // registers below are a placeholder with a reading equal to zero
+    // the reason we need them because n_commands is fixed
+    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
@@ -204,6 +230,18 @@ struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xde, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xdc, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xda, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd8, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd6, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd4, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd2, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd0, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xce, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 
 };
 
@@ -243,11 +281,11 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .n_commands = NCOMMANDS_FFL12_F1,
     .n_values = NSUPPLIES_FFL12_F1 * NPAGES_FFL12_F1 * NCOMMANDS_FFL12_F1,
     .n_pages = NPAGES_FFL12_F1,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffl12_f1_values,
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -281,7 +319,10 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-
+    {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x28, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 
@@ -294,11 +335,11 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .n_commands = NCOMMANDS_FFLDAQ_F2,
     .n_values = NSUPPLIES_FFLDAQ_F2 * NPAGES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2,
     .n_pages = NPAGES_FFLDAQ_F2,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffldaq_f2_values,
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -310,7 +351,21 @@ struct sm_command_t sm_command_fflit_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-
+    // there are no registers to read optical power for 14Gbps ECUO.
+    // registers below are a placeholder with a reading equal to zero
+    // the reason we need them because n_commands is fixed
+    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
@@ -319,7 +374,18 @@ struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-
+    {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xde, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xdc, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xda, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd8, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd6, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd4, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd2, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd0, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xce, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 
 #ifdef REV1
@@ -353,16 +419,24 @@ struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .n_commands = NCOMMANDS_FFL12_F2,
     .n_values = NSUPPLIES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
     .n_pages = NPAGES_FFL12_F2,
+    .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffl12_f2_values,
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
 #ifdef REV2
 // Clock arguments for monitoring task
+
+struct clk_program_t clkprog_args[] = {
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+    {"", ""}, //
+};
 
 struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
@@ -396,11 +470,11 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .n_commands = NCOMMANDS_CLK,
     .n_values = NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK,
     .n_pages = NPAGES_CLK,
+    .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clk_values,
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 
@@ -418,9 +492,9 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x0C, 1, "STATUS", 0x35, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0D, 1, "LOS", 0x15, "", PM_STATUS},    // page 0x00
     // sticky bits of status bits : table 14.12
-    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
-    // sticky bits of INx LOS bits : table 14.13
     {1, 0x00, 0x12, 1, "LOSIN_FLG", 0xf, "", PM_STATUS}, // page 0x00
+    // sticky bits of status bits : table 14.12
+    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
 };
 
 uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
@@ -434,11 +508,11 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .n_commands = NCOMMANDS_CLKR0A,
     .n_values = NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A,
     .n_pages = NPAGES_CLKR0A,
+    .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clkr0a_values,
     .smbus = &g_sMaster2,
     .smbus_status = &eStatus2,
     .xSem = NULL,
-    .ffpart_bit_mask = 0U,
     .stack_size = 4096U,
 };
 #endif // REV2
@@ -552,6 +626,11 @@ void readFFpresent(void)
                                  (present_FFLDAQ_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
+  ff_bitmask_args[1].present_bit_mask = (~present_FFLDAQ_F1) & 0xFU; // 4 bits
+  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFLDAQ_F2) & 0xFU; // 4 bits
+  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
+
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
 #endif
@@ -612,34 +691,66 @@ TickType_t getFFupdateTick(int mask)
   }
 }
 
-int8_t getFFtemp(const uint8_t i)
+uint16_t getFFtemp(const uint8_t i)
 {
   int i1 = 1;
   int8_t val;
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
-    val = (int8_t)ffl12_f1_args.sm_values[index];
+    val = ffl12_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
     int index = (i - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
-    val = (int8_t)ffldaq_f1_args.sm_values[index];
+    val = ffldaq_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
     int index = (i - NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
-    val = (int8_t)ffl12_f2_args.sm_values[index];
+    val = ffl12_f2_args.sm_values[index];
   }
   else {
     int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-    val = (int8_t)ffldaq_f2_args.sm_values[index];
+    val = ffldaq_f2_args.sm_values[index];
   }
 
   return val;
 }
 
 #ifdef REV2
+uint16_t getFFoptpow(const uint8_t i)
+{
+
+  uint16_t avg_val = 0;
+  uint16_t sum_val = 0;
+  configASSERT(i < NFIREFLIES);
+
+  for (int n = 0; n < 4; ++n) {
+    if (ff_moni2c_arg[n].int_idx <= i && i < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev) {
+      for (int i1 = 4; i1 < ff_moni2c_arg[n].arg->n_commands; ++i1) {
+        int dev = i - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
+        int index = dev * (ff_moni2c_arg[n].arg->n_commands * ff_moni2c_arg[n].arg->n_pages) + i1;
+        sum_val += ff_moni2c_arg[n].arg->sm_values[index];
+      }
+      avg_val = sum_val / (ff_moni2c_arg[n].arg->n_commands - 4);
+    }
+  }
+
+  return avg_val;
+}
+
+uint16_t getFFpresentbit(const uint8_t i)
+{
+  if (i > 3) {
+    log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
+    return 56;
+  }
+  uint16_t val = ff_bitmask_args[i].present_bit_mask;
+
+  return val;
+}
+
 void getFFpart()
 {
   // Write device vendor part for identifying FF device
@@ -731,7 +842,6 @@ void getFFpart()
     }
 
     log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA%d): 0x%02x \r\n:", f + 1, tmp_ffpart_bit_mask);
-
     log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA%d): 0x%02x \r\n:", f + 1, dev_xmit_4v0_sel[f]);
     // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
     if ((dev_xmit_4v0_sel[f] ^ tmp_ffpart_bit_mask) != 0U) {
@@ -739,9 +849,9 @@ void getFFpart()
     }
 
     if (f == 0)
-      ffl12_f1_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
+      ff_bitmask_args[0].ffpart_bit_mask = tmp_ffpart_bit_mask;
     else
-      ffl12_f2_args.ffpart_bit_mask = tmp_ffpart_bit_mask;
+      ff_bitmask_args[2].ffpart_bit_mask = tmp_ffpart_bit_mask;
 
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(semaphores[f]) == xTaskGetCurrentTaskHandle()) {
@@ -1023,14 +1133,11 @@ struct MonitorTaskArgs_t dcdc_args = {
     .name = "PSMON",
     .devices = pm_addrs_dcdc,
     .n_devices = NSUPPLIES_PS,
-    .commands =
-        pm_command_dcdc,
+    .commands = pm_command_dcdc,
     .n_commands = NCOMMANDS_PS,
-    .pm_values =
-        dcdc_values,
+    .pm_values = dcdc_values,
     .n_values = NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS,
-    .n_pages =
-        NPAGES_PS,
+    .n_pages = NPAGES_PS,
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
     .xSem = NULL,
