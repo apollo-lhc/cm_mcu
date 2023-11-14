@@ -3,6 +3,7 @@ import os
 import sys
 import argparse
 import yaml
+import subprocess
 
 parser = argparse.ArgumentParser(description='Process YAML for MCU.')
 parser.add_argument('-v', '--verbose', action='store_true',
@@ -114,14 +115,6 @@ with open(args.output, 'w', encoding="ascii") as fout:
     print(r"#error No revision defined", file=fout)
     print(r"#endif // REV1", file=fout)
 
-# reformat the c file using clang-format
-# -style=file:$HOME/src/apollo_cm_mcu/.clang-format
-r = subprocess.run(["clang-format", "-i", args.output], check=False)
-if r.returncode != 0:
-    print('clang-format failed')
-    sys.exit(1)
-if args.verbose:
-    print('clang-format complete')
 
 # open output header file for writing.
 # first chekc that ZM_VALID_ENTRIES has exactly two entries
@@ -143,3 +136,12 @@ with open(header_fname, encoding="ascii", mode='w') as fheader:
     print(f"#define ZMON_VALID_ENTRIES {ZM_VALID_ENTRIES[1]}", file=fheader)
     print("#endif // REV1", file=fheader)
     print("#endif // ZYNQMON_ADDRESSES_H", file=fheader)
+
+# reformat the c file using clang-format
+# -style=file:$HOME/src/apollo_cm_mcu/.clang-format
+r = subprocess.run(["clang-format", "-i", args.output], check=False)
+if r.returncode != 0:
+    print('clang-format failed')
+    sys.exit(1)
+if args.verbose:
+    print('clang-format complete')
