@@ -2,8 +2,8 @@
 import os
 import sys
 import argparse
-import yaml
 import subprocess
+import yaml
 
 parser = argparse.ArgumentParser(description='Process YAML for MCU.')
 parser.add_argument('-v', '--verbose', action='store_true',
