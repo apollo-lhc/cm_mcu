@@ -1279,7 +1279,37 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
   }
 }
 
-// This command takes 1 argument, either k or v
+// This command takes 1 argument, either f1 or f2
+#ifdef REV2
+BaseType_t fpga_flash(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
+
+  if (strcmp(argv[1], "f2") == 0) {
+    write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
+    write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
+    vTaskDelay(delay);
+    write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
+    vTaskDelay(delay);
+    write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA2 has been programmed\r\n");
+  }
+  if (strcmp(argv[1], "f1") == 0) {
+    write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
+    write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
+    vTaskDelay(delay);
+    write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
+    vTaskDelay(delay);
+    write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA1 has been programmed\r\n");
+  }
+  snprintf(m + copied, SCRATCH_SIZE - copied, "via flash\r\n");
+  return pdFALSE;
+}
+#endif
+
+// This command takes 1 argument, either f1 or f2
 BaseType_t fpga_reset(int argc, char **argv, char *m)
 {
   int copied = 0;
