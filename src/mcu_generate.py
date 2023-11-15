@@ -1,9 +1,9 @@
+#! /usr/bin/env python
 """ Generate the C code for the microcontroller using the yaml files in the data directory"""
 import os
 import sys
 import argparse
 import subprocess
-
 import yaml
 
 parser = argparse.ArgumentParser(description='Process YAML for MCU.')
