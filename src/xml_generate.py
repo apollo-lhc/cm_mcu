@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """Generate XML file from YAML input"""
 import xml.etree.ElementTree as ET
 from pprint import pprint
@@ -188,7 +189,9 @@ for c in config:  # loop over entries in configuration (sensor category)
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
 # create output file name based on input file, replacing 'yaml' with 'xml'
-out_name = args.input_file[:-len('yaml')] + 'xml'
+out_name = args.input_file[:-len('yaml')] + '.xml'
+if ( args.verbose ):
+    print("writing to file", out_name)
 tree.write(out_name)
 
 #% %

@@ -136,3 +136,4 @@ dmypy.json
 src/test.xml
 src/test2.xml
 .DS_Store
+**/*.xml
