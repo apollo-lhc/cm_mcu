@@ -3,6 +3,7 @@
 import xml.etree.ElementTree as ET
 from pprint import pprint
 import argparse
+import os
 import yaml
 
 #% %
@@ -188,9 +189,10 @@ for c in config:  # loop over entries in configuration (sensor category)
             i += 1
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
-# create output file name based on input file, replacing 'yaml' with 'xml'
-out_name = args.input_file[:-len('yaml')] + '.xml'
-if ( args.verbose ):
+# create output file name based on input file, replacing 'yml' with 'xml'
+out_name = os.path.basename(args.input_file)[:-len('.yml')] + '.xml'
+out_name = args.directory + '/' + out_name
+if args.verbose:
     print("writing to file", out_name)
 tree.write(out_name)
 
