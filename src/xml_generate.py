@@ -118,8 +118,8 @@ class reg:
 # custom file type for yaml file, to be used with argparse
 def yaml_file(filename):
     """custom file type for yaml file, to be used with argparse"""
-    if not filename.endswith('.yaml'):
-        raise argparse.ArgumentTypeError('File must have a .yaml extension')
+    if not filename.endswith('.yml'):
+        raise argparse.ArgumentTypeError('File must have a .yml extension')
     return filename
 
 parser = argparse.ArgumentParser(description='Process YAML for XML.')
