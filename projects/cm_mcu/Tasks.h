@@ -199,7 +199,7 @@ bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
 uint16_t getFFtemp(const uint8_t i);
-uint16_t getFFoptpow(const uint8_t i);
+uint16_t getFFavgoptpow(const uint8_t i);
 uint16_t getFFpresentbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);

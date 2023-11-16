@@ -719,7 +719,7 @@ uint16_t getFFtemp(const uint8_t i)
 }
 
 #ifdef REV2
-uint16_t getFFoptpow(const uint8_t i)
+uint16_t getFFavgoptpow(const uint8_t i)
 {
 
   uint16_t avg_val = 0;
