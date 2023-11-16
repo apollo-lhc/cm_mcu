@@ -90,9 +90,16 @@ clean:
 ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
-
 ## Zynq address table -- MCU code
 YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/*.yml)
+#
+# for building tar files in a release
+#
+release: 
+	@python ${ROOT}/sm_cm_config/src/xml_generate.py -d ${ROOT} ${YAML_FILES}
+#
+# Zynq address table -- MCU code
+#
 ZynqMon_addresses.c ZynqMon_addresses.h &: ${YAML_FILES}
 	python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES}
 
@@ -183,4 +190,4 @@ ifneq (${MAKECMDGOALS},clean)
 -include ${wildcard ${COMPILER}/*.d} __dummy__
 endif
 
-.PHONY: ${COMPILER}
+.PHONY: ${COMPILER} release
