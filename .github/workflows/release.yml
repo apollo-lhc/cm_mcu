@@ -37,10 +37,14 @@ jobs:
         cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_rev1.axf
         make clean REV1=1
         make -k REV1=1
-        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_rev1.bin
-        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_rev1.axf
-        cp projects/boot_loader/gcc/bl_main.bin bl_main_rev1.bin
-        cp projects/boot_loader/gcc/bl_main.axf bl_main_rev1.axf
+        mkdir REV1
+        cp projects/cm_mcu/gcc/cm_mcu.bin REV1/cm_mcu_rev1.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf REV1/cm_mcu_rev1.axf
+        cp projects/boot_loader/gcc/bl_main.bin REV1/bl_main_rev1.bin
+        cp projects/boot_loader/gcc/bl_main.axf REV1/bl_main_rev1.axf
+        make release
+        mv PL_MEM_CM_rev1.xml REV1
+        tar zcvpf cm_mcu_rev1.tar.gz REV1
      - name: make with GCC for Rev2
        run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
@@ -50,10 +54,14 @@ jobs:
         cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_rev2.axf
         make clean REV2=1
         make -k REV2=1
-        cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_rev2.bin
-        cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_rev2.axf
-        cp projects/boot_loader/gcc/bl_main.bin bl_main_rev2.bin
-        cp projects/boot_loader/gcc/bl_main.axf bl_main_rev2.axf
+        mkdir REV2
+        cp projects/cm_mcu/gcc/cm_mcu.bin REV2/cm_mcu_rev2.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf REV2/cm_mcu_rev2.axf
+        cp projects/boot_loader/gcc/bl_main.bin REV2/bl_main_rev2.bin
+        cp projects/boot_loader/gcc/bl_main.axf REV2/bl_main_rev2.axf
+        make release
+        mv PL_MEM_CM_rev2.xml REV2
+        tar zcvpf cm_mcu_rev2.tar.gz REV2
      - name: test
        run: pwd; ls -R ; find . -type f -name '*.axf' -print
      - uses: "marvinpinto/action-automatic-releases@latest"
@@ -61,5 +69,6 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            ./cm_mcu*.*
-            ./bl_main*.*
+            ./REV1/*
+            ./REV2/*
+            *.tar.gz
