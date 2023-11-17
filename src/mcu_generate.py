@@ -128,7 +128,6 @@ try:
 except FileNotFoundError as e:
     if args.verbose:
         print(f"clang-format not found: {e}")
-    pass
 
 # open output header file for writing.
 # first chekc that ZM_VALID_ENTRIES has exactly two entries
