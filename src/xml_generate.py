@@ -136,13 +136,9 @@ args = parser.parse_args()
 
 if args.verbose:
     print('Verbose mode on')
-
-if args.directory:
-    print('Output directory:', args.directory)
-
-if args.verbose:
     print('Input file names:', args.input_file)
-
+    if args.directory:
+        print('Output directory:', args.directory)
 
 
 with open(args.input_file, encoding='ascii') as f:
@@ -214,7 +210,9 @@ for c in config:  # loop over entries in configuration (sensor category)
     size = calc_size(c)
     thislength = len(postfixes) * len(names)*size
     entries.append(reg(c['name'], start, start + thislength - 1, thislength))
-pprint(entries)
+if args.verbose:
+    for e in entries:
+        print(e)
 
 #check for overlaps and overloads
 for i in range(len(entries)):
