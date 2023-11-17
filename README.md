@@ -5,7 +5,7 @@ On the MCU side, we define which addresses the MCU will send with the data. (pyt
 
 On the Zynq side, the XML files allow us to decode the memory on the zynq according to the data as laid out in the MCU. (python code `xml_generate.py`)
 
-The input files are in the `data` directory and are given by `zynqmon_<i>.yaml` where `i` refers to the CM revision number.
+The input files are in the `data` directory and are given by `PL_MEM_CM_rev<i>.yml` where `i` refers to the CM revision number.
 There are two outputs:
 1. The `C` code consists of a `c` and a header file. It is compiled into the MCU binary in the `cm_mcu` repo
 1. The xml files must be included in the Zynq in ... (add directory info here)
