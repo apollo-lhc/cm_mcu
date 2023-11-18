@@ -1,9 +1,9 @@
+#! /usr/bin/env python
 """ Generate the C code for the microcontroller using the yaml files in the data directory"""
 import os
 import sys
 import argparse
 import subprocess
-
 import yaml
 
 parser = argparse.ArgumentParser(description='Process YAML for MCU.')
@@ -17,7 +17,7 @@ parser.add_argument('input_files', metavar='file', type=str,
 
 args = parser.parse_args()
 
-if args.output:
+if args.output and args.verbose:
     print('Output file name:', args.output)
 
 # sort the input file names.Default appears to be random(or order in the filesystem)
@@ -118,12 +118,16 @@ with open(args.output, 'w', encoding="ascii") as fout:
 
 # reformat the c file using clang-format
 # -style=file:$HOME/src/apollo_cm_mcu/.clang-format
-r = subprocess.run(["clang-format", "-i", args.output], check=False)
-if r.returncode != 0:
-    print('clang-format failed')
-    sys.exit(1)
-if args.verbose:
-    print('clang-format complete')
+# if the clang-format fails, we just ignore it
+try:
+    r = subprocess.run(["clang-format", "-i", args.output], check=False)
+    if r.returncode != 0 and args.verbose:
+        print('clang-format failed')
+    if args.verbose:
+        print('clang-format complete')
+except FileNotFoundError as e:
+    if args.verbose:
+        print(f"clang-format not found: {e}")
 
 # open output header file for writing.
 # first chekc that ZM_VALID_ENTRIES has exactly two entries

@@ -134,4 +134,6 @@ dmypy.json
 
 # testing xml output
 src/test.xml
+src/test2.xml
 .DS_Store
+**/*.xml
