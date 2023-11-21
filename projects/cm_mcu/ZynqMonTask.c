@@ -548,9 +548,9 @@ void zm_send_data(struct zynqmon_data_t data[])
 {
   // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
   for (int i = 0; i < ZMON_VALID_ENTRIES; ++i) {
-    uint8_t message[4];
+    uint8_t message[5];
     format_data(data[i].sensor, data[i].data.us, message);
-    for (int j = 0; j < 4; ++j) {
+    for (int j = 0; j < 5; ++j) {
       ZMUartCharPut(message[j]);
     }
   }
@@ -565,7 +565,7 @@ void ZynqMonTask(void *parameters)
   // will be done centrally in Rev 2
 
 #ifdef ZYNQMON_TEST_MODE
-  uint8_t message[4] = {0x9c, 0x2c, 0x2b, 0x3e};
+  uint8_t message[5] = {0xf7, 0x0a, 0x1c, 0x2b, 0x3e};
 #endif // ZYNQMON_TEST_MODE
 
   // reset the data we will send
@@ -611,6 +611,7 @@ void ZynqMonTask(void *parameters)
           message[1] = 0xaa;
           message[2] = 0x55;
           message[3] = 0xaa;
+          message[4] = 0x55;
           inTestMode = true;
           enable = true;
           testmode = 2;
@@ -629,7 +630,7 @@ void ZynqMonTask(void *parameters)
         // non-incrementing, single word
         if (testmode == 0) {
           format_data(testaddress, testdata, message);
-          for (int i = 0; i < 4; ++i) {
+          for (int i = 0; i < 5; ++i) {
             ZMUartCharPut(message[i]);
           }
           // one shot mode -- disable
@@ -642,13 +643,13 @@ void ZynqMonTask(void *parameters)
             testdata++;
             testaddress++;
             format_data(testaddress, testdata, message);
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < 5; ++i) {
               ZMUartCharPut(message[i]);
             }
           }
         }
         else if (testmode == 2) { // test mode, no formatting
-          for (int i = 0; i < 4; ++i) {
+          for (int i = 0; i < 5; ++i) {
             ZMUartCharPut(message[i]);
           }
         }
