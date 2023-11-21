@@ -173,6 +173,7 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x04, 1, "FF_LASER_FAULT", 0xff, "", PM_STATUS},
     {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
     {2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
     {2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
@@ -206,6 +207,7 @@ struct sm_command_t sm_command_fflit_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x09, 1, "FF_LASER_FAULT", 0xffff, "", PM_STATUS},
     // there are no registers to read optical power for 14Gbps ECUO.
     // registers below are a placeholder with a reading equal to zero
     // the reason we need them because n_commands is fixed
@@ -230,6 +232,7 @@ struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x09, 1, "FF_LASER_FAULT", 0xffff, "", PM_STATUS},
     {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
     {2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
     {2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
@@ -319,6 +322,7 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
+    {1, 0x00, 0x04, 1, "FF_LASER_FAULT", 0xff, "", PM_STATUS},
     {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
     {2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
     {2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
@@ -351,6 +355,7 @@ struct sm_command_t sm_command_fflit_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x09, 1, "FF_LASER_FAULT", 0xffff, "", PM_STATUS},
     // there are no registers to read optical power for 14Gbps ECUO.
     // registers below are a placeholder with a reading equal to zero
     // the reason we need them because n_commands is fixed
@@ -374,6 +379,7 @@ struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x09, 1, "FF_LASER_FAULT", 0xffff, "", PM_STATUS},
     {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
     {2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
     {2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
@@ -728,12 +734,12 @@ uint16_t getFFoptpow(const uint8_t i)
 
   for (int n = 0; n < 4; ++n) {
     if (ff_moni2c_arg[n].int_idx <= i && i < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev) {
-      for (int i1 = 4; i1 < ff_moni2c_arg[n].arg->n_commands; ++i1) {
+      for (int i1 = 5; i1 < ff_moni2c_arg[n].arg->n_commands; ++i1) {
         int dev = i - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
         int index = dev * (ff_moni2c_arg[n].arg->n_commands * ff_moni2c_arg[n].arg->n_pages) + i1;
         sum_val += ff_moni2c_arg[n].arg->sm_values[index];
       }
-      avg_val = sum_val / (ff_moni2c_arg[n].arg->n_commands - 4);
+      avg_val = sum_val / (ff_moni2c_arg[n].arg->n_commands - 5);
     }
   }
 

@@ -816,6 +816,62 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+BaseType_t ff_laser_fault(int argc, char **argv, char *m)
+{
+  // argument handling
+  int copied = 0;
+
+  static int whichff = 0;
+  static int n = 0;
+
+  if (whichff == 0) {
+    // check for stale data
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+    if (isFFStale()) {
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF Temperature:\r\n");
+  }
+
+  int i1 = 4; // 4 for laser fault
+
+  for (; n < NFIREFLY_ARG; ++n) {
+    struct MonitorI2CTaskArgs_t *ff_arg = ff_moni2c_arg[n].arg;
+    for (; whichff < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev; ++whichff) {
+      int dev = whichff - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
+      bool isRx = (strstr(ff_moni2c_addrs[whichff].name, "Rx") != NULL);
+      if (!isRx) {
+        if (isEnabledFF(ff_moni2c_arg[n].int_idx + dev)) {
+          int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
+          uint8_t val = ff_arg->sm_values[index];
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
+        }
+        else // dummy value
+          copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+      }
+      if ((SCRATCH_SIZE - copied) < 20) {
+        ++whichff;
+        return pdTRUE;
+      }
+    }
+  }
+
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichff = 0;
+  n = 0;
+
+  return pdFALSE;
+}
+
 BaseType_t ff_temp(int argc, char **argv, char *m)
 {
   // argument handling

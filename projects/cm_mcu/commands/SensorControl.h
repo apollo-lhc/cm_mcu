@@ -34,6 +34,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m);
 BaseType_t ff_status(int argc, char **argv, char *m);
 BaseType_t ff_los_alarm(int argc, char **argv, char *m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m);
+BaseType_t ff_laser_fault(int argc, char **argv, char *m);
 
 // Clocks
 BaseType_t clkmon_ctl(int argc, char **argv, char *m);

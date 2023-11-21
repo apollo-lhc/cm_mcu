@@ -289,6 +289,12 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_laser_fault",
+        ff_laser_fault,
+        "Displays a table showing the laser fault of the fireflies via Tx channels.\r\n",
+        0,
+    },
+    {
         "ff_optpow",
         ff_optpow,
         "Displays a table showing the per-ch optical power of the I2C fireflies.\r\n",
