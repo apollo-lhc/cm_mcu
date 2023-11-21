@@ -82,7 +82,7 @@ all: ${COMPILER}/cm_mcu.axf
 # The rule to clean out all the build products.
 #
 clean:
-	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c ZynqMon_addresses.h
+	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c ZynqMon_addresses.h ${ROOT}/PL_MEM*.xml
 
 #
 # The rule to create the target directory.
@@ -90,11 +90,32 @@ clean:
 ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
-
 ## Zynq address table -- MCU code
 YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/*.yml)
+#
+# for building tar files in a release
+#
+release: ${YAML_FILES}
+	@for f in ${YAML_FILES}; do \
+		if [ 'x${VERBOSE}' = x ]; then \
+			echo "  PY    $(notdir $$f)"; \
+		else \
+			echo ${ROOT}/sm_cm_config/src/xml_generate.py -d ${ROOT} $$f; \
+		fi; \
+		python ${ROOT}/sm_cm_config/src/xml_generate.py -d ${ROOT} $$f; \
+	done
+
+#
+# Zynq address table -- MCU code
+#
 ZynqMon_addresses.c ZynqMon_addresses.h &: ${YAML_FILES}
-	python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES}
+	@if [ 'x${VERBOSE}' = x ];                                            \
+	then                                                                 \
+		echo "  PY    $(notdir $?)";                                               \
+	else                                                                 \
+		echo ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES};    \
+	fi
+	@python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES}
 
 # these rules are required to force the generation of the ZynqMon_addresses.c
 # and .h file. The second one depends on the .h file only, but putting that
@@ -183,4 +204,4 @@ ifneq (${MAKECMDGOALS},clean)
 -include ${wildcard ${COMPILER}/*.d} __dummy__
 endif
 
-.PHONY: ${COMPILER}
+.PHONY: ${COMPILER} release

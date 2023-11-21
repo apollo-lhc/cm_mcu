@@ -35,5 +35,7 @@ check-and-reinit-submodules:
             git submodule update --init; \
 	fi
 
+release:
+	@$(MAKE) -C projects/cm_mcu release
 
 .PHONY: all clean $(DIRS) $(DIRSCLEAN) check-and-reinit-submodules
