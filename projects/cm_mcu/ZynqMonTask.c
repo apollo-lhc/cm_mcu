@@ -45,45 +45,36 @@
 
 #define SENSOR_MESSAGE_START_OF_FRAME_NIB    2
 #define SENSOR_MESSAGE_START_OF_FRAME_NIB_V2 3
-#define RESERVED_DATA_V2                     0x9 // 0b1001
+#define RESERVED_DATA                        0x9	// 0b1001
 #define SENSOR_MESSAGE_DATA_FRAME_NIB        0
 #define SENSOR_MESSAGE_HEADER_OFFSET         6
 #define SENSOR_SIX_BITS                      0x3F
-#define DATA_FOUR_BITS                       0xF
-#define DATA_TWO_BITS_MASK0                  0x3  // a mask for 0b11
-#define DATA_TWO_BITS_MASK1                  0xC  // a mask for 0b1100
-#define DATA_TWO_BITS_MASK2                  0x30 // a mask for 0b110000
 #define SENSOR_MESSAGE_START_OF_FRAME \
   (SENSOR_MESSAGE_START_OF_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 #define SENSOR_MESSAGE_START_OF_FRAME_V2 \
   (SENSOR_MESSAGE_START_OF_FRAME_NIB_V2 << SENSOR_MESSAGE_HEADER_OFFSET)
 #define SENSOR_MESSAGE_DATA_FRAME (SENSOR_MESSAGE_DATA_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 
-static void format_data(const uint8_t sensor, const uint16_t data, uint8_t message[5])
+
+static void format_data(const uint16_t sensor, const uint16_t data, uint8_t message[5])
 {
-  uint8_t tmp_message_0;
-  uint8_t tmp_message_1;
-  // version2 modifies version1's bytes
-  // modified version1 header and start of sensor (6 bits, sensor[7:2]
-  message[0] = SENSOR_MESSAGE_START_OF_FRAME_V2;
-  tmp_message_0 = ((sensor >> 2) & SENSOR_SIX_BITS);
-  message[0] |= (SENSOR_MESSAGE_START_OF_FRAME_NIB_V2 << 4) | ((tmp_message_0 >> 2) & DATA_FOUR_BITS);
-  // modified version1 data frame with a reserved-data byte
-  // version1 data frame : rest of sensor[1:0] (2 bits) and start of data[15:12] (4 bits)
-  message[1] = SENSOR_MESSAGE_DATA_FRAME;
-  tmp_message_1 = ((sensor & 0x3) << 4) | ((data >> 12) & 0xF);
-  message[1] |= (tmp_message_0 & DATA_TWO_BITS_MASK0) << 4 | ((tmp_message_1 & DATA_TWO_BITS_MASK2) >> 2) | ((RESERVED_DATA_V2 & DATA_TWO_BITS_MASK1) >> 2);
+     //header for v2 (0b11) and start of sensor[9:4] (6 bits)
+     message[0] = SENSOR_MESSAGE_START_OF_FRAME_V2 | ((sensor >> 4) & SENSOR_SIX_BITS);
+       
+     //rest of sensor[3:0] (4 bits) and start of reserved[3:2] (2 bits) 
+     message[1] = SENSOR_MESSAGE_DATA_FRAME;
+     message[1] |= ((sensor & 0xf) << 2) | ((RESERVED_DATA >> 2) & 0x3);
 
-  // modified version1 data frame with a reserved-data byte
-  message[2] = SENSOR_MESSAGE_DATA_FRAME;
-  message[2] |= ((RESERVED_DATA_V2 & DATA_TWO_BITS_MASK0) << 4) | (tmp_message_1 & DATA_FOUR_BITS);
+     //rest of reserved[1:0] (2 bits) and start of data[15:14] (2 bits) 
+     message[2] = SENSOR_MESSAGE_DATA_FRAME;
+     message[2] |= ((RESERVED_DATA & 0x3) << 4) | ((data >> 12) & 0xF);
 
-  // take version1 data frame 2, data[11:6] (6 bits)
-  message[3] = SENSOR_MESSAGE_DATA_FRAME;
-  message[3] |= (data >> 6) & 0x3F;
-  // take version1 data frame 3, data[5:0] ( 6 bits )
-  message[4] = SENSOR_MESSAGE_DATA_FRAME;
-  message[4] |= data & 0x3F;
+     // data[11:6] (6 bits)
+     message[3] = SENSOR_MESSAGE_DATA_FRAME;
+     message[3] |= (data >> 6) & 0x3F;
+     // data[5:0] ( 6 bits )
+     message[4] = SENSOR_MESSAGE_DATA_FRAME;
+     message[4] |= data & 0x3F;
 }
 
 #ifdef ZYNQMON_TEST_MODE
