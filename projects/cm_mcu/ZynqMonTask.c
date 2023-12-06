@@ -45,7 +45,7 @@
 
 #define SENSOR_MESSAGE_START_OF_FRAME_NIB    2
 #define SENSOR_MESSAGE_START_OF_FRAME_NIB_V2 3
-#define RESERVED_DATA                        0x9	// 0b1001
+#define RESERVED_DATA                        0x9 // 0b1001
 #define SENSOR_MESSAGE_DATA_FRAME_NIB        0
 #define SENSOR_MESSAGE_HEADER_OFFSET         6
 #define SENSOR_SIX_BITS                      0x3F
@@ -55,26 +55,25 @@
   (SENSOR_MESSAGE_START_OF_FRAME_NIB_V2 << SENSOR_MESSAGE_HEADER_OFFSET)
 #define SENSOR_MESSAGE_DATA_FRAME (SENSOR_MESSAGE_DATA_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 
-
 static void format_data(const uint16_t sensor, const uint16_t data, uint8_t message[5])
 {
-     //header for v2 (0b11) and start of sensor[9:4] (6 bits)
-     message[0] = SENSOR_MESSAGE_START_OF_FRAME_V2 | ((sensor >> 4) & SENSOR_SIX_BITS);
-       
-     //rest of sensor[3:0] (4 bits) and start of reserved[3:2] (2 bits) 
-     message[1] = SENSOR_MESSAGE_DATA_FRAME;
-     message[1] |= ((sensor & 0xf) << 2) | ((RESERVED_DATA >> 2) & 0x3);
+  // header for v2 (0b11) and start of sensor[9:4] (6 bits)
+  message[0] = SENSOR_MESSAGE_START_OF_FRAME_V2 | ((sensor >> 4) & SENSOR_SIX_BITS);
 
-     //rest of reserved[1:0] (2 bits) and start of data[15:14] (2 bits) 
-     message[2] = SENSOR_MESSAGE_DATA_FRAME;
-     message[2] |= ((RESERVED_DATA & 0x3) << 4) | ((data >> 12) & 0xF);
+  // rest of sensor[3:0] (4 bits) and start of reserved[3:2] (2 bits)
+  message[1] = SENSOR_MESSAGE_DATA_FRAME;
+  message[1] |= ((sensor & 0xf) << 2) | ((RESERVED_DATA >> 2) & 0x3);
 
-     // data[11:6] (6 bits)
-     message[3] = SENSOR_MESSAGE_DATA_FRAME;
-     message[3] |= (data >> 6) & 0x3F;
-     // data[5:0] ( 6 bits )
-     message[4] = SENSOR_MESSAGE_DATA_FRAME;
-     message[4] |= data & 0x3F;
+  // rest of reserved[1:0] (2 bits) and start of data[15:14] (2 bits)
+  message[2] = SENSOR_MESSAGE_DATA_FRAME;
+  message[2] |= ((RESERVED_DATA & 0x3) << 4) | ((data >> 12) & 0xF);
+
+  // data[11:6] (6 bits)
+  message[3] = SENSOR_MESSAGE_DATA_FRAME;
+  message[3] |= (data >> 6) & 0x3F;
+  // data[5:0] ( 6 bits )
+  message[4] = SENSOR_MESSAGE_DATA_FRAME;
+  message[4] |= data & 0x3F;
 }
 
 #ifdef ZYNQMON_TEST_MODE
