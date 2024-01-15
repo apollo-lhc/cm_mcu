@@ -178,6 +178,33 @@ config:
     mcu_extra_call: 0
     names:
       - MCU_CLKR0A_VER
+  - name: clkr0bconfigversion
+    start: 232
+    count: 4
+    type: char
+    size: 2
+    mcu_call: clkconfigversion
+    mcu_extra_call: 1
+    names:
+      - MCU_CLKR0B_VER
+  - name: clkr1aconfigversion
+    start: 236
+    count: 4
+    type: char
+    size: 2
+    mcu_call: clkconfigversion
+    mcu_extra_call: 2
+    names:
+      - MCU_CLKR1A_VER
+  - name: clkr1bconfigversion
+    start: 240
+    count: 4
+    type: char
+    size: 2
+    mcu_call: clkconfigversion
+    mcu_extra_call: 3
+    names:
+      - MCU_CLKR1B_VER
   - name: firefly_bits
     start: 244
     count: 8
