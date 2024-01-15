@@ -205,8 +205,17 @@ config:
     mcu_extra_call: 3
     names:
       - MCU_CLKR1B_VER
-  - name: firefly_bits
+  - name: clkr1cconfigversion
     start: 244
+    count: 4
+    type: char
+    size: 2
+    mcu_call: clkconfigversion
+    mcu_extra_call: 4
+    names:
+      - MCU_CLKR1C_VER
+  - name: firefly_bits
+    start: 248
     count: 8
     type: uint16_t
     extra: Table=CM_FFARGV_MON;Status=1
@@ -220,29 +229,3 @@ config:
     postfixes:
       - IS_FF25Gbs
       - IS_PRESENT
-  - name: hexdata
-    start: 252
-    count: 16
-    type: uint16_t
-    extra: Table=CM_HEX_MON;Status=1
-    mcu_call: hexdata
-    mcu_extra_call: null
-    names:
-      - HEXFC
-      - HEXFD
-      - HEXFE
-      - HEXFF
-      - HEX100
-      - HEX101
-      - HEX102
-      - HEX103
-      - HEX104
-      - HEX105
-      - HEX106
-      - HEX107
-      - HEX108
-      - HEX109
-      - HEX10a
-      - HEX10b
-    postfixes:
-      - Column0

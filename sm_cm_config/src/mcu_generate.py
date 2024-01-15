@@ -75,7 +75,6 @@ with open(args.output, 'w', encoding="ascii") as fout:
                 expected_length *= len(c['postfixes'])
             if '32' in c['type']:
                 expected_length *= 2
-                #expected_length += 1 #FIXME
             elif 'char' in c['type']:
                 expected_length = expected_length/2.
             if 'size' in c:

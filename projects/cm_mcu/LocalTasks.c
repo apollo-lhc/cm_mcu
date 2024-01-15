@@ -173,10 +173,10 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
-    {2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x28, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
@@ -230,18 +230,18 @@ struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
-    {2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xde, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xdc, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xda, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd8, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd6, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd4, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd2, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd0, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xce, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 
 };
 
@@ -319,10 +319,10 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
-    {2, 0x00, 0x24, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x26, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x28, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 
@@ -374,18 +374,18 @@ struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
     {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
-    {2, 0x01, 0xe2, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xe0, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xde, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xdc, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xda, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd8, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd6, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd4, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd2, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd0, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xce, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
 };
 
 #ifdef REV1
@@ -818,7 +818,7 @@ void getFFpart()
           strncpy(vendor_string, vendor_string_rxch, nstring);
         }
         else {
-          if (strncmp(vendor_string_rxch, vendor_string, nstring) == 0 && (strstr(vendor_string_rxch, "14") == NULL) && (strstr(vendor_string_rxch, "CRRNB") == NULL)) {
+          if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) {
             tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
