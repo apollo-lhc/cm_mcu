@@ -7,7 +7,7 @@ import os
 import yaml
 
 #% %
-def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int,
+def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int, 
               parent_id: str) -> ET.Element:
     """create the node to be inserted into the xml tree"""
 # pylint: disable=too-many-branches
@@ -17,7 +17,7 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int,
     thenode.set('id', myid)
 #address is half of the sensor address since these are 32 bit addresses
     theaddr = int(addr2/2)
-    remain = addr2 % 2
+    remain = bit
     thenode.set('address', str(hex(theaddr)))
 #this appears to be on all the nodes
     thenode.set("permission", "r")
@@ -90,11 +90,12 @@ def calc_size(thedict: dict) -> int:
 #and a pretty print method
 class reg:
     """create an object with a name, and a start end end register"""
-    def __init__(self, name, sta, end, sz):
+    def __init__(self, name, sta, end, sz, width):
         self.name = name
         self.start = sta
         self.end = end
         self.size = sz
+        self.width = width
 
     def __str__(self):
         return "name: " + self.name + " start: " + str(self.start) + \
@@ -102,17 +103,20 @@ class reg:
 
     def overlaps(self, other):
         """calculate overlap between two objects"""
+        actual_size = self.size * (self.width/16) # the self.size is counted based on a 16-bit data 
         if (self.start <= other.start and self.end >= other.start):
             return True
         if (self.start <= other.end and self.end >= other.end):
             return True
         if (self.start >= other.start and self.end <= other.end):
             return True
+        if (abs(self.start - other.start) < actual_size): # the next other.start is larger than self.start + self.size when e.g. data is 32-bit   
+            return True
         return False
 
     def overloads(self):
         """check if the object overloads the register space"""
-        if self.start + self.size >= 255:
+        if self.start + self.size >= 1023:
             return True
         return False
 
@@ -153,35 +157,51 @@ with open(args.input_file, encoding='ascii') as f:
 cm = ET.Element('node')
 cm.set('id', 'CM')
 cm.set('address', '0x00000000')
-
+prev_addr = 0x0
+prev_j = 0x0
+prev_bit = 0x0
 #% %
 config = y['config']
 
 for c in config:  # loop over entries in configuration (sensor category)
     i = 0  # counter over the number of sensors within a category
     names = c['names']
+    start = c['start']
     for n in names:  # loop over names of sensors within a category
         if 'postfixes' in c:
-            pp = node = ET.SubElement(cm, 'node')
-            pp.set('id', n)
-            start = c['start']
-            addr = int((start + i)/2)
-            pp.set('address', str(hex(addr)))
             postfixes = c['postfixes']
             j = 0
             for p in postfixes:
+                addr = int((start + i)/2) 
+                bit = i%2 
                 if p == 'RESERVED':
                     i += 1
                     j += 1
                     continue
-                if args.verbose:
-                    print("adding postfix", p, "to node", n)
-                node = make_node(pp, p, c, j, n)
+                if (bit == 1 and j == 0):
+                    pp = node = ET.SubElement(cm, 'node')
+                    pp.set('id', n)
+                    pp.set('address', str(hex(prev_addr)))
+                    node = make_node(pp, p, c, j, bit, n)
+                elif (bit == 0 and j == 0):
+                    pp = node = ET.SubElement(cm, 'node')
+                    pp.set('id', n)
+                    pp.set('address', str(hex(addr)))
+                    node = make_node(pp, p, c, j, bit, n)
+                else:
+                    if (prev_bit == 0 and prev_j == 0):
+                        node = make_node(pp, p, c, prev_j, bit, n)
+                    elif (prev_bit == 0):
+                        node = make_node(pp, p, c, j, bit, n)
+                    else :  
+                        node = make_node(pp, p, c, j+1, bit, n)
+                prev_addr = addr
+                prev_j = j  
+                prev_bit = bit
                 i += 1
                 j += 1
         else:
-            start = c['start']
-            make_node(cm, n, c, start+i, "")
+            make_node(cm, n, c, start+i, (start+i)%2, "")
             i += 1
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
@@ -209,7 +229,20 @@ for c in config:  # loop over entries in configuration (sensor category)
         postfixes = ' '
     size = calc_size(c)
     thislength = len(postfixes) * len(names)*size
-    entries.append(reg(c['name'], start, start + thislength - 1, thislength))
+    width = 99
+    if c['type'] == 'int8':
+        width = 8
+    elif c['type'] == 'int16':
+        width = 16
+    elif c['type'] == 'fp16':
+        width = 16
+    elif c['type'] == 'char':
+        width = 16
+    elif c['type'] == 'uint32_t':
+        width = 32
+    elif c['type'] == 'uint16_t':
+        width = 16
+    entries.append(reg(c['name'], start, start + thislength - 1, thislength, width))
 if args.verbose:
     for e in entries:
         print(e)
