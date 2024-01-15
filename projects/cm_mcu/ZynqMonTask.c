@@ -65,7 +65,7 @@ static void format_data(const uint16_t sensor, const uint16_t data, uint8_t mess
   message[1] = SENSOR_MESSAGE_DATA_FRAME;
   message[1] |= ((sensor & 0xf) << 2) | ((RESERVED_DATA >> 2) & 0x3);
 
-  // rest of reserved[1:0] (2 bits) and start of data[15:14] (2 bits)
+  // rest of reserved[1:0] (2 bits) and start of data[15:12] (4 bits)
   message[2] = SENSOR_MESSAGE_DATA_FRAME;
   message[2] |= ((RESERVED_DATA & 0x3) << 4) | ((data >> 12) & 0xF);
 

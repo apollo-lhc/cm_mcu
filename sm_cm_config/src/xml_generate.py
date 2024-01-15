@@ -103,14 +103,11 @@ class reg:
 
     def overlaps(self, other):
         """calculate overlap between two objects"""
-        actual_size = self.size * (self.width/16) # the self.size is counted based on a 16-bit data 
         if (self.start <= other.start and self.end >= other.start):
             return True
         if (self.start <= other.end and self.end >= other.end):
             return True
         if (self.start >= other.start and self.end <= other.end):
-            return True
-        if (abs(self.start - other.start) < actual_size): # the next other.start is larger than self.start + self.size when e.g. data is 32-bit   
             return True
         return False
 
