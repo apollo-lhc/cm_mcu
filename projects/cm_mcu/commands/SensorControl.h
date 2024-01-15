@@ -54,7 +54,6 @@ BaseType_t ff_status(int argc, char **argv, char *m);
 BaseType_t ff_los_alarm(int argc, char **argv, char *m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m);
 
-
 // Clocks
 BaseType_t clkmon_ctl(int argc, char **argv, char *m);
 BaseType_t clkr0amon_ctl(int argc, char **argv, char *m);
@@ -65,6 +64,5 @@ BaseType_t fpga_reset(int argc, char **argv, char *m);
 BaseType_t fpga_flash(int argc, char **argv, char *m);
 
 int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device);
-
 
 #endif

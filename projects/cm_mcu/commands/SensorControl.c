@@ -13,7 +13,6 @@
 #include "common/smbus_helper.h"
 #include "Tasks.h"
 
-
 int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
 {
   memset(value, 0, size);

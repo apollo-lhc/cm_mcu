@@ -278,7 +278,6 @@ void zm_set_uptime(struct zynqmon_data_t data[], int start)
   now_16 = (now >> 16) & 0xFFFFU; // upper 16 bits
   data[1].sensor = start + 1;
   data[1].data.us = now_16;
-
 }
 
 // wasting half the data packet here; could repack it
@@ -302,34 +301,34 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 #ifdef REV2
 uint16_t getFFtXdisenablebit(const uint8_t i)
 {
-	if (i > NFIREFLIES_F1 + NFIREFLIES_F2) {
-		log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
-		return 56;
-	}
-	uint8_t val = 56;
-	int i2c_dev;
-	if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-		return val;
-	if (i < NFIREFLIES_F1) {
-		i2c_dev = I2C_DEVICE_F1;
-	}
-	else {
-		i2c_dev = I2C_DEVICE_F2;
-	}
-	int ret;
-	if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-		ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, &val, 1, i2c_dev);
-	}
-	else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
-		ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, &val, 1, i2c_dev);
-	}
-	if (ret !=0)
-		return 56;
-	else
-		return val;
+  if (i > NFIREFLIES_F1 + NFIREFLIES_F2) {
+    log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
+    return 56;
+  }
+  uint8_t val = 56;
+  int i2c_dev;
+  if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+    return val;
+  if (i < NFIREFLIES_F1) {
+    i2c_dev = I2C_DEVICE_F1;
+  }
+  else {
+    i2c_dev = I2C_DEVICE_F2;
+  }
+  int ret = -99;
+  if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
+    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, &val, 1, i2c_dev);
+  }
+  else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
+    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, &val, 1, i2c_dev);
+  }
+  if (ret != 0)
+    return 56;
+  else
+    return val;
 }
 // updated once per loop.
-//For each firefly device, send
+// For each firefly device, send
 // (1) ffpart-bit (1 for 25GBs FFL, else 0)
 // (2) present-bit
 // (3) tx-disable-bit (e.g. via ECU0_14G_TX_DISABLE_REG)
@@ -432,18 +431,16 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
     }
     data[ll].sensor = ll + start;
     ++ll;
-    
 
     if (isFFStale()) {
-    	data[ll].data.us = 0xff; // special stale value
+      data[ll].data.us = 0xff; // special stale value
     }
     else {
-    	data[ll].data.us  = getFFtXdisenablebit(j); // sensor value and type
-    	log_debug(LOG_SERVICE, "TX-disenabled? for ff argv %d: 0x%02x\r\n", j, getFFtXdisenablebit(j));
+      data[ll].data.us = getFFtXdisenablebit(j); // sensor value and type
+      log_debug(LOG_SERVICE, "TX-disenabled? for ff argv %d: 0x%02x\r\n", j, getFFtXdisenablebit(j));
     }
     data[ll].sensor = ll + start;
     ++ll;
-  
   }
 }
 

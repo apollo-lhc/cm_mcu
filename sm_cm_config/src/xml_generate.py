@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/ usr / bin / env python
 """Generate XML file from YAML input"""
 import xml.etree.ElementTree as ET
 from pprint import pprint
@@ -10,8 +10,8 @@ import yaml
 def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int, 
               parent_id: str) -> ET.Element:
     """create the node to be inserted into the xml tree"""
-# pylint: disable=too-many-branches
-# I disable this check because as far as I can tell it's wrong
+#pylint : disable = too - many - branches
+#I disable this check because as far as I can tell it's wrong
     thenode = ET.SubElement(parent, 'node')
     myid = myid.replace(' ', '_')
     thenode.set('id', myid)
@@ -117,8 +117,7 @@ class reg:
             return True
         return False
 
-
-# custom file type for yaml file, to be used with argparse
+#custom file type for yaml file, to be used with argparse
 def yaml_file(filename):
     """custom file type for yaml file, to be used with argparse"""
     if not filename.endswith('.yml'):
@@ -129,7 +128,7 @@ parser = argparse.ArgumentParser(description='Process YAML for XML.')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='increase output verbosity')
 parser.add_argument('-d', '--directory', type=str, help='output directory')
-# this argument is required, one input file ending with yaml extension
+#this argument is required, one input file ending with yaml extension
 parser.add_argument('input_file', metavar='file', type=yaml_file,
                     help='input yaml file name')
 
@@ -202,7 +201,7 @@ for c in config:  # loop over entries in configuration (sensor category)
             i += 1
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
-# create output file name based on input file, replacing 'yml' with 'xml'
+#create output file name based on input file, replacing 'yml' with 'xml'
 out_name = os.path.basename(args.input_file)[:-len('.yml')] + '.xml'
 out_name = args.directory + '/' + out_name
 if args.verbose:
