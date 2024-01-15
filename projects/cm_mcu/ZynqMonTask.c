@@ -278,8 +278,7 @@ void zm_set_uptime(struct zynqmon_data_t data[], int start)
   now_16 = (now >> 16) & 0xFFFFU; // upper 16 bits
   data[1].sensor = start + 1;
   data[1].data.us = now_16;
-  //data[2].sensor = start + 2;
-  //data[2].data.us = 0x8;
+
 }
 
 // wasting half the data packet here; could repack it
@@ -444,16 +443,7 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
     }
     data[ll].sensor = ll + start;
     ++ll;
-    /* 
-    if (isFFStale()) {
-    	data[ll].data.us = 0xff; // special stale value
-    }
-    else {
-    	data[ll].data.us  = 1; // reserved data
-    }
-    data[ll].sensor = ll + start;
-    ++ll;
-    */
+  
   }
 }
 
@@ -588,14 +578,6 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
         data[j].data.f = (__fp16)__builtin_nanf("");
     }
     data[j].sensor = j + start;
-  }
-}
-
-void zm_set_hexdata(struct zynqmon_data_t data[], int start)
-{
-  for (int i = 0; i < 16; ++i) {
-    data[i].sensor = i + start;
-    data[i].data.us = i + start;
   }
 }
 

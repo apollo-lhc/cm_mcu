@@ -359,7 +359,6 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start);
 void zm_set_clock(struct zynqmon_data_t data[], int start, int n);
 void zm_set_fpga(struct zynqmon_data_t data[], int start);
 void zm_set_allclk(struct zynqmon_data_t data[], int start);
-void zm_set_hexdata(struct zynqmon_data_t data[], int start);
 
 #ifdef ZYNQMON_TEST_MODE
 void setZYNQMonTestData(uint8_t sensor, uint16_t value);
