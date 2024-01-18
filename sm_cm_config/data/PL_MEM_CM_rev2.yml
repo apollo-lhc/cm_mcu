@@ -132,7 +132,7 @@ config:
       - F2_TEMP_SLR3
   - name: clkmonr0a
     start: 185
-    count: 8
+    count: 7
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
     mcu_call: clock
@@ -149,7 +149,7 @@ config:
       - STICKY_FLG
   - name: clkmon
     start: 193
-    count: 32
+    count: 28
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
     mcu_call: clock
@@ -160,8 +160,7 @@ config:
       - R1B
       - R1C
     postfixes:
-      - PN_BASE0
-      - PN_BASE1
+      - PN_BASE
       - DEVICE_REV
       - I2C_ADDR
       - STATUS_OR_LOSXAXB
