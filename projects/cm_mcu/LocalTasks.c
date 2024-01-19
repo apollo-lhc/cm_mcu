@@ -447,7 +447,7 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
 
 struct sm_command_t sm_command_clk[] = {
     // device information on page 0 : table 16.2 and 16.4
-    {1, 0x00, 0x02, 2, "PN_BASE", 0xff, "", PM_STATUS},    // page 0x00
+    {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},    // page 0x00
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", PM_STATUS},   // page 0x00
     // internal statuses on page 0 : table 16.8 and 16.9
@@ -483,7 +483,7 @@ struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
 
 struct sm_command_t sm_command_clkr0a[] = {
     // device information on page 0 : table 14.4 and 14.6
-    {1, 0x00, 0x02, 2, "PN_BASE", 0xff, "", PM_STATUS},    // page 0x00
+    {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},    // page 0x00
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", PM_STATUS},   // page 0x00
     // internal statuses on page 0 : table 14.5
