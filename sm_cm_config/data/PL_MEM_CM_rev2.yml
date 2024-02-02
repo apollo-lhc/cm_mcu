@@ -131,7 +131,7 @@ config:
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
   - name: clkmonr0a
-    start: 186
+    start: 185
     count: 8
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1

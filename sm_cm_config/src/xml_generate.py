@@ -160,12 +160,14 @@ prev_j = 0x0 #keep track of the order of postfixes in each name node
 prev_bit = 0x0 #keep track of the even or odd order of bytes globally sent for masking
 #% %
 config = y['config']
-
 for c in config:  # loop over entries in configuration (sensor category)
     i = 0  # counter over the number of sensors within a category
     names = c['names']
     start = c['start']
+    count = c['count']
     for n in names:  # loop over names of sensors within a category
+        if (n=="R0B" and start!=prev_start+prev_count+1):
+            print("warning: the start address of clkmon should continue from clkr0a")
         if 'postfixes' in c:
             postfixes = c['postfixes']
             j = 0
@@ -191,14 +193,25 @@ for c in config:  # loop over entries in configuration (sensor category)
                         node = make_node(pp, p, c, j, bit, n)
                     else :               #the low byte with an increasing postfix node by one 
                         node = make_node(pp, p, c, j+1, bit, n)
+                if (prev_bit == bit and prev_addr == addr and prev_addr != 0) :
+                    print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
                 prev_addr = addr
                 prev_j = j  
                 prev_bit = bit
                 i += 1
                 j += 1
+                
+                #print("if : n : ", n, " p : ", p, " bit : ", bit)
         else:
             make_node(cm, n, c, start+i, (start+i)%2, "")
+            if (prev_bit == (start+i)%2 and prev_addr == int((start+i)/2) and prev_addr != 0) :
+                print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
+            prev_addr = int((start + i)/2)
+            prev_bit = (start+i)%2 
+            #print("else : n : ", n, " bit : ", (start+i)%2)
             i += 1
+        prev_start = start
+        prev_count = count
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
 #create output file name based on input file, replacing 'yml' with 'xml'
