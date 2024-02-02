@@ -140,8 +140,7 @@ config:
     names: 
       - R0A
     postfixes:
-      - PN_BASE0
-      - PN_BASE1
+      - PN_BASE
       - DEVICE_REV
       - I2C_ADDR
       - STATUS_OR_LOSXAXB
@@ -161,8 +160,7 @@ config:
       - R1B
       - R1C
     postfixes:
-      - PN_BASE0
-      - PN_BASE1
+      - PN_BASE
       - DEVICE_REV
       - I2C_ADDR
       - STATUS_OR_LOSXAXB

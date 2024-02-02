@@ -89,7 +89,7 @@ void MonitorI2CTask(void *parameters)
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
       if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
-        log_warn(LOG_SERVICE, "%s could not get semaphore in time; delay & continue\r\n", args->name);
+        log_debug(LOG_SERVICE, "%s could not get semaphore in time; delay & continue\r\n", args->name);
         vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(10)); // wait
         continue;
       }

@@ -1135,8 +1135,10 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   if (i == 0) {
 
     for (; c < clockr0a_args.n_commands; ++c) {
-      uint8_t val = clockr0a_args.sm_values[c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%02x    0x%04x\r\n", clockr0a_args.commands[c].name, clockr0a_args.commands[c].command, clockr0a_args.commands[c].bit_mask, val);
+      uint16_t val = clockr0a_args.sm_values[c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%04x    0x%04x\r\n",
+                         clockr0a_args.commands[c].name, clockr0a_args.commands[c].command,
+                         clockr0a_args.commands[c].bit_mask, val);
 
       // copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
       if ((SCRATCH_SIZE - copied) < 50) {
@@ -1163,8 +1165,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   else {
 
     for (; c < clock_args.n_commands; ++c) {
-      uint8_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%02x    0x%04x\r\n", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
+      uint16_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%04x    0x%04x\r\n", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
       if ((SCRATCH_SIZE - copied) < 50) {
         ++c;
         return pdTRUE;
