@@ -6,6 +6,8 @@ import argparse
 import os
 import yaml
 
+zm_num_entries = 1024
+
 #% %
 def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int, 
               parent_id: str) -> ET.Element:
@@ -113,7 +115,7 @@ class reg:
 
     def overloads(self):
         """check if the object overloads the register space"""
-        if self.start + self.size >= 1023:
+        if self.start + self.size >= zm_num_entries - 1:
             return True
         return False
 
@@ -153,9 +155,9 @@ with open(args.input_file, encoding='ascii') as f:
 cm = ET.Element('node')
 cm.set('id', 'CM')
 cm.set('address', '0x00000000')
-prev_addr = 0x0
-prev_j = 0x0
-prev_bit = 0x0
+prev_addr = 0x0 #keep track of the most recent address that comes into a pair of bytes for 8-bit masking 
+prev_j = 0x0 #keep track of the order of postfixes in each name node  
+prev_bit = 0x0 #keep track of the even or odd order of bytes globally sent for masking
 #% %
 config = y['config']
 
@@ -174,22 +176,20 @@ for c in config:  # loop over entries in configuration (sensor category)
                     i += 1
                     j += 1
                     continue
-                if (bit == 1 and j == 0):
+                if (bit == 1 and j == 0):   #the previous name node has odd bytes so this postfix node uses the previous postfix address but masks off the lower byte 
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
                     pp.set('address', str(hex(prev_addr)))
                     node = make_node(pp, p, c, j, bit, n)
-                elif (bit == 0 and j == 0):
+                elif (bit == 0 and j == 0): #starting a new postfix node in a new name node
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
                     pp.set('address', str(hex(addr)))
                     node = make_node(pp, p, c, j, bit, n)
-                else:
-                    if (prev_bit == 0 and prev_j == 0):
-                        node = make_node(pp, p, c, prev_j, bit, n)
-                    elif (prev_bit == 0):
+                else: # any non-first byte in a name node 
+                    if (prev_bit == 0):  #the upper byte of the previous postfix node
                         node = make_node(pp, p, c, j, bit, n)
-                    else :  
+                    else :               #the low byte with an increasing postfix node by one 
                         node = make_node(pp, p, c, j+1, bit, n)
                 prev_addr = addr
                 prev_j = j  

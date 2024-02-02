@@ -173,10 +173,10 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
-    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 };
 
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
@@ -204,23 +204,23 @@ struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
 struct sm_command_t sm_command_fflit_f1[] = {
     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
     // there are no registers to read optical power for 14Gbps ECUO.
     // registers below are a placeholder with a reading equal to zero
     // the reason we need them because n_commands is fixed
-    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "0.1uW", PM_STATUS},
 
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
@@ -228,20 +228,20 @@ struct sm_command_t sm_command_fflit_f1[] = {
 struct sm_command_t sm_command_fflot_f1[] = {
     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
-    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 
 };
 
@@ -319,10 +319,10 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
-    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 };
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 
@@ -349,43 +349,43 @@ struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
 struct sm_command_t sm_command_fflit_f2[] = {
     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
     // there are no registers to read optical power for 14Gbps ECUO.
     // registers below are a placeholder with a reading equal to zero
     // the reason we need them because n_commands is fixed
-    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "0.1uW", PM_STATUS},
 };
 // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
 // **commands below have not been tested yet**
 struct sm_command_t sm_command_fflot_f2[] = {
     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 1, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 1, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xff, "mw", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
-    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xff, "mw", PM_STATUS},
-    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xff, "mw", PM_STATUS},
+    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 };
 
 #ifdef REV1

@@ -56,7 +56,9 @@
   (SENSOR_MESSAGE_START_OF_FRAME_NIB_V2 << SENSOR_MESSAGE_HEADER_OFFSET)
 #define SENSOR_MESSAGE_DATA_FRAME (SENSOR_MESSAGE_DATA_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
 
-static void format_data(const uint16_t sensor, const uint16_t data, uint8_t message[5])
+#define MESSAGE_SIZE 5
+
+static void format_data(const uint16_t sensor, const uint16_t data, uint8_t message[MESSAGE_SIZE])
 {
   // header for v2 (0b11) and start of sensor[9:4] (6 bits)
   message[0] = SENSOR_MESSAGE_START_OF_FRAME_V2 | ((sensor >> 4) & SENSOR_SIX_BITS);
@@ -582,9 +584,9 @@ void zm_send_data(struct zynqmon_data_t data[])
 {
   // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
   for (int i = 0; i < ZMON_VALID_ENTRIES; ++i) {
-    uint8_t message[5];
+    uint8_t message[MESSAGE_SIZE];
     format_data(data[i].sensor, data[i].data.us, message);
-    for (int j = 0; j < 5; ++j) {
+    for (int j = 0; j < MESSAGE_SIZE; ++j) {
       ZMUartCharPut(message[j]);
     }
   }
@@ -599,7 +601,7 @@ void ZynqMonTask(void *parameters)
   // will be done centrally in Rev 2
 
 #ifdef ZYNQMON_TEST_MODE
-  uint8_t message[5] = {0xf7, 0x0a, 0x1c, 0x2b, 0x3e};
+  uint8_t message[MESSAGE_SIZE] = {0xf7, 0x0a, 0x1c, 0x2b, 0x3e};
 #endif // ZYNQMON_TEST_MODE
 
   // reset the data we will send
@@ -664,7 +666,7 @@ void ZynqMonTask(void *parameters)
         // non-incrementing, single word
         if (testmode == 0) {
           format_data(testaddress, testdata, message);
-          for (int i = 0; i < 5; ++i) {
+          for (int i = 0; i < MESSAGE_SIZE; ++i) {
             ZMUartCharPut(message[i]);
           }
           // one shot mode -- disable
@@ -677,13 +679,13 @@ void ZynqMonTask(void *parameters)
             testdata++;
             testaddress++;
             format_data(testaddress, testdata, message);
-            for (int i = 0; i < 5; ++i) {
+            for (int i = 0; i < MESSAGE_SIZE; ++i) {
               ZMUartCharPut(message[i]);
             }
           }
         }
         else if (testmode == 2) { // test mode, no formatting
-          for (int i = 0; i < 5; ++i) {
+          for (int i = 0; i < MESSAGE_SIZE; ++i) {
             ZMUartCharPut(message[i]);
           }
         }

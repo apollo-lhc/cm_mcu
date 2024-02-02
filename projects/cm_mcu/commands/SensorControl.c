@@ -119,7 +119,7 @@ static int disable_transmit(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
+  uint16_t value = 0xfff;
   if (disable == false)
     value = 0x0;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
@@ -136,7 +136,9 @@ static int disable_transmit(bool disable, int num_ff)
     else {
       i2c_dev = I2C_DEVICE_F2;
     }
+
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
+      value = 0xf;
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
@@ -150,7 +152,7 @@ static int disable_receivers(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
+  uint16_t value = 0xfff;
   if (disable == false)
     value = 0x0;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
@@ -168,6 +170,7 @@ static int disable_receivers(bool disable, int num_ff)
       i2c_dev = I2C_DEVICE_F2;
     }
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
+      value = 0xf;
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Rx") != NULL) {
@@ -937,17 +940,8 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
   // argument handling
   int copied = 0;
-  // check for stale data
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
-  if (isFFStale()) {
-    TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-    int mins = (now - last) / 60;
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-  }
   if (argc == 2) {
-
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s not understood", argv[0], argv[1]);
     return pdFALSE;
   }
