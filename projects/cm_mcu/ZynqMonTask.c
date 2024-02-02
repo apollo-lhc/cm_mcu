@@ -44,9 +44,9 @@
 // Register List
 // See Google Docs, 'CM uC Sensor register map'
 
-#define RESERVED_DATA                        0x9 // 0b1001
-#define SENSOR_MESSAGE_HEADER_OFFSET         6
-#define SENSOR_SIX_BITS                      0x3F
+#define RESERVED_DATA                0x9 // 0b1001
+#define SENSOR_MESSAGE_HEADER_OFFSET 6
+#define SENSOR_SIX_BITS              0x3F
 #define SENSOR_MESSAGE_START_OF_FRAME \
   (2 << SENSOR_MESSAGE_HEADER_OFFSET)
 #define SENSOR_MESSAGE_START_OF_FRAME_V2 \

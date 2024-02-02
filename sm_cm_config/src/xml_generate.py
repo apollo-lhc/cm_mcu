@@ -166,7 +166,7 @@ for c in config:  # loop over entries in configuration (sensor category)
     start = c['start']
     count = c['count']
     for n in names:  # loop over names of sensors within a category
-        if (n=="R0B" and start!=prev_start+prev_count+1):
+        if (n=="R0B" and start!=prev_start+prev_count+1): #clkmonr0a and clkmon are from the same function in zynqmontask 
             print("warning: the start address of clkmon should continue from clkr0a")
         if 'postfixes' in c:
             postfixes = c['postfixes']
@@ -200,18 +200,16 @@ for c in config:  # loop over entries in configuration (sensor category)
                 prev_bit = bit
                 i += 1
                 j += 1
-                
-                #print("if : n : ", n, " p : ", p, " bit : ", bit)
         else:
             make_node(cm, n, c, start+i, (start+i)%2, "")
             if (prev_bit == (start+i)%2 and prev_addr == int((start+i)/2) and prev_addr != 0) :
                 print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
             prev_addr = int((start + i)/2)
             prev_bit = (start+i)%2 
-            #print("else : n : ", n, " bit : ", (start+i)%2)
             i += 1
         prev_start = start
         prev_count = count
+
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
 #create output file name based on input file, replacing 'yml' with 'xml'
