@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 """Generate XML file from YAML input"""
 import xml.etree.ElementTree as ET
 from pprint import pprint
@@ -6,18 +6,20 @@ import argparse
 import os
 import yaml
 
+zm_num_entries = 1024 
+
 #% %
-def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int,
+def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int, 
               parent_id: str) -> ET.Element:
     """create the node to be inserted into the xml tree"""
 # pylint: disable=too-many-branches
-# I disable this check because as far as I can tell it's wrong
+#I disable this check because as far as I can tell it's wrong
     thenode = ET.SubElement(parent, 'node')
     myid = myid.replace(' ', '_')
     thenode.set('id', myid)
 #address is half of the sensor address since these are 32 bit addresses
     theaddr = int(addr2/2)
-    remain = addr2 % 2
+    remain = bit
     thenode.set('address', str(hex(theaddr)))
 #this appears to be on all the nodes
     thenode.set("permission", "r")
@@ -90,11 +92,12 @@ def calc_size(thedict: dict) -> int:
 #and a pretty print method
 class reg:
     """create an object with a name, and a start end end register"""
-    def __init__(self, name, sta, end, sz):
+    def __init__(self, name, sta, end, sz, width):
         self.name = name
         self.start = sta
         self.end = end
         self.size = sz
+        self.width = width
 
     def __str__(self):
         return "name: " + self.name + " start: " + str(self.start) + \
@@ -112,12 +115,11 @@ class reg:
 
     def overloads(self):
         """check if the object overloads the register space"""
-        if self.start + self.size >= 255:
+        if self.start + self.size >= zm_num_entries - 1:
             return True
         return False
 
-
-# custom file type for yaml file, to be used with argparse
+#custom file type for yaml file, to be used with argparse
 def yaml_file(filename):
     """custom file type for yaml file, to be used with argparse"""
     if not filename.endswith('.yml'):
@@ -128,7 +130,7 @@ parser = argparse.ArgumentParser(description='Process YAML for XML.')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='increase output verbosity')
 parser.add_argument('-d', '--directory', type=str, help='output directory')
-# this argument is required, one input file ending with yaml extension
+#this argument is required, one input file ending with yaml extension
 parser.add_argument('input_file', metavar='file', type=yaml_file,
                     help='input yaml file name')
 
@@ -153,39 +155,64 @@ with open(args.input_file, encoding='ascii') as f:
 cm = ET.Element('node')
 cm.set('id', 'CM')
 cm.set('address', '0x00000000')
-
+prev_addr = 0x0 #keep track of the most recent address that comes into a pair of bytes for 8-bit masking 
+prev_j = 0x0 #keep track of the order of postfixes in each name node  
+prev_bit = 0x0 #keep track of the even or odd order of bytes globally sent for masking
 #% %
 config = y['config']
-
 for c in config:  # loop over entries in configuration (sensor category)
     i = 0  # counter over the number of sensors within a category
     names = c['names']
+    start = c['start']
+    count = c['count']
     for n in names:  # loop over names of sensors within a category
+        if (n=="R0B" and start!=prev_start+prev_count+1): #clkmonr0a and clkmon are from the same function in zynqmontask 
+            print("warning: the start address of clkmon should continue from clkr0a")
         if 'postfixes' in c:
-            pp = node = ET.SubElement(cm, 'node')
-            pp.set('id', n)
-            start = c['start']
-            addr = int((start + i)/2)
-            pp.set('address', str(hex(addr)))
             postfixes = c['postfixes']
             j = 0
             for p in postfixes:
+                addr = int((start + i)/2) 
+                bit = i%2 
                 if p == 'RESERVED':
                     i += 1
                     j += 1
                     continue
-                if args.verbose:
-                    print("adding postfix", p, "to node", n)
-                node = make_node(pp, p, c, j, n)
+                if (bit == 1 and j == 0):   #the previous name node has odd bytes so this postfix node uses the previous postfix address but masks off the lower byte 
+                    pp = node = ET.SubElement(cm, 'node')
+                    pp.set('id', n)
+                    pp.set('address', str(hex(prev_addr)))
+                    node = make_node(pp, p, c, j, bit, n)
+                elif (bit == 0 and j == 0): #starting a new postfix node in a new name node
+                    pp = node = ET.SubElement(cm, 'node')
+                    pp.set('id', n)
+                    pp.set('address', str(hex(addr)))
+                    node = make_node(pp, p, c, j, bit, n)
+                else: # any non-first byte in a name node 
+                    if (prev_bit == 0):  #the upper byte of the previous postfix node
+                        node = make_node(pp, p, c, j, bit, n)
+                    else :               #the low byte with an increasing postfix node by one 
+                        node = make_node(pp, p, c, j+1, bit, n)
+                if (prev_bit == bit and prev_addr == addr and prev_addr != 0) :
+                    print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
+                prev_addr = addr
+                prev_j = j  
+                prev_bit = bit
                 i += 1
                 j += 1
         else:
-            start = c['start']
-            make_node(cm, n, c, start+i, "")
+            make_node(cm, n, c, start+i, (start+i)%2, "")
+            if (prev_bit == (start+i)%2 and prev_addr == int((start+i)/2) and prev_addr != 0) :
+                print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
+            prev_addr = int((start + i)/2)
+            prev_bit = (start+i)%2 
             i += 1
+        prev_start = start
+        prev_count = count
+
 tree = ET.ElementTree(cm)
 ET.indent(tree, space='\t')
-# create output file name based on input file, replacing 'yml' with 'xml'
+#create output file name based on input file, replacing 'yml' with 'xml'
 out_name = os.path.basename(args.input_file)[:-len('.yml')] + '.xml'
 out_name = args.directory + '/' + out_name
 if args.verbose:
@@ -209,7 +236,20 @@ for c in config:  # loop over entries in configuration (sensor category)
         postfixes = ' '
     size = calc_size(c)
     thislength = len(postfixes) * len(names)*size
-    entries.append(reg(c['name'], start, start + thislength - 1, thislength))
+    width = 99
+    if c['type'] == 'int8':
+        width = 8
+    elif c['type'] == 'int16':
+        width = 16
+    elif c['type'] == 'fp16':
+        width = 16
+    elif c['type'] == 'char':
+        width = 16
+    elif c['type'] == 'uint32_t':
+        width = 32
+    elif c['type'] == 'uint16_t':
+        width = 16
+    entries.append(reg(c['name'], start, start + thislength - 1, thislength, width))
 if args.verbose:
     for e in entries:
         print(e)
