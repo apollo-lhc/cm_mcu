@@ -13,26 +13,7 @@
 #include "common/smbus_helper.h"
 #include "Tasks.h"
 
-// Register definitions
-// -------------------------------------------------
-// 8 bit 2's complement signed int, valid from 0-80 C, LSB is 1 deg C
-// Same address for 4 XCVR and 12 Tx/Rx devices
-
-// two bytes, 12 FF to be disabled
-#define ECU0_14G_TX_DISABLE_REG 0x34U
-// one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_TX_DISABLE_REG 0x56U
-// two bytes, 12 FF to be disabled
-#define ECU0_14G_RX_DISABLE_REG 0x34U
-// one byte, 4 FF to be enabled/disabled (only 4 LSB are used)
-#define ECU0_25G_XVCR_RX_DISABLE_REG 0x35U
-// one byte, 4 FF to be enabled/disabled (4 LSB are Rx, 4 LSB are Tx)
-#define ECU0_25G_XVCR_CDR_REG 0x62U
-// two bytes, 12 FF to be enabled/disabled. The byte layout
-// is a bit weird -- 0-3 on byte 4a, 4-11 on byte 4b
-#define ECU0_25G_TXRX_CDR_REG 0x4AU
-
-static int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
+int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
 {
   memset(value, 0, size);
   // find the appropriate information for this FF device
@@ -138,7 +119,7 @@ static int disable_transmit(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
+  uint16_t value = 0xfff;
   if (disable == false)
     value = 0x0;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
@@ -155,7 +136,9 @@ static int disable_transmit(bool disable, int num_ff)
     else {
       i2c_dev = I2C_DEVICE_F2;
     }
+
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
+      value = 0xf;
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
@@ -169,7 +152,7 @@ static int disable_receivers(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0x3ff;
+  uint16_t value = 0xfff;
   if (disable == false)
     value = 0x0;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
@@ -187,6 +170,7 @@ static int disable_receivers(bool disable, int num_ff)
       i2c_dev = I2C_DEVICE_F2;
     }
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
+      value = 0xf;
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Rx") != NULL) {
@@ -956,17 +940,8 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
   // argument handling
   int copied = 0;
-  // check for stale data
-  TickType_t now = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
-  if (isFFStale()) {
-    TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-    int mins = (now - last) / 60;
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-  }
   if (argc == 2) {
-
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s not understood", argv[0], argv[1]);
     return pdFALSE;
   }
@@ -1160,8 +1135,10 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   if (i == 0) {
 
     for (; c < clockr0a_args.n_commands; ++c) {
-      uint8_t val = clockr0a_args.sm_values[c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%02x    0x%04x\r\n", clockr0a_args.commands[c].name, clockr0a_args.commands[c].command, clockr0a_args.commands[c].bit_mask, val);
+      uint16_t val = clockr0a_args.sm_values[c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%04x    0x%04x\r\n",
+                         clockr0a_args.commands[c].name, clockr0a_args.commands[c].command,
+                         clockr0a_args.commands[c].bit_mask, val);
 
       // copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
       if ((SCRATCH_SIZE - copied) < 50) {
@@ -1188,8 +1165,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   else {
 
     for (; c < clock_args.n_commands; ++c) {
-      uint8_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%02x    0x%04x\r\n", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
+      uint16_t val = clock_args.sm_values[(i - 1) * (clock_args.n_commands * clock_args.n_pages) + c];
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%04x    0x%04x\r\n", clock_args.commands[c].name, clock_args.commands[c].command, clock_args.commands[c].bit_mask, val);
       if ((SCRATCH_SIZE - copied) < 50) {
         ++c;
         return pdTRUE;

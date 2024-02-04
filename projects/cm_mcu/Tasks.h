@@ -199,7 +199,7 @@ bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
 uint16_t getFFtemp(const uint8_t i);
-uint16_t getFFoptpow(const uint8_t i);
+uint16_t getFFavgoptpow(const uint8_t i);
 uint16_t getFFpresentbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);
@@ -331,9 +331,9 @@ void EEPROMTask(void *parameters);
 extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
 // data for zynqmon task to be sent to Zynq
-#define ZM_NUM_ENTRIES 256
+#define ZM_NUM_ENTRIES 1024
 struct zynqmon_data_t {
-  uint8_t sensor;
+  uint16_t sensor;
   union convert_16_t {
     uint16_t us;   // cppcheck-suppress unusedStructMember
     uint8_t uc[2]; // cppcheck-suppress unusedStructMember

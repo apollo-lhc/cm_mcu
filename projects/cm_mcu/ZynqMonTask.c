@@ -27,6 +27,7 @@
 #include "Tasks.h"
 #include "MonitorTask.h"
 #include "MonitorI2CTask.h"
+#include "commands/SensorControl.h"
 #include "clocksynth.h"
 #include "common/log.h"
 
@@ -43,27 +44,36 @@
 // Register List
 // See Google Docs, 'CM uC Sensor register map'
 
-#define SENSOR_MESSAGE_START_OF_FRAME_NIB 2
-#define SENSOR_MESSAGE_DATA_FRAME_NIB     0
-#define SENSOR_MESSAGE_HEADER_OFFSET      6
-#define SENSOR_SIX_BITS                   0x3F
+#define RESERVED_DATA                0x9 // 0b1001
+#define SENSOR_MESSAGE_HEADER_OFFSET 6
+#define SENSOR_SIX_BITS              0x3F
 #define SENSOR_MESSAGE_START_OF_FRAME \
-  (SENSOR_MESSAGE_START_OF_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
-#define SENSOR_MESSAGE_DATA_FRAME (SENSOR_MESSAGE_DATA_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
+  (2 << SENSOR_MESSAGE_HEADER_OFFSET)
+#define SENSOR_MESSAGE_START_OF_FRAME_V2 \
+  (3 << SENSOR_MESSAGE_HEADER_OFFSET)
+#define SENSOR_MESSAGE_DATA_FRAME (0 << SENSOR_MESSAGE_HEADER_OFFSET)
 
-static void format_data(const uint8_t sensor, const uint16_t data, uint8_t message[4])
+#define MESSAGE_SIZE 5
+
+static void format_data(const uint16_t sensor, const uint16_t data, uint8_t message[MESSAGE_SIZE])
 {
-  // header and start of sensor (6 bits, sensor[7:2]
-  message[0] = SENSOR_MESSAGE_START_OF_FRAME | ((sensor >> 2) & SENSOR_SIX_BITS);
-  // data frame 1, rest of sensor[1:0] (2 bits) and start of data[15:12] (4 bits)
+  // header for v2 (0b11) and start of sensor[9:4] (6 bits)
+  message[0] = SENSOR_MESSAGE_START_OF_FRAME_V2 | ((sensor >> 4) & SENSOR_SIX_BITS);
+
+  // rest of sensor[3:0] (4 bits) and start of reserved[3:2] (2 bits)
   message[1] = SENSOR_MESSAGE_DATA_FRAME;
-  message[1] |= ((sensor & 0x3) << 4) | ((data >> 12) & 0xF);
-  // data frame 2, data[11:6] (6 bits)
+  message[1] |= ((sensor & 0xf) << 2) | ((RESERVED_DATA >> 2) & 0x3);
+
+  // rest of reserved[1:0] (2 bits) and start of data[15:12] (4 bits)
   message[2] = SENSOR_MESSAGE_DATA_FRAME;
-  message[2] |= (data >> 6) & 0x3F;
-  // data frame 3, data[5:0] ( 6 bits )
+  message[2] |= ((RESERVED_DATA & 0x3) << 4) | ((data >> 12) & 0xF);
+
+  // data[11:6] (6 bits)
   message[3] = SENSOR_MESSAGE_DATA_FRAME;
-  message[3] |= data & 0x3F;
+  message[3] |= (data >> 6) & 0x3F;
+  // data[5:0] ( 6 bits )
+  message[4] = SENSOR_MESSAGE_DATA_FRAME;
+  message[4] |= data & 0x3F;
 }
 
 #ifdef ZYNQMON_TEST_MODE
@@ -288,7 +298,39 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 }
 
 #ifdef REV2
-// updated once per loop. Store the ffpart-bit (1 for 25GBs FFL, else 0) and present-bit data
+uint16_t getFFtXdisenablebit(const uint8_t i)
+{
+  if (i > NFIREFLIES_F1 + NFIREFLIES_F2) {
+    log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
+    return 56;
+  }
+  uint8_t val = 56;
+  int i2c_dev;
+  if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+    return val;
+  if (i < NFIREFLIES_F1) {
+    i2c_dev = I2C_DEVICE_F1;
+  }
+  else {
+    i2c_dev = I2C_DEVICE_F2;
+  }
+  int ret = -99;
+  if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
+    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, &val, 1, i2c_dev);
+  }
+  else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
+    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, &val, 1, i2c_dev);
+  }
+  if (ret != 0)
+    return 56;
+  else
+    return val;
+}
+// updated once per loop.
+// For each firefly device, send
+// (1) ffpart-bit (1 for 25GBs FFL, else 0)
+// (2) present-bit
+// (3) tx-disable-bit (e.g. via ECU0_14G_TX_DISABLE_REG)
 void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
 {
 
@@ -378,12 +420,23 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
     }
     data[ll].sensor = ll + start;
     ++ll;
+
     if (isFFStale()) {
       data[ll].data.us = 0xff; // special stale value
     }
     else {
-      data[ll].data.us = getFFoptpow(j); // sensor value and type
-      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, getFFoptpow(j));
+      data[ll].data.us = getFFavgoptpow(j); // sensor value and type
+      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, getFFavgoptpow(j));
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = getFFtXdisenablebit(j); // sensor value and type
+      log_debug(LOG_SERVICE, "TX-disenabled? for ff argv %d: 0x%02x\r\n", j, getFFtXdisenablebit(j));
     }
     data[ll].sensor = ll + start;
     ++ll;
@@ -528,9 +581,9 @@ void zm_send_data(struct zynqmon_data_t data[])
 {
   // https://docs.google.com/spreadsheets/d/1E-JD7sRUnkbXNqfgCUgriTZWfCXark6IN9ir_9b362M/edit#gid=0
   for (int i = 0; i < ZMON_VALID_ENTRIES; ++i) {
-    uint8_t message[4];
+    uint8_t message[MESSAGE_SIZE];
     format_data(data[i].sensor, data[i].data.us, message);
-    for (int j = 0; j < 4; ++j) {
+    for (int j = 0; j < MESSAGE_SIZE; ++j) {
       ZMUartCharPut(message[j]);
     }
   }
@@ -545,7 +598,7 @@ void ZynqMonTask(void *parameters)
   // will be done centrally in Rev 2
 
 #ifdef ZYNQMON_TEST_MODE
-  uint8_t message[4] = {0x9c, 0x2c, 0x2b, 0x3e};
+  uint8_t message[MESSAGE_SIZE] = {0xf7, 0x0a, 0x1c, 0x2b, 0x3e};
 #endif // ZYNQMON_TEST_MODE
 
   // reset the data we will send
@@ -591,6 +644,7 @@ void ZynqMonTask(void *parameters)
           message[1] = 0xaa;
           message[2] = 0x55;
           message[3] = 0xaa;
+          message[4] = 0x55;
           inTestMode = true;
           enable = true;
           testmode = 2;
@@ -609,7 +663,7 @@ void ZynqMonTask(void *parameters)
         // non-incrementing, single word
         if (testmode == 0) {
           format_data(testaddress, testdata, message);
-          for (int i = 0; i < 4; ++i) {
+          for (int i = 0; i < MESSAGE_SIZE; ++i) {
             ZMUartCharPut(message[i]);
           }
           // one shot mode -- disable
@@ -622,13 +676,13 @@ void ZynqMonTask(void *parameters)
             testdata++;
             testaddress++;
             format_data(testaddress, testdata, message);
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < MESSAGE_SIZE; ++i) {
               ZMUartCharPut(message[i]);
             }
           }
         }
         else if (testmode == 2) { // test mode, no formatting
-          for (int i = 0; i < 4; ++i) {
+          for (int i = 0; i < MESSAGE_SIZE; ++i) {
             ZMUartCharPut(message[i]);
           }
         }

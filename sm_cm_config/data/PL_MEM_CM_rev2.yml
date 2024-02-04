@@ -8,7 +8,7 @@ revision: 1
 config:
   - name: firefly
     start: 0
-    count: 40
+    count: 60
     mcu_call: firefly_info
     mcu_extra_call: null
     type: uint16_t
@@ -37,8 +37,9 @@ config:
     postfixes: 
       - Temp_C
       - OptPow
+      - TxDisabled
   - name: uptime
-    start: 44
+    start: 60
     count: 2
     type: uint32_t
     mcu_call: uptime
@@ -47,7 +48,7 @@ config:
     names:
       - MCU_UPTIME
   - name: psmon
-    start: 47
+    start: 62
     count: 84
     mcu_call: psmon
     mcu_extra_call: null
@@ -76,7 +77,7 @@ config:
       - IOUT
       - STATUS_WORD
   - name: gitversion
-    start: 132
+    start: 146
     count: 10
     type: char
     size: 5
@@ -85,7 +86,7 @@ config:
     names:
       - MCU_FW_VER
   - name: adcmon
-    start: 143
+    start: 156
     count: 21
     mcu_call: adcmon
     mcu_extra_call: null
@@ -114,7 +115,7 @@ config:
       - F2_TEMP
       - TM4C_TEMP
   - name: fpga
-    start: 165
+    start: 177
     count: 8
     type: fp16
     extra: Table=CM_MON;Column=Temp_C;Status=2;
@@ -130,7 +131,7 @@ config:
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
   - name: clkmonr0a
-    start: 174
+    start: 185
     count: 8
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
@@ -148,7 +149,7 @@ config:
       - LOSIN_FLG_OR_LOL
       - STICKY_FLG
   - name: clkmon
-    start: 182
+    start: 194
     count: 32
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
@@ -169,7 +170,7 @@ config:
       - LOSIN_FLG_OR_LOL
       - STICKY_FLG
   - name: clkr0aconfigversion
-    start: 216
+    start: 228
     count: 4
     type: char
     size: 2
@@ -178,7 +179,7 @@ config:
     names:
       - MCU_CLKR0A_VER
   - name: clkr0bconfigversion
-    start: 220
+    start: 233
     count: 4
     type: char
     size: 2
@@ -187,7 +188,7 @@ config:
     names:
       - MCU_CLKR0B_VER
   - name: clkr1aconfigversion
-    start: 224
+    start: 238
     count: 4
     type: char
     size: 2
@@ -196,7 +197,7 @@ config:
     names:
       - MCU_CLKR1A_VER
   - name: clkr1bconfigversion
-    start: 228
+    start: 243
     count: 4
     type: char
     size: 2
@@ -205,7 +206,7 @@ config:
     names:
       - MCU_CLKR1B_VER
   - name: clkr1cconfigversion
-    start: 232
+    start: 248
     count: 4
     type: char
     size: 2
@@ -214,7 +215,7 @@ config:
     names:
       - MCU_CLKR1C_VER
   - name: firefly_bits
-    start: 236
+    start: 253
     count: 8
     type: uint16_t
     extra: Table=CM_FFARGV_MON;Status=1
