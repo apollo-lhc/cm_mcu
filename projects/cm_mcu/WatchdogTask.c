@@ -73,7 +73,7 @@ void task_watchdog_feed_task(uint16_t task_id)
   taskENABLE_INTERRUPTS();
 }
 
-uint16_t task_watchdog_get_status()
+uint16_t task_watchdog_get_status(void)
 {
   return s_fed_tasks & s_registered_tasks;
 }

@@ -244,7 +244,7 @@ bl_user_init_hw_fn(void)
 
 // Flash green LED 3 times
 
-void bl_user_end_hook()
+void bl_user_end_hook(void)
 {
   MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, RED_LED_PIN);
   Delay(LONG_DELAY);
@@ -261,7 +261,7 @@ void bl_user_end_hook()
 
 void bl_user_progress_hook(unsigned long ulCompleted, unsigned long ulTotal)
 {
-  int tens = (10*ulCompleted/ulTotal);
+  unsigned int tens = (10*ulCompleted/ulTotal);
   MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, tens%2);
   return;
 }
