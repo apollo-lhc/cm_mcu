@@ -258,55 +258,6 @@ static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8
   return ret;
 }
 
-// this command takes no arguments since there is only one command
-// right now.
-BaseType_t sensor_summary(int argc, char **argv, char *m)
-{
-  int copied = 0;
-  // collect all sensor information
-  // highest temperature for each
-  // Firefly
-  // FPGA
-  // DCDC
-  // TM4C
-  float tm4c_temp = getADCvalue(ADC_INFO_TEMP_ENTRY);
-  int tens, frac;
-  float_to_ints(tm4c_temp, &tens, &frac);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MCU %02d.%02d\r\n", tens, frac);
-  // Fireflies. These are reported as ints but we are asked
-  // to report a float.
-  int8_t imax_temp = -99;
-  for (int i = 0; i < NFIREFLIES; ++i) {
-    int8_t v = getFFtemp(i);
-    if (v > imax_temp)
-      imax_temp = v;
-  }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY %02d.0\r\n", imax_temp);
-  // FPGAs.
-  float max_fpga;
-  if (fpga_args.n_devices == 2)
-    max_fpga = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
-  else
-    max_fpga = fpga_args.pm_values[0];
-  float_to_ints(max_fpga, &tens, &frac);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA %02d.%02d\r\n", tens, frac);
-
-  // DCDC. The first command is READ_TEMPERATURE_1.
-  // I am assuming it stays that way!!!!!!!!
-  float max_temp = -99.0f;
-  for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
-    for (int page = 0; page < dcdc_args.n_pages; ++page) {
-      float thistemp = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
-                                           page * dcdc_args.n_commands + 0];
-      if (thistemp > max_temp)
-        max_temp = thistemp;
-    }
-  }
-  float_to_ints(max_temp, &tens, &frac);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "REG %02d.%02d\r\n", tens, frac);
-
-  return pdFALSE;
-}
 
 // dump monitor information
 BaseType_t psmon_ctl(int argc, char **argv, char *m)
@@ -1260,28 +1211,27 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
 #ifdef REV2
 BaseType_t fpga_flash(int argc, char **argv, char *m)
 {
-  int copied = 0;
-  const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
-
+  const TickType_t kDELAY = 1 / portTICK_PERIOD_MS; // 1 ms delay
+  char *which = NULL;
   if (strcmp(argv[1], "f2") == 0) {
     write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
     write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-    vTaskDelay(delay);
+    vTaskDelay(kDELAY);
     write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
-    vTaskDelay(delay);
+    vTaskDelay(kDELAY);
     write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA2 has been programmed\r\n");
+    which = "F2";
   }
   if (strcmp(argv[1], "f1") == 0) {
     write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-    vTaskDelay(delay);
+    vTaskDelay(kDELAY);
     write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
-    vTaskDelay(delay);
+    vTaskDelay(kDELAY);
     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA1 has been programmed\r\n");
+    which = "F1";
   }
-  snprintf(m + copied, SCRATCH_SIZE - copied, "via flash\r\n");
+  snprintf(m, SCRATCH_SIZE, "%s programmed via flash\r\n", which);
   return pdFALSE;
 }
 #endif
@@ -1289,21 +1239,21 @@ BaseType_t fpga_flash(int argc, char **argv, char *m)
 // This command takes 1 argument, either f1 or f2
 BaseType_t fpga_reset(int argc, char **argv, char *m)
 {
-  int copied = 0;
   const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
-
+  char *which = NULL;
   if (strcmp(argv[1], "f2") == 0) {
     write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
     write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VU7P has been reset\r\n");
+    which = "F2";
   }
   if (strcmp(argv[1], "f1") == 0) {
     write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
     vTaskDelay(delay);
     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "KU15P has been reset\r\n");
+    which = "F1";
   }
+  snprintf(m, SCRATCH_SIZE, "%s has been reset\r\n", which);
   return pdFALSE;
 }
 

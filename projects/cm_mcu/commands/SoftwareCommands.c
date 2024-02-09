@@ -126,12 +126,14 @@ BaseType_t TaskStatsCommand(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#if 0
 BaseType_t watchdog_ctl(int argc, char **argv, char *m)
 {
   uint16_t stat = task_watchdog_get_status();
   snprintf(m, SCRATCH_SIZE, "%s: status 0x%08x\r\n", argv[0], stat);
   return pdFALSE;
 }
+#endif 
 
 BaseType_t zmon_ctl(int argc, char **argv, char *m)
 {
