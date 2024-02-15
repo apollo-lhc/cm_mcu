@@ -258,7 +258,6 @@ static uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8
   return ret;
 }
 
-
 // dump monitor information
 BaseType_t psmon_ctl(int argc, char **argv, char *m)
 {

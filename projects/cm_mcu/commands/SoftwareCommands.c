@@ -133,7 +133,7 @@ BaseType_t watchdog_ctl(int argc, char **argv, char *m)
   snprintf(m, SCRATCH_SIZE, "%s: status 0x%08x\r\n", argv[0], stat);
   return pdFALSE;
 }
-#endif 
+#endif
 
 BaseType_t zmon_ctl(int argc, char **argv, char *m)
 {
