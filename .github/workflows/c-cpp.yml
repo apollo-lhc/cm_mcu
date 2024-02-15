@@ -21,23 +21,11 @@ jobs:
     steps:
     - name: Code checkout
       uses: actions/checkout@v2
-    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
-      id:   cache-toolchain
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-toolchain-10-2020-q4
-      with:
-        path: ${{ runner.temp }}/arm-none-eabi
-        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
-        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
-
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
-      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
       with:
-        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
         # Directory to unpack GCC to. Defaults to a temporary directory.
-        directory: ${{ runner.temp }}/arm-none-eabi
     - name: make with GCC, debug build, Rev1
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
@@ -66,27 +54,15 @@ jobs:
     - name: Code checkout
       uses: actions/checkout@v2
     - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v1.6.1
+      uses: KyleMayes/install-llvm-action@v1.9.0
       with:
-       version: "14.0"
+       version: "17.0"
        directory: ${{ runner.temp }}/llvm
-    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
-      id:   cache-toolchain
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-toolchain-10-2020-q4
-      with:
-        path: ${{ runner.temp }}/arm-none-eabi
-        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
-        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
-
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
-      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
       with:
-        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+        release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
         # Directory to unpack GCC to. Defaults to a temporary directory.
-        directory: ${{ runner.temp }}/arm-none-eabi
 
     - name: make with CLANG, Rev 1
       run: |
