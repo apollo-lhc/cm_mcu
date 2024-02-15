@@ -749,7 +749,7 @@ uint16_t getFFpresentbit(const uint8_t i)
   return val;
 }
 
-void getFFpart()
+void getFFpart(void)
 {
   // Write device vendor part for identifying FF device
   uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;

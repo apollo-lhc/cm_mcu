@@ -31,9 +31,7 @@
 
 #include "common/LocalUart.h"
 
-
 #define LONG_DELAY 2500000
-
 
 #ifdef REV1
 #define RED_LED_BASE   GPIO_PORTP_BASE
@@ -60,42 +58,35 @@
 //*****************************************************************************
 extern void Delay(uint32_t ui32Count);
 
-
 void toggleLed(enum color rgb)
 {
   int gpio_port, gpio_pin;
   switch (rgb) {
-  case red: // red
-    gpio_port = RED_LED_BASE;
-    gpio_pin  = RED_LED_PIN;
-    break;
-  case green: // green
-    gpio_port = GREEN_LED_BASE;
-    gpio_pin  = GREEN_LED_PIN;
-    break;
-  case blue: // blue
-  default:
-    gpio_port = BLUE_LED_BASE;
-    gpio_pin  = BLUE_LED_PIN;
-    break;
+    case red: // red
+      gpio_port = RED_LED_BASE;
+      gpio_pin = RED_LED_PIN;
+      break;
+    case green: // green
+      gpio_port = GREEN_LED_BASE;
+      gpio_pin = GREEN_LED_PIN;
+      break;
+    case blue: // blue
+    default:
+      gpio_port = BLUE_LED_BASE;
+      gpio_pin = BLUE_LED_PIN;
+      break;
   }
 
-   
-  int val = MAP_GPIOPinRead(gpio_port,gpio_pin);
-  if ( val ) 
-    MAP_GPIOPinWrite(gpio_port,gpio_pin, 0);
+  int val = MAP_GPIOPinRead(gpio_port, gpio_pin);
+  if (val)
+    MAP_GPIOPinWrite(gpio_port, gpio_pin, 0);
   else
-    MAP_GPIOPinWrite(gpio_port,gpio_pin, gpio_pin);
+    MAP_GPIOPinWrite(gpio_port, gpio_pin, gpio_pin);
   return;
 }
 
-
-
-
-
 #ifdef BL_HW_INIT_FN_HOOK
-void
-bl_user_init_hw_fn(void)
+void bl_user_init_hw_fn(void)
 {
 #ifdef REV1
   // LEDs
@@ -141,12 +132,12 @@ bl_user_init_hw_fn(void)
 #endif // LEDs for Rev1
 
   // CLOCK
-  // Run from the PLL, internal oscillator, at the defined clock speed 
+  // Run from the PLL, internal oscillator, at the defined clock speed
   // CRYSTAL_FREQ
-  uint32_t ui32SysClock =   
-    MAP_SysCtlClockFreqSet((SYSCTL_OSC_INT|SYSCTL_USE_PLL |
-			    SYSCTL_CFG_VCO_320), CRYSTAL_FREQ);
-
+  uint32_t ui32SysClock =
+      MAP_SysCtlClockFreqSet((SYSCTL_OSC_INT | SYSCTL_USE_PLL |
+                              SYSCTL_CFG_VCO_320),
+                             CRYSTAL_FREQ);
 
   // UART
   // Turn on the UART peripheral
@@ -173,9 +164,8 @@ bl_user_init_hw_fn(void)
   // Configure the UART for 115,200, 8-N-1 operation.
   //
   MAP_UARTConfigSetExpClk(UART4_BASE, ui32SysClock, 115200,
-                         (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-                          UART_CONFIG_PAR_NONE));
-
+                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                           UART_CONFIG_PAR_NONE));
 
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
@@ -195,17 +185,17 @@ bl_user_init_hw_fn(void)
   MAP_GPIOPinConfigure(GPIO_PB1_U1TX);
   MAP_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_1);
 
-
   // Turn on the UART peripheral
   MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
-  while ( ! ROM_SysCtlPeripheralReady(SYSCTL_PERIPH_UART1));
+  while (!ROM_SysCtlPeripheralReady(SYSCTL_PERIPH_UART1))
+    ;
 
   //
   // Configure the UART for 115,200, 8-N-1 operation.
   //
   MAP_UARTConfigSetExpClk(UART1_BASE, ui32SysClock, 115200,
-                         (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-                          UART_CONFIG_PAR_NONE));
+                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                           UART_CONFIG_PAR_NONE));
 #elif UARTx_BASE == UART0_BASE
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
   //
@@ -244,7 +234,7 @@ bl_user_init_hw_fn(void)
 
 // Flash green LED 3 times
 
-void bl_user_end_hook()
+void bl_user_end_hook(void)
 {
   MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, RED_LED_PIN);
   Delay(LONG_DELAY);
@@ -261,20 +251,19 @@ void bl_user_end_hook()
 
 void bl_user_progress_hook(unsigned long ulCompleted, unsigned long ulTotal)
 {
-  int tens = (10*ulCompleted/ulTotal);
-  MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, tens%2);
+  unsigned int tens = (10 * ulCompleted / ulTotal);
+  MAP_GPIOPinWrite(RED_LED_BASE, RED_LED_PIN, tens % 2);
   return;
 }
 #endif // BL_PROGRESS_FN_HOOK
 
-
 #ifdef BL_CHECK_UPDATE_FN_HOOK
 // User hook to force an update
 // print helper for CLI
-void bl_user_uart_print(const char* str)
+void bl_user_uart_print(const char *str)
 {
   UARTPrint(UARTx_BASE, str);
-  return ;
+  return;
 }
 
 struct bl_user_data_t {
@@ -284,43 +273,42 @@ struct bl_user_data_t {
 
 int bl_user_rl_execute(void *d, int argc, char **argv)
 {
-  const char * helpstr =
-    "h\r\n This help.\r\n"
-    "b\r\n Start normal boot process\r\n"
-    "r\r\n Restart MCU\r\n"
-    "f\r\n Force update\r\n"
-    ;
+  const char *helpstr =
+      "h\r\n This help.\r\n"
+      "b\r\n Start normal boot process\r\n"
+      "r\r\n Restart MCU\r\n"
+      "f\r\n Force update\r\n";
 
-  struct bl_user_data_t *data = d; // cast pointer to void 
+  struct bl_user_data_t *data = d; // cast pointer to void
 
-  UARTPrint(UARTx_BASE, "\r\n"); 
+  UARTPrint(UARTx_BASE, "\r\n");
 
-  if ( argc > 1 )  {
+  if (argc > 1) {
     UARTPrint(UARTx_BASE, helpstr);
     data->done = false;
     return 0;
   }
 
   switch (argv[0][0]) {
-  case 'b':
-    UARTPrint(UARTx_BASE, "Booting application.\r\n");
-    data->done = true;
-    data->retval = 0;
-    break;
-  case 'f':
-    UARTPrint(UARTx_BASE, "Force update\r\n");
-    data->done = true;
-    data->retval = 1;
-    break;
-  case 'r':
-    UARTPrint(UARTx_BASE, "Hard reboot\r\n");
-    ROM_SysCtlReset(); // this function never returns
-    break;
-  case 'h':
-  default:
-    UARTPrint(UARTx_BASE, helpstr);
-    data->done = false;
-    break;
+    case 'b':
+      UARTPrint(UARTx_BASE, "Booting application.\r\n");
+      data->done = true;
+      data->retval = 0;
+      break;
+    case 'f':
+      UARTPrint(UARTx_BASE, "Force update\r\n");
+      data->done = true;
+      data->retval = 1;
+      break;
+    case 'r':
+      UARTPrint(UARTx_BASE, "Hard reboot\r\n");
+      ROM_SysCtlReset(); // this function never returns
+      break;
+    case 'h':
+    default:
+      UARTPrint(UARTx_BASE, helpstr);
+      data->done = false;
+      break;
   }
   while (ROM_UARTBusy(UARTx_BASE))
     ;
@@ -329,9 +317,8 @@ int bl_user_rl_execute(void *d, int argc, char **argv)
   return 0;
 }
 
-
 // return non-zero to force an update
-#define BL_USER_BUFFSZ  1
+#define BL_USER_BUFFSZ 1
 unsigned long bl_user_checkupdate_hook(void)
 {
   UARTPrint(UARTx_BASE, "\r\n***** CM MCU BOOTLOADER *****\r\n");
@@ -340,13 +327,12 @@ unsigned long bl_user_checkupdate_hook(void)
     ;
   toggleLed(blue);
 
-
   struct bl_user_data_t rl_userdata = {
       .done = false,
       .retval = 0,
   };
   struct microrl_config rl_config = {
-      .print = bl_user_uart_print, 
+      .print = bl_user_uart_print,
       // set callback for execute
       .execute = bl_user_rl_execute,
       .prompt_str = "$ ",
@@ -358,33 +344,31 @@ unsigned long bl_user_checkupdate_hook(void)
   microrl_set_execute_callback(&rl, bl_user_rl_execute);
   microrl_insert_char(&rl, ' '); // this seems to be necessary?
 
-
   int cRxedChar;
-  for( ;; ) {
+  for (;;) {
     int timeleft = 20;
     cRxedChar = -1;
 
-    while ( timeleft ) {
-      if ( MAP_UARTCharsAvail(UARTx_BASE)) {
+    while (timeleft) {
+      if (MAP_UARTCharsAvail(UARTx_BASE)) {
         cRxedChar = MAP_UARTCharGetNonBlocking(UARTx_BASE);
         break;
       }
       else {
-        ROM_SysCtlDelay(CRYSTAL_FREQ/20);
+        ROM_SysCtlDelay(CRYSTAL_FREQ / 20);
       }
       timeleft--;
     }
-    if ( cRxedChar > 0 )
+    if (cRxedChar > 0)
       microrl_insert_char(&rl, cRxedChar);
-    if ( timeleft == 0 ) {
+    if (timeleft == 0) {
       UARTPrint(UARTx_BASE, "CLI timed out\r\n");
       break;
     }
-    if ( rl_userdata.done == true ) {
+    if (rl_userdata.done == true) {
       toggleLed(blue);
       return rl_userdata.retval;
     }
-
   }
   toggleLed(blue);
 
