@@ -14,14 +14,6 @@
 #include "FreeRTOS.h"
 #include "printf.h"
 
-#ifdef gcc
-// use this until GCC gets __FILE_NAME__ in GCC12. CLANG already has it
-// __FILE_NAME__ just returns the file, not the whole directory.
-// note that it appears that the whole file name is still in the binary so there
-// is still wasted space
-#define __FILE_NAME__ (__builtin_strrchr("/" __FILE__, '/') + 1)
-#endif
-
 #define LOG_VERSION "0.1.0_pw"
 
 enum log_level_t { LOG_FATAL,

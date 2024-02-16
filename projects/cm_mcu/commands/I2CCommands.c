@@ -170,12 +170,12 @@ BaseType_t i2c_scan(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                      "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n00:         ");
   for (uint8_t i = 0x3; i < 0x78; ++i) {
-    uint8_t data;
+    uint8_t data[4];
     if (i % 16 == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n%2x:", i);
     }
     // try to read one byte from current address
-    int status = apollo_i2c_ctl_r(device, i, 1, &data);
+    int status = apollo_i2c_ctl_r(device, i, 1, data);
     if (status == 0)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, " %2x", i);
     else

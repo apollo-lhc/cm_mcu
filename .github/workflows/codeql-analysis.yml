@@ -13,10 +13,14 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ master rev2_checkout ]
+    branches: [ master  ]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+
   schedule:
     - cron: '30 3 * * 1'
 
@@ -32,46 +36,49 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp' ]
+        language: [ 'c', 'python' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
         # Learn more:
         # https://docs.github.com/en/free-pro-team@latest/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#changing-the-languages-that-are-analyzed
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ];
+          then pip install -r requirements.txt;
+          fi
+          # Set the `CODEQL-PYTHON` environment variable to the Python executable
+          # that includes the dependencies
+          echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
-    - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
-      id:   cache-toolchain
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-toolchain-10-2020-q4
-      with:
-        path: ${{ runner.temp }}/arm-none-eabi
-        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
-        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
+        # Override the default behavior so that the action doesn't attempt
+        # to auto-install Python dependencies
+        setup-python-dependencies: false
 
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-      if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
-      uses: fiam/arm-none-eabi-gcc@v1.0.4
+      uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
       with:
-        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
-        # Directory to unpack GCC to. Defaults to a temporary directory.
-        directory: ${{ runner.temp }}/arm-none-eabi
+        release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
     - name: make with GCC
       run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         arm-none-eabi-gcc --version
-        make -k -w VERBOSE=1 REV1=1
+        make -k -w VERBOSE=1 
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3

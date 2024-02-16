@@ -45,6 +45,9 @@ static BaseType_t bl_ctl(int argc, char **argv, char *m)
   HWREG(NVIC_DIS2) = 0xffffffff;
   HWREG(NVIC_DIS3) = 0xffffffff;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+
   //
   // Return control to the boot loader.  This is a call to the SVC
   // handler in the boot loader.
@@ -52,6 +55,7 @@ static BaseType_t bl_ctl(int argc, char **argv, char *m)
   (*((void (*)(void))(*(uint32_t *)0x2c)))();
 
   // the above points to a memory location in flash.
+#pragma GCC diagnostic pop
   // shut up compiler warning. This will never get called
   return pdFALSE;
 }
