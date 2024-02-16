@@ -14,7 +14,6 @@
 #include "FreeRTOS.h"
 #include "printf.h"
 
-
 #define LOG_VERSION "0.1.0_pw"
 
 enum log_level_t { LOG_FATAL,
