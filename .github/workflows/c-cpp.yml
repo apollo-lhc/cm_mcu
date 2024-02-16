@@ -8,7 +8,6 @@ on:
   schedule:
     - cron: '30 4 * * 1'
   workflow_dispatch:
-    branches: [ master ]
 
 #  note that I need to manually set the path for the arm-none-eabi-gcc exe
 #  after it comes out of the cache. I don't understand why I need to do that.
@@ -25,7 +24,6 @@ jobs:
       uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
       with:
         release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
-        # Directory to unpack GCC to. Defaults to a temporary directory.
     - name: make with GCC, debug build, Rev1
       run: |
         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
