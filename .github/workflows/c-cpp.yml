@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - name: Code checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
       uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
       with:
@@ -46,7 +46,7 @@ jobs:
 
     steps:
     - name: Code checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1.9.0
       with:
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Code checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Get changed files
       id: changed-files
       uses: tj-actions/changed-files@v41.0.0
