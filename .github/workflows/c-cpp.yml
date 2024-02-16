@@ -26,21 +26,17 @@ jobs:
         release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
     - name: make with GCC, debug build, Rev1
       run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make -k DEBUG=1 REV1=1
     - name: make with GCC, debug build, Rev2
       run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make REV1=1 clean
         make -k DEBUG=1 REV2=1
     - name: make with GCC, Rev1
       run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make REV1=1 clean
         make -k REV1=1 
     - name: make with GCC, Rev 2
       run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make REV1=1 clean
         make -k REV2=1 
 
