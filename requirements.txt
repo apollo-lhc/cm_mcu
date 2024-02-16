@@ -1,2 +1,2 @@
 # Add your project dependencies here
-yaml>=6.0.0
+yaml
