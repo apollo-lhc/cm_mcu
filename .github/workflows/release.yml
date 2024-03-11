@@ -11,57 +11,46 @@ jobs:
      steps:
      - name: Code checkout
        uses: actions/checkout@v4
-     - name: Check cache for Embedded Arm Toolchain arm-none-eabi-gcc
-       id:   cache-toolchain
-       uses: actions/cache@v2
-       env:
-         cache-name: cache-toolchain-10-2020-q4
-       with:
-        path: ${{ runner.temp }}/arm-none-eabi
-        key:  ${{ runner.os }}-buildv1-${{ env.cache-name }}
-        restore-keys: ${{ runner.os }}-buildv1-${{ env.cache-name }}
-
      - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-       if:   steps.cache-toolchain.outputs.cache-hit != 'true'  # Install toolchain if not found in cache
-       uses: fiam/arm-none-eabi-gcc@v1.0.4
+       uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
        with:
-        release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
-        # Directory to unpack GCC to. Defaults to a temporary directory.
-        directory: ${{ runner.temp }}/arm-none-eabi
+        release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
+     - name: GitHub Tag Name
+       run: |
+         echo "Tag name from GITHUB_REF_NAME: $GITHUB_REF_NAME"
+         echo "Tag name from github.ref_name: >${{  github.ref_name }}<"
      - name: make with GCC for Rev1
        run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make clean REV1=1
         make -k NO_ECN001=1 REV1=1
         cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001_rev1.bin
         cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_rev1.axf
         make clean REV1=1
         make -k REV1=1
-        mkdir REV1
-        cp projects/cm_mcu/gcc/cm_mcu.bin REV1/cm_mcu_rev1.bin
-        cp projects/cm_mcu/gcc/cm_mcu.axf REV1/cm_mcu_rev1.axf
-        cp projects/boot_loader/gcc/bl_main.bin REV1/bl_main_rev1.bin
-        cp projects/boot_loader/gcc/bl_main.axf REV1/bl_main_rev1.axf
+        mkdir -p ${{github.ref_name}}/REV1
+        cp projects/cm_mcu/gcc/cm_mcu.bin ${{github.ref_name}}/REV1/cm_mcu_rev1.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf ${{github.ref_name}}/REV1/cm_mcu_rev1.axf
+        cp projects/boot_loader/gcc/bl_main.bin ${{github.ref_name}}/REV1/bl_main_rev1.bin
+        cp projects/boot_loader/gcc/bl_main.axf ${{github.ref_name}}/REV1/bl_main_rev1.axf
         make release
-        mv PL_MEM_CM_rev1.xml REV1
-        tar zcvpf cm_mcu_rev1.tar.gz REV1
+        mv PL_MEM_CM_rev1.xml ${{github.ref_name}}/REV1
+        tar zcvpf cm_mcu_rev1_${{github.ref_name}}.tar.gz ${{github.ref_name}}/REV1
      - name: make with GCC for Rev2
        run: |
-        export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
         make clean REV2=1
         make -k NO_ECN001=1 REV2=1
         cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001_rev2.bin
         cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_rev2.axf
         make clean REV2=1
         make -k REV2=1
-        mkdir REV2
-        cp projects/cm_mcu/gcc/cm_mcu.bin REV2/cm_mcu_rev2.bin
-        cp projects/cm_mcu/gcc/cm_mcu.axf REV2/cm_mcu_rev2.axf
-        cp projects/boot_loader/gcc/bl_main.bin REV2/bl_main_rev2.bin
-        cp projects/boot_loader/gcc/bl_main.axf REV2/bl_main_rev2.axf
+        mkdir -p ${{github.ref_name}}/REV2
+        cp projects/cm_mcu/gcc/cm_mcu.bin ${{github.ref_name}}/REV2/cm_mcu_rev2.bin
+        cp projects/cm_mcu/gcc/cm_mcu.axf ${{github.ref_name}}/REV2/cm_mcu_rev2.axf
+        cp projects/boot_loader/gcc/bl_main.bin ${{github.ref_name}}/REV2/bl_main_rev2.bin
+        cp projects/boot_loader/gcc/bl_main.axf ${{github.ref_name}}/REV2/bl_main_rev2.axf
         make release
-        mv PL_MEM_CM_rev2.xml REV2
-        tar zcvpf cm_mcu_rev2.tar.gz REV2
+        mv PL_MEM_CM_rev2.xml ${{github.ref_name}}/REV2
+        tar zcvpf cm_mcu_rev2_${{github.ref_name}}.tar.gz ${{github.ref_name}}/REV2
      - name: test
        run: pwd; ls -R ; find . -type f -name '*.axf' -print
      - uses: "marvinpinto/action-automatic-releases@latest"
@@ -69,6 +58,5 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            ./REV1/*
-            ./REV2/*
+            ${{github.ref_name}}/**
             *.tar.gz
