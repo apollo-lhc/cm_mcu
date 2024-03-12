@@ -131,7 +131,7 @@ config:
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
   - name: clkmonr0a
-    start: 185
+    start: 186
     count: 8
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
@@ -149,7 +149,7 @@ config:
       - LOSIN_FLG_OR_LOL
       - STICKY_FLG
   - name: clkmon
-    start: 194
+    start: 195
     count: 32
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
