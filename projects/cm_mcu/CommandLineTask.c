@@ -14,8 +14,6 @@
 #include "commands/SensorControl.h"
 #include "commands/SoftwareCommands.h"
 #include "common/smbus_units.h"
-#include "common/printf.h"
-#include "common/log.h"
 #include "Semaphore.h"
 
 static char m[SCRATCH_SIZE];
@@ -345,7 +343,7 @@ static struct command_t commands[] = {
     {
         "log",
         log_ctl,
-        "args: (<fac> debug|toggle|info|warn|fatal|trace)(status|quiet)\r\nChange levels\r\n",
+        "args: (<fac> dbg|inf|wrn|ftl|trc)|dump|status|quiet\r\nConfigure log\r\n",
         -1,
     },
     {"led", led_ctl, "Manipulate red LED\r\n", 1},

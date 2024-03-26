@@ -1,8 +1,6 @@
-#include <assert.h>
 #include <strings.h>
 
 #include "commands/SoftwareCommands.h"
-#include "FreeRTOS.h"
 #include "Tasks.h"
 #include "commands/parameters.h"
 #include "portmacro.h"
