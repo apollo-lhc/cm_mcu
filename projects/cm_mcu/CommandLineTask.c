@@ -343,7 +343,7 @@ static struct command_t commands[] = {
     {
         "log",
         log_ctl,
-        "args: (<fac> dbg|inf|wrn|ftl|trc)|dump|status|quiet\r\nConfigure log\r\n",
+        "args: (<fac> FTL|ERR|WRN|INF|DBG|TRC)|dump|status|quiet\r\nConfigure log\r\n",
         -1,
     },
     {"led", led_ctl, "Manipulate red LED\r\n", 1},
