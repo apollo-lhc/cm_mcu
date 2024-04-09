@@ -14,18 +14,11 @@
 #include <string.h>
 
 // to be moved
-#include "driverlib/sysctl.h"
-#include "driverlib/timer.h"
-#include "driverlib/gpio.h"
 #include "inc/hw_memmap.h"
-#include "inc/hw_ints.h"
 #include "driverlib/rom.h"
-#include "driverlib/rom_map.h"
 
 #ifdef REV1
 #include "common/softuart.h"
-#elif defined(REV2)
-#include "driverlib/uart.h"
 #endif
 
 #include "Tasks.h"
@@ -38,7 +31,7 @@
 #include "ZynqMon_addresses.h"
 
 // Rev 2
-// this needs to be split into a SoftUART version (Rev1) and a hard UART version (Rev2)
+// this was split into a SoftUART version (Rev1) and a hard UART version (Rev2)
 
 #define SZ 20
 
@@ -292,7 +285,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   for (uint8_t i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
-      data[i].data.i = getFFtemp(i); // sensor value and type
+      data[i].data.us = getFFtemp(i); // sensor value and type
     }
     else {
       data[i].data.i = -56; // special stale value
@@ -302,7 +295,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 }
 
 #ifdef REV2
-uint16_t getFFtXdisenablebit(const uint8_t i)
+uint16_t getFFtXdisablebit(const uint8_t i)
 {
   return 56; // FIXME
 #ifdef NOTDEF
@@ -442,8 +435,8 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
       data[ll].data.us = 0xff; // special stale value
     }
     else {
-      data[ll].data.us = getFFtXdisenablebit(j); // sensor value and type
-      log_debug(LOG_SERVICE, "TX-disenabled? for ff argv %d: 0x%02x\r\n", j, getFFtXdisenablebit(j));
+      data[ll].data.us = getFFtXdisablebit(j); // sensor value and type
+      log_debug(LOG_SERVICE, "TX-disabled? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
     }
     data[ll].sensor = ll + start;
     ++ll;
