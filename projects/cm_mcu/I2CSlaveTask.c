@@ -19,6 +19,7 @@
 #include "MonitorTask.h"
 #include "common/LocalUart.h"
 #include "common/log.h"
+#include "FireflyUtils.h"
 #include "I2CSlaveTask.h"
 
 // Rev 2:
