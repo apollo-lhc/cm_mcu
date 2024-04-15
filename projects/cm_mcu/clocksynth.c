@@ -30,7 +30,7 @@ int clear_clk_stickybits(void)
 
   int status = -99;
 
-  const uint8_t nsupplies[2] = {NSUPPLIES_CLKR0A, NSUPPLIES_CLK};
+  const uint8_t nsupplies[2] = {NDEVICES_CLKR0A, NDEVICES_CLK};
   const uint8_t ncommands[2] = {NCOMMANDS_FLG_CLKR0A, NCOMMANDS_FLG_CLK};
   const uint8_t dev_addr[2] = {CLOCK_SYNTH5341_I2C_ADDRESS, CLOCK_SYNTH5395_I2C_ADDRESS};
 

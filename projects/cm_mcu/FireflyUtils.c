@@ -225,7 +225,7 @@ TickType_t getFFupdateTick(int mask)
 uint16_t getFFtemp(const uint8_t i)
 {
   int i1 = 1;
-  int8_t val;
+  uint16_t val;
   configASSERT(i < NFIREFLIES);
   if (i < NFIREFLIES_IT_F1) {
     int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
@@ -282,6 +282,9 @@ uint16_t getFFpresentbit(const uint8_t i)
   return val;
 }
 
+extern struct sm_command_t sm_command_fflit_f1[];
+extern struct sm_command_t sm_command_fflit_f2[];
+
 void getFFpart(void)
 {
   // Write device vendor part for identifying FF device
@@ -291,7 +294,7 @@ void getFFpart(void)
 
   SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
   const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
-  const uint32_t ndevices[2] = {NSUPPLIES_FFL12_F1 / 2, NSUPPLIES_FFL12_F2 / 2};
+  const uint32_t ndevices[2] = {NDEVICES_FFL12_F1 / 2, NDEVICES_FFL12_F2 / 2};
   const uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
   const uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
 

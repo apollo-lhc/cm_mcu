@@ -14,8 +14,6 @@
 #include <string.h> // memset
 #include <time.h>   // struct tm
 
-// ROM header must come before MAP header
-#include "driverlib/rom.h"
 #include "driverlib/hibernate.h"
 
 #include "Tasks.h"
@@ -147,16 +145,16 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 };
 
-uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
+uint16_t ffldaq_f1_values[NDEVICES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
     .name = "F1_4",
     .devices = ffldaq_f1_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F1,
-    .n_devices = NSUPPLIES_FFLDAQ_F1,
+    .n_devices = NDEVICES_FFLDAQ_F1,
     .commands = sm_command_ffldaq_f1,
     .n_commands = NCOMMANDS_FFLDAQ_F1,
-    .n_values = NSUPPLIES_FFLDAQ_F1 * NPAGES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1,
+    .n_values = NDEVICES_FFLDAQ_F1 * NPAGES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1,
     .n_pages = NPAGES_FFLDAQ_F1,
     .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffldaq_f1_values,
@@ -238,16 +236,16 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #error "Define either Rev1 or Rev2"
 #endif
 
-uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
+uint16_t ffl12_f1_values[NDEVICES_FFL12_F1 * NCOMMANDS_FFL12_F1];
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .name = "F1_12",
     .devices = ffl12_f1_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F1,
-    .n_devices = NSUPPLIES_FFL12_F1,
+    .n_devices = NDEVICES_FFL12_F1,
     .commands = sm_command_fflot_f1, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
     .n_commands = NCOMMANDS_FFL12_F1,
-    .n_values = NSUPPLIES_FFL12_F1 * NPAGES_FFL12_F1 * NCOMMANDS_FFL12_F1,
+    .n_values = NDEVICES_FFL12_F1 * NPAGES_FFL12_F1 * NCOMMANDS_FFL12_F1,
     .n_pages = NPAGES_FFL12_F1,
     .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffl12_f1_values,
@@ -292,16 +290,16 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
     {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 };
-uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
+uint16_t ffldaq_f2_values[NDEVICES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
     .name = "F2_4",
     .devices = ffldaq_f2_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F2,
-    .n_devices = NSUPPLIES_FFLDAQ_F2,
+    .n_devices = NDEVICES_FFLDAQ_F2,
     .commands = sm_command_ffldaq_f2,
     .n_commands = NCOMMANDS_FFLDAQ_F2,
-    .n_values = NSUPPLIES_FFLDAQ_F2 * NPAGES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2,
+    .n_values = NDEVICES_FFLDAQ_F2 * NPAGES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2,
     .n_pages = NPAGES_FFLDAQ_F2,
     .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffldaq_f2_values,
@@ -375,16 +373,17 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #else
 #error "Define either Rev1 or Rev2"
 #endif
-uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
+
+uint16_t ffl12_f2_values[NDEVICES_FFL12_F2 * NCOMMANDS_FFL12_F2];
 
 struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .name = "F2_12",
     .devices = ffl12_f2_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F2,
-    .n_devices = NSUPPLIES_FFL12_F2,
+    .n_devices = NDEVICES_FFL12_F2,
     .commands = sm_command_fflot_f2, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
     .n_commands = NCOMMANDS_FFL12_F2,
-    .n_values = NSUPPLIES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
+    .n_values = NDEVICES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
     .n_pages = NPAGES_FFL12_F2,
     .selpage_reg = FF_SELPAGE_REG,
     .sm_values = ffl12_f2_values,
@@ -425,16 +424,16 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS}, // page 0x00
 };
 
-uint16_t clk_values[NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
+uint16_t clk_values[NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
 
 struct MonitorI2CTaskArgs_t clock_args = {
     .name = "CLKSI",
     .devices = clk_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_CLK,
-    .n_devices = NSUPPLIES_CLK,
+    .n_devices = NDEVICES_CLK,
     .commands = sm_command_clk,
     .n_commands = NCOMMANDS_CLK,
-    .n_values = NSUPPLIES_CLK * NPAGES_CLK * NCOMMANDS_CLK,
+    .n_values = NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK,
     .n_pages = NPAGES_CLK,
     .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clk_values,
@@ -462,16 +461,16 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
 };
 
-uint16_t clkr0a_values[NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
+uint16_t clkr0a_values[NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
 
 struct MonitorI2CTaskArgs_t clockr0a_args = {
     .name = "CLKR0A",
     .devices = clkr0a_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_CLK,
-    .n_devices = NSUPPLIES_CLKR0A,
+    .n_devices = NDEVICES_CLKR0A,
     .commands = sm_command_clkr0a,
     .n_commands = NCOMMANDS_CLKR0A,
-    .n_values = NSUPPLIES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A,
+    .n_values = NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A,
     .n_pages = NPAGES_CLKR0A,
     .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clkr0a_values,

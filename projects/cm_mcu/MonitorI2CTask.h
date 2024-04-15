@@ -52,33 +52,33 @@ struct MonitorI2CTaskArgs_t {
 #define CLK_SELPAGE_REG 0x1
 
 #ifndef REV2
-#define NSUPPLIES_FFLDAQ_F1 (3)
+#define NDEVICES_FFLDAQ_F1 (3)
 #else // REV2
-#define NSUPPLIES_FFLDAQ_F1 (4)
+#define NDEVICES_FFLDAQ_F1 (4)
 #endif                        // REV 2
 #define NCOMMANDS_FFLDAQ_F1 8 // number of commands
 #define NPAGES_FFLDAQ_F1    1 // number of pages on the 4-channel firefly ports
 
 #ifndef REV2
-#define NSUPPLIES_FFL12_F1 (8)
+#define NDEVICES_FFL12_F1 (8)
 #else // REV1
-#define NSUPPLIES_FFL12_F1 (6)
+#define NDEVICES_FFL12_F1 (6)
 #endif                        // REV 2
 #define NCOMMANDS_FFL12_F1 16 // number of commands
 #define NPAGES_FFL12_F1    1  // number of pages on the 12-channel firefly ports
 
 #ifndef REV2
-#define NSUPPLIES_FFLDAQ_F2 (10)
+#define NDEVICES_FFLDAQ_F2 (10)
 #else // REV1
-#define NSUPPLIES_FFLDAQ_F2 (4)
+#define NDEVICES_FFLDAQ_F2 (4)
 #endif                        // REV 2
 #define NCOMMANDS_FFLDAQ_F2 8 // number of commands
 #define NPAGES_FFLDAQ_F2    1 // number of pages on the 4-channel firefly ports
 
 #ifndef REV2
-#define NSUPPLIES_FFL12_F2 (4)
+#define NDEVICES_FFL12_F2 (4)
 #else // REV1
-#define NSUPPLIES_FFL12_F2 (6)
+#define NDEVICES_FFL12_F2 (6)
 #endif                        // REV 2
 #define NCOMMANDS_FFL12_F2 16 // number of commands
 #define NPAGES_FFL12_F2    1  // number of pages on the 12-channel firefly ports
@@ -92,11 +92,11 @@ extern struct MonitorI2CTaskArgs_t ffldaq_f1_args;
 extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
 extern struct MonitorI2CTaskArgs_t ffldaq_f2_args;
 
-#define NSUPPLIES_CLK        (4)
+#define NDEVICES_CLK        (4)
 #define NCOMMANDS_CLK        7 // number of commands
 #define NCOMMANDS_FLG_CLK    1 // number of sticky commands
 #define NPAGES_CLK           1 //
-#define NSUPPLIES_CLKR0A     (1)
+#define NDEVICES_CLKR0A     (1)
 #define NCOMMANDS_CLKR0A     7 // number of commands
 #define NCOMMANDS_FLG_CLKR0A 2 // number of sticky commands
 #define NPAGES_CLKR0A        1 //
