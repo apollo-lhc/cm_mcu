@@ -1524,7 +1524,7 @@ void init_registers_ff(void)
 #define EEPROM_MAX_PER_PAGE 126
 
 // You must claim the semaphore at a higher level than this
-static int load_clk_registers(int reg_count, uint16_t reg_page, uint16_t i2c_addrs)
+static int load_clk_registers(uint32_t reg_count, uint16_t reg_page, uint16_t i2c_addrs)
 {
   int8_t HighByte = -1; // keep track when reg0 is changed
   int status_w = -1;

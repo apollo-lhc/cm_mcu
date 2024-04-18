@@ -2,8 +2,6 @@
 #define FIREFLYUTILS_H
 #include <stdbool.h>
 #include <stdint.h>
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
 #include "Tasks.h"
 
 // Function declarations
