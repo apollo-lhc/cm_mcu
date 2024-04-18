@@ -305,6 +305,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 uint16_t getFFtXdisenablebit(const uint8_t i)
 {
   return 56; // FIXME
+#ifdef NOTDEF
   if (i > NFIREFLIES_F1 + NFIREFLIES_F2) {
     log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
     return 56;
@@ -330,6 +331,7 @@ uint16_t getFFtXdisenablebit(const uint8_t i)
     return 56;
   else
     return val;
+#endif // NOTDEF
 }
 // updated once per loop.
 // For each firefly device, send
