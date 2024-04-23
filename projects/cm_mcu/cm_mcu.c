@@ -299,20 +299,20 @@ int main(void)
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
-  xTaskCreate(MonitorI2CTask, "FF12", 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffl12_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "FFDAQ", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffldaq_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "FF12V", 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffl12_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "FFDAV", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffldaq_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
 
 #ifdef REV2
-  xTaskCreate(MonitorI2CTask, "CLKSI", 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorI2CTask, "CLKR0", 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
-              NULL);
+  // xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+  //             NULL);
+  // xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
+  //             NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, "PSMON", 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
