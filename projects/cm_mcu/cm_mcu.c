@@ -433,7 +433,7 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 }
 #endif
 /*-----------------------------------------------------------*/
-
+extern uint16_t  after_guard[6], before_guard[6];
 #if (configUSE_IDLE_HOOK == 1)
 void vApplicationIdleHook(void)
 {
@@ -455,6 +455,10 @@ void vApplicationIdleHook(void)
     }
     Print("\r\n");
 #endif // DUMP_STACK
+  }
+  for (int i = 0; i< 6; ++i ) {
+    if ( (after_guard[i] != 0xbeef ) || (before_guard[i] != 0xbeef) )
+      Print("bad beef\r\n");
   }
 }
 #endif
