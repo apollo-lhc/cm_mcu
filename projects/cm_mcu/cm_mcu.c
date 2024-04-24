@@ -237,7 +237,7 @@ const char *gitVersion(void)
   return gitVersion;
 }
 
-int main(void)
+__attribute__((noreturn)) int main(void)
 {
   SystemInit();
 
@@ -378,20 +378,21 @@ int main(void)
   vTaskStartScheduler();
   // should never get here
   Print("Scheduler start failed\r\n");
-  configASSERT(1 == 0);
+  configASSERT(1 == 0); // capture in eeprom
   __builtin_unreachable();
-  return 0;
 }
 
 uintptr_t __stack_chk_guard = 0xdeadbeef;
 
-void __stack_chk_fail(void)
+__attribute__((noreturn)) void __stack_chk_fail(void)
 {
   // fall back to lower-level routine since if we get here things are broken
   UARTPrint(ZQ_UART, "Stack smashing detected\r\n");
   while (MAP_UARTBusy(ZQ_UART))
     ;
-  configASSERT(1 == 0);
+  configASSERT(1 == 0); // capture in eeprom
+  while (true)
+    ;
 }
 
 int SystemStackWaterHighWaterMark(void)
@@ -410,6 +411,7 @@ int SystemStackWaterHighWaterMark(void)
 
 /*-----------------------------------------------------------*/
 #if (configCHECK_FOR_STACK_OVERFLOW != 0)
+__attribute__((noreturn))
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
@@ -429,11 +431,11 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
     ;
 #else  // DEBUG
   ROM_SysCtlReset();
+  __builtin_unreachable();
 #endif // DEBUG
 }
 #endif
 /*-----------------------------------------------------------*/
-extern uint16_t  after_guard[6], before_guard[6];
 #if (configUSE_IDLE_HOOK == 1)
 void vApplicationIdleHook(void)
 {
@@ -455,10 +457,6 @@ void vApplicationIdleHook(void)
     }
     Print("\r\n");
 #endif // DUMP_STACK
-  }
-  for (int i = 0; i< 6; ++i ) {
-    if ( (after_guard[i] != 0xbeef ) || (before_guard[i] != 0xbeef) )
-      Print("bad beef\r\n");
   }
 }
 #endif
