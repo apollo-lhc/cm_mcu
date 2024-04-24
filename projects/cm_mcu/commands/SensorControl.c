@@ -8,6 +8,7 @@
 #include <strings.h>
 #include <sys/_types.h>
 #include "I2CCommunication.h"
+#include "common/utils.h"
 #include "parameters.h"
 #include "SensorControl.h"
 #include "Semaphore.h"
@@ -594,6 +595,40 @@ BaseType_t ff_reset(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
+// reset the muxes for the firefly devices
+BaseType_t ff_mux_reset(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  BaseType_t which_fpga = strtol(argv[1], NULL, 10);
+  if ( which_fpga != 1 && which_fpga != 2 ) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: arg must 1 or 2\r\n", argv[0]);
+    return pdFALSE;
+  }
+  // grab semaphore
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  SemaphoreHandle_t s = i2c4_sem;
+  if ( which_fpga == 2 ) {
+    s = i2c3_sem;
+  }
+  if (acquireI2CSemaphore(s) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return pdFALSE;
+  }
+  // select the appropriate output for the mux
+  int pin = _F1_OPTICS_I2C_RESET;
+  if ( which_fpga == 2 )
+    pin = _F2_OPTICS_I2C_RESET;
+  // toggle the pin
+  write_gpio_pin(pin, 0); // active low signal
+  vTaskDelay(pdMS_TO_TICKS(1));
+  write_gpio_pin(pin, 1); // active low signal
+
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
+      xSemaphoreGive(s);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: mux reset complete F%d\r\n", argv[0], which_fpga);
+  return pdFALSE;
+}
 #endif // REV2
 
 BaseType_t ff_status(int argc, char **argv, char *m)
@@ -627,7 +662,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     extern struct ff_bit_mask_t ff_bitmask_args[4];
     char *ff_bitmask_names[4] = {"1_12", "1_4 ", "2_12", "2_4 "};
     for (int i = 0; i < 4; ++i ) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%s: 0x%x\r\n", ff_bitmask_names[i],
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%s: 0x%02x\r\n", ff_bitmask_names[i],
                           ff_bitmask_args[i].present_bit_mask);
     }
   }
