@@ -144,7 +144,7 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
 #elif defined(REV2)
-  initI2C5(g_ui32SysClock);  // controller for FPGAs
+  initI2C5(g_ui32SysClock); // controller for FPGAs
 #endif
 
   // smbus
@@ -411,8 +411,7 @@ int SystemStackWaterHighWaterMark(void)
 
 /*-----------------------------------------------------------*/
 #if (configCHECK_FOR_STACK_OVERFLOW != 0)
-__attribute__((noreturn))
-void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
+__attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */

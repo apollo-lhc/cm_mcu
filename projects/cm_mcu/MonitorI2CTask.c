@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 // FreeRTOS
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
@@ -49,7 +48,6 @@ bool getFFch_high(uint8_t val, int channel)
   return true;
 }
 
-
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
 void MonitorI2CTask(void *parameters)
 {
@@ -61,12 +59,11 @@ void MonitorI2CTask(void *parameters)
   // watchdog info
   task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
 
-
   // wait for the power to come up
   vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(5000));
 
-  int IsCLK = (strstr(args->name, "CLK") != NULL);    // the instance is of CLK-device type
-  int IsFF12 = (strstr(args->name, "_12") != NULL);  // the instance is of FF 12-ch part type
+  int IsCLK = (strstr(args->name, "CLK") != NULL);  // the instance is of CLK-device type
+  int IsFF12 = (strstr(args->name, "_12") != NULL); // the instance is of FF 12-ch part type
   int IsFFDAQ = (strstr(args->name, "_4") != NULL); // the instance is of FF 4-ch part type
 
   // initialize to the current tick time
@@ -176,7 +173,7 @@ void MonitorI2CTask(void *parameters)
         uint8_t page_reg_value = args->commands[c].page;
         int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
         if (r != 0) {
-          log_error(LOG_MONI2C, "%s : page fail %s\r\n", args->devices[ps].name, SMBUS_get_error(r));
+          log_error(LOG_MONI2C, "%s: %s : page fail %s\r\n", args->name, args->devices[ps].name, SMBUS_get_error(r));
           break;
         }
 

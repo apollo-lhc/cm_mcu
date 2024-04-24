@@ -612,10 +612,10 @@ void readFFpresent(void)
                                  ((present_FFL12_BOTTOM_F1));       // 6 bits
 
 #elif defined(REV2)
-  present_FFL12_F1_bar = present_FFL12_F1_bar & 0x3FU;                     // bottom 6 bits
-  present_FFL12_F2_bar = present_FFL12_F2_bar & 0x3FU;                     // bottom 6 bits
-  present_FFLDAQ_F1_bar = (present_FFLDAQ_F1_bar >> 4) & 0xFU;             // bits 4-7
-  present_FFLDAQ_F2_bar = (present_FFLDAQ_F2_bar >> 4) & 0xFU;             // bits 4-7
+  present_FFL12_F1_bar = present_FFL12_F1_bar & 0x3FU;         // bottom 6 bits
+  present_FFL12_F2_bar = present_FFL12_F2_bar & 0x3FU;         // bottom 6 bits
+  present_FFLDAQ_F1_bar = (present_FFLDAQ_F1_bar >> 4) & 0xFU; // bits 4-7
+  present_FFLDAQ_F2_bar = (present_FFLDAQ_F2_bar >> 4) & 0xFU; // bits 4-7
 
   uint32_t ff_combined_present = ((present_FFLDAQ_F2_bar) << 16) | // 4 bits
                                  ((present_FFL12_F2_bar) << 10) |  // 6 bits
