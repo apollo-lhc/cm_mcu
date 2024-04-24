@@ -399,23 +399,7 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #else
 #error "Define either Rev1 or Rev2"
 #endif
-uint16_t before_guard[6] = {
-    0xbeef,
-    0xbeef,
-    0xbeef,
-    0xbeef,
-    0xbeef,
-    0xbeef,
-};
 uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
-uint16_t after_guard[6] = {
-    0xbeef,
-    0xbeef,
-    0xbeef,
-    0xbeef,
-    0xbeef,
-    0xbeef,
-};
 
 struct MonitorI2CTaskArgs_t ffl12_f2_args = {
     .name = "F2_12",
@@ -632,9 +616,6 @@ void readFFpresent(void)
   present_FFL12_F2_bar = present_FFL12_F2_bar & 0x3FU;                     // bottom 6 bits
   present_FFLDAQ_F1_bar = (present_FFLDAQ_F1_bar >> 4) & 0xFU;             // bits 4-7
   present_FFLDAQ_F2_bar = (present_FFLDAQ_F2_bar >> 4) & 0xFU;             // bits 4-7
-  // remember these are active low signals.
-  log_info(LOG_SERVICE, "\r\nF1_12: 0x%x\r\nF1_4 : 0x%x\r\nF2_12: 0x%x\r\n, F2_4 : 0x%x\r\n", 
-    ~present_FFL12_F1_bar, ~present_FFLDAQ_F1_bar, ~present_FFL12_F2_bar, ~present_FFLDAQ_F2_bar);
 
   uint32_t ff_combined_present = ((present_FFLDAQ_F2_bar) << 16) | // 4 bits
                                  ((present_FFL12_F2_bar) << 10) |  // 6 bits
