@@ -16,6 +16,7 @@
 #include "Tasks.h"
 #include "projdefs.h"
 
+
 int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
 {
   memset(value, 0, size);
@@ -37,7 +38,7 @@ int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value,
 
   if (acquireI2CSemaphore(s) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return 5;
+    return SEM_ACCESS_ERROR;
   }
 
   // write to the mux
@@ -90,7 +91,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
 
   if (acquireI2CSemaphore(s) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return 5;
+    return SEM_ACCESS_ERROR;
   }
 
   // write to the mux
@@ -1055,7 +1056,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         int ret = read_arbitrary_ff_register(regnum, channel, &value, 1);
         if (ret != 0) {
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "read_ff_reg failed with %d\r\n", ret);
-          if (ret == 5)
+          if (ret == -5)
             snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
           return pdFALSE;
         }
@@ -1087,7 +1088,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         int ret = write_arbitrary_ff_register(regnum, value, channel);
         if (ret != 0) {
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "write_ff_reg failed with %d\r\n", ret);
-          if (ret == 5)
+          if (ret == -5)
             snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
           return pdFALSE;
         }

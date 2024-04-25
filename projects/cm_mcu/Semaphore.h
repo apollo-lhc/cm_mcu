@@ -25,6 +25,8 @@ void initSemaphores(void);
 
 SemaphoreHandle_t getSemaphore(int number);
 
+#define SEM_ACCESS_ERROR (-5)
+
 int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits);
 
 #define acquireI2CSemaphore(s) \
