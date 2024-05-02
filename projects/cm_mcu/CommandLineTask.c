@@ -300,7 +300,7 @@ static struct command_t commands[] = {
       "ff_mux_reset", 
       ff_mux_reset, 
       "reset ff muxes, 1 or 2 for F1 or F2\r\n",
-      1
+      1,
     },
     {
         "ff_optpow",

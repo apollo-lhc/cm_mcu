@@ -72,12 +72,12 @@ void MonitorI2CTask(void *parameters)
   bool good = false;
   for (;;) {
 
-    log_debug(LOG_MONI2C, "%s: grab semaphore\r\n", args->name);
+    log_debug(LOG_MONI2C, "%s: grab sem\r\n", args->name);
 
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
       if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
-        log_debug(LOG_SERVICE, "%s could not get semaphore in time; delay & continue\r\n", args->name);
+        log_debug(LOG_SERVICE, "%s could'nt get sem; delay & continue\r\n", args->name);
         vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(10)); // wait
         continue;
       }
@@ -86,12 +86,12 @@ void MonitorI2CTask(void *parameters)
     // -------------------------------
     // loop over devices in the device-type instance
     // -------------------------------
-    for (int ps = 0; ps < args->n_devices; ++ps) {
-      log_debug(LOG_MONI2C, "%s: device %d powercheck\r\n", args->name, ps);
+    for (int thisdev = 0; thisdev < args->n_devices; ++thisdev) {
+      log_debug(LOG_MONI2C, "%s: dev %d pwrchk\r\n", args->name, thisdev);
 
       if (getPowerControlState() != POWER_ON) {
         if (good) {
-          log_info(LOG_MONI2C, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
+          log_info(LOG_MONI2C, "%s: PWR off. Disable I2Cmon.\r\n", args->name);
           good = false;
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
@@ -103,7 +103,7 @@ void MonitorI2CTask(void *parameters)
       else if (getPowerControlState() == POWER_ON) { // power is on, and ...
         if (!good) {                                 // ... was not good, but is now good
           task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
-          log_info(LOG_MONI2C, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
+          log_info(LOG_MONI2C, "%s: PWR on. (Re)start I2Cmon.\r\n", args->name);
           good = true;
         }
       }
@@ -112,10 +112,10 @@ void MonitorI2CTask(void *parameters)
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1
           int NFIREFLIES_IT_F1_P1 = NFIREFLIES_IT_F1 - 2;
-          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (ps < NFIREFLIES_IT_F1 - 3) * (ps)) + (IsFF12 * (ps > NFIREFLIES_IT_F1 - 3) * (ps + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
+          if (!isEnabledFF((IsFFDAQ * (thisdev + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (thisdev < NFIREFLIES_IT_F1 - 3) * (thisdev)) + (IsFF12 * (thisdev > NFIREFLIES_IT_F1 - 3) * (thisdev + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
             continue;
 #elif defined(REV2)
-          if (!isEnabledFF((IsFFDAQ * (ps + NFIREFLIES_IT_F1)) + (IsFF12 * (ps)))) // skip the FF if it's not enabled via the FF config
+          if (!isEnabledFF((IsFFDAQ * (thisdev + NFIREFLIES_IT_F1)) + (IsFF12 * (thisdev)))) // skip the FF if it's not enabled via the FF config
             continue;
 #else
 #error "Define either Rev1 or Rev2"
@@ -123,10 +123,10 @@ void MonitorI2CTask(void *parameters)
         }
         if (args->i2c_dev == I2C_DEVICE_F2) { // FPGA #2
 #ifdef REV1
-          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (ps)) + (IsFF12 * (ps + NFIREFLIES_DAQ_F2)))) // skip the FF if it's not enabled via the FF config
+          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (thisdev)) + (IsFF12 * (thisdev + NFIREFLIES_DAQ_F2)))) // skip the FF if it's not enabled via the FF config
             continue;
 #elif defined(REV2)
-          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (ps + NFIREFLIES_IT_F2)) + (IsFF12 * (ps)))) // skip the FF if it's not enabled via the FF config
+          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (thisdev + NFIREFLIES_IT_F2)) + (IsFF12 * (thisdev)))) // skip the FF if it's not enabled via the FF config
             continue;
 #else
 #error "Define either Rev1 or Rev2"
@@ -156,35 +156,34 @@ void MonitorI2CTask(void *parameters)
 
       // select the appropriate output for the mux
       uint8_t data;
-      data = 0x1U << args->devices[ps].mux_bit;
+      data = 0x1U << args->devices[thisdev].mux_bit;
       log_debug(LOG_MONI2C, "Mux set to 0x%02x\r\n", data);
-      int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ps].mux_addr, 1, data);
+      int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[thisdev].mux_addr, 1, data);
       if (res != 0) {
-        log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
+        log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,dev=%d)\r\n", SMBUS_get_error(res), args->name, thisdev);
         break;
       }
 
       // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
 
-        int index = ps * (args->n_commands * args->n_pages) + c;
+        int index = thisdev * (args->n_commands * args->n_pages) + c;
 
         log_debug(LOG_MONI2C, "%s: reg %s\r\n", args->name, args->commands[c].name);
         uint8_t page_reg_value = args->commands[c].page;
-        int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[ps].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
+        int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[thisdev].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
         if (r != 0) {
-          log_error(LOG_MONI2C, "%s: %s : page fail %s\r\n", args->name, args->devices[ps].name, SMBUS_get_error(r));
+          log_error(LOG_MONI2C, "%s: %s : page fail %s\r\n", args->name, args->devices[thisdev].name, SMBUS_get_error(r));
           break;
         }
 
         uint32_t output_raw;
-        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[ps].dev_addr, args->commands[c].reg_size,
+        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[thisdev].dev_addr, args->commands[c].reg_size,
                                        args->commands[c].command, args->commands[c].size, &output_raw);
-        // uint16_t masked_output = output_raw & args->commands[c].bit_mask;
 
         if (res != 0) {
-          log_error(LOG_MONI2C, "%s: %s read Error %s, break (ps=%d)\r\n",
-                    args->name, args->commands[c].name, SMBUS_get_error(res), ps);
+          log_error(LOG_MONI2C, "%s: %s read Error %s, break (dev=%d)\r\n",
+                    args->name, args->commands[c].name, SMBUS_get_error(res), thisdev);
           args->sm_values[index] = 0xffff;
           break;
         }
@@ -198,9 +197,9 @@ void MonitorI2CTask(void *parameters)
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
       args->updateTick = xTaskGetTickCount(); // current time in ticks
 
-      res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[ps].mux_addr, 1, 0U); // reset mux
+      res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[thisdev].mux_addr, 1, 0U); // reset mux
       if (res != 0) {
-        log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, ps);
+        log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,dev=%d)\r\n", SMBUS_get_error(res), args->name, thisdev);
         break;
       }
       log_debug(LOG_MONI2C, "%s: reset mux\r\n", args->name);
