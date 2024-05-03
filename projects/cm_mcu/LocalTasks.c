@@ -541,8 +541,6 @@ void readFFpresent(void)
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c4_sem);
 
-  uint32_t present_FFL12_F1_bar, present_FFLDAQ_F1_bar; // active low signals
-
 #ifdef REV1
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
@@ -551,6 +549,7 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
 #elif defined(REV2)
+  uint32_t present_FFL12_F1_bar, present_FFLDAQ_F1_bar; // active low signals
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1_bar); // active low!!
@@ -569,8 +568,6 @@ void readFFpresent(void)
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c3_sem);
 
-  uint32_t present_FFL12_F2_bar, present_FFLDAQ_F2_bar; // active low signals
-
 #ifdef REV1
   // to port 0
   apollo_i2c_ctl_w(3, 0x72, 1, 0x01);
@@ -579,6 +576,7 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(3, 0x72, 1, 0x02);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_0X21_F2);
 #elif defined(REV2)
+  uint32_t present_FFL12_F2_bar, present_FFLDAQ_F2_bar; // active low signals
   // to port 7
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low!!

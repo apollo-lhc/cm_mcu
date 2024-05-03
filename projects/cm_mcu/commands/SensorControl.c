@@ -656,7 +656,6 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   int i1 = 0; // 0 for status
 #ifdef REV2
   int nTx = -1; // order of Tx ch
-#endif          // REV2
   // print out the "present" bits on first pass
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "PRESENT:\r\n");
@@ -667,6 +666,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
                          ff_bitmask_args[i].present_bit_mask);
     }
   }
+#endif // REV2
   for (; n < NFIREFLY_ARG; ++n) {
     struct MonitorI2CTaskArgs_t *ff_arg = ff_moni2c_arg[n].arg;
     for (; whichff < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev; ++whichff) {
