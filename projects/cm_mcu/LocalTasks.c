@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h> // memset
-#include <time.h> // struct tm
+#include <time.h>   // struct tm
 
 // ROM header must come before MAP header
 #include "driverlib/rom.h"
@@ -576,7 +576,7 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(3, 0x72, 1, 0x02);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_0X21_F2);
 #elif defined(REV2)
-  uint32_t present_FFL12_F2_bar, present_FFLDAQ_F2_bar; // active low signals
+  uint32_t present_FFL12_F2_bar, present_FFLDAQ_F2_bar;            // active low signals
   // to port 7
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low!!
@@ -609,10 +609,10 @@ void readFFpresent(void)
                                  ((present_FFL12_BOTTOM_F1));       // 6 bits
 
 #elif defined(REV2)
-  present_FFL12_F1_bar = present_FFL12_F1_bar & 0x3FU;         // bottom 6 bits
-  present_FFL12_F2_bar = present_FFL12_F2_bar & 0x3FU;         // bottom 6 bits
-  present_FFLDAQ_F1_bar = (present_FFLDAQ_F1_bar >> 4) & 0xFU; // bits 4-7
-  present_FFLDAQ_F2_bar = (present_FFLDAQ_F2_bar >> 4) & 0xFU; // bits 4-7
+  present_FFL12_F1_bar = present_FFL12_F1_bar & 0x3FU;             // bottom 6 bits
+  present_FFL12_F2_bar = present_FFL12_F2_bar & 0x3FU;             // bottom 6 bits
+  present_FFLDAQ_F1_bar = (present_FFLDAQ_F1_bar >> 4) & 0xFU;     // bits 4-7
+  present_FFLDAQ_F2_bar = (present_FFLDAQ_F2_bar >> 4) & 0xFU;     // bits 4-7
 
   uint32_t ff_combined_present = ((present_FFLDAQ_F2_bar) << 16) | // 4 bits
                                  ((present_FFL12_F2_bar) << 10) |  // 6 bits
