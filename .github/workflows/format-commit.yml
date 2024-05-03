@@ -39,7 +39,8 @@ jobs:
         clangFormatVersion: 17
         inplace: true
         style: file
-    - name: Commit clang-formatted files
-      uses: stefanzweifel/git-auto-commit-action@v4
+    - uses: EndBug/add-and-commit@v9
       with:
-        commit_message: Apply clang-format changes
+        message: 'Committing clang-format changes'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
