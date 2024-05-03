@@ -309,10 +309,10 @@ __attribute__((noreturn)) int main(void)
               NULL);
 
 #ifdef REV2
-  // xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
-  //             NULL);
-  // xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
-  //             NULL);
+  xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
+              NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, dcdc_args.name, 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);

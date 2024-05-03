@@ -31,12 +31,12 @@ jobs:
           makedefs
           **/*.md
     - name: Format changed files
-      uses: DoozyX/clang-format-lint-action@v0.14
+      uses: DoozyX/clang-format-lint-action@v0.17
       if: steps.changed-files.outputs.any_changed == 'true'
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
-        clangFormatVersion: 11
+        clangFormatVersion: 17
         inplace: true
         style: file
     - name: Commit clang-formatted files

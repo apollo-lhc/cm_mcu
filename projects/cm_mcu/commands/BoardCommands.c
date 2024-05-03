@@ -9,14 +9,12 @@
 #include <stdbool.h>
 
 #include <stdlib.h>
-//#include "FreeRTOSConfig.h"
 #include "commands/parameters.h"
 #include "common/utils.h"
 #include "driverlib/gpio.h"
 #include "BoardCommands.h"
 #include "common/pinsel.h"
 #include "inc/hw_hibernate.h"
-//#include "driverlib/hibernate.h"
 #include "Tasks.h"
 #include "Semaphore.h"
 
