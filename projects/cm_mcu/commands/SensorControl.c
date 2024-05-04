@@ -1055,8 +1055,9 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         int ret = read_arbitrary_ff_register(regnum, channel, &value, 1);
         if (ret != 0) {
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "read_ff_reg failed with %d\r\n", ret);
-          if (ret == -5)
+          if (ret == SEM_ACCESS_ERROR) {
             snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
+          }
           return pdFALSE;
         }
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
@@ -1087,8 +1088,9 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         int ret = write_arbitrary_ff_register(regnum, value, channel);
         if (ret != 0) {
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "write_ff_reg failed with %d\r\n", ret);
-          if (ret == -5)
+          if (ret == SEM_ACCESS_ERROR) {
             snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
+          }
           return pdFALSE;
         }
         snprintf(m + copied, SCRATCH_SIZE - copied,
