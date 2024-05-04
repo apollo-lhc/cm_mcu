@@ -771,7 +771,7 @@ void getFFpart(void)
     acquireI2CSemaphoreBlock(semaphores[f]);
     uint32_t tmp_ffpart_bit_mask = 0U;
     bool detect_ff = false;
-    for (uint8_t n = 0; n < ndevices[f]; n++) {
+    for (uint32_t n = 0; n < ndevices[f]; n++) {
       uint8_t vendor_data_rxch[4];
       int8_t vendor_part_rxch[17];
 

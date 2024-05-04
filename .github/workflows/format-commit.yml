@@ -30,6 +30,11 @@ jobs:
           **/Makefile
           makedefs
           **/*.md
+          **/*.txt
+          **/.pylintrc
+          **/.gitignore
+          **/.git*
+          **/LICENSE 
     - name: Format changed files
       uses: DoozyX/clang-format-lint-action@v0.17
       if: steps.changed-files.outputs.any_changed == 'true'
