@@ -7,11 +7,14 @@
 
 #include <strings.h>
 #include <sys/_types.h>
+#include "I2CCommunication.h"
+#include "common/utils.h"
 #include "parameters.h"
 #include "SensorControl.h"
 #include "Semaphore.h"
 #include "common/smbus_helper.h"
 #include "Tasks.h"
+#include "projdefs.h"
 
 int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
 {
@@ -34,7 +37,7 @@ int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value,
 
   if (acquireI2CSemaphore(s) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return 5;
+    return SEM_ACCESS_ERROR;
   }
 
   // write to the mux
@@ -87,7 +90,7 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
 
   if (acquireI2CSemaphore(s) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return 5;
+    return SEM_ACCESS_ERROR;
   }
 
   // write to the mux
@@ -539,6 +542,95 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+#ifdef REV2
+// reset firefly devices. The resets are ganged together,
+// so you can only reset all of them at once, for those
+// attached to F1 or F2
+#define FF_RESET_MUX_ADDR       0x71
+#define FF_RESET_MUX_BIT_MASK   (0x1 << 6)
+#define FF_RESET_IOEXP_ADDR     0x21
+#define FF_RESET_IOEXP_REG_ADDR 0x3 // output port 1
+BaseType_t ff_reset(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  BaseType_t which_fpga = strtol(argv[1], NULL, 10);
+  if (which_fpga != 1 && which_fpga != 2) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: arg must 1 or 2\r\n", argv[0]);
+    return pdFALSE;
+  }
+  // grab semaphore
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  SemaphoreHandle_t s = i2c4_sem;
+  uint8_t i2c_dev = 4;
+  if (which_fpga == 2) {
+    s = i2c3_sem;
+    i2c_dev = 3;
+  }
+  if (acquireI2CSemaphore(s) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return pdFALSE;
+  }
+  // select the appropriate output for the mux
+  apollo_i2c_ctl_w(i2c_dev, FF_RESET_MUX_ADDR, 1, FF_RESET_MUX_BIT_MASK);
+  // read/modify/write the reset register
+  uint32_t reset_reg;
+  int ret = apollo_i2c_ctl_reg_r(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, &reset_reg);
+  // set reset bit 0 which is active low
+  reset_reg &= ~(0x1 << 0);
+  ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
+  // wait a tick
+  vTaskDelay(pdMS_TO_TICKS(1));
+  // clear the active low reset bit
+  reset_reg |= (0x1 << 0);
+  ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
+  // release the semaphore
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(s);
+  if (ret) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: error %d\r\n", argv[0], ret);
+  }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reset complete F%d\r\n", argv[0], which_fpga);
+  }
+  return pdFALSE;
+}
+// reset the muxes for the firefly devices
+BaseType_t ff_mux_reset(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  BaseType_t which_fpga = strtol(argv[1], NULL, 10);
+  if (which_fpga != 1 && which_fpga != 2) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: arg must 1 or 2\r\n", argv[0]);
+    return pdFALSE;
+  }
+  // grab semaphore
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  SemaphoreHandle_t s = i2c4_sem;
+  if (which_fpga == 2) {
+    s = i2c3_sem;
+  }
+  if (acquireI2CSemaphore(s) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return pdFALSE;
+  }
+  // select the appropriate output for the mux
+  int pin = _F1_OPTICS_I2C_RESET;
+  if (which_fpga == 2)
+    pin = _F2_OPTICS_I2C_RESET;
+  // toggle the pin
+  write_gpio_pin(pin, 0); // active low signal
+  vTaskDelay(pdMS_TO_TICKS(1));
+  write_gpio_pin(pin, 1); // active low signal
+
+  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(s);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: mux reset complete F%d\r\n", argv[0], which_fpga);
+  return pdFALSE;
+}
+#endif // REV2
+
 BaseType_t ff_status(int argc, char **argv, char *m)
 {
   // argument handling
@@ -563,8 +655,17 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   int i1 = 0; // 0 for status
 #ifdef REV2
   int nTx = -1; // order of Tx ch
-#endif          // REV2
-
+  // print out the "present" bits on first pass
+  if (whichff == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "PRESENT:\r\n");
+    extern struct ff_bit_mask_t ff_bitmask_args[4];
+    char *ff_bitmask_names[4] = {"1_12", "1_4 ", "2_12", "2_4 "};
+    for (int i = 0; i < 4; ++i) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%s: 0x%02x\r\n", ff_bitmask_names[i],
+                         ff_bitmask_args[i].present_bit_mask);
+    }
+  }
+#endif // REV2
   for (; n < NFIREFLY_ARG; ++n) {
     struct MonitorI2CTaskArgs_t *ff_arg = ff_moni2c_arg[n].arg;
     for (; whichff < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev; ++whichff) {
@@ -588,7 +689,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
           ff_4v0_sel &= f1_ff12xmit_4v0_sel;
         else
           ff_4v0_sel &= f2_ff12xmit_4v0_sel;
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8_sel?(%x) \t", ff_4v0_sel >> (nTx % (NFIREFLIES_IT_F1 / 2)));
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8?(%x) \t", ff_4v0_sel >> (nTx % (NFIREFLIES_IT_F1 / 2)));
 #endif              // REV2
       }
       else {
@@ -954,8 +1055,9 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         int ret = read_arbitrary_ff_register(regnum, channel, &value, 1);
         if (ret != 0) {
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "read_ff_reg failed with %d\r\n", ret);
-          if (ret == 5)
+          if (ret == SEM_ACCESS_ERROR) {
             snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
+          }
           return pdFALSE;
         }
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
@@ -986,8 +1088,9 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         int ret = write_arbitrary_ff_register(regnum, value, channel);
         if (ret != 0) {
           copied += snprintf(m + copied, SCRATCH_SIZE - copied, "write_ff_reg failed with %d\r\n", ret);
-          if (ret == 5)
+          if (ret == SEM_ACCESS_ERROR) {
             snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
+          }
           return pdFALSE;
         }
         snprintf(m + copied, SCRATCH_SIZE - copied,

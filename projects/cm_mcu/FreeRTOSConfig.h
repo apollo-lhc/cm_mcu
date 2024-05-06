@@ -157,6 +157,7 @@ header file. */
     APOLLO_ASSERT_RECORD();   \
     for (;;)                  \
       ;                       \
+    __builtin_unreachable();  \
   }
 #else
 #define APOLLO_ASSERT(exp)    \
@@ -164,6 +165,7 @@ header file. */
     taskDISABLE_INTERRUPTS(); \
     APOLLO_ASSERT_RECORD();   \
     ROM_SysCtlReset();        \
+    __builtin_unreachable();  \
   }
 #endif
 

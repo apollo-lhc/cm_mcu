@@ -12,12 +12,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h> // memset
-#include <sys/_types.h>
-#include <time.h> // struct tm
+#include <time.h>   // struct tm
 
 // ROM header must come before MAP header
 #include "driverlib/rom.h"
-#include "driverlib/rom_map.h"
 #include "driverlib/hibernate.h"
 
 #include "Tasks.h"
@@ -31,8 +29,6 @@
 #include "common/smbus_helper.h"
 #include "I2CCommunication.h"
 #include "common/log.h"
-#include "common/printf.h"
-#include "inc/hw_memmap.h"
 
 convert_8_t tmp1;
 
@@ -45,7 +41,7 @@ uint32_t ff_USER_mask = 0;    // global variable of ff signals from user input
 uint32_t f1_ff12xmit_4v0_sel = 0; // global variable for FPGA1 12-ch xmit ff's power-supply physical selection
 uint32_t f2_ff12xmit_4v0_sel = 0; // global variable for FPGA2 12-ch xmit ff's power-supply physical selection
 
-struct ff_bit_mask_t ff_bitmask_args[] = {
+struct ff_bit_mask_t ff_bitmask_args[4] = {
     {0U, 0U}, // {3, 6} bits correspond to ffl12_f1 devices
     {0U, 0U}, // {0, 4} and bits correspond to ffldaq_f1 devices
     {0U, 0U}, // {3, 6} bits correspond to ffl12_f2 devices
@@ -60,11 +56,6 @@ uint32_t present_FFLDAQ_F1, present_FFL12_F1,
     //      4.06 I2C VU7P OPTICS (the I/O expanders at 0x20 and 0x21 have mixed 4-ch (FFLDAQ) and 12-ch (FFL12) pins)
     present_0X20_F2, present_0X21_F2, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2,
     present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2 = 0;
-#elif defined(REV2)
-//      4.05 I2C FPGA31 OPTICS
-uint32_t present_FFLDAQ_F1, present_FFL12_F1,
-    //      4.06 I2C FPGA2 OPTICS
-    present_FFLDAQ_F2, present_FFL12_F2 = 0;
 #endif // REV2
 
 #ifdef REV1
@@ -182,7 +173,7 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
 uint16_t ffldaq_f1_values[NSUPPLIES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
 
 struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
-    .name = "FFDAQ",
+    .name = "F1_4",
     .devices = ffldaq_f1_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F1,
     .n_devices = NSUPPLIES_FFLDAQ_F1,
@@ -273,7 +264,7 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 uint16_t ffl12_f1_values[NSUPPLIES_FFL12_F1 * NCOMMANDS_FFL12_F1];
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
-    .name = "FF12",
+    .name = "F1_12",
     .devices = ffl12_f1_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F1,
     .n_devices = NSUPPLIES_FFL12_F1,
@@ -327,7 +318,7 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
 uint16_t ffldaq_f2_values[NSUPPLIES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
 
 struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
-    .name = "FFDAV",
+    .name = "F2_4",
     .devices = ffldaq_f2_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F2,
     .n_devices = NSUPPLIES_FFLDAQ_F2,
@@ -407,11 +398,10 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #else
 #error "Define either Rev1 or Rev2"
 #endif
-
 uint16_t ffl12_f2_values[NSUPPLIES_FFL12_F2 * NCOMMANDS_FFL12_F2];
 
 struct MonitorI2CTaskArgs_t ffl12_f2_args = {
-    .name = "FF12V",
+    .name = "F2_12",
     .devices = ffl12_f2_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F2,
     .n_devices = NSUPPLIES_FFL12_F2,
@@ -518,7 +508,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
 void setFFmask(uint32_t ff_combined_present)
 {
 
-  log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
+  log_info(LOG_SERVICE, "Setting bit mask of enabled Fireflys\r\n");
 
   // int32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
 #ifdef REV1
@@ -542,6 +532,9 @@ void setFFmask(uint32_t ff_combined_present)
   return;
 }
 
+// this function reads out the I/O expanders to determine which Fireflys are present
+// and if they require 3.8V or not.
+// the code sets ff_bitmask_args[] and f[12]_ff12xmit_4v0_sel
 void readFFpresent(void)
 {
   // grab the semaphore to ensure unique access to I2C controller
@@ -556,12 +549,13 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
 #elif defined(REV2)
+  uint32_t present_FFL12_F1_bar, present_FFLDAQ_F1_bar; // active low signals
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
+  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1_bar); // active low!!
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1_bar);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
 #endif
 
@@ -582,12 +576,13 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(3, 0x72, 1, 0x02);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_0X21_F2);
 #elif defined(REV2)
+  uint32_t present_FFL12_F2_bar, present_FFLDAQ_F2_bar; // active low signals
   // to port 7
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
+  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low!!
   // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2_bar);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
 
 #endif
@@ -614,20 +609,20 @@ void readFFpresent(void)
                                  ((present_FFL12_BOTTOM_F1));       // 6 bits
 
 #elif defined(REV2)
-  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;                     // bottom 6 bits
-  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;                     // bottom 6 bits
-  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU;             // bits 4-7
-  present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU;             // bits 4-7
+  present_FFL12_F1_bar = present_FFL12_F1_bar & 0x3FU;         // bottom 6 bits
+  present_FFL12_F2_bar = present_FFL12_F2_bar & 0x3FU;         // bottom 6 bits
+  present_FFLDAQ_F1_bar = (present_FFLDAQ_F1_bar >> 4) & 0xFU; // bits 4-7
+  present_FFLDAQ_F2_bar = (present_FFLDAQ_F2_bar >> 4) & 0xFU; // bits 4-7
 
-  uint32_t ff_combined_present = ((present_FFLDAQ_F2) << 16) | // 4 bits
-                                 ((present_FFL12_F2) << 10) |  // 6 bits
-                                 (present_FFLDAQ_F1) << 6 |    // 4 bits
-                                 ((present_FFL12_F1));         // 6 bits
+  uint32_t ff_combined_present = ((present_FFLDAQ_F2_bar) << 16) | // 4 bits
+                                 ((present_FFL12_F2_bar) << 10) |  // 6 bits
+                                 (present_FFLDAQ_F1_bar) << 6 |    // 4 bits
+                                 ((present_FFL12_F1_bar));         // 6 bits
 
-  ff_bitmask_args[1].present_bit_mask = (~present_FFLDAQ_F1) & 0xFU; // 4 bits
-  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
-  ff_bitmask_args[3].present_bit_mask = (~present_FFLDAQ_F2) & 0xFU; // 4 bits
-  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
+  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1_bar) & 0x3FU; // 6 bits
+  ff_bitmask_args[1].present_bit_mask = (~present_FFLDAQ_F1_bar) & 0xFU; // 4 bits
+  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2_bar) & 0x3FU; // 6 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFLDAQ_F2_bar) & 0xFU; // 4 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
@@ -749,17 +744,22 @@ uint16_t getFFpresentbit(const uint8_t i)
   return val;
 }
 
+// there is a lot of indirection here
+// this function modifies ffl12_f[12]_args to point to the appropriate command set
+// it also modifies ff_bitmask_args[]
+//
+#define NSTRING (VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1)
 void getFFpart(void)
 {
   // Write device vendor part for identifying FF device
-  uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;
-  char vendor_string[nstring];
-  uint8_t data;
+  char vendor_string[NSTRING];
 
   SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
   const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
   const uint32_t ndevices[2] = {NSUPPLIES_FFL12_F1 / 2, NSUPPLIES_FFL12_F2 / 2};
-  const uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
+  // why are these masks inverted? I am inverting them to preserve past behavior
+  const uint32_t dev_present_mask[2] = {~ff_bitmask_args[0].present_bit_mask,
+                                        ~ff_bitmask_args[2].present_bit_mask};
   const uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
 
   struct MonitorI2CTaskArgs_t args_st[2] = {ffl12_f1_args, ffl12_f2_args};
@@ -771,11 +771,11 @@ void getFFpart(void)
     acquireI2CSemaphoreBlock(semaphores[f]);
     uint32_t tmp_ffpart_bit_mask = 0U;
     bool detect_ff = false;
-    for (uint8_t n = 0; n < ndevices[f]; n++) {
+    for (uint32_t n = 0; n < ndevices[f]; n++) {
       uint8_t vendor_data_rxch[4];
       int8_t vendor_part_rxch[17];
 
-      data = 0x1U << args_st[f].devices[(2 * n) + 1].mux_bit;
+      uint8_t data = 0x1U << args_st[f].devices[(2 * n) + 1].mux_bit;
       log_debug(LOG_SERVICE, "Mux set to 0x%02x\r\n", data);
       int rmux = apollo_i2c_ctl_w(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].mux_addr, 1, data);
       if (rmux != 0) {
@@ -813,14 +813,14 @@ void getFFpart(void)
               ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
           }
           log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA%d): %s \r\n:", f + 1, vendor_string_rxch);
-          strncpy(vendor_string, vendor_string_rxch, nstring);
+          strncpy(vendor_string, vendor_string_rxch, NSTRING);
         }
         else {
           if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) {
             tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
           }
           else {
-            if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
+            if (strncmp(vendor_string_rxch, vendor_string, NSTRING) != 0) {
               log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA%d) on %s \r\n:", f + 1, ff_moni2c_addrs[(2 * n) + 1 + ff_ndev_offset[f]].name);
               log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
             }
@@ -1715,7 +1715,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     // grab the semaphore to ensure unique access to I2C controller
     if (acquireI2CSemaphore(semaphores[i]) == pdFAIL) {
       log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-      return 5;
+      return SEM_ACCESS_ERROR;
     }
     // mux setting
     int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);

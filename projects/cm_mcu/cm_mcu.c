@@ -144,7 +144,7 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
 #elif defined(REV2)
-  initI2C5(g_ui32SysClock);  // controller for FPGAs
+  initI2C5(g_ui32SysClock); // controller for FPGAs
 #endif
 
   // smbus
@@ -237,7 +237,7 @@ const char *gitVersion(void)
   return gitVersion;
 }
 
-int main(void)
+__attribute__((noreturn)) int main(void)
 {
   SystemInit();
 
@@ -299,24 +299,24 @@ int main(void)
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
-  xTaskCreate(MonitorI2CTask, "FF12", 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffl12_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "FFDAQ", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffldaq_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "FF12V", 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffl12_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "FFDAV", 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, ffldaq_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
 
 #ifdef REV2
-  xTaskCreate(MonitorI2CTask, "CLKSI", 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, "CLKR0", 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
               NULL);
 #endif // REV2
-  xTaskCreate(MonitorTask, "PSMON", 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, dcdc_args.name, 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTask, "XIMON", 2 * configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, fpga_args.name, 2 * configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
@@ -378,20 +378,21 @@ int main(void)
   vTaskStartScheduler();
   // should never get here
   Print("Scheduler start failed\r\n");
-  configASSERT(1 == 0);
+  configASSERT(1 == 0); // capture in eeprom
   __builtin_unreachable();
-  return 0;
 }
 
 uintptr_t __stack_chk_guard = 0xdeadbeef;
 
-void __stack_chk_fail(void)
+__attribute__((noreturn)) void __stack_chk_fail(void)
 {
   // fall back to lower-level routine since if we get here things are broken
   UARTPrint(ZQ_UART, "Stack smashing detected\r\n");
   while (MAP_UARTBusy(ZQ_UART))
     ;
-  configASSERT(1 == 0);
+  configASSERT(1 == 0); // capture in eeprom
+  while (true)
+    ;
 }
 
 int SystemStackWaterHighWaterMark(void)
@@ -410,7 +411,7 @@ int SystemStackWaterHighWaterMark(void)
 
 /*-----------------------------------------------------------*/
 #if (configCHECK_FOR_STACK_OVERFLOW != 0)
-void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
+__attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */
@@ -429,11 +430,11 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
     ;
 #else  // DEBUG
   ROM_SysCtlReset();
+  __builtin_unreachable();
 #endif // DEBUG
 }
 #endif
 /*-----------------------------------------------------------*/
-
 #if (configUSE_IDLE_HOOK == 1)
 void vApplicationIdleHook(void)
 {

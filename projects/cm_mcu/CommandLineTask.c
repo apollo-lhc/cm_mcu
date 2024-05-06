@@ -272,6 +272,14 @@ static struct command_t commands[] = {
      "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
      " Firefly controlling and monitoring commands\r\n",
      -1},
+#ifdef REV2
+    {
+        "ff_reset",
+        ff_reset,
+        "Reset FF, args: 1 or 2 for F1 or F2\r\n",
+        1,
+    },
+#endif // REV2
     {
         "ff_status",
         ff_status,
@@ -290,6 +298,14 @@ static struct command_t commands[] = {
         "Show FF CDR loss of lock alarms\r\n",
         0,
     },
+#ifdef REV2
+    {
+        "ff_mux_reset",
+        ff_mux_reset,
+        "reset ff muxes, 1 or 2 for F1 or F2\r\n",
+        1,
+    },
+#endif // REV2
     {
         "ff_optpow",
         ff_optpow,

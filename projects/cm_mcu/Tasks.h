@@ -216,16 +216,14 @@ extern uint32_t ff_USER_mask;
 extern uint32_t f1_ff12xmit_4v0_sel;
 extern uint32_t f2_ff12xmit_4v0_sel;
 struct ff_bit_mask_t {
-  uint8_t ffpart_bit_mask;   // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
-  uint32_t present_bit_mask; // this mask is used for all ffs to detect if it is mounted or not
+  uint8_t ffpart_bit_mask;  // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
+  uint8_t present_bit_mask; // this mask is used for all ffs to detect if it is mounted or not
 };
 extern struct ff_bit_mask_t ff_bitmask_args[NFIREFLY_ARG];
 #endif
 
 #ifdef REV1
 extern uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
-#elif defined(REV2)
-extern uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
 #endif               // REV2
 #define ADDR_ID 0x40 // internal eeprom block for board number & rev
 #define ADDR_FF 0x44 // internal eeprom block for ff mask
@@ -318,7 +316,7 @@ uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
 
 // -- ZynqMon
-//#define ZYNQMON_TEST_MODE
+// #define ZYNQMON_TEST_MODE
 // ZynqMon queue messages
 #define ZYNQMON_ENABLE_TRANSMIT  0x1
 #define ZYNQMON_DISABLE_TRANSMIT 0x2

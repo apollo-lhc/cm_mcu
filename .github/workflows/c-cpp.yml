@@ -95,10 +95,10 @@ jobs:
           **/LICENSE 
     - name: Format changed files
       if: steps.changed-files.outputs.any_changed == 'true'
-      uses: DoozyX/clang-format-lint-action@v0.14
+      uses: DoozyX/clang-format-lint-action@v0.17
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
-        clangFormatVersion: 11
+        clangFormatVersion: 17
         inplace: false
         style: file

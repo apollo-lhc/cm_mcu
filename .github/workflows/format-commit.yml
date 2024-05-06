@@ -30,16 +30,22 @@ jobs:
           **/Makefile
           makedefs
           **/*.md
+          **/*.txt
+          **/.pylintrc
+          **/.gitignore
+          **/.git*
+          **/LICENSE 
     - name: Format changed files
-      uses: DoozyX/clang-format-lint-action@v0.14
+      uses: DoozyX/clang-format-lint-action@v0.17
       if: steps.changed-files.outputs.any_changed == 'true'
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
         extensions: 'h,c'
-        clangFormatVersion: 11
+        clangFormatVersion: 17
         inplace: true
         style: file
-    - name: Commit clang-formatted files
-      uses: stefanzweifel/git-auto-commit-action@v4
+    - uses: EndBug/add-and-commit@v9
       with:
-        commit_message: Apply clang-format changes
+        message: 'Committing clang-format changes'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

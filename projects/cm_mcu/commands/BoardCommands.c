@@ -9,15 +9,14 @@
 #include <stdbool.h>
 
 #include <stdlib.h>
-#include "FreeRTOSConfig.h"
 #include "commands/parameters.h"
 #include "common/utils.h"
 #include "driverlib/gpio.h"
 #include "BoardCommands.h"
 #include "common/pinsel.h"
 #include "inc/hw_hibernate.h"
-#include "driverlib/hibernate.h"
 #include "Tasks.h"
+#include "Semaphore.h"
 
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char *m)
@@ -349,7 +348,7 @@ BaseType_t v38_ctl(int argc, char **argv, char *m)
   int ret = enable_3v8(ffmask, !turnOn);
   if (ret != 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "enable 3v8 failed with %d\r\n", ret);
-    if (ret == 5)
+    if (ret == SEM_ACCESS_ERROR)
       snprintf(m + copied, SCRATCH_SIZE - copied, "please release semaphore \r\n");
     return pdFALSE;
   }
