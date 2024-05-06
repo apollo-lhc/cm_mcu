@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include "commands/parameters.h"
 #include "common/utils.h"
-#include "driverlib/gpio.h"
+#include "driverlib/gpio.h" // IWYU pragma: keep
 #include "BoardCommands.h"
 #include "common/pinsel.h"
 #include "inc/hw_hibernate.h"

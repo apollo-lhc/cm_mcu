@@ -1,0 +1,43 @@
+# Configuration generation for how to access various data
+# read out via the I2C-based monitoring tasks.
+metadata:
+  - cm_hw_rev: 2A
+  - revision: 1
+
+config:
+#  - name: "bob" # register name
+#    reg_size: 1 # size of register address
+#    page: 0 
+#    reg_address: 0x1 # actual register address
+#    size: 0 # how many bytes to read 
+#    bit_mask: 0xFFFF # ??
+#    units: A
+#    type: Linear11 # bitfield, linear11
+#    devices: # list of devices that have this register. 14G, 25G-12, 25G-4, CERN-B.
+  - name: FF_STATUS_REG
+    reg_size: 1
+    page: 0
+    reg_address: 0x2
+    size: 2
+    mask: 0xFF
+    units: ""
+    type: PM_STATUS
+    devices: [14G, 25G12, 25G4, CERNB]
+  - name: FF_TEMPERATURE
+    reg_size: 1
+    page: 0
+    reg_address: 0x16
+    size: 2
+    mask: 0xFF
+    units: C
+    type: PM_NONVOLTAGE
+    devices: [14G, 25G12, 25G4, CERNB]
+  - name: FF_LOS_ALARM
+    reg_size: 1
+    page: 0
+    reg_address: 0x07
+    size: 2
+    mask: 0xFFFF
+    units: ""
+    type: PM_STATUS
+    devices: [25G12, 25G4]

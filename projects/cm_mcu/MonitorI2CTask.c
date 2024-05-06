@@ -14,7 +14,7 @@
 #include <string.h>
 
 // FreeRTOS
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "FreeRTOSConfig.h"
 #include "task.h"
 
