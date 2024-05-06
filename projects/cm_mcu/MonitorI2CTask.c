@@ -108,7 +108,7 @@ void MonitorI2CTask(void *parameters)
         }
       }
 
-      // for firefly devices, skip if FF is not enabled 
+      // for firefly devices, skip if FF is not enabled
       if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1

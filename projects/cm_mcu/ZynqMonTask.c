@@ -19,7 +19,7 @@
 
 #ifdef REV1
 #include "common/softuart.h"
-#include "driverlib/timer.h" 
+#include "driverlib/timer.h"
 #include "driverlib/gpio.h"
 #include "inc/hw_ints.h"
 #endif

@@ -134,7 +134,6 @@ void MonitorI2CTask(void *parameters);
 #define I2C_DEVICE_F2 3
 #endif
 
-
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
 enum pm_type { PM_VOLTAGE,
                PM_NONVOLTAGE,
@@ -142,7 +141,6 @@ enum pm_type { PM_VOLTAGE,
                PM_LINEAR11,
                PM_LINEAR16U,
                PM_LINEAR16S };
-
 
 struct clk_program_t {
   char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip

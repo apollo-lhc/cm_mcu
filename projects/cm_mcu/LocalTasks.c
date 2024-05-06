@@ -28,7 +28,6 @@
 #include "I2CCommunication.h"
 #include "common/log.h"
 
-
 // local prototype
 void Print(const char *str);
 
@@ -68,11 +67,11 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 };
 
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
-    {"FFL12", &ffl12_f1_args, 0, 0, 6},     //
-    {"FFL4", &ffl4_f1_args, 6, 0, 3},   //
-    {"FFL12", &ffl12_f1_args, 9, 6, 2},     //
-    {"FFL4", &ffl4_f2_args, 11, 0, 10}, //
-    {"FFL12", &ffl12_f2_args, 21, 0, 4},    //
+    {"FFL12", &ffl12_f1_args, 0, 0, 6},  //
+    {"FFL4", &ffl4_f1_args, 6, 0, 3},    //
+    {"FFL12", &ffl12_f1_args, 9, 6, 2},  //
+    {"FFL4", &ffl4_f2_args, 11, 0, 10},  //
+    {"FFL12", &ffl12_f2_args, 21, 0, 4}, //
 };
 
 #elif defined(REV2)
@@ -106,10 +105,10 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 };
 
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
-    {"FFL12", &ffl12_f1_args, 0, 0, 6},    //
-    {"FFL4", &ffl4_f1_args, 6, 0, 4},  //
-    {"FFL12", &ffl12_f2_args, 10, 0, 6},   //
-    {"FFL4", &ffl4_f2_args, 16, 0, 4}, //
+    {"FFL12", &ffl12_f1_args, 0, 0, 6},  //
+    {"FFL4", &ffl4_f1_args, 6, 0, 4},    //
+    {"FFL12", &ffl12_f2_args, 10, 0, 6}, //
+    {"FFL4", &ffl4_f2_args, 16, 0, 4},   //
 };
 #else
 #error "Define either Rev1 or Rev2"

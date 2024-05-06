@@ -3,7 +3,7 @@
  * @brief Utilities to access and control SamTec Firefly devices.
  *
  * This file contains utility functions and definitions for interacting with
- * SamTec Firefly devices. 
+ * SamTec Firefly devices.
 
  * @author Peter Wittich
  * @date September 20, 2022
@@ -132,34 +132,34 @@ void readFFpresent(void)
 #ifdef REV1
   uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;    // bottom 6 bits
   uint32_t present_FFL12_TOP_F1 = (present_FFL12_F1 >> 6) & 0x3U; // top 2 bits
-  present_FFL4_F1 = (present_FFL4_F1 >> 5) & 0x7U;            // bits 5-7
+  present_FFL4_F1 = (present_FFL4_F1 >> 5) & 0x7U;                // bits 5-7
   present_FFL12_0X20_F2 = (present_0X20_F2 >> 6) & 0x3U;          // bit 6-7
-  present_FFL4_0X20_F2 = present_0X20_F2 & 0x3FU;               // bottom 6 bits
+  present_FFL4_0X20_F2 = present_0X20_F2 & 0x3FU;                 // bottom 6 bits
   present_FFL12_0X21_F2 = (present_0X21_F2 >> 4) & 0x3U;          // bit 4-5
-  present_FFL4_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;         // bit 4 bits
+  present_FFL4_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;           // bit 4 bits
 
-  uint32_t ff_combined_present = ((present_FFL12_0X21_F2) << 23) |  // 2 bits
-                                 ((present_FFL12_0X20_F2) << 21) |  // 2 bits
-                                 ((present_FFL4_0X21_F2) << 17) | // 4 bits
-                                 ((present_FFL4_0X20_F2) << 11) | // 6 bits
-                                 ((present_FFL12_TOP_F1) << 9) |    // 2 bits
-                                 (present_FFL4_F1) << 6 |         // 3 bits
-                                 ((present_FFL12_BOTTOM_F1));       // 6 bits
+  uint32_t ff_combined_present = ((present_FFL12_0X21_F2) << 23) | // 2 bits
+                                 ((present_FFL12_0X20_F2) << 21) | // 2 bits
+                                 ((present_FFL4_0X21_F2) << 17) |  // 4 bits
+                                 ((present_FFL4_0X20_F2) << 11) |  // 6 bits
+                                 ((present_FFL12_TOP_F1) << 9) |   // 2 bits
+                                 (present_FFL4_F1) << 6 |          // 3 bits
+                                 ((present_FFL12_BOTTOM_F1));      // 6 bits
 
 #elif defined(REV2)
-  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
-  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;         // bottom 6 bits
+  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;     // bottom 6 bits
+  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;     // bottom 6 bits
   present_FFL4_F1 = (present_FFL4_F1 >> 4) & 0xFU; // bits 4-7
   present_FFL4_F2 = (present_FFL4_F2 >> 4) & 0xFU; // bits 4-7
 
-  uint32_t ff_combined_present = ((present_FFL4_F2) << 16) | // 4 bits
-                                 ((present_FFL12_F2) << 10) |  // 6 bits
-                                 (present_FFL4_F1) << 6 |    // 4 bits
-                                 ((present_FFL12_F1));         // 6 bits
+  uint32_t ff_combined_present = ((present_FFL4_F2) << 16) |  // 4 bits
+                                 ((present_FFL12_F2) << 10) | // 6 bits
+                                 (present_FFL4_F1) << 6 |     // 4 bits
+                                 ((present_FFL12_F1));        // 6 bits
 
-  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1) & 0xFU; // 4 bits
+  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1) & 0xFU;   // 4 bits
   ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
-  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2) & 0xFU; // 4 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2) & 0xFU;   // 4 bits
   ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6

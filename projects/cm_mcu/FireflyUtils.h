@@ -37,7 +37,6 @@
 #define VENDOR_START_BIT_FF12  171
 #define VENDOR_STOP_BIT_FF12   187
 
-
 struct arg_moni2c_ff_t {
   char *ff_part;                    // ff part
   struct MonitorI2CTaskArgs_t *arg; // ff arg
