@@ -113,7 +113,7 @@ void MonitorI2CTask(void *parameters)
         if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
 #ifdef REV1
           int NFIREFLIES_IT_F1_P1 = NFIREFLIES_IT_F1 - 2;
-          if (!isEnabledFF((IsFFDAQ * (thisdev + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (thisdev < NFIREFLIES_IT_F1 - 3) * (thisdev)) + (IsFF12 * (thisdev > NFIREFLIES_IT_F1 - 3) * (thisdev + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
+          if (!isEnabledFF((IsFFDAQ * (device + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (device < NFIREFLIES_IT_F1 - 3) * (device)) + (IsFF12 * (device > NFIREFLIES_IT_F1 - 3) * (device + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
             continue;
 #elif defined(REV2)
           if (!isEnabledFF((IsFFDAQ * (device + NFIREFLIES_IT_F1)) + (IsFF12 * (device)))) // skip the FF if it's not enabled via the FF config
@@ -124,7 +124,7 @@ void MonitorI2CTask(void *parameters)
         }
         if (args->i2c_dev == I2C_DEVICE_F2) { // FPGA #2
 #ifdef REV1
-          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (thisdev)) + (IsFF12 * (thisdev + NFIREFLIES_DAQ_F2)))) // skip the FF if it's not enabled via the FF config
+          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (device)) + (IsFF12 * (device + NFIREFLIES_DAQ_F2)))) // skip the FF if it's not enabled via the FF config
             continue;
 #elif defined(REV2)
           if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (device + NFIREFLIES_IT_F2)) + (IsFF12 * (device)))) // skip the FF if it's not enabled via the FF config

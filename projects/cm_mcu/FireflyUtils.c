@@ -26,26 +26,26 @@ uint32_t ff_USER_mask = 0;    // global variable of ff signals from user input
 uint32_t f1_ff12xmit_4v0_sel = 0; // global variable for FPGA1 12-ch xmit ff's power-supply physical selection
 uint32_t f2_ff12xmit_4v0_sel = 0; // global variable for FPGA2 12-ch xmit ff's power-supply physical selection
 
-struct ff_bit_mask_t ff_bitmask_args[] = {
+struct ff_bit_mask_t ff_bitmask_args[4] = {
     {0U, 0U}, // {3, 6} bits correspond to ffl12_f1 devices
-    {0U, 0U}, // {0, 4} and bits correspond to ffldaq_f1 devices
+    {0U, 0U}, // {0, 4} and bits correspond to ffl4_f1 devices
     {0U, 0U}, // {3, 6} bits correspond to ffl12_f2 devices
-    {0U, 0U}, // {0, 4} bits correspond to ffldaq_f2 devices
+    {0U, 0U}, // {0, 4} bits correspond to ffl4_f2 devices
 };
 
 #endif
 // outputs from *_PRESENT pins for constructing ff_PRESENT_mask
 #ifdef REV1
 //      4.05 I2C KU15P OPTICS
-uint32_t present_FFLDAQ_F1, present_FFL12_F1,
-    //      4.06 I2C VU7P OPTICS (the I/O expanders at 0x20 and 0x21 have mixed 4-ch (FFLDAQ) and 12-ch (FFL12) pins)
-    present_0X20_F2, present_0X21_F2, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2,
-    present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2 = 0;
+uint32_t present_FFL4_F1, present_FFL12_F1,
+    //      4.06 I2C VU7P OPTICS (the I/O expanders at 0x20 and 0x21 have mixed 4-ch (ffl4) and 12-ch (FFL12) pins)
+    present_0X20_F2, present_0X21_F2, present_FFL4_0X20_F2, present_FFL12_0X20_F2,
+    present_FFL4_0X21_F2, present_FFL12_0X21_F2 = 0;
 #elif defined(REV2)
 //      4.05 I2C FPGA31 OPTICS
-uint32_t present_FFLDAQ_F1, present_FFL12_F1,
+uint32_t present_FFL4_F1, present_FFL12_F1,
     //      4.06 I2C FPGA2 OPTICS
-    present_FFLDAQ_F2, present_FFL12_F2 = 0;
+    present_FFL4_F2, present_FFL12_F2 = 0;
 #endif // REV2
 
 void setFFmask(uint32_t ff_combined_present)
@@ -87,14 +87,14 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
 #elif defined(REV2)
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
 #endif
 
@@ -120,7 +120,7 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
   // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
 
 #endif
@@ -132,34 +132,34 @@ void readFFpresent(void)
 #ifdef REV1
   uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;    // bottom 6 bits
   uint32_t present_FFL12_TOP_F1 = (present_FFL12_F1 >> 6) & 0x3U; // top 2 bits
-  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 5) & 0x7U;            // bits 5-7
+  present_FFL4_F1 = (present_FFL4_F1 >> 5) & 0x7U;            // bits 5-7
   present_FFL12_0X20_F2 = (present_0X20_F2 >> 6) & 0x3U;          // bit 6-7
-  present_FFLDAQ_0X20_F2 = present_0X20_F2 & 0x3FU;               // bottom 6 bits
+  present_FFL4_0X20_F2 = present_0X20_F2 & 0x3FU;               // bottom 6 bits
   present_FFL12_0X21_F2 = (present_0X21_F2 >> 4) & 0x3U;          // bit 4-5
-  present_FFLDAQ_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;         // bit 4 bits
+  present_FFL4_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;         // bit 4 bits
 
   uint32_t ff_combined_present = ((present_FFL12_0X21_F2) << 23) |  // 2 bits
                                  ((present_FFL12_0X20_F2) << 21) |  // 2 bits
-                                 ((present_FFLDAQ_0X21_F2) << 17) | // 4 bits
-                                 ((present_FFLDAQ_0X20_F2) << 11) | // 6 bits
+                                 ((present_FFL4_0X21_F2) << 17) | // 4 bits
+                                 ((present_FFL4_0X20_F2) << 11) | // 6 bits
                                  ((present_FFL12_TOP_F1) << 9) |    // 2 bits
-                                 (present_FFLDAQ_F1) << 6 |         // 3 bits
+                                 (present_FFL4_F1) << 6 |         // 3 bits
                                  ((present_FFL12_BOTTOM_F1));       // 6 bits
 
 #elif defined(REV2)
   present_FFL12_F1 = present_FFL12_F1 & 0x3FU;         // bottom 6 bits
   present_FFL12_F2 = present_FFL12_F2 & 0x3FU;         // bottom 6 bits
-  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU; // bits 4-7
-  present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU; // bits 4-7
+  present_FFL4_F1 = (present_FFL4_F1 >> 4) & 0xFU; // bits 4-7
+  present_FFL4_F2 = (present_FFL4_F2 >> 4) & 0xFU; // bits 4-7
 
-  uint32_t ff_combined_present = ((present_FFLDAQ_F2) << 16) | // 4 bits
+  uint32_t ff_combined_present = ((present_FFL4_F2) << 16) | // 4 bits
                                  ((present_FFL12_F2) << 10) |  // 6 bits
-                                 (present_FFLDAQ_F1) << 6 |    // 4 bits
+                                 (present_FFL4_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
-  ff_bitmask_args[1].present_bit_mask = (~present_FFLDAQ_F1) & 0xFU; // 4 bits
+  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1) & 0xFU; // 4 bits
   ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
-  ff_bitmask_args[3].present_bit_mask = (~present_FFLDAQ_F2) & 0xFU; // 4 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2) & 0xFU; // 4 bits
   ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
@@ -187,9 +187,9 @@ unsigned isFFStale(void)
   TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
   TickType_t last[4];
   last[0] = pdTICKS_TO_S(ffl12_f1_args.updateTick);
-  last[1] = pdTICKS_TO_S(ffldaq_f1_args.updateTick);
+  last[1] = pdTICKS_TO_S(ffl4_f1_args.updateTick);
   last[2] = pdTICKS_TO_S(ffl12_f2_args.updateTick);
-  last[3] = pdTICKS_TO_S(ffldaq_f2_args.updateTick);
+  last[3] = pdTICKS_TO_S(ffl4_f2_args.updateTick);
 
   unsigned mask = 0U;
   for (int ff_t = 0; ff_t < 4; ++ff_t) {
@@ -212,13 +212,13 @@ TickType_t getFFupdateTick(int mask)
     return ffl12_f1_args.updateTick;
   }
   else if (mask & 0x02U) {
-    return ffldaq_f1_args.updateTick;
+    return ffl4_f1_args.updateTick;
   }
   else if (mask & 0x04U) {
     return ffl12_f2_args.updateTick;
   }
   else {
-    return ffldaq_f2_args.updateTick;
+    return ffl4_f2_args.updateTick;
   }
 }
 
@@ -233,8 +233,8 @@ uint16_t getFFtemp(const uint8_t i)
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-    int index = (i - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
-    val = ffldaq_f1_args.sm_values[index];
+    int index = (i - NFIREFLIES_IT_F1) * (ffl4_f1_args.n_commands * ffl4_f1_args.n_pages) + i1;
+    val = ffl4_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
@@ -242,8 +242,8 @@ uint16_t getFFtemp(const uint8_t i)
     val = ffl12_f2_args.sm_values[index];
   }
   else {
-    int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-    val = ffldaq_f2_args.sm_values[index];
+    int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffl4_f2_args.n_commands * ffl4_f2_args.n_pages) + i1;
+    val = ffl4_f2_args.sm_values[index];
   }
 
   return val;

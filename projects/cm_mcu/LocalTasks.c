@@ -28,7 +28,6 @@
 #include "I2CCommunication.h"
 #include "common/log.h"
 
-//convert_8_t tmp1;
 
 // local prototype
 void Print(const char *str);
@@ -70,9 +69,9 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
     {"FFL12", &ffl12_f1_args, 0, 0, 6},     //
-    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 3},   //
+    {"FFL4", &ffl4_f1_args, 6, 0, 3},   //
     {"FFL12", &ffl12_f1_args, 9, 6, 2},     //
-    {"FFLDAQ", &ffldaq_f2_args, 11, 0, 10}, //
+    {"FFL4", &ffl4_f2_args, 11, 0, 10}, //
     {"FFL12", &ffl12_f2_args, 21, 0, 4},    //
 };
 
@@ -108,9 +107,9 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
 
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
     {"FFL12", &ffl12_f1_args, 0, 0, 6},    //
-    {"FFLDAQ", &ffldaq_f1_args, 6, 0, 4},  //
+    {"FFL4", &ffl4_f1_args, 6, 0, 4},  //
     {"FFL12", &ffl12_f2_args, 10, 0, 6},   //
-    {"FFLDAQ", &ffldaq_f2_args, 16, 0, 4}, //
+    {"FFL4", &ffl4_f2_args, 16, 0, 4}, //
 };
 #else
 #error "Define either Rev1 or Rev2"
@@ -118,13 +117,13 @@ struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
 
 // FFDAQ arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA1
 #ifdef REV1
-struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
+struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     {"K04 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
     {"K05 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"K06 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
 #elif defined(REV2)
-struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
+struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
     {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
@@ -134,7 +133,7 @@ struct dev_moni2c_addr_t ffldaq_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
 #error "Define either Rev1 or Rev2"
 #endif
 
-struct sm_command_t sm_command_ffldaq_f1[] = {
+struct sm_command_t sm_command_ffl4_f1[] = {
     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
@@ -145,19 +144,19 @@ struct sm_command_t sm_command_ffldaq_f1[] = {
     {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 };
 
-uint16_t ffldaq_f1_values[NDEVICES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1];
+uint16_t ffl4_f1_values[NDEVICES_FFL4_F1 * NCOMMANDS_FFL4_F1];
 
-struct MonitorI2CTaskArgs_t ffldaq_f1_args = {
+struct MonitorI2CTaskArgs_t ffl4_f1_args = {
     .name = "F1_4",
-    .devices = ffldaq_f1_moni2c_addrs,
+    .devices = ffl4_f1_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F1,
-    .n_devices = NDEVICES_FFLDAQ_F1,
-    .commands = sm_command_ffldaq_f1,
-    .n_commands = NCOMMANDS_FFLDAQ_F1,
-    .n_values = NDEVICES_FFLDAQ_F1 * NPAGES_FFLDAQ_F1 * NCOMMANDS_FFLDAQ_F1,
-    .n_pages = NPAGES_FFLDAQ_F1,
+    .n_devices = NDEVICES_FFL4_F1,
+    .commands = sm_command_ffl4_f1,
+    .n_commands = NCOMMANDS_FFL4_F1,
+    .n_values = NDEVICES_FFL4_F1 * NPAGES_FFL4_F1 * NCOMMANDS_FFL4_F1,
+    .n_pages = NPAGES_FFL4_F1,
     .selpage_reg = FF_SELPAGE_REG,
-    .sm_values = ffldaq_f1_values,
+    .sm_values = ffl4_f1_values,
     .smbus = &g_sMaster4,
     .smbus_status = &eStatus4,
     .xSem = NULL,
@@ -257,7 +256,7 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
 
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
 #ifdef REV1
-struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
+struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
     {"V01 4 XCVR GTY", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"V02 4 XCVR GTY", FF_I2CMUX_1_ADDR, 1, 0x50}, //
     {"V03 4 XCVR GTY", FF_I2CMUX_1_ADDR, 2, 0x50}, //
@@ -270,7 +269,7 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
     {"V10 4 XCVR GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
 };
 #elif defined(REV2)
-struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
+struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
     {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
     {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
@@ -280,7 +279,7 @@ struct dev_moni2c_addr_t ffldaq_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 #error "Define either Rev1 or Rev2"
 #endif
 
-struct sm_command_t sm_command_ffldaq_f2[] = {
+struct sm_command_t sm_command_ffl4_f2[] = {
     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
@@ -290,19 +289,19 @@ struct sm_command_t sm_command_ffldaq_f2[] = {
     {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
     {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 };
-uint16_t ffldaq_f2_values[NDEVICES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2];
+uint16_t ffl4_f2_values[NDEVICES_FFL4_F2 * NCOMMANDS_FFL4_F2];
 
-struct MonitorI2CTaskArgs_t ffldaq_f2_args = {
+struct MonitorI2CTaskArgs_t ffl4_f2_args = {
     .name = "F2_4",
-    .devices = ffldaq_f2_moni2c_addrs,
+    .devices = ffl4_f2_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_F2,
-    .n_devices = NDEVICES_FFLDAQ_F2,
-    .commands = sm_command_ffldaq_f2,
-    .n_commands = NCOMMANDS_FFLDAQ_F2,
-    .n_values = NDEVICES_FFLDAQ_F2 * NPAGES_FFLDAQ_F2 * NCOMMANDS_FFLDAQ_F2,
-    .n_pages = NPAGES_FFLDAQ_F2,
+    .n_devices = NDEVICES_FFL4_F2,
+    .commands = sm_command_ffl4_f2,
+    .n_commands = NCOMMANDS_FFL4_F2,
+    .n_values = NDEVICES_FFL4_F2 * NPAGES_FFL4_F2 * NCOMMANDS_FFL4_F2,
+    .n_pages = NPAGES_FFL4_F2,
     .selpage_reg = FF_SELPAGE_REG,
-    .sm_values = ffldaq_f2_values,
+    .sm_values = ffl4_f2_values,
     .smbus = &g_sMaster3,
     .smbus_status = &eStatus3,
     .xSem = NULL,
@@ -481,6 +480,7 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
 };
 #endif // REV2
 
+#if 0
 void setFFmask(uint32_t ff_combined_present)
 {
 
@@ -520,14 +520,14 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
 #elif defined(REV2)
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFLDAQ_F1);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
 #endif
 
@@ -553,7 +553,7 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
   // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFLDAQ_F2);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
 
 #endif
@@ -565,34 +565,34 @@ void readFFpresent(void)
 #ifdef REV1
   uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;    // bottom 6 bits
   uint32_t present_FFL12_TOP_F1 = (present_FFL12_F1 >> 6) & 0x3U; // top 2 bits
-  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 5) & 0x7U;            // bits 5-7
+  present_FFL4_F1 = (present_FFL4_F1 >> 5) & 0x7U;            // bits 5-7
   present_FFL12_0X20_F2 = (present_0X20_F2 >> 6) & 0x3U;          // bit 6-7
-  present_FFLDAQ_0X20_F2 = present_0X20_F2 & 0x3FU;               // bottom 6 bits
+  present_FFL4_0X20_F2 = present_0X20_F2 & 0x3FU;               // bottom 6 bits
   present_FFL12_0X21_F2 = (present_0X21_F2 >> 4) & 0x3U;          // bit 4-5
-  present_FFLDAQ_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;         // bit 4 bits
+  present_FFL4_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;         // bit 4 bits
 
   uint32_t ff_combined_present = ((present_FFL12_0X21_F2) << 23) |  // 2 bits
                                  ((present_FFL12_0X20_F2) << 21) |  // 2 bits
-                                 ((present_FFLDAQ_0X21_F2) << 17) | // 4 bits
-                                 ((present_FFLDAQ_0X20_F2) << 11) | // 6 bits
+                                 ((present_FFL4_0X21_F2) << 17) | // 4 bits
+                                 ((present_FFL4_0X20_F2) << 11) | // 6 bits
                                  ((present_FFL12_TOP_F1) << 9) |    // 2 bits
-                                 (present_FFLDAQ_F1) << 6 |         // 3 bits
+                                 (present_FFL4_F1) << 6 |         // 3 bits
                                  ((present_FFL12_BOTTOM_F1));       // 6 bits
 
 #elif defined(REV2)
   present_FFL12_F1 = present_FFL12_F1 & 0x3FU;                     // bottom 6 bits
   present_FFL12_F2 = present_FFL12_F2 & 0x3FU;                     // bottom 6 bits
-  present_FFLDAQ_F1 = (present_FFLDAQ_F1 >> 4) & 0xFU;             // bits 4-7
-  present_FFLDAQ_F2 = (present_FFLDAQ_F2 >> 4) & 0xFU;             // bits 4-7
+  present_FFL4_F1 = (present_FFL4_F1 >> 4) & 0xFU;             // bits 4-7
+  present_FFL4_F2 = (present_FFL4_F2 >> 4) & 0xFU;             // bits 4-7
 
-  uint32_t ff_combined_present = ((present_FFLDAQ_F2) << 16) | // 4 bits
+  uint32_t ff_combined_present = ((present_FFL4_F2) << 16) | // 4 bits
                                  ((present_FFL12_F2) << 10) |  // 6 bits
-                                 (present_FFLDAQ_F1) << 6 |    // 4 bits
+                                 (present_FFL4_F1) << 6 |    // 4 bits
                                  ((present_FFL12_F1));         // 6 bits
 
-  ff_bitmask_args[1].present_bit_mask = (~present_FFLDAQ_F1) & 0xFU; // 4 bits
+  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1) & 0xFU; // 4 bits
   ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
-  ff_bitmask_args[3].present_bit_mask = (~present_FFLDAQ_F2) & 0xFU; // 4 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2) & 0xFU; // 4 bits
   ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
 
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
@@ -620,9 +620,9 @@ unsigned isFFStale(void)
   TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
   TickType_t last[4];
   last[0] = pdTICKS_TO_S(ffl12_f1_args.updateTick);
-  last[1] = pdTICKS_TO_S(ffldaq_f1_args.updateTick);
+  last[1] = pdTICKS_TO_S(ffl4_f1_args.updateTick);
   last[2] = pdTICKS_TO_S(ffl12_f2_args.updateTick);
-  last[3] = pdTICKS_TO_S(ffldaq_f2_args.updateTick);
+  last[3] = pdTICKS_TO_S(ffl4_f2_args.updateTick);
 
   unsigned mask = 0U;
   for (int ff_t = 0; ff_t < 4; ++ff_t) {
@@ -645,13 +645,13 @@ TickType_t getFFupdateTick(int mask)
     return ffl12_f1_args.updateTick;
   }
   else if (mask & 0x02U) {
-    return ffldaq_f1_args.updateTick;
+    return ffl4_f1_args.updateTick;
   }
   else if (mask & 0x04U) {
     return ffl12_f2_args.updateTick;
   }
   else {
-    return ffldaq_f2_args.updateTick;
+    return ffl4_f2_args.updateTick;
   }
 }
 
@@ -666,8 +666,8 @@ uint16_t getFFtemp(const uint8_t i)
   }
 
   else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-    int index = (i - NFIREFLIES_IT_F1) * (ffldaq_f1_args.n_commands * ffldaq_f1_args.n_pages) + i1;
-    val = ffldaq_f1_args.sm_values[index];
+    int index = (i - NFIREFLIES_IT_F1) * (ffl4_f1_args.n_commands * ffl4_f1_args.n_pages) + i1;
+    val = ffl4_f1_args.sm_values[index];
   }
 
   else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
@@ -675,8 +675,8 @@ uint16_t getFFtemp(const uint8_t i)
     val = ffl12_f2_args.sm_values[index];
   }
   else {
-    int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffldaq_f2_args.n_commands * ffldaq_f2_args.n_pages) + i1;
-    val = ffldaq_f2_args.sm_values[index];
+    int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffl4_f2_args.n_commands * ffl4_f2_args.n_pages) + i1;
+    val = ffl4_f2_args.sm_values[index];
   }
 
   return val;
@@ -724,7 +724,7 @@ void getFFpart(void)
 
   SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
   const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
-  const uint32_t ndevices[2] = {NSUPPLIES_FFL12_F1 / 2, NSUPPLIES_FFL12_F2 / 2};
+  const uint32_t ndevices[2] = {NDEVICES_FFL12_F1 / 2, NDEVICES_FFL12_F2 / 2};
   const uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
   const uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
 
@@ -759,6 +759,7 @@ void getFFpart(void)
           vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
         }
 
+        convert_8_t tmp1;
         tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
         vendor_part_rxch[i - VENDOR_START_BIT_FF12] = tmp1.s;
         vendor_part_rxch[i - VENDOR_START_BIT_FF12 + 1] = '\0'; // null-terminated
@@ -823,6 +824,7 @@ void getFFpart(void)
     }
   }
 }
+#endif
 #endif
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
