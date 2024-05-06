@@ -591,7 +591,7 @@ BaseType_t ff_reset(int argc, char **argv, char *m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: error %d\r\n", argv[0], ret);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reset complete F%d\r\n", argv[0], which_fpga);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reset complete F%ld\r\n", argv[0], which_fpga);
   }
   return pdFALSE;
 }
@@ -626,7 +626,7 @@ BaseType_t ff_mux_reset(int argc, char **argv, char *m)
 
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
     xSemaphoreGive(s);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: mux reset complete F%d\r\n", argv[0], which_fpga);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: mux reset complete F%ld\r\n", argv[0], which_fpga);
   return pdFALSE;
 }
 #endif // REV2
@@ -661,7 +661,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     extern struct ff_bit_mask_t ff_bitmask_args[4];
     char *ff_bitmask_names[4] = {"1_12", "1_4 ", "2_12", "2_4 "};
     for (int i = 0; i < 4; ++i) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%s: 0x%02x\r\n", ff_bitmask_names[i],
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%s: 0x%02lx\r\n", ff_bitmask_names[i],
                          ff_bitmask_args[i].present_bit_mask);
     }
   }

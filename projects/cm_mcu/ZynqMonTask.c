@@ -19,12 +19,14 @@
 
 #ifdef REV1
 #include "common/softuart.h"
+#include "driverlib/timer.h" 
+#include "driverlib/gpio.h"
+#include "inc/hw_ints.h"
 #endif
 
 #include "Tasks.h"
 #include "MonitorTask.h"
 #include "MonitorI2CTask.h"
-#include "commands/SensorControl.h"
 #include "clocksynth.h"
 #include "common/log.h"
 
@@ -152,8 +154,8 @@ void InitSUART(void)
   // Enable the GPIO modules that contains the GPIO pins to be used by
   // the software UART.
   //
-  // MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-  // MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+  // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+  // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
   //
   // Configure the software UART module: 8 data bits, no parity, and one
   // stop bit.
@@ -170,33 +172,33 @@ void InitSUART(void)
   // UART.  The interface in this example is run at 38,400 baud,
   // requiring a timer tick at 38,400 Hz.
   //
-  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-  MAP_TimerConfigure(TIMER0_BASE,
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+  ROM_TimerConfigure(TIMER0_BASE,
                      (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC | TIMER_CFG_B_PERIODIC));
-  MAP_TimerLoadSet(TIMER0_BASE, TIMER_A, g_ulBitTime);
-  MAP_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
-  MAP_TimerEnable(TIMER0_BASE, TIMER_A);
+  ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, g_ulBitTime);
+  ROM_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
+  ROM_TimerEnable(TIMER0_BASE, TIMER_A);
   //
   // Set the priorities of the interrupts associated with the software
   // UART.  The receiver is higher priority than the transmitter, and the
   // receiver edge interrupt is higher priority than the receiver timer
   // interrupt.
   //
-  // MAP_IntPrioritySet(INT_GPIOE, 0x00);
-  // MAP_IntPrioritySet(INT_TIMER0B, 0x40);
+  // ROM_IntPrioritySet(INT_GPIOE, 0x00);
+  // ROM_IntPrioritySet(INT_TIMER0B, 0x40);
   // 0x80 corresponds to 4 << (8-5)
   // Remember that on the TM4C only 3 highest bits
   // are used for setting interrupt priority, and numerically lower
   // values are logically higher.
   // this is lower that configMAX_SYSCALL_INTERRUPT_PRIORITY but the ISR
   // does not call any FreeRTOS functions so this will work.
-  MAP_IntPrioritySet(INT_TIMER0A, 0x80); // THIS NEEDS TO BE at a HIGH PRIORITY!!!! DONOT CHANGE
+  ROM_IntPrioritySet(INT_TIMER0A, 0x80); // THIS NEEDS TO BE at a HIGH PRIORITY!!!! DONOT CHANGE
   //
   // Enable the interrupts associated with the software UART.
   //
-  // MAP_IntEnable(INT_GPIOE);
-  // MAP_IntEnable(INT_TIMER0A);
-  // MAP_IntEnable(INT_TIMER0B);
+  // ROM_IntEnable(INT_GPIOE);
+  // ROM_IntEnable(INT_TIMER0A);
+  // ROM_IntEnable(INT_TIMER0B);
 
   //
   // Enable the transmit FIFO half full interrupt in the software UART.
@@ -655,7 +657,7 @@ void ZynqMonTask(void *parameters)
     if (enable) {
 #ifdef REV1
       // Enable the interrupts during transmission
-      MAP_IntEnable(INT_TIMER0A);
+      ROM_IntEnable(INT_TIMER0A);
 #endif // REV1
 
       if (inTestMode) {
@@ -701,7 +703,7 @@ void ZynqMonTask(void *parameters)
       while (g_sUART.ui16TxBufferRead != g_sUART.ui16TxBufferWrite)
         vTaskDelay(pdMS_TO_TICKS(10));
 
-      MAP_IntDisable(INT_TIMER0A);
+      ROM_IntDisable(INT_TIMER0A);
 #endif // REV1
     }  // if ( enabled)
 
