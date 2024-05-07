@@ -23,7 +23,7 @@ struct sm_command_t {
   uint16_t bit_mask;     // begin bit mask
   char *units;           // units for pretty printing
   enum pm_type type;     // how to decode command (L11 or bitfield or ...)
-  bool (*devicelist)(void);
+  uint16_t (*devicelist)(void);
   void (*storeData)(uint16_t data, int which);
 };
 
