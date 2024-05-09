@@ -73,7 +73,6 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
         for c in config:
             s = addr_template.substitute(c)
             print(s, file=fout_source)
-            # print(f"{{{c['reg_size']},\"{c['name']}\"}},", file=fout)
         print(r"};", file=fout_source)
 
         # generate the arrays to store the data
@@ -104,12 +103,14 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
                 print(f"DEVICE_{d} | ", end="", file=fout_source)
             print(r"0;", file=fout_source)
             print(r"}", file=fout_source)
-        print(r"#endif", file=fout_header)
+        # closing header guard
+        print(r"#endif// MON_I2C_ADDRESSES_H", file=fout_header)
+
 # reformat the c file using clang-format
 # -style=file:$HOME/src/apollo_cm_mcu/.clang-format
 # if the clang-format fails, we just ignore it
 try:
-    r = subprocess.run(["clang-format", "-i", args.output], check=False)
+    r = subprocess.run(["clang-format", "-i", source_fname, header_fname], check=False)
     if r.returncode != 0 and args.verbose:
         print('clang-format failed')
     if args.verbose:

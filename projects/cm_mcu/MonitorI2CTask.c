@@ -192,7 +192,7 @@ void MonitorI2CTask(void *parameters)
         else {
           uint16_t masked_output = output_raw & args->commands[c].bit_mask;
           args->sm_values[index] = masked_output;
-          if ( args->commands[c].devicelist() ) {
+          if (args->commands[c].devicelist()) {
             args->commands[c].storeData(masked_output, device);
           }
         }
