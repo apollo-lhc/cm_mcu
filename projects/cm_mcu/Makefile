@@ -82,7 +82,7 @@ all: ${COMPILER}/cm_mcu.axf
 # The rule to clean out all the build products.
 #
 clean:
-	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c ZynqMon_addresses.h ${ROOT}/PL_MEM*.xml
+	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c ZynqMon_addresses.h ${ROOT}/PL_MEM*.xml MonI2C_addresses.*
 
 #
 # The rule to create the target directory.
