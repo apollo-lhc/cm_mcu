@@ -1,5 +1,5 @@
 /*
- * MonitorI2CTask.c
+ * MonitorI2CTask_new.c
  *
  *  Created on: June 30, 2022
  *      Author: pkotamnives
@@ -20,7 +20,7 @@
 
 // local includes
 #include "common/smbus_helper.h"
-#include "MonitorI2CTask.h"
+#include "MonitorTaskI2C_new.h"
 #include "common/log.h"
 #include "Tasks.h"
 #include "I2CCommunication.h"
@@ -29,7 +29,7 @@
 // local prototype
 
 // read-only accessor functions for Firefly names and values.
-
+#if 0
 bool getFFch_low(uint8_t val, int channel)
 {
   configASSERT(channel < 8);
@@ -47,12 +47,13 @@ bool getFFch_high(uint8_t val, int channel)
   }
   return true;
 }
+#endif
 
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
-void MonitorI2CTask(void *parameters)
+void MonitorI2CTask_new(void *parameters)
 {
 
-  struct MonitorI2CTaskArgs_t *args = parameters;
+  struct MonitorI2CTaskArgs_new_t *args = parameters;
 
   configASSERT(args->name != 0);
 
@@ -61,10 +62,6 @@ void MonitorI2CTask(void *parameters)
 
   // wait for the power to come up
   vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(5000));
-
-  int IsCLK = (strstr(args->name, "CLK") != NULL);  // the instance is of CLK-device type
-  int IsFF12 = (strstr(args->name, "_12") != NULL); // the instance is of FF 12-ch part type
-  int IsFFDAQ = (strstr(args->name, "_4") != NULL); // the instance is of FF 4-ch part type
 
   // initialize to the current tick time
   args->updateTick = xTaskGetTickCount();
@@ -107,54 +104,9 @@ void MonitorI2CTask(void *parameters)
           good = true;
         }
       }
-
-      // for firefly devices, skip if FF is not enabled
-      if (!IsCLK) {                           // Fireflies need to be checked if the links are connected or not
-        if (args->i2c_dev == I2C_DEVICE_F1) { // FPGA #1
-#ifdef REV1
-          int NFIREFLIES_IT_F1_P1 = NFIREFLIES_IT_F1 - 2;
-          if (!isEnabledFF((IsFFDAQ * (device + NFIREFLIES_IT_F1_P1)) + (IsFF12 * (device < NFIREFLIES_IT_F1 - 3) * (device)) + (IsFF12 * (device > NFIREFLIES_IT_F1 - 3) * (device + NFIREFLIES_DAQ_F1)))) // skip the FF if it's not enabled via the FF config
-            continue;
-#elif defined(REV2)
-          if (!isEnabledFF((IsFFDAQ * (device + NFIREFLIES_IT_F1)) + (IsFF12 * (device)))) // skip the FF if it's not enabled via the FF config
-            continue;
-#else
-#error "Define either Rev1 or Rev2"
-#endif
-        }
-        if (args->i2c_dev == I2C_DEVICE_F2) { // FPGA #2
-#ifdef REV1
-          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (device)) + (IsFF12 * (device + NFIREFLIES_DAQ_F2)))) // skip the FF if it's not enabled via the FF config
-            continue;
-#elif defined(REV2)
-          if (!isEnabledFF(NFIREFLIES_F1 + (IsFFDAQ * (device + NFIREFLIES_IT_F2)) + (IsFF12 * (device)))) // skip the FF if it's not enabled via the FF config
-            continue;
-#else
-#error "Define either Rev1 or Rev2"
-#endif
-        }
-      }
-
-      // for firefly devices, check the reset pin
-      if (!IsCLK) {
-        // mux setting
-        int result = apollo_i2c_ctl_w(args->i2c_dev, 0x71, 1, 0x40);
-        if (result) {
-          log_warn(LOG_MONI2C, "mux err %d\r\n", result);
-          break;
-        }
-        uint32_t val;
-        // reading reset-FF pin
-        int res = apollo_i2c_ctl_reg_r(args->i2c_dev, 0x21, 1, 0x3, 1, &val);
-        if (res) {
-          log_warn(LOG_MONI2C, "%s read reset-FF pin failed %d\r\n", args->name, res);
-          break;
-        }
-        if ((val & 0x1) != 0x1) {
-          log_warn(LOG_MONI2C, "%s reset-FF pin is down \r\n", args->name);
-          break;
-        }
-      }
+      // what kind of device do we have (e.g., 4 ch FF, 12 ch 25 G FF, 12 ch CERN-B FF, etc.)
+      int devtype = args->typeCallback(device);
+      int dev_mask = 0x1U << device;
 
       // select the appropriate output for the mux
       uint8_t data;
@@ -168,8 +120,11 @@ void MonitorI2CTask(void *parameters)
 
       // Read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
+        // check if the command is for this device
+        if ((args->commands[c].devicelist() & dev_mask) == 0 ) {
+          continue; // not for me!
+        }
 
-        int index = device * (args->n_commands * args->n_pages) + c;
 
         log_debug(LOG_MONI2C, "%s: reg %s\r\n", args->name, args->commands[c].name);
         uint8_t page_reg_value = args->commands[c].page;
@@ -181,17 +136,17 @@ void MonitorI2CTask(void *parameters)
 
         uint32_t output_raw;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[device].dev_addr, args->commands[c].reg_size,
-                                       args->commands[c].command, args->commands[c].size, &output_raw);
+                                       args->commands[c].command[devtype], args->commands[c].size, &output_raw);
 
         if (res != 0) {
           log_error(LOG_MONI2C, "%s: %s read Error %s, break (ps=%d)\r\n",
                     args->name, args->commands[c].name, SMBUS_get_error(res), device);
-          args->sm_values[index] = 0xffff;
+          args->commands[c].storeData(0xffff, device);
           break;
         }
         else {
           uint16_t masked_output = output_raw & args->commands[c].bit_mask;
-          args->sm_values[index] = masked_output;
+          args->commands[c].storeData(masked_output, device);
         }
 
       } // loop over commands

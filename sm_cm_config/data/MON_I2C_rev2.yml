@@ -4,40 +4,102 @@ metadata:
   - cm_hw_rev: 2A
   - revision: 1
 
-config:
-#  - name: "bob" # register name
-#    reg_size: 1 # size of register address
-#    page: 0 
-#    reg_address: 0x1 # actual register address
-#    size: 0 # how many bytes to read 
-#    bit_mask: 0xFFFF # ??
-#    units: A
-#    type: Linear11 # bitfield, linear11
-#    devices: # list of devices that have this register. 14G, 25G-12, 25G-4, CERN-B.
-  - name: FF_STATUS_REG
-    reg_size: 1
-    page: 0
-    reg_address: 0x2
-    size: 2
-    mask: 0xFF
-    units: ""
-    type: PM_STATUS
-    devices: [14G, 25G12, 25G4, CERNB]
-  - name: FF_TEMPERATURE
-    reg_size: 1
-    page: 0
-    reg_address: 0x16
-    size: 2
-    mask: 0xFF
-    units: C
-    type: PM_NONVOLTAGE
-    devices: [14G, 25G12, 25G4, CERNB]
-  - name: FF_LOS_ALARM
-    reg_size: 1
-    page: 0
-    reg_address: 0x07
-    size: 2
-    mask: 0xFFFF
-    units: ""
-    type: PM_STATUS
-    devices: [25G12, 25G4]
+devices:
+  - name: Fireflies
+    ndevices: NFIREFLIES
+    prefix: FF
+    config:
+    #  - name: "bob" # register name
+    #    reg_size: 1 # size of register address
+    #    page: 0 
+    #    reg_address: 0x1 # actual register address by device type
+    #    size: 0 # how many bytes to read 
+    #    bit_mask: 0xFFFF # ??
+    #    units: A
+    #    type: Linear11 # bitfield, linear11, linear16
+    #    devices: # list of devices that have this register. 14G, 25G-12, 25G-4, CERN-B.
+      - name: FF_STATUS_REG
+        reg_size: 1
+        page: 0
+        reg_address: 0x2
+        size: 2
+        mask: 0xFF
+        units: ""
+        type: PM_STATUS
+        devices: [CERNB, 14G, 25G4, 25G12]
+      - name: FF_TEMPERATURE
+        reg_size: 1
+        page: 0
+        reg_address: 0x16
+        size: 2
+        mask: 0xFF
+        units: C
+        type: PM_NONVOLTAGE
+        devices: [14G, 25G12, 25G4, CERNB]
+      - name: FF_LOS_ALARM
+        reg_size: 1
+        page: 0
+        reg_address: 0x07
+        size: 2
+        mask: 0xFFFF
+        units: ""
+        type: PM_STATUS
+        devices: [25G12, 25G4]
+      - name: FF_OPT_POWER_CH1
+        reg_size: 1
+        page: 0
+        reg_address: [-1, -1, 0x22, 0xe4]
+        size: 2
+        mask: 0xFFFF
+        units: uW
+        type: PM_VOLTAGE
+        devices: [25G4, 25G12]
+  - name: Clocks
+    ndevices: NDEVICES_CLK
+    prefix: CLK
+    config:
+    - name: CLK_PN_BASE 
+      reg_size: 1
+      page: 0
+      reg_address: 0x2
+      size: 2
+      mask: 0xFFFF
+      units: ""
+      type: PM_STATUS
+      devices: [SI5395, SI5341]
+    - name: CLK_DEVICE_REV
+      reg_size: 1
+      page: 0
+      reg_address: 0x5
+      size: 1
+      mask: 0xFF
+      units: ""
+      type: PM_STATUS
+      devices: [SI5395, SI5341]
+    - name: CLK_I2C_ADDR
+      reg_size: 1
+      page: 0
+      reg_address: 0xB
+      size: 1
+      mask: 0xFF
+      units: ""
+      type: PM_STATUS
+      devices: [SI5395, SI5341]
+    - name: CLK_STATUS
+      reg_size: 1
+      page: 0
+      reg_address: 0x35
+      size: 1
+      mask: 0xFF
+      units: ""
+      type: PM_STATUS
+      devices: [SI5341]
+    - name: CLK_LOL
+      reg_size: 1
+      page: 0
+      reg_address: 0xE
+      size: 1
+      mask: 0x02
+      units: ""
+      type: PM_STATUS
+      devices: [SI5395]
