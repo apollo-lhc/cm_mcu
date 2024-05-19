@@ -9,18 +9,13 @@
 #include <stdbool.h>
 
 #include "inc/hw_memmap.h"
-#include "inc/hw_ints.h" // to be removed
-#include "inc/hw_i2c.h"
-#include "inc/hw_types.h"
 #include "driverlib/rom.h" // to be removed
 #include "driverlib/i2c.h" // to be removed
 #include "InterruptHandlers.h"
 #include "Tasks.h"
 #include "MonitorTask.h"
-#include "common/LocalUart.h"
 #include "common/log.h"
 #include "FireflyUtils.h"
-#include "I2CSlaveTask.h"
 
 // Rev 2:
 // All that needs to be done is rename local_fpga_{v,k}u to

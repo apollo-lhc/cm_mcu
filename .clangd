@@ -1,0 +1,5 @@
+Diagnostics:
+  ClangTidy:
+    Add: modernize*
+    Remove: readability-braces-around-statements
+

@@ -176,6 +176,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonI2C_addresses.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/MonUtils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/WatchdogTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LocalTasks.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/BoardCommands.o

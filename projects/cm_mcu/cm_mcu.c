@@ -20,10 +20,10 @@
 #include "FreeRTOSConfig.h"
 #include "common/LocalUart.h"
 #include "common/utils.h"
-#include "common/power_ctl.h"
+// #include "common/power_ctl.h"
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
-#include "common/pinsel.h"
+// #include "common/pinsel.h"
 #include "common/smbus.h"
 #include "common/log.h"
 #include "CommandLineTask.h"
@@ -31,25 +31,25 @@
 #include "MonitorI2CTask.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
-#include "I2CSlaveTask.h"
+// #include "I2CSlaveTask.h"
 #include "AlarmUtilities.h"
 
 // TI Includes
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
-#include "inc/hw_types.h"
+// #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
-#include "driverlib/pin_map.h"
+// #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
-#include "driverlib/gpio.h"
+// #include "driverlib/gpio.h"
 #include "driverlib/i2c.h"
 #include "driverlib/adc.h"
-#include "driverlib/uart.h"
-#include "driverlib/interrupt.h"
+// #include "driverlib/uart.h"
+// #include "driverlib/interrupt.h"
 
 // FreeRTOS includes
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "task.h"
 #include "queue.h"
 #include "stream_buffer.h"
@@ -144,7 +144,7 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
 #elif defined(REV2)
-  initI2C5(g_ui32SysClock); // controller for FPGAs
+  initI2C5(g_ui32SysClock);  // controller for FPGAs
 #endif
 
   // smbus

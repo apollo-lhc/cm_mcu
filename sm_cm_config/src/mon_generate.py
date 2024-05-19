@@ -72,14 +72,15 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
         open(header_fname, 'w', encoding="ascii") as fout_header:
     write_boilderplate(fout_source)
     write_boilderplate(fout_header)
-    print("#include \"stdint.h\"", file=fout_source)
-    print("#include \"MonitorTaskI2C_new.h\"", file=fout_source)
     print(f"#include \"{header_fname}\"", file=fout_source)
+    #print("#include \"MonitorTaskI2C_new.h\"", file=fout_source)
 
-    # header file 
+    # header file
     print(r"#ifndef MON_I2C_ADDRESSES_H", file=fout_header)
     print(r"#define MON_I2C_ADDRESSES_H", file=fout_header)
-    print("#include \"stdint.h\"", file=fout_header)
+    print("#include <stdint.h>", file=fout_header)
+    print("#include \"MonitorTaskI2C_new.h\"", file=fout_header)
+    #print("#include \"MonI2C_addresses.h\"", file=fout_header)
 
 
     with open(args.input_files[0], encoding="ascii") as f:
@@ -88,12 +89,16 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
         # loop over devices first
         data = yaml.load(f, Loader=yaml.FullLoader)
         for d in data['devices']:
-        
             ndev = d['ndevices']
             prefix = d['prefix']
             config = d['config']
+            ncommands = len(config)
+            print(f"#define NCOMMANDS_{prefix} {ncommands}", file=fout_header)
+            print(f"// {prefix} has {ndev} devices and {ncommands} commands", file=fout_source)
             print(f"#define {prefix}_NOT_COVERED (-1)", file=fout_source)
-            print(f"struct i2c_reg_command_t sm_command_test_{prefix}[] = {{", file=fout_source)
+            print(f"struct i2c_reg_command_t sm_command_test_{prefix}[NCOMMANDS_{prefix}] = {{",
+                  file=fout_source)
+            print(f"extern struct i2c_reg_command_t sm_command_test_{prefix}[];", file=fout_header)
             for c in config:
                 reg_list = c['reg_address']
                 print(f"reg list is >{reg_list}<")

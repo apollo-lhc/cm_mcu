@@ -8,8 +8,7 @@
 #ifndef PROJECTS_CM_MCU_MONITORI2CTASK_H_
 #define PROJECTS_CM_MCU_MONITORI2CTASK_H_
 
-#include "common/smbus.h"
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "semphr.h"
 #include "Tasks.h"
 #include "FireflyUtils.h"
@@ -40,12 +39,10 @@ struct MonitorI2CTaskArgs_t {
   const uint8_t n_pages;             // number of pages to loop over
   const uint16_t selpage_reg;        // register for selecting page
   uint16_t *sm_values;
-  tSMBus *smbus;                       // pointer to I2C controller
-  volatile tSMBusStatus *smbus_status; // pointer to I2C status
-  TickType_t updateTick;               // last update time, in ticks
-  SemaphoreHandle_t xSem;              // semaphore for controlling access to device
-  UBaseType_t stack_size;              // stack size of task
-  MonTaskFcnPointer presentCallback;   // callback for present check
+  TickType_t updateTick;             // last update time, in ticks
+  SemaphoreHandle_t xSem;            // semaphore for controlling access to device
+  UBaseType_t stack_size;            // stack size of task
+  MonTaskFcnPointer presentCallback; // callback for present check
 };
 
 #define FF_SELPAGE_REG  0x7f

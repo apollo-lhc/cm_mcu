@@ -11,14 +11,14 @@
 #ifndef PROJECTS_CM_MCU_TASKS_H_
 #define PROJECTS_CM_MCU_TASKS_H_
 
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
+// #include "FreeRTOSConfig.h"
 #include "queue.h"
 #include "semphr.h"
 #include "common/log.h"
-#include "driverlib/eeprom.h"
+// #include "driverlib/eeprom.h"
 
-#include "common/printf.h"
+// #include "common/printf.h"
 #include <sys/_types.h>
 
 #include "clocksynth.h"
@@ -341,11 +341,11 @@ uint16_t task_watchdog_get_status(void);
 #define CHECK_TASK_STACK_USAGE(vv)                                                    \
   {                                                                                   \
     UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                              \
-    if (val < vv) {                                                                   \
+    if (val < (vv)) {                                                                 \
       log_debug(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
-                vv);                                                                  \
+                (vv));                                                                \
     }                                                                                 \
-    vv = val;                                                                         \
+    (vv) = val;                                                                       \
   }
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */
