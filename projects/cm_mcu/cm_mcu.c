@@ -20,10 +20,8 @@
 #include "FreeRTOSConfig.h"
 #include "common/LocalUart.h"
 #include "common/utils.h"
-// #include "common/power_ctl.h"
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
-// #include "common/pinsel.h"
 #include "common/smbus.h"
 #include "common/log.h"
 #include "CommandLineTask.h"
@@ -31,22 +29,16 @@
 #include "MonitorI2CTask.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
-// #include "I2CSlaveTask.h"
 #include "AlarmUtilities.h"
 
 // TI Includes
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
-// #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
-// #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
-// #include "driverlib/gpio.h"
 #include "driverlib/i2c.h"
 #include "driverlib/adc.h"
-// #include "driverlib/uart.h"
-// #include "driverlib/interrupt.h"
 
 // FreeRTOS includes
 #include "FreeRTOS.h" // IWYU pragma: keep
@@ -306,6 +298,8 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(MonitorI2CTask, ffl12_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorI2CTask, ffl4_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f2_args, tskIDLE_PRIORITY + 4,
+              NULL);
+  xTaskCreate(MonitorI2CTask_new, ffl4_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
 
 #ifdef REV2

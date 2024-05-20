@@ -9,7 +9,7 @@ int FireflyType(int device)
     case 1:
     case 2:
     case 3: {
-      // fixme: this should be a check on CERN-B or ECUO-[RT]12-25
+      // FIXME: this should be a check on CERN-B or ECUO-[RT]12-25
       // with a function call
       return DEVICE_25G12;
     }
@@ -42,9 +42,9 @@ int ClockType(int device)
 
 struct MonitorI2CTaskArgs_new_t ff_f1_args = {
     .name = "FF_F1",
-    .devices = ffl12_f2_moni2c_addrs,
+    .devices = ff_moni2c_addrs_f1,
     .i2c_dev = I2C_DEVICE_F1,
-    .n_devices = NDEVICES_FFL4_F1, // FIXME: NDEVICES_FF_F1
+    .n_devices = NFIREFLIES_F1,
     .commands = sm_command_test_FF,
     .n_commands = NCOMMANDS_FF,
     .selpage_reg = FF_SELPAGE_REG,
@@ -56,9 +56,9 @@ struct MonitorI2CTaskArgs_new_t ff_f1_args = {
 
 struct MonitorI2CTaskArgs_new_t ff_f2_args = {
     .name = "FF_F2",
-    .devices = ffl12_f2_moni2c_addrs,
+    .devices = ff_moni2c_addrs_f2,
     .i2c_dev = I2C_DEVICE_F2,
-    .n_devices = NDEVICES_FFL12_F2, // FIXME: NDEVICES_FF_F2
+    .n_devices = NFIREFLIES_F2,
     .commands = sm_command_test_FF,
     .n_commands = NCOMMANDS_FF,
     .selpage_reg = FF_SELPAGE_REG,

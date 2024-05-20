@@ -115,6 +115,7 @@ void LGA80D_init(void);
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
 void MonitorI2CTask(void *parameters);
+void MonitorI2CTask_new(void *parameters);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
 #elif defined(REV2) // REV2

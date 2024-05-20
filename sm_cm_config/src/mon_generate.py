@@ -101,7 +101,7 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
             print(f"extern struct i2c_reg_command_t sm_command_test_{prefix}[];", file=fout_header)
             for c in config:
                 reg_list = c['reg_address']
-                print(f"reg list is >{reg_list}<")
+                #print(f"reg list is >{reg_list}<")
                 # if reg_list is an integer, convert it to a list of 4 integers
                 # this handles the case where all 4 types share the same address
                 if isinstance(reg_list, int):

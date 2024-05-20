@@ -46,6 +46,8 @@ struct arg_moni2c_ff_t {
 };
 
 extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
+extern struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1];
+extern struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2];
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 
 // Samtec firefly specific commands
