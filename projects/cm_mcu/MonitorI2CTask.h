@@ -24,7 +24,6 @@ struct sm_command_t {
   enum pm_type type;     // how to decode command (L11 or bitfield or ...)
 };
 
-
 struct MonitorI2CTaskArgs_t {
   const char *name;                  // name to be assigned to the task
   struct dev_moni2c_addr_t *devices; // list of devices to query
@@ -36,9 +35,9 @@ struct MonitorI2CTaskArgs_t {
   const uint8_t n_pages;             // number of pages to loop over
   const uint16_t selpage_reg;        // register for selecting page
   uint16_t *sm_values;
-  TickType_t updateTick;             // last update time, in ticks
-  SemaphoreHandle_t xSem;            // semaphore for controlling access to device
-  UBaseType_t stack_size;            // stack size of task
+  TickType_t updateTick;  // last update time, in ticks
+  SemaphoreHandle_t xSem; // semaphore for controlling access to device
+  UBaseType_t stack_size; // stack size of task
 };
 
 #define FF_SELPAGE_REG  0x7f
