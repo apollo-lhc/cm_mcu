@@ -24,9 +24,6 @@ struct sm_command_t {
   enum pm_type type;     // how to decode command (L11 or bitfield or ...)
 };
 
-// how to find an I2C device, with a mux infront of it.
-
-typedef bool (*MonTaskFcnPointer)(struct MonitorI2CTaskArgs_t *);
 
 struct MonitorI2CTaskArgs_t {
   const char *name;                  // name to be assigned to the task
@@ -42,7 +39,6 @@ struct MonitorI2CTaskArgs_t {
   TickType_t updateTick;             // last update time, in ticks
   SemaphoreHandle_t xSem;            // semaphore for controlling access to device
   UBaseType_t stack_size;            // stack size of task
-  MonTaskFcnPointer presentCallback; // callback for present check
 };
 
 #define FF_SELPAGE_REG  0x7f

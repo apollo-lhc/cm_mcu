@@ -1,19 +1,17 @@
 /*
  * MonitorI2CTask_new.h
  *
- *  Created on: June 30, 2022
- *      Author: pkotamnives
  */
 
-#ifndef PROJECTS_CM_MCU_MONITORI2CTASK_H_
-#define PROJECTS_CM_MCU_MONITORI2CTASK_H_
+#ifndef PROJECTS_CM_MCU_MONITORI2CTASKNEW_H_
+#define PROJECTS_CM_MCU_MONITORI2CTASKNEW_H_
 
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "semphr.h"
 #include "Tasks.h"
 #include "FireflyUtils.h"
 
-struct sm_command_t {
+struct sm_command_new_t {
   int reg_size;          // number of bytes of register/command
   unsigned char page;    // I2C page address
   unsigned char command; // I2c register address
@@ -115,4 +113,4 @@ extern struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2];
 
 #define DEVICE_NONE 0x80
 
-#endif /* PROJECTS_CM_MCU_MONITORI2CTASK_H_ */
+#endif /* PROJECTS_CM_MCU_MONITORI2CTASKNEW_H_ */

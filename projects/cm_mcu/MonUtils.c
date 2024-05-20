@@ -1,22 +1,27 @@
 #include "MonitorTaskI2C_new.h"
 #include "MonI2C_addresses.h"
 #include "FireflyUtils.h"
+#include "MonUtils.h"
 
+// for 12 channel parts, there is one Tx and Rx device.
+// for 4 channel parts, there is one XCVR part
 int FireflyType(int device)
 {
   switch (device) {
     case 0:
     case 1:
     case 2:
-    case 3: {
+    case 3:
+    case 4:
+    case 5: {
       // FIXME: this should be a check on CERN-B or ECUO-[RT]12-25
       // with a function call
-      return DEVICE_25G12;
+      return DEVICE_CERNB;
     }
-    case 4:
-    case 5:
     case 6:
     case 7:
+    case 8:
+    case 9:
       return DEVICE_25G4;
     default:
       return DEVICE_NONE;

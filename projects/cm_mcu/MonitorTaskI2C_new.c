@@ -107,9 +107,6 @@ void MonitorI2CTask_new(void *parameters)
           good = true;
         }
       }
-      // what kind of device do we have (e.g., 4 ch FF, 12 ch 25 G FF, 12 ch CERN-B FF, etc.)
-      int devtype = args->typeCallback(device);
-      uint32_t dev_mask = 0x1U << device;
 
       // select the appropriate output for the mux
       uint8_t data;
@@ -121,10 +118,15 @@ void MonitorI2CTask_new(void *parameters)
         break;
       }
       uint8_t last_page_reg_value = 0xff;
-      // Read I2C registers/commands
+
+      // what kind of device is this
+      int devtype = args->typeCallback(device);
+      uint32_t devtype_mask = 0x1U << devtype;
+      // Loop to read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
         // check if the command is for this device
-        if ((args->commands[c].devicelist() & dev_mask) == 0) {
+        // what kind of device do we have (e.g., 4 ch FF, 12 ch 25 G FF, 12 ch CERN-B FF, etc.)
+        if ((args->commands[c].devicelist() & devtype_mask) == 0) {
           continue; // not for me!
         }
 
