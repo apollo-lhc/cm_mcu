@@ -7,7 +7,9 @@
 
 #include <strings.h>
 #include <sys/_types.h>
+#include "FireflyUtils.h"
 #include "I2CCommunication.h"
+#include "MonI2C_addresses.h"
 #include "common/utils.h"
 #include "parameters.h"
 #include "SensorControl.h"
@@ -891,6 +893,20 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
       else
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+      if ((SCRATCH_SIZE - copied) < 20) {
+        ++whichff;
+        copied = 0;
+        return pdTRUE;
+      }
+    }
+    n = 0;
+    for ( ; n < NFIREFLIES; ++n ) {
+      if (isEnabledFF(n)) {
+        uint8_t val = get_FF_TEMPERATURE_data(n);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
+      }
+      else // dummy value
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
       if ((SCRATCH_SIZE - copied) < 20) {
         ++whichff;
         return pdTRUE;

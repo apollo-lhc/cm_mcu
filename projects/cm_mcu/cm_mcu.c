@@ -305,6 +305,8 @@ __attribute__((noreturn)) int main(void)
 #ifdef REV2
   xTaskCreate(MonitorI2CTask_new, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
+  xTaskCreate(MonitorI2CTask_new, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
+              NULL);
 
   xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
               NULL);
