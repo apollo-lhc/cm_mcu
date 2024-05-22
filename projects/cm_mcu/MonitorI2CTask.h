@@ -84,12 +84,12 @@ extern struct MonitorI2CTaskArgs_t ffl4_f1_args;
 extern struct MonitorI2CTaskArgs_t ffl12_f2_args;
 extern struct MonitorI2CTaskArgs_t ffl4_f2_args;
 
-#define NDEVICES_CLK         (4)
-//#define NCOMMANDS_CLK        7 // number of commands
-#define NCOMMANDS_FLG_CLK    1 // number of sticky commands
-#define NPAGES_CLK           1 //
-#define NDEVICES_CLKR0A      (1)
-//#define NCOMMANDS_CLKR0A     7 // number of commands
+#define NDEVICES_CLK (4)
+// #define NCOMMANDS_CLK        7 // number of commands
+#define NCOMMANDS_FLG_CLK 1 // number of sticky commands
+#define NPAGES_CLK        1 //
+#define NDEVICES_CLKR0A   (1)
+// #define NCOMMANDS_CLKR0A     7 // number of commands
 #define NCOMMANDS_FLG_CLKR0A 2 // number of sticky commands
 #define NPAGES_CLKR0A        1 //
 

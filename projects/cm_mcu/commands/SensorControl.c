@@ -900,7 +900,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
       }
     }
     n = 0;
-    for ( ; n < NFIREFLIES; ++n ) {
+    for (; n < NFIREFLIES; ++n) {
       if (isEnabledFF(n)) {
         uint8_t val = get_FF_TEMPERATURE_data(n);
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
