@@ -29,8 +29,8 @@
 #include "I2CCommunication.h"
 #include "common/log.h"
 
-// local prototype
-void Print(const char *str);
+#define NCOMMANDS_CLK_TMP 7
+#define NCOMMANDS_CLK_TMPR0A 7
 
 #ifdef REV1
 // -------------------------------------------------
@@ -434,7 +434,7 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
 
-struct sm_command_t sm_command_clk[] = {
+struct sm_command_t sm_command_clk[NCOMMANDS_CLK_TMP] = {
     // device information on page 0 : table 16.2 and 16.4
     {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},  // page 0x00
     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
@@ -447,7 +447,7 @@ struct sm_command_t sm_command_clk[] = {
     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS}, // page 0x00
 };
 
-uint16_t clk_values[NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK];
+uint16_t clk_values[NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP];
 
 struct MonitorI2CTaskArgs_t clock_args = {
     .name = "CLKSI",
@@ -455,13 +455,11 @@ struct MonitorI2CTaskArgs_t clock_args = {
     .i2c_dev = I2C_DEVICE_CLK,
     .n_devices = NDEVICES_CLK,
     .commands = sm_command_clk,
-    .n_commands = NCOMMANDS_CLK,
-    .n_values = NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK,
+    .n_commands = NCOMMANDS_CLK_TMP,
+    .n_values = NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP,
     .n_pages = NPAGES_CLK,
     .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clk_values,
-    // .smbus = &g_sMaster2,
-    // .smbus_status = &eStatus2,
     .xSem = NULL,
     .stack_size = 4096U,
 };
@@ -484,7 +482,7 @@ struct sm_command_t sm_command_clkr0a[] = {
     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
 };
 
-uint16_t clkr0a_values[NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A];
+uint16_t clkr0a_values[NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A];
 
 struct MonitorI2CTaskArgs_t clockr0a_args = {
     .name = "CLKR0A",
@@ -492,13 +490,11 @@ struct MonitorI2CTaskArgs_t clockr0a_args = {
     .i2c_dev = I2C_DEVICE_CLK,
     .n_devices = NDEVICES_CLKR0A,
     .commands = sm_command_clkr0a,
-    .n_commands = NCOMMANDS_CLKR0A,
-    .n_values = NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLKR0A,
+    .n_commands = NCOMMANDS_CLK_TMPR0A,
+    .n_values = NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A,
     .n_pages = NPAGES_CLKR0A,
     .selpage_reg = CLK_SELPAGE_REG,
     .sm_values = clkr0a_values,
-    // .smbus = &g_sMaster2,
-    // .smbus_status = &eStatus2,
     .xSem = NULL,
     .stack_size = 4096U,
 };

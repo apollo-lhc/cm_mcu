@@ -80,7 +80,8 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
     print(r"#define MON_I2C_ADDRESSES_H", file=fout_header)
     print("#include <stdint.h>", file=fout_header)
     print("#include \"MonitorTaskI2C_new.h\"", file=fout_header)
-    #print("#include \"MonI2C_addresses.h\"", file=fout_header)
+    print("#include \"FireflyUtils.h\"", file=fout_source)
+    print("#include \"MonitorI2CTask.h\"", file=fout_source)
 
 
     with open(args.input_files[0], encoding="ascii") as f:
@@ -90,6 +91,7 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
         data = yaml.load(f, Loader=yaml.FullLoader)
         for d in data['devices']:
             ndev = d['ndevices']
+            ndev_types = d['ndevice_types']
             prefix = d['prefix']
             config = d['config']
             ncommands = len(config)
@@ -98,14 +100,16 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
             print(f"#define {prefix}_NOT_COVERED (-1)", file=fout_source)
             print(f"struct i2c_reg_command_t sm_command_test_{prefix}[NCOMMANDS_{prefix}] = {{",
                   file=fout_source)
-            print(f"extern struct i2c_reg_command_t sm_command_test_{prefix}[];", file=fout_header)
+            print(f"extern struct i2c_reg_command_t sm_command_test_{prefix}[NCOMMANDS_{prefix}];",
+                  file=fout_header)
             for c in config:
                 reg_list = c['reg_address']
                 #print(f"reg list is >{reg_list}<")
-                # if reg_list is an integer, convert it to a list of 4 integers
-                # this handles the case where all 4 types share the same address
+                # if reg_list is an integer, convert it to a list of ndev_types integers
+                # this handles the case where all ndev types share the same address
                 if isinstance(reg_list, int):
-                    reg_list = [reg_list, reg_list, reg_list, reg_list]
+                    reg_list = [reg_list]*int(ndev_types)
+                    #print(f"reg list is >{reg_list}<")
                 reg_list_str = '{'
                 for r in reg_list:
                     if r > 0:
@@ -141,7 +145,7 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
                 print(f"uint16_t get_{c['name']}_mask(void);", file=fout_header)
                 print(f"uint16_t get_{c['name']}_mask(void) {{", file=fout_source)
                 print(r"    return ", end="", file=fout_source)
-                for d in c['devices']:
+                for d in c['devicetypes']:
                     print(f"DEVICE_{d} | ", end="", file=fout_source)
                 print(r"0;", file=fout_source)
                 print(r"}", file=fout_source)

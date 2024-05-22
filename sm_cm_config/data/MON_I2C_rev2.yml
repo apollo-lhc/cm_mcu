@@ -7,6 +7,7 @@ metadata:
 devices:
   - name: Fireflies
     ndevices: NFIREFLIES
+    ndevice_types: 4
     prefix: FF
     config:
     #  - name: "bob" # register name
@@ -26,7 +27,7 @@ devices:
         mask: 0xFF
         units: ""
         type: PM_STATUS
-        devices: [CERNB, 14G, 25G4, 25G12]
+        devicetypes: [CERNB, 14G, 25G4, 25G12]
       - name: FF_TEMPERATURE
         reg_size: 1
         page: 0
@@ -35,7 +36,7 @@ devices:
         mask: 0xFF
         units: C
         type: PM_NONVOLTAGE
-        devices: [14G, 25G12, 25G4, CERNB]
+        devicetypes: [14G, 25G12, 25G4, CERNB]
       - name: FF_LOS_ALARM
         reg_size: 1
         page: 0
@@ -44,7 +45,7 @@ devices:
         mask: 0xFFFF
         units: ""
         type: PM_STATUS
-        devices: [25G12, 25G4]
+        devicetypes: [25G12, 25G4]
       - name: FF_OPT_POWER_CH1
         reg_size: 1
         page: 0
@@ -53,9 +54,46 @@ devices:
         mask: 0xFFFF
         units: uW
         type: PM_VOLTAGE
-        devices: [25G4, 25G12]
+        devicetypes: [25G4, 25G12]
+      - name: FF_OPT_POWER_CH2
+        reg_size: 1
+        page: 0
+        reg_address: [-1, -1, 0x24, 0xe2]
+        size: 2
+        mask: 0xFFFF
+        units: uW
+        type: PM_VOLTAGE
+        devicetypes: [25G4, 25G12]
+      - name: FF_OPT_POWER_CH3
+        reg_size: 1
+        page: 0
+        reg_address: [-1, -1, 0x26, 0xe0]
+        size: 2
+        mask: 0xFFFF
+        units: uW
+        type: PM_VOLTAGE
+        devicetypes: [25G4, 25G12]
+      - name: FF_OPT_POWER_CH4
+        reg_size: 1
+        page: 0
+        reg_address: [-1, -1, 0x28, 0xde]
+        size: 2
+        mask: 0xFFFF
+        units: uW
+        type: PM_VOLTAGE
+        devicetypes: [25G4, 25G12]
+      - name: FF_OPT_POWER_CH5
+        reg_size: 1
+        page: 0
+        reg_address: [-1, -1, -1, 0xdc]
+        size: 2
+        mask: 0xFFFF
+        units: uW
+        type: PM_VOLTAGE
+        devicetypes: [25G12]
   - name: Clocks
     ndevices: NDEVICES_CLK
+    ndevice_types: 2
     prefix: CLK
     config:
     - name: CLK_PN_BASE 
@@ -66,7 +104,7 @@ devices:
       mask: 0xFFFF
       units: ""
       type: PM_STATUS
-      devices: [SI5395, SI5341]
+      devicetypes: [SI5395, SI5341]
     - name: CLK_DEVICE_REV
       reg_size: 1
       page: 0
@@ -75,7 +113,7 @@ devices:
       mask: 0xFF
       units: ""
       type: PM_STATUS
-      devices: [SI5395, SI5341]
+      devicetypes: [SI5395, SI5341]
     - name: CLK_I2C_ADDR
       reg_size: 1
       page: 0
@@ -84,7 +122,7 @@ devices:
       mask: 0xFF
       units: ""
       type: PM_STATUS
-      devices: [SI5395, SI5341]
+      devicetypes: [SI5395, SI5341]
     - name: CLK_STATUS
       reg_size: 1
       page: 0
@@ -93,7 +131,7 @@ devices:
       mask: 0xFF
       units: ""
       type: PM_STATUS
-      devices: [SI5341]
+      devicetypes: [SI5341]
     - name: CLK_LOL
       reg_size: 1
       page: 0
@@ -102,4 +140,31 @@ devices:
       mask: 0x02
       units: ""
       type: PM_STATUS
-      devices: [SI5395]
+      devicetypes: [SI5395]
+    - name: CLK_LOSXAXB
+      reg_size: 1
+      page: 0
+      reg_address: 0xB
+      size: 1
+      mask: 0x02
+      units: ""
+      type: PM_STATUS
+      devicetypes: [SI5395]
+    - name: CLK_LOSOOF_IN 
+      reg_size: 1
+      page: 0
+      reg_address: 0xD
+      size: 1
+      mask: 0x0ff
+      units: ""
+      type: PM_STATUS
+      devicetypes: [SI5395]
+    - name: CLK_STICKY_FLG
+      reg_size: 1
+      page: 0
+      reg_address: 0x11
+      size: 1
+      mask: 0x02f
+      units: ""
+      type: PM_STATUS
+      devicetypes: [SI5395, SI5341]

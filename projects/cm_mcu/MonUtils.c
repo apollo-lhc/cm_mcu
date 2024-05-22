@@ -1,3 +1,4 @@
+#include "MonitorI2CTask.h"
 #include "MonitorTaskI2C_new.h"
 #include "MonI2C_addresses.h"
 #include "FireflyUtils.h"
