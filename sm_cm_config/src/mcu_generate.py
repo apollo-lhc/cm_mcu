@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 """ Generate the C code for the microcontroller using the yaml files in the data directory"""
+import datetime
 import os
 import sys
 import argparse
@@ -42,6 +43,11 @@ with open(args.output, 'w', encoding="ascii") as fout:
     print(r"// This file contains the addresses of the zynqmon data", file=fout)
     print(r"// and the C calls to initialize the zynqmon data", file=fout)
     print(r"//", file=fout)
+    # Print timestamp to output file
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"// Generated: {timestamp}", file=fout)
+    print(r"//", file=fout)
+
     print("#include \"Tasks.h\"", file=fout)
     # include the header file we will write later
     print(f"#include \"{header_fname}\"", file=fout)

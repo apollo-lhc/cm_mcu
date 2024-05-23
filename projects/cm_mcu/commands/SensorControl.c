@@ -858,7 +858,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
   // argument handling
   int copied = 0;
 
-  static int whichff = 0;
+  //static int whichff = 0;
   static int nn = 0;//, n = 0;
 
   if (nn == 0) {
@@ -911,7 +911,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
     else // dummy value
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[nn].name, "--");
     if ((SCRATCH_SIZE - copied) < 20) {
-      ++whichff;
+      //++whichff;
       return pdTRUE;
     }
     bool isTx = (strstr(ff_moni2c_addrs[nn].name, "Tx") != NULL);
@@ -928,7 +928,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
     m[copied++] = '\n';
     m[copied] = '\0';
   }
-  whichff = 0;
+  //whichff = 0;
   //n = 0;
 
   return pdFALSE;
