@@ -137,7 +137,7 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
 #elif defined(REV2)
-  initI2C5(g_ui32SysClock); // controller for FPGAs
+  initI2C5(g_ui32SysClock);  // controller for FPGAs
 #endif
 
   // smbus
@@ -305,9 +305,8 @@ __attribute__((noreturn)) int main(void)
 #ifdef REV2
   xTaskCreate(MonitorI2CTask_new, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  // these get stored to the wrong location
-//  xTaskCreate(MonitorI2CTask_new, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
-//              NULL);
+  xTaskCreate(MonitorI2CTask_new, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
+              NULL);
 
   xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
               NULL);

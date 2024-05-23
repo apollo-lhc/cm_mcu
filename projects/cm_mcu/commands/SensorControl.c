@@ -859,7 +859,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
   int copied = 0;
 
   static int whichff = 0;
-  static int nn=0, n = 0;
+  static int nn = 0;//, n = 0;
 
   if (nn == 0) {
     // check for stale data
@@ -902,25 +902,25 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
     }
     copied += snprintf(m+copied, SCRATCH_SIZE - copied, "-------\r\n");
 #endif
-    //static int nn = 0;
-    for (; nn < NFIREFLIES; ++nn) {
-      if (isEnabledFF(nn)) {
-        uint8_t val = get_FF_TEMPERATURE_data(nn);
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[nn].name, val);
-      }
-      else // dummy value
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[nn].name, "--");
-      if ((SCRATCH_SIZE - copied) < 20) {
-        ++whichff;
-        return pdTRUE;
-      }
-      bool isTx = (strstr(ff_moni2c_addrs[nn].name, "Tx") != NULL);
-      if (isTx)
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-      else
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  // static int nn = 0;
+  for (; nn < NFIREFLIES; ++nn) {
+    if (isEnabledFF(nn)) {
+      uint8_t val = get_FF_TEMPERATURE_data(nn);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[nn].name, val);
     }
-    nn = 0;
+    else // dummy value
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[nn].name, "--");
+    if ((SCRATCH_SIZE - copied) < 20) {
+      ++whichff;
+      return pdTRUE;
+    }
+    bool isTx = (strstr(ff_moni2c_addrs[nn].name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  }
+  nn = 0;
   //}
 
   if (nn % 2 == 1) {
@@ -929,7 +929,7 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
     m[copied] = '\0';
   }
   whichff = 0;
-  n = 0;
+  //n = 0;
 
   return pdFALSE;
 }

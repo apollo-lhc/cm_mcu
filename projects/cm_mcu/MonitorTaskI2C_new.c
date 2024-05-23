@@ -121,7 +121,7 @@ void MonitorI2CTask_new(void *parameters)
 
       // what kind of device is this
       uint32_t devtype_mask = args->typeCallback(device);
-      uint32_t devtype = 32 - __builtin_clz( devtype_mask); // highest bit set FIXME: this is backwards
+      uint32_t devtype = 32 - __builtin_clz(devtype_mask); // highest bit set FIXME: this is backwards
       // Loop to read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
         // check if the command is for this device

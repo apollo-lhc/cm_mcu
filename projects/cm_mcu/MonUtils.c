@@ -8,7 +8,7 @@
 // for 4 channel parts, there is one XCVR part
 int FireflyType(int device)
 {
-  device = device %NFIREFLIES_F1; // F1 and F2 devices are the same.
+  device = device % NFIREFLIES_F1; // F1 and F2 devices are the same.
   switch (device) {
     case 0:
     case 1:
@@ -50,7 +50,7 @@ int ClockType(int device)
 bool isEnabledFF_F2(int device)
 {
   // firefly devices on F2 are devices 10-19
-  return isEnabledFF(device+NFIREFLIES_F1);
+  return isEnabledFF(device + NFIREFLIES_F1);
 }
 
 struct MonitorI2CTaskArgs_new_t ff_f1_args = {
