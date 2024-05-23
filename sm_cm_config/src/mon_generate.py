@@ -19,9 +19,9 @@ def parse_args() -> argparse.Namespace:
                     help='increase output verbosity')
     parser.add_argument('-o', '--output', type=str, help='output file name',
                     default="MonI2C_addresses.c")
-#this argument is required
-    parser.add_argument('input_files', metavar='file', type=str,
-                    nargs='+', help='input yaml file names')
+    # this argument is required
+    parser.add_argument('input_file', metavar='file', type=str,
+                    help='input yaml file names')
 
     return parser.parse_args()
 
@@ -52,7 +52,7 @@ if args.output and args.verbose:
 # addr_template = Template("{$reg_size, $page, $reg_address, $size, \"$name\","
 #                          " $mask, \"$units\", $type, get_${name}_mask, set_${name}_data}, ")
 addr_template = Template("{$reg_size, $page, $reg_list, $size, \"$name\","
-                         " $mask, \"$units\", $type, get_${name}_mask, set_${name}_data}, ")
+                         " $mask, \"$units\", $type, get_${prefix}_${name}_mask, set_${prefix}_${name}_data}, ")
 # output file names: header file and c source file
 # make sure that the output file ends with .c. Print error message and exit if it doesn't
 if not args.output.endswith(".c"):
@@ -84,11 +84,14 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
     print("#include \"MonitorI2CTask.h\"", file=fout_source)
 
 
-    with open(args.input_files[0], encoding="ascii") as f:
+    with open(args.input_file, encoding="ascii") as f:
 
         # generate the list of registers to access
         # loop over devices first
         data = yaml.load(f, Loader=yaml.FullLoader)
+        for k in data.keys():
+            print(f"key is {k}")
+
         for d in data['devices']:
             ndev = d['ndevices']
             ndev_types = d['ndevice_types']
@@ -117,39 +120,67 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
                     else:
                         reg_list_str += f"{prefix}_NOT_COVERED, "
                 reg_list_str += "}"
-                s = addr_template.substitute(c, reg_list=reg_list_str)
+                s = addr_template.substitute(c, reg_list=reg_list_str, prefix=prefix)
                 print(s, file=fout_source)
             print(r"};", file=fout_source)
 
             # generate the arrays to store the data
             print(r"// Arrays to store the data", file=fout_source)
+            prefix = d['prefix']
             for c in config:
-                print(f"static uint16_t {c['name']}_data[{ndev}] = {{0}};", file=fout_source)
+                data_name = f"{prefix}_{c['name']}_data"
+                print(f"static uint16_t {data_name}[{ndev}] = {{0}};", file=fout_source)
             # generate access functions
             print(r"// Access functions", file=fout_source)
             for c in config:
-                set_fcn_name = f"set_{c['name']}_data"
+                data_name = f"{prefix}_{c['name']}_data"
+                set_fcn_name = f"set_{prefix}_{c['name']}_data"
+                get_fcn_name = f"get_{prefix}_{c['name']}_data"
                 # getter
-                print(f"uint16_t get_{c['name']}_data(int which);", file=fout_header)
-                print(f"uint16_t get_{c['name']}_data(int which) {{", file=fout_source)
-                print(f"    return {c['name']}_data[which];", file=fout_source)
+                print(f"uint16_t {get_fcn_name}(int which);", file=fout_header)
+                print(f"uint16_t {get_fcn_name}(int which) {{", file=fout_source)
+                print(f"    return {data_name}[which];", file=fout_source)
                 print(r"}", file=fout_source)
                 # setter
                 print(f"void {set_fcn_name}(uint16_t data, int which);", file=fout_header)
                 print(f"void {set_fcn_name}(uint16_t data, int which) {{", file=fout_source)
-                print(f"        {c['name']}_data[which] = data;", file=fout_source)
+                print(f"        {data_name}[which] = data;", file=fout_source)
                 print(r"}", file=fout_source)
             # using the devices field, generate a function that returns a mask of the devices
             print(r"// Function to return a mask of the devices for each command", file=fout_source)
             for c in config:
-                print(f"uint16_t get_{c['name']}_mask(void);", file=fout_header)
-                print(f"uint16_t get_{c['name']}_mask(void) {{", file=fout_source)
+                get_mask_fcn_name = f"get_{prefix}_{c['name']}_mask"
+                print(f"uint16_t {get_mask_fcn_name}(void);", file=fout_header)
+                print(f"uint16_t {get_mask_fcn_name}(void) {{", file=fout_source)
                 print(r"    return ", end="", file=fout_source)
                 for d in c['devicetypes']:
                     print(f"DEVICE_{d} | ", end="", file=fout_source)
                 print(r"0;", file=fout_source)
                 print(r"}", file=fout_source)
-            # closing header guard
+        # special: for the firefly devices, generate a list of functions that
+        # return either the data in the F1 array or the data in the F2 array,
+        # depending on if the argument is >= than or less than 10
+        print(r"// Functions to return the data in the F1 or F2 arrays", file=fout_source)
+        config = data['define'] #['FF_SHARED_REGS']
+        #print(config)
+        for c in config:
+            print(c)
+            data_name_f1 = f"FF_F1_{c['name']}_data"
+            data_name_f2 = f"FF_F2_{c['name']}_data"
+            get_fcn_name_f1 = f"get_F1_{c['name']}_data"
+            get_fcn_name_f2 = f"get_F2_{c['name']}_data"
+            get_fcn_name = f"get_FF_{c['name']}_data"
+            # write get_fcn_name header to the header file
+            print(f"uint16_t {get_fcn_name}(int which);", file=fout_header)
+            # write body of get_fcn_name to the source file
+            print(f"uint16_t {get_fcn_name}(int which) {{", file=fout_source)
+            print( "    if (which < NFIREFLIES_F1) {{", file=fout_source)
+            print(f"        return {data_name_f1}[which];", file=fout_source)
+            print( "    }} else {{", file=fout_source)
+            print(f"        return {data_name_f2}[which - NFIREFLIES_F1];", file=fout_source)
+            print( "    }}", file=fout_source)
+            print(r"}", file=fout_source)
+        # closing header guard
         print(r"#endif// MON_I2C_ADDRESSES_H", file=fout_header)
 
 # reformat the c file using clang-format

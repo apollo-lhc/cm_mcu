@@ -4,99 +4,100 @@ metadata:
   - cm_hw_rev: 2A
   - revision: 1
 
+# these registers are shared between the two FF tasks
+define: &FF_SHARED_REGS
+  - name: STATUS_REG # register name
+    reg_size: 1 # size of register address in bytes
+    page: 0 # page of register
+    reg_address: 0x2 # register address
+    size: 2 # size of data in register in bytes
+    mask: 0xFF # mask for valid bits
+    units: "" # units for display
+    type: PM_STATUS # type of data
+    devicetypes: [CERNB, 14G, 25G4, 25G12] # device types that use this register
+  - name: TEMPERATURE
+    reg_size: 1
+    page: 0
+    reg_address: 0x16
+    size: 2
+    mask: 0xFF
+    units: C
+    type: PM_NONVOLTAGE
+    devicetypes: [14G, 25G12, 25G4, CERNB]
+  - name: LOS_ALARM
+    reg_size: 1
+    page: 0
+    reg_address: 0x07
+    size: 2
+    mask: 0xFFFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [25G12, 25G4]
+  - name: OPT_POWER_CH1
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 0x22, 0xe4]
+    size: 2
+    mask: 0xFFFF
+    units: uW
+    type: PM_VOLTAGE
+    devicetypes: [25G4, 25G12]
+  - name: OPT_POWER_CH2
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 0x24, 0xe2]
+    size: 2
+    mask: 0xFFFF
+    units: uW
+    type: PM_VOLTAGE
+    devicetypes: [25G4, 25G12]
+  - name: OPT_POWER_CH3
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 0x26, 0xe0]
+    size: 2
+    mask: 0xFFFF
+    units: uW
+    type: PM_VOLTAGE
+    devicetypes: [25G4, 25G12]
+  - name: OPT_POWER_CH4
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 0x28, 0xde]
+    size: 2
+    mask: 0xFFFF
+    units: uW
+    type: PM_VOLTAGE
+    devicetypes: [25G4, 25G12]
+  - name: OPT_POWER_CH5
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, -1, 0xdc]
+    size: 2
+    mask: 0xFFFF
+    units: uW
+    type: PM_VOLTAGE
+    devicetypes: [25G12]
+
 devices:
-  - name: Fireflies
-    ndevices: NFIREFLIES
+  - name: Fireflies_F1
+    ndevices: NFIREFLIES_F1
     ndevice_types: 4
-    prefix: FF
+    prefix: FF_F1
     config:
-    #  - name: "bob" # register name
-    #    reg_size: 1 # size of register address
-    #    page: 0 
-    #    reg_address: 0x1 # actual register address by device type
-    #    size: 0 # how many bytes to read 
-    #    bit_mask: 0xFFFF # ??
-    #    units: A
-    #    type: Linear11 # bitfield, linear11, linear16
-    #    devices: # list of devices that have this register. 14G, 25G-12, 25G-4, CERN-B.
-      - name: FF_STATUS_REG
-        reg_size: 1
-        page: 0
-        reg_address: 0x2
-        size: 2
-        mask: 0xFF
-        units: ""
-        type: PM_STATUS
-        devicetypes: [CERNB, 14G, 25G4, 25G12]
-      - name: FF_TEMPERATURE
-        reg_size: 1
-        page: 0
-        reg_address: 0x16
-        size: 2
-        mask: 0xFF
-        units: C
-        type: PM_NONVOLTAGE
-        devicetypes: [14G, 25G12, 25G4, CERNB]
-      - name: FF_LOS_ALARM
-        reg_size: 1
-        page: 0
-        reg_address: 0x07
-        size: 2
-        mask: 0xFFFF
-        units: ""
-        type: PM_STATUS
-        devicetypes: [25G12, 25G4]
-      - name: FF_OPT_POWER_CH1
-        reg_size: 1
-        page: 0
-        reg_address: [-1, -1, 0x22, 0xe4]
-        size: 2
-        mask: 0xFFFF
-        units: uW
-        type: PM_VOLTAGE
-        devicetypes: [25G4, 25G12]
-      - name: FF_OPT_POWER_CH2
-        reg_size: 1
-        page: 0
-        reg_address: [-1, -1, 0x24, 0xe2]
-        size: 2
-        mask: 0xFFFF
-        units: uW
-        type: PM_VOLTAGE
-        devicetypes: [25G4, 25G12]
-      - name: FF_OPT_POWER_CH3
-        reg_size: 1
-        page: 0
-        reg_address: [-1, -1, 0x26, 0xe0]
-        size: 2
-        mask: 0xFFFF
-        units: uW
-        type: PM_VOLTAGE
-        devicetypes: [25G4, 25G12]
-      - name: FF_OPT_POWER_CH4
-        reg_size: 1
-        page: 0
-        reg_address: [-1, -1, 0x28, 0xde]
-        size: 2
-        mask: 0xFFFF
-        units: uW
-        type: PM_VOLTAGE
-        devicetypes: [25G4, 25G12]
-      - name: FF_OPT_POWER_CH5
-        reg_size: 1
-        page: 0
-        reg_address: [-1, -1, -1, 0xdc]
-        size: 2
-        mask: 0xFFFF
-        units: uW
-        type: PM_VOLTAGE
-        devicetypes: [25G12]
+      *FF_SHARED_REGS
+  - name: Fireflies_F2
+    ndevices: NFIREFLIES_F2
+    ndevice_types: 4
+    prefix: FF_F2
+    config:
+      *FF_SHARED_REGS
   - name: Clocks
     ndevices: NDEVICES_CLK
     ndevice_types: 2
     prefix: CLK
     config:
-    - name: CLK_PN_BASE 
+    - name: PN_BASE 
       reg_size: 1
       page: 0
       reg_address: 0x2
@@ -105,7 +106,7 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395, SI5341]
-    - name: CLK_DEVICE_REV
+    - name: DEVICE_REV
       reg_size: 1
       page: 0
       reg_address: 0x5
@@ -114,7 +115,7 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395, SI5341]
-    - name: CLK_I2C_ADDR
+    - name: I2C_ADDR
       reg_size: 1
       page: 0
       reg_address: 0xB
@@ -123,7 +124,7 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395, SI5341]
-    - name: CLK_STATUS
+    - name: STATUS
       reg_size: 1
       page: 0
       reg_address: 0x35
@@ -132,7 +133,7 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5341]
-    - name: CLK_LOL
+    - name: LOL
       reg_size: 1
       page: 0
       reg_address: 0xE
@@ -141,7 +142,7 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395]
-    - name: CLK_LOSXAXB
+    - name: LOSXAXB
       reg_size: 1
       page: 0
       reg_address: 0xB
@@ -150,7 +151,7 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395]
-    - name: CLK_LOSOOF_IN 
+    - name: LOSOOF_IN 
       reg_size: 1
       page: 0
       reg_address: 0xD
@@ -159,7 +160,7 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395]
-    - name: CLK_STICKY_FLG
+    - name: STICKY_FLG
       reg_size: 1
       page: 0
       reg_address: 0x11
