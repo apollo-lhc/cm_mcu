@@ -294,19 +294,20 @@ __attribute__((noreturn)) int main(void)
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
-  xTaskCreate(MonitorI2CTask, ffl12_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorI2CTask, ffl4_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f1_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorI2CTask, ffl12_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorI2CTask, ffl4_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f2_args, tskIDLE_PRIORITY + 4,
-              NULL);
+//  xTaskCreate(MonitorI2CTask, ffl12_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
+//              NULL);
+//  xTaskCreate(MonitorI2CTask, ffl4_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f1_args, tskIDLE_PRIORITY + 4,
+//              NULL);
+//  xTaskCreate(MonitorI2CTask, ffl12_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
+//              NULL);
+//  xTaskCreate(MonitorI2CTask, ffl4_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f2_args, tskIDLE_PRIORITY + 4,
+//              NULL);
 #ifdef REV2
   xTaskCreate(MonitorI2CTask_new, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask_new, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
-              NULL);
+  // these get stored to the wrong location
+//  xTaskCreate(MonitorI2CTask_new, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
+//              NULL);
 
   xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
               NULL);
