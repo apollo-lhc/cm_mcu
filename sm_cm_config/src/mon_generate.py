@@ -89,8 +89,6 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
         # generate the list of registers to access
         # loop over devices first
         data = yaml.load(f, Loader=yaml.FullLoader)
-        for k in data.keys():
-            print(f"key is {k}")
 
         for d in data['devices']:
             ndev = d['ndevices']
@@ -164,7 +162,6 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
         config = data['define'] #['FF_SHARED_REGS']
         #print(config)
         for c in config:
-            print(c)
             data_name_f1 = f"FF_F1_{c['name']}_data"
             data_name_f2 = f"FF_F2_{c['name']}_data"
             get_fcn_name_f1 = f"get_F1_{c['name']}_data"
