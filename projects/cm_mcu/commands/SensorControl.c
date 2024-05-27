@@ -17,6 +17,7 @@
 #include "common/smbus_helper.h"
 #include "Tasks.h"
 #include "projdefs.h"
+#include "MonUtils.h"
 
 int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
 {
@@ -85,9 +86,9 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   }
 
   int res;
-  SemaphoreHandle_t s = i2c4_sem;
+  SemaphoreHandle_t s = getSemaphore(4);
   if (i2c_device == I2C_DEVICE_F2) {
-    s = i2c3_sem;
+    s = getSemaphore(3);
   }
 
   if (acquireI2CSemaphore(s) == pdFAIL) {
@@ -124,9 +125,9 @@ static int disable_transmit(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0xfff;
+  uint16_t value = 0xfffU;
   if (disable == false)
-    value = 0x0;
+    value = 0x0U;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
     i = 0;
     imax = NFIREFLIES;
@@ -143,10 +144,10 @@ static int disable_transmit(bool disable, int num_ff)
     }
 
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      value = 0xf;
+      value &= 0x000fU; // only 4 LSB matter, so mask out others
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1, i2c_dev);
     }
-    else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
+    else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) { // FIXME: check for CERNB vs 25G
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2, i2c_dev);
     }
   }
@@ -1435,5 +1436,51 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
   if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(dcdc_args.xSem);
   }
+  return pdFALSE;
+}
+
+//#define VENDOR_START_BIT_FFDAQ 168
+//#define VENDOR_STOP_BIT_FFDAQ  184
+//#define VENDOR_START_BIT_FF12  171
+//#define VENDOR_STOP_BIT_FF12   187
+#define VENDOR_COUNT_FFDAQ (VENDOR_STOP_BIT_FFDAQ-VENDOR_START_BIT_FFDAQ)
+#define VENDOR_COUNT_FF12  (VENDOR_STOP_BIT_FF12-VENDOR_START_BIT_FF12)
+
+BaseType_t ff_dump_names(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ID registers\r\n", argv[0]);
+  static int i = 0;
+  for (; i < NFIREFLIES; ++i) {
+    if (!isEnabledFF(i)) {// skip the FF if it's not enabled via the FF config
+      continue;
+    }
+
+    char name[20];
+    memset(name, '\0', 20);
+    int type = FireflyType(i);
+    int startReg = VENDOR_START_BIT_FFDAQ;
+    int count = VENDOR_COUNT_FFDAQ;
+    if ( type == DEVICE_CERNB || type == DEVICE_25G12 ) {
+      startReg = VENDOR_START_BIT_FF12;
+      count = VENDOR_COUNT_FF12;
+    }
+    int ret = 0;
+    for (unsigned char c = 0; c < count; ++c ) {
+      uint8_t v;
+      ret += read_arbitrary_ff_register(startReg + c, i, &v, 1);
+      name[c] = v;
+    }
+    if ( ret != 0 ) {
+      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
+      return pdFALSE;
+    }
+    copied += snprintf(m+copied, SCRATCH_SIZE - copied, "%02d:\t%s\r\n", i, name);
+    if ((SCRATCH_SIZE - copied) < 25 && (i < NFIREFLIES)) {
+      ++i;
+      return pdTRUE;
+    }
+  }
+  i = 0;
   return pdFALSE;
 }

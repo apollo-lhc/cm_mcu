@@ -55,6 +55,7 @@ BaseType_t ff_status(int argc, char **argv, char *m);
 BaseType_t ff_los_alarm(int argc, char **argv, char *m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m);
 BaseType_t ff_mux_reset(int argc, char **argv, char *m);
+BaseType_t ff_dump_names(int argc, char **argv, char *m);
 
 // Clocks
 BaseType_t clkmon_ctl(int argc, char **argv, char *m);

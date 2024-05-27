@@ -6,4 +6,6 @@
 extern struct MonitorI2CTaskArgs_new_t ff_f1_args;
 extern struct MonitorI2CTaskArgs_new_t ff_f2_args;
 
+int FireflyType(int device);
+
 #endif // MONUTILS_H

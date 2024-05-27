@@ -305,6 +305,12 @@ static struct command_t commands[] = {
         "reset ff muxes, 1 or 2 for F1 or F2\r\n",
         1,
     },
+    {
+        "ff_dump_names",
+        ff_dump_names,
+        "dump name registers\r\n",
+        0,
+    },
 #endif // REV2
     {
         "ff_optpow",

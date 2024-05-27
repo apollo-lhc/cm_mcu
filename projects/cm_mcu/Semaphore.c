@@ -60,10 +60,10 @@ SemaphoreHandle_t getSemaphore(int number)
 
 int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits)
 {
-  int retval = pdTRUE;
   if (s == NULL) {
     return pdFAIL;
   }
+  int retval = pdTRUE;
   int tries = 0;
   while (xSemaphoreTake(s, tickWaits) == pdFALSE) {
     ++tries;

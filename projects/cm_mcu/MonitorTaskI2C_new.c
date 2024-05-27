@@ -88,7 +88,7 @@ void MonitorI2CTask_new(void *parameters)
         log_debug(LOG_MONI2C, "%s: device %d not present\r\n", args->name, device);
         continue;
       }
-      log_debug(LOG_MONI2C, "%s: device %d powercheck\r\n", args->name, device);
+      log_debug(LOG_MONI2C, "%s: device %d pwr chk\r\n", args->name, device);
       if (getPowerControlState() != POWER_ON) {
         if (good) {
           log_info(LOG_MONI2C, "%s: PWR off. Disable I2Cmon.\r\n", args->name);
