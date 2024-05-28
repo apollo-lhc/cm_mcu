@@ -13,8 +13,8 @@
 #include <stdbool.h>
 #include <sys/_types.h>
 
-#include "math.h"
-#include "stdlib.h"
+#include <math.h> // IWYU pragma: keep (for fmaxf, fmax, fmaxl)
+#include <stdlib.h> // IWYU pragma: keep (for abs, labs, llabs, fabs, fabsf)
 
 // write, read or toggle GPIO pin by name
 void write_gpio_pin(int pin, uint8_t value);

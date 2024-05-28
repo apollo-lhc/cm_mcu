@@ -307,6 +307,8 @@ __attribute__((noreturn)) int main(void)
               NULL);
   xTaskCreate(MonitorI2CTask_new, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
+  xTaskCreate(MonitorI2CTask_new, clk_args.name, 2 * configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
+              NULL);
 
   xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
               NULL);

@@ -84,7 +84,8 @@ void MonitorI2CTask_new(void *parameters)
     // loop over devices in the device-type instance
     // -------------------------------
     for (int device = 0; device < args->n_devices; ++device) {
-      if (args->presentCallback && !args->presentCallback(device)) {
+      // if there is a present call back and it reurns false, skip this device
+      if (args->presentCallback && !args->presentCallback(device)) { 
         log_debug(LOG_MONI2C, "%s: device %d not present\r\n", args->name, device);
         continue;
       }

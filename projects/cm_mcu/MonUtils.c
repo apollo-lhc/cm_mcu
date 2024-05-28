@@ -2,6 +2,7 @@
 #include "MonitorTaskI2C_new.h"
 #include "MonI2C_addresses.h"
 #include "FireflyUtils.h"
+#include "Tasks.h"
 #include "MonUtils.h"
 
 // for 12 channel parts, there is one Tx and Rx device.
@@ -79,6 +80,20 @@ struct MonitorI2CTaskArgs_new_t ff_f2_args = {
     .stack_size = 4096U,
     .typeCallback = FireflyType,
     .presentCallback = isEnabledFF_F2,
+};
+
+struct MonitorI2CTaskArgs_new_t clk_args = {
+    .name = "CLK",
+    .devices = clk_moni2c_addrs, // FIXME: this doesn't include R0A
+    .i2c_dev = I2C_DEVICE_CLK,
+    .n_devices = NDEVICES_CLK,
+    .commands = sm_command_test_CLK,
+    .n_commands = NCOMMANDS_CLK,
+    .selpage_reg = CLK_SELPAGE_REG,
+    .xSem = NULL,
+    .stack_size = 4096U,
+    .typeCallback = ClockType,
+    .presentCallback = NULL,
 };
 
 #endif // REV2

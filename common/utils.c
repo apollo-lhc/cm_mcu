@@ -4,6 +4,8 @@
  *  Created on: May 9, 2019
  *      Author: wittich
  */
+#include <stdint.h>
+#include <stddef.h>
 
 #include "common/utils.h"
 #include "common/pinsel.h"
