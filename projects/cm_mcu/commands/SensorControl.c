@@ -62,6 +62,14 @@ int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value,
                SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
   }
+  if (!res) { // clear the mux
+    muxmask = 0x0U;
+    res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
+    if (res !=0) {
+      log_warn(LOG_SERVICE, "%s: Mux clear error %d (%s) (ff=%s) ...\r\n", __func__, res,
+               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+    }
+  }
 
   // release the semaphore
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
@@ -108,6 +116,14 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
     res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
     if (res != 0) {
       log_warn(LOG_SERVICE, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
+               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+    }
+  }
+  if (!res) { // clear the mux
+    muxmask = 0x0U;
+    res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
+    if (res != 0) {
+      log_warn(LOG_SERVICE, "%s: Mux clear error %d (%s) (ff=%s) ...\r\n", __func__, res,
                SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
   }
@@ -173,10 +189,10 @@ static int disable_receivers(bool disable, int num_ff)
       i2c_dev = I2C_DEVICE_F2;
     }
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      value = 0xf;
+      value &= 0x000fU; // only 4 LSB matter, so mask out others
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1, i2c_dev);
     }
-    else if (strstr(ff_moni2c_addrs[i].name, "Rx") != NULL) {
+    else if (strstr(ff_moni2c_addrs[i].name, "Rx") != NULL) { // FIXME: check for CERNB vs 25G
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2, i2c_dev);
     }
   }
