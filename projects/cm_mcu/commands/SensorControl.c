@@ -69,7 +69,7 @@ int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value,
   if (!res) { // clear the mux
     muxmask = 0x0U;
     res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
-    if (res !=0) {
+    if (res != 0) {
       log_warn(LOG_SERVICE, "%s: Mux clear error %d (%s) (ff=%s) ...\r\n", __func__, res,
                SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
@@ -876,8 +876,8 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
   // argument handling
   int copied = 0;
 
-  //static int whichff = 0;
-  static int nn = 0;//, n = 0;
+  // static int whichff = 0;
+  static int nn = 0; //, n = 0;
 
   if (nn == 0) {
     // check for stale data
@@ -946,8 +946,8 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
     m[copied++] = '\n';
     m[copied] = '\0';
   }
-  //whichff = 0;
-  //n = 0;
+  // whichff = 0;
+  // n = 0;
 
   return pdFALSE;
 }
@@ -1456,12 +1456,12 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-//#define VENDOR_START_BIT_FFDAQ 168
-//#define VENDOR_STOP_BIT_FFDAQ  184
-//#define VENDOR_START_BIT_FF12  171
-//#define VENDOR_STOP_BIT_FF12   187
-#define VENDOR_COUNT_FFDAQ (VENDOR_STOP_BIT_FFDAQ-VENDOR_START_BIT_FFDAQ)
-#define VENDOR_COUNT_FF12  (VENDOR_STOP_BIT_FF12-VENDOR_START_BIT_FF12)
+// #define VENDOR_START_BIT_FFDAQ 168
+// #define VENDOR_STOP_BIT_FFDAQ  184
+// #define VENDOR_START_BIT_FF12  171
+// #define VENDOR_STOP_BIT_FF12   187
+#define VENDOR_COUNT_FFDAQ (VENDOR_STOP_BIT_FFDAQ - VENDOR_START_BIT_FFDAQ)
+#define VENDOR_COUNT_FF12  (VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12)
 
 BaseType_t ff_dump_names(int argc, char **argv, char *m)
 {
@@ -1469,7 +1469,7 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ID registers\r\n", argv[0]);
   static int i = 0;
   for (; i < NFIREFLIES; ++i) {
-    if (!isEnabledFF(i)) {// skip the FF if it's not enabled via the FF config
+    if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
       continue;
     }
 
@@ -1478,21 +1478,21 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
     int type = FireflyType(i);
     int startReg = VENDOR_START_BIT_FFDAQ;
     int count = VENDOR_COUNT_FFDAQ;
-    if ( type == DEVICE_CERNB || type == DEVICE_25G12 ) {
+    if (type == DEVICE_CERNB || type == DEVICE_25G12) {
       startReg = VENDOR_START_BIT_FF12;
       count = VENDOR_COUNT_FF12;
     }
     int ret = 0;
-    for (unsigned char c = 0; c < count; ++c ) {
+    for (unsigned char c = 0; c < count; ++c) {
       uint8_t v;
       ret += read_arbitrary_ff_register(startReg + c, i, &v, 1);
       name[c] = v;
     }
-    if ( ret != 0 ) {
+    if (ret != 0) {
       snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
       return pdFALSE;
     }
-    copied += snprintf(m+copied, SCRATCH_SIZE - copied, "%02d:\t%s\r\n", i, name);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%02d:\t%s\r\n", i, name);
     if ((SCRATCH_SIZE - copied) < 25 && (i < NFIREFLIES)) {
       ++i;
       return pdTRUE;
