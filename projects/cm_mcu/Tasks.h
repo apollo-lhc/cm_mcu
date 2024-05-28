@@ -12,13 +12,10 @@
 #define PROJECTS_CM_MCU_TASKS_H_
 
 #include "FreeRTOS.h" // IWYU pragma: keep
-// #include "FreeRTOSConfig.h"
 #include "queue.h"
 #include "semphr.h"
 #include "common/log.h"
-// #include "driverlib/eeprom.h"
 
-// #include "common/printf.h"
 #include <sys/_types.h>
 
 #include "clocksynth.h"

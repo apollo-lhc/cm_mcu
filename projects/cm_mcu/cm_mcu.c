@@ -253,6 +253,7 @@ __attribute__((noreturn)) int main(void)
 #ifdef REV2
   ff_f1_args.xSem = i2c4_sem;
   ff_f2_args.xSem = i2c3_sem;
+  clk_args.xSem = i2c2_sem;
   clock_args.xSem = i2c2_sem;
   clockr0a_args.xSem = i2c2_sem;
 #endif // REV2
@@ -310,10 +311,10 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(MonitorI2CTask_new, clk_args.name, 2 * configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
               NULL);
 
-  xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
-              NULL);
+//  xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
+//              NULL);
+//  xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
+//              NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, dcdc_args.name, 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);

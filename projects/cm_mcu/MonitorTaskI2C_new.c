@@ -60,6 +60,11 @@ void MonitorI2CTask_new(void *parameters)
   // watchdog info
   task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
 
+  // ensure that the semaphore has been set up
+  if (!args->xSem) {
+    log_error(LOG_MONI2C, "%s: no sem\r\n", args->name);
+  }
+
   // wait for the power to come up
   vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(5000));
 
@@ -74,7 +79,7 @@ void MonitorI2CTask_new(void *parameters)
     // grab the semaphore to ensure unique access to I2C controller
     if (args->xSem != NULL) {
       if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
-        log_debug(LOG_SERVICE, "%s could'nt get sem; delay & continue\r\n", args->name);
+        log_debug(LOG_MONI2C, "%s could'nt get sem; delay & continue\r\n", args->name);
         vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(10)); // wait
         continue;
       }
