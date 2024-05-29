@@ -12,11 +12,13 @@
 #include <stdint.h>
 #include <string.h> // memset
 
+#include "MonI2C_addresses.h"
+#include "MonUtils.h"
+#include "MonitorTaskI2C_new.h"
 #include "common/log.h"
 
 #include "Semaphore.h"
 #include "I2CCommunication.h"
-#include "MonitorI2CTask.h"
 #include "common/smbus_helper.h"
 #include "driverlib/eeprom.h"
 #include "FireflyUtils.h"
@@ -186,14 +188,12 @@ bool isEnabledFF(int ff)
 unsigned isFFStale(void)
 {
   TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-  TickType_t last[4];
-  last[0] = pdTICKS_TO_S(ffl12_f1_args.updateTick);
-  last[1] = pdTICKS_TO_S(ffl4_f1_args.updateTick);
-  last[2] = pdTICKS_TO_S(ffl12_f2_args.updateTick);
-  last[3] = pdTICKS_TO_S(ffl4_f2_args.updateTick);
+  TickType_t last[2];
+  last[0] = pdTICKS_TO_S(ff_f1_args.updateTick);
+  last[1] = pdTICKS_TO_S(ff_f2_args.updateTick);
 
   unsigned mask = 0U;
-  for (int ff_t = 0; ff_t < 4; ++ff_t) {
+  for (int ff_t = 0; ff_t < 2; ++ff_t) {
     if (checkStale(last[ff_t], now)) {
       mask |= (1U << ff_t);
     }
@@ -209,67 +209,47 @@ TickType_t getFFupdateTick(int mask)
   if (__builtin_popcount(mask) == 0) {
     log_warn(LOG_SERVICE, "empty mask\r\n");
   }
-  if (mask & 0x1U) {
-    return ffl12_f1_args.updateTick;
+  else if (mask & 0x1U) {
+    return ff_f1_args.updateTick;
   }
   else if (mask & 0x02U) {
-    return ffl4_f1_args.updateTick;
+    return ff_f2_args.updateTick;
   }
-  else if (mask & 0x04U) {
-    return ffl12_f2_args.updateTick;
-  }
-  else {
-    return ffl4_f2_args.updateTick;
-  }
+  log_warn(LOG_SERVICE, "invalid mask\r\n");
+  return 0;
 }
 
 uint16_t getFFtemp(const uint8_t i)
 {
-  int i1 = 1;
-  uint16_t val;
   configASSERT(i < NFIREFLIES);
-  if (i < NFIREFLIES_IT_F1) {
-    int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
-    val = ffl12_f1_args.sm_values[index];
-  }
-
-  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-    int index = (i - NFIREFLIES_IT_F1) * (ffl4_f1_args.n_commands * ffl4_f1_args.n_pages) + i1;
-    val = ffl4_f1_args.sm_values[index];
-  }
-
-  else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-    int index = (i - NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
-    val = ffl12_f2_args.sm_values[index];
-  }
-  else {
-    int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffl4_f2_args.n_commands * ffl4_f2_args.n_pages) + i1;
-    val = ffl4_f2_args.sm_values[index];
-  }
-
-  return val;
+  return get_FF_TEMPERATURE_data(i);
 }
 
 #ifdef REV2
-uint16_t getFFavgoptpow(const uint8_t i)
+float getFFavgoptpow(const uint8_t i)
 {
 
-  uint16_t avg_val = 0;
   uint16_t sum_val = 0;
   configASSERT(i < NFIREFLIES);
 
-  for (int n = 0; n < 4; ++n) {
-    if (ff_moni2c_arg[n].int_idx <= i && i < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev) {
-      for (int i1 = 4; i1 < ff_moni2c_arg[n].arg->n_commands; ++i1) {
-        int dev = i - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
-        int index = dev * (ff_moni2c_arg[n].arg->n_commands * ff_moni2c_arg[n].arg->n_pages) + i1;
-        sum_val += ff_moni2c_arg[n].arg->sm_values[index];
-      }
-      avg_val = sum_val / (ff_moni2c_arg[n].arg->n_commands - 4);
-    }
-  }
+  sum_val += get_FF_OPT_POWER_CH1_data(i);
+  sum_val += get_FF_OPT_POWER_CH2_data(i);
+  sum_val += get_FF_OPT_POWER_CH3_data(i);
+  sum_val += get_FF_OPT_POWER_CH4_data(i);
+  sum_val += get_FF_OPT_POWER_CH5_data(i);
+  // sum_val += get_FF_OPT_POWER_CH6_data(i);
+  // sum_val += get_FF_OPT_POWER_CH7_data(i);
+  // sum_val += get_FF_OPT_POWER_CH8_data(i);
+  // sum_val += get_FF_OPT_POWER_CH9_data(i);
+  // sum_val += get_FF_OPT_POWER_CH10_data(i);
+  // sum_val += get_FF_OPT_POWER_CH11_data(i);
+  // sum_val += get_FF_OPT_POWER_CH12_data(i);
 
-  return avg_val;
+  float nchannels = 12.;
+  if (FireflyType(i) == DEVICE_25G4) {
+    nchannels = 4.;
+  }
+  return sum_val / nchannels;
 }
 
 uint16_t getFFpresentbit(const uint8_t i)
@@ -283,115 +263,153 @@ uint16_t getFFpresentbit(const uint8_t i)
   return val;
 }
 
-extern struct sm_command_t sm_command_fflit_f1[];
-extern struct sm_command_t sm_command_fflit_f2[];
-
-void getFFpart(void)
+uint32_t ff_map_25gb_parts(void)
 {
-  // Write device vendor part for identifying FF device
-  uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;
-  char vendor_string[nstring];
-  uint8_t data;
-
-  SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
-  const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
-  const uint32_t ndevices[2] = {NDEVICES_FFL12_F1 / 2, NDEVICES_FFL12_F2 / 2};
-  const uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
-  const uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
-
-  struct MonitorI2CTaskArgs_t args_st[2] = {ffl12_f1_args, ffl12_f2_args};
-
-  for (int f = 0; f < 2; ++f) {
-
-    // grab the semaphore to ensure unique access to I2C controller
-    // otherwise, block its operations indefinitely until it's available
-    acquireI2CSemaphoreBlock(semaphores[f]);
-    uint32_t tmp_ffpart_bit_mask = 0U;
-    bool detect_ff = false;
-    for (uint32_t n = 0; n < ndevices[f]; n++) {
-      uint8_t vendor_data_rxch[4];
-      int8_t vendor_part_rxch[17];
-
-      data = 0x1U << args_st[f].devices[(2 * n) + 1].mux_bit;
-      log_debug(LOG_SERVICE, "Mux set to 0x%02x\r\n", data);
-      int rmux = apollo_i2c_ctl_w(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].mux_addr, 1, data);
-      if (rmux != 0) {
-        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-      }
-      for (uint8_t i = VENDOR_START_BIT_FF12; i < VENDOR_STOP_BIT_FF12; i++) {
-        uint32_t vendor_char_rxch;
-        int res = apollo_i2c_ctl_reg_r(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
-        if (res != 0) {
-          log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
-          vendor_part_rxch[i - VENDOR_START_BIT_FF12] = 0;
-          break;
-        }
-        for (int j = 0; j < 4; ++j) {
-          vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
-        }
-        convert_8_t tmp1;
-        tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
-        vendor_part_rxch[i - VENDOR_START_BIT_FF12] = tmp1.s;
-        vendor_part_rxch[i - VENDOR_START_BIT_FF12 + 1] = '\0'; // null-terminated
-      }
-
-      char *vendor_string_rxch = (char *)vendor_part_rxch;
-
-      if ((dev_present_mask[f] & (1 << (2 * n))) == 0) { // check that there is a FF installed in this ch
-        if (!detect_ff) {
-          detect_ff = true;
-          if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) { // the first 25Gbs 12-ch detected on FPGA1(2)
-            tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n);                                     // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
-          }
-          else {
-            if (f == 0)
-              ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
-            else
-              ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
-          }
-          log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA%d): %s \r\n:", f + 1, vendor_string_rxch);
-          strncpy(vendor_string, vendor_string_rxch, nstring);
-        }
-        else {
-          if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) {
-            tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
-          }
-          else {
-            if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
-              log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA%d) on %s \r\n:", f + 1, ff_moni2c_addrs[(2 * n) + 1 + ff_ndev_offset[f]].name);
-              log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
-            }
-          }
-        }
-      }
-      else {
-        log_info(LOG_SERVICE, "No Firefly 12-ch part(FPGA%d) on %s \r\n:", f + 1, ff_moni2c_addrs[(2 * n) + 1 + ff_ndev_offset[f]].name);
-      }
-      memset(vendor_data_rxch, 0, sizeof(vendor_data_rxch));
-      memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
-      rmux = apollo_i2c_ctl_w(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].mux_addr, 1, 0);
-      if (rmux != 0) {
-        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-      }
-      log_debug(LOG_SERVICE, "%s: reset mux\r\n", args_st[f].devices[(2 * n) + 1].name);
+  uint32_t ff_25gb_parts = 0U;
+  for (int i = 0; i < NFIREFLIES; ++i) {
+    if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
+      continue;
+    }
+    // skip 4 channel parts
+    if (FireflyType(i) == DEVICE_25G4) {
+      continue;
     }
 
-    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA%d): 0x%02x \r\n:", f + 1, tmp_ffpart_bit_mask);
-    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA%d): 0x%02x \r\n:", f + 1, dev_xmit_4v0_sel[f]);
-    // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
-    if ((dev_xmit_4v0_sel[f] ^ tmp_ffpart_bit_mask) != 0U) {
-      log_warn(LOG_SERVICE, "FPGA%d 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f + 1, dev_xmit_4v0_sel[f], tmp_ffpart_bit_mask);
+    char name[17];
+    memset(name, '\0', 17);
+    int startReg = VENDOR_START_BIT_FF12;
+    int count = VENDOR_COUNT_FF12;
+    int ret = 0;
+    // build up name of the device (vendor string)
+    for (unsigned char c = 0; c < count; ++c) {
+      uint8_t v;
+      ret += read_arbitrary_ff_register(startReg + c, i, &v, 1);
+      name[c] = v;
     }
-
-    if (f == 0)
-      ff_bitmask_args[0].ffpart_bit_mask = tmp_ffpart_bit_mask;
-    else
-      ff_bitmask_args[2].ffpart_bit_mask = tmp_ffpart_bit_mask;
-
-    // if we have a semaphore, give it
-    if (xSemaphoreGetMutexHolder(semaphores[f]) == xTaskGetCurrentTaskHandle()) {
-      xSemaphoreGive(semaphores[f]);
+    if (ret != 0) {
+      log_error(LOG_SERVICE, "Error reading vendor string for FF %d\r\n", i);
+      // what to do? FIXME: return error?
+    }
+    if (strstr(name, "14") == NULL &&
+        strstr(name, "CRRNB") == NULL && strstr(name, "CERNB") == NULL) {
+      ff_25gb_parts |= (0x1U << i);
     }
   }
+  return ff_25gb_parts;
+}
+
+// currently this function does the following
+// decide which commands to run for the 12 channel part, i.e.,
+// decide if we have CERN-B or 25 Gbps part on the 12 channel sites
+// it then sets the command struct in the MonitorI2CTaskArgs_t struct
+// nad also sets a bitmask to show which 12 channel sites have 25 Gbps part
+void getFFpart(void)
+{
+  return;
+  // // Write device vendor part for identifying FF device
+  // uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;
+  // char vendor_string[nstring];
+  // uint8_t data;
+
+  // SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
+  // const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
+  // const uint32_t ndevices[2] = {NDEVICES_FFL12_F1 / 2, NDEVICES_FFL12_F2 / 2};
+  // const uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
+  // const uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
+
+  // struct MonitorI2CTaskArgs_t args_st[2] = {ffl12_f1_args, ffl12_f2_args};
+
+  // for (int f = 0; f < 2; ++f) { // loop over FPGAs
+
+  //   // grab the semaphore to ensure unique access to I2C controller
+  //   // otherwise, block its operations indefinitely until it's available
+  //   acquireI2CSemaphoreBlock(semaphores[f]);
+  //   uint32_t tmp_ffpart_bit_mask = 0U;
+  //   bool detect_ff = false;
+  //   for (uint32_t n = 0; n < ndevices[f]; n++) {
+  //     uint8_t vendor_data_rxch[4];
+  //     int8_t vendor_part_rxch[17];
+
+  //     data = 0x1U << args_st[f].devices[(2 * n) + 1].mux_bit;
+  //     log_debug(LOG_SERVICE, "Mux set to 0x%02x\r\n", data);
+  //     int rmux = apollo_i2c_ctl_w(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].mux_addr, 1, data);
+  //     if (rmux != 0) {
+  //       log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+  //     }
+  //     for (uint8_t i = VENDOR_START_BIT_FF12; i < VENDOR_STOP_BIT_FF12; i++) {
+  //       uint32_t vendor_char_rxch;
+  //       int res = apollo_i2c_ctl_reg_r(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
+  //       if (res != 0) {
+  //         log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
+  //         vendor_part_rxch[i - VENDOR_START_BIT_FF12] = 0;
+  //         break;
+  //       }
+  //       for (int j = 0; j < 4; ++j) {
+  //         vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
+  //       }
+  //       convert_8_t tmp1;
+  //       tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
+  //       vendor_part_rxch[i - VENDOR_START_BIT_FF12] = tmp1.s;
+  //       vendor_part_rxch[i - VENDOR_START_BIT_FF12 + 1] = '\0'; // null-terminated
+  //     }
+
+  //     char *vendor_string_rxch = (char *)vendor_part_rxch;
+
+  //     if ((dev_present_mask[f] & (1 << (2 * n))) == 0) { // check that there is a FF installed in this ch
+  //       if (!detect_ff) {
+  //         detect_ff = true;
+  //         if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) { // the first 25Gbs 12-ch detected on FPGA1(2)
+  //           tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n);                                     // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+  //         }
+  //         else {
+  //           if (f == 0)
+  //             ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
+  //           else
+  //             ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
+  //         }
+  //         log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA%d): %s \r\n:", f + 1, vendor_string_rxch);
+  //         strncpy(vendor_string, vendor_string_rxch, nstring);
+  //       }
+  //       else {
+  //         if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) {
+  //           tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
+  //         }
+  //         else {
+  //           if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
+  //             log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA%d) on %s \r\n:", f + 1, ff_moni2c_addrs[(2 * n) + 1 + ff_ndev_offset[f]].name);
+  //             log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
+  //           }
+  //         }
+  //       }
+  //     }
+  //     else {
+  //       log_info(LOG_SERVICE, "No Firefly 12-ch part(FPGA%d) on %s \r\n:", f + 1, ff_moni2c_addrs[(2 * n) + 1 + ff_ndev_offset[f]].name);
+  //     }
+  //     memset(vendor_data_rxch, 0, sizeof(vendor_data_rxch));
+  //     memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
+  //     rmux = apollo_i2c_ctl_w(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].mux_addr, 1, 0);
+  //     if (rmux != 0) {
+  //       log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
+  //     }
+  //     log_debug(LOG_SERVICE, "%s: reset mux\r\n", args_st[f].devices[(2 * n) + 1].name);
+  //   }
+
+  //   log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA%d): 0x%02x \r\n:", f + 1, tmp_ffpart_bit_mask);
+  //   log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA%d): 0x%02x \r\n:", f + 1, dev_xmit_4v0_sel[f]);
+  //   // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
+  //   if ((dev_xmit_4v0_sel[f] ^ tmp_ffpart_bit_mask) != 0U) {
+  //     log_warn(LOG_SERVICE, "FPGA%d 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f + 1, dev_xmit_4v0_sel[f], tmp_ffpart_bit_mask);
+  //   }
+
+  //   if (f == 0)
+  //     ff_bitmask_args[0].ffpart_bit_mask = tmp_ffpart_bit_mask;
+  //   else
+  //     ff_bitmask_args[2].ffpart_bit_mask = tmp_ffpart_bit_mask;
+
+  //   // if we have a semaphore, give it
+  //   if (xSemaphoreGetMutexHolder(semaphores[f]) == xTaskGetCurrentTaskHandle()) {
+  //     xSemaphoreGive(semaphores[f]);
+  //   }
+  // }
 }
 #endif

@@ -26,7 +26,6 @@
 #include "common/log.h"
 #include "CommandLineTask.h"
 #include "InterruptHandlers.h"
-#include "MonitorI2CTask.h"
 #include "MonitorTask.h"
 #include "MonUtils.h"
 #include "Tasks.h"
@@ -246,16 +245,10 @@ __attribute__((noreturn)) int main(void)
   initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   fpga_args.xSem = i2c5_sem;
-  ffl12_f1_args.xSem = i2c4_sem;
-  ffl4_f1_args.xSem = i2c4_sem;
-  ffl12_f2_args.xSem = i2c3_sem;
-  ffl4_f2_args.xSem = i2c3_sem;
 #ifdef REV2
   ff_f1_args.xSem = i2c4_sem;
   ff_f2_args.xSem = i2c3_sem;
   clk_args.xSem = i2c2_sem;
-  clock_args.xSem = i2c2_sem;
-  clockr0a_args.xSem = i2c2_sem;
 #endif // REV2
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
@@ -295,14 +288,6 @@ __attribute__((noreturn)) int main(void)
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
-//  xTaskCreate(MonitorI2CTask, ffl12_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
-//              NULL);
-//  xTaskCreate(MonitorI2CTask, ffl4_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f1_args, tskIDLE_PRIORITY + 4,
-//              NULL);
-//  xTaskCreate(MonitorI2CTask, ffl12_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
-//              NULL);
-//  xTaskCreate(MonitorI2CTask, ffl4_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl4_f2_args, tskIDLE_PRIORITY + 4,
-//              NULL);
 #ifdef REV2
   xTaskCreate(MonitorI2CTask_new, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
@@ -311,10 +296,6 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(MonitorI2CTask_new, clk_args.name, 2 * configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
               NULL);
 
-//  xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
-//              NULL);
-//  xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
-//              NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, dcdc_args.name, 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);

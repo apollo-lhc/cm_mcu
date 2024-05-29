@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 #include <stdlib.h>
+#include "FireflyUtils.h"
 #include "commands/parameters.h"
 #include "common/utils.h"
 #include "driverlib/gpio.h" // IWYU pragma: keep

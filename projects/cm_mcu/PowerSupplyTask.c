@@ -12,6 +12,7 @@
 #include <assert.h>
 
 // local includes
+#include "FireflyUtils.h"
 #include "Tasks.h"
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
@@ -24,9 +25,6 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "queue.h"
-
-// getFFpart includes
-#include "MonitorI2CTask.h"
 
 void Print(const char *);
 

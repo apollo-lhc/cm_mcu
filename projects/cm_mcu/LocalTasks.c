@@ -15,11 +15,11 @@
 #include <time.h>   // struct tm
 
 #include "FireflyUtils.h"
+#include "MonitorTaskI2C_new.h"
 #include "driverlib/hibernate.h"
 
 #include "Tasks.h"
 #include "MonitorTask.h"
-#include "MonitorI2CTask.h"
 #include "InterruptHandlers.h"
 #include "Semaphore.h"
 
@@ -66,7 +66,36 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
-
+struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
+    {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"K01  12 Rx GTH", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"K02  12 Tx GTH", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"K02  12 Rx GTH", FF_I2CMUX_1_ADDR, 3, 0x54}, //
+    {"K03  12 Tx GTH", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"K03  12 Rx GTH", FF_I2CMUX_1_ADDR, 5, 0x54}, //
+    {"K04 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"K05 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"K06 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"K07  12 Tx GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"K07  12 Rx GTY", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+};
+struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
+    {"V01 4 XCVR GTY", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"V02 4 XCVR GTY", FF_I2CMUX_1_ADDR, 1, 0x50}, //
+    {"V03 4 XCVR GTY", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"V04 4 XCVR GTY", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"V05 4 XCVR GTY", FF_I2CMUX_1_ADDR, 4, 0x50}, //
+    {"V06 4 XCVR GTY", FF_I2CMUX_1_ADDR, 5, 0x50}, //
+    {"V07 4 XCVR GTY", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"V08 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"V09 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"V10 4 XCVR GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"V11  12 Tx GTY", FF_I2CMUX_1_ADDR, 6, 0x50}, //
+    {"V11  12 Rx GTY", FF_I2CMUX_1_ADDR, 7, 0x54}, //
+    {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
+    {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
+};
+#if 0
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
     {"FFL12", &ffl12_f1_args, 0, 0, 6},  //
     {"FFL4", &ffl4_f1_args, 6, 0, 3},    //
@@ -74,7 +103,7 @@ struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
     {"FFL4", &ffl4_f2_args, 11, 0, 10},  //
     {"FFL12", &ffl12_f2_args, 21, 0, 4}, //
 };
-
+#endif // 0
 #elif defined(REV2)
 // -------------------------------------------------
 //
@@ -130,12 +159,14 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
 
 };
 
+#if 0
 struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
     {"FFL12", &ffl12_f1_args, 0, 0, 6},  //
     {"FFL4", &ffl4_f1_args, 6, 0, 4},    //
     {"FFL12", &ffl12_f2_args, 10, 0, 6}, //
     {"FFL4", &ffl4_f2_args, 16, 0, 4},   //
 };
+#endif // 0
 #else
 #error "Define either Rev1 or Rev2"
 #endif
@@ -147,17 +178,18 @@ struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     {"K05 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"K06 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
-#elif defined(REV2)
-struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
-    {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
-    {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
-    {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
-    {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
-};
-#else
-#error "Define either Rev1 or Rev2"
+// #elif defined(REV2)
+// struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
+//     {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+//     {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+//     {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+//     {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+// };
+// #else
+// #error "Define either Rev1 or Rev2"
 #endif
 
+#if 0
 struct sm_command_t sm_command_ffl4_f1[] = {
     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
@@ -234,7 +266,7 @@ struct sm_command_t sm_command_fflot_f1[] = {
     {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
 
 };
-
+#endif // 0
 #ifdef REV1
 struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
@@ -258,7 +290,7 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #else
 #error "Define either Rev1 or Rev2"
 #endif
-
+#if 0
 uint16_t ffl12_f1_values[NDEVICES_FFL12_F1 * NCOMMANDS_FFL12_F1];
 
 struct MonitorI2CTaskArgs_t ffl12_f1_args = {
@@ -277,7 +309,7 @@ struct MonitorI2CTaskArgs_t ffl12_f1_args = {
     .xSem = NULL,
     .stack_size = 4096U,
 };
-
+#endif // 0
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
 #ifdef REV1
 struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
@@ -292,90 +324,90 @@ struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
     {"V09 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
     {"V10 4 XCVR GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
 };
-#elif defined(REV2)
-struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
-    {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
-    {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
-    {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
-    {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
-};
-#else
-#error "Define either Rev1 or Rev2"
+// #elif defined(REV2)
+// struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
+//     {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+//     {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+//     {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+//     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+// };
+// #else
+// #error "Define either Rev1 or Rev2"
 #endif
 
-struct sm_command_t sm_command_ffl4_f2[] = {
-    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
-    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-};
-uint16_t ffl4_f2_values[NDEVICES_FFL4_F2 * NCOMMANDS_FFL4_F2];
+// struct sm_command_t sm_command_ffl4_f2[] = {
+//     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+//     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+//     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
+//     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
+//     {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
+//     {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+// };
+// uint16_t ffl4_f2_values[NDEVICES_FFL4_F2 * NCOMMANDS_FFL4_F2];
 
-struct MonitorI2CTaskArgs_t ffl4_f2_args = {
-    .name = "F2_4",
-    .devices = ffl4_f2_moni2c_addrs,
-    .i2c_dev = I2C_DEVICE_F2,
-    .n_devices = NDEVICES_FFL4_F2,
-    .commands = sm_command_ffl4_f2,
-    .n_commands = NCOMMANDS_FFL4_F2,
-    .n_values = NDEVICES_FFL4_F2 * NPAGES_FFL4_F2 * NCOMMANDS_FFL4_F2,
-    .n_pages = NPAGES_FFL4_F2,
-    .selpage_reg = FF_SELPAGE_REG,
-    .sm_values = ffl4_f2_values,
-    // .smbus = &g_sMaster3,
-    // .smbus_status = &eStatus3,
-    .xSem = NULL,
-    .stack_size = 4096U,
-};
+// struct MonitorI2CTaskArgs_t ffl4_f2_args = {
+//     .name = "F2_4",
+//     .devices = ffl4_f2_moni2c_addrs,
+//     .i2c_dev = I2C_DEVICE_F2,
+//     .n_devices = NDEVICES_FFL4_F2,
+//     .commands = sm_command_ffl4_f2,
+//     .n_commands = NCOMMANDS_FFL4_F2,
+//     .n_values = NDEVICES_FFL4_F2 * NPAGES_FFL4_F2 * NCOMMANDS_FFL4_F2,
+//     .n_pages = NPAGES_FFL4_F2,
+//     .selpage_reg = FF_SELPAGE_REG,
+//     .sm_values = ffl4_f2_values,
+//     // .smbus = &g_sMaster3,
+//     // .smbus_status = &eStatus3,
+//     .xSem = NULL,
+//     .stack_size = 4096U,
+// };
 
-// FF12V arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
+// // FF12V arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
 
-// register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
-struct sm_command_t sm_command_fflit_f2[] = {
-    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    // there are no registers to read optical power for 14Gbps ECUO.
-    // registers below are a placeholder with a reading equal to zero
-    // the reason we need them because n_commands is fixed
-    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-};
-// register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
-// **commands below have not been tested yet**
-struct sm_command_t sm_command_fflot_f2[] = {
-    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
-    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-};
+// // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
+// struct sm_command_t sm_command_fflit_f2[] = {
+//     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+//     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+//     {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+//     {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+//     // there are no registers to read optical power for 14Gbps ECUO.
+//     // registers below are a placeholder with a reading equal to zero
+//     // the reason we need them because n_commands is fixed
+//     {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+//     {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "0.1uW", PM_STATUS},
+// };
+// // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
+// // **commands below have not been tested yet**
+// struct sm_command_t sm_command_fflot_f2[] = {
+//     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
+//     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
+//     {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
+//     {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
+//     {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
+//     {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+//     {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
+// };
 
 #ifdef REV1
 struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
@@ -397,24 +429,24 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #error "Define either Rev1 or Rev2"
 #endif
 
-uint16_t ffl12_f2_values[NDEVICES_FFL12_F2 * NCOMMANDS_FFL12_F2];
+// uint16_t ffl12_f2_values[NDEVICES_FFL12_F2 * NCOMMANDS_FFL12_F2];
 
-struct MonitorI2CTaskArgs_t ffl12_f2_args = {
-    .name = "F2_12",
-    .devices = ffl12_f2_moni2c_addrs,
-    .i2c_dev = I2C_DEVICE_F2,
-    .n_devices = NDEVICES_FFL12_F2,
-    .commands = sm_command_fflot_f2, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
-    .n_commands = NCOMMANDS_FFL12_F2,
-    .n_values = NDEVICES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
-    .n_pages = NPAGES_FFL12_F2,
-    .selpage_reg = FF_SELPAGE_REG,
-    .sm_values = ffl12_f2_values,
-    // .smbus = &g_sMaster3,
-    // .smbus_status = &eStatus3,
-    .xSem = NULL,
-    .stack_size = 4096U,
-};
+// struct MonitorI2CTaskArgs_t ffl12_f2_args = {
+//     .name = "F2_12",
+//     .devices = ffl12_f2_moni2c_addrs,
+//     .i2c_dev = I2C_DEVICE_F2,
+//     .n_devices = NDEVICES_FFL12_F2,
+//     .commands = sm_command_fflot_f2, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
+//     .n_commands = NCOMMANDS_FFL12_F2,
+//     .n_values = NDEVICES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
+//     .n_pages = NPAGES_FFL12_F2,
+//     .selpage_reg = FF_SELPAGE_REG,
+//     .sm_values = ffl12_f2_values,
+//     // .smbus = &g_sMaster3,
+//     // .smbus_status = &eStatus3,
+//     .xSem = NULL,
+//     .stack_size = 4096U,
+// };
 
 #ifdef REV2
 // Clock arguments for monitoring task
@@ -427,425 +459,85 @@ struct clk_program_t clkprog_args[] = {
     {"", ""}, //
 };
 
-struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
+// struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
+//     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
+//     {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
+//     {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
+//     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
+// };
+struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
+    {"r0a", 0x70, 0, 0x77, 0x45D},  // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
     {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
     {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
 
-struct sm_command_t sm_command_clk[NCOMMANDS_CLK_TMP] = {
-    // device information on page 0 : table 16.2 and 16.4
-    {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},  // page 0x00
-    {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
-    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", PM_STATUS},   // page 0x00
-    // internal statuses on page 0 : table 16.8 and 16.9
-    {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", PM_STATUS},   // page 0x00
-    {1, 0x00, 0x0D, 1, "LOSOOF_IN", 0xff, "", PM_STATUS}, // page 0x00
-    {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},       // page 0x00
-    // internal error flags : table 16.12
-    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS}, // page 0x00
-};
+// struct sm_command_t sm_command_clk[NCOMMANDS_CLK_TMP] = {
+//     // device information on page 0 : table 16.2 and 16.4
+//     {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},  // page 0x00
+//     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
+//     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", PM_STATUS},   // page 0x00
+//     // internal statuses on page 0 : table 16.8 and 16.9
+//     {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", PM_STATUS},   // page 0x00
+//     {1, 0x00, 0x0D, 1, "LOSOOF_IN", 0xff, "", PM_STATUS}, // page 0x00
+//     {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},       // page 0x00
+//     // internal error flags : table 16.12
+//     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS}, // page 0x00
+// };
 
-uint16_t clk_values[NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP];
+// uint16_t clk_values[NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP];
 
-struct MonitorI2CTaskArgs_t clock_args = {
-    .name = "CLKSI",
-    .devices = clk_moni2c_addrs,
-    .i2c_dev = I2C_DEVICE_CLK,
-    .n_devices = NDEVICES_CLK,
-    .commands = sm_command_clk,
-    .n_commands = NCOMMANDS_CLK_TMP,
-    .n_values = NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP,
-    .n_pages = NPAGES_CLK,
-    .selpage_reg = CLK_SELPAGE_REG,
-    .sm_values = clk_values,
-    .xSem = NULL,
-    .stack_size = 4096U,
-};
+// struct MonitorI2CTaskArgs_t clock_args = {
+//     .name = "CLKSI",
+//     .devices = clk_moni2c_addrs,
+//     .i2c_dev = I2C_DEVICE_CLK,
+//     .n_devices = NDEVICES_CLK,
+//     .commands = sm_command_clk,
+//     .n_commands = NCOMMANDS_CLK_TMP,
+//     .n_values = NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP,
+//     .n_pages = NPAGES_CLK,
+//     .selpage_reg = CLK_SELPAGE_REG,
+//     .sm_values = clk_values,
+//     .xSem = NULL,
+//     .stack_size = 4096U,
+// };
 
-struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
-    {"r0a", 0x70, 0, 0x77, 0x45D}, // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
-};
+// struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
+//     {"r0a", 0x70, 0, 0x77, 0x45D}, // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
+// };
 
-struct sm_command_t sm_command_clkr0a[] = {
-    // device information on page 0 : table 14.4 and 14.6
-    {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},  // page 0x00
-    {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
-    {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", PM_STATUS},   // page 0x00
-    // internal statuses on page 0 : table 14.5
-    {1, 0x00, 0x0C, 1, "STATUS", 0x35, "", PM_STATUS}, // page 0x00
-    {1, 0x00, 0x0D, 1, "LOS", 0x15, "", PM_STATUS},    // page 0x00
-    // sticky bits of status bits : table 14.12
-    {1, 0x00, 0x12, 1, "LOSIN_FLG", 0xf, "", PM_STATUS}, // page 0x00
-    // sticky bits of status bits : table 14.12
-    {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
-};
+// struct sm_command_t sm_command_clkr0a[] = {
+//     // device information on page 0 : table 14.4 and 14.6
+//     {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},  // page 0x00
+//     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
+//     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", PM_STATUS},   // page 0x00
+//     // internal statuses on page 0 : table 14.5
+//     {1, 0x00, 0x0C, 1, "STATUS", 0x35, "", PM_STATUS}, // page 0x00
+//     {1, 0x00, 0x0D, 1, "LOS", 0x15, "", PM_STATUS},    // page 0x00
+//     // sticky bits of status bits : table 14.12
+//     {1, 0x00, 0x12, 1, "LOSIN_FLG", 0xf, "", PM_STATUS}, // page 0x00
+//     // sticky bits of status bits : table 14.12
+//     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
+// };
 
-uint16_t clkr0a_values[NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A];
+// uint16_t clkr0a_values[NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A];
 
-struct MonitorI2CTaskArgs_t clockr0a_args = {
-    .name = "CLKR0A",
-    .devices = clkr0a_moni2c_addrs,
-    .i2c_dev = I2C_DEVICE_CLK,
-    .n_devices = NDEVICES_CLKR0A,
-    .commands = sm_command_clkr0a,
-    .n_commands = NCOMMANDS_CLK_TMPR0A,
-    .n_values = NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A,
-    .n_pages = NPAGES_CLKR0A,
-    .selpage_reg = CLK_SELPAGE_REG,
-    .sm_values = clkr0a_values,
-    .xSem = NULL,
-    .stack_size = 4096U,
-};
+// struct MonitorI2CTaskArgs_t clockr0a_args = {
+//     .name = "CLKR0A",
+//     .devices = clkr0a_moni2c_addrs,
+//     .i2c_dev = I2C_DEVICE_CLK,
+//     .n_devices = NDEVICES_CLKR0A,
+//     .commands = sm_command_clkr0a,
+//     .n_commands = NCOMMANDS_CLK_TMPR0A,
+//     .n_values = NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A,
+//     .n_pages = NPAGES_CLKR0A,
+//     .selpage_reg = CLK_SELPAGE_REG,
+//     .sm_values = clkr0a_values,
+//     .xSem = NULL,
+//     .stack_size = 4096U,
+// };
 #endif // REV2
-
-#if 0
-void setFFmask(uint32_t ff_combined_present)
-{
-
-  log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
-
-  // int32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
-#ifdef REV1
-  uint32_t data = (~ff_combined_present) & 0x1FFFFFFU;
-#elif defined(REV2)
-  uint32_t data = (~ff_combined_present) & 0xFFFFFU;
-#endif // REV1
-  ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
-  ff_PRESENT_mask = data;
-  uint64_t block = EEPROMBlockFromAddr(ADDR_FF);
-
-  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
-  xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
-
-  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
-  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-  uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
-  xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
-
-  return;
-}
-
-void readFFpresent(void)
-{
-  // grab the semaphore to ensure unique access to I2C controller
-  // otherwise, block its operations indefinitely until it's available
-  acquireI2CSemaphoreBlock(i2c4_sem);
-
-#ifdef REV1
-  // to port 7
-  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
-  // to port 6
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
-#elif defined(REV2)
-  // to port 7
-  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
-  // to port 6
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-#endif
-
-  // if we have a semaphore, give it
-  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(i2c4_sem);
-  }
-
-  // grab the semaphore to ensure unique access to I2C controller
-  // otherwise, block its operations indefinitely until it's available
-  acquireI2CSemaphoreBlock(i2c3_sem);
-
-#ifdef REV1
-  // to port 0
-  apollo_i2c_ctl_w(3, 0x72, 1, 0x01);
-  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_0X20_F2);
-  // to port 1
-  apollo_i2c_ctl_w(3, 0x72, 1, 0x02);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_0X21_F2);
-#elif defined(REV2)
-  // to port 7
-  apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
-  // to port 6
-  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-
-#endif
-  // if we have a semaphore, give it
-  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(i2c3_sem);
-  }
-
-#ifdef REV1
-  uint32_t present_FFL12_BOTTOM_F1 = present_FFL12_F1 & 0x3FU;    // bottom 6 bits
-  uint32_t present_FFL12_TOP_F1 = (present_FFL12_F1 >> 6) & 0x3U; // top 2 bits
-  present_FFL4_F1 = (present_FFL4_F1 >> 5) & 0x7U;            // bits 5-7
-  present_FFL12_0X20_F2 = (present_0X20_F2 >> 6) & 0x3U;          // bit 6-7
-  present_FFL4_0X20_F2 = present_0X20_F2 & 0x3FU;               // bottom 6 bits
-  present_FFL12_0X21_F2 = (present_0X21_F2 >> 4) & 0x3U;          // bit 4-5
-  present_FFL4_0X21_F2 = (present_0X21_F2 >> 2) & 0xFU;         // bit 4 bits
-
-  uint32_t ff_combined_present = ((present_FFL12_0X21_F2) << 23) |  // 2 bits
-                                 ((present_FFL12_0X20_F2) << 21) |  // 2 bits
-                                 ((present_FFL4_0X21_F2) << 17) | // 4 bits
-                                 ((present_FFL4_0X20_F2) << 11) | // 6 bits
-                                 ((present_FFL12_TOP_F1) << 9) |    // 2 bits
-                                 (present_FFL4_F1) << 6 |         // 3 bits
-                                 ((present_FFL12_BOTTOM_F1));       // 6 bits
-
-#elif defined(REV2)
-  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;                     // bottom 6 bits
-  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;                     // bottom 6 bits
-  present_FFL4_F1 = (present_FFL4_F1 >> 4) & 0xFU;             // bits 4-7
-  present_FFL4_F2 = (present_FFL4_F2 >> 4) & 0xFU;             // bits 4-7
-
-  uint32_t ff_combined_present = ((present_FFL4_F2) << 16) | // 4 bits
-                                 ((present_FFL12_F2) << 10) |  // 6 bits
-                                 (present_FFL4_F1) << 6 |    // 4 bits
-                                 ((present_FFL12_F1));         // 6 bits
-
-  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1) & 0xFU; // 4 bits
-  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
-  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2) & 0xFU; // 4 bits
-  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
-
-  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
-  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
-#endif
-
-  setFFmask(ff_combined_present);
-}
-
-bool isEnabledFF(int ff)
-{
-  // firefly config stored in on-board EEPROM via user input
-  // and firefly config via PRESENT signals at the first boot
-  // must be true for a firefly to be enabled.
-  if (!((1 << ff) & ff_PRESENT_mask) || !((1 << ff) & ff_USER_mask)) {
-    return false;
-  }
-  else {
-    return true;
-  }
-}
-
-unsigned isFFStale(void)
-{
-  TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-  TickType_t last[4];
-  last[0] = pdTICKS_TO_S(ffl12_f1_args.updateTick);
-  last[1] = pdTICKS_TO_S(ffl4_f1_args.updateTick);
-  last[2] = pdTICKS_TO_S(ffl12_f2_args.updateTick);
-  last[3] = pdTICKS_TO_S(ffl4_f2_args.updateTick);
-
-  unsigned mask = 0U;
-  for (int ff_t = 0; ff_t < 4; ++ff_t) {
-    if (checkStale(last[ff_t], now)) {
-      mask |= (1U << ff_t);
-    }
-  }
-
-  return mask; // bits set for stale tasks. no bits set == not stale.
-}
-
-// this will return the tick of the _lowest_ set bit.
-TickType_t getFFupdateTick(int mask)
-{
-  log_debug(LOG_SERVICE, "mask = %x\r\n", mask);
-  if (__builtin_popcount(mask) == 0) {
-    log_warn(LOG_SERVICE, "empty mask\r\n");
-  }
-  if (mask & 0x1U) {
-    return ffl12_f1_args.updateTick;
-  }
-  else if (mask & 0x02U) {
-    return ffl4_f1_args.updateTick;
-  }
-  else if (mask & 0x04U) {
-    return ffl12_f2_args.updateTick;
-  }
-  else {
-    return ffl4_f2_args.updateTick;
-  }
-}
-
-uint16_t getFFtemp(const uint8_t i)
-{
-  int i1 = 1;
-  int8_t val;
-  configASSERT(i < NFIREFLIES);
-  if (i < NFIREFLIES_IT_F1) {
-    int index = i * (ffl12_f1_args.n_commands * ffl12_f1_args.n_pages) + i1;
-    val = ffl12_f1_args.sm_values[index];
-  }
-
-  else if (NFIREFLIES_IT_F1 <= i && i < NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1) {
-    int index = (i - NFIREFLIES_IT_F1) * (ffl4_f1_args.n_commands * ffl4_f1_args.n_pages) + i1;
-    val = ffl4_f1_args.sm_values[index];
-  }
-
-  else if (NFIREFLIES_F1 <= i && i < NFIREFLIES_F1 + NFIREFLIES_IT_F2) {
-    int index = (i - NFIREFLIES_F1) * (ffl12_f2_args.n_commands * ffl12_f2_args.n_pages) + i1;
-    val = ffl12_f2_args.sm_values[index];
-  }
-  else {
-    int index = (i - NFIREFLIES_F1 - NFIREFLIES_IT_F2) * (ffl4_f2_args.n_commands * ffl4_f2_args.n_pages) + i1;
-    val = ffl4_f2_args.sm_values[index];
-  }
-
-  return val;
-}
-
-#ifdef REV2
-uint16_t getFFavgoptpow(const uint8_t i)
-{
-
-  uint16_t avg_val = 0;
-  uint16_t sum_val = 0;
-  configASSERT(i < NFIREFLIES);
-
-  for (int n = 0; n < 4; ++n) {
-    if (ff_moni2c_arg[n].int_idx <= i && i < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev) {
-      for (int i1 = 4; i1 < ff_moni2c_arg[n].arg->n_commands; ++i1) {
-        int dev = i - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
-        int index = dev * (ff_moni2c_arg[n].arg->n_commands * ff_moni2c_arg[n].arg->n_pages) + i1;
-        sum_val += ff_moni2c_arg[n].arg->sm_values[index];
-      }
-      avg_val = sum_val / (ff_moni2c_arg[n].arg->n_commands - 4);
-    }
-  }
-
-  return avg_val;
-}
-
-uint16_t getFFpresentbit(const uint8_t i)
-{
-  if (i > 3) {
-    log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
-    return 56;
-  }
-  uint16_t val = ff_bitmask_args[i].present_bit_mask;
-
-  return val;
-}
-
-void getFFpart(void)
-{
-  // Write device vendor part for identifying FF device
-  uint8_t nstring = VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12 + 1;
-  char vendor_string[nstring];
-  uint8_t data;
-
-  SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
-  const int ff_ndev_offset[2] = {0, NFIREFLIES_IT_F1 + NFIREFLIES_DAQ_F1};
-  const uint32_t ndevices[2] = {NDEVICES_FFL12_F1 / 2, NDEVICES_FFL12_F2 / 2};
-  const uint32_t dev_present_mask[2] = {present_FFL12_F1, present_FFL12_F2};
-  const uint32_t dev_xmit_4v0_sel[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
-
-  struct MonitorI2CTaskArgs_t args_st[2] = {ffl12_f1_args, ffl12_f2_args};
-
-  for (int f = 0; f < 2; ++f) {
-
-    // grab the semaphore to ensure unique access to I2C controller
-    // otherwise, block its operations indefinitely until it's available
-    acquireI2CSemaphoreBlock(semaphores[f]);
-    uint32_t tmp_ffpart_bit_mask = 0U;
-    bool detect_ff = false;
-    for (uint8_t n = 0; n < ndevices[f]; n++) {
-      uint8_t vendor_data_rxch[4];
-      int8_t vendor_part_rxch[17];
-
-      data = 0x1U << args_st[f].devices[(2 * n) + 1].mux_bit;
-      log_debug(LOG_SERVICE, "Mux set to 0x%02x\r\n", data);
-      int rmux = apollo_i2c_ctl_w(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].mux_addr, 1, data);
-      if (rmux != 0) {
-        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-      }
-      for (uint8_t i = VENDOR_START_BIT_FF12; i < VENDOR_STOP_BIT_FF12; i++) {
-        uint32_t vendor_char_rxch;
-        int res = apollo_i2c_ctl_reg_r(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].dev_addr, 1, (uint16_t)i, 1, &vendor_char_rxch);
-        if (res != 0) {
-          log_warn(LOG_SERVICE, "GetFFpart read Error %s, break\r\n", SMBUS_get_error(res));
-          vendor_part_rxch[i - VENDOR_START_BIT_FF12] = 0;
-          break;
-        }
-        for (int j = 0; j < 4; ++j) {
-          vendor_data_rxch[j] = (vendor_char_rxch >> (3 - j) * 8) & 0xFF;
-        }
-
-        convert_8_t tmp1;
-        tmp1.us = vendor_data_rxch[3]; // change from uint_8 to int8_t, preserving bit pattern
-        vendor_part_rxch[i - VENDOR_START_BIT_FF12] = tmp1.s;
-        vendor_part_rxch[i - VENDOR_START_BIT_FF12 + 1] = '\0'; // null-terminated
-      }
-
-      char *vendor_string_rxch = (char *)vendor_part_rxch;
-
-      if ((dev_present_mask[f] & (1 << (2 * n))) == 0) { // check that there is a FF installed in this ch
-        if (!detect_ff) {
-          detect_ff = true;
-          if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) { // the first 25Gbs 12-ch detected on FPGA1(2)
-            tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n);                                     // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
-          }
-          else {
-            if (f == 0)
-              ffl12_f1_args.commands = sm_command_fflit_f1; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f1
-            else
-              ffl12_f2_args.commands = sm_command_fflit_f2; // if the 14Gbsp 12-ch part is found, change the set of commands to sm_command_fflit_f2
-          }
-          log_info(LOG_SERVICE, "Getting Firefly 12-ch part (FPGA%d): %s \r\n:", f + 1, vendor_string_rxch);
-          strncpy(vendor_string, vendor_string_rxch, nstring);
-        }
-        else {
-          if (strstr(vendor_string_rxch, "14") == NULL && strstr(vendor_string_rxch, "CRRNB") == NULL) {
-            tmp_ffpart_bit_mask = tmp_ffpart_bit_mask | (0x1U << n); // bit 1 for a 25Gbs ch and assign to a Bit-mask of Firefly 12-ch part
-          }
-          else {
-            if (strncmp(vendor_string_rxch, vendor_string, nstring) != 0) {
-              log_info(LOG_SERVICE, "Different Firefly 12-ch part(FPGA%d) on %s \r\n:", f + 1, ff_moni2c_addrs[(2 * n) + 1 + ff_ndev_offset[f]].name);
-              log_info(LOG_SERVICE, "with %s \r\n:", vendor_string_rxch);
-            }
-          }
-        }
-      }
-      else {
-        log_info(LOG_SERVICE, "No Firefly 12-ch part(FPGA%d) on %s \r\n:", f + 1, ff_moni2c_addrs[(2 * n) + 1 + ff_ndev_offset[f]].name);
-      }
-      memset(vendor_data_rxch, 0, sizeof(vendor_data_rxch));
-      memset(vendor_part_rxch, 0, sizeof(vendor_part_rxch));
-      rmux = apollo_i2c_ctl_w(args_st[f].i2c_dev, args_st[f].devices[(2 * n) + 1].mux_addr, 1, 0);
-      if (rmux != 0) {
-        log_warn(LOG_SERVICE, "Mux write error %s\r\n", SMBUS_get_error(rmux));
-      }
-      log_debug(LOG_SERVICE, "%s: reset mux\r\n", args_st[f].devices[(2 * n) + 1].name);
-    }
-
-    log_debug(LOG_SERVICE, "Bit-mask of Firefly 12-ch part (FPGA%d): 0x%02x \r\n:", f + 1, tmp_ffpart_bit_mask);
-    log_debug(LOG_SERVICE, "Bit-mask of xmit_3v8_sel(FPGA%d): 0x%02x \r\n:", f + 1, dev_xmit_4v0_sel[f]);
-    // Warning if 25Gbs found but is connected to 3.3V or Non-25Gbs found but is connected to 3.8V
-    if ((dev_xmit_4v0_sel[f] ^ tmp_ffpart_bit_mask) != 0U) {
-      log_warn(LOG_SERVICE, "FPGA%d 12-ch FFs have unmatched xmit_3v8_sel(0x%02x) and 12-ch ff-mask(0x%02x) \r\n", f + 1, dev_xmit_4v0_sel[f], tmp_ffpart_bit_mask);
-    }
-
-    if (f == 0)
-      ff_bitmask_args[0].ffpart_bit_mask = tmp_ffpart_bit_mask;
-    else
-      ff_bitmask_args[2].ffpart_bit_mask = tmp_ffpart_bit_mask;
-
-    // if we have a semaphore, give it
-    if (xSemaphoreGetMutexHolder(semaphores[f]) == xTaskGetCurrentTaskHandle()) {
-      xSemaphoreGive(semaphores[f]);
-    }
-  }
-}
-#endif
-#endif
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2
 #define FPGA_MON_NFPGA              2

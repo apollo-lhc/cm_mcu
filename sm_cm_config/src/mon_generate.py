@@ -52,7 +52,8 @@ if args.output and args.verbose:
 # addr_template = Template("{$reg_size, $page, $reg_address, $size, \"$name\","
 #                          " $mask, \"$units\", $type, get_${name}_mask, set_${name}_data}, ")
 addr_template = Template("{$reg_size, $page, $reg_list, $size, \"$name\","
-                         " $mask, \"$units\", $type, get_${prefix}_${name}_mask, set_${prefix}_${name}_data}, ")
+                         " $mask, \"$units\", $type, get_${prefix}_${name}_mask,"
+                         " set_${prefix}_${name}_data, get_${prefix}_${name}_data},")
 # output file names: header file and c source file
 # make sure that the output file ends with .c. Print error message and exit if it doesn't
 if not args.output.endswith(".c"):
@@ -81,7 +82,7 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
     print("#include <stdint.h>", file=fout_header)
     print("#include \"MonitorTaskI2C_new.h\"", file=fout_header)
     print("#include \"FireflyUtils.h\"", file=fout_source)
-    print("#include \"MonitorI2CTask.h\"", file=fout_source)
+    #print("#include \"MonitorI2CTask.h\"", file=fout_source)
 
 
     with open(args.input_file, encoding="ascii") as f:
@@ -164,19 +165,25 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
         for c in config:
             data_name_f1 = f"FF_F1_{c['name']}_data"
             data_name_f2 = f"FF_F2_{c['name']}_data"
-            get_fcn_name_f1 = f"get_F1_{c['name']}_data"
-            get_fcn_name_f2 = f"get_F2_{c['name']}_data"
+            get_fcn_name_f1 = f"get_FF_F1_{c['name']}_data"
+            get_fcn_name_f2 = f"get_FF_F2_{c['name']}_data"
             get_fcn_name = f"get_FF_{c['name']}_data"
-            # write get_fcn_name header to the header file
-            print(f"uint16_t {get_fcn_name}(int which);", file=fout_header)
-            # write body of get_fcn_name to the source file
-            print(f"uint16_t {get_fcn_name}(int which) {{", file=fout_source)
-            print( "    if (which < NFIREFLIES_F1) {{", file=fout_source)
-            print(f"        return {data_name_f1}[which];", file=fout_source)
-            print( "    }} else {{", file=fout_source)
-            print(f"        return {data_name_f2}[which - NFIREFLIES_F1];", file=fout_source)
-            print( "    }}", file=fout_source)
-            print(r"}", file=fout_source)
+            # write a preprocessor macro that uses a trigram to select the correct function
+            print(f"#define {get_fcn_name}(which) \\",
+                    file=fout_header)
+            print(f"    ((which) < NFIREFLIES_F1 ? {get_fcn_name_f1}((which)) : {get_fcn_name_f2}((which) - NFIREFLIES_F1))",
+                    file=fout_header)
+
+            # # write get_fcn_name header to the header file
+            # print(f"uint16_t {get_fcn_name}(int which);", file=fout_header)
+            # # write body of get_fcn_name to the source file
+            # print(f"uint16_t {get_fcn_name}(int which) {{", file=fout_source)
+            # print( "    if (which < NFIREFLIES_F1) {{", file=fout_source)
+            # print(f"        return {data_name_f1}[which];", file=fout_source)
+            # print( "    }} else {{", file=fout_source)
+            # print(f"        return {data_name_f2}[which - NFIREFLIES_F1];", file=fout_source)
+            # print( "    }}", file=fout_source)
+            # print(r"}", file=fout_source)
         # closing header guard
         print(r"#endif// MON_I2C_ADDRESSES_H", file=fout_header)
 

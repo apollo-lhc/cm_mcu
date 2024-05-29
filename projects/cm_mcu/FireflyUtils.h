@@ -32,14 +32,18 @@
 #define CLK_PAGE_COMMAND 1
 #define NFIREFLIES       (NFIREFLIES_F1 + NFIREFLIES_F2)
 
+// register address of the first and last entry of the
+// device identifier in the memory map of the FF devices
 #define VENDOR_START_BIT_FFDAQ 168
 #define VENDOR_STOP_BIT_FFDAQ  184
 #define VENDOR_START_BIT_FF12  171
 #define VENDOR_STOP_BIT_FF12   187
+#define VENDOR_COUNT_FFDAQ     (VENDOR_STOP_BIT_FFDAQ - VENDOR_START_BIT_FFDAQ)
+#define VENDOR_COUNT_FF12      (VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12)
 
 struct arg_moni2c_ff_t {
   char *ff_part;                    // ff part
-  struct MonitorI2CTaskArgs_t *arg; // ff arg
+  struct MonitorTaskI2CArgs_t *arg; // ff arg
   uint8_t int_idx;                  // start idx of this arg in ff_moni2c_addrs
   uint8_t dev_int_idx;              // start idx of the device in its arg
   uint8_t num_dev;                  // number of devices in this ff arg.
@@ -57,7 +61,7 @@ bool isEnabledFF(int ff);
 void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
 uint16_t getFFtemp(const uint8_t i);
-uint16_t getFFavgoptpow(const uint8_t i);
+float getFFavgoptpow(const uint8_t i);
 uint16_t getFFpresentbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);
@@ -67,6 +71,8 @@ uint8_t getFFstatus(const uint8_t i);
 unsigned isFFStale(void);
 TickType_t getFFupdateTick(int ff_t);
 void init_registers_ff(void);
+
+uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size);
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;

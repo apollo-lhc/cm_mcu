@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "FireflyUtils.h"
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
@@ -20,7 +21,6 @@
 #include "common/utils.h"
 #include "common/log.h"
 #include "Tasks.h"
-#include "MonitorI2CTask.h"
 #include "Semaphore.h"
 #include "clocksynth.h"
 

@@ -14,6 +14,8 @@
 #include <string.h>
 
 // to be moved
+#include "FireflyUtils.h"
+#include "MonUtils.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/rom.h"
 
@@ -26,7 +28,6 @@
 
 #include "Tasks.h"
 #include "MonitorTask.h"
-#include "MonitorI2CTask.h"
 #include "clocksynth.h"
 #include "common/log.h"
 
@@ -427,8 +428,8 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
       data[ll].data.us = 0xff; // special stale value
     }
     else {
-      data[ll].data.us = getFFavgoptpow(j); // sensor value and type
-      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, getFFavgoptpow(j));
+      data[ll].data.us = (uint16_t)getFFavgoptpow(j); // sensor value and type
+      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, data[ll].data.us);
     }
     data[ll].sensor = ll + start;
     ++ll;
@@ -530,29 +531,24 @@ void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
   // MonitorI2CTask values -- clock chips
   // update times, in seconds. If the data is stale, send NaN
   // n=1 is r0a and n=0 is else
-  struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
+  // struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
 
-  TickType_t last = pdTICKS_TO_S(args_st[n].updateTick);
+  TickType_t last = pdTICKS_TO_S(clk_args.updateTick);
   TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
   bool stale = checkStale(last, now);
 
   int ll = 0;
 
-  for (int j = 0; j < args_st[n].n_devices; ++j) {      // loop over supplies
-    for (int l = 0; l < args_st[n].n_pages; ++l) {      // loop over register pages
-      for (int k = 0; k < args_st[n].n_commands; ++k) { // loop over clock commands FIXME : don't send sticky-bit ones
-        int index =
-            (j * args_st[n].n_commands * args_st[n].n_pages) + k;
-
-        if (stale) {
-          data[ll].data.us = 56; // special stale value
-        }
-        else {
-          data[ll].data.us = args_st[n].sm_values[index];
-        }
-        data[ll].sensor = ll + start;
-        ++ll;
+  for (int j = 0; j < clk_args.n_devices; ++j) { // loop over supplies
+    for (int k = 0; k < clk_args.n_commands; ++k) {
+      if (stale) {
+        data[ll].data.us = 56; // special stale value
       }
+      else {
+        data[ll].data.us = clk_args.commands[j].retrieveData(j);
+      }
+      data[ll].sensor = ll + start;
+      ++ll;
     }
   }
 }

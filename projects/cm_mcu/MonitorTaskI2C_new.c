@@ -29,7 +29,7 @@
 // local prototype
 
 // read-only accessor functions for Firefly names and values.
-#if 0
+
 bool getFFch_low(uint8_t val, int channel)
 {
   configASSERT(channel < 8);
@@ -47,7 +47,6 @@ bool getFFch_high(uint8_t val, int channel)
   }
   return true;
 }
-#endif
 
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
 void MonitorI2CTask_new(void *parameters)

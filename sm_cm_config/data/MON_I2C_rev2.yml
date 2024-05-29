@@ -9,7 +9,7 @@ define: &FF_SHARED_REGS
   - name: STATUS_REG # register name
     reg_size: 1 # size of register address in bytes
     page: 0 # page of register
-    reg_address: 0x2 # register address
+    reg_address: 0x2 # register address, if list: [ cernb, 14g, 25g4, 25g12]
     size: 2 # size of data in register in bytes
     mask: 0xFF # mask for valid bits
     units: "" # units for display
@@ -33,6 +33,15 @@ define: &FF_SHARED_REGS
     units: ""
     type: PM_STATUS
     devicetypes: [25G12, 25G4]
+  - name: CDR_LOL_ALARM
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 0x5, 0x14]
+    size: 2
+    mask: 0xFFFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [25G4, 25G12]
   - name: OPT_POWER_CH1
     reg_size: 1
     page: 0

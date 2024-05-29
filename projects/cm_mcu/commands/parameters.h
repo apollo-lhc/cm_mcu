@@ -40,7 +40,6 @@
 #include "driverlib/uart.h"
 
 #include "MonitorTask.h"
-#include "MonitorI2CTask.h"
 #include "CommandLineTask.h"
 #include "I2CCommunication.h"
 #include "Tasks.h"

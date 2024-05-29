@@ -1,10 +1,10 @@
-#include "MonitorI2CTask.h"
 #include "MonitorTaskI2C_new.h"
 #include "MonI2C_addresses.h"
 #include "FireflyUtils.h"
 #include "Tasks.h"
 #include "MonUtils.h"
 
+#ifdef REV2
 // for 12 channel parts, there is one Tx and Rx device.
 // for 4 channel parts, there is one XCVR part
 int FireflyType(int device)
@@ -31,7 +31,6 @@ int FireflyType(int device)
   }
 }
 
-#ifdef REV2
 // For rev2 clocks there is one 5341 and 4 5395s
 int ClockType(int device)
 {
