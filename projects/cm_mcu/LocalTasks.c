@@ -213,7 +213,6 @@ struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
 // #error "Define either Rev1 or Rev2"
 #endif
 
-
 #ifdef REV1
 struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"V11  12 Tx GTY", FF_I2CMUX_1_ADDR, 6, 0x50}, //
@@ -233,7 +232,6 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #else
 #error "Define either Rev1 or Rev2"
 #endif
-
 
 #ifdef REV2
 // Clock arguments for monitoring task

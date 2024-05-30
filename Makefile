@@ -44,9 +44,9 @@ check-for-pr: format
 
 # 2nd dollar sign in grep is to pass along a single dollar sign to make
 format:
-	run-clang-format.py $(shell git diff --diff-filter=AM --name-only master | egrep '.[ch]$$')
+	run-clang-format.py $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')
 
 format-apply:
-	run-clang-format.py -i $(shell git diff --diff-filter=AM --name-only master | egrep '.[ch]$$')	
+	run-clang-format.py -i $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')	
 
 .PHONY: all clean $(DIRS) $(DIRSCLEAN) check-and-reinit-submodules
