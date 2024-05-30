@@ -4,7 +4,59 @@
 #include "Tasks.h"
 #include "MonUtils.h"
 
-#ifdef REV2
+#ifdef REV1
+int FireflyType(int device)
+{
+  switch (device) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 9:
+    case 10:
+    case 21:
+    case 22:
+    case 23:
+    case 24:
+      // in Rev1 there is no 3.8V so we cheat and call all of these CERN-B
+      return DEVICE_CERNB;
+    case 6:
+    case 7:
+    case 8:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+      return DEVICE_25G4;
+    default:
+      return DEVICE_NONE;
+  }
+}
+
+// For rev2 clocks there is one 5341 and 4 5395s
+int ClockType(int device)
+{
+  switch (device) {
+    case 0:
+      return DEVICE_SI5341;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+      return DEVICE_SI5395;
+    default:
+      return DEVICE_NONE;
+  }
+}
+#elif defined(REV2)
 // for 12 channel parts, there is one Tx and Rx device.
 // for 4 channel parts, there is one XCVR part
 int FireflyType(int device)
@@ -47,6 +99,8 @@ int ClockType(int device)
   }
 }
 
+#endif // REV2
+
 bool isEnabledFF_F2(int device)
 {
   // firefly devices on F2 are devices 10-19
@@ -81,6 +135,7 @@ struct MonitorI2CTaskArgs_new_t ff_f2_args = {
     .presentCallback = isEnabledFF_F2,
 };
 
+#ifdef REV2
 struct MonitorI2CTaskArgs_new_t clk_args = {
     .name = "CLK",
     .devices = clk_moni2c_addrs, // FIXME: this doesn't include R0A
