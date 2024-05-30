@@ -1,4 +1,4 @@
-#include "MonitorTaskI2C_new.h"
+#include "MonitorTaskI2C.h"
 #include "MonI2C_addresses.h"
 #include "FireflyUtils.h"
 #include "Tasks.h"
@@ -107,7 +107,7 @@ bool isEnabledFF_F2(int device)
   return isEnabledFF(device + NFIREFLIES_F1);
 }
 
-struct MonitorI2CTaskArgs_new_t ff_f1_args = {
+struct MonitorTaskI2CArgs_t ff_f1_args = {
     .name = "FF_F1",
     .devices = ff_moni2c_addrs_f1,
     .i2c_dev = I2C_DEVICE_F1,
@@ -121,7 +121,7 @@ struct MonitorI2CTaskArgs_new_t ff_f1_args = {
     .presentCallback = isEnabledFF,
 };
 
-struct MonitorI2CTaskArgs_new_t ff_f2_args = {
+struct MonitorTaskI2CArgs_t ff_f2_args = {
     .name = "FF_F2",
     .devices = ff_moni2c_addrs_f2,
     .i2c_dev = I2C_DEVICE_F2,
@@ -136,7 +136,7 @@ struct MonitorI2CTaskArgs_new_t ff_f2_args = {
 };
 
 #ifdef REV2
-struct MonitorI2CTaskArgs_new_t clk_args = {
+struct MonitorTaskI2CArgs_t clk_args = {
     .name = "CLK",
     .devices = clk_moni2c_addrs, // FIXME: this doesn't include R0A
     .i2c_dev = I2C_DEVICE_CLK,

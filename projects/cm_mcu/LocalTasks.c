@@ -15,7 +15,7 @@
 #include <time.h>   // struct tm
 
 #include "FireflyUtils.h"
-#include "MonitorTaskI2C_new.h"
+#include "MonitorTaskI2C.h"
 #include "driverlib/hibernate.h"
 
 #include "Tasks.h"
@@ -95,15 +95,6 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
-#if 0
-struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
-    {"FFL12", &ffl12_f1_args, 0, 0, 6},  //
-    {"FFL4", &ffl4_f1_args, 6, 0, 3},    //
-    {"FFL12", &ffl12_f1_args, 9, 6, 2},  //
-    {"FFL4", &ffl4_f2_args, 11, 0, 10},  //
-    {"FFL12", &ffl12_f2_args, 21, 0, 4}, //
-};
-#endif // 0
 #elif defined(REV2)
 // -------------------------------------------------
 //
@@ -159,14 +150,6 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
 
 };
 
-#if 0
-struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG] = {
-    {"FFL12", &ffl12_f1_args, 0, 0, 6},  //
-    {"FFL4", &ffl4_f1_args, 6, 0, 4},    //
-    {"FFL12", &ffl12_f2_args, 10, 0, 6}, //
-    {"FFL4", &ffl4_f2_args, 16, 0, 4},   //
-};
-#endif // 0
 #else
 #error "Define either Rev1 or Rev2"
 #endif
@@ -189,84 +172,6 @@ struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
 // #error "Define either Rev1 or Rev2"
 #endif
 
-#if 0
-struct sm_command_t sm_command_ffl4_f1[] = {
-    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-    {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
-    {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-};
-
-uint16_t ffl4_f1_values[NDEVICES_FFL4_F1 * NCOMMANDS_FFL4_F1];
-
-struct MonitorI2CTaskArgs_t ffl4_f1_args = {
-    .name = "F1_4",
-    .devices = ffl4_f1_moni2c_addrs,
-    .i2c_dev = I2C_DEVICE_F1,
-    .n_devices = NDEVICES_FFL4_F1,
-    .commands = sm_command_ffl4_f1,
-    .n_commands = NCOMMANDS_FFL4_F1,
-    .n_values = NDEVICES_FFL4_F1 * NPAGES_FFL4_F1 * NCOMMANDS_FFL4_F1,
-    .n_pages = NPAGES_FFL4_F1,
-    .selpage_reg = FF_SELPAGE_REG,
-    .sm_values = ffl4_f1_values,
-    // .smbus = &g_sMaster4,
-    // .smbus_status = &eStatus4,
-    .xSem = NULL,
-    .stack_size = 4096U,
-};
-
-// FF12 arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA1
-
-// register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
-struct sm_command_t sm_command_fflit_f1[] = {
-    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    // there are no registers to read optical power for 14Gbps ECUO.
-    // registers below are a placeholder with a reading equal to zero
-    // the reason we need them because n_commands is fixed
-    {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-    {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-
-};
-// register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
-// **commands below have not been tested yet**
-struct sm_command_t sm_command_fflot_f1[] = {
-    {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-    {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-    {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-    {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
-    {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-    {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-
-};
-#endif // 0
 #ifdef REV1
 struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
@@ -290,26 +195,6 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 #else
 #error "Define either Rev1 or Rev2"
 #endif
-#if 0
-uint16_t ffl12_f1_values[NDEVICES_FFL12_F1 * NCOMMANDS_FFL12_F1];
-
-struct MonitorI2CTaskArgs_t ffl12_f1_args = {
-    .name = "F1_12",
-    .devices = ffl12_f1_moni2c_addrs,
-    .i2c_dev = I2C_DEVICE_F1,
-    .n_devices = NDEVICES_FFL12_F1,
-    .commands = sm_command_fflot_f1, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
-    .n_commands = NCOMMANDS_FFL12_F1,
-    .n_values = NDEVICES_FFL12_F1 * NPAGES_FFL12_F1 * NCOMMANDS_FFL12_F1,
-    .n_pages = NPAGES_FFL12_F1,
-    .selpage_reg = FF_SELPAGE_REG,
-    .sm_values = ffl12_f1_values,
-    // .smbus = &g_sMaster4,
-    // .smbus_status = &eStatus4,
-    .xSem = NULL,
-    .stack_size = 4096U,
-};
-#endif // 0
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
 #ifdef REV1
 struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
@@ -324,90 +209,10 @@ struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
     {"V09 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
     {"V10 4 XCVR GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
 };
-// #elif defined(REV2)
-// struct dev_moni2c_addr_t ffl4_f2_moni2c_addrs[NFIREFLIES_DAQ_F2] = {
-//     {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
-//     {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
-//     {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
-//     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
-// };
 // #else
 // #error "Define either Rev1 or Rev2"
 #endif
 
-// struct sm_command_t sm_command_ffl4_f2[] = {
-//     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-//     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-//     {1, 0x00, 0x03, 1, "FF_LOS_ALARM", 0xff, "", PM_STATUS},
-//     {1, 0x00, 0x05, 1, "FF_CDR_LOL_ALARM", 0xff, "", PM_STATUS},
-//     {2, 0x00, 0x22, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 4 Rx-ch registers with increasing addresses
-//     {2, 0x00, 0x24, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x00, 0x26, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x00, 0x28, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-// };
-// uint16_t ffl4_f2_values[NDEVICES_FFL4_F2 * NCOMMANDS_FFL4_F2];
-
-// struct MonitorI2CTaskArgs_t ffl4_f2_args = {
-//     .name = "F2_4",
-//     .devices = ffl4_f2_moni2c_addrs,
-//     .i2c_dev = I2C_DEVICE_F2,
-//     .n_devices = NDEVICES_FFL4_F2,
-//     .commands = sm_command_ffl4_f2,
-//     .n_commands = NCOMMANDS_FFL4_F2,
-//     .n_values = NDEVICES_FFL4_F2 * NPAGES_FFL4_F2 * NCOMMANDS_FFL4_F2,
-//     .n_pages = NPAGES_FFL4_F2,
-//     .selpage_reg = FF_SELPAGE_REG,
-//     .sm_values = ffl4_f2_values,
-//     // .smbus = &g_sMaster3,
-//     // .smbus_status = &eStatus3,
-//     .xSem = NULL,
-//     .stack_size = 4096U,
-// };
-
-// // FF12V arguments for monitoring i2c task of 12-channel firefly ports connected to FPGA2
-
-// // register maps for IT-DTC Fireflies 12-ch part -- future will be CERN-B but currently is 14Gbps ECUO
-// struct sm_command_t sm_command_fflit_f2[] = {
-//     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-//     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-//     {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-//     {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-//     // there are no registers to read optical power for 14Gbps ECUO.
-//     // registers below are a placeholder with a reading equal to zero
-//     // the reason we need them because n_commands is fixed
-//     {1, 0x00, 0x00, 1, "FF_CH01_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH02_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH03_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH04_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH05_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH06_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH07_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH08_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH09_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH10_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH11_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-//     {1, 0x00, 0x00, 1, "FF_CH12_OPT_POW", 0xff, "0.1uW", PM_STATUS},
-// };
-// // register maps for OT-DTC Fireflies 12-ch part -- 25Gbps ECUO (no connected devices to test as of 08.04.22)
-// // **commands below have not been tested yet**
-// struct sm_command_t sm_command_fflot_f2[] = {
-//     {1, 0x00, 0x02, 2, "FF_STATUS_REG", 0xff, "", PM_STATUS},
-//     {1, 0x00, 0x16, 2, "FF_TEMPERATURE", 0xff, "C", PM_STATUS},
-//     {2, 0x00, 0x07, 2, "FF_LOS_ALARM", 0xffff, "", PM_STATUS},
-//     {2, 0x00, 0x14, 2, "FF_CDR_LOL_ALARM", 0xffff, "", PM_STATUS},
-//     {2, 0x01, 0xe4, 2, "FF_CH01_OPT_POW", 0xffff, "0.1uW", PM_STATUS}, // read 12 Rx-ch registers  with decreasing addresses
-//     {2, 0x01, 0xe2, 2, "FF_CH02_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xe0, 2, "FF_CH03_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xde, 2, "FF_CH04_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xdc, 2, "FF_CH05_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xda, 2, "FF_CH06_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xd8, 2, "FF_CH07_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xd6, 2, "FF_CH08_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xd4, 2, "FF_CH09_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xd2, 2, "FF_CH10_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xd0, 2, "FF_CH11_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-//     {2, 0x01, 0xce, 2, "FF_CH12_OPT_POW", 0xffff, "0.1uW", PM_STATUS},
-// };
 
 #ifdef REV1
 struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
@@ -429,24 +234,6 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #error "Define either Rev1 or Rev2"
 #endif
 
-// uint16_t ffl12_f2_values[NDEVICES_FFL12_F2 * NCOMMANDS_FFL12_F2];
-
-// struct MonitorI2CTaskArgs_t ffl12_f2_args = {
-//     .name = "F2_12",
-//     .devices = ffl12_f2_moni2c_addrs,
-//     .i2c_dev = I2C_DEVICE_F2,
-//     .n_devices = NDEVICES_FFL12_F2,
-//     .commands = sm_command_fflot_f2, // 25Gbps by default but if the 14Gbsp 12-ch part is found, the set of commands is changed in INIT task
-//     .n_commands = NCOMMANDS_FFL12_F2,
-//     .n_values = NDEVICES_FFL12_F2 * NPAGES_FFL12_F2 * NCOMMANDS_FFL12_F2,
-//     .n_pages = NPAGES_FFL12_F2,
-//     .selpage_reg = FF_SELPAGE_REG,
-//     .sm_values = ffl12_f2_values,
-//     // .smbus = &g_sMaster3,
-//     // .smbus_status = &eStatus3,
-//     .xSem = NULL,
-//     .stack_size = 4096U,
-// };
 
 #ifdef REV2
 // Clock arguments for monitoring task
@@ -459,12 +246,6 @@ struct clk_program_t clkprog_args[] = {
     {"", ""}, //
 };
 
-// struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395] = {
-//     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
-//     {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
-//     {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
-//     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
-// };
 struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r0a", 0x70, 0, 0x77, 0x45D},  // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
@@ -473,70 +254,6 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
 
-// struct sm_command_t sm_command_clk[NCOMMANDS_CLK_TMP] = {
-//     // device information on page 0 : table 16.2 and 16.4
-//     {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},  // page 0x00
-//     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
-//     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0x7f, "", PM_STATUS},   // page 0x00
-//     // internal statuses on page 0 : table 16.8 and 16.9
-//     {1, 0x00, 0x0C, 1, "LOSXAXB", 0x02, "", PM_STATUS},   // page 0x00
-//     {1, 0x00, 0x0D, 1, "LOSOOF_IN", 0xff, "", PM_STATUS}, // page 0x00
-//     {1, 0x00, 0x0E, 1, "LOL", 0x02, "", PM_STATUS},       // page 0x00
-//     // internal error flags : table 16.12
-//     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x27, "", PM_STATUS}, // page 0x00
-// };
-
-// uint16_t clk_values[NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP];
-
-// struct MonitorI2CTaskArgs_t clock_args = {
-//     .name = "CLKSI",
-//     .devices = clk_moni2c_addrs,
-//     .i2c_dev = I2C_DEVICE_CLK,
-//     .n_devices = NDEVICES_CLK,
-//     .commands = sm_command_clk,
-//     .n_commands = NCOMMANDS_CLK_TMP,
-//     .n_values = NDEVICES_CLK * NPAGES_CLK * NCOMMANDS_CLK_TMP,
-//     .n_pages = NPAGES_CLK,
-//     .selpage_reg = CLK_SELPAGE_REG,
-//     .sm_values = clk_values,
-//     .xSem = NULL,
-//     .stack_size = 4096U,
-// };
-
-// struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341] = {
-//     {"r0a", 0x70, 0, 0x77, 0x45D}, // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
-// };
-
-// struct sm_command_t sm_command_clkr0a[] = {
-//     // device information on page 0 : table 14.4 and 14.6
-//     {1, 0x00, 0x02, 2, "PN_BASE", 0xffff, "", PM_STATUS},  // page 0x00
-//     {1, 0x00, 0x05, 1, "DEVICE_REV", 0xff, "", PM_STATUS}, // page 0x00
-//     {1, 0x00, 0x0B, 1, "I2C_ADDR", 0xff, "", PM_STATUS},   // page 0x00
-//     // internal statuses on page 0 : table 14.5
-//     {1, 0x00, 0x0C, 1, "STATUS", 0x35, "", PM_STATUS}, // page 0x00
-//     {1, 0x00, 0x0D, 1, "LOS", 0x15, "", PM_STATUS},    // page 0x00
-//     // sticky bits of status bits : table 14.12
-//     {1, 0x00, 0x12, 1, "LOSIN_FLG", 0xf, "", PM_STATUS}, // page 0x00
-//     // sticky bits of status bits : table 14.12
-//     {1, 0x00, 0x11, 1, "STICKY_FLG", 0x2f, "", PM_STATUS}, // page 0x00
-// };
-
-// uint16_t clkr0a_values[NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A];
-
-// struct MonitorI2CTaskArgs_t clockr0a_args = {
-//     .name = "CLKR0A",
-//     .devices = clkr0a_moni2c_addrs,
-//     .i2c_dev = I2C_DEVICE_CLK,
-//     .n_devices = NDEVICES_CLKR0A,
-//     .commands = sm_command_clkr0a,
-//     .n_commands = NCOMMANDS_CLK_TMPR0A,
-//     .n_values = NDEVICES_CLKR0A * NPAGES_CLKR0A * NCOMMANDS_CLK_TMPR0A,
-//     .n_pages = NPAGES_CLKR0A,
-//     .selpage_reg = CLK_SELPAGE_REG,
-//     .sm_values = clkr0a_values,
-//     .xSem = NULL,
-//     .stack_size = 4096U,
-// };
 #endif // REV2
 
 #define FPGA_MON_NDEVICES_PER_FPGA  2

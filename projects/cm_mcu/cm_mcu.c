@@ -289,11 +289,11 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
 #ifdef REV2
-  xTaskCreate(MonitorI2CTask_new, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask_new, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask_new, clk_args.name, 2 * configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, clk_args.name, 2 * configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
               NULL);
 
 #endif // REV2

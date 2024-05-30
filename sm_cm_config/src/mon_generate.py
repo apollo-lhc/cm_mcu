@@ -74,13 +74,13 @@ with open(source_fname, 'w', encoding="ascii") as fout_source, \
     write_boilderplate(fout_source)
     write_boilderplate(fout_header)
     print(f"#include \"{header_fname}\"", file=fout_source)
-    #print("#include \"MonitorTaskI2C_new.h\"", file=fout_source)
+    #print("#include \"MonitorTaskI2C.h\"", file=fout_source)
 
     # header file
     print(r"#ifndef MON_I2C_ADDRESSES_H", file=fout_header)
     print(r"#define MON_I2C_ADDRESSES_H", file=fout_header)
     print("#include <stdint.h>", file=fout_header)
-    print("#include \"MonitorTaskI2C_new.h\"", file=fout_header)
+    print("#include \"MonitorTaskI2C.h\"", file=fout_header)
     print("#include \"FireflyUtils.h\"", file=fout_source)
     #print("#include \"MonitorI2CTask.h\"", file=fout_source)
 

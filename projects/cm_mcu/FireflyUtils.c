@@ -14,7 +14,7 @@
 
 #include "MonI2C_addresses.h"
 #include "MonUtils.h"
-#include "MonitorTaskI2C_new.h"
+#include "MonitorTaskI2C.h"
 #include "common/log.h"
 
 #include "Semaphore.h"
@@ -237,13 +237,13 @@ float getFFavgoptpow(const uint8_t i)
   sum_val += get_FF_OPT_POWER_CH3_data(i);
   sum_val += get_FF_OPT_POWER_CH4_data(i);
   sum_val += get_FF_OPT_POWER_CH5_data(i);
-  // sum_val += get_FF_OPT_POWER_CH6_data(i);
-  // sum_val += get_FF_OPT_POWER_CH7_data(i);
-  // sum_val += get_FF_OPT_POWER_CH8_data(i);
-  // sum_val += get_FF_OPT_POWER_CH9_data(i);
-  // sum_val += get_FF_OPT_POWER_CH10_data(i);
-  // sum_val += get_FF_OPT_POWER_CH11_data(i);
-  // sum_val += get_FF_OPT_POWER_CH12_data(i);
+  sum_val += get_FF_OPT_POWER_CH6_data(i);
+  sum_val += get_FF_OPT_POWER_CH7_data(i);
+  sum_val += get_FF_OPT_POWER_CH8_data(i);
+  sum_val += get_FF_OPT_POWER_CH9_data(i);
+  sum_val += get_FF_OPT_POWER_CH10_data(i);
+  sum_val += get_FF_OPT_POWER_CH11_data(i);
+  sum_val += get_FF_OPT_POWER_CH12_data(i);
 
   float nchannels = 12.;
   if (FireflyType(i) == DEVICE_25G4) {

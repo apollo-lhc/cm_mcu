@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "MonitorTaskI2C_new.h"
+#include "MonitorTaskI2C.h"
 #include "common/smbus_helper.h"
 #include "clocksynth.h"
 #include "I2CCommunication.h"

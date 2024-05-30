@@ -1,5 +1,5 @@
 /*
- * MonitorI2CTask_new.c
+ * MonitorTaskI2C.c
  *
  *  Created on: June 30, 2022
  *      Author: pkotamnives
@@ -20,7 +20,7 @@
 
 // local includes
 #include "common/smbus_helper.h"
-#include "MonitorTaskI2C_new.h"
+#include "MonitorTaskI2C.h"
 #include "common/log.h"
 #include "Tasks.h"
 #include "I2CCommunication.h"
@@ -49,10 +49,10 @@ bool getFFch_high(uint8_t val, int channel)
 }
 
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
-void MonitorI2CTask_new(void *parameters)
+void MonitorTaskI2C(void *parameters)
 {
 
-  struct MonitorI2CTaskArgs_new_t *args = parameters;
+  struct MonitorTaskI2CArgs_t *args = parameters;
 
   configASSERT(args->name != 0);
 
