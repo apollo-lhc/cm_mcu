@@ -408,6 +408,7 @@ void PowerSupplyTask(void *parameters)
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
           getFFpart();
+          ff_map_25gb_parts();
           UBaseType_t ffmask[2] = {0xe, 0xe};
           if ((f1_ff12xmit_4v0_sel ^ ff_bitmask_args[0].ffpart_bit_mask) == 0x0U && (f2_ff12xmit_4v0_sel ^ ff_bitmask_args[2].ffpart_bit_mask) == 0x0U) {
             int ret = enable_3v8(ffmask, false); // enable v38

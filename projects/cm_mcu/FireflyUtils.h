@@ -65,6 +65,7 @@ float getFFavgoptpow(const uint8_t i);
 uint16_t getFFpresentbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);
+uint32_t ff_map_25gb_parts(void);
 #endif
 
 uint8_t getFFstatus(const uint8_t i);

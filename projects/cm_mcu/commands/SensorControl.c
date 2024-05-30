@@ -1362,8 +1362,9 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       continue;
     }
     uint16_t val = clk_args.commands[c].retrieveData(i);
+    int devtype = 31 - __builtin_clz(ClockType(i));
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%04x    0x%04x\r\n",
-                       clk_args.commands[c].name, clk_args.commands[c].command[ClockType(i)],
+                       clk_args.commands[c].name, clk_args.commands[c].command[devtype],
                        clk_args.commands[c].bit_mask, val);
     if ((SCRATCH_SIZE - copied) < 20) {
       ++c;
@@ -1377,12 +1378,12 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   }
   c = 0;
 #ifdef REV2
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clkprog_args[0].progname_clkdesgid);
-  if (strncmp(clkprog_args[0].progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(clkprog_args[0].progname_clkdesgid, "5341ABP1", 3) == 0) {
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clkprog_args[i].progname_clkdesgid);
+  if (strncmp(clkprog_args[i].progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(clkprog_args[i].progname_clkdesgid, "5341ABP1", 3) == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
   }
 
-  snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", clkprog_args[0].progname_eeprom);
+  snprintf(m + copied, SCRATCH_SIZE - copied, "\r\nProgram (read from eeprom): %s\r\n", clkprog_args[i].progname_eeprom);
 #endif
 
   return pdFALSE;

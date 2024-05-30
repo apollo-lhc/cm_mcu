@@ -54,8 +54,8 @@ struct MonitorI2CTaskArgs_new_t {
 #define DEVICE_14G    0x02
 #define DEVICE_25G4   0x04
 #define DEVICE_25G12  0x08
-#define DEVICE_SI5395 0x10
-#define DEVICE_SI5341 0x20
+#define DEVICE_SI5341 0x01
+#define DEVICE_SI5395 0x02
 
 #define DEVICE_NONE 0x80
 

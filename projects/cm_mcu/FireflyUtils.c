@@ -263,22 +263,25 @@ uint16_t getFFpresentbit(const uint8_t i)
   return val;
 }
 
+// figure out which parts are 25G and which are not, for 12 channel parts
 uint32_t ff_map_25gb_parts(void)
 {
   uint32_t ff_25gb_parts = 0U;
+  uint32_t ff_25gb_pairs = 0U;
   for (int i = 0; i < NFIREFLIES; ++i) {
     if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
-      continue;
-    }
-    // skip 4 channel parts
-    if (FireflyType(i) == DEVICE_25G4) {
       continue;
     }
 
     char name[17];
     memset(name, '\0', 17);
-    int startReg = VENDOR_START_BIT_FF12;
-    int count = VENDOR_COUNT_FF12;
+    int startReg = VENDOR_START_BIT_FFDAQ;
+    int count = VENDOR_COUNT_FFDAQ;
+    int type = FireflyType(i);
+    if (type == DEVICE_CERNB || type == DEVICE_25G12) {
+      startReg = VENDOR_START_BIT_FF12;
+      count = VENDOR_COUNT_FF12;
+    }
     int ret = 0;
     // build up name of the device (vendor string)
     for (unsigned char c = 0; c < count; ++c) {
@@ -290,10 +293,32 @@ uint32_t ff_map_25gb_parts(void)
       log_error(LOG_SERVICE, "Error reading vendor string for FF %d\r\n", i);
       // what to do? FIXME: return error?
     }
+    log_info(LOG_SERVICE, "F%d FF%02d: %s\r\n", i/10+1, i%10, name);
+    // skip 4 channel parts
+    if (type == DEVICE_25G4) {
+      continue;
+    }
     if (strstr(name, "14") == NULL &&
         strstr(name, "CRRNB") == NULL && strstr(name, "CERNB") == NULL) {
       ff_25gb_parts |= (0x1U << i);
+      int ipair = i/2; // counts pairs of 12 channel devices
+      ff_25gb_pairs |= (0x1U << ipair);
     }
+  }
+  log_info(LOG_SERVICE, "ff 25G12 mask: 0x%08lx\r\n", ff_25gb_parts);
+  // these masks have one bit per pair of receiver/transceiver
+  ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_pairs & 0x7U;
+  ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_pairs>>10) & 0x7U;
+  // check if the 4v switch settings match
+  // F1
+  if (ff_bitmask_args[0].ffpart_bit_mask != f1_ff12xmit_4v0_sel) {
+    log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
+        ff_bitmask_args[0].ffpart_bit_mask,f1_ff12xmit_4v0_sel);
+  }
+  // F2
+  if (ff_bitmask_args[2].ffpart_bit_mask != f2_ff12xmit_4v0_sel) {
+    log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
+        ff_bitmask_args[2].ffpart_bit_mask,f2_ff12xmit_4v0_sel);
   }
   return ff_25gb_parts;
 }
