@@ -2,4 +2,5 @@ Diagnostics:
   ClangTidy:
     Add: modernize*
     Remove: readability-braces-around-statements
-
+CompileFlags:
+  Add: [-Wunused-parameter]

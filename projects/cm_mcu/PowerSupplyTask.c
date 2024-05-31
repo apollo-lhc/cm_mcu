@@ -14,15 +14,13 @@
 // local includes
 #include "FireflyUtils.h"
 #include "Tasks.h"
-#include "common/i2c_reg.h"
-#include "common/pinout.h"
 #include "common/pinsel.h"
 #include "common/power_ctl.h"
 #include "common/utils.h"
 #include "common/log.h"
 
 // FreeRTOS includes
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 

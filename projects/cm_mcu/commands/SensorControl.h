@@ -7,7 +7,7 @@
 
 #ifndef SENSOR_CONTROL_H_
 #define SENSOR_CONTROL_H_
-#include "parameters.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 
 // Register definitions
 // -------------------------------------------------

@@ -7,28 +7,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "inc/hw_types.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_nvic.h"
-#include "driverlib/rom.h"
-#include "driverlib/rom_map.h"
-#include "driverlib/systick.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/eeprom.h"
 
 // local includes
-#include "common/i2c_reg.h"
-#include "common/LocalUart.h"
-#include "common/power_ctl.h"
-#include "common/pinsel.h"
 #include "common/smbus.h"
-#include "common/utils.h"
-#include "common/microrl.h"
 #include "common/log.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "stream_buffer.h"
 #include "queue.h"
 
@@ -36,8 +22,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-// TivaWare includes
-#include "driverlib/uart.h"
 
 #include "Tasks.h"
 #include "I2CCommunication.h"

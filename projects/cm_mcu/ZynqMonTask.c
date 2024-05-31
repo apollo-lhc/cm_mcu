@@ -300,7 +300,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 #ifdef REV2
 uint16_t getFFtXdisablebit(const uint8_t i)
 {
-  return 56; // FIXME
+  return 56; // FIXME: reimplement this
 #ifdef NOTDEF
   if (i > NFIREFLIES_F1 + NFIREFLIES_F2) {
     log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
@@ -526,12 +526,10 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
   }
 }
 
-void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
+void zm_set_clock(struct zynqmon_data_t data[], int start)
 {
   // MonitorI2CTask values -- clock chips
-  // update times, in seconds. If the data is stale, send NaN
-  // n=1 is r0a and n=0 is else
-  // struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
+  // update times, in seconds. If the data is stale, send 56
 
   TickType_t last = pdTICKS_TO_S(clk_args.updateTick);
   TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());

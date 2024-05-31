@@ -11,13 +11,9 @@
 #include <string.h>
 
 #include "FireflyUtils.h"
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
 #include "task.h"
 
 #include "driverlib/rom.h"
-#include "driverlib/eeprom.h"
-#include "driverlib/sysctl.h"
 #include "common/utils.h"
 #include "common/log.h"
 #include "Tasks.h"

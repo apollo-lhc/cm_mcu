@@ -265,7 +265,7 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
   return ret;
 }
 
-// read a SINGLE firefly register, one byte only
+// read a SINGLE firefly register, size bytes (up to 4 bytes)
 uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size)
 {
   if (num_ff >= NFIREFLIES) {
@@ -278,7 +278,7 @@ uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *val
   else {
     i2c_dev = I2C_DEVICE_F2;
   }
-  int ret = read_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, 1, i2c_dev);
+  int ret = read_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, size, i2c_dev);
   return ret;
 }
 

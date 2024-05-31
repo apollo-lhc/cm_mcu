@@ -276,7 +276,7 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start);
 void zm_set_adcmon(struct zynqmon_data_t data[], int start);
 void zm_set_psmon_legacy(struct zynqmon_data_t data[], int start);
 void zm_set_psmon(struct zynqmon_data_t data[], int start);
-void zm_set_clock(struct zynqmon_data_t data[], int start, int n);
+void zm_set_clock(struct zynqmon_data_t data[], int start);
 void zm_set_fpga(struct zynqmon_data_t data[], int start);
 void zm_set_allclk(struct zynqmon_data_t data[], int start);
 

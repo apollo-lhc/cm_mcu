@@ -26,27 +26,6 @@
 #include "I2CCommunication.h"
 #include "Semaphore.h"
 
-// local prototype
-
-// read-only accessor functions for Firefly names and values.
-
-bool getFFch_low(uint8_t val, int channel)
-{
-  configASSERT(channel < 8);
-  if (!((1 << channel) & val)) {
-    return false;
-  }
-  return true;
-}
-
-bool getFFch_high(uint8_t val, int channel)
-{
-  configASSERT(channel >= 8);
-  if (!((1 << (channel - 8)) & val)) {
-    return false;
-  }
-  return true;
-}
 
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
 void MonitorTaskI2C(void *parameters)

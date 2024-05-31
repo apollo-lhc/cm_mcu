@@ -29,9 +29,6 @@
 #include "I2CCommunication.h"
 #include "common/log.h"
 
-#define NCOMMANDS_CLK_TMP    7
-#define NCOMMANDS_CLK_TMPR0A 7
-
 #ifdef REV1
 // -------------------------------------------------
 //
