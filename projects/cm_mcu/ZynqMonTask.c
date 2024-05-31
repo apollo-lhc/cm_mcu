@@ -15,6 +15,7 @@
 
 // to be moved
 #include "FireflyUtils.h"
+#include "MonI2C_addresses.h"
 #include "MonUtils.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/rom.h"
@@ -300,34 +301,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 #ifdef REV2
 uint16_t getFFtXdisablebit(const uint8_t i)
 {
-  return 56; // FIXME: reimplement this
-#ifdef NOTDEF
-  if (i > NFIREFLIES_F1 + NFIREFLIES_F2) {
-    log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
-    return 56;
-  }
-  uint8_t val = 56;
-  int i2c_dev;
-  if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-    return val;
-  if (i < NFIREFLIES_F1) {
-    i2c_dev = I2C_DEVICE_F1;
-  }
-  else {
-    i2c_dev = I2C_DEVICE_F2;
-  }
-  int ret = -99;
-  if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, &val, 1, i2c_dev);
-  }
-  else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
-    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, &val, 1, i2c_dev);
-  }
-  if (ret != 0)
-    return 56;
-  else
-    return val;
-#endif // NOTDEF
+  return get_FF_CHANNEL_DISABLE_data(i);
 }
 // updated once per loop.
 // For each firefly device, send

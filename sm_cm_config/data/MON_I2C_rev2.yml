@@ -150,6 +150,15 @@ define: &FF_SHARED_REGS
     units: uW
     type: PM_VOLTAGE
     devicetypes: [25G12]
+  - name: CHANNEL_DISABLE
+    reg_size: 1
+    page: 0
+    reg_address: [52, 52, 86, 52]
+    size: 2
+    mask: 0xFFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [CERNB, 14G, 25G4, 25G12]
 
 devices:
   - name: Fireflies_F1

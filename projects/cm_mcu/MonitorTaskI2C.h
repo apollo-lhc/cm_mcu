@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef PROJECTS_CM_MCU_MONITORI2CTASKNEW_H_
-#define PROJECTS_CM_MCU_MONITORI2CTASKNEW_H_
+#ifndef PROJECTS_CM_MCU_MONITORTASKI2C_H_
+#define PROJECTS_CM_MCU_MONITORTASKI2C_H_
 
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "semphr.h"
@@ -61,4 +61,4 @@ struct MonitorTaskI2CArgs_t {
 
 extern struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK];
 
-#endif /* PROJECTS_CM_MCU_MONITORI2CTASKNEW_H_ */
+#endif /* PROJECTS_CM_MCU_MONITORTASKI2C_H_ */

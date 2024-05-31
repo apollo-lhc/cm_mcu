@@ -130,44 +130,45 @@ config:
       - F2_TEMP_SLR1
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
-  - name: clkmonr0a
-    start: 186
-    count: 8
-    type: uint16_t
-    extra: Table=CM_CLK_MON;Status=1
-    mcu_call: clock
-    mcu_extra_call: 0
-    names: 
-      - R0A
-    postfixes:
-      - PN_BASE0
-      - PN_BASE1
-      - DEVICE_REV
-      - I2C_ADDR
-      - STATUS_OR_LOSXAXB
-      - LOS_OR_LOSOOF_IN
-      - LOSIN_FLG_OR_LOL
-      - STICKY_FLG
+  # - name: clkmonr0a
+  #   start: 186
+  #   count: 8
+  #   type: uint16_t
+  #   extra: Table=CM_CLK_MON;Status=1
+  #   mcu_call: clock
+  #   mcu_extra_call: 0
+  #   names: 
+  #     - R0A
+  #   postfixes:
+  #     - PN_BASE0
+  #     - PN_BASE1
+  #     - DEVICE_REV
+  #     - I2C_ADDR
+  #     - STATUS_OR_LOSXAXB
+  #     - LOS_OR_LOSOOF_IN
+  #     - LOSIN_FLG_OR_LOL
+  #     - STICKY_FLG
   - name: clkmon
-    start: 195
-    count: 32
+    start: 186
+    count: 40
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
     mcu_call: clock
-    mcu_extra_call: 1
+    mcu_extra_call: null
     names: 
+      - ROA
       - R0B
       - R1A
       - R1B
       - R1C
     postfixes:
-      - PN_BASE0
-      - PN_BASE1
+      - PN_BASE
       - DEVICE_REV
       - I2C_ADDR
-      - STATUS_OR_LOSXAXB
-      - LOS_OR_LOSOOF_IN
-      - LOSIN_FLG_OR_LOL
+      - STATUS
+      - LOL
+      - LOSXAXB
+      - LOSOOF_IN
       - STICKY_FLG
   - name: clkr0aconfigversion
     start: 228
