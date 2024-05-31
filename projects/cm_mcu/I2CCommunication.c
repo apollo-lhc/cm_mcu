@@ -22,7 +22,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 #include "Tasks.h"
 #include "I2CCommunication.h"
 #include "common/smbus_helper.h"

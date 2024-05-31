@@ -283,10 +283,10 @@ uint32_t ff_map_25gb_parts(void)
     }
     int ret = 0;
     // build up name of the device (vendor string)
-    for (unsigned char c = 0; c < count/4; ++c) {
+    for (int c = 0; c < count / 4; ++c) {
       uint8_t v[4];
-      ret += read_arbitrary_ff_register(startReg + 4*c, i, v, 4);
-      name[4 * c]     = v[0];
+      ret += read_arbitrary_ff_register(startReg + 4 * c, i, v, 4);
+      name[4 * c] = v[0];
       name[4 * c + 1] = v[1];
       name[4 * c + 2] = v[2];
       name[4 * c + 3] = v[3];

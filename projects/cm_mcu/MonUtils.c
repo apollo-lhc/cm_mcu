@@ -138,7 +138,7 @@ struct MonitorTaskI2CArgs_t ff_f2_args = {
 #ifdef REV2
 struct MonitorTaskI2CArgs_t clk_args = {
     .name = "CLK",
-    .devices = clk_moni2c_addrs, 
+    .devices = clk_moni2c_addrs,
     .i2c_dev = I2C_DEVICE_CLK,
     .n_devices = NDEVICES_CLK,
     .commands = sm_command_test_CLK,

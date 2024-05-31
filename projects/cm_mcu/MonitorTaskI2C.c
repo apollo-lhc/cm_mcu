@@ -26,7 +26,6 @@
 #include "I2CCommunication.h"
 #include "Semaphore.h"
 
-
 // Monitor registers of FF temperatures, voltages, currents, and ClK statuses via I2C
 void MonitorTaskI2C(void *parameters)
 {
