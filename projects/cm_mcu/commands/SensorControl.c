@@ -70,7 +70,7 @@ int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value,
   if (!res) { // clear the mux
     muxmask = 0x0U;
     res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
-    if (res != 0) {
+    if (res !=0) {
       log_warn(LOG_SERVICE, "%s: Mux clear error %d (%s) (ff=%s) ...\r\n", __func__, res,
                SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
