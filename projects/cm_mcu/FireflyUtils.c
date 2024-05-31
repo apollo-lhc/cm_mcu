@@ -19,7 +19,6 @@
 
 #include "Semaphore.h"
 #include "I2CCommunication.h"
-#include "common/smbus_helper.h"
 #include "driverlib/eeprom.h"
 #include "FireflyUtils.h"
 
@@ -284,10 +283,13 @@ uint32_t ff_map_25gb_parts(void)
     }
     int ret = 0;
     // build up name of the device (vendor string)
-    for (unsigned char c = 0; c < count; ++c) {
-      uint8_t v;
-      ret += read_arbitrary_ff_register(startReg + c, i, &v, 1);
-      name[c] = v;
+    for (unsigned char c = 0; c < count/4; ++c) {
+      uint8_t v[4];
+      ret += read_arbitrary_ff_register(startReg + 4*c, i, v, 4);
+      name[4 * c]     = v[0];
+      name[4 * c + 1] = v[1];
+      name[4 * c + 2] = v[2];
+      name[4 * c + 3] = v[3];
     }
     if (ret != 0) {
       log_error(LOG_SERVICE, "Error reading vendor string for FF %d\r\n", i);
