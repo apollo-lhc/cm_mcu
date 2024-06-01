@@ -989,142 +989,41 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
 // loop over all channels on all devices and show optical power
 BaseType_t ff_optpow(int argc, char **argv, char *m)
 {
-  // argument handling
-  snprintf(m, SCRATCH_SIZE, "FF Optical Power: to be implemented anew\r\n");
-  return pdFALSE;
-  // it appears that this in its current implementation prints optical power of every channel on every device.
-  // that would be over 100 channels, which is too much for a single command.
-#if 0
+  // takes no arguments
+  static int i = 0;
   int copied = 0;
-  static int whichff = 0;
-  static int n = 0;
-  static int i1 = 4;
-
-  if (whichff == 0) {
-    // check for stale data
-    if (isFFStale()) {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF Optical Power:\r\n");
+  if ( i == 0 ) {
+    copied += snprintf(m, SCRATCH_SIZE, "FF average Optical Power\r\n");
   }
-
-  for (; whichff < NFIREFLIES; ++whichff) {
-    // skip transmitters
-    if (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL)
-      continue;
-    // skip if not enabled or present
-    if (!isEnabledFF(whichff))
-      continue;
-    // loop over all channels. for XCVR, 4 channels. for Tx devices, 12 channels
-    int maxchan = 12;
-    if (FireflyType(whichff)==DEVICE_25G4) {
-      maxchan = 4;
+  for (; i < NFIREFLIES; ++i ) {
+    bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
+    if (isEnabledFF(i) && !isTx ) {
+      float val = getFFavgoptpow(i);
+      int tens, frac;
+      float_to_ints(val, &tens, &frac);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: % 5d.%02d",
+                         ff_moni2c_addrs[i].name, tens, frac);
     }
-    uint16_t val;
-    // firefly channels are labled 1-12
-    for ( int c = 1; c <= maxchan; ++c) {
-      switch (c) {
-      case 1:
-        val = get_FF_OPT_POWER_CH1_data(c);
-        break;
-      case 2:
-        val = get_FF_OPT_POWER_CH2_data(c);
-        break;
-      case 3:
-        val = get_FF_F1_OPT_POWER_CH3_data(c);
-        break;
-      case 4:
-        val = get_FF_F1_OPT_POWER_CH4_data(c);
-        break;
-      case 5:
-        val = get_FF_F1_OPT_POWER_CH5_data(c);
-        break;
-      default:
-        val = 0;
-        break;
-      // case 6:
-      //   val = get_FF_F1_OPT_POWER_CH6_data(c);
-      //   break;
-      // case 7:
-      //   val = get_FF_F1_OPT_POWER_CH7_data(c);
-      //   break;
-      // case 8: 
-      //   val = get_FF_F1_OPT_POWER_CH8_data(c);
-      //   break;
-      // case 9:
-      //   val = get_FF_F1_OPT_POWER_CH9_data(c);
-      //   break;
-      // case 10:
-      //   val = get_FF_F1_OPT_POWER_CH10_data(c);
-      //   break;
-      // case 11:
-      //   val = get_FF_F1_OPT_POWER_CH11_data(c);
-      //   break;
-      // case 12:
-      //   val = get_FF_F1_OPT_POWER_CH12_data(c);
-      //   break;
-      }
-    } 
-  for (; n < NFIREFLY_ARG; ++n) {
-    struct MonitorI2CTaskArgs_t *ff_arg = ff_moni2c_arg[n].arg;
-    for (; whichff < ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].num_dev; ++whichff) {
-
-      int dev = whichff - ff_moni2c_arg[n].int_idx + ff_moni2c_arg[n].dev_int_idx;
-
-      if (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL)
-        continue;
-      if (isEnabledFF(ff_moni2c_arg[n].int_idx + dev)) {
-        i1 = 4;
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: \r\n", ff_moni2c_addrs[whichff].name);
-        for (; i1 < ff_arg->n_commands; ++i1) {
-          int index = dev * (ff_arg->n_commands * ff_arg->n_pages) + i1;
-          uint8_t val = ff_arg->sm_values[index];
-          if ((SCRATCH_SIZE - copied) < 20) {
-            return pdTRUE;
-          }
-
-          if ((i1 - 4) % 6 == 0)
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-          else if ((i1 - 4) % 6 == 1)
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-          else if ((i1 - 4) % 6 == 2)
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-          else if ((i1 - 4) % 6 == 3)
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-          else if ((i1 - 4) % 6 == 4)
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \t", i1 - 3, val);
-          else
-            copied += snprintf(m + copied, SCRATCH_SIZE - copied, "CH%2d: %2d \r\n", i1 - 3, val);
-        }
-
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-      }
-      else // dummy value
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s \r\n", ff_moni2c_addrs[whichff].name, "--");
-
-      if ((SCRATCH_SIZE - copied) < 20) {
-        ++whichff;
-        return pdTRUE;
-      }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s:     ---",
+                         ff_moni2c_addrs[i].name);
     }
-  }
-
-  if (whichff % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
-  n = 0;
-  i1 = 4;
+    if (isTx) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t\t");
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    }
+    if ((SCRATCH_SIZE - copied) < 20) {
+      ++i;
+      return pdTRUE;
+    }
+  } // loop over NFIREFLIES
+  i = 0;
   return pdFALSE;
-}
-#endif // 0
-}
+}  
+
+
 // this command takes up to two arguments
 BaseType_t ff_ctl(int argc, char **argv, char *m)
 {

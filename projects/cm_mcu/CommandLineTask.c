@@ -315,7 +315,7 @@ static struct command_t commands[] = {
     {
         "ff_optpow",
         ff_optpow,
-        "Showing the FF per-ch optical power \r\n",
+        "Showing avg FF optical power\r\n",
         0,
     },
     {

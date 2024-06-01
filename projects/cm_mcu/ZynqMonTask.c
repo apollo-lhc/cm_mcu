@@ -517,7 +517,7 @@ void zm_set_clock(struct zynqmon_data_t data[], int start)
         data[ll].data.us = 56; // special stale value
       }
       else {
-        data[ll].data.us = clk_args.commands[j].retrieveData(j);
+        data[ll].data.us = clk_args.commands[k].retrieveData(j);
       }
       data[ll].sensor = ll + start;
       ++ll;
