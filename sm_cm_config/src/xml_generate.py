@@ -1,4 +1,4 @@
-#!/ usr / bin / env python
+#!/usr/bin/env python
 """Generate XML file from YAML input"""
 import xml.etree.ElementTree as ET
 from pprint import pprint
@@ -12,7 +12,7 @@ zm_num_entries = 1024
 def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int, 
               parent_id: str) -> ET.Element:
     """create the node to be inserted into the xml tree"""
-#pylint : disable = too - many - branches
+#pylint: disable=too-many-branches
 #I disable this check because as far as I can tell it's wrong
     thenode = ET.SubElement(parent, 'node')
     myid = myid.replace(' ', '_')
