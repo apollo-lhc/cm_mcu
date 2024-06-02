@@ -16,7 +16,6 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
 #I disable this check because as far as I can tell it's wrong
     thenode = ET.SubElement(parent, 'node')
     myid = myid.replace(' ', '_')
-    print(f"myid: {myid}")
     thenode.set('id', myid)
 #address is half of the sensor address since these are 32 bit addresses
     theaddr = int(addr2/2)
