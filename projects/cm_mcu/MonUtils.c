@@ -2,6 +2,7 @@
 #include "MonI2C_addresses.h"
 #include "FireflyUtils.h"
 #include "Tasks.h"
+#include "common/log.h"
 #include "MonUtils.h"
 
 #ifdef REV1
@@ -71,12 +72,17 @@ int FireflyType(int device)
     case 4:
     case 5: {
       uint8_t mask = ff_bitmask_args[0].ffpart_bit_mask; // default to F1
-      if ( ! isF1 ) 
+      int thistype;
+      if (!isF1) 
         mask = ff_bitmask_args[2].ffpart_bit_mask;
-      if (mask&(0x1U<<device))
-        return DEVICE_25G12;
-      else
-        return DEVICE_CERNB;
+      if (mask & (0x1U << device)) {
+        thistype = DEVICE_25G12;
+      }
+      else {
+        thistype = DEVICE_CERNB;
+      }
+      log_debug(LOG_SERVICE, "%s: device %d is type %d", __func__, device, thistype);
+      return thistype;
     }
     case 6:
     case 7:

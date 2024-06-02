@@ -254,7 +254,7 @@ float getFFavgoptpow(const uint8_t i)
 uint16_t getFFpresentbit(const uint8_t i)
 {
   if (i > 3) {
-    log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
+    log_error(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
     return 56;
   }
   uint16_t val = ff_bitmask_args[i].present_bit_mask;
