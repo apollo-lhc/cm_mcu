@@ -88,7 +88,7 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
                                   CLOCK_CHANGEPAGE_REG_ADDR, 1, page);
 
     // now read out the six bytes of data in two reads
-    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START) & 0xFF;
+    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START)&0xFF;
     uint16_t init_postamble_page = 32 * (device + 1) - 1;
 
     // read the addresses in EEPROM that store the number of registers in Preamble-register, Register, and Postamble-register list per a clock config file
@@ -115,10 +115,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
         // as eepromdata[0] and eepromdat[1],respectively
 
         // third byte from three addresses in EEPROM is a value byte
-        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i) * 3), 3, tempdata);
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i)*3), 3, tempdata);
         eepromdata[0] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
         // third byte from three addresses in EEPROM is a value byte
-        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i) * 3), 3, tempdata);
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i)*3), 3, tempdata);
         eepromdata[1] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
       }
     }

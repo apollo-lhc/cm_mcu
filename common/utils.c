@@ -9,13 +9,11 @@
 
 #include "common/utils.h"
 #include "common/pinsel.h"
-#include "common/printf.h"
-#include "driverlib/gpio.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/debug.h"
 #include "driverlib/eeprom.h"
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "Tasks.h"
 
 typedef struct error_buffer_t error_buffer_t;

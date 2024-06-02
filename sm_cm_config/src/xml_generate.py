@@ -165,9 +165,10 @@ with open(args.input_file, encoding='ascii') as f:
 cm = ET.Element('node')
 cm.set('id', 'CM')
 cm.set('address', '0x00000000')
-prev_addr = 0x0 #keep track of the most recent address that comes into a pair of bytes for 8-bit masking
-prev_j = 0x0 #keep track of the order of postfixes in each name node
-prev_bit = 0x0 #keep track of the even or odd order of bytes globally sent for masking
+# keep track of the most recent address that comes into a pair of bytes for 8-bit masking
+prev_addr = 0x0
+prev_j = 0x0 # keep track of the order of postfixes in each name node
+prev_bit = 0x0 # keep track of the even or odd order of bytes globally sent for masking
 #% %
 config = y['config']
 for c in config:  # loop over entries in configuration (sensor category)
@@ -186,7 +187,9 @@ for c in config:  # loop over entries in configuration (sensor category)
                     i += 1
                     j += 1
                     continue
-                if (bit == 1 and j == 0):   #the previous name node has odd bytes so this postfix node uses the previous postfix address but masks off the lower byte
+                # the previous name node has odd bytes so this postfix node uses the 
+                # previous postfix address but masks off the lower byte
+                if (bit == 1 and j == 0):   
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
                     pp.set('address', str(hex(prev_addr)))
@@ -202,7 +205,8 @@ for c in config:  # loop over entries in configuration (sensor category)
                     else :               #the low byte with an increasing postfix node by one
                         node = make_node(pp, p, c, j+1, bit, n)
                 if (prev_bit == bit and prev_addr == addr and prev_addr != 0) :
-                    print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
+                    print("warning : please check if masks overlapped at node ", 
+                          n, " addr ", hex(prev_addr))
                 prev_addr = addr
                 prev_j = j
                 prev_bit = bit
@@ -211,7 +215,8 @@ for c in config:  # loop over entries in configuration (sensor category)
         else:
             make_node(cm, n, c, start+i, (start+i)%2, "")
             if (prev_bit == (start+i)%2 and prev_addr == int((start+i)/2) and prev_addr != 0) :
-                print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
+                print("warning : please check if masks overlapped at node ", n, 
+                      " addr ", hex(prev_addr))
             prev_addr = int((start + i)/2)
             prev_bit = (start+i)%2
             i += 1

@@ -311,13 +311,13 @@ static struct command_t commands[] = {
         "dump name registers\r\n",
         0,
     },
-#endif // REV2
     {
         "ff_optpow",
         ff_optpow,
         "Showing avg FF optical power\r\n",
         0,
     },
+#endif // REV2
     {
         "ff_temp",
         ff_temp,
