@@ -61,6 +61,7 @@ int ClockType(int device)
 // for 4 channel parts, there is one XCVR part
 int FireflyType(int device)
 {
+  bool isF1 = device < NFIREFLIES_F1;
   device = device % NFIREFLIES_F1; // F1 and F2 devices are the same.
   switch (device) {
     case 0:
@@ -69,9 +70,13 @@ int FireflyType(int device)
     case 3:
     case 4:
     case 5: {
-      // FIXME: this should be a check on CERN-B or ECUO-[RT]12-25
-      // with a function call
-      return DEVICE_CERNB;
+      uint8_t mask = ff_bitmask_args[0].ffpart_bit_mask; // default to F1
+      if ( ! isF1 ) 
+        mask = ff_bitmask_args[2].ffpart_bit_mask;
+      if (mask&(0x1U<<device))
+        return DEVICE_25G12;
+      else
+        return DEVICE_CERNB;
     }
     case 6:
     case 7:
