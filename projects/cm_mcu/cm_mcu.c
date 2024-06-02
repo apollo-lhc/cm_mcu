@@ -136,7 +136,7 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
 #elif defined(REV2)
-  initI2C5(g_ui32SysClock);  // controller for FPGAs
+  initI2C5(g_ui32SysClock); // controller for FPGAs
 #endif
 
   // smbus

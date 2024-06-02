@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/ usr / bin / env python
 """Generate XML file from YAML input"""
 import xml.etree.ElementTree as ET
 from pprint import pprint
@@ -6,13 +6,13 @@ import argparse
 import os
 import yaml
 
-zm_num_entries = 1024 
+zm_num_entries = 1024
 
 #% %
 def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int, 
               parent_id: str) -> ET.Element:
     """create the node to be inserted into the xml tree"""
-# pylint: disable=too-many-branches
+#pylint : disable = too - many - branches
 #I disable this check because as far as I can tell it's wrong
     thenode = ET.SubElement(parent, 'node')
     myid = myid.replace(' ', '_')
@@ -62,7 +62,7 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
                 colid = thedict['default_col']
             else:
                 colid = myid
-            # for some special patterns, generate a different column id
+#for some special patterns, generate a different column id
             if myid.lower().startswith("cur_"):
                 colid = "IOUT"
             elif "temp" in myid.lower():
@@ -165,7 +165,7 @@ with open(args.input_file, encoding='ascii') as f:
 cm = ET.Element('node')
 cm.set('id', 'CM')
 cm.set('address', '0x00000000')
-# keep track of the most recent address that comes into a pair of bytes for 8-bit masking
+#keep track of the most recent address that comes into a pair of bytes for 8 - bit masking
 prev_addr = 0x0
 prev_j = 0x0 # keep track of the order of postfixes in each name node
 prev_bit = 0x0 # keep track of the even or odd order of bytes globally sent for masking
@@ -187,8 +187,8 @@ for c in config:  # loop over entries in configuration (sensor category)
                     i += 1
                     j += 1
                     continue
-                # the previous name node has odd bytes so this postfix node uses the 
-                # previous postfix address but masks off the lower byte
+#the previous name node has odd bytes so this postfix node uses the
+#previous postfix address but masks off the lower byte
                 if (bit == 1 and j == 0):   
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
