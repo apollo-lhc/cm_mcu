@@ -1331,7 +1331,13 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
       snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
       return pdFALSE;
     }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%02d:\t%s\r\n", i, name);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s:%s", ff_moni2c_addrs[i].name, name);
+
+    bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
     if ((SCRATCH_SIZE - copied) < 25 && (i < NFIREFLIES)) {
       ++i;
       return pdTRUE;
