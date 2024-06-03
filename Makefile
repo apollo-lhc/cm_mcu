@@ -42,7 +42,7 @@ check-for-pr: format
 	@./buildall.sh
 
 
-# 2nd dollar sign in grep is to pass along a single dollar sign to make
+# 2nd dollar sign in grep command is to pass along a single dollar sign to egrep itself
 format:
 	run-clang-format.py $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')
 

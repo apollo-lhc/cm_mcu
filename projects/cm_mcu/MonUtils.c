@@ -76,7 +76,7 @@ int FireflyType(int device)
       int thistype;
       if (!isF1)
         mask = ff_bitmask_args[2].ffpart_bit_mask;
-      if (mask & (0x1U << (device/2))) {
+      if (mask & (0x1U << (device / 2))) {
         thistype = DEVICE_25G12;
       }
       else {
