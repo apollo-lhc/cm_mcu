@@ -115,7 +115,7 @@ void MonitorTaskI2C(void *parameters)
 
         // set page register if it's different than the last time
         log_debug(LOG_MONI2C, "%s: reg %s\r\n", args->name, args->commands[c].name);
-        uint8_t page_reg_value = args->commands[c].page;
+        uint8_t page_reg_value = args->commands[c].page[devtype];
         if (page_reg_value != last_page_reg_value) {
           int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[device].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
           if (r != 0) {
