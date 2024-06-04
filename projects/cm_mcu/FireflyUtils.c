@@ -36,30 +36,17 @@ struct ff_bit_mask_t ff_bitmask_args[4] = {
 };
 
 #endif
-// outputs from *_PRESENT pins for constructing ff_PRESENT_mask
-#ifdef REV1
-//      4.05 I2C KU15P OPTICS
-uint32_t present_FFL4_F1, present_FFL12_F1,
-    //      4.06 I2C VU7P OPTICS (the I/O expanders at 0x20 and 0x21 have mixed 4-ch (ffl4) and 12-ch (FFL12) pins)
-    present_0X20_F2, present_0X21_F2, present_FFL4_0X20_F2, present_FFL12_0X20_F2,
-    present_FFL4_0X21_F2, present_FFL12_0X21_F2 = 0;
-#elif defined(REV2)
-//      4.05 I2C FPGA31 OPTICS
-uint32_t present_FFL4_F1, present_FFL12_F1,
-    //      4.06 I2C FPGA2 OPTICS
-    present_FFL4_F2, present_FFL12_F2 = 0;
-#endif // REV2
 
 void setFFmask(uint32_t ff_combined_present)
 {
 
-  log_info(LOG_SERVICE, "Setting a bit mask of enabled Fireflys to 1 \r\n");
+  log_info(LOG_SERVICE, "%s:FF EEPROM masks\r\n");
 
   // int32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
 #ifdef REV1
   uint32_t data = (~ff_combined_present) & 0x1FFFFFFU;
 #elif defined(REV2)
-  uint32_t data = (~ff_combined_present) & 0xFFFFFU;
+  uint32_t data = (ff_combined_present) & 0xFFFFFU;
 #endif // REV1
   ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
   ff_PRESENT_mask = data;
@@ -79,6 +66,20 @@ void setFFmask(uint32_t ff_combined_present)
 
 void readFFpresent(void)
 {
+  // outputs from *_PRESENT pins for constructing ff_PRESENT_mask
+#ifdef REV1
+  //      4.05 I2C KU15P OPTICS
+  uint32_t present_FFL4_F1, present_FFL12_F1,
+      //      4.06 I2C VU7P OPTICS (the I/O expanders at 0x20 and 0x21 have mixed 4-ch (ffl4) and 12-ch (FFL12) pins)
+      present_0X20_F2, present_0X21_F2, present_FFL4_0X20_F2, present_FFL12_0X20_F2,
+      present_FFL4_0X21_F2, present_FFL12_0X21_F2 = 0;
+#elif defined(REV2)
+  //      4.05 I2C FPGA31 OPTICS
+  uint32_t present_FFL4_F1_bar, present_FFL12_F1_bar,
+      //      4.06 I2C FPGA2 OPTICS
+      present_FFL4_F2_bar, present_FFL12_F2_bar = 0;
+#endif // REV2
+
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c4_sem);
@@ -93,11 +94,13 @@ void readFFpresent(void)
 #elif defined(REV2)
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
+  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1_bar); // active low
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1_bar); // active low
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
+  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7;          // bits 4-6
+
 #endif
 
   // if we have a semaphore, give it
@@ -119,11 +122,12 @@ void readFFpresent(void)
 #elif defined(REV2)
   // to port 7
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2);
+  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low
   // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
+  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7;          // bits 4-6
 
 #endif
   // if we have a semaphore, give it
@@ -149,23 +153,30 @@ void readFFpresent(void)
                                  ((present_FFL12_BOTTOM_F1));      // 6 bits
 
 #elif defined(REV2)
-  present_FFL12_F1 = present_FFL12_F1 & 0x3FU;     // bottom 6 bits
-  present_FFL12_F2 = present_FFL12_F2 & 0x3FU;     // bottom 6 bits
-  present_FFL4_F1 = (present_FFL4_F1 >> 4) & 0xFU; // bits 4-7
-  present_FFL4_F2 = (present_FFL4_F2 >> 4) & 0xFU; // bits 4-7
+  present_FFL12_F1_bar = present_FFL12_F1_bar & 0x3FU;     // bottom 6 bits
+  present_FFL12_F2_bar = present_FFL12_F2_bar & 0x3FU;     // bottom 6 bits
+  present_FFL4_F1_bar = (present_FFL4_F1_bar >> 4) & 0xFU; // bits 4-7
+  present_FFL4_F2_bar = (present_FFL4_F2_bar >> 4) & 0xFU; // bits 4-7
 
-  uint32_t ff_combined_present = ((present_FFL4_F2) << 16) |  // 4 bits
-                                 ((present_FFL12_F2) << 10) | // 6 bits
-                                 (present_FFL4_F1) << 6 |     // 4 bits
-                                 ((present_FFL12_F1));        // 6 bits
+  // active low
+  uint32_t ff_combined_present_bar = ((present_FFL4_F2_bar) << 16) |  // 4 bits
+                                     ((present_FFL12_F2_bar) << 10) | // 6 bits
+                                     (present_FFL4_F1_bar) << 6 |     // 4 bits
+                                     ((present_FFL12_F1_bar));        // 6 bits
+  uint32_t ff_combined_present = ~ff_combined_present_bar; // make active high
+  // masks are active high 
+  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1_bar) & 0xFU;   // 4 bits
+  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1_bar) & 0x3FU; // 6 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2_bar) & 0xFU;   // 4 bits
+  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2_bar) & 0x3FU; // 6 bits
 
-  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1) & 0xFU;   // 4 bits
-  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1) & 0x3FU; // 6 bits
-  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2) & 0xFU;   // 4 bits
-  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2) & 0x3FU; // 6 bits
-
-  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
-  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7; // bits 4-6
+  // dump all the masks using log_info
+  log_info(LOG_SERVICE, "F1 4v0 switch:    0x%x\r\n", f1_ff12xmit_4v0_sel);
+  log_info(LOG_SERVICE, "F2 4v0 switch:    0x%x\r\n", f2_ff12xmit_4v0_sel);
+  log_info(LOG_SERVICE, "F1 12-ch FF mask: 0x%02x\r\n", ff_bitmask_args[0].present_bit_mask);
+  log_info(LOG_SERVICE, "F1  4-ch FF mask: 0x%02x\r\n", ff_bitmask_args[1].present_bit_mask);
+  log_info(LOG_SERVICE, "F2 12-ch FF mask: 0x%02x\r\n", ff_bitmask_args[2].present_bit_mask);
+  log_info(LOG_SERVICE, "F2  4-ch FF mask: 0x%02x\r\n", ff_bitmask_args[3].present_bit_mask);
 #endif
 
   setFFmask(ff_combined_present);
@@ -309,19 +320,26 @@ uint32_t ff_map_25gb_parts(void)
     }
   }
   log_info(LOG_SERVICE, "ff 25G12 mask: 0x%08lx\r\n", ff_25gb_parts);
-  // these masks have one bit per pair of receiver/transceiver
-  ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_pairs & 0x7U;
-  ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_pairs >> 10) & 0x7U;
+  // these masks have one bit per pair of receiver/transceiver FIXME: do they?
+  // ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_pairs & 0x7U;
+  // ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_pairs >> 5) & 0x7U;
+  ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_parts & 0x3fU; // six bits
+  ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_parts >> 10) & 0x3fU;
+  // dump the masks
+  log_info(LOG_SERVICE, "F1 25G12 mask: 0x%02x\r\n", ff_bitmask_args[0].ffpart_bit_mask);
+  log_info(LOG_SERVICE, "F2 25G12 mask: 0x%02x\r\n", ff_bitmask_args[2].ffpart_bit_mask);
+  log_info(LOG_SERVICE, "Fx 25G12 pair mask: 0x%02x\r\n", ff_25gb_pairs);
+  log_info(LOG_SERVICE, "Fx 25G12 mask: 0x%02x\r\n", ff_25gb_parts);
   // check if the 4v switch settings match
   // F1
   if (ff_bitmask_args[0].ffpart_bit_mask != f1_ff12xmit_4v0_sel) {
     log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
-              ff_bitmask_args[0].ffpart_bit_mask, f1_ff12xmit_4v0_sel);
+              f1_ff12xmit_4v0_sel, ff_bitmask_args[0].ffpart_bit_mask);
   }
   // F2
   if (ff_bitmask_args[2].ffpart_bit_mask != f2_ff12xmit_4v0_sel) {
     log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
-              ff_bitmask_args[2].ffpart_bit_mask, f2_ff12xmit_4v0_sel);
+              f2_ff12xmit_4v0_sel, ff_bitmask_args[2].ffpart_bit_mask);
   }
   return ff_25gb_parts;
 }
