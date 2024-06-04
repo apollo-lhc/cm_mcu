@@ -163,8 +163,8 @@ void readFFpresent(void)
                                      ((present_FFL12_F2_bar) << 10) | // 6 bits
                                      (present_FFL4_F1_bar) << 6 |     // 4 bits
                                      ((present_FFL12_F1_bar));        // 6 bits
-  uint32_t ff_combined_present = ~ff_combined_present_bar; // make active high
-  // masks are active high 
+  uint32_t ff_combined_present = ~ff_combined_present_bar;            // make active high
+  // masks are active high
   ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1_bar) & 0xFU;   // 4 bits
   ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1_bar) & 0x3FU; // 6 bits
   ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2_bar) & 0xFU;   // 4 bits
