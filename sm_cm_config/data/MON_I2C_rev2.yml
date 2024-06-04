@@ -42,7 +42,7 @@ define: &FF_SHARED_REGS
     units: ""
     type: PM_STATUS
     devicetypes: [25G4, 25G12]
-  - name: OPT_POWER_CH1 # FIXME: 25G12 is on different page than 25G4 >:-|
+  - name: OPT_POWER_CH1 # 25G12 is on different page than 25G4 >:-|
     reg_size: 1
     page: [0, 0, 0, 1]
     reg_address: [-1, -1, 34, 228]

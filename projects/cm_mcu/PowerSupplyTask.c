@@ -406,17 +406,21 @@ void PowerSupplyTask(void *parameters)
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
           ff_map_25gb_parts();
-          UBaseType_t ffmask[2] = {0xe, 0xe};
+          UBaseType_t ffmask[2] = {0xe, 0xe}; // TODO why are these hardcoded?
           if ((f1_ff12xmit_4v0_sel ^ ff_bitmask_args[0].ffpart_bit_mask) == 0x0U && (f2_ff12xmit_4v0_sel ^ ff_bitmask_args[2].ffpart_bit_mask) == 0x0U) {
             int ret = enable_3v8(ffmask, false); // enable v38
-            if (ret != 0)
+            if (ret != 0) {
               log_info(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
-            else
+            }
+            else {
               log_info(LOG_PWRCTL, "enable 3v8 \r\n");
+            }
             blade_power_ok(true);
             nextState = POWER_ON;
           }
           else {
+            log_info(LOG_PWRCTL, "FF 4V0 part check failed: %x!=%x||%x!=%x\r\n",
+                     f1_ff12xmit_4v0_sel, ff_bitmask_args[0].ffpart_bit_mask, f2_ff12xmit_4v0_sel, ff_bitmask_args[2].ffpart_bit_mask);
             int ret = enable_3v8(ffmask, true); // disable v38
             if (ret == 0)
               log_info(LOG_PWRCTL, "disable 3v8\r\n");

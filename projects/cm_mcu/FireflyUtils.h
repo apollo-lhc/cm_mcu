@@ -58,7 +58,6 @@ extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
-void setFFmask(uint32_t ff_combined_mask);
 void readFFpresent(void);
 uint16_t getFFtemp(const uint8_t i);
 float getFFavgoptpow(const uint8_t i);
@@ -90,7 +89,7 @@ extern struct ff_bit_mask_t ff_bitmask_args[NFIREFLY_ARG];
 #ifdef REV1
 extern uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
 #elif defined(REV2)
-extern uint32_t present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_F2, present_FFL12_F2;
+extern uint32_t present_FFLDAQ_F1, present_FFL12_F1_bar, present_FFLDAQ_F2, present_FFL12_F2_bar;
 #endif // REV2
 
 #endif // FIREFLYUTILS_H
