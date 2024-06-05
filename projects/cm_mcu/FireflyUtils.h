@@ -61,6 +61,7 @@ bool isEnabledFF(int ff);
 void readFFpresent(void);
 uint16_t getFFtemp(const uint8_t i);
 float getFFavgoptpow(const uint8_t i);
+float getFFoptpow(const uint8_t i, const uint8_t ch);
 uint16_t getFFpresentbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);

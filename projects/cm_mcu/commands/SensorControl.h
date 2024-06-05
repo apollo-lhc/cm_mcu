@@ -49,6 +49,7 @@ BaseType_t adc_ctl(int argc, char **argv, char *m);
 // Fireflies
 BaseType_t ff_ctl(int argc, char **argv, char *m);
 BaseType_t ff_optpow(int argc, char **argv, char *m);
+BaseType_t ff_optpow_dev(int argc, char **argv, char *m);
 BaseType_t ff_temp(int argc, char **argv, char *m);
 BaseType_t ff_reset(int argc, char **argv, char *m);
 BaseType_t ff_status(int argc, char **argv, char *m);

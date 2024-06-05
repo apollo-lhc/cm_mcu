@@ -143,7 +143,7 @@ static int disable_transmit(bool disable, int num_ff)
 {
   int ret = 0, i = num_ff, imax = num_ff + 1;
   // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0xfffU;
+  uint16_t value = 0xffffU; // see data sheet re how bits are arranged; do not set this to 0xfffU!
   if (disable == false)
     value = 0x0U;
   if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
@@ -872,7 +872,7 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
   static int i = 0;
   int copied = 0;
   if (i == 0) {
-    copied += snprintf(m, SCRATCH_SIZE, "FF average Optical Power\r\n");
+    copied += snprintf(m, SCRATCH_SIZE, "FF average Optical Power (uW)\r\n");
   }
   for (; i < NFIREFLIES; ++i) {
     bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
@@ -902,7 +902,29 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-// this command takes up to two arguments
+// show optical power for all channels in a single device
+BaseType_t ff_optpow_dev(int argc, char **argv, char *m)
+{
+  // takes one argument
+  BaseType_t whichFF = strtol(argv[1], NULL, 10);
+  int copied = 0;
+  if (whichFF >= NFIREFLIES) {
+    copied += snprintf(m, SCRATCH_SIZE, "%s: choose ff number less than %d\r\n",
+                       argv[0], NFIREFLIES);
+    return pdFALSE;
+  }
+  copied += snprintf(m, SCRATCH_SIZE, "FF %s Optical Power (uW)\r\n", ff_moni2c_addrs[whichFF].name);
+  int nchannels = FireflyType(whichFF) == DEVICE_25G4 ? 4 : 12;
+  for (int i = 0; i < nchannels; ++i) {
+    float val = getFFoptpow(whichFF, i);
+    int tens, frac;
+    float_to_ints(val, &tens, &frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Ch %02d: % 5d.%02d\r\n", i, tens, frac);
+  }
+  return pdFALSE;
+}
+
+// this command takes up to two arguments. control firefly devices
 BaseType_t ff_ctl(int argc, char **argv, char *m)
 {
   // argument handling

@@ -236,31 +236,115 @@ uint16_t getFFtemp(const uint8_t i)
 }
 
 #ifdef REV2
+// returns optical power in uW
+// not that the 4 channel and 12 channel data is encoded differently
+// see the relevant data sheets and comments below
+#define SWAP_BYTES(x) __builtin_bswap16(x)
 float getFFavgoptpow(const uint8_t i)
 {
 
   uint16_t sum_val = 0;
   configASSERT(i < NFIREFLIES);
 
-  sum_val += get_FF_OPT_POWER_CH1_data(i);
-  sum_val += get_FF_OPT_POWER_CH2_data(i);
-  sum_val += get_FF_OPT_POWER_CH3_data(i);
-  sum_val += get_FF_OPT_POWER_CH4_data(i);
-  sum_val += get_FF_OPT_POWER_CH5_data(i);
-  sum_val += get_FF_OPT_POWER_CH6_data(i);
-  sum_val += get_FF_OPT_POWER_CH7_data(i);
-  sum_val += get_FF_OPT_POWER_CH8_data(i);
-  sum_val += get_FF_OPT_POWER_CH9_data(i);
-  sum_val += get_FF_OPT_POWER_CH10_data(i);
-  sum_val += get_FF_OPT_POWER_CH11_data(i);
-  sum_val += get_FF_OPT_POWER_CH12_data(i);
-
-  float nchannels = 12.f;
   if (FireflyType(i) == DEVICE_25G4) {
-    nchannels = 4.f;
+    sum_val += get_FF_OPT_POWER_CH1_data(i);
+    sum_val += get_FF_OPT_POWER_CH2_data(i);
+    sum_val += get_FF_OPT_POWER_CH3_data(i);
+    sum_val += get_FF_OPT_POWER_CH4_data(i);
+    float sum_valf = sum_val / 10.f; // LSB is 0.1 uW
+    float nchannels = 4.f;
+    return sum_valf / nchannels;
   }
-  return (float)sum_val / nchannels;
+  else { // this is a 12 channel part; do calculation even if CERN-B
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
+    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
+    float sumvalf = sum_val / 10.f; // LSB is 0.1 uW
+    float nchannels = 12.f;
+    return sumvalf / nchannels;
+  }
 }
+
+// get optical power for a single channel
+float getFFoptpow(const uint8_t i, const uint8_t ch)
+{
+  configASSERT(i < NFIREFLIES);
+  configASSERT(ch < 12);
+  float val;
+  if (FireflyType(i) == DEVICE_25G4) {
+    switch (ch) {
+      case 0:
+        val = get_FF_OPT_POWER_CH1_data(i);
+        break;
+      case 1:
+        val = get_FF_OPT_POWER_CH2_data(i);
+        break;
+      case 2:
+        val = get_FF_OPT_POWER_CH3_data(i);
+        break;
+      case 3:
+        val = get_FF_OPT_POWER_CH4_data(i);
+        break;
+      default:
+        val = -1;
+        break;
+    }
+  }
+  else {
+    switch (ch) {
+      case 0:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
+        break;
+      case 1:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
+        break;
+      case 2:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
+        break;
+      case 3:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
+        break;
+      case 4:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
+        break;
+      case 5:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
+        break;
+      case 6:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
+        break;
+      case 7:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
+        break;
+      case 8:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
+        break;
+      case 9:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
+        break;
+      case 10:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
+        break;
+      case 11:
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
+        break;
+      default:
+        val = 0;
+        break;
+    }
+  }
+  return val / 10.f; // LSB is 0.1 uW
+}
+#undef SWAP_BYTES
 
 uint16_t getFFpresentbit(const uint8_t i)
 {
@@ -330,7 +414,7 @@ uint32_t ff_map_25gb_parts(void)
   log_info(LOG_SERVICE, "F2 25G12 mask: 0x%02x\r\n", ff_bitmask_args[2].ffpart_bit_mask);
   log_info(LOG_SERVICE, "Fx 25G12 pair mask: 0x%02x\r\n", ff_25gb_pairs);
   // pair mask into two parts
-  uint32_t pair_mask_low = ff_25gb_pairs & 0x7U; // 3 bits
+  uint32_t pair_mask_low = ff_25gb_pairs & 0x7U;         // 3 bits
   uint32_t pair_mask_high = (ff_25gb_pairs >> 5) & 0x7U; // 3 pairs of Tx/Rx + 2 XCVRs = 5 shifts
   log_info(LOG_SERVICE, "F1 25G pair mask: 0x%02x\r\n", pair_mask_low);
   log_info(LOG_SERVICE, "F2 25G pair mask: 0x%02x\r\n", pair_mask_high);

@@ -317,6 +317,12 @@ static struct command_t commands[] = {
         "Showing avg FF optical power\r\n",
         0,
     },
+    {
+        "ff_optpow_dev",
+        ff_optpow_dev,
+        "Showing avg FF optical power\r\n",
+        1,
+    },
 #endif // REV2
     {
         "ff_temp",
