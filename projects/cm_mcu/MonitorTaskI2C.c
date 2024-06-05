@@ -66,6 +66,7 @@ void MonitorTaskI2C(void *parameters)
     // loop over devices in the device-type instance
     // -------------------------------
     for (int device = 0; device < args->n_devices; ++device) {
+      log_debug(LOG_MONI2C, "%s: device %s\r\n", args->name, args->devices[device].name);
       // if there is a present call back and it reurns false, skip this device
       if (args->presentCallback && !args->presentCallback(device)) {
         log_debug(LOG_MONI2C, "%s: device %d not present\r\n", args->name, device);
@@ -110,13 +111,15 @@ void MonitorTaskI2C(void *parameters)
         // check if the command is for this device
         // what kind of device do we have (e.g., 4 ch FF, 12 ch 25 G FF, 12 ch CERN-B FF, etc.)
         if ((args->commands[c].devicelist() & devtype_mask) == 0) {
+          log_debug(LOG_MONI2C, "%s: command %s not for device %d (mask: %x this: %x)\r\n",
+                    args->name, args->commands[c].name, device, args->commands[c].devicelist(), devtype_mask);
           continue; // not for me!
         }
-
+        log_debug(LOG_MONI2C, "%s: >>reg %s\r\n", args->name, args->commands[c].name);
         // set page register if it's different than the last time
-        log_debug(LOG_MONI2C, "%s: reg %s\r\n", args->name, args->commands[c].name);
         uint8_t page_reg_value = args->commands[c].page[devtype];
         if (page_reg_value != last_page_reg_value) {
+          log_debug(LOG_MONI2C, "%s: new page %d\r\n", args->name, page_reg_value);
           int r = apollo_i2c_ctl_reg_w(args->i2c_dev, args->devices[device].dev_addr, 1, args->selpage_reg, 1, page_reg_value);
           if (r != 0) {
             log_error(LOG_MONI2C, "%s : page fail %s\r\n", args->devices[device].name, SMBUS_get_error(r));

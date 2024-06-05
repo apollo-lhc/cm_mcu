@@ -71,18 +71,19 @@ int FireflyType(int device)
     case 3:
     case 4:
     case 5: {
-      // this mask is set in pairs
+      // //this mask is set in pairs
       uint8_t mask = ff_bitmask_args[0].ffpart_bit_mask; // default to F1
       int thistype;
       if (!isF1)
         mask = ff_bitmask_args[2].ffpart_bit_mask;
-      if (mask & (0x1U << (device / 2))) {
+      if (mask & (0x1U << (device))) {
         thistype = DEVICE_25G12;
       }
       else {
         thistype = DEVICE_CERNB;
       }
-      log_debug(LOG_SERVICE, "%s: device %d is type %d\r\n", __func__, device, thistype);
+      log_debug(LOG_MONI2C  , "%s: %s device %d is type %d (25G mask %x)\r\n", __func__, isF1?"F1":"F2",
+                device, thistype, mask);
       return thistype;
     }
     case 6:

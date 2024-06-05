@@ -40,7 +40,7 @@ struct ff_bit_mask_t ff_bitmask_args[4] = {
 void setFFmask(uint32_t ff_combined_present)
 {
 
-  log_info(LOG_SERVICE, "%s:FF EEPROM masks\r\n");
+  log_info(LOG_SERVICE, "%s:FF EEPROM masks\r\n", __func__);
 
   // int32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
 #ifdef REV1
@@ -329,18 +329,32 @@ uint32_t ff_map_25gb_parts(void)
   log_info(LOG_SERVICE, "F1 25G12 mask: 0x%02x\r\n", ff_bitmask_args[0].ffpart_bit_mask);
   log_info(LOG_SERVICE, "F2 25G12 mask: 0x%02x\r\n", ff_bitmask_args[2].ffpart_bit_mask);
   log_info(LOG_SERVICE, "Fx 25G12 pair mask: 0x%02x\r\n", ff_25gb_pairs);
-  log_info(LOG_SERVICE, "Fx 25G12 mask: 0x%02x\r\n", ff_25gb_parts);
+  // pair mask into two parts
+  uint32_t pair_mask_low = ff_25gb_pairs & 0x7U; // 3 bits
+  uint32_t pair_mask_high = (ff_25gb_pairs >> 5) & 0x7U; // 3 pairs of Tx/Rx + 2 XCVRs = 5 shifts
+  log_info(LOG_SERVICE, "F1 25G pair mask: 0x%02x\r\n", pair_mask_low);
+  log_info(LOG_SERVICE, "F2 25G pair mask: 0x%02x\r\n", pair_mask_high);
   // check if the 4v switch settings match
   // F1
-  if (ff_bitmask_args[0].ffpart_bit_mask != f1_ff12xmit_4v0_sel) {
+  if (pair_mask_low != f1_ff12xmit_4v0_sel) {
     log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
-              f1_ff12xmit_4v0_sel, ff_bitmask_args[0].ffpart_bit_mask);
+              f1_ff12xmit_4v0_sel, pair_mask_low);
   }
   // F2
-  if (ff_bitmask_args[2].ffpart_bit_mask != f2_ff12xmit_4v0_sel) {
+  if (pair_mask_high != f2_ff12xmit_4v0_sel) {
     log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
-              f2_ff12xmit_4v0_sel, ff_bitmask_args[2].ffpart_bit_mask);
+              f2_ff12xmit_4v0_sel, pair_mask_high);
   }
-  return ff_25gb_parts;
+  // // F1
+  // if (ff_bitmask_args[0].ffpart_bit_mask != f1_ff12xmit_4v0_sel) {
+  //   log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
+  //             f1_ff12xmit_4v0_sel, ff_bitmask_args[0].ffpart_bit_mask);
+  // }
+  // // F2
+  // if (ff_bitmask_args[2].ffpart_bit_mask != f2_ff12xmit_4v0_sel) {
+  //   log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
+  //             f2_ff12xmit_4v0_sel, ff_bitmask_args[2].ffpart_bit_mask);
+  // }
+  return ff_25gb_pairs;
 }
 #endif

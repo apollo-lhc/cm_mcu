@@ -852,7 +852,8 @@ int init_registers_clk(void)
 }
 void init_registers_ff(void)
 {
-
+  log_info(LOG_SERVICE, "%s\r\n", __func__);
+  int result;
   // =====================================================
   // CMv2 Schematic 4.05 I2C FPGA#1 OPTICS
 
@@ -864,9 +865,9 @@ void init_registers_ff(void)
   acquireI2CSemaphoreBlock(i2c4_sem);
 
   // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
-  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+  result =  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  result += apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
 
   // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
   // All signals are inputs so nothing needs to be done.
@@ -877,9 +878,9 @@ void init_registers_ff(void)
   // All other signals are inputs
 
   // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+  result += apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
 
   // 4b) U18 default output values (I2C address 0x21 on I2C channel #4)
   // The output on P10 should default to "1".
@@ -889,9 +890,13 @@ void init_registers_ff(void)
   // 12-lane transmitter sites for FPGA#1.
 
   // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  result += apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+
+  if (result) {
+    log_error(LOG_SERVICE, "\tFailed to initialize FPGA#1 optics\r\n");
+  }
 
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
@@ -901,7 +906,7 @@ void init_registers_ff(void)
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c3_sem);
-
+  result = 0;
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
 
@@ -909,9 +914,9 @@ void init_registers_ff(void)
   // All signals are inputs.
 
   // # set first I2C switch on channel 3 (U9, address 0x70) to port 7
-  apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+  result += apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
+  result += apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
 
   // 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
   // All signals are inputs so nothing needs to be done.
@@ -922,9 +927,9 @@ void init_registers_ff(void)
   // All other signals are inputs
 
   // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
-  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+  result += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
 
   // 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
   // The output on P10 should default to "1".
@@ -934,9 +939,13 @@ void init_registers_ff(void)
   // 12-lane transmitter sites for FPGA#2.
 
   // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
-  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
-  apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+  result += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+
+  if (result) {
+    log_error(LOG_SERVICE, "\tFailed to initialize FPGA#2 optics\r\n");
+  }
 
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
