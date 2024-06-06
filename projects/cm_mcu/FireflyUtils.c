@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h> // memset
+#include <sys/_intsup.h>
 
 #include "MonI2C_addresses.h"
 #include "MonUtils.h"
@@ -242,36 +243,17 @@ uint16_t getFFtemp(const uint8_t i)
 #define SWAP_BYTES(x) __builtin_bswap16(x)
 float getFFavgoptpow(const uint8_t i)
 {
-
-  uint16_t sum_val = 0;
   configASSERT(i < NFIREFLIES);
+  float sum_val = 0.f;
 
+  int ch_max = 12;
   if (FireflyType(i) == DEVICE_25G4) {
-    sum_val += get_FF_OPT_POWER_CH1_data(i);
-    sum_val += get_FF_OPT_POWER_CH2_data(i);
-    sum_val += get_FF_OPT_POWER_CH3_data(i);
-    sum_val += get_FF_OPT_POWER_CH4_data(i);
-    float sum_valf = sum_val / 10.f; // LSB is 0.1 uW
-    float nchannels = 4.f;
-    return sum_valf / nchannels;
+    ch_max = 4;
   }
-  else { // this is a 12 channel part; do calculation even if CERN-B
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
-    sum_val += SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
-    float sumvalf = sum_val / 10.f; // LSB is 0.1 uW
-    float nchannels = 12.f;
-    return sumvalf / nchannels;
+  for ( int ch = 0; ch < ch_max; ++ch) {
+    sum_val += getFFoptpow(i, ch);
   }
+  return sum_val / (float)ch_max;
 }
 
 // get optical power for a single channel
@@ -281,25 +263,6 @@ float getFFoptpow(const uint8_t i, const uint8_t ch)
   configASSERT(ch < 12);
   float val;
   if (FireflyType(i) == DEVICE_25G4) {
-    switch (ch) {
-      case 0:
-        val = get_FF_OPT_POWER_CH1_data(i);
-        break;
-      case 1:
-        val = get_FF_OPT_POWER_CH2_data(i);
-        break;
-      case 2:
-        val = get_FF_OPT_POWER_CH3_data(i);
-        break;
-      case 3:
-        val = get_FF_OPT_POWER_CH4_data(i);
-        break;
-      default:
-        val = -1;
-        break;
-    }
-  }
-  else {
     switch (ch) {
       case 0:
         val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
@@ -313,32 +276,53 @@ float getFFoptpow(const uint8_t i, const uint8_t ch)
       case 3:
         val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
         break;
+      default:
+        log_warn(LOG_SERVICE, "%s: invalid channel %d\r\n", __func__, ch);
+        val = -999.f;
+        break;
+    }
+  }
+  else {
+    switch (ch) {
+      case 0:
+        val = get_FF_OPT_POWER_CH1_data(i);
+        break;
+      case 1:
+        val = get_FF_OPT_POWER_CH2_data(i);
+        break;
+      case 2:
+        val = get_FF_OPT_POWER_CH3_data(i);
+        break;
+      case 3:
+        val = get_FF_OPT_POWER_CH4_data(i);
+        break;
       case 4:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
+        val = get_FF_OPT_POWER_CH5_data(i);
         break;
       case 5:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
+        val = get_FF_OPT_POWER_CH6_data(i);
         break;
       case 6:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
+        val = get_FF_OPT_POWER_CH7_data(i);
         break;
       case 7:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
+        val = get_FF_OPT_POWER_CH8_data(i);
         break;
       case 8:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
+        val = get_FF_OPT_POWER_CH9_data(i);
         break;
       case 9:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
+        val = get_FF_OPT_POWER_CH10_data(i);
         break;
       case 10:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
+        val = get_FF_OPT_POWER_CH11_data(i);
         break;
       case 11:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
+        val = get_FF_OPT_POWER_CH12_data(i);
         break;
       default:
-        val = 0;
+        log_warn(LOG_SERVICE, "%s: invalid channel %d\r\n", __func__, ch);
+        val = -999.f;
         break;
     }
   }
