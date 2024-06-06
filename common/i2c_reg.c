@@ -171,7 +171,7 @@ void initI2C3(const uint32_t sysclockfreq)
   // the I2C3 module.  The last parameter sets the I2C data transfer rate.
   // If false the data rate is set to 100kbps and if true the data rate will
   // be set to 400kbps.
-  MAP_I2CMasterInitExpClk(I2C3_BASE, sysclockfreq, false);
+  MAP_I2CMasterInitExpClk(I2C3_BASE, sysclockfreq, true);
   while (!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C3))
     ;
 
@@ -212,7 +212,7 @@ void initI2C4(const uint32_t sysclockfreq)
   // the I2C4 module.  The last parameter sets the I2C data transfer rate.
   // If false the data rate is set to 100kbps and if true the data rate will
   // be set to 400kbps.
-  MAP_I2CMasterInitExpClk(I2C4_BASE, sysclockfreq, false);
+  MAP_I2CMasterInitExpClk(I2C4_BASE, sysclockfreq, true);
   while (!MAP_SysCtlPeripheralReady(SYSCTL_PERIPH_I2C4))
     ;
 
