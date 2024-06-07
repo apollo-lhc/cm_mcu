@@ -82,7 +82,7 @@ int FireflyType(int device)
       else {
         thistype = DEVICE_CERNB;
       }
-      log_debug(LOG_MONI2C  , "%s: %s device %d is type %d (25G mask %x)\r\n", __func__, isF1?"F1":"F2",
+      log_debug(LOG_MONI2C, "%s: %s device %d is type %d (25G mask %x)\r\n", __func__, isF1 ? "F1" : "F2",
                 device, thistype, mask);
       return thistype;
     }
