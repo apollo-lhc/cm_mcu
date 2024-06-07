@@ -250,7 +250,7 @@ float getFFavgoptpow(const uint8_t i)
   if (FireflyType(i) == DEVICE_25G4) {
     ch_max = 4;
   }
-  for ( int ch = 0; ch < ch_max; ++ch) {
+  for (int ch = 0; ch < ch_max; ++ch) {
     sum_val += getFFoptpow(i, ch);
   }
   return sum_val / (float)ch_max;

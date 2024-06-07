@@ -897,7 +897,7 @@ void init_registers_ff(void)
   result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
-  //clear 2nd I2C switch on channel 4 
+  // clear 2nd I2C switch on channel 4
   result += apollo_i2c_ctl_w(4, 0x70, 1, 0x0);
   if (result) {
     log_error(LOG_SERVICE, "\tFailed to initialize FPGA#1 optics\r\n");
@@ -1119,7 +1119,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
   static const uint8_t ioexp_addr = 0x21;  // address of i/o expander on i2c bus
   static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
   int result = 0;
-  // dump infput ffmask 
+  // dump infput ffmask
   log_debug(LOG_SERVICE, "ffmask[0] 0x%x, ffmask[1] 0x%x\r\n", ffmask[0], ffmask[1]);
   // loop over 2 i2c modules
   for (int i = 0; i < 2; ++i) {
@@ -1153,7 +1153,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
     uint32_t val;
     result += apollo_i2c_ctl_reg_r(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, &val);
     log_debug(LOG_SERVICE, "%s: read 3.8V  val raw 0x%x\r\n", __func__, val);
-    val = (val & mask) >>1; // mask and shift
+    val = (val & mask) >> 1; // mask and shift
     if (result) {
       log_warn(LOG_SERVICE, "expand rd %d\r\n", result);
     }
@@ -1161,8 +1161,8 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       log_error(LOG_SERVICE, "expand val 0x%x != 0x%x\r\n", val, ffmask[i]);
       result = 1;
     }
-    log_info(LOG_SERVICE, "%s: set 3.8V to val 0x%x (input 0x%x)\r\n", __func__, val, 
-            ffmask[i]);
+    log_info(LOG_SERVICE, "%s: set 3.8V to val 0x%x (input 0x%x)\r\n", __func__, val,
+             ffmask[i]);
 
     // clear the mux
     result += apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, 0);
