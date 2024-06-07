@@ -326,7 +326,7 @@ float getFFoptpow(const uint8_t i, const uint8_t ch)
         break;
     }
   }
-  return val * 10.f; // LSB is 0.1 uW, we return uW
+  return val * 10.f; // LSB is 0.1 uW, we return uW 
 }
 #undef SWAP_BYTES
 
@@ -388,9 +388,7 @@ uint32_t ff_map_25gb_parts(void)
     }
   }
   log_info(LOG_SERVICE, "ff 25G12 mask: 0x%08lx\r\n", ff_25gb_parts);
-  // these masks have one bit per pair of receiver/transceiver FIXME: do they?
-  // ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_pairs & 0x7U;
-  // ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_pairs >> 5) & 0x7U;
+  // these masks have one bit per pair of receiver/transceiver
   ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_parts & 0x3fU; // six bits
   ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_parts >> 10) & 0x3fU;
   // dump the masks
@@ -413,16 +411,6 @@ uint32_t ff_map_25gb_parts(void)
     log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
               f2_ff12xmit_4v0_sel, pair_mask_high);
   }
-  // // F1
-  // if (ff_bitmask_args[0].ffpart_bit_mask != f1_ff12xmit_4v0_sel) {
-  //   log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
-  //             f1_ff12xmit_4v0_sel, ff_bitmask_args[0].ffpart_bit_mask);
-  // }
-  // // F2
-  // if (ff_bitmask_args[2].ffpart_bit_mask != f2_ff12xmit_4v0_sel) {
-  //   log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
-  //             f2_ff12xmit_4v0_sel, ff_bitmask_args[2].ffpart_bit_mask);
-  // }
   return ff_25gb_pairs;
 }
 #endif
