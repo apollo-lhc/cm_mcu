@@ -865,9 +865,12 @@ void init_registers_ff(void)
   acquireI2CSemaphoreBlock(i2c4_sem);
 
   // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
-  result =  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  result = apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   result += apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
   result += apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+
+  // clear first I2C switch on channel 4
+  result += apollo_i2c_ctl_w(4, 0x70, 1, 0x0);
 
   // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
   // All signals are inputs so nothing needs to be done.
@@ -894,6 +897,8 @@ void init_registers_ff(void)
   result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
 
+  //clear 2nd I2C switch on channel 4 
+  result += apollo_i2c_ctl_w(4, 0x70, 1, 0x0);
   if (result) {
     log_error(LOG_SERVICE, "\tFailed to initialize FPGA#1 optics\r\n");
   }
@@ -917,6 +922,9 @@ void init_registers_ff(void)
   result += apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   result += apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
   result += apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+
+  // clear first I2C switch on channel 3
+  result += apollo_i2c_ctl_w(3, 0x70, 1, 0x0);
 
   // 5b) U10 default output values (I2C address 0x20 on I2C channel #3)
   // All signals are inputs so nothing needs to be done.
@@ -942,6 +950,9 @@ void init_registers_ff(void)
   result += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x00); //  00000000 [P07..P00]
   result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x01); //  00000001 [P17..P10]
+
+  // clear 2nd I2C switch on channel 3
+  result += apollo_i2c_ctl_w(3, 0x71, 1, 0x0);
 
   if (result) {
     log_error(LOG_SERVICE, "\tFailed to initialize FPGA#2 optics\r\n");
@@ -1107,6 +1118,9 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
   static const uint8_t muxaddr = 0x71;     // address of mux on i2c bus
   static const uint8_t ioexp_addr = 0x21;  // address of i/o expander on i2c bus
   static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
+  int result = 0;
+  // dump infput ffmask 
+  log_debug(LOG_SERVICE, "ffmask[0] 0x%x, ffmask[1] 0x%x\r\n", ffmask[0], ffmask[1]);
   // loop over 2 i2c modules
   for (int i = 0; i < 2; ++i) {
     if (ffmask[i] == 0) { // this device is not selected
@@ -1119,7 +1133,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       return SEM_ACCESS_ERROR;
     }
     // mux setting
-    int result = apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
+    result += apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
     if (result) {
       log_warn(LOG_SERVICE, "mux err %d\r\n", result);
     }
@@ -1128,19 +1142,36 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       if (turnOff) {
         val = ~val; // invert bits when turning off
       }
-      val &= mask; // mask out extra bits extraneously set
-      val |= 0x01; // make sure active low reset bit stays deasserted (i.e., LSB is high)
-      result = apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
+      val = (val << 1) & mask; // set bits 1-3, and mask out extra bits extraneously set
+      val |= 0x01;             // make sure active low reset bit stays deasserted (i.e., LSB is high)
+      result += apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
       if (result) {
         log_warn(LOG_SERVICE, "expand wr %d\r\n", result);
       }
     }
+    // read back the value to make sure it was set correctly
+    uint32_t val;
+    result += apollo_i2c_ctl_reg_r(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, &val);
+    log_debug(LOG_SERVICE, "%s: read 3.8V  val raw 0x%x\r\n", __func__, val);
+    val = (val & mask) >>1; // mask and shift
+    if (result) {
+      log_warn(LOG_SERVICE, "expand rd %d\r\n", result);
+    }
+    else if (val != ffmask[i]) {
+      log_error(LOG_SERVICE, "expand val 0x%x != 0x%x\r\n", val, ffmask[i]);
+      result = 1;
+    }
+    log_info(LOG_SERVICE, "%s: set 3.8V to val 0x%x (input 0x%x)\r\n", __func__, val, 
+            ffmask[i]);
+
+    // clear the mux
+    result += apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, 0);
 
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(semaphores[i]) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(semaphores[i]);
     }
   }
-  return 0;
+  return result;
 }
 #endif // REV2
