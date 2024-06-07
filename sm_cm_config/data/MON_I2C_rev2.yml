@@ -19,10 +19,19 @@ define: &FF_SHARED_REGS
     reg_size: 1
     page: 0
     reg_address: 0x16
-    size: 2
+    size: 1
     mask: 0xFF
     units: C
     type: PM_NONVOLTAGE
+    devicetypes: [14G, 25G12, 25G4, CERNB]
+  - name: VCC3V3
+    reg_size: 1
+    page: 0
+    reg_address: 26
+    size: 2
+    mask: 0xFFFF
+    units: V
+    type: PM_VOLTAGE
     devicetypes: [14G, 25G12, 25G4, CERNB]
   - name: LOS_ALARM
     reg_size: 1

@@ -314,20 +314,26 @@ static struct command_t commands[] = {
     {
         "ff_optpow",
         ff_optpow,
-        "Showing avg FF optical power\r\n",
+        "Show avg FF optical power\r\n",
         0,
     },
     {
         "ff_optpow_dev",
         ff_optpow_dev,
-        "Showing avg FF optical power\r\n",
+        "Show dev FF optical power\r\n",
         1,
+    },
+    {
+        "ff_volts",
+        ff_v3v3,
+        "Show FF 3v3 mon\r\n",
+        0,
     },
 #endif // REV2
     {
         "ff_temp",
         ff_temp,
-        "Showing FF temperatures\r\n",
+        "Show FF temperatures\r\n",
         0,
     },
     {"fpga", fpga_ctl, "Show state of FPGAs\r\n",

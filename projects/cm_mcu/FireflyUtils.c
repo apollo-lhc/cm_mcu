@@ -285,40 +285,40 @@ float getFFoptpow(const uint8_t i, const uint8_t ch)
   else {
     switch (ch) {
       case 0:
-        val = get_FF_OPT_POWER_CH1_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
         break;
       case 1:
-        val = get_FF_OPT_POWER_CH2_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
         break;
       case 2:
-        val = get_FF_OPT_POWER_CH3_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
         break;
       case 3:
-        val = get_FF_OPT_POWER_CH4_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
         break;
       case 4:
-        val = get_FF_OPT_POWER_CH5_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
         break;
       case 5:
-        val = get_FF_OPT_POWER_CH6_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
         break;
       case 6:
-        val = get_FF_OPT_POWER_CH7_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
         break;
       case 7:
-        val = get_FF_OPT_POWER_CH8_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
         break;
       case 8:
-        val = get_FF_OPT_POWER_CH9_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
         break;
       case 9:
-        val = get_FF_OPT_POWER_CH10_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
         break;
       case 10:
-        val = get_FF_OPT_POWER_CH11_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
         break;
       case 11:
-        val = get_FF_OPT_POWER_CH12_data(i);
+        val = SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
         break;
       default:
         log_warn(LOG_SERVICE, "%s: invalid channel %d\r\n", __func__, ch);
@@ -326,7 +326,7 @@ float getFFoptpow(const uint8_t i, const uint8_t ch)
         break;
     }
   }
-  return val / 10.f; // LSB is 0.1 uW
+  return val * 10.f; // LSB is 0.1 uW, we return uW
 }
 #undef SWAP_BYTES
 

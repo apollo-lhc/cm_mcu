@@ -854,7 +854,6 @@ BaseType_t ff_temp(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
   }
   nn = 0;
-  //}
 
   if (nn % 2 == 1) {
     m[copied++] = '\r';
@@ -1091,6 +1090,57 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
       return pdFALSE;
     }
   }
+  return pdFALSE;
+}
+
+// firefly 3.3V monitor dumper
+BaseType_t ff_v3v3(int argc, char **argv, char *m)
+{
+  // argument handling
+  int copied = 0;
+
+  static int nn = 0;
+
+  if (nn == 0) {
+    // check for stale data
+    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+    if (isFFStale()) {
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF 3V3 Mon:\r\n");
+  }
+
+  for (; nn < NFIREFLIES; ++nn) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[nn].name);
+    if (isEnabledFF(nn)) {
+      float val = (float)__builtin_bswap16(get_FF_VCC3V3_data(nn)) * 100e-6f; // LSB is 100uV
+      int tens, frac;
+      float_to_ints(val, &tens, &frac);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "% 2d.%02d", tens, frac);
+    }
+    else // dummy value
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, " --- ");
+    bool isTx = (strstr(ff_moni2c_addrs[nn].name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    if ((SCRATCH_SIZE - copied) < 50) {
+      return pdTRUE;
+    }
+  }
+  nn = 0;
+
+  if (nn % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+
   return pdFALSE;
 }
 
