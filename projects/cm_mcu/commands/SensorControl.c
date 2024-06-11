@@ -793,14 +793,14 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x", ff_moni2c_addrs[whichff].name, val);
     }
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %4s", ff_moni2c_addrs[whichff].name, "--");
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %4s", ff_moni2c_addrs[whichff].name, "  --  ");
     }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
     if (isTx)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
     else
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 20) {
+    if ((SCRATCH_SIZE - copied) < 30) {
       ++whichff;
       return pdTRUE;
     }
@@ -1376,41 +1376,48 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
 // this command takes no arguments
 BaseType_t ff_dump_names(int argc, char **argv, char *m)
 {
-  int copied = 0;
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ID registers\r\n", argv[0]);
   static int i = 0;
+  int copied = 0;
+  if ( i == 0 ) { // not if we are on 2nd iteration
+    copied += snprintf(m, SCRATCH_SIZE, "%s: ID registers\r\n", argv[0]);
+  }
   for (; i < NFIREFLIES; ++i) {
-    if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
-      continue;
-    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[i].name);
+    if (isEnabledFF(i)) { // process if enabled
 
-    char name[17];
-    memset(name, '\0', 17);
-    int type = FireflyType(i);
-    int startReg = VENDOR_START_BIT_FFDAQ;
-    int count = VENDOR_COUNT_FFDAQ;
-    if (type == DEVICE_CERNB || type == DEVICE_25G12) {
-      startReg = VENDOR_START_BIT_FF12;
-      count = VENDOR_COUNT_FF12;
+      char name[17];
+      memset(name, '\0', 17);
+      int type = FireflyType(i);
+      int startReg = VENDOR_START_BIT_FFDAQ;
+      int count = VENDOR_COUNT_FFDAQ;
+      if (type == DEVICE_CERNB || type == DEVICE_25G12) {
+        startReg = VENDOR_START_BIT_FF12;
+        count = VENDOR_COUNT_FF12;
+      }
+      int ret = 0;
+      for (unsigned char c = 0; c < count / 4; ++c) { // read name 4 chars at a time
+        uint8_t v[4];
+        ret += read_arbitrary_ff_register(startReg + 4 * c, i, v, 4);
+        name[4 * c] = v[0];
+        name[4 * c + 1] = v[1];
+        name[4 * c + 2] = v[2];
+        name[4 * c + 3] = v[3];
+      }
+      if (ret != 0) {
+        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
+        return pdFALSE;
+      }
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s", name);
     }
-    int ret = 0;
-    for (unsigned char c = 0; c < count; ++c) {
-      uint8_t v;
-      ret += read_arbitrary_ff_register(startReg + c, i, &v, 1);
-      name[c] = v;
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "--------------");
     }
-    if (ret != 0) {
-      snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
-      return pdFALSE;
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s:%s", ff_moni2c_addrs[i].name, name);
-
     bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
     if (isTx)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
     else
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 25 && (i < NFIREFLIES)) {
+    if ((SCRATCH_SIZE - copied) < 45 && (i < NFIREFLIES)) {
       ++i;
       return pdTRUE;
     }
