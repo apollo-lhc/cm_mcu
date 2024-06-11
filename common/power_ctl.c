@@ -5,11 +5,9 @@
  *      Author: wittich
  */
 
-
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
 #include "common/utils.h"
-
 
 #ifdef USE_FREERTOS
 #include "FreeRTOS.h" // IWYU pragma: keep

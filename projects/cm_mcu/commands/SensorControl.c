@@ -1465,7 +1465,7 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
 {
   static int i = 0;
   int copied = 0;
-  if ( i == 0 ) { // not if we are on 2nd iteration
+  if (i == 0) { // not if we are on 2nd iteration
     copied += snprintf(m, SCRATCH_SIZE, "%s: ID registers\r\n", argv[0]);
   }
   for (; i < NFIREFLIES; ++i) {
