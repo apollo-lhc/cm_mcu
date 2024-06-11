@@ -494,10 +494,6 @@ void PowerSupplyTask(void *parameters)
         }
       }
     }
-#ifdef REV2 // PG_4V0 is not helpful to read from. assert that PWR_FAILED
-    if ((f1_ff12xmit_4v0_sel ^ ff_bitmask_args[0].ffpart_bit_mask) != 0x0U || (f2_ff12xmit_4v0_sel ^ ff_bitmask_args[2].ffpart_bit_mask) != 0x0U)
-      setPSStatus(N_PS_OKS - 1, PWR_FAILED);
-#endif
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);
