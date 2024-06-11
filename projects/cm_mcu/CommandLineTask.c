@@ -300,6 +300,18 @@ static struct command_t commands[] = {
     },
 #ifdef REV2
     {
+        "ff_cdr_ena",
+        ff_cdr_enable_status,
+        "Show FF CDR enable status\r\n",
+        0,
+    },
+    {
+        "ff_ch_dis",
+        ff_ch_disable_status,
+        "Show FF ch disable status\r\n",
+        0,
+    },
+    {
         "ff_mux_reset",
         ff_mux_reset,
         "reset ff muxes, 1 or 2 for F1 or F2\r\n",

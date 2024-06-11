@@ -769,6 +769,49 @@ BaseType_t ff_los_alarm(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+BaseType_t ff_ch_disable_status(int argc, char **argv, char *m)
+{
+  int copied = 0;
+
+  static int whichff = 0;
+
+  if (whichff == 0) {
+    // check for stale data
+    if (isFFStale()) {
+      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
+  }
+
+  for (; whichff < NFIREFLIES; ++whichff) {
+    uint16_t val = get_FF_CHANNEL_DISABLE_data(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",
+                       ff_moni2c_addrs[whichff].name, val);
+    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    if ((SCRATCH_SIZE - copied) < 20) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichff = 0;
+
+  return pdFALSE;
+}
+
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -788,12 +831,14 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
   }
 
   for (; whichff < NFIREFLIES; ++whichff) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
+                       ff_moni2c_addrs[whichff].name);
     if (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4) {
       uint16_t val = get_FF_CDR_LOL_ALARM_data(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x", ff_moni2c_addrs[whichff].name, val);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
     }
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %4s", ff_moni2c_addrs[whichff].name, "  --  ");
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
     }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
     if (isTx)
@@ -812,6 +857,48 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
   }
   whichff = 0;
   // n = 0;
+
+  return pdFALSE;
+}
+BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m)
+{
+  int copied = 0;
+
+  static int whichff = 0;
+
+  if (whichff == 0) {
+    // check for stale data
+    if (isFFStale()) {
+      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF CDR Enable:\r\n");
+  }
+
+  for (; whichff < NFIREFLIES; ++whichff) {
+    uint16_t val = get_FF_CDR_ENABLE_data(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",
+                       ff_moni2c_addrs[whichff].name, val);
+    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    if ((SCRATCH_SIZE - copied) < 20) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichff = 0;
 
   return pdFALSE;
 }

@@ -10,7 +10,7 @@ define: &FF_SHARED_REGS
     reg_size: 1 # size of register address in bytes
     page: 0 # page of register
     reg_address: 0x2 # register address, if list: [ cernb, 14g, 25g4, 25g12]
-    size: 2 # size of data in register in bytes
+    size: 2 # size of data in register in bytes, max 2 bytes
     mask: 0xFF # mask for valid bits
     units: "" # units for display
     type: PM_STATUS # type of data
@@ -159,7 +159,7 @@ define: &FF_SHARED_REGS
     units: uW
     type: PM_VOLTAGE
     devicetypes: [25G12]
-  - name: CHANNEL_DISABLE
+  - name: CHANNEL_DISABLE # this is both Tx and on 25G12, not on 25G4
     reg_size: 1
     page: 0
     reg_address: [52, 52, 86, 52]
@@ -168,6 +168,33 @@ define: &FF_SHARED_REGS
     units: ""
     type: PM_STATUS
     devicetypes: [CERNB, 14G, 25G4, 25G12]
+  - name: POWER_ALARM_0
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 9, 14] 
+    size: 2
+    mask: 0xFFFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [ 25G4, 25G12]
+  - name: POWER_ALARM_1
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, -1, 16] 
+    size: 2
+    mask: 0xFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [ 25G12]
+  - name: CDR_ENABLE
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 98, 74]
+    size: 2
+    mask: 0xFFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [25G4, 25G12]
 
 devices:
   - name: Fireflies_F1
