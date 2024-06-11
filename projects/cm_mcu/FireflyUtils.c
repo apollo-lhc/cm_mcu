@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h> // memset
-#include <sys/_intsup.h>
+#include <assert.h>
 
 #include "MonI2C_addresses.h"
 #include "MonUtils.h"
@@ -329,6 +329,7 @@ uint16_t getFFpresentbit(const uint8_t i)
 // sets ff_bitmask_args[0].ffpart_bit_mask and ff_bitmask_args[2].ffpart_bit_mask
 uint32_t ff_map_25gb_parts(void)
 {
+  static_assert(FF_VENDOR_COUNT_FFDAQ == FF_VENDOR_COUNT_FF12, "FF_VENDOR_COUNT_FFDAQ != FF_VENDOR_COUNT_FF12");
   uint32_t ff_25gb_parts = 0U;
   uint32_t ff_25gb_pairs = 0U;
   for (int i = 0; i < NFIREFLIES; ++i) {
@@ -336,18 +337,16 @@ uint32_t ff_map_25gb_parts(void)
       continue;
     }
 
-    char name[17];
-    memset(name, '\0', 17);
+    char name[FF_VENDOR_START_BIT_FFDAQ + 1];
+    memset(name, '\0', FF_VENDOR_START_BIT_FFDAQ + 1);
     int startReg = FF_VENDOR_START_BIT_FFDAQ;
-    int count = FF_VENDOR_COUNT_FFDAQ;
     int type = FireflyType(i);
     if (type == DEVICE_CERNB || type == DEVICE_25G12) {
       startReg = FF_VENDOR_START_BIT_FF12;
-      count = FF_VENDOR_COUNT_FF12;
     }
     int ret = 0;
     // build up name of the device (vendor string)
-    for (int c = 0; c < count / 4; ++c) {
+    for (BaseType_t c = 0; c < FF_VENDOR_COUNT_FF12 / 4; ++c) {
       uint8_t v[4];
       ret += read_arbitrary_ff_register(startReg + 4 * c, i, v, 4);
       name[4 * c] = v[0];
