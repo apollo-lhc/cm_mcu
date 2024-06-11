@@ -34,12 +34,12 @@
 
 // register address of the first and last entry of the
 // device identifier in the memory map of the FF devices
-#define VENDOR_START_BIT_FFDAQ 168
-#define VENDOR_STOP_BIT_FFDAQ  184
-#define VENDOR_START_BIT_FF12  171
-#define VENDOR_STOP_BIT_FF12   187
-#define VENDOR_COUNT_FFDAQ     (VENDOR_STOP_BIT_FFDAQ - VENDOR_START_BIT_FFDAQ)
-#define VENDOR_COUNT_FF12      (VENDOR_STOP_BIT_FF12 - VENDOR_START_BIT_FF12)
+#define FF_VENDOR_START_BIT_FFDAQ 168
+#define FF_VENDOR_STOP_BIT_FFDAQ  184
+#define FF_VENDOR_START_BIT_FF12  171
+#define FF_VENDOR_STOP_BIT_FF12   187
+#define FF_VENDOR_COUNT_FFDAQ     (FF_VENDOR_STOP_BIT_FFDAQ - FF_VENDOR_START_BIT_FFDAQ)
+#define FF_VENDOR_COUNT_FF12      (FF_VENDOR_STOP_BIT_FF12 - FF_VENDOR_START_BIT_FF12)
 
 struct arg_moni2c_ff_t {
   char *ff_part;                    // ff part

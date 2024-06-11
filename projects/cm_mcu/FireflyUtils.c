@@ -338,12 +338,12 @@ uint32_t ff_map_25gb_parts(void)
 
     char name[17];
     memset(name, '\0', 17);
-    int startReg = VENDOR_START_BIT_FFDAQ;
-    int count = VENDOR_COUNT_FFDAQ;
+    int startReg = FF_VENDOR_START_BIT_FFDAQ;
+    int count = FF_VENDOR_COUNT_FFDAQ;
     int type = FireflyType(i);
     if (type == DEVICE_CERNB || type == DEVICE_25G12) {
-      startReg = VENDOR_START_BIT_FF12;
-      count = VENDOR_COUNT_FF12;
+      startReg = FF_VENDOR_START_BIT_FF12;
+      count = FF_VENDOR_COUNT_FF12;
     }
     int ret = 0;
     // build up name of the device (vendor string)
