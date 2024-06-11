@@ -257,74 +257,58 @@ float getFFavgoptpow(const uint8_t i)
 }
 
 // get optical power for a single channel
+// the datasheet for the 25G12 part says to byte swap,
+// but the 4 channel part does not say to do so.
+// However, trial and error shows that the 4 channel part
+// does need byte swapping.
 float getFFoptpow(const uint8_t i, const uint8_t ch)
 {
   configASSERT(i < NFIREFLIES);
   configASSERT(ch < 12);
   float val;
-  if (FireflyType(i) == DEVICE_25G4) {
-    switch (ch) {
-      case 0:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
-        break;
-      case 1:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
-        break;
-      case 2:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
-        break;
-      case 3:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
-        break;
-      default:
-        log_warn(LOG_SERVICE, "%s: invalid channel %d\r\n", __func__, ch);
-        val = -999.f;
-        break;
-    }
-  }
-  else {
-    switch (ch) {
-      case 0:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
-        break;
-      case 1:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
-        break;
-      case 2:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
-        break;
-      case 3:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
-        break;
-      case 4:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
-        break;
-      case 5:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
-        break;
-      case 6:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
-        break;
-      case 7:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
-        break;
-      case 8:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
-        break;
-      case 9:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
-        break;
-      case 10:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
-        break;
-      case 11:
-        val = SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
-        break;
-      default:
-        log_warn(LOG_SERVICE, "%s: invalid channel %d\r\n", __func__, ch);
-        val = -999.f;
-        break;
-    }
+  // if i is for a 4 channel part and you ask for channel 5
+  // or greater, well, good luck then. It's just zero.
+  switch (ch) {
+    case 0:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
+      break;
+    case 1:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
+      break;
+    case 2:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
+      break;
+    case 3:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
+      break;
+    case 4:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
+      break;
+    case 5:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
+      break;
+    case 6:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
+      break;
+    case 7:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
+      break;
+    case 8:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
+      break;
+    case 9:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
+      break;
+    case 10:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
+      break;
+    case 11:
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
+      break;
+    default:
+      log_warn(LOG_SERVICE, "%s: invalid channel %d\r\n", __func__, ch);
+      val = -999.f;
+      break;
   }
   return val * 10.f; // LSB is 0.1 uW, we return uW 
 }
