@@ -158,15 +158,6 @@ struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
     {"K05 4 XCVR GTY", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"K06 4 XCVR GTY", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
-// #elif defined(REV2)
-// struct dev_moni2c_addr_t ffl4_f1_moni2c_addrs[NFIREFLIES_DAQ_F1] = {
-//     {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
-//     {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
-//     {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
-//     {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
-// };
-// #else
-// #error "Define either Rev1 or Rev2"
 #endif
 
 #ifdef REV1
