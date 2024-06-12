@@ -240,7 +240,6 @@ uint16_t getFFtemp(const uint8_t i)
 // returns optical power in uW
 // not that the 4 channel and 12 channel data is encoded differently
 // see the relevant data sheets and comments below
-#define SWAP_BYTES(x) __builtin_bswap16(x)
 float getFFavgoptpow(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
@@ -261,6 +260,7 @@ float getFFavgoptpow(const uint8_t i)
 // but the 4 channel part does not say to do so.
 // However, trial and error shows that the 4 channel part
 // does need byte swapping.
+#define SWAP_BYTES(x) __builtin_bswap16(x)
 float getFFoptpow(const uint8_t i, const uint8_t ch)
 {
   configASSERT(i < NFIREFLIES);
