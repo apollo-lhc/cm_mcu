@@ -5,17 +5,12 @@
  *      Author: wittich
  */
 
-#include <string.h>
-
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
 #include "common/utils.h"
 
-#include "driverlib/rom_map.h"
-#include "driverlib/sysctl.h"
-
 #ifdef USE_FREERTOS
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "task.h"
 #endif // USE_FREERTOS
 
@@ -73,7 +68,7 @@ struct gpio_pin_t oks[] = {
 //
 // ------------------------------------------
 // if you update this you need to update N_PS_ENABLES
-static const struct gpio_pin_t enables[] = {
+static const struct gpio_pin_t enables[N_PS_ENABLES] = {
     {  EN_F1_INT, "EN_F1_INT", 1},
     {  EN_F2_INT, "EN_F2_INT", 1},
     {  EN_1V8, "EN_1V8", 2},

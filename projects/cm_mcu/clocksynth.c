@@ -7,15 +7,20 @@
 #include <assert.h>
 #include <string.h>
 
+#include "MonitorTaskI2C.h"
 #include "common/smbus_helper.h"
-#include "Semaphore.h"
 #include "clocksynth.h"
-#include "common/utils.h"
 #include "I2CCommunication.h"
-#include "MonitorI2CTask.h"
 #include "Tasks.h"
 
 #ifdef REV2
+
+#define SYN_NDEVICES_CLK     4
+#define SYN_NDEVICES_CLKR0A  (1)
+#define NCOMMANDS_FLG_CLK    1 // number of sticky commands
+#define NCOMMANDS_FLG_CLKR0A 2 // number of sticky commands
+
+extern struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK];
 
 // must grab and release the semaphore in a larger scope when calling this function
 int clear_clk_stickybits(void)
@@ -28,38 +33,25 @@ int clear_clk_stickybits(void)
     return 1;
   }
 
-  int status = -99;
-
-  const uint8_t nsupplies[2] = {NSUPPLIES_CLKR0A, NSUPPLIES_CLK};
-  const uint8_t ncommands[2] = {NCOMMANDS_FLG_CLKR0A, NCOMMANDS_FLG_CLK};
-  const uint8_t dev_addr[2] = {CLOCK_SYNTH5341_I2C_ADDRESS, CLOCK_SYNTH5395_I2C_ADDRESS};
-
-  struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
-  struct dev_moni2c_addr_t *dev_st[2] = {clkr0a_moni2c_addrs, clk_moni2c_addrs};
-
-  // Clear sticky flags of clock synth 5341 and 5395 status monitor (raised high after reset)
-  for (int n = 0; n < 2; ++n) {
-
-    for (uint8_t i = 0; i < nsupplies[n]; i++) {
-      uint8_t data = 0x1U << dev_st[n][i].mux_bit;
-      int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, dev_st[n][i].mux_addr, 1, data);
-      if (res != 0)
-        log_warn(LOG_SERVICE, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), dev_st[n][i].name, i);
-
-      for (uint8_t c = 0; c < ncommands[n]; c++) {
-        uint8_t page_reg_value = args_st[n].commands[args_st[n].n_commands - c - 1].page;
-        int res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, dev_addr[n], 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, page_reg_value);
-
-        if (res != 0)
-          log_error(LOG_SERVICE, "%s: page fail %s\r\n", args_st[n].name, SMBUS_get_error(res));
-
-        status = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, dev_addr[n], 1, args_st[n].commands[args_st[n].n_commands - c - 1].command, 1, 0);
-        if (status != 0)
-          return status;
-      }
+  for (int i = 0; i < NDEVICES_CLK; ++i) {
+    // set the mux
+    int res = apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].mux_addr, 1,
+                               1 << clk_moni2c_addrs[i].mux_bit);
+    if (res != 0) {
+      log_warn(LOG_SERVICE, "Mux error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
+               clk_moni2c_addrs[i].name);
+      return res;
+    }
+    // clear the sticky flag
+    res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].dev_addr, 1,
+                               CLOCK_SYNTH_STICKY_FLAG_REGISTER, 1, 0);
+    if (res != 0) {
+      log_warn(LOG_SERVICE, "Sticky flag error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
+               clk_moni2c_addrs[i].name);
+      return res;
     }
   }
-  return status;
+  return 0;
 }
 
 // return the string that corresponds to the programmed file. If
@@ -80,18 +72,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
   uint16_t eeprom_progname_reg;
   // In Rev2 device 0 and devices 1-5 are different and hence are stored in different arrays
   // for monitoring purposes
-  if (device == 0) {
-    mux_addr = clkr0a_moni2c_addrs[0].mux_addr;
-    mux_bit = clkr0a_moni2c_addrs[0].mux_bit;
-    dev_addr = clkr0a_moni2c_addrs[0].dev_addr;
-    eeprom_progname_reg = clkr0a_moni2c_addrs[0].eeprom_progname_reg;
-  }
-  else {
-    mux_addr = clk_moni2c_addrs[device - 1].mux_addr;
-    mux_bit = clk_moni2c_addrs[device - 1].mux_bit;
-    dev_addr = clk_moni2c_addrs[device - 1].dev_addr;
-    eeprom_progname_reg = clk_moni2c_addrs[device - 1].eeprom_progname_reg;
-  }
+  mux_addr = clk_moni2c_addrs[device].mux_addr;
+  mux_bit = clk_moni2c_addrs[device].mux_bit;
+  dev_addr = clk_moni2c_addrs[device].dev_addr;
+  eeprom_progname_reg = clk_moni2c_addrs[device].eeprom_progname_reg;
   // set mux bit
   int status = apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 1 << mux_bit);
   if (status != 0) {
@@ -104,7 +88,7 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
                                   CLOCK_CHANGEPAGE_REG_ADDR, 1, page);
 
     // now read out the six bytes of data in two reads
-    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START)&0xFF;
+    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START) & 0xFF;
     uint16_t init_postamble_page = 32 * (device + 1) - 1;
 
     // read the addresses in EEPROM that store the number of registers in Preamble-register, Register, and Postamble-register list per a clock config file
@@ -131,10 +115,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
         // as eepromdata[0] and eepromdat[1],respectively
 
         // third byte from three addresses in EEPROM is a value byte
-        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i)*3), 3, tempdata);
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i) * 3), 3, tempdata);
         eepromdata[0] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
         // third byte from three addresses in EEPROM is a value byte
-        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i)*3), 3, tempdata);
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i) * 3), 3, tempdata);
         eepromdata[1] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
       }
     }

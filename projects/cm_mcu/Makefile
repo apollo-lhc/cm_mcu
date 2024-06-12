@@ -82,7 +82,7 @@ all: ${COMPILER}/cm_mcu.axf
 # The rule to clean out all the build products.
 #
 clean:
-	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c ZynqMon_addresses.h ${ROOT}/PL_MEM*.xml
+	@rm -rf ${COMPILER} ${wildcard *~} ZynqMon_addresses.c ZynqMon_addresses.h ${ROOT}/PL_MEM*.xml MonI2C_addresses.*
 
 #
 # The rule to create the target directory.
@@ -91,12 +91,12 @@ ${COMPILER}:
 	@mkdir -p ${COMPILER}
 
 ## Zynq address table -- MCU code
-YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/*.yml)
+ZYNQMON_YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/PL_MEM*.yml)
 #
 # for building tar files in a release
 #
-release: ${YAML_FILES}
-	@for f in ${YAML_FILES}; do \
+release: ${ZYNQMON_YAML_FILES}
+	@for f in ${ZYNQMON_YAML_FILES}; do \
 		if [ 'x${VERBOSE}' = x ]; then \
 			echo "  PY    $(notdir $$f)"; \
 		else \
@@ -108,14 +108,29 @@ release: ${YAML_FILES}
 #
 # Zynq address table -- MCU code
 #
-ZynqMon_addresses.c ZynqMon_addresses.h &: ${YAML_FILES}
+ZynqMon_addresses.c ZynqMon_addresses.h &: ${ZYNQMON_YAML_FILES}
 	@if [ 'x${VERBOSE}' = x ];                                            \
 	then                                                                 \
 		echo "  PY    $(notdir $?)";                                               \
 	else                                                                 \
-		echo ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES};    \
+		echo ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${ZYNQMON_YAML_FILES};    \
 	fi
-	@python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${YAML_FILES}
+	@python ${ROOT}/sm_cm_config/src/mcu_generate.py -o $@ ${ZYNQMON_YAML_FILES}
+
+#
+# Rules for building the MonI2C_address.c file
+#
+MONI2C_YAML_FILES=$(wildcard ${ROOT}/sm_cm_config/data/MON_I2C*.yml)
+
+MonI2C_addresses.c: ${MONI2C_YAML_FILES}
+	@if [ 'x${VERBOSE}' = x ];                                            \
+	then                                                                 \
+		echo "  PY    $(notdir $?)";                                               \
+	else                                                                 \
+		echo ${ROOT}/sm_cm_config/src/mon_generate.py -o $@ ${MONI2C_YAML_FILES};    \
+	fi
+	@python ${ROOT}/sm_cm_config/src/mon_generate.py -o $@ ${MONI2C_YAML_FILES}
+
 
 # these rules are required to force the generation of the ZynqMon_addresses.c
 # and .h file. The second one depends on the .h file only, but putting that
@@ -149,20 +164,23 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorI2CTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTaskI2C.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/GenericAlarmTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmUtilities.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMon_addresses.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/MonI2C_addresses.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqMonTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/InitTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/MonUtils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/WatchdogTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LocalTasks.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/BoardCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/SoftwareCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/FireflyUtils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/BufferCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommands.o

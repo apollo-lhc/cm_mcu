@@ -300,22 +300,52 @@ static struct command_t commands[] = {
     },
 #ifdef REV2
     {
+        "ff_cdr_ena",
+        ff_cdr_enable_status,
+        "Show FF CDR enable status\r\n",
+        0,
+    },
+    {
+        "ff_ch_dis",
+        ff_ch_disable_status,
+        "Show FF ch disable status\r\n",
+        0,
+    },
+    {
         "ff_mux_reset",
         ff_mux_reset,
         "reset ff muxes, 1 or 2 for F1 or F2\r\n",
         1,
     },
-#endif // REV2
     {
-        "ff_optpow",
-        ff_optpow,
-        "Showing the FF per-ch optical power \r\n",
+        "ff_dump_names",
+        ff_dump_names,
+        "dump name registers\r\n",
         0,
     },
     {
+        "ff_optpow",
+        ff_optpow,
+        "Show avg FF optical power\r\n",
+        0,
+    },
+    {
+        "ff_optpow_dev",
+        ff_optpow_dev,
+        "Show dev FF optical power\r\n",
+        1,
+    },
+    {
+        "ff_volts",
+        ff_v3v3,
+        "Show FF 3v3 mon\r\n",
+        0,
+    },
+#endif // REV2
+    {
         "ff_temp",
         ff_temp,
-        "Showing FF temperatures\r\n",
+        "Show FF temperatures\r\n",
         0,
     },
     {"fpga", fpga_ctl, "Show state of FPGAs\r\n",

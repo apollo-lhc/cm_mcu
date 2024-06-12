@@ -38,4 +38,15 @@ check-and-reinit-submodules:
 release:
 	@$(MAKE) -C projects/cm_mcu release
 
+check-for-pr: format
+	@./buildall.sh
+
+
+# 2nd dollar sign in grep command is to pass along a single dollar sign to egrep itself
+format:
+	run-clang-format.py $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')
+
+format-apply:
+	run-clang-format.py -i $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')	
+
 .PHONY: all clean $(DIRS) $(DIRSCLEAN) check-and-reinit-submodules

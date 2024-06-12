@@ -7,7 +7,7 @@
 
 #ifndef SENSOR_CONTROL_H_
 #define SENSOR_CONTROL_H_
-#include "parameters.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 
 // Register definitions
 // -------------------------------------------------
@@ -49,12 +49,17 @@ BaseType_t adc_ctl(int argc, char **argv, char *m);
 // Fireflies
 BaseType_t ff_ctl(int argc, char **argv, char *m);
 BaseType_t ff_optpow(int argc, char **argv, char *m);
+BaseType_t ff_optpow_dev(int argc, char **argv, char *m);
 BaseType_t ff_temp(int argc, char **argv, char *m);
 BaseType_t ff_reset(int argc, char **argv, char *m);
 BaseType_t ff_status(int argc, char **argv, char *m);
 BaseType_t ff_los_alarm(int argc, char **argv, char *m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m);
 BaseType_t ff_mux_reset(int argc, char **argv, char *m);
+BaseType_t ff_dump_names(int argc, char **argv, char *m);
+BaseType_t ff_v3v3(int argc, char **argv, char *m);
+BaseType_t ff_ch_disable_status(int argc, char **argv, char *m);
+BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m);
 
 // Clocks
 BaseType_t clkmon_ctl(int argc, char **argv, char *m);

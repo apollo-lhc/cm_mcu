@@ -10,11 +10,7 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
-#include "stream_buffer.h"
 #include "common/smbus.h"
 #include "MonitorTask.h"
 

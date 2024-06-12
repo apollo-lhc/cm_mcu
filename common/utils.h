@@ -13,8 +13,8 @@
 #include <stdbool.h>
 #include <sys/_types.h>
 
-#include "math.h"
-#include "stdlib.h"
+#include <math.h>   // IWYU pragma: keep (for fmaxf, fmax, fmaxl)
+#include <stdlib.h> // IWYU pragma: keep (for abs, labs, llabs, fabs, fabsf)
 
 // write, read or toggle GPIO pin by name
 void write_gpio_pin(int pin, uint8_t value);
@@ -127,7 +127,7 @@ bool checkStale(unsigned oldTime, unsigned newTime);
 
 void float_to_ints(float val, int *tens, int *fraction);
 // this will suffer from the double evaluation bug
-//#define MAX(a,b) (a)>(b)?(a):(b)
+// #define MAX(a,b) (a)>(b)?(a):(b)
 // instead use these functions and a _generic macro
 // this is overkill, but I'm parking it here because I never remember this exists.
 inline int max(int const x, int const y)

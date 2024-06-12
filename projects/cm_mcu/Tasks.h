@@ -11,14 +11,11 @@
 #ifndef PROJECTS_CM_MCU_TASKS_H_
 #define PROJECTS_CM_MCU_TASKS_H_
 
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "queue.h"
 #include "semphr.h"
 #include "common/log.h"
-#include "driverlib/eeprom.h"
 
-#include "common/printf.h"
 #include <sys/_types.h>
 
 #include "clocksynth.h"
@@ -26,6 +23,14 @@
 #ifdef __INTELLISENSE__
 #define __fp16 float
 #endif // __INTELLISENSE
+
+struct dev_moni2c_addr_t {
+  char *name;
+  uint8_t mux_addr;             // I2C address of the Mux
+  uint8_t mux_bit;              // port of the mux; write value 0x1U<<mux_bit to the mux register
+  uint8_t dev_addr;             // I2C address of device.
+  uint16_t eeprom_progname_reg; // register on eeprom for reading program version
+};
 
 // Local task
 typedef union {
@@ -107,6 +112,7 @@ void LGA80D_init(void);
 // --- Semi-generic PMBUS based I2C task
 void MonitorTask(void *parameters);
 void MonitorI2CTask(void *parameters);
+void MonitorTaskI2C(void *parameters);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
 #elif defined(REV2) // REV2
@@ -126,38 +132,6 @@ void MonitorI2CTask(void *parameters);
 #define I2C_DEVICE_F2 3
 #endif
 
-// the following are true for both Rev1 and Rev2
-#define FF_I2CMUX_1_ADDR 0x70
-#define FF_I2CMUX_2_ADDR 0x71
-#define I2C_DEVICE_CLK   2
-
-// REV1
-#ifndef REV2
-#define NFIREFLY_ARG      5
-#define NFIREFLIES_F1     11
-#define NFIREFLIES_F2     14
-#define NFIREFLIES_IT_F1  8
-#define NFIREFLIES_DAQ_F1 3
-#define NFIREFLIES_IT_F2  4
-#define NFIREFLIES_DAQ_F2 10
-#else // REV2
-// REV 2
-#define NFIREFLY_ARG      4
-#define NFIREFLIES_F1     10
-#define NFIREFLIES_F2     10
-#define NFIREFLIES_IT_F1  6
-#define NFIREFLIES_DAQ_F1 4
-#define NFIREFLIES_IT_F2  6
-#define NFIREFLIES_DAQ_F2 4
-#endif // REV 2
-#define CLK_PAGE_COMMAND 1
-#define NFIREFLIES       (NFIREFLIES_F1 + NFIREFLIES_F2)
-
-#define VENDOR_START_BIT_FFDAQ 168
-#define VENDOR_STOP_BIT_FFDAQ  184
-#define VENDOR_START_BIT_FF12  171
-#define VENDOR_STOP_BIT_FF12   187
-
 // pilfered and adapted from http://billauer.co.il/blog/2018/01/c-pmbus-xilinx-fpga-kc705/
 enum pm_type { PM_VOLTAGE,
                PM_NONVOLTAGE,
@@ -166,25 +140,6 @@ enum pm_type { PM_VOLTAGE,
                PM_LINEAR16U,
                PM_LINEAR16S };
 
-struct dev_moni2c_addr_t {
-  char *name;
-  uint8_t mux_addr;             // I2C address of the Mux
-  uint8_t mux_bit;              // port of the mux; write value 0x1U<<mux_bit to the mux register
-  uint8_t dev_addr;             // I2C address of device.
-  uint16_t eeprom_progname_reg; // register on eeprom for reading program version
-};
-
-struct arg_moni2c_ff_t {
-  char *ff_part;                    // ff part
-  struct MonitorI2CTaskArgs_t *arg; // ff arg
-  uint8_t int_idx;                  // start idx of this arg in ff_moni2c_addrs
-  uint8_t dev_int_idx;              // start idx of the device in its arg
-  uint8_t num_dev;                  // number of devices in this ff arg.
-};
-
-extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
-extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
-
 struct clk_program_t {
   char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
   char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
@@ -192,39 +147,6 @@ struct clk_program_t {
 
 extern struct clk_program_t clkprog_args[5]; // NSUPPLIES_CLK + NSUPPLIES_CLKR0A = 5
 
-// Samtec firefly specific commands
-bool getFFch_low(uint8_t val, int channel);
-bool getFFch_high(uint8_t val, int channel);
-bool isEnabledFF(int ff);
-void setFFmask(uint32_t ff_combined_mask);
-void readFFpresent(void);
-uint16_t getFFtemp(const uint8_t i);
-uint16_t getFFavgoptpow(const uint8_t i);
-uint16_t getFFpresentbit(const uint8_t i);
-#ifdef REV2
-void getFFpart(void);
-#endif
-
-uint8_t getFFstatus(const uint8_t i);
-unsigned isFFStale(void);
-TickType_t getFFupdateTick(int ff_t);
-void init_registers_ff(void);
-
-extern uint32_t ff_PRESENT_mask;
-extern uint32_t ff_USER_mask;
-#ifdef REV2
-extern uint32_t f1_ff12xmit_4v0_sel;
-extern uint32_t f2_ff12xmit_4v0_sel;
-struct ff_bit_mask_t {
-  uint8_t ffpart_bit_mask;  // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
-  uint8_t present_bit_mask; // this mask is used for all ffs to detect if it is mounted or not
-};
-extern struct ff_bit_mask_t ff_bitmask_args[NFIREFLY_ARG];
-#endif
-
-#ifdef REV1
-extern uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
-#endif               // REV2
 #define ADDR_ID 0x40 // internal eeprom block for board number & rev
 #define ADDR_FF 0x44 // internal eeprom block for ff mask
 #define ADDR_PS 0x48 // internal eeprom block for ps ignore fail
@@ -354,7 +276,7 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start);
 void zm_set_adcmon(struct zynqmon_data_t data[], int start);
 void zm_set_psmon_legacy(struct zynqmon_data_t data[], int start);
 void zm_set_psmon(struct zynqmon_data_t data[], int start);
-void zm_set_clock(struct zynqmon_data_t data[], int start, int n);
+void zm_set_clock(struct zynqmon_data_t data[], int start);
 void zm_set_fpga(struct zynqmon_data_t data[], int start);
 void zm_set_allclk(struct zynqmon_data_t data[], int start);
 
@@ -381,8 +303,6 @@ int init_registers_clk(void);
 
 #define CLOCK_NUM_SI5341 1
 #define CLOCK_NUM_SI5395 4
-extern struct dev_moni2c_addr_t clkr0a_moni2c_addrs[CLOCK_NUM_SI5341];
-extern struct dev_moni2c_addr_t clk_moni2c_addrs[CLOCK_NUM_SI5395];
 
 // configuring clock initalization
 int init_load_clk(int clk_n);
@@ -417,11 +337,11 @@ uint16_t task_watchdog_get_status(void);
 #define CHECK_TASK_STACK_USAGE(vv)                                                    \
   {                                                                                   \
     UBaseType_t val = uxTaskGetStackHighWaterMark(NULL);                              \
-    if (val < vv) {                                                                   \
+    if (val < (vv)) {                                                                 \
       log_debug(LOG_SERVICE, "stack (%s) = %d(was %d)\r\n", pcTaskGetName(NULL), val, \
-                vv);                                                                  \
+                (vv));                                                                \
     }                                                                                 \
-    vv = val;                                                                         \
+    (vv) = val;                                                                       \
   }
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

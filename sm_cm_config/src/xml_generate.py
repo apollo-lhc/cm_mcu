@@ -6,13 +6,13 @@ import argparse
 import os
 import yaml
 
-zm_num_entries = 1024 
+zm_num_entries = 1024
 
 #% %
 def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int, 
               parent_id: str) -> ET.Element:
     """create the node to be inserted into the xml tree"""
-# pylint: disable=too-many-branches
+#pylint: disable=too-many-branches
 #I disable this check because as far as I can tell it's wrong
     thenode = ET.SubElement(parent, 'node')
     myid = myid.replace(' ', '_')
@@ -57,7 +57,16 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
         extra = thedict['extra']
         if not "Column" in extra:
 #this semicolon asks for no semicolon in extra when postfixes are included
-            extra = extra + ";Column=" + myid
+            if 'default_col' in thedict and thedict['default_col'] is not None:
+                colid = thedict['default_col']
+            else:
+                colid = myid
+#for some special patterns, generate a different column id
+            if myid.lower().startswith("cur_"):
+                colid = "IOUT"
+            elif "temp" in myid.lower():
+                colid = "TEMP_C"
+            extra = extra + ";Column=" + colid
         if not "Row" in extra:
             if parent_id != "":
                 extra = "Row=" + parent_id + ";" + extra
@@ -155,9 +164,10 @@ with open(args.input_file, encoding='ascii') as f:
 cm = ET.Element('node')
 cm.set('id', 'CM')
 cm.set('address', '0x00000000')
-prev_addr = 0x0 #keep track of the most recent address that comes into a pair of bytes for 8-bit masking 
-prev_j = 0x0 #keep track of the order of postfixes in each name node  
-prev_bit = 0x0 #keep track of the even or odd order of bytes globally sent for masking
+#keep track of the most recent address that comes into a pair of bytes for 8 - bit masking
+prev_addr = 0x0
+prev_j = 0x0 # keep track of the order of postfixes in each name node
+prev_bit = 0x0 # keep track of the even or odd order of bytes globally sent for masking
 #% %
 config = y['config']
 for c in config:  # loop over entries in configuration (sensor category)
@@ -166,8 +176,6 @@ for c in config:  # loop over entries in configuration (sensor category)
     start = c['start']
     count = c['count']
     for n in names:  # loop over names of sensors within a category
-        if (n=="R0B" and start!=prev_start+prev_count+1): #clkmonr0a and clkmon are from the same function in zynqmontask 
-            print("warning: the start address of clkmon should continue from clkr0a")
         if 'postfixes' in c:
             postfixes = c['postfixes']
             j = 0
@@ -178,7 +186,9 @@ for c in config:  # loop over entries in configuration (sensor category)
                     i += 1
                     j += 1
                     continue
-                if (bit == 1 and j == 0):   #the previous name node has odd bytes so this postfix node uses the previous postfix address but masks off the lower byte 
+#the previous name node has odd bytes so this postfix node uses the
+#previous postfix address but masks off the lower byte
+                if (bit == 1 and j == 0):   
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
                     pp.set('address', str(hex(prev_addr)))
@@ -188,24 +198,26 @@ for c in config:  # loop over entries in configuration (sensor category)
                     pp.set('id', n)
                     pp.set('address', str(hex(addr)))
                     node = make_node(pp, p, c, j, bit, n)
-                else: # any non-first byte in a name node 
-                    if (prev_bit == 0):  #the upper byte of the previous postfix node
+                else: # any non-first byte in a name node
+                    if prev_bit == 0: #the upper byte of the previous postfix node
                         node = make_node(pp, p, c, j, bit, n)
-                    else :               #the low byte with an increasing postfix node by one 
+                    else :               #the low byte with an increasing postfix node by one
                         node = make_node(pp, p, c, j+1, bit, n)
                 if (prev_bit == bit and prev_addr == addr and prev_addr != 0) :
-                    print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
+                    print("warning : please check if masks overlapped at node ", 
+                          n, " addr ", hex(prev_addr))
                 prev_addr = addr
-                prev_j = j  
+                prev_j = j
                 prev_bit = bit
                 i += 1
                 j += 1
         else:
             make_node(cm, n, c, start+i, (start+i)%2, "")
             if (prev_bit == (start+i)%2 and prev_addr == int((start+i)/2) and prev_addr != 0) :
-                print("warning : please check if masks overlapped at node ", n, " addr ", hex(prev_addr))
+                print("warning : please check if masks overlapped at node ", n, 
+                      " addr ", hex(prev_addr))
             prev_addr = int((start + i)/2)
-            prev_bit = (start+i)%2 
+            prev_bit = (start+i)%2
             i += 1
         prev_start = start
         prev_count = count

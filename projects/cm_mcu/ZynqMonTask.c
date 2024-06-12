@@ -14,31 +14,28 @@
 #include <string.h>
 
 // to be moved
-#include "driverlib/sysctl.h"
-#include "driverlib/timer.h"
-#include "driverlib/gpio.h"
+#include "FireflyUtils.h"
+#include "MonI2C_addresses.h"
+#include "MonUtils.h"
 #include "inc/hw_memmap.h"
-#include "inc/hw_ints.h"
 #include "driverlib/rom.h"
-#include "driverlib/rom_map.h"
 
 #ifdef REV1
 #include "common/softuart.h"
-#elif defined(REV2)
-#include "driverlib/uart.h"
+#include "driverlib/timer.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_ints.h"
 #endif
 
 #include "Tasks.h"
 #include "MonitorTask.h"
-#include "MonitorI2CTask.h"
-#include "commands/SensorControl.h"
 #include "clocksynth.h"
 #include "common/log.h"
 
 #include "ZynqMon_addresses.h"
 
 // Rev 2
-// this needs to be split into a SoftUART version (Rev1) and a hard UART version (Rev2)
+// this was split into a SoftUART version (Rev1) and a hard UART version (Rev2)
 
 #define SZ 20
 
@@ -159,8 +156,8 @@ void InitSUART(void)
   // Enable the GPIO modules that contains the GPIO pins to be used by
   // the software UART.
   //
-  // MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-  // MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+  // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+  // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
   //
   // Configure the software UART module: 8 data bits, no parity, and one
   // stop bit.
@@ -177,33 +174,33 @@ void InitSUART(void)
   // UART.  The interface in this example is run at 38,400 baud,
   // requiring a timer tick at 38,400 Hz.
   //
-  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-  MAP_TimerConfigure(TIMER0_BASE,
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+  ROM_TimerConfigure(TIMER0_BASE,
                      (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC | TIMER_CFG_B_PERIODIC));
-  MAP_TimerLoadSet(TIMER0_BASE, TIMER_A, g_ulBitTime);
-  MAP_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
-  MAP_TimerEnable(TIMER0_BASE, TIMER_A);
+  ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, g_ulBitTime);
+  ROM_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
+  ROM_TimerEnable(TIMER0_BASE, TIMER_A);
   //
   // Set the priorities of the interrupts associated with the software
   // UART.  The receiver is higher priority than the transmitter, and the
   // receiver edge interrupt is higher priority than the receiver timer
   // interrupt.
   //
-  // MAP_IntPrioritySet(INT_GPIOE, 0x00);
-  // MAP_IntPrioritySet(INT_TIMER0B, 0x40);
+  // ROM_IntPrioritySet(INT_GPIOE, 0x00);
+  // ROM_IntPrioritySet(INT_TIMER0B, 0x40);
   // 0x80 corresponds to 4 << (8-5)
   // Remember that on the TM4C only 3 highest bits
   // are used for setting interrupt priority, and numerically lower
   // values are logically higher.
   // this is lower that configMAX_SYSCALL_INTERRUPT_PRIORITY but the ISR
   // does not call any FreeRTOS functions so this will work.
-  MAP_IntPrioritySet(INT_TIMER0A, 0x80); // THIS NEEDS TO BE at a HIGH PRIORITY!!!! DONOT CHANGE
+  ROM_IntPrioritySet(INT_TIMER0A, 0x80); // THIS NEEDS TO BE at a HIGH PRIORITY!!!! DONOT CHANGE
   //
   // Enable the interrupts associated with the software UART.
   //
-  // MAP_IntEnable(INT_GPIOE);
-  // MAP_IntEnable(INT_TIMER0A);
-  // MAP_IntEnable(INT_TIMER0B);
+  // ROM_IntEnable(INT_GPIOE);
+  // ROM_IntEnable(INT_TIMER0A);
+  // ROM_IntEnable(INT_TIMER0B);
 
   //
   // Enable the transmit FIFO half full interrupt in the software UART.
@@ -292,7 +289,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   for (uint8_t i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
     if (!isFFStale()) {
-      data[i].data.i = getFFtemp(i); // sensor value and type
+      data[i].data.us = getFFtemp(i); // sensor value and type
     }
     else {
       data[i].data.i = -56; // special stale value
@@ -302,36 +299,9 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
 }
 
 #ifdef REV2
-uint16_t getFFtXdisenablebit(const uint8_t i)
+uint16_t getFFtXdisablebit(const uint8_t i)
 {
-  return 56; // FIXME
-#ifdef NOTDEF
-  if (i > NFIREFLIES_F1 + NFIREFLIES_F2) {
-    log_warn(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
-    return 56;
-  }
-  uint8_t val = 56;
-  int i2c_dev;
-  if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-    return val;
-  if (i < NFIREFLIES_F1) {
-    i2c_dev = I2C_DEVICE_F1;
-  }
-  else {
-    i2c_dev = I2C_DEVICE_F2;
-  }
-  int ret = -99;
-  if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, &val, 1, i2c_dev);
-  }
-  else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) {
-    ret = read_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, &val, 1, i2c_dev);
-  }
-  if (ret != 0)
-    return 56;
-  else
-    return val;
-#endif // NOTDEF
+  return get_FF_CHANNEL_DISABLE_data(i);
 }
 // updated once per loop.
 // For each firefly device, send
@@ -432,8 +402,8 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
       data[ll].data.us = 0xff; // special stale value
     }
     else {
-      data[ll].data.us = getFFavgoptpow(j); // sensor value and type
-      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, getFFavgoptpow(j));
+      data[ll].data.us = (uint16_t)getFFavgoptpow(j); // sensor value and type
+      log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, data[ll].data.us);
     }
     data[ll].sensor = ll + start;
     ++ll;
@@ -442,8 +412,8 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
       data[ll].data.us = 0xff; // special stale value
     }
     else {
-      data[ll].data.us = getFFtXdisenablebit(j); // sensor value and type
-      log_debug(LOG_SERVICE, "TX-disenabled? for ff argv %d: 0x%02x\r\n", j, getFFtXdisenablebit(j));
+      data[ll].data.us = getFFtXdisablebit(j); // sensor value and type
+      log_debug(LOG_SERVICE, "TX-disabled? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
     }
     data[ll].sensor = ll + start;
     ++ll;
@@ -530,34 +500,27 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
   }
 }
 
-void zm_set_clock(struct zynqmon_data_t data[], int start, int n)
+void zm_set_clock(struct zynqmon_data_t data[], int start)
 {
   // MonitorI2CTask values -- clock chips
-  // update times, in seconds. If the data is stale, send NaN
-  // n=1 is r0a and n=0 is else
-  struct MonitorI2CTaskArgs_t args_st[2] = {clockr0a_args, clock_args};
+  // update times, in seconds. If the data is stale, send 56
 
-  TickType_t last = pdTICKS_TO_S(args_st[n].updateTick);
+  TickType_t last = pdTICKS_TO_S(clk_args.updateTick);
   TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
   bool stale = checkStale(last, now);
 
   int ll = 0;
 
-  for (int j = 0; j < args_st[n].n_devices; ++j) {      // loop over supplies
-    for (int l = 0; l < args_st[n].n_pages; ++l) {      // loop over register pages
-      for (int k = 0; k < args_st[n].n_commands; ++k) { // loop over clock commands FIXME : don't send sticky-bit ones
-        int index =
-            (j * args_st[n].n_commands * args_st[n].n_pages) + k;
-
-        if (stale) {
-          data[ll].data.us = 56; // special stale value
-        }
-        else {
-          data[ll].data.us = args_st[n].sm_values[index];
-        }
-        data[ll].sensor = ll + start;
-        ++ll;
+  for (int j = 0; j < clk_args.n_devices; ++j) { // loop over supplies
+    for (int k = 0; k < clk_args.n_commands; ++k) {
+      if (stale) {
+        data[ll].data.us = 56; // special stale value
       }
+      else {
+        data[ll].data.us = clk_args.commands[k].retrieveData(j);
+      }
+      data[ll].sensor = ll + start;
+      ++ll;
     }
   }
 }
@@ -662,7 +625,7 @@ void ZynqMonTask(void *parameters)
     if (enable) {
 #ifdef REV1
       // Enable the interrupts during transmission
-      MAP_IntEnable(INT_TIMER0A);
+      ROM_IntEnable(INT_TIMER0A);
 #endif // REV1
 
       if (inTestMode) {
@@ -708,7 +671,7 @@ void ZynqMonTask(void *parameters)
       while (g_sUART.ui16TxBufferRead != g_sUART.ui16TxBufferWrite)
         vTaskDelay(pdMS_TO_TICKS(10));
 
-      MAP_IntDisable(INT_TIMER0A);
+      ROM_IntDisable(INT_TIMER0A);
 #endif // REV1
     }  // if ( enabled)
 

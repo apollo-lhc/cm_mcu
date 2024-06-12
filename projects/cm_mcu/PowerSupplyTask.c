@@ -12,21 +12,17 @@
 #include <assert.h>
 
 // local includes
+#include "FireflyUtils.h"
 #include "Tasks.h"
-#include "common/i2c_reg.h"
-#include "common/pinout.h"
 #include "common/pinsel.h"
 #include "common/power_ctl.h"
 #include "common/utils.h"
 #include "common/log.h"
 
 // FreeRTOS includes
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "FreeRTOSConfig.h"
 #include "queue.h"
-
-// getFFpart includes
-#include "MonitorI2CTask.h"
 
 void Print(const char *);
 
@@ -409,18 +405,25 @@ void PowerSupplyTask(void *parameters)
         else {
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
-          getFFpart();
-          UBaseType_t ffmask[2] = {0xe, 0xe};
-          if ((f1_ff12xmit_4v0_sel ^ ff_bitmask_args[0].ffpart_bit_mask) == 0x0U && (f2_ff12xmit_4v0_sel ^ ff_bitmask_args[2].ffpart_bit_mask) == 0x0U) {
+          uint32_t ff_25gb_pairs = ff_map_25gb_parts();
+          uint32_t pair_mask_low = ff_25gb_pairs & 0x7U;         // 3 bits
+          uint32_t pair_mask_high = (ff_25gb_pairs >> 5) & 0x7U; // 3 pairs of Tx/Rx + 2 XCVRs = 5 shifts
+
+          UBaseType_t ffmask[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
+          if ((f1_ff12xmit_4v0_sel == pair_mask_low) && (f2_ff12xmit_4v0_sel == pair_mask_high)) {
             int ret = enable_3v8(ffmask, false); // enable v38
-            if (ret != 0)
+            if (ret != 0) {
               log_info(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
-            else
+            }
+            else {
               log_info(LOG_PWRCTL, "enable 3v8 \r\n");
+            }
             blade_power_ok(true);
             nextState = POWER_ON;
           }
           else {
+            log_info(LOG_PWRCTL, "FF 4V0 part check failed: %x!=%x||%x!=%x\r\n",
+                     f1_ff12xmit_4v0_sel, pair_mask_low, f2_ff12xmit_4v0_sel, pair_mask_high);
             int ret = enable_3v8(ffmask, true); // disable v38
             if (ret == 0)
               log_info(LOG_PWRCTL, "disable 3v8\r\n");
@@ -491,10 +494,6 @@ void PowerSupplyTask(void *parameters)
         }
       }
     }
-#ifdef REV2 // PG_4V0 is not helpful to read from. assert that PWR_FAILED
-    if ((f1_ff12xmit_4v0_sel ^ ff_bitmask_args[0].ffpart_bit_mask) != 0x0U || (f2_ff12xmit_4v0_sel ^ ff_bitmask_args[2].ffpart_bit_mask) != 0x0U)
-      setPSStatus(N_PS_OKS - 1, PWR_FAILED);
-#endif
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);

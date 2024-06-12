@@ -1,6 +1,7 @@
 #include "AlarmUtilities.h"
 #include "Tasks.h"
 #include "MonitorTask.h"
+#include "FireflyUtils.h"
 
 #include "common/log.h"
 #include "common/pinsel.h"

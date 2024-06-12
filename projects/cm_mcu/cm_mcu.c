@@ -20,36 +20,28 @@
 #include "FreeRTOSConfig.h"
 #include "common/LocalUart.h"
 #include "common/utils.h"
-#include "common/power_ctl.h"
 #include "common/i2c_reg.h"
 #include "common/pinout.h"
-#include "common/pinsel.h"
 #include "common/smbus.h"
 #include "common/log.h"
 #include "CommandLineTask.h"
 #include "InterruptHandlers.h"
-#include "MonitorI2CTask.h"
 #include "MonitorTask.h"
+#include "MonUtils.h"
 #include "Tasks.h"
-#include "I2CSlaveTask.h"
 #include "AlarmUtilities.h"
 
 // TI Includes
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
-#include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
-#include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
-#include "driverlib/gpio.h"
 #include "driverlib/i2c.h"
 #include "driverlib/adc.h"
-#include "driverlib/uart.h"
-#include "driverlib/interrupt.h"
 
 // FreeRTOS includes
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "task.h"
 #include "queue.h"
 #include "stream_buffer.h"
@@ -253,13 +245,10 @@ __attribute__((noreturn)) int main(void)
   initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   fpga_args.xSem = i2c5_sem;
-  ffl12_f1_args.xSem = i2c4_sem;
-  ffldaq_f1_args.xSem = i2c4_sem;
-  ffl12_f2_args.xSem = i2c3_sem;
-  ffldaq_f2_args.xSem = i2c3_sem;
 #ifdef REV2
-  clock_args.xSem = i2c2_sem;
-  clockr0a_args.xSem = i2c2_sem;
+  ff_f1_args.xSem = i2c4_sem;
+  ff_f2_args.xSem = i2c3_sem;
+  clk_args.xSem = i2c2_sem;
 #endif // REV2
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
@@ -299,20 +288,14 @@ __attribute__((noreturn)) int main(void)
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
-  xTaskCreate(MonitorI2CTask, ffl12_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f1_args, tskIDLE_PRIORITY + 4,
+#ifdef REV2
+  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, ffldaq_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ffldaq_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorI2CTask, ffl12_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffl12_f2_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorI2CTask, ffldaq_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ffldaq_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, clk_args.name, 2 * configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
               NULL);
 
-#ifdef REV2
-  xTaskCreate(MonitorI2CTask, clock_args.name, 2 * configMINIMAL_STACK_SIZE, &clock_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorI2CTask, clockr0a_args.name, 2 * configMINIMAL_STACK_SIZE, &clockr0a_args, tskIDLE_PRIORITY + 4,
-              NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, dcdc_args.name, 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
