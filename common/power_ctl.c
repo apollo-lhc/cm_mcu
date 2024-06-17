@@ -139,7 +139,9 @@ bool disable_ps(void)
   // to finish their activity. For Rev2 of the CM (when the I2C
   // pullups are from management power) this delay can be reduced or
   // removed.
+#ifdef REV1
   vTaskDelay(pdMS_TO_TICKS(500));
+#endif // REV1
 
   // disable in reverse order
   for (int prio = PS_NUM_PRIORITIES; prio > 0; --prio) {

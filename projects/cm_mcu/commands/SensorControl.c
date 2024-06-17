@@ -790,9 +790,15 @@ BaseType_t ff_ch_disable_status(int argc, char **argv, char *m)
   }
 
   for (; whichff < NFIREFLIES; ++whichff) {
-    uint16_t val = get_FF_CHANNEL_DISABLE_data(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",
-                       ff_moni2c_addrs[whichff].name, val);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
+                       ff_moni2c_addrs[whichff].name);
+    if (isEnabledFF(whichff)) {
+      uint16_t val = get_FF_CHANNEL_DISABLE_data(whichff);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
+    }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
     if (isTx)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
@@ -835,7 +841,8 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
   for (; whichff < NFIREFLIES; ++whichff) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
                        ff_moni2c_addrs[whichff].name);
-    if (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4) {
+    if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12
+        || FireflyType(whichff) == DEVICE_25G4)) {
       uint16_t val = get_FF_CDR_LOL_ALARM_data(whichff);
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
     }
