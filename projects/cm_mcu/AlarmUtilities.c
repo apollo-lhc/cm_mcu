@@ -16,10 +16,10 @@
 
 extern struct MonitorTaskArgs_t fpga_args;
 
-#define INITIAL_ALARM_TEMP_FF   45.0f // in Celsius duh
+#define INITIAL_ALARM_TEMP_FF   50.0f // in Celsius duh
 #define INITIAL_ALARM_TEMP_DCDC 70.0f
 #define INITIAL_ALARM_TEMP_TM4C 70.0f
-#define INITIAL_ALARM_TEMP_FPGA 70.0f
+#define INITIAL_ALARM_TEMP_FPGA 81.0f
 #define ALM_OVERTEMP_THRESHOLD  5.0f
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
 // a shutdown message is sent
