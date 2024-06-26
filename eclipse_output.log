@@ -1,2 +1,0 @@
-Jun 17, 2024 1:42:06 PM org.apache.aries.spifly.BaseActivator log
-INFO: Registered provider org.slf4j.simple.SimpleServiceProvider of service org.slf4j.spi.SLF4JServiceProvider in bundle slf4j.simple

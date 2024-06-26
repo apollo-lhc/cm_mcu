@@ -241,6 +241,6 @@ config:
       - F2_FFL12CH
       - F2_FFLDAQ
     postfixes:
-      - IS_FF25Gbs
       - IS_PRESENT
+      - IS_FF25Gbs
       
