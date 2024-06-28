@@ -320,21 +320,9 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
       data[ll].data.us = 0xFF; // special stale value
     }
     else {
-      if (j == 0)
-        // 6 bits for ffpart-bits of FFL12 on FPGA1
-        // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
-        // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
-        // e.g. if ffpart_bit_mask  = 101, val = 110011
-        val = ((ff_bitmask_args[0].ffpart_bit_mask & 0x1) << 1) | (ff_bitmask_args[0].ffpart_bit_mask & 0x1) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x2) << 2) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x2) << 1) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x4) << 3) | ((ff_bitmask_args[0].ffpart_bit_mask & 0x4) << 2);
-      else if (j == 2)
-        // 6 bits for ffpart_bits of FFL12 on FPGA2
-        // ffpart_bit_mask = P3_RX | P2_RX | P1_RX
-        // P3_RX | P3_TX | P2_RX | P2_TX | P1_RX | P1_TX
-        // e.g. if ffpart_bit_mask  = 101, val = 110011
-        val = ((ff_bitmask_args[2].ffpart_bit_mask & 0x1) << 1) | (ff_bitmask_args[2].ffpart_bit_mask & 0x1) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x2) << 2) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x2) << 1) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x4) << 3) | ((ff_bitmask_args[2].ffpart_bit_mask & 0x4) << 2);
-      else
-        val = 0xF; // default 0b1111 FFLDAG is always 25Gbs
+      val = ff_bitmask_args[j].ffpart_bit_mask;
       log_debug(LOG_SERVICE, "25GB bits? for ff argv %d: 0x%02x\r\n", j, val);
+      log_debug(LOG_CLI, "25G? for ff argv %d: 0x%02x\r\n", j, val);
       data[ll].data.us = val; // present-bit
     }
     data[ll].sensor = ll + start;
@@ -345,6 +333,7 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
     else {
       val = getFFpresentbit(j);
       log_debug(LOG_SERVICE, "present bits? for ff argv %d: 0x%02x\r\n", j, val);
+      log_debug(LOG_CLI, "present? for ff argv %d: 0x%02x\r\n", j, val);
       data[ll].data.us = val; // present-bit
     }
     data[ll].sensor = ll + start;
@@ -352,7 +341,7 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
   }
 }
 
-#define ZM_CLK_VERSION_LENGTH 20
+#define ZM_CLK_VERSION_LENGTH 6
 void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n)
 {
   char buff[ZM_CLK_VERSION_LENGTH];
@@ -367,12 +356,15 @@ void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n)
       break; // success, I found the string
     ++v;
   }
-  // get the clock config version and copy it into the buffer
-  strncpy(buff, v, ZM_CLK_VERSION_LENGTH);
-  // make sure our string is well-terminated
-  buff[ZM_CLK_VERSION_LENGTH - 1] = '\0';
-  // loop over the buffer and copy it into the data struct
-  // each data word consists of two chars.
+  // if there is a version string, it should start with a 'v'
+  if (*v == 'v') {
+    // get the clock config version and copy it into the buffer
+    strncpy(buff, v, ZM_CLK_VERSION_LENGTH);
+    // make sure our string is well-terminated
+    buff[ZM_CLK_VERSION_LENGTH - 1] = '\0';
+    // loop over the buffer and copy it into the data struct
+    // each data word consists of two chars.
+  }
   for (int j = 0; j < ZM_CLK_VERSION_LENGTH; j += 2) {
     data[j / 2].sensor = start + (j / 2);
     data[j / 2].data.c[0] = buff[j];

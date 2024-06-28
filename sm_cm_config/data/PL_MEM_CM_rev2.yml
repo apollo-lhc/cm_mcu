@@ -228,7 +228,7 @@ config:
     names:
       - MCU_CLKR1C_VER
   - name: firefly_bits
-    start: 253
+    start: 254
     count: 8
     type: uint16_t
     extra: Table=CM_FFARGV_MON;Status=1
@@ -243,3 +243,4 @@ config:
     postfixes:
       - IS_FF25Gbs
       - IS_PRESENT
+      
