@@ -1,8 +1,9 @@
-name: zynqmon configuration file
-cm_hw_rev: 2B
-sm_hw_rev: 1A
-sm_fw_rev: 1A
-revision: 1
+metadata:
+  - name: zynqmon configuration file
+  - cm_hw_rev: 2B
+  - sm_hw_rev: 1A
+  - sm_fw_rev: 1A
+  - revision: 1
 
 
 config:
@@ -241,6 +242,6 @@ config:
       - F2_FFL12CH
       - F2_FFLDAQ
     postfixes:
-      - IS_PRESENT
       - IS_FF25Gbs
+      - IS_PRESENT
       
