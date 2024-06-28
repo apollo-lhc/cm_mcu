@@ -835,6 +835,8 @@ int init_registers_clk(void)
   status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
   status += apollo_i2c_ctl_reg_w(2, 0x21, 1, 0x03, 1, 0x03); //  00000011 [P17..P10]
 
+  status += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // reset the mux
+
   // if we have a semaphore, give it
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c2_sem);
