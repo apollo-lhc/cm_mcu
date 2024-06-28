@@ -7,10 +7,7 @@
  *  Generic alarm task that uses a callback and dispatches alarms if it deems fit.
  */
 #include "Tasks.h"
-#include "MonitorTask.h"
 #include "common/power_ctl.h"
-#include "common/utils.h"
-#include "common/log.h"
 
 #include "AlarmUtilities.h"
 

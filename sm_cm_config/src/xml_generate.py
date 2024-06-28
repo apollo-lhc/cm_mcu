@@ -180,14 +180,14 @@ for c in config:  # loop over entries in configuration (sensor category)
             postfixes = c['postfixes']
             j = 0
             for p in postfixes:
-                addr = int((start + i)/2) 
-                bit = i%2 
+                addr = int((start + i)/2)
+                bit = i%2
                 if p == 'RESERVED':
                     i += 1
                     j += 1
                     continue
-#the previous name node has odd bytes so this postfix node uses the
-#previous postfix address but masks off the lower byte
+                # the previous name node has odd bytes so this postfix node uses the
+                # previous postfix address but masks off the lower byte
                 if (bit == 1 and j == 0):   
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
