@@ -224,6 +224,9 @@ void I2CSlaveTask(void *parameters);
 
 // EEPROM
 
+// get board information from on-MCU eeprom
+void get_board_info(uint32_t *rev, uint32_t *id);
+
 extern QueueHandle_t xEPRMQueue_in;
 extern QueueHandle_t xEPRMQueue_out;
 

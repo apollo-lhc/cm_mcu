@@ -22,7 +22,6 @@
 
 void InitTask(void *parameters)
 {
-
   //  store the reboot into the error buffer, including the reason for the reset
   uint32_t r = ROM_SysCtlResetCauseGet();
   uint16_t restart_reason = (uint16_t)0xFFFFUL & r;
@@ -30,6 +29,11 @@ void InitTask(void *parameters)
   ROM_SysCtlResetCauseClear(r);
   errbuffer_put(EBUF_RESTART, restart_reason);
   log_info(LOG_SERVICE, "REC register=0x%08x\r\n", restart_reason);
+
+  // get board information
+  uint32_t id, rev;
+  get_board_info(&rev, & id);
+  log_info(LOG_SERVICE, "Board ID: %d, Revision: %d\r\n", id, rev);
 
 // wait for 3.3V power to come up. Wait indefinitely.
 // in Rev1 the clocks cannot be accessed before the 3.3 V is on.

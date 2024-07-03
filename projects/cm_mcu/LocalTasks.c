@@ -1167,4 +1167,14 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
   }
   return result;
 }
+
+// return board information stored in on-board EEPROM
+void get_board_info(uint32_t *rev, uint32_t *id) 
+{
+  // read the board info from the EEPROM
+  uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
+  *id = sn >> 16;
+  *rev = sn & 0xff;
+}
+
 #endif // REV2

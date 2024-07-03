@@ -83,18 +83,18 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
 {
   int copied = 0;
 
-  uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
-  uint32_t ps = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
 
-  uint32_t num = (uint32_t)sn >> 16;
-  uint32_t rev = ((uint32_t)sn) & 0xff;
+  uint32_t id;
+  uint32_t rev;
+  get_board_info(&rev, &id);
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ID:%08lx\r\n", sn);
 
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lu\r\n", num);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lu\r\n", id);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lu\r\n", rev);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly USER config: %lx\r\n", ff_USER_mask);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Firefly PRESENT config: %lx\r\n", ff_PRESENT_mask);
+
+  uint32_t ps = read_eeprom_single(EEPROM_ID_PS_IGNORE_MASK);
   // copied += // this is here to remind you to update `copied` if you add more lines
   snprintf(m + copied, SCRATCH_SIZE - copied, "PS ignore mask: %lx\r\n", ps);
 
