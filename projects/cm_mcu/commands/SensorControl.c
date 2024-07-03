@@ -164,8 +164,8 @@ static int disable_transmit(bool disable, int num_ff)
     }
 
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      value &= 0x000fU; // only 4 LSB matter, so mask out others
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value, 1, i2c_dev);
+      // only 4 LSB matter, so mask out others.
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value&0xFU, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) { // same for all 12 channel parts
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2, i2c_dev);
