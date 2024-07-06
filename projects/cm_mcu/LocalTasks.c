@@ -393,20 +393,23 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
-    log_error(LOG_SERVICE, "page\r\n");
+    log_error(LOG_SERVICE, "page w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
+    return;
   }
 
   // actual command -- snapshot control copy NVRAM for reading
   uint8_t cmd = 0x1;
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
   if (r) {
-    log_error(LOG_SERVICE, "ctrl\r\n");
+    log_error(LOG_SERVICE, "ctrl w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
+    return;
   }
   // actual command -- read snapshot
   tSMBusStatus r2 =
       SMBusMasterBlockRead(&g_sMaster1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
   if (r2 != SMBUS_OK) {
     log_error(LOG_SERVICE, "block %d\r\n", r2);
+    return;
   }
   while ((r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10)); // wait
@@ -419,7 +422,7 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
     cmd = 0x3;
     r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
     if (r) {
-      log_error(LOG_SERVICE, "error reset\r\n");
+      log_error(LOG_SERVICE, "error reset %s\r\n", add->name);
     }
   }
 

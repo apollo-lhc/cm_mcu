@@ -65,21 +65,6 @@ int TempStatus(void)
       ++retval;
   }
 
-  // FPGA
-  if (fpga_args.n_devices == 2) {
-    currentTemp[FPGA] = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
-  }
-  else {
-    currentTemp[FPGA] = fpga_args.pm_values[0];
-  }
-  excess_temp = currentTemp[FPGA] - getAlarmTemperature(FPGA);
-  if (excess_temp > 0.f) {
-    status_T |= ALM_STAT_FPGA_OVERTEMP;
-    retval++;
-    if (excess_temp > ALM_OVERTEMP_THRESHOLD)
-      ++retval;
-  }
-
   // DCDC. The first command is READ_TEMPERATURE_1.
   // I am assuming it stays that way!!!!!!!!
   currentTemp[DCDC] = -99.0f;
@@ -99,6 +84,25 @@ int TempStatus(void)
     if (excess_temp > ALM_OVERTEMP_THRESHOLD)
       ++retval;
   }
+  // tests below here require the power to be on
+  if ( getPowerControlState() != POWER_ON ) {
+    return retval;
+  }
+  // FPGA
+  if (fpga_args.n_devices == 2) {
+    currentTemp[FPGA] = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
+  }
+  else {
+    currentTemp[FPGA] = fpga_args.pm_values[0];
+  }
+  excess_temp = currentTemp[FPGA] - getAlarmTemperature(FPGA);
+  if (excess_temp > 0.f) {
+    status_T |= ALM_STAT_FPGA_OVERTEMP;
+    retval++;
+    if (excess_temp > ALM_OVERTEMP_THRESHOLD)
+      ++retval;
+  }
+
 
   // Fireflies. These are reported as ints but we are asked
   // to report a float.

@@ -9,6 +9,7 @@
 #include <sys/_types.h>
 #include <assert.h>
 
+#include "AlarmUtilities.h"
 #include "FireflyUtils.h"
 #include "I2CCommunication.h"
 #include "MonI2C_addresses.h"
@@ -22,6 +23,7 @@
 #include "Tasks.h"
 #include "projdefs.h"
 #include "MonUtils.h"
+#include "common/power_ctl.h"
 
 int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
 {
@@ -323,6 +325,14 @@ BaseType_t psmon_ctl(int argc, char **argv, char *m)
 
 // send power control commands
 extern struct gpio_pin_t oks[N_PS_OKS];
+
+// power control state names
+static const char *power_control_state_names[] = {
+  #define X(name) #name,
+    X_MACRO_PS_STATES
+  #undef X
+};
+
 BaseType_t power_ctl(int argc, char **argv, char *m)
 {
   int s = SCRATCH_SIZE;
@@ -354,27 +364,7 @@ BaseType_t power_ctl(int argc, char **argv, char *m)
     }
     for (; i < N_PS_OKS; ++i) {
       enum ps_state j = getPSStatus(i);
-      char *c;
-      switch (j) {
-        case PWR_UNKNOWN:
-          c = "PWR_UNKNOWN";
-          break;
-        case PWR_ON:
-          c = "PWR_ON";
-          break;
-        case PWR_OFF:
-          c = "PWR_OFF";
-          break;
-        case PWR_DISABLED:
-          c = "PWR_DISABLED";
-          break;
-        case PWR_FAILED:
-          c = "PWR_FAILED";
-          break;
-        default:
-          c = "UNKNOWN";
-          break;
-      }
+      const char *c = power_control_state_names[j];
 
       copied +=
           snprintf(m + copied, SCRATCH_SIZE - copied, "%16s: %s\r\n", oks[i].name, c);
@@ -424,15 +414,15 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
   uint32_t message;
   if (strncmp(argv[1], "clear", 4) == 0) {
     message = ALM_CLEAR_ALL; // clear all alarms
-    xQueueSendToBack(xAlmQueue, &message, pdMS_TO_TICKS(10));
-    // xQueueSendToBack(voltAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
+    xQueueSendToBack(tempAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
+    xQueueSendToBack(voltAlarmTask.xAlmQueue, &message, pdMS_TO_TICKS(10));
     m[0] = '\0'; // no output from this command
 
     return pdFALSE;
   }
   else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ALARM status\r\n", argv[0]);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: TALARM status\r\n", argv[0]);
     uint32_t stat = getTempAlarmStatus();
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08lx\r\n", stat);
 
