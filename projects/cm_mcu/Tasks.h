@@ -89,19 +89,27 @@ void LedTask(void *parameters);
 // --- Power Supply management task
 void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
-enum power_system_state {
-  POWER_FAILURE,
-  POWER_INIT,
-  POWER_DOWN,
-  POWER_OFF,
-  POWER_L1ON,
-  POWER_L2ON,
-  POWER_L3ON,
-  POWER_L4ON,
-  POWER_L5ON,
-  POWER_L6ON,
-  POWER_ON,
+
+// power system state x-macros
+#define X_MACRO_PS_SYSTEM_STATES \
+  X(POWER_FAILURE)             \
+  X(POWER_INIT)                \
+  X(POWER_DOWN)                \
+  X(POWER_OFF)                 \
+  X(POWER_L1ON)                \
+  X(POWER_L2ON)                \
+  X(POWER_L3ON)                \
+  X(POWER_L4ON)                \
+  X(POWER_L5ON)                \
+  X(POWER_L6ON)                \
+  X(POWER_ON)
+
+enum power_system_state { // todo: replace with x-macro 
+#define X(state) state,
+  X_MACRO_PS_SYSTEM_STATES
+#undef X
 };
+
 enum power_system_state getPowerControlState(void);
 const char *getPowerControlStateName(enum power_system_state);
 const bool getPowerControlExternalAlarmState(void);

@@ -6,15 +6,31 @@
  *
  *  Generic alarm task that uses a callback and dispatches alarms if it deems fit.
  */
+#include "FreeRTOS.h"
 #include "Tasks.h"
+#include "common/log.h"
 #include "common/power_ctl.h"
 
 #include "AlarmUtilities.h"
 
-enum alarm_task_state { ALM_INIT,
-                        ALM_NORMAL,
-                        ALM_WARN,
-                        ALM_ERROR };
+#define X_MACRO_ALM_STATES \
+    X(ALM_INIT) \
+    X(ALM_NORMAL) \
+    X(ALM_WARN) \
+    X(ALM_ERROR)
+
+enum alarm_task_state {
+#define X(name) name,
+  X_MACRO_ALM_STATES
+#undef X
+};
+
+// alarm state names
+static const char *alarm_task_state_names[] = {
+#define X(name) #name,
+    X_MACRO_ALM_STATES
+#undef X
+};
 
 // ALARM TASK STATE MACHINE
 // +------+
@@ -33,11 +49,12 @@ enum alarm_task_state { ALM_INIT,
 // sent to the CLI.
 //
 
-QueueHandle_t xAlmQueue = NULL;
 
 void GenericAlarmTask(void *parameters)
 {
   struct GenericAlarmParams_t *params = parameters;
+
+  char *taskName = pcTaskGetTaskName(NULL); // get the name of the task
 
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -46,8 +63,10 @@ void GenericAlarmTask(void *parameters)
 
   enum alarm_task_state currentState = ALM_INIT;
   for (;;) {
-    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));
-    if (xQueueReceive(xAlmQueue, &message, 0)) {
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
+    if (xQueueReceive(params->xAlmQueue, &message, 0)) {
+      log_debug(LOG_ALM, "%s: received message %d (%s)\r\n", taskName, message, 
+          msgqueue_message_text[message]);
       switch (message) {
         case ALM_CLEAR_ALL: // clear all alarms
           alarming = false;
@@ -95,6 +114,8 @@ void GenericAlarmTask(void *parameters)
           // this message always goes to the power queue, for all
           // alarms.
           xQueueSendToFront(xPwrQueue, &message, 100);
+          log_debug(LOG_ALM, "sent message %d (%s) to power queue\r\n", TEMP_ALARM, 
+              msgqueue_message_text[TEMP_ALARM]);
           nextState = ALM_ERROR;
         }
         else {
@@ -111,6 +132,8 @@ void GenericAlarmTask(void *parameters)
           // this message always goes to the power queue, for all
           // alarms.
           xQueueSendToFront(xPwrQueue, &message, 100);
+          log_debug(LOG_ALM, "sent message %d (%s) to power queue\r\n", TEMP_ALARM_CLEAR,
+                    msgqueue_message_text[TEMP_ALARM_CLEAR]);
           nextState = ALM_NORMAL;
         }
         else {
@@ -122,6 +145,11 @@ void GenericAlarmTask(void *parameters)
         nextState = ALM_ERROR;
         break;
     }
+    if (currentState != nextState) {
+      log_debug(LOG_ALM, "%s: change from state %s to %s\r\n", taskName,
+                alarm_task_state_names[currentState], alarm_task_state_names[nextState]);
+    }
+
     currentState = nextState;
 
     // monitor stack usage for this task
