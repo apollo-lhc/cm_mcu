@@ -22,6 +22,7 @@ struct i2c_reg_command_t {
   uint16_t (*devicelist)(void);
   void (*storeData)(uint16_t data, int which); // store data in location which
   uint16_t (*retrieveData)(int which);         // retrieve data from location which
+  void (*clearData)(void);                     // zero out the data
 };
 
 // how to find an I2C device, with a mux infront of it.

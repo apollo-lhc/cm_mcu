@@ -67,7 +67,8 @@ def main():
 
     addr_template = Template("{$reg_size, $page, $reg_list, $size, \"$name\","
                             " $mask, \"$units\", $type, get_${prefix}_${name}_mask,"
-                            " set_${prefix}_${name}_data, get_${prefix}_${name}_data},")
+                            " set_${prefix}_${name}_data, get_${prefix}_${name}_data,"
+                            " clear_${prefix}_${name}}, ")
     # output file names: header file and c source file
     # make sure that the output file ends with .c. Print error message and exit if it doesn't
     if not args.output.endswith(".c"):
@@ -163,6 +164,14 @@ def main():
                         print(f"DEVICE_{d} | ", end="", file=fout_source)
                     print(r"0;", file=fout_source)
                     print(r"}", file=fout_source)
+                for c in config:
+                    data_name = f"{prefix}_{c['name']}_data"
+                    clear_fcn_name = f"clear_{prefix}_{c['name']}"
+                    print(f"void {clear_fcn_name}(void);", file=fout_header)
+                    print(f"void {clear_fcn_name}(void) {{", file=fout_source)
+                    print(f"   __builtin_memset({data_name}, 0, {ndev}*sizeof(uint16_t));", file=fout_source)
+                    print(r"}", file=fout_source)
+
             # special: for the firefly devices, generate a list of functions that
             # return either the data in the F1 array or the data in the F2 array,
             # depending on if the argument is >= than or less than NFIREFLIES_F1

@@ -129,12 +129,6 @@ void GenericAlarmTask(void *parameters)
           // error has cleared, log and move to fault state
           if (params->errorlog_clearerror)
             params->errorlog_clearerror();
-          message = TEMP_ALARM_CLEAR;
-          // this message always goes to the power queue, for all
-          // alarms.
-          xQueueSendToFront(xPwrQueue, &message, 100);
-          log_debug(LOG_ALM, "sent message %d (%s) to power queue\r\n",
-		                TEMP_ALARM_CLEAR, msgqueue_message_text[TEMP_ALARM_CLEAR]);
           nextState = ALM_FAULT_ERROR_CLEARED;
         }
         else {
@@ -145,7 +139,15 @@ void GenericAlarmTask(void *parameters)
       case ALM_FAULT_ERROR_CLEARED: {
         if (external_reset) {
           external_reset = false;
+          message = TEMP_ALARM_CLEAR;
+          // this message always goes to the power queue, for all
+          // alarms.
+          xQueueSendToFront(xPwrQueue, &message, 100);
+          log_debug(LOG_ALM, "sent message %d (%s) to power queue\r\n",
+                    TEMP_ALARM_CLEAR, msgqueue_message_text[TEMP_ALARM_CLEAR]);
           nextState = ALM_NORMAL;
+          // give the monitoring a moment to catch up
+          vTaskDelay(pdMS_TO_TICKS(5000));
         }
         else {
           nextState = ALM_FAULT_ERROR_CLEARED;

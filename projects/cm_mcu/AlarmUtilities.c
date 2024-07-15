@@ -137,7 +137,7 @@ void TempErrorLog(void)
 
 void TempClearErrorLog(void)
 {
-  log_info(LOG_ALM, "Temperature normal\r\n");
+  log_info(LOG_ALM, "Temperature error cleared\r\n");
   errbuffer_put(EBUF_TEMP_NORMAL, 0);
 }
 
@@ -204,7 +204,8 @@ int VoltStatus(void)
 
   // compile-time sanity check on the flags being unique.
   // I need the +1 in the 1<xx since the highest channel is 0-based counting.
-  static_assert((VALM_BASE_MASK ^ VALM_GEN_MASK ^ VALM_F1_MASK ^ VALM_F2_MASK) == ((1 << (VALM_HIGHEST_V_CH + 1)) - 1), "VALM masks not unique");
+  static_assert((VALM_BASE_MASK ^ VALM_GEN_MASK ^ VALM_F1_MASK ^ VALM_F2_MASK) == ((1 << (VALM_HIGHEST_V_CH + 1)) - 1),
+                "VALM masks not unique");
 
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
@@ -274,7 +275,9 @@ void VoltErrorLog(void)
     log_warn(LOG_ALM, "Voltage high: status: 0x%04x at ADC ch %02d now +%02d.%02d %% off\r\n",
              status_V, excess_volt_which_ch, tens, frac);
   }
-  errbuffer_volt_high((uint8_t)currentVoltStatus[GEN], (uint8_t)currentVoltStatus[FPGA1], (uint8_t)currentVoltStatus[FPGA2]); // add voltage status as a data field in eeprom rather than its value
+  // add voltage status as a data field in eeprom rather than its value
+  errbuffer_volt_high((uint8_t)currentVoltStatus[GEN], (uint8_t)currentVoltStatus[FPGA1],
+                      (uint8_t)currentVoltStatus[FPGA2]);
 }
 
 void VoltClearErrorLog(void)
