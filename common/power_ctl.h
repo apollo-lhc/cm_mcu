@@ -50,11 +50,6 @@ enum ps_state {
 #undef X
 };
 
-// enum ps_state{PWR_UNKNOWN,
-//               PWR_ON,
-//               PWR_OFF,
-//               PWR_DISABLED,
-//               PWR_FAILED};
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
 

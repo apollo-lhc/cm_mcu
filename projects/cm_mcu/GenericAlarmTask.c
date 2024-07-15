@@ -145,7 +145,8 @@ void GenericAlarmTask(void *parameters)
           log_debug(LOG_ALM, "sent message %d (%s) to power queue\r\n",
                     TEMP_ALARM_CLEAR, msgqueue_message_text[TEMP_ALARM_CLEAR]);
           nextState = ALM_NORMAL;
-          // give the monitoring a moment to catch up
+          // give the monitoring a moment to catch up. This is not a clean solution,
+          // but for now it appears to work.
           vTaskDelay(pdMS_TO_TICKS(5000));
         }
         else {
