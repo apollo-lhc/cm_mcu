@@ -106,6 +106,9 @@ int TempStatus(void)
 
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
+  // if stale we ignore
+  if (isFFStale())
+    return retval;
   BaseType_t imax_ff_temp = -99;
   for (size_t i = 0; i < NFIREFLIES; ++i) {
     int8_t v = getFFtemp(i);
