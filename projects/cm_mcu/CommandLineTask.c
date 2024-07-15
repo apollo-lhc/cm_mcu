@@ -19,8 +19,7 @@
 static char m[SCRATCH_SIZE];
 
 // this command takes no arguments and never returns.
-__attribute__((noreturn))
-static BaseType_t bl_ctl(int argc, char **argv, char *m)
+__attribute__((noreturn)) static BaseType_t bl_ctl(int argc, char **argv, char *m)
 {
   disable_ps();
   Print("Jumping to bootloader\r\n");

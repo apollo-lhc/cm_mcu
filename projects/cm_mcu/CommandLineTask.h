@@ -12,7 +12,6 @@
 #include <stdbool.h>
 
 #include "FreeRTOS.h" // IWYU pragma: keep
-//#include "FreeRTOSConfig.h"
 #include "stream_buffer.h"
 
 // Command line interface

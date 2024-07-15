@@ -135,10 +135,10 @@ bool disable_ps(void)
   for (int o = 0; o < N_PS_OKS; ++o)
     if (states[o] != PWR_DISABLED)
       states[o] = PWR_OFF;
-  // this long delay (probably too long) allows all I2C tasks
-  // to finish their activity. For Rev2 of the CM (when the I2C
-  // pullups are from management power) this delay can be reduced or
-  // removed.
+      // this long delay (probably too long) allows all I2C tasks
+      // to finish their activity. For Rev2 of the CM (when the I2C
+      // pullups are from management power) this delay can be reduced or
+      // removed.
 #ifdef REV1
   vTaskDelay(pdMS_TO_TICKS(500));
 #endif // REV1

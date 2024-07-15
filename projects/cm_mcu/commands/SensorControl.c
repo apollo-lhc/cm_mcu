@@ -167,7 +167,7 @@ static int disable_transmit(bool disable, int num_ff)
 
     if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
       // only 4 LSB matter, so mask out others.
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value&0xFU, 1, i2c_dev);
+      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value & 0xFU, 1, i2c_dev);
     }
     else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) { // same for all 12 channel parts
       ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2, i2c_dev);
@@ -328,9 +328,9 @@ extern struct gpio_pin_t oks[N_PS_OKS];
 
 // power control state names
 static const char *power_control_state_names[] = {
-  #define X(name) #name,
+#define X(name) #name,
     X_MACRO_PS_STATES
-  #undef X
+#undef X
 };
 
 BaseType_t power_ctl(int argc, char **argv, char *m)
@@ -831,8 +831,7 @@ BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
   for (; whichff < NFIREFLIES; ++whichff) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
                        ff_moni2c_addrs[whichff].name);
-    if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12
-        || FireflyType(whichff) == DEVICE_25G4)) {
+    if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
       uint16_t val = get_FF_CDR_LOL_ALARM_data(whichff);
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
     }

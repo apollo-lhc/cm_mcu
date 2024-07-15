@@ -85,7 +85,7 @@ int TempStatus(void)
       ++retval;
   }
   // tests below here require the power to be on
-  if ( getPowerControlState() != POWER_ON ) {
+  if (getPowerControlState() != POWER_ON) {
     return retval;
   }
   // FPGA
@@ -102,7 +102,6 @@ int TempStatus(void)
     if (excess_temp > ALM_OVERTEMP_THRESHOLD)
       ++retval;
   }
-
 
   // Fireflies. These are reported as ints but we are asked
   // to report a float.

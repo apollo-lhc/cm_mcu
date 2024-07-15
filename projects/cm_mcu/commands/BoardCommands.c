@@ -83,11 +83,9 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
 {
   int copied = 0;
 
-
   uint32_t id;
   uint32_t rev;
   get_board_info(&rev, &id);
-
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Board number: %lu\r\n", id);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Revision: %lu\r\n", rev);

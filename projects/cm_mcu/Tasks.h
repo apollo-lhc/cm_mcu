@@ -92,19 +92,19 @@ extern QueueHandle_t xPwrQueue;
 
 // power system state x-macros
 #define X_MACRO_PS_SYSTEM_STATES \
-  X(POWER_FAILURE)             \
-  X(POWER_INIT)                \
-  X(POWER_DOWN)                \
-  X(POWER_OFF)                 \
-  X(POWER_L1ON)                \
-  X(POWER_L2ON)                \
-  X(POWER_L3ON)                \
-  X(POWER_L4ON)                \
-  X(POWER_L5ON)                \
-  X(POWER_L6ON)                \
+  X(POWER_FAILURE)               \
+  X(POWER_INIT)                  \
+  X(POWER_DOWN)                  \
+  X(POWER_OFF)                   \
+  X(POWER_L1ON)                  \
+  X(POWER_L2ON)                  \
+  X(POWER_L3ON)                  \
+  X(POWER_L4ON)                  \
+  X(POWER_L5ON)                  \
+  X(POWER_L6ON)                  \
   X(POWER_ON)
 
-enum power_system_state { // todo: replace with x-macro 
+enum power_system_state {
 #define X(state) state,
   X_MACRO_PS_SYSTEM_STATES
 #undef X

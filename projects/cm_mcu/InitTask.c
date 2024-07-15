@@ -32,7 +32,7 @@ void InitTask(void *parameters)
 
   // get board information
   uint32_t id, rev;
-  get_board_info(&rev, & id);
+  get_board_info(&rev, &id);
   log_info(LOG_SERVICE, "Board ID: %d, Revision: %d\r\n", id, rev);
 
 // wait for 3.3V power to come up. Wait indefinitely.

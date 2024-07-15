@@ -12,21 +12,20 @@
 #include <stdbool.h>
 
 // X-macros for Alarm messages
-#define X_MACRO_QUEUE_MESSAGES \
-    X(TEMP_ALARM, "Temperature Alarm") \
-    X(TEMP_ALARM_CLEAR, "Temperature Alarm Clear") \
-    X(CURRENT_ALARM, "Current Alarm") \
-    X(CURRENT_ALARM_CLEAR, "Current Alarm Clear") \
-    X(PS_ANYFAIL_ALARM, "Power Supply Any Fail Alarm") \
-    X(PS_ANYFAIL_ALARM_CLEAR, "Power Supply Any Fail Alarm Clear") \
-    X(PS_GOOD, "Power Supply Good")   \
-    X(PS_BAD, "Power Supply Bad")     \
-    X(PS_ON, "Power Supply On")       \
-    X(PS_OFF, "Power Supply Off")     \
-    X(PS_ERROR, "Power Supply Error") \
-    X(PS_STATUS, "Power Supply Status") \
-    X(HUH, "Undefined Message")
-
+#define X_MACRO_QUEUE_MESSAGES                                   \
+  X(TEMP_ALARM, "Temperature Alarm")                             \
+  X(TEMP_ALARM_CLEAR, "Temperature Alarm Clear")                 \
+  X(CURRENT_ALARM, "Current Alarm")                              \
+  X(CURRENT_ALARM_CLEAR, "Current Alarm Clear")                  \
+  X(PS_ANYFAIL_ALARM, "Power Supply Any Fail Alarm")             \
+  X(PS_ANYFAIL_ALARM_CLEAR, "Power Supply Any Fail Alarm Clear") \
+  X(PS_GOOD, "Power Supply Good")                                \
+  X(PS_BAD, "Power Supply Bad")                                  \
+  X(PS_ON, "Power Supply On")                                    \
+  X(PS_OFF, "Power Supply Off")                                  \
+  X(PS_ERROR, "Power Supply Error")                              \
+  X(PS_STATUS, "Power Supply Status")                            \
+  X(HUH, "Undefined Message")
 
 // Generate enum and text arrays using X-macros
 enum MsgQueue_Message {
@@ -38,11 +37,11 @@ enum MsgQueue_Message {
 extern const char *msgqueue_message_text[];
 
 #define X_MACRO_PS_STATES \
-    X(PWR_UNKNOWN) \
-    X(PWR_ON) \
-    X(PWR_OFF) \
-    X(PWR_DISABLED) \
-    X(PWR_FAILED)
+  X(PWR_UNKNOWN)          \
+  X(PWR_ON)               \
+  X(PWR_OFF)              \
+  X(PWR_DISABLED)         \
+  X(PWR_FAILED)
 
 // power supply state
 enum ps_state {

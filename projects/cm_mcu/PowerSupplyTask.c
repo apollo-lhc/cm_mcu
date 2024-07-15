@@ -25,10 +25,10 @@
 #include "queue.h"
 
 const char *msgqueue_message_text[] = {
- #define X(name, text) text,
-     X_MACRO_QUEUE_MESSAGES
- #undef X
- };
+#define X(name, text) text,
+    X_MACRO_QUEUE_MESSAGES
+#undef X
+};
 
 void Print(const char *);
 
@@ -413,7 +413,7 @@ void PowerSupplyTask(void *parameters)
             int ret = enable_3v8(ffmask, false); // enable v38
             if (ret != 0) {
               log_error(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
-              disable_ps(); // turn off power 
+              disable_ps(); // turn off power
               power_supply_alarm = true;
               nextState = POWER_FAILURE;
             }
@@ -425,7 +425,7 @@ void PowerSupplyTask(void *parameters)
           }
           else {
             log_error(LOG_PWRCTL, "FF 4V0 part check failed: %x!=%x||%x!=%x, power off\r\n",
-                     f1_ff12xmit_4v0_sel, pair_mask_low, f2_ff12xmit_4v0_sel, pair_mask_high);
+                      f1_ff12xmit_4v0_sel, pair_mask_low, f2_ff12xmit_4v0_sel, pair_mask_high);
             int ret = enable_3v8(ffmask, true); // disable v38
             if (ret == 0)
               log_info(LOG_PWRCTL, "disable 3v8\r\n");

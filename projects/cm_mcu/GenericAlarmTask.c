@@ -15,11 +15,11 @@
 #include <stdbool.h>
 
 #define X_MACRO_ALM_STATES \
-    X(ALM_INIT)   \
-    X(ALM_NORMAL) \
-    X(ALM_WARN)   \
-    X(ALM_FAULT_ERRORING)  \
-    X(ALM_FAULT_ERROR_CLEARED)
+  X(ALM_INIT)              \
+  X(ALM_NORMAL)            \
+  X(ALM_WARN)              \
+  X(ALM_FAULT_ERRORING)    \
+  X(ALM_FAULT_ERROR_CLEARED)
 
 enum alarm_task_state {
 #define X(name) name,
@@ -50,9 +50,8 @@ static const char *alarm_task_state_names[] = {
 // once we get into the ERROR state the only way to clear an error is via a message
 // sent to the CLI.
 // Fault_erroring means the error is active and we are in a fault state
-// fault_error_cleared means the error has cleared but the fault remains. 
+// fault_error_cleared means the error has cleared but the fault remains.
 //
-
 
 void GenericAlarmTask(void *parameters)
 {
@@ -70,7 +69,7 @@ void GenericAlarmTask(void *parameters)
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
     if (xQueueReceive(params->xAlmQueue, &message, 0)) {
       log_debug(LOG_ALM, "%s: received message %d (%s)\r\n", taskName, message,
-          msgqueue_message_text[message]);
+                msgqueue_message_text[message]);
       switch (message) {
         case ALM_CLEAR_ALL: // clear all alarms
           external_reset = true;
@@ -116,7 +115,7 @@ void GenericAlarmTask(void *parameters)
           // alarms.
           xQueueSendToFront(xPwrQueue, &message, 100);
           log_debug(LOG_ALM, "sent message %d (%s) to power queue\r\n", TEMP_ALARM,
-              msgqueue_message_text[TEMP_ALARM]);
+                    msgqueue_message_text[TEMP_ALARM]);
           nextState = ALM_FAULT_ERRORING;
         }
         else {
