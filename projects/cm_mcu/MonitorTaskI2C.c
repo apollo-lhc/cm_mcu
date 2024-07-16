@@ -88,6 +88,10 @@ void MonitorTaskI2C(void *parameters)
         if (!good) {                                 // ... was not good, but is now good
           task_watchdog_register_task(kWatchdogTaskID_MonitorI2CTask);
           log_info(LOG_MONI2C, "%s: PWR on. (Re)start I2Cmon.\r\n", args->name);
+          // clear out stale data
+          for (int i = 0; i < args->n_commands; ++i) {
+            args->commands[i].clearData();
+          }
           good = true;
         }
       }

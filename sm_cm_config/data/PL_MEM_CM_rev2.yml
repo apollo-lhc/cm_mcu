@@ -1,8 +1,9 @@
-name: zynqmon configuration file
-cm_hw_rev: 2B
-sm_hw_rev: 1A
-sm_fw_rev: 1A
-revision: 1
+metadata:
+  - name: zynqmon configuration file
+  - cm_hw_rev: 2B
+  - sm_hw_rev: 1A
+  - sm_fw_rev: 1A
+  - revision: 1
 
 
 config:

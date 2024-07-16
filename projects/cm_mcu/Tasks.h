@@ -89,19 +89,27 @@ void LedTask(void *parameters);
 // --- Power Supply management task
 void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
+
+// power system state x-macros
+#define X_MACRO_PS_SYSTEM_STATES \
+  X(POWER_FAILURE)               \
+  X(POWER_INIT)                  \
+  X(POWER_DOWN)                  \
+  X(POWER_OFF)                   \
+  X(POWER_L1ON)                  \
+  X(POWER_L2ON)                  \
+  X(POWER_L3ON)                  \
+  X(POWER_L4ON)                  \
+  X(POWER_L5ON)                  \
+  X(POWER_L6ON)                  \
+  X(POWER_ON)
+
 enum power_system_state {
-  POWER_FAILURE,
-  POWER_INIT,
-  POWER_DOWN,
-  POWER_OFF,
-  POWER_L1ON,
-  POWER_L2ON,
-  POWER_L3ON,
-  POWER_L4ON,
-  POWER_L5ON,
-  POWER_L6ON,
-  POWER_ON,
+#define X(state) state,
+  X_MACRO_PS_SYSTEM_STATES
+#undef X
 };
+
 enum power_system_state getPowerControlState(void);
 const char *getPowerControlStateName(enum power_system_state);
 const bool getPowerControlExternalAlarmState(void);
@@ -223,6 +231,9 @@ void ADCMonitorTask(void *parameters);
 void I2CSlaveTask(void *parameters);
 
 // EEPROM
+
+// get board information from on-MCU eeprom
+void get_board_info(uint32_t *rev, uint32_t *id);
 
 extern QueueHandle_t xEPRMQueue_in;
 extern QueueHandle_t xEPRMQueue_out;

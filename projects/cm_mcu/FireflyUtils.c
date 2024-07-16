@@ -89,18 +89,23 @@ void readFFpresent(void)
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1);
+  apollo_i2c_ctl_w(4, 0x70, 1, 0x0);
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1);
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x00);
 #elif defined(REV2)
   // to port 7
   apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1_bar); // active low
+  apollo_i2c_ctl_w(4, 0x70, 1, 0x8);                                // clear the mux
+
   // to port 6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1_bar); // active low
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7;          // bits 4-6
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                               // clear the mux
 
 #endif
 
@@ -117,18 +122,22 @@ void readFFpresent(void)
   // to port 0
   apollo_i2c_ctl_w(3, 0x72, 1, 0x01);
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_0X20_F2);
+  apollo_i2c_ctl_w(3, 0x72, 1, 0x0);
   // to port 1
   apollo_i2c_ctl_w(3, 0x72, 1, 0x02);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &present_0X21_F2);
+  apollo_i2c_ctl_w(3, 0x72, 1, 0x0);
 #elif defined(REV2)
   // to port 7
   apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
   apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low
+  apollo_i2c_ctl_w(3, 0x70, 1, 0x0);
   // to port 6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7;          // bits 4-6
+  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
 
 #endif
   // if we have a semaphore, give it

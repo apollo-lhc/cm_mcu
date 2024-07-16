@@ -24,6 +24,12 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
+const char *msgqueue_message_text[] = {
+#define X(name, text) text,
+    X_MACRO_QUEUE_MESSAGES
+#undef X
+};
+
 void Print(const char *);
 
 // Holds the handle of the created queue for the power supply task.
@@ -73,17 +79,9 @@ void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bi
 }
 
 static const char *const power_system_state_names[] = {
-    "FAIL",
-    "INIT",
-    "DOWN",
-    "OFF",
-    "L1ON",
-    "L2ON",
-    "L3ON",
-    "L4ON",
-    "L5ON",
-    "L6ON",
-    "ON",
+#define X(state) #state,
+    X_MACRO_PS_SYSTEM_STATES
+#undef X
 };
 
 const char *getPowerControlStateName(enum power_system_state s)
@@ -190,6 +188,7 @@ void PowerSupplyTask(void *parameters)
     // non-blocking call.
     uint32_t message;
     if (xQueueReceive(xPwrQueue, &message, 0)) { // TODO: what about > 1 message
+      log_debug(LOG_PWRCTL, "received message 0x%x (%s)\r\n", message, msgqueue_message_text[message]);
       switch (message) {
         case PS_OFF:
           cli_powerdown_request = true;
@@ -413,22 +412,26 @@ void PowerSupplyTask(void *parameters)
           if ((f1_ff12xmit_4v0_sel == pair_mask_low) && (f2_ff12xmit_4v0_sel == pair_mask_high)) {
             int ret = enable_3v8(ffmask, false); // enable v38
             if (ret != 0) {
-              log_info(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
+              log_error(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
+              disable_ps(); // turn off power
+              power_supply_alarm = true;
+              nextState = POWER_FAILURE;
             }
             else {
               log_info(LOG_PWRCTL, "enable 3v8 \r\n");
+              blade_power_ok(true);
+              nextState = POWER_ON;
             }
-            blade_power_ok(true);
-            nextState = POWER_ON;
           }
           else {
-            log_info(LOG_PWRCTL, "FF 4V0 part check failed: %x!=%x||%x!=%x\r\n",
-                     f1_ff12xmit_4v0_sel, pair_mask_low, f2_ff12xmit_4v0_sel, pair_mask_high);
+            log_error(LOG_PWRCTL, "FF 4V0 part check failed: %x!=%x||%x!=%x, power off\r\n",
+                      f1_ff12xmit_4v0_sel, pair_mask_low, f2_ff12xmit_4v0_sel, pair_mask_high);
             int ret = enable_3v8(ffmask, true); // disable v38
             if (ret == 0)
               log_info(LOG_PWRCTL, "disable 3v8\r\n");
             else
-              log_info(LOG_PWRCTL, "disable 3v8 failed with %d\r\n", ret);
+              log_warn(LOG_PWRCTL, "disable 3v8 failed with %d\r\n", ret);
+            disable_ps();
             power_supply_alarm = true;
             nextState = POWER_FAILURE;
           }

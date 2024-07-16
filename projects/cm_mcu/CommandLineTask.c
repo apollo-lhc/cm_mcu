@@ -19,8 +19,9 @@
 static char m[SCRATCH_SIZE];
 
 // this command takes no arguments and never returns.
-static BaseType_t bl_ctl(int argc, char **argv, char *m)
+__attribute__((noreturn)) static BaseType_t bl_ctl(int argc, char **argv, char *m)
 {
+  disable_ps();
   Print("Jumping to bootloader\r\n");
   ROM_SysCtlDelay(100000);
   // this code is copied from the JumpToBootLoader()
@@ -54,8 +55,7 @@ static BaseType_t bl_ctl(int argc, char **argv, char *m)
 
   // the above points to a memory location in flash.
 #pragma GCC diagnostic pop
-  // shut up compiler warning. This will never get called
-  return pdFALSE;
+  __builtin_unreachable();
 }
 
 #ifdef REV2

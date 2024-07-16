@@ -28,7 +28,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr,
                          uint16_t packed_reg_address, uint8_t nbytes,
                          uint32_t packed_data);
 // read/write a register using the PMBUS protocol
-int apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
-                    struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value);
+tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
+                             struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value);
 
 #endif /* PROJECTS_CM_MCU_I2CCOMMUNICATION_H_ */

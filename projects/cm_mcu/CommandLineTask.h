@@ -10,10 +10,8 @@
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "stream_buffer.h"
 
 // Command line interface

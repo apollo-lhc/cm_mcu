@@ -314,7 +314,6 @@ __attribute__((noreturn)) int main(void)
   // -------------------------------------------------
   // Initialize all the queues
   // queue for the LED
-
   xLedQueue = xQueueCreate(3,                 // The maximum number of items the queue can hold.
                            sizeof(uint32_t)); // The size of each item.
   configASSERT(xLedQueue != NULL);
@@ -327,8 +326,11 @@ __attribute__((noreturn)) int main(void)
   xEPRMQueue_out = xQueueCreate(5, sizeof(uint64_t));
   configASSERT(xEPRMQueue_out != NULL);
 
-  xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // ALARM queue
-  configASSERT(xAlmQueue != NULL);
+  tempAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // temp ALARM queue
+  configASSERT(tempAlarmTask.xAlmQueue != NULL);
+
+  voltAlarmTask.xAlmQueue = xQueueCreate(10, sizeof(uint32_t)); // volt ALARM queue
+  configASSERT(voltAlarmTask.xAlmQueue != NULL);
 
   xZynqMonQueue = xQueueCreate(10, sizeof(uint32_t)); // Soft UART queue
   configASSERT(xZynqMonQueue != NULL);
