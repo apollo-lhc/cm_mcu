@@ -18,6 +18,6 @@ cp ../sm_cm_config/data/*.xml CornellCM_MCU/address_table
 cd CornellCM_MCU/address_table/modules_CM_MCU
 ln -s PL_MEM_CM_Rev2.xml PL_MEM_CM.xml
 cd ../../..
-tar -czf ../CornellCM_MCU.tgz CornellCM_MCU
+tar -czf ../CornellCM_MCU.tar.gz CornellCM_MCU
 cd ..
 rm -rf tmp
