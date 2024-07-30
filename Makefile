@@ -37,8 +37,19 @@ check-and-reinit-submodules:
 
 release:
 	@$(MAKE) -C projects/cm_mcu release
+	@if [ 'x${VERBOSE}' = x ]; then \
+		echo "  SH    make_release_xml_tgz.sh"; \
+	else \
+		echo "  ./make_release_xml_tgz.sh"; \
+	fi
+	@./make_release_xml_tgz.sh
 
 check-for-pr: format
+	@if [ 'x${VERBOSE}' = x ]; then \
+		echo "  SH buildall.sh"; \
+	else \
+		echo "  ./build_all.sh"; \
+	fi
 	@./buildall.sh
 
 

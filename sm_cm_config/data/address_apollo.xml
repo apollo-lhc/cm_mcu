@@ -1,0 +1,3 @@
+<node id="TOP">
+  <node id="PL_MEM_CM" address="0x23000000" fwinfo="uio_endpoint" module="file://modules_CM_MCU/PL_MEM_CM.xml" />
+</node>
