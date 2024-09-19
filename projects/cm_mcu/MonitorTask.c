@@ -138,7 +138,6 @@ void MonitorTask(void *parameters)
         // loop over commands
         for (int c = 0; c < args->n_commands; ++c) {
           int index = ps * (args->n_commands * args->n_pages) + page * args->n_commands + c;
-          args->pm_values[index] = __builtin_nanf("");
 
           data[0] = 0x0U;
           data[1] = 0x0U;
@@ -147,6 +146,7 @@ void MonitorTask(void *parameters)
           if (r != SMBUS_OK) {
             log_warn(LOG_MON, "%s: SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\r\n", args->name,
                      ps, c, page);
+            args->pm_values[index] = __builtin_nanf("");
             continue; // abort reading this register
           }
           tries = 0;
@@ -162,6 +162,7 @@ void MonitorTask(void *parameters)
             log_warn(LOG_MON, "%s: Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
                      *args->smbus_status, ps, c, page);
             // abort reading this device
+            args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
             release_break();
