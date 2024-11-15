@@ -319,7 +319,7 @@ float getFFoptpow(const uint8_t i, const uint8_t ch)
       val = -999.f;
       break;
   }
-  return val * 10.f; // LSB is 0.1 uW, we return uW
+  return val * 0.1f; // LSB is 0.1 uW, we return uW
 }
 #undef SWAP_BYTES
 

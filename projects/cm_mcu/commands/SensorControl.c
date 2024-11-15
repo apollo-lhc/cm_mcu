@@ -977,7 +977,7 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
     else {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
     }
-    if ((SCRATCH_SIZE - copied) < 20) {
+    if ((SCRATCH_SIZE - copied) < 40) {
       ++i;
       return pdTRUE;
     }
