@@ -26,8 +26,7 @@
 #include "inc/hw_nvic.h"
 #include "inc/hw_types.h"
 #include "driverlib/rom.h"
-#include "InterruptHandlers.h"
-#include "FreeRTOSConfig.h"
+#include "prod_test.h"
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -78,27 +77,27 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     0,                   // Reserved
     0,                   // Reserved
     0,                   // Reserved
-    vPortSVCHandler,     // SVCall handler
+    IntDefaultHandler,     // SVCall handler
     IntDefaultHandler,   // Debug monitor handler
     0,                   // Reserved
-    xPortPendSVHandler,  // The PendSV handler
-    xPortSysTickHandler, // The SysTick handler
+    IntDefaultHandler,  // The PendSV handler
+    IntDefaultHandler, // The SysTick handler
     IntDefaultHandler,   // GPIO Port A
     IntDefaultHandler,   // GPIO Port B
     IntDefaultHandler,   // GPIO Port C
     IntDefaultHandler,   // GPIO Port D
     IntDefaultHandler,   // GPIO Port E
-    UART0IntHandler,     // UART0 Rx and Tx
+    IntDefaultHandler,     // UART0 Rx and Tx
     IntDefaultHandler,   // UART1 Rx and Tx
     IntDefaultHandler,   // SSI0 Rx and Tx
-    I2CSlave0Interrupt,  // I2C0 Master and Slave
+    IntDefaultHandler,  // I2C0 Master and Slave
     IntDefaultHandler,  // PWM Fault
     IntDefaultHandler,  // PWM Generator 0
     IntDefaultHandler,  // PWM Generator 1
     IntDefaultHandler,  // PWM Generator 2
     IntDefaultHandler,  // Quadrature Encoder 0
     IntDefaultHandler,  // ADC Sequence 0
-    ADCSeq1Interrupt,   // ADC Sequence 1
+    IntDefaultHandler,   // ADC Sequence 1
     IntDefaultHandler,  // ADC Sequence 2
     IntDefaultHandler,  // ADC Sequence 3
     IntDefaultHandler,  // Watchdog timer
@@ -129,7 +128,7 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler,      // PWM Generator 3
     IntDefaultHandler,      // uDMA Software Transfer
     IntDefaultHandler,      // uDMA Error
-    ADCSeq0Interrupt,       // ADC1 Sequence 0
+    IntDefaultHandler,       // ADC1 Sequence 0
     IntDefaultHandler,      // ADC1 Sequence 1
     IntDefaultHandler,      // ADC1 Sequence 2
     IntDefaultHandler,      // ADC1 Sequence 3
@@ -222,7 +221,8 @@ extern uint32_t _ebss;
 //*****************************************************************************
 void ResetISR(void)
 {
-  uint32_t *pui32Src, *pui32Dest;
+  uint32_t *pui32Src;
+  uint32_t *pui32Dest;
 
   //
   // Copy the data segment initializers from flash to SRAM.
@@ -281,7 +281,7 @@ static void NmiSR(void)
   //
   // Enter an infinite loop.
   //
-  configASSERT(1 == 0);
+  APOLLO_ASSERT(1 == 0);
 }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
@@ -320,7 +320,7 @@ of this function. */
   pc = pulFaultStackAddress[6];
   psr = pulFaultStackAddress[7];
   // save the originating interrupt
-  errbuffer_put_raw(EBUF_HARDFAULT, (uint16_t)psr & 0xfUL);
+  //errbuffer_put_raw(EBUF_HARDFAULT, (uint16_t)psr & 0xfUL);
 
 #ifdef DEBUG
   /* When the following line is hit, the variables contain the register values. */

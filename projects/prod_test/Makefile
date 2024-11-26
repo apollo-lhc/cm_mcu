@@ -76,8 +76,8 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/printf.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/startup_${COMPILER}.o
 # TIVAWARE
 ${COMPILER}/prod_test.axf: ${COMPILER}/sysctl.o
-${COMPILER}/prod_test.axf: ${COMPILER}/interrupt.o
-${COMPILER}/prod_test.axf: ${COMPILER}/cpu.o
+${COMPILER}/prod_test.axf: ${COMPILER}/pinout_rev2.o
+${COMPILER}/prod_test.axf: ${COMPILER}/gpio.o
 
 
 SCATTERgcc_prod_test=prod_test.ld
