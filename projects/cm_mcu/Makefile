@@ -16,7 +16,7 @@ ROOT=../..
 BASE=$(shell cd ../..; pwd)
 
 # FreeRTOS submodule
-FREERTOS_ROOT=../../FreeRTOS-Kernel
+FREERTOS_ROOT=$(BASE)/FreeRTOS-Kernel
 
 #
 # Include the common make definitions.

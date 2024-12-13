@@ -169,33 +169,21 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,   // GPIO Port C
     IntDefaultHandler,   // GPIO Port D
     IntDefaultHandler,   // GPIO Port E
-#ifdef REV2
     UART0IntHandler, // UART0 Rx and Tx
-#else
-    IntDefaultHandler, // UART0 Rx and Tx
-#endif
-#ifdef REV1
-    UART1IntHandler, // UART1 Rx and Tx -- ZYNQ UART
-#else
     IntDefaultHandler, // UART1 Rx and Tx
-#endif
     IntDefaultHandler,  // SSI0 Rx and Tx
-    I2CSlave0Interrupt, // I2C0 Master and Slave
+    IntDefaultHandler, // I2C0 Master and Slave
     IntDefaultHandler,  // PWM Fault
     IntDefaultHandler,  // PWM Generator 0
     IntDefaultHandler,  // PWM Generator 1
     IntDefaultHandler,  // PWM Generator 2
     IntDefaultHandler,  // Quadrature Encoder 0
     IntDefaultHandler,  // ADC Sequence 0
-    ADCSeq1Interrupt,   // ADC Sequence 1
+    IntDefaultHandler,   // ADC Sequence 1
     IntDefaultHandler,  // ADC Sequence 2
     IntDefaultHandler,  // ADC Sequence 3
     IntDefaultHandler,  // Watchdog timer
-#ifdef REV1
-    Timer0AIntHandler, // Timer 0 subtimer A
-#else                  // not REV1
     IntDefaultHandler, // Timer 0 subtimer A
-#endif
     IntDefaultHandler,      // Timer 0 subtimer B
     IntDefaultHandler,      // Timer 1 subtimer A
     IntDefaultHandler,      // Timer 1 subtimer B
@@ -213,7 +201,7 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // SSI1 Rx and Tx
     IntDefaultHandler,      // Timer 3 subtimer A
     IntDefaultHandler,      // Timer 3 subtimer B
-    SMBusMasterIntHandler1, // I2C1 Master and Slave
+    IntDefaultHandler,      // I2C1 Master and Slave
     IntDefaultHandler,      // CAN0
     IntDefaultHandler,      // CAN1
     IntDefaultHandler,      // Ethernet
@@ -222,7 +210,7 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // PWM Generator 3
     IntDefaultHandler,      // uDMA Software Transfer
     IntDefaultHandler,      // uDMA Error
-    ADCSeq0Interrupt,       // ADC1 Sequence 0
+    IntDefaultHandler,      // ADC1 Sequence 0
     IntDefaultHandler,      // ADC1 Sequence 1
     IntDefaultHandler,      // ADC1 Sequence 2
     IntDefaultHandler,      // ADC1 Sequence 3
@@ -233,16 +221,12 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // SSI2 Rx and Tx
     IntDefaultHandler,      // SSI3 Rx and Tx
     IntDefaultHandler,      // UART3 Rx and Tx
-#ifdef REV1
-    UART4IntHandler, // UART4 Rx and Tx -- FRONT PANEL
-#else
-    IntDefaultHandler, // UART4 Rx and Tx
-#endif
+    IntDefaultHandler,      // UART4 Rx and Tx
     IntDefaultHandler,      // UART5 Rx and Tx
     IntDefaultHandler,      // UART6 Rx and Tx
     IntDefaultHandler,      // UART7 Rx and Tx
-    SMBusMasterIntHandler2, // I2C2 Master and Slave
-    SMBusMasterIntHandler3, // I2C3 Master and Slave
+    IntDefaultHandler,      // I2C2 Master and Slave
+    IntDefaultHandler,      // I2C3 Master and Slave
     IntDefaultHandler,      // Timer 4 subtimer A
     IntDefaultHandler,      // Timer 4 subtimer B
     IntDefaultHandler,      // Timer 5 subtimer A
@@ -250,7 +234,7 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // FPU
     0,                      // Reserved
     0,                      // Reserved
-    SMBusMasterIntHandler4, // I2C4 Master and Slave
+    IntDefaultHandler,      // I2C4 Master and Slave
     IntDefaultHandler,      // I2C5 Master and Slave
     IntDefaultHandler,      // GPIO Port M
     IntDefaultHandler,      // GPIO Port N
@@ -282,7 +266,7 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // Timer 6 subtimer B
     IntDefaultHandler,      // Timer 7 subtimer A
     IntDefaultHandler,      // Timer 7 subtimer B
-    SMBusMasterIntHandler6, // I2C6 Master and Slave
+    IntDefaultHandler,      // I2C6 Master and Slave
     IntDefaultHandler,      // I2C7 Master and Slave
     IntDefaultHandler,      // HIM Scan Matrix Keyboard 0
     IntDefaultHandler,      // One Wire 0
