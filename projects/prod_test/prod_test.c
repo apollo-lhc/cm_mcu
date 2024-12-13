@@ -15,6 +15,24 @@
 // local includes
 #include "common/pinout.h"
 #include "prod_test.h"
+#include "FreeRTOSConfig.h"
+#include "common/LocalUart.h"
+#include "common/utils.h"
+
+
+// FreeRTOS includes
+#include "FreeRTOS.h" // IWYU pragma: keep
+#include "task.h"
+#include "queue.h"
+#include "stream_buffer.h"
+#include "semphr.h"
+#include "portmacro.h"
+//#include "Semaphore.h"
+#include "InterruptHandlers.h"
+
+SemaphoreHandle_t xUARTMutex = 0;
+void vCommandLineTask(void *pvParameters);
+
 
 //*****************************************************************************
 //
@@ -42,6 +60,56 @@ void SystemInit(void)
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
+
+  UART0Init(g_ui32SysClock); // ZYNQ UART
+
+  setupActiveLowPins();
+
+  return;
+}
+
+void Print(const char *str)
+{
+  xSemaphoreTake(xUARTMutex, portMAX_DELAY);
+  {
+#ifdef REV1
+    UARTPrint(FP_UART, str);
+#endif // REV1
+    UARTPrint(ZQ_UART, str);
+  }
+  xSemaphoreGive(xUARTMutex);
+  return;
+}
+
+
+
+// Command line interface
+void vCommandLineTask(void *pvParameters);
+
+typedef struct {
+  StreamBufferHandle_t UartStreamBuffer;
+  uint32_t uart_base;
+  UBaseType_t stack_size;
+} CommandLineTaskArgs_t;
+
+CommandLineTaskArgs_t cli_uart;
+
+
+const char *buildTime(void)
+{
+  const char *btime = __TIME__ ", " __DATE__;
+  return btime;
+}
+
+const char *gitVersion(void)
+{
+#ifdef DEBUG
+#define BUILD_TYPE "DEBUG build"
+#else
+#define BUILD_TYPE "regular build"
+#endif
+  const char *gitVersion = BUILD_TYPE "\r\n" FIRMWARE_VERSION;
+  return gitVersion;
 }
 
 
@@ -54,17 +122,21 @@ __attribute__((noreturn)) int main(void)
 {
     SystemInit();
 
+  // There is one buffer for the CLI (shared front panel and Zynq)
+  xUART0StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
+                                           1);  // number of items before a trigger is sent
 
-  //
-  // Loop forever.
-  //
-  while(1) {
-    // do something.     
-    // Delay for a bit.
-    //
-    for(uint32_t ui32Loop = 0; ui32Loop < 200000; ui32Loop++) {
-    }
+  cli_uart.uart_base = ZQ_UART;
+  cli_uart.UartStreamBuffer = xUART0StreamBuffer;
+  cli_uart.stack_size = 4096U;
 
-    
-  }
+  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
+
+  // start the scheduler -- this function should not return
+  vTaskStartScheduler();
+  // should never get here
+  Print("Scheduler start failed\r\n");
+  configASSERT(1 == 0); // capture in eeprom
+  __builtin_unreachable();
+
 }

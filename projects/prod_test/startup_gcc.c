@@ -27,6 +27,9 @@
 #include "inc/hw_types.h"
 #include "driverlib/rom.h"
 #include "prod_test.h"
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -58,6 +61,8 @@ const uint32_t *getSystemStack(void)
   return pui32Stack;
 }
 
+void UART0IntHandler(void);
+
 //*****************************************************************************
 //
 // The vector table.  Note that the proper constructs must be placed on this to
@@ -87,7 +92,7 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler,   // GPIO Port C
     IntDefaultHandler,   // GPIO Port D
     IntDefaultHandler,   // GPIO Port E
-    IntDefaultHandler,     // UART0 Rx and Tx
+    UART0IntHandler,     // UART0 Rx and Tx
     IntDefaultHandler,   // UART1 Rx and Tx
     IntDefaultHandler,   // SSI0 Rx and Tx
     IntDefaultHandler,  // I2C0 Master and Slave
@@ -281,7 +286,7 @@ static void NmiSR(void)
   //
   // Enter an infinite loop.
   //
-  APOLLO_ASSERT(1 == 0);
+  configASSERT(1 == 0);
 }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
