@@ -120,7 +120,7 @@ const char *gitVersion(void)
 //*****************************************************************************
 __attribute__((noreturn)) int main(void)
 {
-    SystemInit();
+  SystemInit();
 
   // There is one buffer for the CLI (shared front panel and Zynq)
   xUART0StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
@@ -129,8 +129,14 @@ __attribute__((noreturn)) int main(void)
   cli_uart.uart_base = ZQ_UART;
   cli_uart.UartStreamBuffer = xUART0StreamBuffer;
   cli_uart.stack_size = 4096U;
+  xUARTMutex = xSemaphoreCreateMutex();
 
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
+
+  Print("\r\n----------------------------\r\n");
+  Print("Staring Apollo CM MCU Production Test firmware ");
+  Print(gitVersion());
+  Print("\r\n");
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
