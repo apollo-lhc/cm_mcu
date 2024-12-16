@@ -6,8 +6,8 @@
  */
 
 // Include commands
-#include <strings.h>
 #include <string.h>
+#include <strings.h>
 // includes for types
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,6 +18,7 @@
 #include "common/LocalUart.h"
 #include "common/printf.h"
 #include "common/microrl.h"
+#include "commands.h"
 
 typedef struct {
   StreamBufferHandle_t UartStreamBuffer;
@@ -25,86 +26,23 @@ typedef struct {
   UBaseType_t stack_size;
 } CommandLineTaskArgs_t;
 
-void Print(const char *str);
+#define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
 
-#include "driverlib/rom.h"
-#include "inc/hw_types.h"
-#include "inc/hw_nvic.h"
-#include "inc/hw_memmap.h"
-
-// #include "Semaphore.h"
-#define SCRATCH_SIZE 512
-static char m[SCRATCH_SIZE];
-
-// this command takes no arguments and never returns.
-__attribute__((noreturn)) static BaseType_t bl_ctl(int argc, char **argv, char *m)
-{
-  Print("Jumping to bootloader\r\n");
-  ROM_SysCtlDelay(100000);
-  // this code is copied from the JumpToBootLoader()
-  // stack from the boot_demo1 application in the
-  // ek-tm4c129exl part of tiva ware.
-  //
-  // We must make sure we turn off SysTick and its interrupt before entering
-  // the boot loader!
-  //
-  ROM_SysTickIntDisable();
-  ROM_SysTickDisable();
-
-  //
-  // Disable all processor interrupts.  Instead of disabling them
-  // one at a time, a direct write to NVIC is done to disable all
-  // peripheral interrupts.
-  //
-  HWREG(NVIC_DIS0) = 0xffffffff;
-  HWREG(NVIC_DIS1) = 0xffffffff;
-  HWREG(NVIC_DIS2) = 0xffffffff;
-  HWREG(NVIC_DIS3) = 0xffffffff;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-
-  //
-  // Return control to the boot loader.  This is a call to the SVC
-  // handler in the boot loader.
-  //
-  (*((void (*)(void))(*(uint32_t *)0x2c)))();
-
-  // the above points to a memory location in flash.
-#pragma GCC diagnostic pop
-  __builtin_unreachable();
-}
-
-static BaseType_t help_command_fcn(int argc, char **, char *m);
+struct command_t commands[] = {
+    {"bootloader", bl_ctl, "Call bootloader\r\n", 0},
+    {"help", help_command_fcn, "This help command\r\n", -1},
+    {"poweron", power_ctl, "power on at level n", 1},
+    {"poweroff", power_off_ctl, "power off", 0},
+};
 
 ////////////////////////////////////////////////////////////////////////
+
+static char m[SCRATCH_SIZE];
 
 static const char *const pcWelcomeMessage =
     "CLI based on microrl.\r\nType \"help\" to view a list of registered commands.\r\n";
 
-struct command_t {
-  const char *commandstr;
-  BaseType_t (*interpreter)(int argc, char **, char *m);
-  const char *helpstr;
-  const int num_args;
-};
-
-#define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
-static struct command_t commands[] = {
-    {"bootloader", bl_ctl, "Call bootloader\r\n", 0},
-    {"help", help_command_fcn, "This help command\r\n", -1},
-};
-
-static void U0Print(const char *str)
-{
-  UARTPrint(UART0_BASE, str);
-}
-
-struct microrl_user_data_t {
-  uint32_t uart_base;
-};
-
-static BaseType_t help_command_fcn(int argc, char **argv, char *m)
+BaseType_t help_command_fcn(int argc, char **argv, char *m)
 {
   int copied = 0;
   if (argc == 1) {
@@ -122,28 +60,26 @@ static BaseType_t help_command_fcn(int argc, char **argv, char *m)
     i = 0;
     return pdFALSE;
   }
-  else { // help on a specific command.
-    // help for any command that matches the entered command
-    static int j = 0;
-    for (; j < NUM_COMMANDS; ++j) {
-      if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0) {
-        int left = SCRATCH_SIZE - copied;
-        // need room for command string, help string, newlines, etc, and trailing \0
-        unsigned int len = strlen(commands[j].helpstr) + strlen(commands[j].commandstr) + 7;
-        if (left < len) {
-          return pdTRUE;
-        }
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
-                           commands[j].commandstr, commands[j].helpstr);
+  // help for any command that matches the entered command
+  static int j = 0;
+  for (; j < NUM_COMMANDS; ++j) {
+    if (strncmp(commands[j].commandstr, argv[1], strlen(argv[1])) == 0) {
+      int left = SCRATCH_SIZE - copied;
+      // need room for command string, help string, newlines, etc, and trailing \0
+      unsigned int len = strlen(commands[j].helpstr) + strlen(commands[j].commandstr) + 7;
+      if (left < len) {
+        return pdTRUE;
       }
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
+                         commands[j].commandstr, commands[j].helpstr);
     }
-    j = 0;
-    if (copied == 0) {
-      snprintf(m + copied, SCRATCH_SIZE - copied,
-               "%s: No command starting with %s found\r\n", argv[0], argv[1]);
-    }
-    return pdFALSE;
   }
+  j = 0;
+  if (copied == 0) {
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "%s: No command starting with %s found\r\n", argv[0], argv[1]);
+  }
+  return pdFALSE;
 }
 
 static int execute(void *p, int argc, char **argv)
@@ -184,6 +120,10 @@ static int execute(void *p, int argc, char **argv)
   UARTPrint(base, "\r\n");
 
   return 0;
+}
+static void U0Print(const char *str)
+{
+  UARTPrint(UART0_BASE, str);
 }
 
 // The actual task

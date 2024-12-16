@@ -2,8 +2,8 @@
 // * FreeRTOS Kernel V10.2.0
 // *
 
-#ifndef FREERTOS_CONFIG_H
-#define FREERTOS_CONFIG_H
+#ifndef PROD_TEST_FREERTOS_CONFIG_H
+#define PROD_TEST_FREERTOS_CONFIG_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -183,4 +183,4 @@ header file. */
 }
 #endif
 
-#endif /* FREERTOS_CONFIG_H */
+#endif /* PROD_TEST_FREERTOS_CONFIG_H */

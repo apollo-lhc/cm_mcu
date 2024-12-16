@@ -107,6 +107,8 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/printf.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/pinsel.o
+${COMPILER}/prod_test.axf: ${COMPILER}/commands.o
+${COMPILER}/prod_test.axf: ${COMPILER}/power_ctl.o
 
 # TIVAWARE
 ${COMPILER}/prod_test.axf: ${COMPILER}/sysctl.o

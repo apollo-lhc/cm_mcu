@@ -29,6 +29,7 @@
 #include "InterruptHandlers.h"
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "FreeRTOSConfig.h"
+#include "task.h" // IWYU pragma: keep
 //*****************************************************************************
 //
 //  Forward declaration of the default fault handlers.
@@ -59,7 +60,6 @@ const uint32_t *getSystemStack(void)
 {
   return pui32Stack;
 }
-
 
 //*****************************************************************************
 //
