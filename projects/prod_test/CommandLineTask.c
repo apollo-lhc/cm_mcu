@@ -33,6 +33,7 @@ struct command_t commands[] = {
     {"help", help_command_fcn, "This help command\r\n", -1},
     {"poweron", power_ctl, "power on at level n", 1},
     {"poweroff", power_off_ctl, "power off", 0},
+    {"restart", restart_mcu, "restart the MCU", 0},
 };
 
 ////////////////////////////////////////////////////////////////////////

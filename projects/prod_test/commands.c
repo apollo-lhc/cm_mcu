@@ -101,3 +101,14 @@ BaseType_t power_off_ctl(int argc, char **argv, char *m)
   snprintf(m, SCRATCH_SIZE, "Power off\r\n");
   return pdTRUE;
 }   
+
+// direct copy paste from other project? 
+// This command takes no arguments
+BaseType_t restart_mcu(int argc, char **argv, char *m)
+{
+  disable_ps();
+  snprintf(m, SCRATCH_SIZE, "Restarting MCU\r\n");
+  ROM_SysCtlReset(); // This function does not return
+  __builtin_unreachable();
+  return pdFALSE;
+}

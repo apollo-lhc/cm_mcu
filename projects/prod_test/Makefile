@@ -57,7 +57,7 @@ VPATH+=${BASE}/common
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
-
+VPATH+=${BASE}/projects/cm_mcu/commands
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -109,6 +109,7 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/printf.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/pinsel.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/commands.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/power_ctl.o
+${COMPILER}/prod_test.axf: ${COMPILER}/BoardCommands.o
 
 # TIVAWARE
 ${COMPILER}/prod_test.axf: ${COMPILER}/sysctl.o
