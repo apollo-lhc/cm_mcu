@@ -1,15 +1,12 @@
 //*****************************************************************************
-// production testing firmware 
+// production testing firmware
 //*****************************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
 
 // TI includes
-#include "inc/hw_memmap.h"
-#include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
-#include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 
 // local includes
@@ -19,20 +16,16 @@
 #include "common/LocalUart.h"
 #include "common/utils.h"
 
-
 // FreeRTOS includes
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "task.h"
-#include "queue.h"
 #include "stream_buffer.h"
 #include "semphr.h"
 #include "portmacro.h"
-//#include "Semaphore.h"
 #include "InterruptHandlers.h"
 
 SemaphoreHandle_t xUARTMutex = 0;
 void vCommandLineTask(void *pvParameters);
-
 
 //*****************************************************************************
 //
@@ -40,13 +33,12 @@ void vCommandLineTask(void *pvParameters);
 //
 //*****************************************************************************
 #ifdef DEBUG
-void
-__error__(char *pcFilename, uint32_t ui32Line)
+void __error__(char *pcFilename, uint32_t ui32Line)
 {
-  while(1);
+  while (1)
+    ;
 }
 #endif
-
 
 uint32_t g_ui32SysClock;
 
@@ -72,19 +64,13 @@ void Print(const char *str)
 {
   xSemaphoreTake(xUARTMutex, portMAX_DELAY);
   {
-#ifdef REV1
-    UARTPrint(FP_UART, str);
-#endif // REV1
     UARTPrint(ZQ_UART, str);
   }
   xSemaphoreGive(xUARTMutex);
   return;
 }
 
-
-
 // Command line interface
-void vCommandLineTask(void *pvParameters);
 
 typedef struct {
   StreamBufferHandle_t UartStreamBuffer;
@@ -93,7 +79,6 @@ typedef struct {
 } CommandLineTaskArgs_t;
 
 CommandLineTaskArgs_t cli_uart;
-
 
 const char *buildTime(void)
 {
@@ -111,7 +96,6 @@ const char *gitVersion(void)
   const char *gitVersion = BUILD_TYPE "\r\n" FIRMWARE_VERSION;
   return gitVersion;
 }
-
 
 //*****************************************************************************
 //
@@ -144,5 +128,4 @@ __attribute__((noreturn)) int main(void)
   Print("Scheduler start failed\r\n");
   configASSERT(1 == 0); // capture in eeprom
   __builtin_unreachable();
-
 }

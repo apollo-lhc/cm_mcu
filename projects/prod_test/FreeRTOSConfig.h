@@ -5,10 +5,12 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
-#include "common/utils.h"
-#include "common/printf.h"
-#include "driverlib/sysctl.h"
+#include <stdint.h>
+#include <stdbool.h>
+#ifndef DEBUG
 #include "driverlib/rom.h"
+#endif // DEBUG
+#include "inc/hw_memmap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,7 +142,6 @@ header file. */
                                   : "=r"(_a))
 // void apollo_log_assert(void *pc, void * lr);
 // const void *lr = GET_LR();
-
 
 #ifdef DEBUG
 #define APOLLO_ASSERT(exp)    \

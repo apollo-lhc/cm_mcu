@@ -12,7 +12,7 @@
 #define MICRORL_PROMPT_DEFAULT "# "
 #define MICRORL_PROMPT_LEN     2
 
-#define MICRORL_USE_COMPLETE 0
+#define MICRORL_USE_COMPLETE   0
 #define MICRORL_USE_LIBC_STDIO 0
 
 #define MICRORL_USE_CTRL_C 0
@@ -48,11 +48,11 @@
  * you prompt, for example this prompt will green color (if you terminal
  * supports color)
  */
-//#define MICRORL_PROMPT_DEFAULT "\033[32mIRin >\033[0m "	// green color
+// #define MICRORL_PROMPT_DEFAULT "\033[32mIRin >\033[0m "	// green color
 #ifndef MICRORL_PROMPT_DEFAULT
 #define MICRORL_PROMPT_DEFAULT "\033[32mIRin >\033[0m " // green color
 #endif
-//#define MICRORL_PROMPT_DEFAULT "IRin > "
+// #define MICRORL_PROMPT_DEFAULT "IRin > "
 
 /*
  * Define prompt text (without ESC sequence, only text) prompt length, it needs
@@ -132,7 +132,7 @@
 /*
  * New line symbol
  */
-#if !defined(MICRORL_ENDL_CR) && !defined(MICRORL_ENDL_CRLF) && !defined(MICRORL_ENDL_LF) &&       \
+#if !defined(MICRORL_ENDL_CR) && !defined(MICRORL_ENDL_CRLF) && !defined(MICRORL_ENDL_LF) && \
     !defined(MICRORL_ENDL_LFCR)
 #define MICRORL_ENDL_CR
 #endif
@@ -152,7 +152,7 @@
 /********** END CONFIG SECTION ************/
 
 #if MICRORL_RING_HISTORY_LEN > 256
-#error                                                                                             \
+#error \
     "This history implementation (ring buffer with 1 byte iterator) allow 256 byte buffer size maximum"
 #endif
 

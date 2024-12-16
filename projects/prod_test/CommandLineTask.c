@@ -19,17 +19,13 @@
 #include "common/printf.h"
 #include "common/microrl.h"
 
-
 typedef struct {
   StreamBufferHandle_t UartStreamBuffer;
   uint32_t uart_base;
   UBaseType_t stack_size;
 } CommandLineTaskArgs_t;
 
-
-
 void Print(const char *str);
-
 
 #include "driverlib/rom.h"
 #include "inc/hw_types.h"

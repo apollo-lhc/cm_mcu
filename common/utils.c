@@ -15,7 +15,6 @@
 #include "driverlib/eeprom.h"
 #include "FreeRTOS.h" // IWYU pragma: keep
 
-
 #ifdef USE_ERROR_EPROM
 #include "Tasks.h"
 typedef struct error_buffer_t error_buffer_t;
