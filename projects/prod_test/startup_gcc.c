@@ -26,11 +26,9 @@
 #include "inc/hw_nvic.h"
 #include "inc/hw_types.h"
 #include "driverlib/rom.h"
-// #include "prod_test.h"
 #include "InterruptHandlers.h"
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "FreeRTOSConfig.h"
-// #include "task.h"
 //*****************************************************************************
 //
 //  Forward declaration of the default fault handlers.
@@ -62,7 +60,6 @@ const uint32_t *getSystemStack(void)
   return pui32Stack;
 }
 
-void UART0IntHandler(void);
 
 //*****************************************************************************
 //
@@ -301,7 +298,7 @@ static void NmiSR(void)
 // invokes a restart.
 //
 //*****************************************************************************
-void GetRegistersFromStack(uint32_t *pulFaultStackAddress) //
+void GetRegistersFromStack(const uint32_t *pulFaultStackAddress) //
 {
   /* These are volatile to try and prevent the compiler/linker optimizing them
 away as the variables never actually get used.  If the debugger won't show the

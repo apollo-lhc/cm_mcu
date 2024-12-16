@@ -16,6 +16,7 @@
 // Dependencies:
 #include <stdint.h>
 
+#include "driverlib/rom.h"
 #include "inc/hw_types.h"
 #include "inc/hw_nvic.h"
 
@@ -328,7 +329,8 @@ void __default_int_handler(void)
 // file (shouldn't be necessary though).
 void ResetISR(void)
 {
-  uint32_t *pui32Src, *pui32Dest;
+  uint32_t *pui32Src;
+  uint32_t *pui32Dest;
 
   //
   // Copy the data segment initializers from flash to SRAM.
