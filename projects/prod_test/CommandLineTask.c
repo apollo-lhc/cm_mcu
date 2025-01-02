@@ -31,6 +31,7 @@ typedef struct {
 struct command_t commands[] = {
     {"bootloader", bl_ctl, "Call bootloader\r\n", 0},
     {"help", help_command_fcn, "This help command\r\n", -1},
+    {"helloworld", hello_world_fcn, "test", 0},
     {"poweron", power_ctl, "power on at level n", 1},
     {"poweroff", power_off_ctl, "power off", 0},
     {"restart", restart_mcu, "restart the MCU", 0},
