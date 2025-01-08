@@ -7,13 +7,17 @@
 
 // TI includes
 #include "driverlib/sysctl.h"
+#include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
+#include "inc/hw_ints.h"
 
 // local includes
 #include "common/pinout.h"
 #include "prod_test.h"
 #include "FreeRTOSConfig.h"
+#include "common/i2c_reg.h"
 #include "common/LocalUart.h"
+#include "common/smbus.h"
 #include "common/utils.h"
 
 // FreeRTOS includes
@@ -53,7 +57,12 @@ void SystemInit(void)
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
 
+  // initialize interrupts
   UART0Init(g_ui32SysClock); // ZYNQ UART
+  initI2C1(g_ui32SysClock);  // controller for power supplies
+  SMBusMasterInit(&g_sMaster1, I2C1_BASE, g_ui32SysClock);
+  ROM_IntPrioritySet(INT_I2C1, configKERNEL_INTERRUPT_PRIORITY);
+  SMBusMasterIntEnable(&g_sMaster1);
 
   setupActiveLowPins();
 

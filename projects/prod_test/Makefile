@@ -57,7 +57,7 @@ VPATH+=${BASE}/common
 VPATH+=${FREERTOS_ROOT}
 VPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 VPATH+=${FREERTOS_ROOT}/portable/MemMang
-VPATH+=${BASE}/projects/cm_mcu/commands
+#VPATH+=${BASE}/projects/cm_mcu/commands
 #
 # Where to find header files that do not live in the source directory.
 #
@@ -102,6 +102,10 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/LocalUart.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/microrl.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/utils.o
+${COMPILER}/prod_test.axf: ${COMPILER}/i2c_reg.o
+${COMPILER}/prod_test.axf: ${COMPILER}/smbus.o
+${COMPILER}/prod_test.axf: ${COMPILER}/smbus_units.o
+${COMPILER}/prod_test.axf: ${COMPILER}/smbus_helper.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/printf.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/InterruptHandlers.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/startup_${COMPILER}.o
@@ -109,7 +113,8 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/printf.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/pinsel.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/commands.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/power_ctl.o
-${COMPILER}/prod_test.axf: ${COMPILER}/BoardCommands.o
+${COMPILER}/prod_test.axf: ${COMPILER}/PowerI2CCommands.o
+#${COMPILER}/prod_test.axf: ${COMPILER}/BoardCommands.o
 
 # TIVAWARE
 ${COMPILER}/prod_test.axf: ${COMPILER}/sysctl.o

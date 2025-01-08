@@ -19,4 +19,3 @@ BaseType_t bl_ctl(int argc, char **argv, char *m);
 BaseType_t power_ctl(int argc, char **argv, char *m);
 BaseType_t power_off_ctl(int argc, char **argv, char *m);
 BaseType_t restart_mcu(int argc, char **argv, char *m);
-
