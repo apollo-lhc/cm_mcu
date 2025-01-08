@@ -112,10 +112,3 @@ BaseType_t restart_mcu(int argc, char **argv, char *m)
   __builtin_unreachable();
   return pdFALSE;
 }
-
-//Test function
-BaseType_t hello_world_fcn(int argc, char **argv, char *m)
-{
-  snprintf(m, SCRATCH_SIZE, "Hello world\r\n");
-  return pdFALSE;
-}   
