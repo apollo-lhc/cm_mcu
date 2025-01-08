@@ -140,7 +140,7 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
       // write on first pass
       if (rw == 0) {
         data[0] = ps + 1;
-        data[1] = 0x3CU;
+        data[1] = LGA80D_TEST_CONST;
         r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
                                      LGA80D_ADDR_USER_DATA_00, data, 2);
       }
@@ -166,7 +166,7 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
                    ps, ps + 1, data[0]);
           return pdFALSE;
         }
-        if (data[1] != 0x3CU) {
+        if (data[1] != LGA80D_TEST_CONST) {
           snprintf(m, SCRATCH_SIZE,
                    "ERROR: Bad bit 1 on dev %d (expected 60, got %d)\r\n",
                    ps, data[1]);
