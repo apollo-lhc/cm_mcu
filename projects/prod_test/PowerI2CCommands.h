@@ -1,9 +1,9 @@
-//TODO clean up
+// TODO clean up
 #include "FreeRTOS.h" // IWYU pragma: keep
 
-#define PAGE_COMMAND 0x0
+#define PAGE_COMMAND    0x0
 #define N_PM_ADDRS_DCDC 7
-#define NPAGES_PS 2
+#define NPAGES_PS       2
 
 // how to find an I2C device, with a mux infront of it.
 struct dev_i2c_addr_t {

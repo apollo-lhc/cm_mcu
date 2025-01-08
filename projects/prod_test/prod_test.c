@@ -59,7 +59,7 @@ void SystemInit(void)
 
   // initialize interrupts
   UART0Init(g_ui32SysClock); // ZYNQ UART
-  initI2C1(g_ui32SysClock); // controller for power supplies
+  initI2C1(g_ui32SysClock);  // controller for power supplies
   SMBusMasterInit(&g_sMaster1, I2C1_BASE, g_ui32SysClock);
   ROM_IntPrioritySet(INT_I2C1, configKERNEL_INTERRUPT_PRIORITY);
   SMBusMasterIntEnable(&g_sMaster1);
