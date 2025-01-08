@@ -163,7 +163,7 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
         if (data[0] != (ps + 1)) {
           snprintf(m, SCRATCH_SIZE,
                    "ERROR: Bad bit 0 on dev %d (expected %d, got %d)\r\n",
-                   ps, page + 1, data[0]);
+                   ps, ps + 1, data[0]);
           return pdFALSE;
         }
         if (data[1] != 0x3CU) {
