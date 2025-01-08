@@ -25,6 +25,9 @@ endif
 ifdef REV1
 CFLAGS += -DREV1
 endif 
+ifdef REV3
+CFLAGS += -DREV3
+endif 
 
 
 #

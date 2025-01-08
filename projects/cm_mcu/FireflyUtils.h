@@ -11,7 +11,7 @@
 #define I2C_DEVICE_CLK   2
 
 // REV1
-#ifndef REV2
+#ifdef REV1
 #define NFIREFLY_ARG      5
 #define NFIREFLIES_F1     11
 #define NFIREFLIES_F2     14
@@ -19,7 +19,7 @@
 #define NFIREFLIES_DAQ_F1 3
 #define NFIREFLIES_IT_F2  4
 #define NFIREFLIES_DAQ_F2 10
-#else // REV2
+#elif defined(REV2) // REV2
 // REV 2
 #define NFIREFLY_ARG      4
 #define NFIREFLIES_F1     10
@@ -28,7 +28,17 @@
 #define NFIREFLIES_DAQ_F1 4
 #define NFIREFLIES_IT_F2  6
 #define NFIREFLIES_DAQ_F2 4
-#endif // REV 2
+#elif defined(REV3)
+#define NFIREFLY_ARG      4 // FIXME: is this right
+#define NFIREFLIES_F1     10
+#define NFIREFLIES_F2     10
+#define NFIREFLIES_IT_F1  6 // FIXME: is this right
+#define NFIREFLIES_DAQ_F1 4 // FIXME: is this right
+#define NFIREFLIES_IT_F2  6 // FIXME: is this right
+#define NFIREFLIES_DAQ_F2 4 // FIXME: is this right
+#else
+#error "Define Revision!"
+#endif // REV 
 #define CLK_PAGE_COMMAND 1
 #define NFIREFLIES       (NFIREFLIES_F1 + NFIREFLIES_F2)
 
@@ -63,6 +73,7 @@ uint16_t getFFtemp(const uint8_t i);
 float getFFavgoptpow(const uint8_t i);
 float getFFoptpow(const uint8_t i, const uint8_t ch);
 uint16_t getFFpresentbit(const uint8_t i);
+uint8_t getFFpartbit(const uint8_t i);
 #ifdef REV2
 void getFFpart(void);
 uint32_t ff_map_25gb_parts(void);
@@ -84,12 +95,11 @@ struct ff_bit_mask_t {
   uint8_t ffpart_bit_mask;   // this mask is only used for detecting 12-ch 25Gbps on the REV2 board
   uint32_t present_bit_mask; // this mask is used for all ffs to detect if it is mounted or not
 };
-extern struct ff_bit_mask_t ff_bitmask_args[NFIREFLY_ARG];
 #endif
 
 #ifdef REV1
 extern uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL12_F1, present_FFLDAQ_0X20_F2, present_FFL12_0X20_F2, present_FFLDAQ_0X21_F2, present_FFL12_0X21_F2;
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 extern uint32_t present_FFLDAQ_F1, present_FFL12_F1_bar, present_FFLDAQ_F2, present_FFL12_F2_bar;
 #endif // REV2
 

@@ -40,7 +40,7 @@
 #define BLUE_LED_PIN   GPIO_PIN_0
 #define GREEN_LED_BASE GPIO_PORTJ_BASE
 #define GREEN_LED_PIN  GPIO_PIN_1
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 #define LED_BASE       GPIO_PORTP_BASE
 #define RED_LED_BASE   LED_BASE
 #define GREEN_LED_BASE LED_BASE

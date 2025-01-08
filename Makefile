@@ -9,8 +9,10 @@ endif
 
 ifndef REV1
 ifndef REV2
+ifndef REV3
 REV2=1
 export REV2
+endif
 endif
 endif
 

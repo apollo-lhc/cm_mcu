@@ -74,7 +74,7 @@ struct gpio_pin_t {
 #define isFPGAF1_PRESENT() (read_gpio_pin(TM4C_DIP_SW_1) == 1)
 #define isFPGAF2_PRESENT() (read_gpio_pin(TM4C_DIP_SW_2) == 1)
 
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 
 #define X(name, pin, port, localpin, input) \
   name = pin,

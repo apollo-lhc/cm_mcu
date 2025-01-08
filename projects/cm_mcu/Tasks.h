@@ -13,7 +13,6 @@
 
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "queue.h"
-#include "semphr.h"
 #include "common/log.h"
 
 #include <sys/_types.h>
@@ -49,7 +48,7 @@ void InitTask(void *parameters);
 #define ADC_INFO_GEN_VCC_FIN_CH   5
 #define ADC_INFO_FPGA_VCC_INIT_CH 6
 #define ADC_INFO_FPGA_VCC_FIN_CH  7
-#elif defined(REV2) // REV2
+#elif defined(REV2) || defined(REV3) // REV2
 #define ADC_INFO_GEN_VCC_INIT_CH  0
 #define ADC_INFO_GEN_VCC_4V0_CH   3
 #define ADC_INFO_GEN_VCC_FIN_CH   4
@@ -59,9 +58,9 @@ void InitTask(void *parameters);
 #define ADC_INFO_CUR_FIN_CH       17
 #endif
 
-const char *const getADCname(const int i);
-float getADCvalue(const int i);
-float getADCtargetValue(const int i);
+const char *const getADCname(int i);
+float getADCvalue(int i);
+float getADCtargetValue(int i);
 
 // Holds the handle of the created queue for the LED task.
 extern QueueHandle_t xLedQueue;
@@ -123,7 +122,7 @@ void MonitorI2CTask(void *parameters);
 void MonitorTaskI2C(void *parameters);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
-#elif defined(REV2) // REV2
+#elif defined(REV2) || defined(REV3) // Rev 2 or 3 
 #define N_PM_ADDRS_DCDC 7
 #endif
 #define N_EXTRA_CMDS 7
@@ -135,7 +134,7 @@ void MonitorTaskI2C(void *parameters);
 #ifdef REV1
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3) // Rev 2 or 3
 #define I2C_DEVICE_F1 4
 #define I2C_DEVICE_F2 3
 #endif
@@ -164,24 +163,6 @@ extern struct clk_program_t clkprog_args[5]; // NSUPPLIES_CLK + NSUPPLIES_CLKR0A
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff);
 
 // ff_ctl end
-// control the LED
-void LedTask(void *parameters);
-
-#define RED_LED_OFF       (10)
-#define RED_LED_ON        (11)
-#define RED_LED_TOGGLE    (12)
-#define RED_LED_TOGGLE3   (13)
-#define RED_LED_TOGGLE4   (14)
-#define BLUE_LED_OFF      (20)
-#define BLUE_LED_ON       (21)
-#define BLUE_LED_TOGGLE   (22)
-#define BLUE_LED_TOGGLE3  (23)
-#define BLUE_LED_TOGGLE4  (24)
-#define GREEN_LED_OFF     (30)
-#define GREEN_LED_ON      (31)
-#define GREEN_LED_TOGGLE  (32)
-#define GREEN_LED_TOGGLE3 (33)
-#define GREEN_LED_TOGGLE4 (34)
 
 // ---- version info
 const char *buildTime(void);
@@ -218,10 +199,10 @@ enum powdevice { GEN,
 void GenericAlarmTask(void *parameters);
 
 float getAlarmTemperature(enum device device_name);
-void setAlarmTemperature(enum device device_name, const float newtemp);
+void setAlarmTemperature(enum device device_name, float newtemp);
 uint32_t getTempAlarmStatus(void);
 float getAlarmVoltageThres(void);
-void setAlarmVoltageThres(const float voltthres);
+void setAlarmVoltageThres(float voltthres);
 uint32_t getVoltAlarmStatus(void);
 
 // Monitoring using the ADC inputs
@@ -280,7 +261,6 @@ void zm_fill_structs(void);
 void zm_set_firefly_temps(struct zynqmon_data_t data[], int start);
 void zm_set_gitversion(struct zynqmon_data_t data[], int start);
 void zm_set_uptime(struct zynqmon_data_t data[], int start);
-void zm_set_firefly_temps(struct zynqmon_data_t data[], int start);
 void zm_set_firefly_bits(struct zynqmon_data_t data[], int start);
 void zm_set_clkconfigversion(struct zynqmon_data_t data[], int start, int n);
 void zm_set_firefly_info(struct zynqmon_data_t data[], int start);
@@ -304,7 +284,7 @@ int SystemStackWaterHighWaterMark(void);
 
 // clock IO expander initalization
 int init_registers_clk(void);
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 
 #define CLOCK_CHIP_COMMON_I2C_ADDR 0x6b
 #define CLOCK_CHIP_R0A_I2C_ADDR    0x77
@@ -320,7 +300,7 @@ int init_load_clk(int clk_n);
 
 // hibernate/RTC
 void InitRTC(void);
-#endif // REV2
+#endif // REV2 or 3
 
 struct dev_i2c_addr_t; // forward reference
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);

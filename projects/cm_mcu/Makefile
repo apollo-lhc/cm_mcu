@@ -33,6 +33,9 @@ endif
 ifdef REV1
 CFLAGS += -DREV1
 endif 
+ifdef REV3
+CFLAGS += -DREV3
+endif
 CFLAGS+=-DPRINTF_INCLUDE_CONFIG_H -DUSE_ERROR_EPROM
 
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
@@ -143,8 +146,9 @@ ${COMPILER}/ZynqMonTask.o: ZynqMon_addresses.c
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/cm_mcu.o
 ifdef REV1
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev1.o
-endif
-ifdef REV2
+else ifdef REV2
+${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev2.o
+else ifdef REV3
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev2.o
 endif 
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinsel.o

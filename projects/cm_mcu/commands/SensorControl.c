@@ -554,14 +554,21 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // reset firefly devices. The resets are ganged together,
 // so you can only reset all of them at once, for those
 // attached to F1 or F2
+// I/O expanders are different in Rev2 and Rev3 for optics, see schematic pages 4.05 and 4.06
 #define FF_RESET_MUX_ADDR       0x71
 #define FF_RESET_MUX_BIT_MASK   (0x1 << 6)
 #define FF_RESET_IOEXP_ADDR     0x21
+#if defined(REV2)
 #define FF_RESET_IOEXP_REG_ADDR 0x3 // output port 1
+#define FF_RESET_IOEXP_REG_BIT  (0x1<<0) // bit P10, i.e., bit 0 of output port 1
+#elif defined(REV3)
+#define FF_RESET_IOEXP_REG_ADDR 0x2 // output port 0
+#define FF_RESET_IOEXP_REG_BIT  (0x1<<7) // bit P07, i.e., bit 7 of output port 0
+#endif // REV 
 BaseType_t ff_reset(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -589,12 +596,12 @@ BaseType_t ff_reset(int argc, char **argv, char *m)
   uint32_t reset_reg;
   int ret = apollo_i2c_ctl_reg_r(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, &reset_reg);
   // set reset bit 0 which is active low
-  reset_reg &= ~(0x1 << 0);
+  reset_reg &= ~FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
   // wait a tick
   vTaskDelay(pdMS_TO_TICKS(1));
   // clear the active low reset bit
-  reset_reg |= (0x1 << 0);
+  reset_reg |= FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
   // release the semaphore
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
@@ -668,11 +675,10 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   // print out the "present" bits on first pass
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "PRESENT:\r\n");
-    extern struct ff_bit_mask_t ff_bitmask_args[4];
     char *ff_bitmask_names[4] = {"1_12", "1_4 ", "2_12", "2_4 "};
     for (int i = 0; i < 4; ++i) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%s: 0x%02lx\r\n", ff_bitmask_names[i],
-                         ff_bitmask_args[i].present_bit_mask);
+                         getFFpresentbit(i));
     }
   }
 #endif // REV2

@@ -476,7 +476,7 @@ static void U1Print(const char *str)
 {
   UARTPrint(UART1_BASE, str);
 }
-#elif defined(REV2) // REV1
+#elif defined(REV2) || defined(REV3) // REV 2 or 3 
 static void U0Print(const char *str)
 {
   UARTPrint(UART0_BASE, str);
@@ -587,7 +587,7 @@ void vCommandLineTask(void *pvParameters)
 
 #ifdef REV1
   void (*printer)(const char *) = U4Print;
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3) // Rev 2 or 3
   void (*printer)(const char *) = U0Print;
 #endif
 

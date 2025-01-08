@@ -320,7 +320,8 @@ void zm_set_firefly_bits(struct zynqmon_data_t data[], int start)
       data[ll].data.us = 0xFF; // special stale value
     }
     else {
-      val = ff_bitmask_args[j].ffpart_bit_mask;
+      // val = ff_bitmask_args[j].ffpart_bit_mask;
+      val = getFFpartbit(j);
       log_debug(LOG_SERVICE, "25GB bits? for ff argv %d: 0x%02x\r\n", j, val);
       log_debug(LOG_CLI, "25G? for ff argv %d: 0x%02x\r\n", j, val);
       data[ll].data.us = val; // present-bit

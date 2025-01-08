@@ -31,7 +31,7 @@
 //    presumably also set via the task argument.
 // 3. Replace all instances of I2C0_BASE with the appropriate parameter
 
-#if defined(REV1) || defined(REV2)
+#if defined(REV1) || defined(REV2) || defined(REV3) // why is this here 
 #define SLAVE_I2C_BASE I2C0_BASE
 #endif
 

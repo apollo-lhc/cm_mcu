@@ -31,7 +31,8 @@ void InitTask(void *parameters)
   log_info(LOG_SERVICE, "REC register=0x%08x\r\n", restart_reason);
 
   // get board information
-  uint32_t id, rev;
+  uint32_t id;
+  uint32_t rev;
   get_board_info(&rev, &id);
   log_info(LOG_SERVICE, "Board ID: %d, Revision: %d\r\n", id, rev);
 
@@ -51,7 +52,7 @@ void InitTask(void *parameters)
     log_info(LOG_SERVICE, "Clock I/O expander failed\r\n");
     errbuffer_put(EBUF_CLKINIT_FAILURE, 0);
   }
-#ifdef REV2
+#ifndef REV1
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c2_sem);
@@ -75,7 +76,7 @@ void InitTask(void *parameters)
 
   log_info(LOG_SERVICE, "Clocks configured\r\n");
 
-#endif // REV2
+#endif // not REV1
   vTaskSuspend(NULL);
   // Delete this task
   vTaskDelete(xTaskGetCurrentTaskHandle());

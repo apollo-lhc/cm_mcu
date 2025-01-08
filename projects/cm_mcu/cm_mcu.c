@@ -99,7 +99,7 @@ void SystemInitInterrupts(void)
   // this also sets up the interrupts
 #if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
   UART0Init(g_ui32SysClock); // ZYNQ UART
 #endif
   UART4Init(g_ui32SysClock); // front panel UART in Rev1 and Zynq comms in Rev2
@@ -125,17 +125,15 @@ void SystemInitInterrupts(void)
   ROM_IntEnable(INT_ADC0SS1);
   ROM_IntEnable(INT_ADC1SS0);
 
-#if defined(REV1) || defined(REV2)
   // Set up the I2C controllers
   initI2C0(g_ui32SysClock); // Slave controller
   initI2C1(g_ui32SysClock); // controller for power supplies
   initI2C2(g_ui32SysClock); // controller for clocks
   initI2C3(g_ui32SysClock); // controller for V (F2) optics
   initI2C4(g_ui32SysClock); // controller for K (F1) optics
-#endif
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
   initI2C5(g_ui32SysClock); // controller for FPGAs
 #endif
 
@@ -148,7 +146,7 @@ void SystemInitInterrupts(void)
   SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
 #if defined(REV1)
   SMBusMasterInit(&g_sMaster6, I2C6_BASE, g_ui32SysClock);
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
   SMBusMasterInit(&g_sMaster5, I2C5_BASE, g_ui32SysClock);
 #endif
   // FreeRTOS insists that the priority of interrupts be set up like this.
@@ -159,7 +157,7 @@ void SystemInitInterrupts(void)
   ROM_IntPrioritySet(INT_I2C4, configKERNEL_INTERRUPT_PRIORITY);
 #if defined(REV1)
   ROM_IntPrioritySet(INT_I2C6, configKERNEL_INTERRUPT_PRIORITY);
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
   ROM_IntPrioritySet(INT_I2C5, configKERNEL_INTERRUPT_PRIORITY);
 #endif
   //
@@ -171,7 +169,7 @@ void SystemInitInterrupts(void)
   SMBusMasterIntEnable(&g_sMaster4);
 #if defined(REV1)
   SMBusMasterIntEnable(&g_sMaster6);
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
   SMBusMasterIntEnable(&g_sMaster5);
 #endif
 
@@ -191,7 +189,7 @@ void SystemInitInterrupts(void)
 
   setupActiveLowPins();
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   // RTC in the Hibernation module
   InitRTC();
 #endif // REV2
@@ -245,11 +243,11 @@ __attribute__((noreturn)) int main(void)
   initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   fpga_args.xSem = i2c5_sem;
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   ff_f1_args.xSem = i2c4_sem;
   ff_f2_args.xSem = i2c3_sem;
   clk_args.xSem = i2c2_sem;
-#endif // REV2
+#endif // REV2 or 3 
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
 #ifdef REV1
@@ -263,7 +261,7 @@ __attribute__((noreturn)) int main(void)
                                            1);  // number of items before a trigger is sent
   cli_uart.uart_base = ZQ_UART;
   cli_uart.UartStreamBuffer = xUART1StreamBuffer;
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
   // There is one buffer for the CLI (shared front panel and Zynq)
   xUART0StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
                                            1);  // number of items before a trigger is sent
@@ -288,7 +286,7 @@ __attribute__((noreturn)) int main(void)
 #endif // REV1
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
@@ -347,8 +345,10 @@ __attribute__((noreturn)) int main(void)
 
 #ifdef REV1
   Print("\r\nRev1 build\r\n");
-#elif defined(REV2)
+#elif defined(REV2) 
   Print("\r\nRev2 build\r\n");
+#elif defined(REV3)
+  Print("\r\nRev3 build\r\n");
 #endif
   Print("\t\t (FreeRTOS scheduler about to start)\r\n");
   Print("Built on " __TIME__ ", " __DATE__ "\r\n");

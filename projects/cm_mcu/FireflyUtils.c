@@ -73,12 +73,14 @@ void readFFpresent(void)
   uint32_t present_FFL4_F1, present_FFL12_F1,
       //      4.06 I2C VU7P OPTICS (the I/O expanders at 0x20 and 0x21 have mixed 4-ch (ffl4) and 12-ch (FFL12) pins)
       present_0X20_F2, present_0X21_F2, present_FFL4_0X20_F2, present_FFL12_0X20_F2,
-      present_FFL4_0X21_F2, present_FFL12_0X21_F2 = 0;
-#elif defined(REV2)
-  //      4.05 I2C FPGA31 OPTICS
-  uint32_t present_FFL4_F1_bar, present_FFL12_F1_bar,
-      //      4.06 I2C FPGA2 OPTICS
-      present_FFL4_F2_bar, present_FFL12_F2_bar = 0;
+      present_FFL4_0X21_F2, present_FFL12_0X21_F2;
+#elif defined(REV2) || defined(REV3)
+  // 4.05 I2C FPGA31 OPTICS
+  uint32_t present_FFL4_F1_bar;
+  uint32_t present_FFL12_F1_bar;
+  // 4.06 I2C FPGA2 OPTICS
+  uint32_t present_FFL4_F2_bar;
+  uint32_t present_FFL12_F2_bar;
 #endif // REV2
 
   // grab the semaphore to ensure unique access to I2C controller
@@ -106,7 +108,18 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0x7;          // bits 4-6
   apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                               // clear the mux
+#elif defined(REV3)
+  // to port 7
+  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1_bar); // active low
+  apollo_i2c_ctl_w(4, 0x70, 1, 0x8);                                // clear the mux
 
+  // to port 6
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1_bar); // active low
+  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
+  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0xF;          // bits 4-7
+  apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                               // clear the mux
 #endif
 
   // if we have a semaphore, give it
@@ -138,6 +151,18 @@ void readFFpresent(void)
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7;          // bits 4-6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+#elif defined(REV3)
+  // to port 7
+  apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
+  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low
+  apollo_i2c_ctl_w(3, 0x70, 1, 0x8);                                // clear the mux
+
+  // to port 6
+  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
+  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
+  f1_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF;          // bits 4-7
+  apollo_i2c_ctl_w(3, 0x71, 1, 0x0);                               // clear the mux
 
 #endif
   // if we have a semaphore, give it
@@ -179,7 +204,27 @@ void readFFpresent(void)
   ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1_bar) & 0x3FU; // 6 bits
   ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2_bar) & 0xFU;   // 4 bits
   ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2_bar) & 0x3FU; // 6 bits
+#elif defined(REV3)
+  present_FFL12_F1_bar = present_FFL12_F1_bar & 0xFFU;     // bottom 8 bits
+  present_FFL12_F2_bar = present_FFL12_F2_bar & 0xFFU;     // bottom 8 bits
+  present_FFL4_F1_bar = (present_FFL4_F1_bar >> 2) & 0x3U; // bits 2-3
+  present_FFL4_F2_bar = (present_FFL4_F2_bar >> 2) & 0x3U; // bits 2-3
 
+  // active low
+  uint32_t ff_combined_present_bar = ((present_FFL4_F2_bar) << 18) |  // 2 bits
+                                     ((present_FFL12_F2_bar) << 10) | // 8 bits
+                                     (present_FFL4_F1_bar) << 8 |     // 2 bits
+                                     ((present_FFL12_F1_bar));        // 8 bits
+  uint32_t ff_combined_present = ~ff_combined_present_bar;            // make active high
+  // masks are active high
+  ff_bitmask_args[1].present_bit_mask = (~present_FFL4_F1_bar) & 0x3U;   // 2 bits
+  ff_bitmask_args[0].present_bit_mask = (~present_FFL12_F1_bar) & 0xFFU; // 8 bits
+  ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2_bar) & 0x3U;   // 2 bits
+  ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2_bar) & 0xFFU; // 8 bits
+
+#endif // REV
+
+#if defined(REV2) || defined(REV3)
   // dump all the masks using log_info
   log_info(LOG_SERVICE, "F1 4v0 switch:    0x%x\r\n", f1_ff12xmit_4v0_sel);
   log_info(LOG_SERVICE, "F2 4v0 switch:    0x%x\r\n", f2_ff12xmit_4v0_sel);
@@ -330,6 +375,17 @@ uint16_t getFFpresentbit(const uint8_t i)
     return 56;
   }
   uint16_t val = ff_bitmask_args[i].present_bit_mask;
+
+  return val;
+}
+
+uint8_t getFFpartbit(const uint8_t i)
+{
+  if (i > 3) {
+    log_error(LOG_SERVICE, "caught %d > total fireflies %d\r\n", i, NFIREFLIES);
+    return 56;
+  }
+  uint8_t val = ff_bitmask_args[i].ffpart_bit_mask;
 
   return val;
 }

@@ -50,7 +50,7 @@ struct MonitorTaskArgs_t {
 // DC-DC converter
 #ifdef REV1
 #define NSUPPLIES_PS (5) // 5 devices, 2 pages each
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3) // Rev 2 or 3
 #define NSUPPLIES_PS (7) // 7 devices, 2 pages each
 #endif
 #define NCOMMANDS_PS 20 // number of entries in dcdc_ array
