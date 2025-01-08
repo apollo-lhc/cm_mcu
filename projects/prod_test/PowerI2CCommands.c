@@ -42,6 +42,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
 
 /**
  * @brief helper function to verify I2C/SMBUS transactions sucecssful
+ *
  * @details
  * To verify transaction, make a call to this function after calling an SMBUS
  * method such as SMBusMasterI2CWrite. It verifies no errors were generated
@@ -69,7 +70,6 @@ int check_i2c_transaction(tSMBusStatus r, int timeout, bool no_message,
   }
   int tries = 0;
   while (SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
-    // vTaskDelayUntil(xLastWakeTime, pdMS_TO_TICKS(10)); // wait
     vTaskDelay(pdMS_TO_TICKS(10));
     if (timeout > 0) {
       if (++tries > timeout) {
@@ -96,26 +96,19 @@ int check_i2c_transaction(tSMBusStatus r, int timeout, bool no_message,
 }
 
 /**
- * @brief Tests I2C communication to DC-DC converters
  * @details
  * Tests I2C communication to the DC-DC converters by first performing a loop
  * where some (distinct) data is written to the B0 (USER_DATA_00) register of
  * each DC-DC converter, then a second loop reads the data and verifies that it
  * matches what was written. Finally, the MUX reset signal is tested by
  * checking a read attempt fails following a MUX reset
- *
- * @param [in] argc  number of CLI arguments
- * @param [in] argv  CLI arguments
- * @param [out] m  output string
- * @return pdFALSE
  */
 BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
 {
-  // initialize to the current tick time
-  // TickType_t xLastWakeTime = xTaskGetTickCount();
   uint8_t data[2];
   tSMBusStatus r;
   int copied = 0;
+  uint8_t page = 0;
 
   // do two passes, write the first time and read the second
   for (uint8_t rw = 0; rw < 2; ++rw) {
@@ -134,62 +127,57 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
         return pdFALSE;
       }
 
-      // loop over pages on the supply
-      // do we actually need this? If our goal is just to test the hardware I2C
-      // connections, we could just use the first controller on each LGA80D
-      for (uint8_t page = 0; page < NPAGES_PS; ++page) {
-        // select page
+      // select page
+      r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
+                                   PAGE_COMMAND, &page, 1);
+      copied = check_i2c_transaction(r, -1, false, m);
+      if (copied != 0) {
+        snprintf(m + copied, SCRATCH_SIZE - copied,
+                 "(selecting page 0 on dev %d)\r\n", ps);
+        return pdFALSE;
+      }
+
+      // write on first pass
+      if (rw == 0) {
+        data[0] = ps + 1;
+        data[1] = 0x3CU;
         r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                     PAGE_COMMAND, &page, 1);
-        copied = check_i2c_transaction(r, -1, false, m);
-        if (copied != 0) {
-          snprintf(m + copied, SCRATCH_SIZE - copied,
-                   "(selecting page %d on dev %d)\r\n", page, ps);
+                                     LGA80D_ADDR_USER_DATA_00, data, 2);
+      }
+      // read on second pass
+      else {
+        data[0] = 0x0U;
+        data[1] = 0x0U;
+        r = SMBusMasterByteWordRead(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
+                                    LGA80D_ADDR_USER_DATA_00, data, 2);
+      }
+      copied = check_i2c_transaction(r, 500, false, m);
+      if (copied != 0) {
+        snprintf(m + copied, SCRATCH_SIZE - copied,
+                 "(read/write %d, page %d, dev %d)\r\n", rw, page, ps);
+        return pdFALSE;
+      }
+
+      if (rw == 0) {
+        // check read value
+        if (data[0] != (ps + 1)) {
+          snprintf(m, SCRATCH_SIZE,
+                   "ERROR: Bad bit 0 on dev %d (expected %d, got %d)\r\n",
+                   ps, page + 1, data[0]);
           return pdFALSE;
         }
-
-        // Use B0 (USER_DATA_00)
-        if (rw == 0) { // write on first pass
-          data[0] = page + ps * NPAGES_PS + 1;
-          data[1] = 0x3CU;
-          r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                       0xb0, data, 2);
-        }
-        else { // read on second pass
-          data[0] = 0x0U;
-          data[1] = 0x0U;
-          r = SMBusMasterByteWordRead(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                      0xb0, data, 2);
-        }
-        copied = check_i2c_transaction(r, 500, false, m);
-        if (copied != 0) {
-          snprintf(m + copied, SCRATCH_SIZE - copied,
-                   "(read/write %d, page %d, dev %d)\r\n", rw, page, ps);
+        if (data[1] != 0x3CU) {
+          snprintf(m, SCRATCH_SIZE,
+                   "ERROR: Bad bit 1 on dev %d (expected 60, got %d)\r\n",
+                   ps, data[1]);
           return pdFALSE;
         }
+      }
 
-        if (rw == 0) {
-          // check read value
-          if (data[0] != page + ps * NPAGES_PS + 1) {
-            snprintf(m, SCRATCH_SIZE,
-                     "ERROR: Bad bit 0 on dev %d-%d (expected %d, got %d)\r\n",
-                     ps, page, page + ps * NPAGES_PS + 1, data[0]);
-            return pdFALSE;
-          }
-          if (data[1] != 0x3CU) {
-            snprintf(m, SCRATCH_SIZE,
-                     "ERROR: Bad bit 1 on dev %d-%d (expected 60, got %d)\r\n",
-                     ps, page, data[1]);
-            return pdFALSE;
-          }
-        }
-
-        // wait here for 10 msec
-        // vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
-        vTaskDelay(pdMS_TO_TICKS(10));
-      } // loop over pages on the supply
-    }   // loop over devices
-  }     // read/write passes
+      // wait here for 10 msec
+      vTaskDelay(pdMS_TO_TICKS(10));
+    } // loop over devices
+  } // read/write passes
 
   // test reset by attempting read; as long as we don't use an address 0xAX,
   // we shouldn't accidentally address the MUX
@@ -198,17 +186,17 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
   write_gpio_pin(_PWR_I2C_RESET, 0x1);
 
   bool read_fail = false;
-  // read register 0x98 (PMBUS_REVISION), which should be 0x22
   data[0] = 0x0U;
   r = SMBusMasterByteWordRead(&g_sMaster1,
-                              pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr, 0x98,
+                              pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr,
+                              LGA80D_ADDR_PMBUS_REVISION,
                               data, 1);
   copied = check_i2c_transaction(r, 500, true, m);
   if (copied == 1) {
     read_fail = true;
   }
   if (!read_fail) {
-    if (data[0] != 0x22) {
+    if (data[0] != LGA80D_PMBUS_VER) {
       read_fail = true;
     }
   }
