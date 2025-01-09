@@ -1,6 +1,9 @@
 Diagnostics:
   ClangTidy:
     Add: modernize*
-    Remove: readability-braces-around-statements
+    Remove: [readability-identifier-length,
+            readability-redundant-control-flow,
+            readability-magic-numbers,
+            ]
 #CompileFlags:
   #Add: [-Wunused-parameter]

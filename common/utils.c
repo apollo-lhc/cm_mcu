@@ -14,8 +14,9 @@
 #include "driverlib/debug.h"
 #include "driverlib/eeprom.h"
 #include "FreeRTOS.h" // IWYU pragma: keep
-#include "Tasks.h"
 
+#ifdef USE_ERROR_EPROM
+#include "Tasks.h"
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t *errbuf_handle_t;
 
@@ -67,6 +68,7 @@ uint64_t read_eeprom_multi(uint32_t addr)
   xQueueReceive(xEPRMQueue_out, &data, portMAX_DELAY);
   return data;
 }
+#endif // USE_ERROR_EPROM
 
 // write by pin number or name
 void write_gpio_pin(int pin, uint8_t value)
@@ -130,6 +132,7 @@ void setupActiveLowPins(void)
   }
 }
 
+#ifdef USE_ERROR_EPROM
 // EEPROM Buffer
 
 // error codes. these should correspond to the names in utils.h
@@ -473,7 +476,7 @@ void errbuffer_power_fail_clear(void)
 {
   errbuffer_put(EBUF_PWR_FAILURE_CLR, 0);
 }
-
+#endif // USE_ERROR_EPROM
 // These register locations are defined by the ARM Cortex-M4F
 // specification and do not depend on the TM4C1290NCPDT
 // ARM DWT

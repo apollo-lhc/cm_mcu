@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "pinsel.h"
+
 // X-macros for Alarm messages
 #define X_MACRO_QUEUE_MESSAGES                                   \
   X(TEMP_ALARM, "Temperature Alarm")                             \
@@ -125,5 +127,7 @@ bool check_ps(void);
 bool disable_ps(void);
 void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio);
 void blade_power_ok(bool isok);
+
+extern const struct gpio_pin_t oks[N_PS_OKS];
 
 #endif /* COMMON_POWER_CTL_H_ */

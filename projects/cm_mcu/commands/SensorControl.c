@@ -324,7 +324,6 @@ BaseType_t psmon_ctl(int argc, char **argv, char *m)
 }
 
 // send power control commands
-extern struct gpio_pin_t oks[N_PS_OKS];
 
 // power control state names
 static const char *power_control_state_names[] = {

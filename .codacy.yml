@@ -1,3 +1,4 @@
 ---
 exclude_paths:
  - "sm_cm_config/**"
+ - "**/README.md"

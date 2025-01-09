@@ -16,7 +16,7 @@ ROOT=../..
 BASE=$(shell cd ../..; pwd)
 
 # FreeRTOS submodule
-FREERTOS_ROOT=../../FreeRTOS-Kernel
+FREERTOS_ROOT=$(BASE)/FreeRTOS-Kernel
 
 #
 # Include the common make definitions.
@@ -33,7 +33,7 @@ endif
 ifdef REV1
 CFLAGS += -DREV1
 endif 
-CFLAGS+=-DPRINTF_INCLUDE_CONFIG_H
+CFLAGS+=-DPRINTF_INCLUDE_CONFIG_H -DUSE_ERROR_EPROM
 
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
 #CFLAGS+=-fstack-protector 

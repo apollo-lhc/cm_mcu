@@ -1,0 +1,15 @@
+/*
+ * printf_config.h
+ *
+ *  Created on: Jun 1, 2021
+ *      Author: pw94
+ */
+
+#ifndef PROD_TEST_PRINTF_CONFIG_H_
+#define PROD_TEST_PRINTF_CONFIG_H_
+
+#define PRINTF_DISABLE_SUPPORT_FLOAT
+#define PRINTF_DISABLE_SUPPORT_EXPONENTIAL
+#define PRINTF_DISABLE_SUPPORT_LONG_LONG
+#define PRINTF_DISABLE_SUPPORT_PTRDIFF_T
+#endif /* PROD_TEST_PRINTF_CONFIG_H_ */
