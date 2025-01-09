@@ -25,7 +25,7 @@
 
 uint32_t ff_PRESENT_mask = 0; // global variable from getting combined ff signals
 uint32_t ff_USER_mask = 0;    // global variable of ff signals from user input
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 uint32_t f1_ff12xmit_4v0_sel = 0; // global variable for FPGA1 12-ch xmit ff's power-supply physical selection
 uint32_t f2_ff12xmit_4v0_sel = 0; // global variable for FPGA2 12-ch xmit ff's power-supply physical selection
 
@@ -46,7 +46,7 @@ void setFFmask(uint32_t ff_combined_present)
   // int32_t data = (~ff_combined_present) & 0xFFFFFU; // the bit value for an FF mask is an inverted bit value of the PRESENT signals
 #ifdef REV1
   uint32_t data = (~ff_combined_present) & 0x1FFFFFFU;
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3) // TODO: check
   uint32_t data = (ff_combined_present) & 0xFFFFFU;
 #endif // REV1
   ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
@@ -161,7 +161,7 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
   apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-  f1_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF;          // bits 4-7
+  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF;          // bits 4-7
   apollo_i2c_ctl_w(3, 0x71, 1, 0x0);                               // clear the mux
 
 #endif
@@ -290,7 +290,7 @@ uint16_t getFFtemp(const uint8_t i)
   return get_FF_TEMPERATURE_data(i);
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // returns optical power in uW
 // not that the 4 channel and 12 channel data is encoded differently
 // see the relevant data sheets and comments below
@@ -437,15 +437,25 @@ uint32_t ff_map_25gb_parts(void)
   }
   log_info(LOG_SERVICE, "ff 25G12 mask: 0x%08lx\r\n", ff_25gb_parts);
   // these masks have one bit per pair of receiver/transceiver
+#ifdef REV2
   ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_parts & 0x3fU; // six bits
   ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_parts >> 10) & 0x3fU;
+#elif defined(REV3)
+  ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_parts & 0xffU; // eight bits
+  ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_parts >> 10) & 0xffU;
+#endif
   // dump the masks
   log_info(LOG_SERVICE, "F1 25G12 mask: 0x%02x\r\n", ff_bitmask_args[0].ffpart_bit_mask);
   log_info(LOG_SERVICE, "F2 25G12 mask: 0x%02x\r\n", ff_bitmask_args[2].ffpart_bit_mask);
   log_info(LOG_SERVICE, "Fx 25G12 pair mask: 0x%02x\r\n", ff_25gb_pairs);
   // pair mask into two parts
+#ifdef REV2
   uint32_t pair_mask_low = ff_25gb_pairs & 0x7U;         // 3 bits
   uint32_t pair_mask_high = (ff_25gb_pairs >> 5) & 0x7U; // 3 pairs of Tx/Rx + 2 XCVRs = 5 shifts
+#elif defined(REV3)
+  uint32_t pair_mask_low = ff_25gb_pairs & 0xFU;         // 4 bits
+  uint32_t pair_mask_high = (ff_25gb_pairs >> 6) & 0xFU; // 4 pairs of Tx/Rx + 2 XCVRs = 6 shifts
+#endif // Rev2 or 3
   log_info(LOG_SERVICE, "F1 25G pair mask: 0x%02x\r\n", pair_mask_low);
   log_info(LOG_SERVICE, "F2 25G pair mask: 0x%02x\r\n", pair_mask_high);
   // check if the 4v switch settings match

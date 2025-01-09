@@ -210,7 +210,7 @@ struct MonitorTaskI2CArgs_t ff_f2_args = {
     .presentCallback = isEnabledFF_F2,
 };
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3) // FIXME: REV3 has no 5341
 struct MonitorTaskI2CArgs_t clk_args = {
     .name = "CLK",
     .devices = clk_moni2c_addrs,

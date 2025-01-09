@@ -35,7 +35,7 @@
 #include "ZynqMon_addresses.h"
 
 // Rev 2
-// this was split into a SoftUART version (Rev1) and a hard UART version (Rev2)
+// this was split into a SoftUART version (Rev1) and a hard UART version (Rev2+)
 
 #define SZ 20
 
@@ -213,7 +213,7 @@ void ZMUartCharPut(unsigned char c)
   SoftUARTCharPut(&g_sUART, c);
 }
 
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 void ZMUartCharPut(unsigned char c)
 {
   ROM_UARTCharPut(UART4_BASE, c);
@@ -298,7 +298,7 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   }
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 uint16_t getFFtXdisablebit(const uint8_t i)
 {
   return get_FF_CHANNEL_DISABLE_data(i);
@@ -413,7 +413,7 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
   }
 }
 
-#endif // REV2
+#endif // REV2 or 3
 
 // store the zynqmon ADCMon data
 void zm_set_adcmon(struct zynqmon_data_t data[], int start)

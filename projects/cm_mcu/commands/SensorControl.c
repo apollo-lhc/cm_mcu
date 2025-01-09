@@ -670,7 +670,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF STATUS:\r\n");
   }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   int nTx = -1; // order of Tx ch
   // print out the "present" bits on first pass
   if (whichff == 0) {
@@ -694,7 +694,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     if (isTx) {
 #ifdef REV1
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-#elif defined(REV2) // REV1
+#elif defined(REV2) || defined(REV3)
       nTx += 1;
       uint8_t ff_4v0_sel = 1 << (nTx % (NFIREFLIES_IT_F1 / 2));
       if (nTx < (NFIREFLIES_IT_F1 / 2))
@@ -1284,7 +1284,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     m[copied] = '\0';
   }
   c = 0;
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clkprog_args[i].progname_clkdesgid);
   if (strncmp(clkprog_args[i].progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(clkprog_args[i].progname_clkdesgid, "5341ABP1", 3) == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
@@ -1360,7 +1360,7 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
 }
 
 // This command takes 1 argument, either f1 or f2
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 BaseType_t fpga_flash(int argc, char **argv, char *m)
 {
   const TickType_t kDELAY = 1 / portTICK_PERIOD_MS; // 1 ms delay

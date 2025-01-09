@@ -64,7 +64,7 @@ struct gpio_pin_t oks[] = {
 #elif defined(REV2) || defined(REV3) // REV2 or 3
 // ------------------------------------------
 //
-// REV 2
+// REV 2 and REV3
 //
 // ------------------------------------------
 // if you update this you need to update N_PS_ENABLES

@@ -74,7 +74,7 @@ float getFFavgoptpow(const uint8_t i);
 float getFFoptpow(const uint8_t i, const uint8_t ch);
 uint16_t getFFpresentbit(const uint8_t i);
 uint8_t getFFpartbit(const uint8_t i);
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 void getFFpart(void);
 uint32_t ff_map_25gb_parts(void);
 #endif
@@ -88,7 +88,7 @@ uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *val
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 extern uint32_t f1_ff12xmit_4v0_sel;
 extern uint32_t f2_ff12xmit_4v0_sel;
 struct ff_bit_mask_t {

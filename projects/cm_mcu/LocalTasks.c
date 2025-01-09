@@ -1,4 +1,4 @@
-/*
+  /*
  * LocalTasks.c
  *
  *  Created on: Apr 23, 2020
@@ -225,7 +225,7 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"K07  12 Tx GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
     {"K07  12 Rx GTY", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 // struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
 //     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
 //     {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
@@ -262,7 +262,7 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
@@ -272,10 +272,10 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
 #else
-#error "Define either Rev1 or Rev2"
+#error "Define board revision"
 #endif
 
-#ifdef REV2
+#if defined(REV2)||defined(REV3)
 // Clock arguments for monitoring task
 
 struct clk_program_t clkprog_args[] = {
@@ -286,6 +286,10 @@ struct clk_program_t clkprog_args[] = {
     {"", ""}, //
 };
 
+#endif
+
+#ifdef REV2
+
 struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r0a", 0x70, 0, 0x77, 0x45D},  // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
@@ -293,6 +297,16 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
+#elif defined(REV3)
+// FIXME: the offset for R0A will have to change?
+struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
+    {"r0a", 0x70, 0, 0x6b, 0x45D},  // CLK R0A : Si5395-REVA with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
+    {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
+    {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
+    {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
+    {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
+};
+
 
 #endif // REV2
 
@@ -1272,22 +1286,25 @@ int init_load_clk(int clk_n)
 // FPGA) to set these bits. In Rev2 we don't need to do a read/modify/write
 // cycle because the other relevant bits are either inputs and the write does not
 // affect them, or active high resets (bit0). See schematic pages 4.05 and 4.06.
-// For each FPGA (F1 and F2),
-// FF_1-FF3 are selectable. bit mask is 0x0e
-// FIXME: check for REV3
+// Rev3 moves the reset bit elsewhere.
+#define EN3V8_MUXBIT     (0x1U<<6)
+#define EN3V8_MUXADDR    0x71    // mux addresses on I2C Bus
+#define EN3V8_IOEXP_ADDR 0x21 // device address on I2C Bus
+#define EN3V8_IOEXP_REG_ADDR 0x3 // register address in TCA9555 I/O expander
+#ifdef REV2
+#define EN3V8_IOEXP_REG_MASK       0xEU   // which bits in the i/o expander register
+#elif defined(REV3)
+#define EN3V8_IOEXP_REG_MASK       0xFU   // which bits in the i/o expander register
+#endif
+
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
 {
   // i2cw 4 0x71 1 0x40
   // i2cwr 4 0x21 1 0x03 1 0x0f
   SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
   uint32_t i2c_device[2] = {4, 3};
-  static const UBaseType_t mask = 0xeU;    // which bits in the i/o expander
-  static const uint8_t muxbit = 0x1U << 6; // which output of the mux
-  static const uint8_t muxaddr = 0x71;     // address of mux on i2c bus
-  static const uint8_t ioexp_addr = 0x21;  // address of i/o expander on i2c bus
-  static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
   int result = 0;
-  // dump infput ffmask
+  // dump input ffmask
   log_debug(LOG_SERVICE, "ffmask[0] 0x%x, ffmask[1] 0x%x\r\n", ffmask[0], ffmask[1]);
   // loop over 2 i2c modules
   for (int i = 0; i < 2; ++i) {
@@ -1301,7 +1318,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       return SEM_ACCESS_ERROR;
     }
     // mux setting
-    result += apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
+    result += apollo_i2c_ctl_w(i2c_device[i], EN3V8_MUXADDR, 1, EN3V8_MUXBIT);
     if (result) {
       log_warn(LOG_SERVICE, "mux err %d\r\n", result);
     }
@@ -1310,30 +1327,20 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       if (turnOff) {
         val = ~val; // invert bits when turning off
       }
-      val = (val << 1) & mask; // set bits 1-3, and mask out extra bits extraneously set
+#ifdef REV2
+      val = (val << 1) & EN3V8_IOEXP_REG_MASK; // set bits 1-3, and mask out extra bits extraneously set
       val |= 0x01;             // make sure active low reset bit stays deasserted (i.e., LSB is high)
-      result += apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
+#elif defined(REV3)
+      val &= EN3V8_IOEXP_REG_MASK; // bottom 4 bits only, no reset here anymore
+#endif // REV2
+      result += apollo_i2c_ctl_reg_w(i2c_device[i], EN3V8_IOEXP_ADDR, 1, EN3V8_IOEXP_REG_ADDR, 1, val);
       if (result) {
         log_warn(LOG_SERVICE, "expand wr %d\r\n", result);
       }
     }
-    // read back the value to make sure it was set correctly
-    uint32_t val;
-    result += apollo_i2c_ctl_reg_r(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, &val);
-    log_debug(LOG_SERVICE, "%s: read 3.8V  val raw 0x%x\r\n", __func__, val);
-    val = (val & mask) >> 1; // mask and shift
-    if (result) {
-      log_warn(LOG_SERVICE, "expand rd %d\r\n", result);
-    }
-    else if (val != ffmask[i]) {
-      log_error(LOG_SERVICE, "expand val 0x%x != 0x%x\r\n", val, ffmask[i]);
-      result = 1;
-    }
-    log_info(LOG_SERVICE, "%s: set 3.8V to val 0x%x (input 0x%x)\r\n", __func__, val,
-             ffmask[i]);
 
     // clear the mux
-    result += apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, 0);
+    result += apollo_i2c_ctl_w(i2c_device[i], EN3V8_MUXADDR, 1, 0);
 
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(semaphores[i]) == xTaskGetCurrentTaskHandle()) {
