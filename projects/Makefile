@@ -1,8 +1,8 @@
 
 
 DIRS=boot_loader cm_mcu #i2c-sensors 
-ifdef REV2
-DIRS+=prod_test # only build prod_test if REV2 is defined
+ifneq "$(or  $(REV3), $(REV2))" ""
+DIRS+=prod_test # only build prod_test if REV2 or REV3 is defined
 endif
 
 DIRSCLEAN=$(addsuffix .clean,$(DIRS))

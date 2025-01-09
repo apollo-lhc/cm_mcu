@@ -30,6 +30,9 @@ endif
 ifdef REV2
 CFLAGS += -DREV2
 endif 
+ifdef REV3
+CFLAGS += -DREV3
+endif
 ifdef REV1
 error "REV1 is not supported"
 endif 
