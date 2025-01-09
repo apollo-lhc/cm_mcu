@@ -93,6 +93,7 @@ jobs:
           **/.gitignore
           **/.git*
           **/LICENSE 
+          **/*.ld
     - name: Format changed files
       if: steps.changed-files.outputs.any_changed == 'true'
       uses: DoozyX/clang-format-lint-action@v0.17
