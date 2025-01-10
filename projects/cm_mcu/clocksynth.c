@@ -15,7 +15,6 @@
 
 #if defined(REV2) || defined(REV3)
 
-
 // must grab and release the semaphore in a larger scope when calling this function
 int clear_clk_stickybits(void)
 {

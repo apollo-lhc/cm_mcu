@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2010-2017 Texas Instruments Incorporated.  All rights reserved.
 // Software License Agreement
-// 
+//
 // Texas Instruments (TI) is supplying this software for use solely and
 // exclusively on TI's microcontroller products. The software is owned by
 // TI and/or its suppliers, and is protected under applicable copyright
 // laws. You may not combine this software with "viral" open-source
 // software in order to form a larger program.
-// 
+//
 // THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
 // NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
 // NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 // A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
 // CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
 // DAMAGES, FOR ANY REASON WHATSOEVER.
-// 
+//
 // This is part of revision 2.1.4.178 of the Tiva Firmware Development Package.
 //
 //*****************************************************************************
@@ -25,7 +25,7 @@
 #ifndef __BL_CONFIG_H__
 #define __BL_CONFIG_H__
 
-//#define APOLLO_BL_UART_FP // if you want front panel, otherwise zynq
+// #define APOLLO_BL_UART_FP // if you want front panel, otherwise zynq
 #ifdef REV1
 #ifdef APOLLO_BL_UART_FP
 #define SYSCTL_PERIPH_UARTx SYSCTL_PERIPH_UART4
@@ -68,7 +68,7 @@
 // Requires: None
 //
 //*****************************************************************************
-#define CRYSTAL_FREQ            25000000
+#define CRYSTAL_FREQ 25000000
 
 //*****************************************************************************
 //
@@ -82,7 +82,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define BOOST_LDO_VOLTAGE
+// #define BOOST_LDO_VOLTAGE
 
 //*****************************************************************************
 //
@@ -99,7 +99,7 @@
 // Requires: None
 //
 //*****************************************************************************
-#define APP_START_ADDRESS       0x00004000
+#define APP_START_ADDRESS 0x00004000
 
 //*****************************************************************************
 //
@@ -115,7 +115,7 @@
 // Requires: None
 //
 //*****************************************************************************
-#define VTABLE_START_ADDRESS    APP_START_ADDRESS
+#define VTABLE_START_ADDRESS APP_START_ADDRESS
 
 //*****************************************************************************
 //
@@ -130,7 +130,7 @@
 // Requires: None
 //
 //*****************************************************************************
-#define FLASH_PAGE_SIZE         0x00000400
+#define FLASH_PAGE_SIZE 0x00000400
 
 //*****************************************************************************
 //
@@ -144,7 +144,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define FLASH_RSVD_SPACE        0x00000800
+// #define FLASH_RSVD_SPACE        0x00000800
 
 //*****************************************************************************
 //
@@ -155,7 +155,7 @@
 // Requires: None
 //
 //*****************************************************************************
-#define STACK_SIZE              64
+#define STACK_SIZE 64
 
 //*****************************************************************************
 //
@@ -169,7 +169,7 @@
 // Requires: None
 //
 //*****************************************************************************
-#define BUFFER_SIZE             65
+#define BUFFER_SIZE 65
 
 //*****************************************************************************
 //
@@ -183,7 +183,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define ENABLE_BL_UPDATE
+// #define ENABLE_BL_UPDATE
 
 //*****************************************************************************
 //
@@ -197,7 +197,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define FLASH_CODE_PROTECTION
+// #define FLASH_CODE_PROTECTION
 
 //*****************************************************************************
 //
@@ -210,7 +210,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define ENABLE_DECRYPTION
+// #define ENABLE_DECRYPTION
 
 //*****************************************************************************
 //
@@ -223,7 +223,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define ENABLE_MOSCFAIL_HANDLER
+// #define ENABLE_MOSCFAIL_HANDLER
 
 //*****************************************************************************
 //
@@ -239,7 +239,7 @@
 //           FORCED_UPDATE_POLARITY
 //
 //*****************************************************************************
-//#define ENABLE_UPDATE_CHECK
+// #define ENABLE_UPDATE_CHECK
 
 //*****************************************************************************
 //
@@ -252,7 +252,7 @@
 // Requries: None
 //
 //*****************************************************************************
-//#define FORCED_UPDATE_PERIPH    SYSCTL_RCGCGPIO_R1
+// #define FORCED_UPDATE_PERIPH    SYSCTL_RCGCGPIO_R1
 
 //*****************************************************************************
 //
@@ -266,7 +266,7 @@
 // Requries: None
 //
 //*****************************************************************************
-//#define FORCED_UPDATE_PORT      GPIO_PORTB_BASE
+// #define FORCED_UPDATE_PORT      GPIO_PORTB_BASE
 
 //*****************************************************************************
 //
@@ -277,7 +277,7 @@
 // Requries: None
 //
 //*****************************************************************************
-//#define FORCED_UPDATE_PIN       4
+// #define FORCED_UPDATE_PIN       4
 
 //*****************************************************************************
 //
@@ -289,7 +289,7 @@
 // Requries: None
 //
 //*****************************************************************************
-//#define FORCED_UPDATE_POLARITY  0
+// #define FORCED_UPDATE_POLARITY  0
 
 //*****************************************************************************
 //
@@ -303,8 +303,8 @@
 // Requries: None
 //
 //*****************************************************************************
-//#define FORCED_UPDATE_WPU
-//#define FORCED_UPDATE_WPD
+// #define FORCED_UPDATE_WPU
+// #define FORCED_UPDATE_WPD
 
 //*****************************************************************************
 //
@@ -319,8 +319,8 @@
 // Requries: None
 //
 //*****************************************************************************
-//#define FORCED_UPDATE_KEY       GPIO_LOCK_KEY
-//#define FORCED_UPDATE_KEY       GPIO_LOCK_KEY_DD
+// #define FORCED_UPDATE_KEY       GPIO_LOCK_KEY
+// #define FORCED_UPDATE_KEY       GPIO_LOCK_KEY_DD
 
 //*****************************************************************************
 //
@@ -329,8 +329,8 @@
 // Depends on: None
 // Exclusive of: CAN_ENABLE_UPDATE, ENET_ENABLE_UPDATE, I2C_ENABLE_UPDATE,
 //               SSI_ENABLE_UPDATE, USB_ENABLE_UPDATE
-// Requires: UART_AUTOBAUD or UART_FIXED_BAUDRATE, UART_CLOCK_ENABLE, 
-//           UARTx_BASE, UART_RXPIN_CLOCK_ENABLE, UART_RXPIN_BASE, 
+// Requires: UART_AUTOBAUD or UART_FIXED_BAUDRATE, UART_CLOCK_ENABLE,
+//           UARTx_BASE, UART_RXPIN_CLOCK_ENABLE, UART_RXPIN_BASE,
 //           UART_RXPIN_PCTL, UART_RXPIN_POS, UART_TXPIN_CLOCK_ENABLE,
 //           UART_TXPIN_BASE, UART_TXPIN_PCTL and UART_TXPIN_POS
 //
@@ -347,7 +347,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define UART_AUTOBAUD
+// #define UART_AUTOBAUD
 
 //*****************************************************************************
 //
@@ -358,7 +358,7 @@
 // Requires: None
 //
 //*****************************************************************************
-#define UART_FIXED_BAUDRATE     115200
+#define UART_FIXED_BAUDRATE 115200
 
 //*****************************************************************************
 //
@@ -371,12 +371,12 @@
 //*****************************************************************************
 #ifdef REV1
 #ifdef APOLLO_BL_UART_FP
-#define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R4
+#define UART_CLOCK_ENABLE SYSCTL_RCGCUART_R4
 #else
-#define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R1
+#define UART_CLOCK_ENABLE SYSCTL_RCGCUART_R1
 #endif
 #elif defined(REV2) || defined(REV3)
-#define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R0
+#define UART_CLOCK_ENABLE SYSCTL_RCGCUART_R0
 #endif
 //*****************************************************************************
 //
@@ -389,12 +389,12 @@
 //*****************************************************************************
 #ifdef REV1
 #ifdef APOLLO_BL_UART_FP
-#define UARTx_BASE                UART4_BASE
+#define UARTx_BASE UART4_BASE
 #else
-#define UARTx_BASE                UART1_BASE
+#define UARTx_BASE UART1_BASE
 #endif
 #elif defined(REV2) || defined(REV3)
-#define UARTx_BASE                UART0_BASE
+#define UARTx_BASE UART0_BASE
 #endif
 //*****************************************************************************
 //
@@ -406,9 +406,9 @@
 //
 //*****************************************************************************
 #ifdef APOLLO_BL_UART_FP
-#define UART_RXPIN_CLOCK_ENABLE   SYSCTL_RCGCGPIO_R4
+#define UART_RXPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R4
 #else
-#define UART_RXPIN_CLOCK_ENABLE   SYSCTL_RCGCGPIO_R0
+#define UART_RXPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R0
 #endif
 //*****************************************************************************
 //
@@ -420,7 +420,7 @@
 //
 //*****************************************************************************
 // correct for REV1, REV2 and REV3
-#define UART_RXPIN_BASE         GPIO_PORTA_BASE
+#define UART_RXPIN_BASE GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -431,7 +431,7 @@
 // Requires: UART_RXPIN_CLOCK_ENABLE, UART_RXPIN_BASE and UART_RXPIN_POS
 //
 //*****************************************************************************
-#define UART_RXPIN_PCTL         0x1
+#define UART_RXPIN_PCTL 0x1
 
 //*****************************************************************************
 //
@@ -443,9 +443,9 @@
 //
 //*****************************************************************************
 #ifdef APOLLO_BL_UART_FP
-#define UART_RXPIN_POS          2
+#define UART_RXPIN_POS 2
 #else
-#define UART_RXPIN_POS          0
+#define UART_RXPIN_POS 0
 #endif
 
 //*****************************************************************************
@@ -472,7 +472,7 @@
 // Requires: UART_TXPIN_CLOCK_ENABLE, UART_TXPIN_PCTL and UART_TXPIN_POS
 //
 //*****************************************************************************
-#define UART_TXPIN_BASE         GPIO_PORTA_BASE
+#define UART_TXPIN_BASE GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -483,7 +483,7 @@
 // Requires: UART_TXPIN_CLOCK_ENABLE, UART_TXPIN_BASE and UART_TXPIN_POS
 //
 //*****************************************************************************
-#define UART_TXPIN_PCTL         0x1
+#define UART_TXPIN_PCTL 0x1
 
 //*****************************************************************************
 //
@@ -495,9 +495,9 @@
 //
 //*****************************************************************************
 #ifdef APOLLO_BL_UART_FP
-#define UART_TXPIN_POS          3
+#define UART_TXPIN_POS 3
 #else
-#define UART_TXPIN_POS          1
+#define UART_TXPIN_POS 1
 #endif
 
 //*****************************************************************************
@@ -507,15 +507,15 @@
 // Depends on: None
 // Exclusive of: CAN_ENABLE_UPDATE, ENET_ENABLE_UPDATE, I2C_ENABLE_UPDATE,
 //               UART_ENABLE_UPDATE, USB_ENABLE_UPDATE
-// Requires: SSI_CLOCK_ENABLE, SSIx_BASE, SSI_CLKPIN_CLOCK_ENABLE, 
-//           SSI_CLKPIN_BASE, SSI_CLKPIN_PCTL, SSI_CLKPIN_POS, 
+// Requires: SSI_CLOCK_ENABLE, SSIx_BASE, SSI_CLKPIN_CLOCK_ENABLE,
+//           SSI_CLKPIN_BASE, SSI_CLKPIN_PCTL, SSI_CLKPIN_POS,
 //           SSI_FSSPIN_CLOCK_ENABLE, SSI_FSSPIN_BASE, SSI_FSSPIN_PCTL,
 //           SSI_FSSPIN_POS, SSI_MISOPIN_CLOCK_ENABLE, SSI_MISOPIN_BASE,
 //           SSI_MISOPIN_PCTL, SSI_MISOPIN_POS, SSI_MOSIPIN_CLOCK_ENABLE,
 //           SSI_MOSIPIN_BASE, SSI_MOSIPIN_PCTL and SSI_MOSIPIN_POS
 //
 //*****************************************************************************
-//#define SSI_ENABLE_UPDATE
+// #define SSI_ENABLE_UPDATE
 
 //*****************************************************************************
 //
@@ -526,7 +526,7 @@
 // Requires: SSIx_BASE
 //
 //*****************************************************************************
-//#define SSI_CLOCK_ENABLE        SYSCTL_RCGCSSI_R0
+// #define SSI_CLOCK_ENABLE        SYSCTL_RCGCSSI_R0
 
 //*****************************************************************************
 //
@@ -537,7 +537,7 @@
 // Requires: SSI_CLOCK_ENABLE
 //
 //*****************************************************************************
-//#define SSIx_BASE               SSI0_BASE
+// #define SSIx_BASE               SSI0_BASE
 
 //*****************************************************************************
 //
@@ -548,7 +548,7 @@
 // Requires: SSI_CLKPIN_BASE, SSI_CLKPIN_PCTL and SSI_CLKPIN_POS
 //
 //*****************************************************************************
-//#define SSI_CLKPIN_CLOCK_ENABLE  SYSCTL_RCGCGPIO_R0
+// #define SSI_CLKPIN_CLOCK_ENABLE  SYSCTL_RCGCGPIO_R0
 
 //*****************************************************************************
 //
@@ -559,7 +559,7 @@
 // Requires: SSI_CLKPIN_CLOCK_ENABLE, SSI_CLKPIN_PCTL and SSI_CLKPIN_POS
 //
 //*****************************************************************************
-//#define SSI_CLKPIN_BASE          GPIO_PORTA_BASE
+// #define SSI_CLKPIN_BASE          GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -570,7 +570,7 @@
 // Requires: SSI_CLKPIN_CLOCK_ENABLE, SSI_CLKPIN_BASE and SSI_CLKPIN_POS
 //
 //*****************************************************************************
-//#define SSI_CLKPIN_PCTL          0x2
+// #define SSI_CLKPIN_PCTL          0x2
 
 //*****************************************************************************
 //
@@ -581,7 +581,7 @@
 // Requires: SSI_CLKPIN_CLOCK_ENABLE, SSI_CLKPIN_BASE and SSI_CLKPIN_PCTL
 //
 //*****************************************************************************
-//#define SSI_CLKPIN_POS            2
+// #define SSI_CLKPIN_POS            2
 
 //*****************************************************************************
 //
@@ -592,7 +592,7 @@
 // Requires: SSI_FSSPIN_BASE, SSI_FSSPIN_PCTL and SSI_FSSPIN_POS
 //
 //*****************************************************************************
-//#define SSI_FSSPIN_CLOCK_ENABLE  SYSCTL_RCGCGPIO_R0
+// #define SSI_FSSPIN_CLOCK_ENABLE  SYSCTL_RCGCGPIO_R0
 
 //*****************************************************************************
 //
@@ -603,7 +603,7 @@
 // Requires: SSI_FSSPIN_CLOCK_ENABLE, SSI_FSSPIN_PCTL and SSI_FSSPIN_POS
 //
 //*****************************************************************************
-//#define SSI_FSSPIN_BASE          GPIO_PORTA_BASE
+// #define SSI_FSSPIN_BASE          GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -614,7 +614,7 @@
 // Requires: SSI_FSSPIN_CLOCK_ENABLE, SSI_FSSPIN_BASE and SSI_FSSPIN_POS
 //
 //*****************************************************************************
-//#define SSI_FSSPIN_PCTL          0x2
+// #define SSI_FSSPIN_PCTL          0x2
 
 //*****************************************************************************
 //
@@ -625,7 +625,7 @@
 // Requires: SSI_FSSPIN_CLOCK_ENABLE, SSI_FSSPIN_BASE and SSI_FSSPIN_PCTL
 //
 //*****************************************************************************
-//#define SSI_FSSPIN_POS           3
+// #define SSI_FSSPIN_POS           3
 
 //*****************************************************************************
 //
@@ -636,7 +636,7 @@
 // Requires: SSI_MISOPIN_BASE, SSI_MISOPIN_PCTL and SSI_MISOPIN_POS
 //
 //*****************************************************************************
-//#define SSI_MISOPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R0
+// #define SSI_MISOPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R0
 
 //*****************************************************************************
 //
@@ -647,7 +647,7 @@
 // Requires: SSI_MISOPIN_CLOCK_ENABLE, SSI_MISOPIN_PCTL and SSI_MISOPIN_POS
 //
 //*****************************************************************************
-//#define SSI_MISOPIN_BASE         GPIO_PORTA_BASE
+// #define SSI_MISOPIN_BASE         GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -658,7 +658,7 @@
 // Requires: SSI_MISOPIN_CLOCK_ENABLE, SSI_MISOPIN_BASE and SSI_MISOPIN_POS
 //
 //*****************************************************************************
-//#define SSI_MISOPIN_PCTL         0x2
+// #define SSI_MISOPIN_PCTL         0x2
 
 //*****************************************************************************
 //
@@ -669,7 +669,7 @@
 // Requires: SSI_MISOPIN_CLOCK_ENABLE, SSI_MISOPIN_BASE and SSI_MISOPIN_PCTL
 //
 //*****************************************************************************
-//#define SSI_MISOPIN_POS          5
+// #define SSI_MISOPIN_POS          5
 
 //*****************************************************************************
 //
@@ -680,7 +680,7 @@
 // Requires: SSI_MOSIPIN_BASE, SSI_MOSIPIN_PCTL and SSI_MOSIPIN_POS
 //
 //*****************************************************************************
-//#define SSI_MOSIPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R0
+// #define SSI_MOSIPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R0
 
 //*****************************************************************************
 //
@@ -691,7 +691,7 @@
 // Requires: SSI_MOSIPIN_CLOCK_ENABLE, SSI_MOSIPIN_PCTL and SSI_MOSIPIN_POS
 //
 //*****************************************************************************
-//#define SSI_MOSIPIN_BASE         GPIO_PORTA_BASE
+// #define SSI_MOSIPIN_BASE         GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -702,7 +702,7 @@
 // Requires: SSI_MOSIPIN_CLOCK_ENABLE, SSI_MOSIPIN_BASE and SSI_MOSIPIN_POS
 //
 //*****************************************************************************
-//#define SSI_MOSIPIN_PCTL         0x2
+// #define SSI_MOSIPIN_PCTL         0x2
 
 //*****************************************************************************
 //
@@ -713,7 +713,7 @@
 // Requires: SSI_MOSIPIN_CLOCK_ENABLE, SSI_MOSIPIN_BASE and SSI_MOSIPIN_PCTL
 //
 //*****************************************************************************
-//#define SSI_MOSIPIN_POS          4
+// #define SSI_MOSIPIN_POS          4
 
 //*****************************************************************************
 //
@@ -722,13 +722,13 @@
 // Depends on: None
 // Exclusive of: CAN_ENABLE_UPDATE, ENET_ENABLE_UPDATE, SSI_ENABLE_UPDATE,
 //               UART_ENABLE_UPDATE, USB_ENABLE_UPDATE
-// Requires: I2C_SLAVE_ADDR, I2C_CLOCK_ENABLE, I2Cx_BASE, 
+// Requires: I2C_SLAVE_ADDR, I2C_CLOCK_ENABLE, I2Cx_BASE,
 //           I2C_SCLPIN_CLOCK_ENABLE, I2C_SCLPIN_BASE, I2C_SCLPIN_PCTL,
 //           I2C_SCLPIN_POS, I2C_SDAPIN_CLOCK_ENABLE, I2C_SDAPIN_BASE,
 //           I2C_SDAPIN_PCTL and I2C_SDAPIN_POS
 //
 //*****************************************************************************
-//#define I2C_ENABLE_UPDATE
+// #define I2C_ENABLE_UPDATE
 
 //*****************************************************************************
 //
@@ -739,7 +739,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define I2C_SLAVE_ADDR          0x42
+// #define I2C_SLAVE_ADDR          0x42
 
 //*****************************************************************************
 //
@@ -750,7 +750,7 @@
 // Requires: I2Cx_BASE
 //
 //*****************************************************************************
-//#define I2C_CLOCK_ENABLE        SYSCTL_RCGCI2C_R0
+// #define I2C_CLOCK_ENABLE        SYSCTL_RCGCI2C_R0
 
 //*****************************************************************************
 //
@@ -761,7 +761,7 @@
 // Requires: I2C_CLOCK_ENABLE
 //
 //*****************************************************************************
-//#define I2Cx_BASE      I2C0_BASE
+// #define I2Cx_BASE      I2C0_BASE
 
 //*****************************************************************************
 //
@@ -772,7 +772,7 @@
 // Requires: I2C_SCLPIN_BASE, I2C_SCLPIN_PCTL and I2C_SCLPIN_POS
 //
 //*****************************************************************************
-//#define I2C_SCLPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R1
+// #define I2C_SCLPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R1
 
 //*****************************************************************************
 //
@@ -783,7 +783,7 @@
 // Requires: I2C_SCLPIN_CLOCK_ENABLE, I2C_SCLPIN_PCTL and I2C_SCLPIN_POS
 //
 //*****************************************************************************
-//#define I2C_SCLPIN_BASE         GPIO_PORTB_BASE
+// #define I2C_SCLPIN_BASE         GPIO_PORTB_BASE
 
 //*****************************************************************************
 //
@@ -794,7 +794,7 @@
 // Requires: I2C_SCLPIN_CLOCK_ENABLE, I2C_SCLPIN_BASE and I2C_SCLPIN_POS
 //
 //*****************************************************************************
-//#define I2C_SCLPIN_PCTL         0x3
+// #define I2C_SCLPIN_PCTL         0x3
 
 //*****************************************************************************
 //
@@ -805,7 +805,7 @@
 // Requires: I2C_SCLPIN_CLOCK_ENABLE, I2C_SCLPIN_BASE and I2C_SCLPIN_PCTL
 //
 //*****************************************************************************
-//#define I2C_SCLPIN_POS          2
+// #define I2C_SCLPIN_POS          2
 
 //*****************************************************************************
 //
@@ -816,7 +816,7 @@
 // Requires: I2C_SDAPIN_BASE, I2C_SDAPIN_PCTL and I2C_SDAPIN_POS
 //
 //*****************************************************************************
-//#define I2C_SDAPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R1
+// #define I2C_SDAPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R1
 
 //*****************************************************************************
 //
@@ -827,7 +827,7 @@
 // Requires: I2C_SDAPIN_CLOCK_ENABLE, I2C_SDAPIN_PCTL and I2C_SDAPIN_POS
 //
 //*****************************************************************************
-//#define I2C_SDAPIN_BASE         GPIO_PORTB_BASE
+// #define I2C_SDAPIN_BASE         GPIO_PORTB_BASE
 
 //*****************************************************************************
 //
@@ -838,7 +838,7 @@
 // Requires: I2C_SDAPIN_CLOCK_ENABLE, I2C_SDAPIN_BASE and I2C_SDAPIN_POS
 //
 //*****************************************************************************
-//#define I2C_SDAPIN_PCTL         0x3
+// #define I2C_SDAPIN_PCTL         0x3
 
 //*****************************************************************************
 //
@@ -849,7 +849,7 @@
 // Requires: I2C_SDAPIN_CLOCK_ENABLE, I2C_SDAPIN_BASE and I2C_SDAPIN_PCTL
 //
 //*****************************************************************************
-//#define I2C_SDAPIN_POS          3
+// #define I2C_SDAPIN_POS          3
 
 //*****************************************************************************
 //
@@ -861,7 +861,7 @@
 // Requires: CRYSTAL_FREQ
 //
 //*****************************************************************************
-//#define ENET_ENABLE_UPDATE
+// #define ENET_ENABLE_UPDATE
 
 //*****************************************************************************
 //
@@ -872,7 +872,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define ENET_ENABLE_LEDS
+// #define ENET_ENABLE_LEDS
 
 //*****************************************************************************
 //
@@ -884,12 +884,12 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define ENET_MAC_ADDR0          0x00
-//#define ENET_MAC_ADDR1          0x00
-//#define ENET_MAC_ADDR2          0x00
-//#define ENET_MAC_ADDR3          0x00
-//#define ENET_MAC_ADDR4          0x00
-//#define ENET_MAC_ADDR5          0x00
+// #define ENET_MAC_ADDR0          0x00
+// #define ENET_MAC_ADDR1          0x00
+// #define ENET_MAC_ADDR2          0x00
+// #define ENET_MAC_ADDR3          0x00
+// #define ENET_MAC_ADDR4          0x00
+// #define ENET_MAC_ADDR5          0x00
 
 //*****************************************************************************
 //
@@ -903,7 +903,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define ENET_BOOTP_SERVER       "tiva"
+// #define ENET_BOOTP_SERVER       "tiva"
 
 //*****************************************************************************
 //
@@ -915,7 +915,7 @@
 // Requires: CRYSTAL_FREQ, USB_VENDOR_ID, USB_PRODUCT_ID
 //
 //*****************************************************************************
-//#define USB_ENABLE_UPDATE
+// #define USB_ENABLE_UPDATE
 
 //*****************************************************************************
 //
@@ -928,7 +928,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_VENDOR_ID           0x1cbe
+// #define USB_VENDOR_ID           0x1cbe
 
 //*****************************************************************************
 //
@@ -942,7 +942,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_PRODUCT_ID          0x00ff
+// #define USB_PRODUCT_ID          0x00ff
 
 //*****************************************************************************
 //
@@ -954,7 +954,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_DEVICE_ID           0x0001
+// #define USB_DEVICE_ID           0x0001
 
 //*****************************************************************************
 //
@@ -966,7 +966,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_MAX_POWER           150
+// #define USB_MAX_POWER           150
 
 //*****************************************************************************
 //
@@ -978,7 +978,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_BUS_POWERED         1
+// #define USB_BUS_POWERED         1
 
 //*****************************************************************************
 //
@@ -989,7 +989,7 @@
 // Requires: USB_MUX_PERIPH, USB_MUX_PORT, USB_MUX_PIN, USB_MUX_DEVICE
 //
 //*****************************************************************************
-//#define USB_HAS_MUX
+// #define USB_HAS_MUX
 
 //*****************************************************************************
 //
@@ -1000,7 +1000,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_MUX_PERIPH          SYSCTL_RCGC2_GPIOH
+// #define USB_MUX_PERIPH          SYSCTL_RCGC2_GPIOH
 
 //*****************************************************************************
 //
@@ -1011,7 +1011,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_MUX_PORT            GPIO_PORTH_BASE
+// #define USB_MUX_PORT            GPIO_PORTH_BASE
 
 //*****************************************************************************
 //
@@ -1023,7 +1023,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_MUX_PIN             2
+// #define USB_MUX_PIN             2
 
 //*****************************************************************************
 //
@@ -1035,7 +1035,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_MUX_DEVICE          1
+// #define USB_MUX_DEVICE          1
 
 //*****************************************************************************
 //
@@ -1047,13 +1047,13 @@
 // Requires: USB_VBUS_PERIPH, USB_VBUS_PORT, USB_VBUS_PIN
 //
 //*****************************************************************************
-//#define USB_VBUS_CONFIG
+// #define USB_VBUS_CONFIG
 
 //*****************************************************************************
 //
 // Specifies the GPIO peripheral containing the pin which is used for VBUS.
 // The value is of the form SYSCTL_RCGCGPIO_Rx, where the Rx represents
-// the required GPIO port.  This applies to Blizzard class and later 
+// the required GPIO port.  This applies to Blizzard class and later
 // devices.
 //
 // Depends on: USB_ENABLE_UPDATE, USB_VBUS_CONFIG
@@ -1061,7 +1061,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_VBUS_PERIPH          SYSCTL_RCGCGPIO_R1
+// #define USB_VBUS_PERIPH          SYSCTL_RCGCGPIO_R1
 
 //*****************************************************************************
 //
@@ -1074,7 +1074,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_VBUS_PORT            GPIO_PORTB_BASE
+// #define USB_VBUS_PORT            GPIO_PORTB_BASE
 
 //*****************************************************************************
 //
@@ -1085,7 +1085,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_VBUS_PIN             1
+// #define USB_VBUS_PIN             1
 
 //*****************************************************************************
 //
@@ -1097,13 +1097,13 @@
 // Requires: USB_ID_PERIPH, USB_ID_PORT, USB_ID_PIN
 //
 //*****************************************************************************
-//#define USB_ID_CONFIG
+// #define USB_ID_CONFIG
 
 //*****************************************************************************
 //
 // Specifies the GPIO peripheral containing the pin which is used for ID.
 // The value is of the form SYSCTL_RCGCGPIO_Rx, where the Rx represents
-// the required GPIO port.  This applies to Blizzard class and later 
+// the required GPIO port.  This applies to Blizzard class and later
 // devices.
 //
 // Depends on: USB_ENABLE_UPDATE, USB_ID_CONFIG
@@ -1111,7 +1111,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_ID_PERIPH          SYSCTL_RCGCGPIO_R1
+// #define USB_ID_PERIPH          SYSCTL_RCGCGPIO_R1
 
 //*****************************************************************************
 //
@@ -1124,7 +1124,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_ID_PORT            GPIO_PORTB_BASE
+// #define USB_ID_PORT            GPIO_PORTB_BASE
 
 //*****************************************************************************
 //
@@ -1135,7 +1135,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_ID_PIN             0
+// #define USB_ID_PIN             0
 
 //*****************************************************************************
 //
@@ -1147,13 +1147,13 @@
 // Requires: USB_DP_PERIPH, USB_DP_PORT, USB_DP_PIN
 //
 //*****************************************************************************
-//#define USB_DP_CONFIG
+// #define USB_DP_CONFIG
 
 //*****************************************************************************
 //
 // Specifies the GPIO peripheral containing the pin which is used for DP.
 // The value is of the form SYSCTL_RCGCGPIO_Rx, where the Rx represents
-// the required GPIO port.  This applies to Blizzard class and later 
+// the required GPIO port.  This applies to Blizzard class and later
 // devices.
 //
 // Depends on: USB_ENABLE_UPDATE, USB_DP_CONFIG
@@ -1161,7 +1161,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_DP_PERIPH          SYSCTL_RCGCGPIO_R10
+// #define USB_DP_PERIPH          SYSCTL_RCGCGPIO_R10
 
 //*****************************************************************************
 //
@@ -1174,7 +1174,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_DP_PORT            GPIO_PORTL_BASE
+// #define USB_DP_PORT            GPIO_PORTL_BASE
 
 //*****************************************************************************
 //
@@ -1185,7 +1185,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_DP_PIN             6
+// #define USB_DP_PIN             6
 
 //*****************************************************************************
 //
@@ -1197,13 +1197,13 @@
 // Requires: USB_DM_PERIPH, USB_DM_PORT, USB_DM_PIN
 //
 //*****************************************************************************
-//#define USB_DM_CONFIG
+// #define USB_DM_CONFIG
 
 //*****************************************************************************
 //
 // Specifies the GPIO peripheral containing the pin which is used for DM.
 // The value is of the form SYSCTL_RCGCGPIO_Rx, where the Rx represents
-// the required GPIO port.  This applies to Blizzard class and later 
+// the required GPIO port.  This applies to Blizzard class and later
 // devices.
 //
 // Depends on: USB_ENABLE_UPDATE, USB_DM_CONFIG
@@ -1211,7 +1211,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_DM_PERIPH          SYSCTL_RCGCGPIO_R10
+// #define USB_DM_PERIPH          SYSCTL_RCGCGPIO_R10
 
 //*****************************************************************************
 //
@@ -1224,7 +1224,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_DM_PORT            GPIO_PORTL_BASE
+// #define USB_DM_PORT            GPIO_PORTL_BASE
 
 //*****************************************************************************
 //
@@ -1235,7 +1235,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define USB_DM_PIN             7
+// #define USB_DM_PIN             7
 
 //*****************************************************************************
 //
@@ -1248,7 +1248,7 @@
 //           CAN_TX_PORT, CAN_TX_PIN, CAN_BIT_RATE, CRYSTAL_FREQ.
 //
 //*****************************************************************************
-//#define CAN_ENABLE_UPDATE
+// #define CAN_ENABLE_UPDATE
 
 //*****************************************************************************
 //
@@ -1260,7 +1260,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_UART_BRIDGE
+// #define CAN_UART_BRIDGE
 
 //*****************************************************************************
 //
@@ -1272,7 +1272,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_RX_PERIPH           SYSCTL_RCGC2_GPIOA
+// #define CAN_RX_PERIPH           SYSCTL_RCGC2_GPIOA
 
 //*****************************************************************************
 //
@@ -1283,7 +1283,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_RX_PORT             GPIO_PORTA_BASE
+// #define CAN_RX_PORT             GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -1295,7 +1295,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_RX_PIN              4
+// #define CAN_RX_PIN              4
 
 //*****************************************************************************
 //
@@ -1307,7 +1307,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_TX_PERIPH           SYSCTL_RCGC2_GPIOA
+// #define CAN_TX_PERIPH           SYSCTL_RCGC2_GPIOA
 
 //*****************************************************************************
 //
@@ -1318,7 +1318,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_TX_PORT             GPIO_PORTA_BASE
+// #define CAN_TX_PORT             GPIO_PORTA_BASE
 
 //*****************************************************************************
 //
@@ -1330,7 +1330,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_TX_PIN              5
+// #define CAN_TX_PIN              5
 
 //*****************************************************************************
 //
@@ -1341,7 +1341,7 @@
 // Requires: None
 //
 //*****************************************************************************
-//#define CAN_BIT_RATE            1000000
+// #define CAN_BIT_RATE            1000000
 
 //*****************************************************************************
 //
@@ -1367,7 +1367,7 @@
 // void MyHwInitFunc(void);
 //
 //*****************************************************************************
-#define BL_HW_INIT_FN_HOOK      bl_user_init_hw_fn
+#define BL_HW_INIT_FN_HOOK bl_user_init_hw_fn
 
 //*****************************************************************************
 //
@@ -1380,7 +1380,7 @@
 // void MyInitFunc(void);
 //
 //*****************************************************************************
-//#define BL_INIT_FN_HOOK         bl_user_init_fn
+// #define BL_INIT_FN_HOOK         bl_user_init_fn
 
 //*****************************************************************************
 //
@@ -1394,7 +1394,7 @@
 // void MyReinitFunc(void);
 //
 //*****************************************************************************
-//#define BL_REINIT_FN_HOOK       MyReinitFunc
+// #define BL_REINIT_FN_HOOK       MyReinitFunc
 
 //*****************************************************************************
 //
@@ -1407,7 +1407,7 @@
 // void MyStartFunc(void);
 //
 //*****************************************************************************
-//#define BL_START_FN_HOOK        MyStartFunc
+// #define BL_START_FN_HOOK        MyStartFunc
 
 //*****************************************************************************
 //
@@ -1427,7 +1427,7 @@
 // - ulTotal indicates the number of bytes expected or 0 if this is not known.
 //
 //*****************************************************************************
-#define BL_PROGRESS_FN_HOOK     bl_user_progress_hook
+#define BL_PROGRESS_FN_HOOK bl_user_progress_hook
 
 //*****************************************************************************
 //
@@ -1441,7 +1441,7 @@
 // void MyEndFunc(void);
 //
 //*****************************************************************************
-#define BL_END_FN_HOOK          bl_user_end_hook
+#define BL_END_FN_HOOK bl_user_end_hook
 
 //*****************************************************************************
 //
@@ -1460,13 +1460,13 @@
 // - ulSize indicates the number of bytes of data at pucBuffer.
 //
 //*****************************************************************************
-//#define BL_DECRYPT_FN_HOOK      MyDecryptionFunc
+// #define BL_DECRYPT_FN_HOOK      MyDecryptionFunc
 
 //*****************************************************************************
 //
 // Allows an application to force a new firmware download.
 //
-// If hooked, this function will be called after a system reset (following 
+// If hooked, this function will be called after a system reset (following
 // basic initialization and the initialization hook function) to give the
 // application an opportunity to force a new firmware download.  Depending upon
 // the return code, the boot loader will either boot the existing firmware
@@ -1501,7 +1501,7 @@
 // - ulBlockAddr is the address of the flash block to be erased.
 //
 //*****************************************************************************
-//#define BL_FLASH_ERASE_FN_HOOK  MyFlashEraseFunc
+// #define BL_FLASH_ERASE_FN_HOOK  MyFlashEraseFunc
 
 //*****************************************************************************
 //
@@ -1524,13 +1524,13 @@
 //   multiple of 4.
 //
 //*****************************************************************************
-//#define BL_FLASH_PROGRAM_FN_HOOK MyFlashProgramFunc
+// #define BL_FLASH_PROGRAM_FN_HOOK MyFlashProgramFunc
 
 //*****************************************************************************
 //
 // Allows an application to replace the flash error clear function.
 //
-// If hooked, this function will be called before each flash erase or program 
+// If hooked, this function will be called before each flash erase or program
 // operation.  The function must clear any flash error indicators and prepare
 // to detect access violations that may occur in a future erase or program
 // operation.
@@ -1538,7 +1538,7 @@
 // void MyFlashClearErrorFunc(void);
 //
 //*****************************************************************************
-//#define BL_FLASH_CL_ERR_FN_HOOK MyFlashClearErrorFunc
+// #define BL_FLASH_CL_ERR_FN_HOOK MyFlashClearErrorFunc
 
 //*****************************************************************************
 //
@@ -1555,7 +1555,7 @@
 // error was detected.
 //
 //*****************************************************************************
-//#define BL_FLASH_ERROR_FN_HOOK  bl_user_flash_error
+// #define BL_FLASH_ERROR_FN_HOOK  bl_user_flash_error
 
 //*****************************************************************************
 //
@@ -1571,7 +1571,7 @@
 // defined via the FLASH_RSVD_SPACE value in this header file.
 //
 //*****************************************************************************
-//#define BL_FLASH_SIZE_FN_HOOK   MyFlashSizeFunc
+// #define BL_FLASH_SIZE_FN_HOOK   MyFlashSizeFunc
 
 //*****************************************************************************
 //
@@ -1587,7 +1587,7 @@
 // the FLASH_RSVD_SPACE value in this header file.
 //
 //*****************************************************************************
-//#define BL_FLASH_END_FN_HOOK    MyFlashEndFunc
+// #define BL_FLASH_END_FN_HOOK    MyFlashEndFunc
 
 //*****************************************************************************
 //
@@ -1613,6 +1613,6 @@
 // value if valid.
 //
 //*****************************************************************************
-//#define BL_FLASH_AD_CHECK_FN_HOOK MyFlashAddrCheckFunc
+// #define BL_FLASH_AD_CHECK_FN_HOOK MyFlashAddrCheckFunc
 
 #endif // __BL_CONFIG_H__
