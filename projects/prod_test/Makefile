@@ -125,6 +125,8 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/commands.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/PowerI2CCommands.o
+${COMPILER}/prod_test.axf: ${COMPILER}/ClockI2CCommands.o
+${COMPILER}/prod_test.axf: ${COMPILER}/I2CUtils.o
 #${COMPILER}/prod_test.axf: ${COMPILER}/BoardCommands.o
 
 
