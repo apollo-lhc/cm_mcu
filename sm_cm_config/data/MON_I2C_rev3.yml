@@ -211,7 +211,7 @@ devices:
       *FF_SHARED_REGS
   - name: Clocks
     ndevices: NDEVICES_CLK
-    ndevice_types: 2
+    ndevice_types: 1
     prefix: CLK
     config:
     - name: PN_BASE 
@@ -222,7 +222,7 @@ devices:
       mask: 0xFFFF
       units: ""
       type: PM_STATUS
-      devicetypes: [SI5395, SI5341]
+      devicetypes: [SI5395]
     - name: DEVICE_REV
       reg_size: 1
       page: 0
@@ -231,7 +231,7 @@ devices:
       mask: 0xFF
       units: ""
       type: PM_STATUS
-      devicetypes: [SI5395, SI5341]
+      devicetypes: [SI5395]
     - name: I2C_ADDR
       reg_size: 1
       page: 0
@@ -240,16 +240,7 @@ devices:
       mask: 0xFF
       units: ""
       type: PM_STATUS
-      devicetypes: [SI5395, SI5341]
-    - name: STATUS
-      reg_size: 1
-      page: 0
-      reg_address: 0x35
-      size: 1
-      mask: 0xFF
-      units: ""
-      type: PM_STATUS
-      devicetypes: [SI5341]
+      devicetypes: [SI5395]
     - name: LOL
       reg_size: 1
       page: 0
@@ -285,4 +276,4 @@ devices:
       mask: 0x02f
       units: ""
       type: PM_STATUS
-      devicetypes: [SI5395, SI5341]
+      devicetypes: [SI5395]
