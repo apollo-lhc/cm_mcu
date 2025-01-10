@@ -48,7 +48,7 @@ void setFFmask(uint32_t ff_combined_present)
   uint32_t data = (~ff_combined_present) & 0x1FFFFFFU;
 #elif defined(REV2) || defined(REV3) // TODO: check
   uint32_t data = (ff_combined_present) & 0xFFFFFU;
-#endif // REV1
+#endif                               // REV1
   ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
   ff_PRESENT_mask = data;
   uint64_t block = EEPROMBlockFromAddr(ADDR_FF);

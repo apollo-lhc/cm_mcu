@@ -1,4 +1,4 @@
-  /*
+/*
  * LocalTasks.c
  *
  *  Created on: Apr 23, 2020
@@ -275,7 +275,7 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
 #error "Define board revision"
 #endif
 
-#if defined(REV2)||defined(REV3)
+#if defined(REV2) || defined(REV3)
 // Clock arguments for monitoring task
 
 struct clk_program_t clkprog_args[] = {
@@ -306,7 +306,6 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
-
 
 #endif // REV2
 
@@ -1287,14 +1286,14 @@ int init_load_clk(int clk_n)
 // cycle because the other relevant bits are either inputs and the write does not
 // affect them, or active high resets (bit0). See schematic pages 4.05 and 4.06.
 // Rev3 moves the reset bit elsewhere.
-#define EN3V8_MUXBIT     (0x1U<<6)
-#define EN3V8_MUXADDR    0x71    // mux addresses on I2C Bus
-#define EN3V8_IOEXP_ADDR 0x21 // device address on I2C Bus
-#define EN3V8_IOEXP_REG_ADDR 0x3 // register address in TCA9555 I/O expander
+#define EN3V8_MUXBIT         (0x1U << 6)
+#define EN3V8_MUXADDR        0x71 // mux addresses on I2C Bus
+#define EN3V8_IOEXP_ADDR     0x21 // device address on I2C Bus
+#define EN3V8_IOEXP_REG_ADDR 0x3  // register address in TCA9555 I/O expander
 #ifdef REV2
-#define EN3V8_IOEXP_REG_MASK       0xEU   // which bits in the i/o expander register
+#define EN3V8_IOEXP_REG_MASK 0xEU // which bits in the i/o expander register
 #elif defined(REV3)
-#define EN3V8_IOEXP_REG_MASK       0xFU   // which bits in the i/o expander register
+#define EN3V8_IOEXP_REG_MASK 0xFU // which bits in the i/o expander register
 #endif
 
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
@@ -1329,7 +1328,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       }
 #ifdef REV2
       val = (val << 1) & EN3V8_IOEXP_REG_MASK; // set bits 1-3, and mask out extra bits extraneously set
-      val |= 0x01;             // make sure active low reset bit stays deasserted (i.e., LSB is high)
+      val |= 0x01;                             // make sure active low reset bit stays deasserted (i.e., LSB is high)
 #elif defined(REV3)
       val &= EN3V8_IOEXP_REG_MASK; // bottom 4 bits only, no reset here anymore
 #endif // REV2

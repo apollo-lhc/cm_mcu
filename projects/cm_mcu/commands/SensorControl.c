@@ -559,16 +559,16 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
 // so you can only reset all of them at once, for those
 // attached to F1 or F2
 // I/O expanders are different in Rev2 and Rev3 for optics, see schematic pages 4.05 and 4.06
-#define FF_RESET_MUX_ADDR       0x71
-#define FF_RESET_MUX_BIT_MASK   (0x1 << 6)
-#define FF_RESET_IOEXP_ADDR     0x21
+#define FF_RESET_MUX_ADDR     0x71
+#define FF_RESET_MUX_BIT_MASK (0x1 << 6)
+#define FF_RESET_IOEXP_ADDR   0x21
 #if defined(REV2)
-#define FF_RESET_IOEXP_REG_ADDR 0x3 // output port 1
-#define FF_RESET_IOEXP_REG_BIT  (0x1<<0) // bit P10, i.e., bit 0 of output port 1
+#define FF_RESET_IOEXP_REG_ADDR 0x3        // output port 1
+#define FF_RESET_IOEXP_REG_BIT  (0x1 << 0) // bit P10, i.e., bit 0 of output port 1
 #elif defined(REV3)
-#define FF_RESET_IOEXP_REG_ADDR 0x2 // output port 0
-#define FF_RESET_IOEXP_REG_BIT  (0x1<<7) // bit P07, i.e., bit 7 of output port 0
-#endif // REV 
+#define FF_RESET_IOEXP_REG_ADDR 0x2        // output port 0
+#define FF_RESET_IOEXP_REG_BIT  (0x1 << 7) // bit P07, i.e., bit 7 of output port 0
+#endif                                     // REV
 BaseType_t ff_reset(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -702,7 +702,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
       else
         ff_4v0_sel &= f2_ff12xmit_4v0_sel;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8?(%x) \t", ff_4v0_sel >> (nTx % (NFIREFLIES_IT_F1 / 2)));
-#endif              // REV2
+#endif // REV2
     }
     else {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");

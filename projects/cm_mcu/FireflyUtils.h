@@ -38,7 +38,7 @@
 #define NFIREFLIES_DAQ_F2 4 // FIXME: is this right
 #else
 #error "Define Revision!"
-#endif // REV 
+#endif // REV
 #define CLK_PAGE_COMMAND 1
 #define NFIREFLIES       (NFIREFLIES_F1 + NFIREFLIES_F2)
 

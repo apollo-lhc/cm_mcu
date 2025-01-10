@@ -476,7 +476,7 @@ static void U1Print(const char *str)
 {
   UARTPrint(UART1_BASE, str);
 }
-#elif defined(REV2) || defined(REV3) // REV 2 or 3 
+#elif defined(REV2) || defined(REV3) // REV 2 or 3
 static void U0Print(const char *str)
 {
   UARTPrint(UART0_BASE, str);

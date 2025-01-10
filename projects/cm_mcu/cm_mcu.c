@@ -247,7 +247,7 @@ __attribute__((noreturn)) int main(void)
   ff_f1_args.xSem = i2c4_sem;
   ff_f2_args.xSem = i2c3_sem;
   clk_args.xSem = i2c2_sem;
-#endif // REV2 or 3 
+#endif // REV2 or 3
   //  Create the stream buffers that sends data from the interrupt to the
   //  task, and create the task.
 #ifdef REV1
@@ -345,7 +345,7 @@ __attribute__((noreturn)) int main(void)
 
 #ifdef REV1
   Print("\r\nRev1 build\r\n");
-#elif defined(REV2) 
+#elif defined(REV2)
   Print("\r\nRev2 build\r\n");
 #elif defined(REV3)
   Print("\r\nRev3 build\r\n");

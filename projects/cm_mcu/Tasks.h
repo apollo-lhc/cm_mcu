@@ -122,7 +122,7 @@ void MonitorI2CTask(void *parameters);
 void MonitorTaskI2C(void *parameters);
 #ifdef REV1
 #define N_PM_ADDRS_DCDC 5
-#elif defined(REV2) || defined(REV3) // Rev 2 or 3 
+#elif defined(REV2) || defined(REV3) // Rev 2 or 3
 #define N_PM_ADDRS_DCDC 7
 #endif
 #define N_EXTRA_CMDS 7

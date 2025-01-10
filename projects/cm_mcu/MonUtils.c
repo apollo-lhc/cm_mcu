@@ -131,7 +131,6 @@ int FireflyType(int device)
     case 6:
     case 7: {
       // //this mask is set in pairs
-      //uint8_t mask = ff_bitmask_args[0].ffpart_bit_mask; // default to F1
       uint8_t mask = getFFpartbit(0);
       int thistype;
       if (!isF1) {
@@ -156,7 +155,6 @@ int FireflyType(int device)
   }
 }
 
-
 // For rev3 all clocks are SI5395
 int ClockType(int device)
 {
@@ -172,9 +170,7 @@ int ClockType(int device)
   }
 }
 
-
 #endif // REVISION
-
 
 bool isEnabledFF_F2(int device)
 {

@@ -15,12 +15,6 @@
 
 #if defined(REV2) || defined(REV3)
 
-//#define SYN_NDEVICES_CLK     4
-//#define SYN_NDEVICES_CLKR0A  (1)
-//#define NCOMMANDS_FLG_CLK    1 // number of sticky commands
-//#define NCOMMANDS_FLG_CLKR0A 2 // number of sticky commands
-
-extern struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK];
 
 // must grab and release the semaphore in a larger scope when calling this function
 int clear_clk_stickybits(void)
