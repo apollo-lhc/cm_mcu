@@ -119,7 +119,7 @@ void PowerSupplyTask(void *parameters)
            supply_ok_mask_L5 = 0U;
 #if defined(REV2) || defined(REV3)
   uint16_t supply_ok_mask_L6 = 0U;
-#endif // REV2
+#endif // REV2 or REV3
 
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
@@ -138,7 +138,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_F1_MASK_L5;
 #if defined(REV2) || defined(REV3)
     supply_ok_mask_L6 = supply_ok_mask_L5;
-#endif // REV2
+#endif // REV2 or REV3
   }
   if (f2_enable) {
     supply_ok_mask |= PS_OKS_F2_MASK;

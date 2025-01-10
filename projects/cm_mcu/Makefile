@@ -146,9 +146,7 @@ ${COMPILER}/ZynqMonTask.o: ZynqMon_addresses.c
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/cm_mcu.o
 ifdef REV1
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev1.o
-else ifdef REV2
-${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev2.o
-else ifdef REV3
+else ifneq "$(or $(REV3), $(REV2))" ""
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev2.o
 endif 
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinsel.o
