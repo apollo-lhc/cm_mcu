@@ -99,9 +99,12 @@ def main():
         
         # loop over input files
         for idx, fname in enumerate(args.input_files):
+            # allow for differences between Rev2 and later. Keep the same code for Rev1.
+            # this is what was done earlier, though it is probably not the Right Thing To
+            # Do (TM).
             if idx == 0:
-                print(r"#ifdef REV2", file=fout_header)
-                print(r"#ifdef REV2", file=fout_source)
+                print(r"#if defined(REV1) || defined(REV2)", file=fout_header)
+                print(r"#if defined(REV1) || defined(REV2)", file=fout_source)
             else:
                 print(f"#elif defined(REV{idx+2})", file=fout_header)
                 print(f"#elif defined(REV{idx+2})", file=fout_source)
