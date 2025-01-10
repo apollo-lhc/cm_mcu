@@ -109,7 +109,7 @@ void bl_user_init_hw_fn(void)
   // for GPIO_PP0
   //
   MAP_GPIOPinTypeGPIOOutput(GPIO_PORTP_BASE, GPIO_PIN_0);
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
   // LEDs
   //
   MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);

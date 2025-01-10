@@ -33,8 +33,15 @@ endif
 ifdef REV3
 CFLAGS += -DREV3
 endif
+# make sure only one of REV1, REV2, REV3 is defined
+ifeq ($(words $(REV2) $(REV3)),0)
+$(error "No Revision defined (REV2 or REV3 must be selected)")
+else ifneq ($(words $(REV2) $(REV3)),1)
+$(error "Multiple Revisions defined")
+endif
+
 ifdef REV1
-error "REV1 is not supported"
+$(error "REV1 is not supported")
 endif 
 CFLAGS+=-DPRINTF_INCLUDE_CONFIG_H
 

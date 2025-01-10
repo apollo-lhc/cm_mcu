@@ -28,6 +28,12 @@ endif
 ifdef REV3
 CFLAGS += -DREV3
 endif 
+# make sure only one of REV1, REV2, REV3 is defined
+ifeq ($(words $(REV1) $(REV2) $(REV3)),0)
+$(error "No Revision defined")
+else ifneq ($(words $(REV1) $(REV2) $(REV3)),1)
+$(error "Multiple Revisions defined")
+endif
 
 
 #

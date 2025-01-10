@@ -32,7 +32,7 @@
 #else
 #define SYSCTL_PERIPH_UARTx SYSCTL_PERIPH_UART1
 #endif
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 #define SYSCTL_PERIPH_UARTx SYSCTL_PERIPH_UART0
 #endif
 //*****************************************************************************
@@ -375,7 +375,7 @@
 #else
 #define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R1
 #endif
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 #define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R0
 #endif
 //*****************************************************************************
@@ -393,7 +393,7 @@
 #else
 #define UARTx_BASE                UART1_BASE
 #endif
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 #define UARTx_BASE                UART0_BASE
 #endif
 //*****************************************************************************
@@ -419,7 +419,7 @@
 // Requires: UART_RXPIN_CLOCK_ENABLE, UART_RXPIN_PCTL and UART_RXPIN_POS
 //
 //*****************************************************************************
-// correct for REV1 and REV2
+// correct for REV1, REV2 and REV3
 #define UART_RXPIN_BASE         GPIO_PORTA_BASE
 
 //*****************************************************************************

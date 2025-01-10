@@ -1,12 +1,6 @@
 
 include ./makedefs
 
-ifdef REV1
-ifdef REV2
-$(error "REV1 and REV2 are mutually exclusive")
-endif
-endif
-
 ifndef REV1
 ifndef REV2
 ifndef REV3
@@ -14,6 +8,13 @@ REV2=1
 export REV2
 endif
 endif
+endif
+
+# make sure only one of REV1, REV2, REV3 is defined
+ifeq ($(words $(REV1) $(REV2) $(REV3)),0)
+$(error "No Revision defined")
+else ifneq ($(words $(REV1) $(REV2) $(REV3)),1)
+$(error "Multiple Revisions defined")
 endif
 
 
