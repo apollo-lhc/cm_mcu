@@ -25,17 +25,13 @@
 #define NFIREFLIES_F1     10
 #define NFIREFLIES_F2     10
 #define NFIREFLIES_IT_F1  6
-#define NFIREFLIES_DAQ_F1 4
 #define NFIREFLIES_IT_F2  6
-#define NFIREFLIES_DAQ_F2 4
 #elif defined(REV3)
-#define NFIREFLY_ARG      4 // FIXME: is this right
+#define NFIREFLY_ARG      4 
 #define NFIREFLIES_F1     10
 #define NFIREFLIES_F2     10
-#define NFIREFLIES_IT_F1  6 // FIXME: is this right
-#define NFIREFLIES_DAQ_F1 4 // FIXME: is this right
-#define NFIREFLIES_IT_F2  6 // FIXME: is this right
-#define NFIREFLIES_DAQ_F2 4 // FIXME: is this right
+#define NFIREFLIES_IT_F1  8
+#define NFIREFLIES_IT_F2  8
 #else
 #error "Define Revision!"
 #endif // REV

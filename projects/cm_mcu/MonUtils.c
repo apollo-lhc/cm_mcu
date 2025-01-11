@@ -71,12 +71,10 @@ int FireflyType(int device)
     case 3:
     case 4:
     case 5: {
-      // //this mask is set in pairs
-      // uint8_t mask = ff_bitmask_args[0].ffpart_bit_mask; // default to F1
+      // this mask is set in pairs
       uint8_t mask = getFFpartbit(0);
       int thistype;
       if (!isF1) {
-        // mask = ff_bitmask_args[2].ffpart_bit_mask;
         mask = getFFpartbit(2);
       }
       if (mask & (0x1U << (device))) {

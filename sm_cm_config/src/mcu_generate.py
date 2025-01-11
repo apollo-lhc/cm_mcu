@@ -136,7 +136,7 @@ except FileNotFoundError as e:
         print(f"clang-format not found: {e}")
 
 # open output header file for writing.
-# first chekc that ZM_VALID_ENTRIES has exactly two entries
+# first check that ZM_VALID_ENTRIES has exactly three entries
 if len(ZMON_VALID_ENTRIES) != 3:
     print(f"ERROR: ZM_VALID_ENTRIES has the wrong number of entries: {len(ZMON_VALID_ENTRIES)}")
     print(ZMON_VALID_ENTRIES)
