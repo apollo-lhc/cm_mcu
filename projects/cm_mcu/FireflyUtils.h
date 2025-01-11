@@ -21,17 +21,17 @@
 #define NFIREFLIES_DAQ_F2 10
 #elif defined(REV2) // REV2
 // REV 2
-#define NFIREFLY_ARG      4
-#define NFIREFLIES_F1     10
-#define NFIREFLIES_F2     10
-#define NFIREFLIES_IT_F1  6
-#define NFIREFLIES_IT_F2  6
+#define NFIREFLY_ARG     4
+#define NFIREFLIES_F1    10
+#define NFIREFLIES_F2    10
+#define NFIREFLIES_IT_F1 6
+#define NFIREFLIES_IT_F2 6
 #elif defined(REV3)
-#define NFIREFLY_ARG      4 
-#define NFIREFLIES_F1     10
-#define NFIREFLIES_F2     10
-#define NFIREFLIES_IT_F1  8
-#define NFIREFLIES_IT_F2  8
+#define NFIREFLY_ARG     4
+#define NFIREFLIES_F1    10
+#define NFIREFLIES_F2    10
+#define NFIREFLIES_IT_F1 8
+#define NFIREFLIES_IT_F2 8
 #else
 #error "Define Revision!"
 #endif // REV
