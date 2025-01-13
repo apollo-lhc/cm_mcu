@@ -15,7 +15,7 @@ static bool isValidDevice(int device)
 {
 #ifdef REV1
   bool isValidDevice = (device >= 0 && device <= 4) || (device == 6);
-#elif (REV2)
+#elif defined(REV2) || defined(REV3)
   bool isValidDevice = (device >= 0 && device <= 5);
 #endif
   return isValidDevice;

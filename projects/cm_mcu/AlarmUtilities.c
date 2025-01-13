@@ -190,14 +190,14 @@ uint32_t getVoltAlarmStatus(void)
 #define VALM_F2_MASK      0x33340U // F2-specific
 #define VALM_ALL_MASK     (VALM_BASE_MASK | VALM_GEN_MASK | VALM_F1_MASK | VALM_F2_MASK)
 #define VALM_HIGHEST_V_CH 19 // highest channel that contains a voltage, 0 based counting
-#elif REV2
+#elif defined(REV2) || defined(REV3)
 #define VALM_BASE_MASK    0x003U  // management powers, e.g. 12V and M3V3
 #define VALM_GEN_MASK     0x001CU // common powers
 #define VALM_F1_MASK      0x01E0U // F1-specific
 #define VALM_F2_MASK      0x1E00U // F2-specific
 #define VALM_ALL_MASK     (VALM_BASE_MASK | VALM_GEN_MASK | VALM_F1_MASK | VALM_F2_MASK)
 #define VALM_HIGHEST_V_CH 12 // highest channel that contains a voltage, 0 based counting
-#endif                       // REV2
+#endif                       // REV2 or 3
 int VoltStatus(void)
 {
 

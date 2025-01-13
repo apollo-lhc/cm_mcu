@@ -58,7 +58,7 @@ __attribute__((noreturn)) static BaseType_t bl_ctl(int argc, char **argv, char *
   __builtin_unreachable();
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // this command takes one argument
 static BaseType_t clearclk_ctl(int argc, char **argv, char *m)
 {
@@ -123,7 +123,7 @@ static BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
-#endif // REV2
+#endif // REV2 or REV3
 
 typedef struct __attribute__((packed)) {
   linear11_val_t v_in;
@@ -241,7 +241,7 @@ static struct command_t commands[] = {
     {"alm", alarm_ctl, "args: (clear|status|settemp|setvoltthres|#)\r\nGet or clear status of alarm task\r\n",
      -1},
     {"bootloader", bl_ctl, "Call bootloader\r\n", 0},
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     {"clearclk", clearclk_ctl,
      "Reset clk sticky bits\r\n", 0},
     {"clkmon", clkmon_ctl, "CLK chips' status, id:0-4\r\n", 1},
@@ -263,7 +263,7 @@ static struct command_t commands[] = {
     {"errorlog_reset", errbuff_reset,
      "Resets the eeprom error logger\r\n", 0},
     {"first_mcu", first_mcu_ctl, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 4},
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     {"fpga_flash", fpga_flash, "args # (1|2):  Program FPGA 1(2) via a programmed flash\r\n",
      1},
 #endif // REV2
@@ -272,7 +272,7 @@ static struct command_t commands[] = {
      "args: (xmit|cdr on/off (0-23|all)) | regw reg# val (0-23|all) | regr reg# (0-23)\r\n"
      " Firefly controlling and monitoring commands\r\n",
      -1},
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     {
         "ff_reset",
         ff_reset,
@@ -298,7 +298,7 @@ static struct command_t commands[] = {
         "Show FF CDR loss of lock alarms\r\n",
         0,
     },
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     {
         "ff_cdr_ena",
         ff_cdr_enable_status,
@@ -372,7 +372,7 @@ static struct command_t commands[] = {
         "Scan current I2C bus\r\n",
         1,
     },
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     {
         "jtag_sm",
         jtag_sm_ctl,
@@ -437,7 +437,7 @@ static struct command_t commands[] = {
     {"taskstats",
      TaskStatsCommand,
      "Show state of each FreeRTOS task\r\n", 0},
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     {
         "time",
         time_ctl,
@@ -447,7 +447,7 @@ static struct command_t commands[] = {
 #endif // REV2
     {"uptime", uptime, "Uptime in minutes\r\n", 0},
     {"version", ver_ctl, "MCU firmware version\r\n", 0},
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     {"v38", v38_ctl, "Control 3V8 supply. Args: on|off 1|2\r\n", 2},
 #endif // REV2
 #if 0
@@ -476,7 +476,7 @@ static void U1Print(const char *str)
 {
   UARTPrint(UART1_BASE, str);
 }
-#elif defined(REV2) // REV1
+#elif defined(REV2) || defined(REV3) // REV 2 or 3
 static void U0Print(const char *str)
 {
   UARTPrint(UART0_BASE, str);
@@ -587,7 +587,7 @@ void vCommandLineTask(void *pvParameters)
 
 #ifdef REV1
   void (*printer)(const char *) = U4Print;
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3) // Rev 2 or 3
   void (*printer)(const char *) = U0Print;
 #endif
 

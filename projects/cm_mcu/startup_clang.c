@@ -169,10 +169,10 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,   // GPIO Port C
     IntDefaultHandler,   // GPIO Port D
     IntDefaultHandler,   // GPIO Port E
-#ifdef REV2
-    UART0IntHandler, // UART0 Rx and Tx
-#else
+#ifdef REV1
     IntDefaultHandler, // UART0 Rx and Tx
+#else
+    UART0IntHandler, // UART0 Rx and Tx
 #endif
 #ifdef REV1
     UART1IntHandler, // UART1 Rx and Tx -- ZYNQ UART

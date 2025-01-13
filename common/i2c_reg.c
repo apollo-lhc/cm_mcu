@@ -228,7 +228,7 @@ void initI2C4(const uint32_t sysclockfreq)
   write_gpio_pin(_F1_OPTICS_I2C_RESET, 0x1); // active low
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // I2C controller 5 is for FPGAs on the CM
 void initI2C5(const uint32_t sysclockfreq)
 {

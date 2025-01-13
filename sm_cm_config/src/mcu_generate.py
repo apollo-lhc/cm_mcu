@@ -136,9 +136,10 @@ except FileNotFoundError as e:
         print(f"clang-format not found: {e}")
 
 # open output header file for writing.
-# first chekc that ZM_VALID_ENTRIES has exactly two entries
-if len(ZMON_VALID_ENTRIES) != 2:
+# first check that ZM_VALID_ENTRIES has exactly three entries
+if len(ZMON_VALID_ENTRIES) != 3:
     print(f"ERROR: ZM_VALID_ENTRIES has the wrong number of entries: {len(ZMON_VALID_ENTRIES)}")
+    print(ZMON_VALID_ENTRIES)
     sys.exit(1)
 
 with open(header_fname, encoding="ascii", mode='w') as fheader:
@@ -151,7 +152,9 @@ with open(header_fname, encoding="ascii", mode='w') as fheader:
     print("#define ZYNQMON_ADDRESSES_H", file=fheader)
     print("#ifdef REV1", file=fheader)
     print(f"#define ZMON_VALID_ENTRIES {ZMON_VALID_ENTRIES[0]}", file=fheader)
-    print("#elif defined(REV2)", file=fheader)
+    print("#elif defined(REV2) ", file=fheader)
     print(f"#define ZMON_VALID_ENTRIES {ZMON_VALID_ENTRIES[1]}", file=fheader)
+    print("#elif defined(REV3) ", file=fheader)
+    print(f"#define ZMON_VALID_ENTRIES {ZMON_VALID_ENTRIES[2]}", file=fheader)
     print("#endif // REV1", file=fheader)
     print("#endif // ZYNQMON_ADDRESSES_H", file=fheader)

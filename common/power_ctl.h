@@ -88,7 +88,7 @@ void setPSStatus(int i, enum ps_state theState);
 #define PS_OKS_F2_MASK_L4 0x00C0U
 #define PS_OKS_F2_MASK_L5 0x3000U
 
-#elif defined(REV2) // Rev 2
+#elif defined(REV2) || defined(REV3) // Rev 2 or 3
 // -----------------------------------------------------
 //
 // Rev 2

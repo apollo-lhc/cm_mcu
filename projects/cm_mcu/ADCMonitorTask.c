@@ -33,7 +33,6 @@
 
 #include "InterruptHandlers.h"
 #include "Tasks.h"
-#include "common/log.h"
 
 // On Apollo the ADC range is from 0 - 2.5V.
 // Some signals must be scaled to fit in this range.
@@ -95,7 +94,7 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH10, "F1_MGTH_AVCC", 1.f, 0.f, 0.90f},
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f, 0.f}, // this one is special, temp in C
 };
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 // -------------------------------------------------
 //
 // REV 2
@@ -117,7 +116,11 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH10, "F2_AVCC", 1.f, 0.f, 0.90f},
     {ADC_CTL_CH11, "F2_AVTT", 1.f, 0.f, 1.2f},
     {ADC_CTL_CH12, "F2_VCCAUX", 1.f, 0.f, 1.8f},
+  #ifdef REV2
     {ADC_CTL_CH13, "CUR_V_12V", 10.f, 0.f, 2.5f},
+  #else // REV3
+    {ADC_CTL_CH13, "CUR_V_12V", 12.5f, 0.f, 2.5f},
+  #endif // 
     {ADC_CTL_CH14, "CUR_V_M3V3", 2.f, 0.f, 2.5f},
     {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 0.f, 2.5f},
     {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 1.f, 0.f, 2.5f},
@@ -127,7 +130,7 @@ struct ADC_Info_t ADCs[] = {
     {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f, 0.f}, // this one is special, temp in C
 };
 #else
-#error Need to define either Rev1 or Rev2
+#error Need to define revision
 #endif
 // clang-format on
 

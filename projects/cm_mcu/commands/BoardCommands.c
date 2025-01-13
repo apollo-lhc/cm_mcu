@@ -143,7 +143,7 @@ BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-#if defined(REV2)
+#if defined(REV2) || defined(REV3)
 BaseType_t jtag_sm_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -279,7 +279,7 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   }
 #ifdef REV1
 #include "common/gpio_pins_rev1.def"
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 #include "common/gpio_pins_rev2.def"
 #endif
   // X-Macro end
@@ -328,7 +328,7 @@ BaseType_t gpio_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // interface to 3.8 V
 // interface: v38 on|off 1|2
 BaseType_t v38_ctl(int argc, char **argv, char *m)

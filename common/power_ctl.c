@@ -61,10 +61,10 @@ struct gpio_pin_t oks[] = {
     { F2_MGTY1_AVTT_OK, "F2_MGTY1_AVTT_OK", 5},
     { F2_MGTY2_AVTT_OK, "F2_MGTY2_AVTT_OK", 5}
 };
-#elif defined(REV2) // REV2
+#elif defined(REV2) || defined(REV3) // REV2 or 3
 // ------------------------------------------
 //
-// REV 2
+// REV 2 and REV3
 //
 // ------------------------------------------
 // if you update this you need to update N_PS_ENABLES

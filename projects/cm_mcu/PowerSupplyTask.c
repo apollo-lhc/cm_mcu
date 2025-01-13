@@ -117,9 +117,9 @@ void PowerSupplyTask(void *parameters)
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
   uint16_t supply_ok_mask_L1 = 0U, supply_ok_mask_L2 = 0U, supply_ok_mask_L4 = 0U,
            supply_ok_mask_L5 = 0U;
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   uint16_t supply_ok_mask_L6 = 0U;
-#endif // REV2
+#endif // REV2 or REV3
 
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
@@ -136,9 +136,9 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 = supply_ok_mask_L1 | PS_OKS_F1_MASK_L2;
     supply_ok_mask_L4 = supply_ok_mask_L2 | PS_OKS_F1_MASK_L4;
     supply_ok_mask_L5 = supply_ok_mask_L4 | PS_OKS_F1_MASK_L5;
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     supply_ok_mask_L6 = supply_ok_mask_L5;
-#endif // REV2
+#endif // REV2 or REV3
   }
   if (f2_enable) {
     supply_ok_mask |= PS_OKS_F2_MASK;
@@ -146,7 +146,7 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 |= supply_ok_mask_L1 | PS_OKS_F2_MASK_L2;
     supply_ok_mask_L4 |= supply_ok_mask_L2 | PS_OKS_F2_MASK_L4;
     supply_ok_mask_L5 |= supply_ok_mask_L4 | PS_OKS_F2_MASK_L5;
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     supply_ok_mask_L6 |= supply_ok_mask_L5;
 #endif // REV2
   }
@@ -167,12 +167,12 @@ void PowerSupplyTask(void *parameters)
     supply_ok_mask_L2 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L4 &= ~ignore_mask; // mask out the ignored bits.
     supply_ok_mask_L5 &= ~ignore_mask; // mask out the ignored bits.
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
     supply_ok_mask_L6 &= ~ignore_mask; // mask out the ignored bits.
 #endif                                 // REV2
   }
 
-#if defined(ECN001) || defined(REV2)
+#if defined(ECN001) || defined(REV2) || defined(REV3)
   // configure the LGA80D supplies. This call takes some time.
   LGA80D_init();
 #endif // ECN001
@@ -374,7 +374,7 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
       case POWER_L5ON: {
         if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
@@ -405,8 +405,15 @@ void PowerSupplyTask(void *parameters)
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
           uint32_t ff_25gb_pairs = ff_map_25gb_parts();
+          // FIXME code below is also in ff_map_25g_parts()
+          // FIXME when no FF are installed the code requires the 4V switch to be off for no good reason
+#ifdef REV2
           uint32_t pair_mask_low = ff_25gb_pairs & 0x7U;         // 3 bits
           uint32_t pair_mask_high = (ff_25gb_pairs >> 5) & 0x7U; // 3 pairs of Tx/Rx + 2 XCVRs = 5 shifts
+#elif defined(REV3)
+          uint32_t pair_mask_low = ff_25gb_pairs & 0xFU;         // 4 bits
+          uint32_t pair_mask_high = (ff_25gb_pairs >> 6) & 0xFU; // 4 pairs of Tx/Rx + 2 XCVRs = 6 shifts
+#endif
 
           UBaseType_t ffmask[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
           if ((f1_ff12xmit_4v0_sel == pair_mask_low) && (f2_ff12xmit_4v0_sel == pair_mask_high)) {
@@ -418,7 +425,7 @@ void PowerSupplyTask(void *parameters)
               nextState = POWER_FAILURE;
             }
             else {
-              log_info(LOG_PWRCTL, "enable 3v8 \r\n");
+              log_info(LOG_PWRCTL, "enable 3v8\r\n");
               blade_power_ok(true);
               nextState = POWER_ON;
             }
@@ -439,6 +446,8 @@ void PowerSupplyTask(void *parameters)
 
         break;
       }
+#else
+#error "missing states, this will not work"
 #endif                                                // REV2
       case POWER_FAILURE: {                           // we go through POWER_OFF state before turning on.
         if (!power_supply_alarm && !external_alarm) { // errors cleared

@@ -309,7 +309,7 @@ void pinsel(int pin, uint32_t *x_gpio_port, uint8_t *x_gpio_pin)
   *x_gpio_pin = gpio_pin;
 }
 
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 void pinsel(int pin, uint32_t *x_gpio_port, uint8_t *x_gpio_pin)
 {
   uint8_t gpio_pin = -1;

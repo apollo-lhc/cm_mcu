@@ -146,9 +146,63 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 
 };
+#elif defined(REV3)
+// -------------------------------------------------
+//
+// REV 3
+//
+// -------------------------------------------------
+struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
+    {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 1, 0x54}, //
+    {"F1_4  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F1_4  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F1_5 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 1, 0x54}, //
+    {"F2_4  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F2_4  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F2_5 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+
+};
+struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
+    {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+};
+struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
+    {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
+    {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
+    {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
+    {"F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
+    {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
+    {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+
+};
 
 #else
-#error "Define either Rev1 or Rev2"
+#error "Define Revision!"
 #endif
 
 // FFDAQ arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA1
@@ -171,17 +225,6 @@ struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
     {"K07  12 Tx GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
     {"K07  12 Rx GTY", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
-#elif defined(REV2)
-struct dev_moni2c_addr_t ffl12_f1_moni2c_addrs[NFIREFLIES_IT_F1] = {
-    {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
-    {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
-    {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
-    {"F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
-    {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
-    {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
-};
-#else
-#error "Define either Rev1 or Rev2"
 #endif
 // FFDAQV arguments for monitoring i2c task of 4-channel firefly ports connected to FPGA2
 #ifdef REV1
@@ -208,20 +251,9 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
-#elif defined(REV2)
-struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
-    {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
-    {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
-    {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
-    {"F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
-    {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
-    {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
-};
-#else
-#error "Define either Rev1 or Rev2"
 #endif
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // Clock arguments for monitoring task
 
 struct clk_program_t clkprog_args[] = {
@@ -232,8 +264,21 @@ struct clk_program_t clkprog_args[] = {
     {"", ""}, //
 };
 
+#endif
+
+#ifdef REV2
+
 struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r0a", 0x70, 0, 0x77, 0x45D},  // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
+    {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
+    {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
+    {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
+    {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
+};
+#elif defined(REV3)
+// FIXME: the offset for R0A will have to change?
+struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
+    {"r0a", 0x70, 0, 0x6b, 0x45D},  // CLK R0A : Si5395-REVA with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
     {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
     {"r1b", 0x70, 3, 0x6b, 0x664E}, // CLK R1B : Si5395-REVA #regs = 584 (read at 0x7F7D in EEPROM) if change, addr 0x664E will have to change
@@ -271,7 +316,7 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
 };
 #define F2_NDEVICES 2
 
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 struct dev_i2c_addr_t fpga_addrs[] = {
     {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
     {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
@@ -324,7 +369,7 @@ struct MonitorTaskArgs_t fpga_args = {
 #ifdef REV1
     .smbus = &g_sMaster6,
     .smbus_status = &eStatus6,
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
     .smbus = &g_sMaster5,
     .smbus_status = &eStatus5,
 #endif
@@ -348,7 +393,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
     {"VVCCINT1", 0x70, 3, 0x46}, // first vccint, VU7P
     {"VVCCINT2", 0x70, 4, 0x45}, // second vccint, VU7P
 };
-#elif defined(REV2) // REV1
+#elif defined(REV2) || defined(REV3)
 // Power supply arguments for Monitoring task
 // Supply Address | Voltages  | Priority
 // ---------------+-----------|-----------
@@ -369,8 +414,8 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
 };
 
 #else
-#error "need to define either Rev1 or Rev2"
-#endif // REV1
+#error "Define Revision!"
+#endif // REV
 
 // this function is run once in the dcdc monitoring task
 struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
@@ -597,7 +642,7 @@ void initFPGAMon(void)
   }
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // initialize the real-time clock, which lives in the Hibernate Module in the TM4C1294NCPDT
 extern uint32_t g_ui32SysClock;
 
@@ -776,7 +821,7 @@ void init_registers_ff(void)
   }
 }
 #endif // REV1
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 int init_registers_clk(void)
 {
   // initialize the external I2C registers for the clocks and for the optical devices.
@@ -846,6 +891,9 @@ int init_registers_clk(void)
   }
   return status;
 }
+#endif // REV2 || REV3
+
+#ifdef REV2
 void init_registers_ff(void)
 {
   log_info(LOG_SERVICE, "%s\r\n", __func__);
@@ -959,9 +1007,124 @@ void init_registers_ff(void)
     xSemaphoreGive(i2c3_sem);
   }
 }
+#elif defined(REV3)
+void init_registers_ff(void)
+{
+  log_info(LOG_SERVICE, "%s\r\n", __func__);
+  int result;
+  // =====================================================
+  // CMv3 Schematic 4.05 I2C FPGA#1 OPTICS
+
+  // 3a) U15 inputs vs. outputs (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs.
+
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c4_sem);
+
+  // # set first I2C switch on channel 4 (U14, address 0x70) to port 7
+  result = apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  result += apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(4, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+
+  // clear first I2C switch on channel 4
+  result += apollo_i2c_ctl_w(4, 0x70, 1, 0x0);
+
+  // 3b) U15 default output values (I2C address 0x20 on I2C channel #4)
+  // All signals are inputs so nothing needs to be done.
+
+  // 4a) U18 inputs vs. outputs (I2C address 0x21 on I2C channel #4)
+  // The "/F1_FF_RESET" signal on P07 is an output
+  // The "EN_...3V8" signals on P11, P12, and P13 are outputs.
+  // All other signals are inputs
+
+  // # set second I2C switch on channel 4 (U17, address 0x71) to port 6
+  result += apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x06, 1, 0x7f); //  01111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+
+  // 4b) U17 default output values (I2C address 0x21 on I2C channel #4)
+  // The output on P07 should default to "1".
+  // This negates the active-lo "RESET" input on the FPGA#1 FireFlys
+  // The outputs on P10, P11, P12, and P13 should default to "0"
+  // This disables the 3.8 volt power supplies on the three FireFly
+  // 12-lane transmitter sites for FPGA#1.
+
+  // # set second I2C switch on channel 4 (U16, address 0x71) to port 6
+  result += apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x02, 1, 0x80); //  10000000 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(4, 0x21, 1, 0x03, 1, 0x00); //  00000001 [P17..P10]
+
+  // clear 2nd I2C switch on channel 4
+  result += apollo_i2c_ctl_w(4, 0x70, 1, 0x0);
+  if (result) {
+    log_error(LOG_SERVICE, "\tFailed to initialize FPGA#1 optics\r\n");
+  }
+
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c4_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c4_sem);
+  }
+
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c3_sem);
+  result = 0;
+  // =====================================================
+  // CMv3 Schematic 4.06 I2C FPGA#2 OPTICS
+
+  // 5a) U2 inputs vs. outputs (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs.
+
+  // # set first I2C switch on channel 3 (U9, address 0x70) to port 7
+  result += apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
+  result += apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x06, 1, 0xff); //  11111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(3, 0x20, 1, 0x07, 1, 0xff); //  11111111 [P17..P10]
+
+  // clear first I2C switch on channel 3
+  result += apollo_i2c_ctl_w(3, 0x70, 1, 0x0);
+
+  // 5b) U2 default output values (I2C address 0x20 on I2C channel #3)
+  // All signals are inputs so nothing needs to be done.
+
+  // 6a) U12 inputs vs. outputs (I2C address 0x21 on I2C channel #3)
+  // The "/F2_FF_RESET" signal on P07 is an output
+  // The "EN_...3V8" signals on P10, P11, P12, and P13 are outputs.
+  // All other signals are inputs
+
+  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+  result += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x06, 1, 0x7f); //  11111111 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x07, 1, 0xf0); //  11110000 [P17..P10]
+
+  // 6b) U12 default output values (I2C address 0x21 on I2C channel #3)
+  // The output on P07 should default to "1".
+  // This negates the active-lo "RESET" input on the FPGA#2 FireFlys
+  // The outputs on P10, P11, P12, and P13 should default to "0"
+  // This disables the 3.8 volt power supplies on the three FireFly
+  // 12-lane transmitter sites for FPGA#2.
+
+  // # set second I2C switch on channel 3 (U11, address 0x71) to port 6
+  result += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x02, 1, 0x80); //  00000000 [P07..P00]
+  result += apollo_i2c_ctl_reg_w(3, 0x21, 1, 0x03, 1, 0x00); //  00000001 [P17..P10]
+
+  // clear 2nd I2C switch on channel 3
+  result += apollo_i2c_ctl_w(3, 0x71, 1, 0x0);
+
+  if (result) {
+    log_error(LOG_SERVICE, "\tFailed to initialize FPGA#2 optics\r\n");
+  }
+
+  // if we have a semaphore, give it
+  if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c3_sem);
+  }
+}
+
 #endif // REV2
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 
 #define EEPROM_MAX_PER_PAGE 126
 
@@ -1094,14 +1257,22 @@ int init_load_clk(int clk_n)
 }
 #endif // REV2
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // Enable or disable the 3.8V power supplies for the SamTec Fireflies
 // In Rev2 we write to the I/O expander(s) (one on each I2C bus for each
 // FPGA) to set these bits. In Rev2 we don't need to do a read/modify/write
 // cycle because the other relevant bits are either inputs and the write does not
 // affect them, or active high resets (bit0). See schematic pages 4.05 and 4.06.
-// For each FPGA (F1 and F2),
-// FF_1-FF3 are selectable. bit mask is 0x0e
+// Rev3 moves the reset bit elsewhere.
+#define EN3V8_MUXBIT         (0x1U << 6)
+#define EN3V8_MUXADDR        0x71 // mux addresses on I2C Bus
+#define EN3V8_IOEXP_ADDR     0x21 // device address on I2C Bus
+#define EN3V8_IOEXP_REG_ADDR 0x3  // register address in TCA9555 I/O expander
+#ifdef REV2
+#define EN3V8_IOEXP_REG_MASK 0xEU // which bits in the i/o expander register
+#elif defined(REV3)
+#define EN3V8_IOEXP_REG_MASK 0xFU // which bits in the i/o expander register
+#endif
 
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
 {
@@ -1109,13 +1280,8 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
   // i2cwr 4 0x21 1 0x03 1 0x0f
   SemaphoreHandle_t semaphores[2] = {i2c4_sem, i2c3_sem};
   uint32_t i2c_device[2] = {4, 3};
-  static const UBaseType_t mask = 0xeU;    // which bits in the i/o expander
-  static const uint8_t muxbit = 0x1U << 6; // which output of the mux
-  static const uint8_t muxaddr = 0x71;     // address of mux on i2c bus
-  static const uint8_t ioexp_addr = 0x21;  // address of i/o expander on i2c bus
-  static const uint8_t ioexp_reg_addr = 3; // register address in i/o expander
   int result = 0;
-  // dump infput ffmask
+  // dump input ffmask
   log_debug(LOG_SERVICE, "ffmask[0] 0x%x, ffmask[1] 0x%x\r\n", ffmask[0], ffmask[1]);
   // loop over 2 i2c modules
   for (int i = 0; i < 2; ++i) {
@@ -1129,7 +1295,7 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       return SEM_ACCESS_ERROR;
     }
     // mux setting
-    result += apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, muxbit);
+    result += apollo_i2c_ctl_w(i2c_device[i], EN3V8_MUXADDR, 1, EN3V8_MUXBIT);
     if (result) {
       log_warn(LOG_SERVICE, "mux err %d\r\n", result);
     }
@@ -1138,30 +1304,20 @@ int enable_3v8(UBaseType_t ffmask[2], bool turnOff)
       if (turnOff) {
         val = ~val; // invert bits when turning off
       }
-      val = (val << 1) & mask; // set bits 1-3, and mask out extra bits extraneously set
-      val |= 0x01;             // make sure active low reset bit stays deasserted (i.e., LSB is high)
-      result += apollo_i2c_ctl_reg_w(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, val);
+#ifdef REV2
+      val = (val << 1) & EN3V8_IOEXP_REG_MASK; // set bits 1-3, and mask out extra bits extraneously set
+      val |= 0x01;                             // make sure active low reset bit stays deasserted (i.e., LSB is high)
+#elif defined(REV3)
+      val &= EN3V8_IOEXP_REG_MASK; // bottom 4 bits only, no reset here anymore
+#endif // REV2
+      result += apollo_i2c_ctl_reg_w(i2c_device[i], EN3V8_IOEXP_ADDR, 1, EN3V8_IOEXP_REG_ADDR, 1, val);
       if (result) {
         log_warn(LOG_SERVICE, "expand wr %d\r\n", result);
       }
     }
-    // read back the value to make sure it was set correctly
-    uint32_t val;
-    result += apollo_i2c_ctl_reg_r(i2c_device[i], ioexp_addr, 1, ioexp_reg_addr, 1, &val);
-    log_debug(LOG_SERVICE, "%s: read 3.8V  val raw 0x%x\r\n", __func__, val);
-    val = (val & mask) >> 1; // mask and shift
-    if (result) {
-      log_warn(LOG_SERVICE, "expand rd %d\r\n", result);
-    }
-    else if (val != ffmask[i]) {
-      log_error(LOG_SERVICE, "expand val 0x%x != 0x%x\r\n", val, ffmask[i]);
-      result = 1;
-    }
-    log_info(LOG_SERVICE, "%s: set 3.8V to val 0x%x (input 0x%x)\r\n", __func__, val,
-             ffmask[i]);
 
     // clear the mux
-    result += apollo_i2c_ctl_w(i2c_device[i], muxaddr, 1, 0);
+    result += apollo_i2c_ctl_w(i2c_device[i], EN3V8_MUXADDR, 1, 0);
 
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(semaphores[i]) == xTaskGetCurrentTaskHandle()) {

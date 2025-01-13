@@ -4,6 +4,8 @@ Diagnostics:
     Remove: [readability-identifier-length,
             readability-redundant-control-flow,
             readability-magic-numbers,
+            readability-uppercase-literal-suffix,
+            readability-function-cognitive-complexity,
             ]
 #CompileFlags:
   #Add: [-Wunused-parameter]

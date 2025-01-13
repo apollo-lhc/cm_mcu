@@ -33,6 +33,16 @@ endif
 ifdef REV1
 CFLAGS += -DREV1
 endif 
+ifdef REV3
+CFLAGS += -DREV3
+endif
+# make sure only one of REV1, REV2, REV3 is defined
+ifeq ($(words $(REV1) $(REV2) $(REV3)),0)
+$(error "No Revision defined")
+else ifneq ($(words $(REV1) $(REV2) $(REV3)),1)
+$(error "Multiple Revisions defined (cm_mcu)")
+endif
+
 CFLAGS+=-DPRINTF_INCLUDE_CONFIG_H -DUSE_ERROR_EPROM
 
 CFLAGS+=-Wno-pointer-compare ## for configASSERT macro
@@ -143,8 +153,7 @@ ${COMPILER}/ZynqMonTask.o: ZynqMon_addresses.c
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/cm_mcu.o
 ifdef REV1
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev1.o
-endif
-ifdef REV2
+else ifneq "$(or $(REV3), $(REV2))" ""
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev2.o
 endif 
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinsel.o

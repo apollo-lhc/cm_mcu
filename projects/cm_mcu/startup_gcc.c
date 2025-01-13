@@ -88,10 +88,10 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler,   // GPIO Port C
     IntDefaultHandler,   // GPIO Port D
     IntDefaultHandler,   // GPIO Port E
-#ifdef REV2
-    UART0IntHandler, // UART0 Rx and Tx
-#else
+#ifdef REV1
     IntDefaultHandler, // UART0 Rx and Tx
+#else
+    UART0IntHandler, // UART0 Rx and Tx
 #endif
 #ifdef REV1
     UART1IntHandler, // UART1 Rx and Tx -- ZYNQ UART
@@ -238,7 +238,8 @@ extern uint32_t _ebss;
 //*****************************************************************************
 void ResetISR(void)
 {
-  uint32_t *pui32Src, *pui32Dest;
+  uint32_t *pui32Src;
+  uint32_t *pui32Dest;
 
   //
   // Copy the data segment initializers from flash to SRAM.

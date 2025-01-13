@@ -46,11 +46,11 @@
 #if defined(REV1)
 // Stream buffers for UART communication
 StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
-#elif defined(REV2)
+#elif defined(REV2) || defined(REV3)
 StreamBufferHandle_t xUART0StreamBuffer;
 #endif // Revision
 
-#if defined(REV2)
+#if defined(REV2) || defined(REV3)
 void UART0IntHandler(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;

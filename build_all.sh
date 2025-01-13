@@ -17,10 +17,14 @@ make clean
 make -j REV1=1  > /dev/null
 make clean
 make -j REV2=1  > /dev/null
+make clean
+make -j REV3=1  > /dev/null
 make COMPILER=clang clean 
 make  -j REV1=1 COMPILER=clang > /dev/null
 make COMPILER=clang clean
 make -j REV2=1 COMPILER=clang > /dev/null
+make COMPILER=clang clean
+make -j REV3=1 COMPILER=clang > /dev/null
 make format > /dev/null
 echo "all build succeeded."
 

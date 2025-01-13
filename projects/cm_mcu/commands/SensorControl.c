@@ -554,14 +554,21 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 // reset firefly devices. The resets are ganged together,
 // so you can only reset all of them at once, for those
 // attached to F1 or F2
-#define FF_RESET_MUX_ADDR       0x71
-#define FF_RESET_MUX_BIT_MASK   (0x1 << 6)
-#define FF_RESET_IOEXP_ADDR     0x21
-#define FF_RESET_IOEXP_REG_ADDR 0x3 // output port 1
+// I/O expanders are different in Rev2 and Rev3 for optics, see schematic pages 4.05 and 4.06
+#define FF_RESET_MUX_ADDR     0x71
+#define FF_RESET_MUX_BIT_MASK (0x1 << 6)
+#define FF_RESET_IOEXP_ADDR   0x21
+#if defined(REV2)
+#define FF_RESET_IOEXP_REG_ADDR 0x3        // output port 1
+#define FF_RESET_IOEXP_REG_BIT  (0x1 << 0) // bit P10, i.e., bit 0 of output port 1
+#elif defined(REV3)
+#define FF_RESET_IOEXP_REG_ADDR 0x2        // output port 0
+#define FF_RESET_IOEXP_REG_BIT  (0x1 << 7) // bit P07, i.e., bit 7 of output port 0
+#endif                                     // REV
 BaseType_t ff_reset(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -589,12 +596,12 @@ BaseType_t ff_reset(int argc, char **argv, char *m)
   uint32_t reset_reg;
   int ret = apollo_i2c_ctl_reg_r(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, &reset_reg);
   // set reset bit 0 which is active low
-  reset_reg &= ~(0x1 << 0);
+  reset_reg &= ~FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
   // wait a tick
   vTaskDelay(pdMS_TO_TICKS(1));
   // clear the active low reset bit
-  reset_reg |= (0x1 << 0);
+  reset_reg |= FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
   // release the semaphore
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
@@ -663,16 +670,15 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF STATUS:\r\n");
   }
 
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   int nTx = -1; // order of Tx ch
   // print out the "present" bits on first pass
   if (whichff == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "PRESENT:\r\n");
-    extern struct ff_bit_mask_t ff_bitmask_args[4];
     char *ff_bitmask_names[4] = {"1_12", "1_4 ", "2_12", "2_4 "};
     for (int i = 0; i < 4; ++i) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%s: 0x%02lx\r\n", ff_bitmask_names[i],
-                         ff_bitmask_args[i].present_bit_mask);
+                         getFFpresentbit(i));
     }
   }
 #endif // REV2
@@ -688,7 +694,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     if (isTx) {
 #ifdef REV1
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-#elif defined(REV2) // REV1
+#elif defined(REV2) || defined(REV3)
       nTx += 1;
       uint8_t ff_4v0_sel = 1 << (nTx % (NFIREFLIES_IT_F1 / 2));
       if (nTx < (NFIREFLIES_IT_F1 / 2))
@@ -696,7 +702,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
       else
         ff_4v0_sel &= f2_ff12xmit_4v0_sel;
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, " 3v8?(%x) \t", ff_4v0_sel >> (nTx % (NFIREFLIES_IT_F1 / 2)));
-#endif              // REV2
+#endif // REV2
     }
     else {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
@@ -1278,7 +1284,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     m[copied] = '\0';
   }
   c = 0;
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Program (read from clock chip): %s", clkprog_args[i].progname_clkdesgid);
   if (strncmp(clkprog_args[i].progname_clkdesgid, "5395ABP1", 3) == 0 || strncmp(clkprog_args[i].progname_clkdesgid, "5341ABP1", 3) == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, " (not found)");
@@ -1354,7 +1360,7 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
 }
 
 // This command takes 1 argument, either f1 or f2
-#ifdef REV2
+#if defined(REV2) || defined(REV3)
 BaseType_t fpga_flash(int argc, char **argv, char *m)
 {
   const TickType_t kDELAY = 1 / portTICK_PERIOD_MS; // 1 ms delay
