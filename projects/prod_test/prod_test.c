@@ -9,6 +9,7 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
+#include "driverlib/adc.h"
 #include "inc/hw_ints.h"
 
 // local includes
@@ -30,6 +31,7 @@
 
 SemaphoreHandle_t xUARTMutex = 0;
 void vCommandLineTask(void *pvParameters);
+void ADCMonitorTask(void *pvParameters);
 
 //*****************************************************************************
 //
@@ -56,6 +58,25 @@ void SystemInit(void)
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
+
+  // ADC
+  // initialize the ADCs.
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
+  // Set the reference to external
+  ROM_ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V);
+  ROM_ADCReferenceSet(ADC1_BASE, ADC_REF_EXT_3V);
+  ROM_ADCIntEnable(ADC0_BASE, 1); // enable interrupt for sequence 1
+  ROM_ADCIntEnable(ADC1_BASE, 0); // enable interrupt for sequence 0
+  // clear the interrupts
+  ROM_ADCIntClear(ADC0_BASE, 1);
+  ROM_ADCIntClear(ADC1_BASE, 0);
+  // FreeRTOS insists that the priority of interrupts be set up like this.
+  ROM_IntPrioritySet(INT_ADC0SS1, configKERNEL_INTERRUPT_PRIORITY);
+  ROM_IntPrioritySet(INT_ADC1SS0, configKERNEL_INTERRUPT_PRIORITY);
+
+  ROM_IntEnable(INT_ADC0SS1);
+  ROM_IntEnable(INT_ADC1SS0);
 
   // initialize interrupts
   UART0Init(g_ui32SysClock); // ZYNQ UART
@@ -125,6 +146,7 @@ __attribute__((noreturn)) int main(void)
   xUARTMutex = xSemaphoreCreateMutex();
 
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
   Print("\r\n----------------------------\r\n");
   Print("Staring Apollo CM MCU Production Test firmware ");

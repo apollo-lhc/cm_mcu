@@ -30,6 +30,7 @@ typedef struct {
 #define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
 
 struct command_t commands[] = {
+    {"adc", adc_ctl, "Display ADC measurements", 0},
     {"bootloader", bl_ctl, "Call bootloader", 0},
     {"help", help_command_fcn, "This help command", -1},
     {"dcdci2ctest", run_dcdc_i2ctest, "Test I2C to DC-DC converters", 0},
@@ -57,7 +58,7 @@ BaseType_t help_command_fcn(int argc, char **argv, char *m)
       if (left < len) {
         return pdTRUE;
       }
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s\r\n",
                          commands[i].commandstr, commands[i].helpstr);
     }
     i = 0;

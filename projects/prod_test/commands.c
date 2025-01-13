@@ -8,6 +8,7 @@
 #include "common/printf.h"
 #include "common/power_ctl.h"
 #include "common/pinsel.h"
+#include "common/utils.h"
 
 // #define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -99,7 +100,7 @@ BaseType_t power_off_ctl(int argc, char **argv, char *m)
 {
   disable_ps();
   snprintf(m, SCRATCH_SIZE, "Power off\r\n");
-  return pdTRUE;
+  return pdFALSE;
 }
 
 // direct copy paste from other project?
@@ -110,5 +111,30 @@ BaseType_t restart_mcu(int argc, char **argv, char *m)
   snprintf(m, SCRATCH_SIZE, "Restarting MCU\r\n");
   ROM_SysCtlReset(); // This function does not return
   __builtin_unreachable();
+  return pdFALSE;
+}
+
+// this command takes no arguments
+BaseType_t adc_ctl(int argc, char **argv, char *m)
+{
+  int copied = 0;
+
+  static int whichadc = 0;
+  if (whichadc == 0) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ADC outputs\r\n");
+  }
+  for (; whichadc < 21; ++whichadc) {
+    float val = getADCvalue(whichadc);
+    int tens;
+    int frac;
+    float_to_ints(val, &tens, &frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%14s: %02d.%02d\r\n",
+                       getADCname(whichadc), tens, frac);
+    if ((SCRATCH_SIZE - copied) < 20 && (whichadc < 20)) {
+      ++whichadc;
+      return pdTRUE;
+    }
+  }
+  whichadc = 0;
   return pdFALSE;
 }

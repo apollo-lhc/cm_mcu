@@ -15,6 +15,7 @@
 // FreeRTOS includes
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "stream_buffer.h"
+#include "task.h"
 
 extern StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer, xUART0StreamBuffer;
 
@@ -52,17 +53,13 @@ void SMBusMasterIntHandler6(void);
 extern TaskHandle_t TaskNotifyI2CSlave;
 void I2CSlave0Interrupt(void);
 
+#endif // 0
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
 
 void ADCSeq0Interrupt(void);
 void ADCSeq1Interrupt(void);
 
-#ifdef REV1
-// soft UART
-void Timer0AIntHandler(void);
-#endif // REV1
-#endif
 // these are from the FreeRTOS code base.
 void xPortPendSVHandler(void);
 void vPortSVCHandler(void);
