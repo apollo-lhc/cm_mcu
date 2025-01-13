@@ -54,6 +54,7 @@ enum ps_state {
 
 enum ps_state getPSStatus(int i);
 void setPSStatus(int i, enum ps_state theState);
+#define PS_NUM_PRIORITIES 6
 
 #ifdef REV1
 // -----------------------------------------------------
@@ -91,7 +92,7 @@ void setPSStatus(int i, enum ps_state theState);
 #elif defined(REV2) || defined(REV3) // Rev 2 or 3
 // -----------------------------------------------------
 //
-// Rev 2
+// Rev 2 and Rev 3
 //
 // -----------------------------------------------------
 // Number of enable and power good/OK pins
