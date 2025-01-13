@@ -13,8 +13,8 @@
 #include "common/smbus.h"
 
 // FreeRTOS includes
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h"       // IWYU pragma: keep
+#include "FreeRTOSConfig.h" // IWYU pragma: keep
 #include "stream_buffer.h"
 #include "task.h"
 

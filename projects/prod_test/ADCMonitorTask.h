@@ -1,4 +1,6 @@
 #pragma once
+
+#include <stdbool.h>
 // On Apollo the ADC range is from 0 - 2.5V.
 // Some signals must be scaled to fit in this range.
 #define ADC_MAX_VOLTAGE_RANGE 2.5f
@@ -15,3 +17,8 @@
 #define ADC_INFO_CUR_INIT_CH      13
 #define ADC_INFO_CUR_FIN_CH       17
 #endif // REV2 or REV3
+
+#define ADC_DIFF_TOLERANCE 0.05f // in percent
+
+float getADCtargetValue(int i);
+int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float *delta);

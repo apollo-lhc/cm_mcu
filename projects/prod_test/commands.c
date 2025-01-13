@@ -62,15 +62,6 @@ __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
   __builtin_unreachable();
 }
 
-//// power control state names
-// static const char *power_control_state_names[] = {
-// #define X(name) #name,
-//     X_MACRO_PS_STATES
-// #undef X
-// };
-
-int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float *delta);
-
 // turn on power at the specified level
 BaseType_t power_ctl(int argc, char **argv, char *m)
 {
@@ -104,7 +95,6 @@ BaseType_t power_off_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-// direct copy paste from other project?
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char *m)
 {
@@ -115,9 +105,7 @@ BaseType_t restart_mcu(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-// this command takes no arguments
-float getADCtargetValue(int i);
-
+// Display ADC measurements
 BaseType_t adc_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -130,10 +118,10 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
     float val = getADCvalue(whichadc);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%14s: %5.2f",
                        getADCname(whichadc), (double)val);
-    if (whichadc < ADC_INFO_CUR_INIT_CH) { // for voltage vals, check
+    if (whichadc < ADC_INFO_CUR_INIT_CH) { // for voltage vals, compare to expected
       float target_val = getADCtargetValue(whichadc);
       float diff = (target_val - val) / val;
-      if (ABS(diff) > 0.05f) {
+      if (ABS(diff) > ADC_DIFF_TOLERANCE) {
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\tBAD");
       }
     }

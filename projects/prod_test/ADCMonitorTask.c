@@ -125,7 +125,6 @@ float getADCtargetValue(const int i)
 }
 
 #if defined(REV2) || defined(REV3)
-#define ADC_DIFF_TOLERANCE 0.05f // in percent
 int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float *delta)
 {
   // in the special case where neither f1 or f2 are enabled (no FPGAs),
