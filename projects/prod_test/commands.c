@@ -16,7 +16,10 @@
 #include "inc/hw_types.h"
 #include "inc/hw_nvic.h"
 #include "portmacro.h"
+#include "task.h"
 // #include "inc/hw_memmap.h"
+
+#include "ADCMonitorTask.h"
 
 void Print(const char *str);
 
@@ -59,40 +62,38 @@ __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
   __builtin_unreachable();
 }
 
-// power control state names
-static const char *power_control_state_names[] = {
-#define X(name) #name,
-    X_MACRO_PS_STATES
-#undef X
-};
+//// power control state names
+//static const char *power_control_state_names[] = {
+//#define X(name) #name,
+//    X_MACRO_PS_STATES
+//#undef X
+//};
+
+int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float * delta);
 
 // turn on power at the specified level
 BaseType_t power_ctl(int argc, char **argv, char *m)
 {
-  int copied = 0;
   // parse argv[1] as a number
   // if it is not a number, return an error
   // if it is a number, turn on power at that level
   // return success
   int32_t level = strtol(argv[1], NULL, 16);
-  if (level <= 0 || level > N_PS_OKS) {
+  if (level < 0 || level > PS_NUM_PRIORITIES) {
     snprintf(m, SCRATCH_SIZE, "Invalid power level %s\r\n", argv[1]);
     return pdFALSE;
   }
-  turn_on_ps_at_prio(true, true, level);
-  static int i = 0;
-  for (; i < N_PS_OKS; ++i) {
-    enum ps_state j = getPSStatus(i);
-    const char *c = power_control_state_names[j];
+  // 0 is automatic
+  if ( level > 0)
+    turn_on_ps_at_prio(true, true, level);
+  vTaskDelay(pdMS_TO_TICKS(1000)); // let ADC catch up
+  float delta;
+  int r = check_ps_at_prio(level, true, true, &delta);
+  int copied = snprintf(m, SCRATCH_SIZE, "volt compare at level %d: %s\r\n",
+                        level, (r==0?"good":"bad"));
+  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "delta: %f%%\r\n",
+                     (double)delta);
 
-    copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%16s: %s\r\n", oks[i].name, c);
-    if ((SCRATCH_SIZE - copied) < 20 && (i < N_PS_OKS)) {
-      ++i;
-      return pdTRUE;
-    }
-  }
-  i = 0;
   return pdFALSE;
 }
 
@@ -115,6 +116,8 @@ BaseType_t restart_mcu(int argc, char **argv, char *m)
 }
 
 // this command takes no arguments
+float getADCtargetValue(int i);
+
 BaseType_t adc_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -125,12 +128,19 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
   }
   for (; whichadc < 21; ++whichadc) {
     float val = getADCvalue(whichadc);
-    int tens;
-    int frac;
-    float_to_ints(val, &tens, &frac);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%14s: %02d.%02d\r\n",
-                       getADCname(whichadc), tens, frac);
-    if ((SCRATCH_SIZE - copied) < 20 && (whichadc < 20)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%14s: %5.2f",
+                       getADCname(whichadc), (double)val);
+    if ( whichadc < ADC_INFO_CUR_INIT_CH ) { // for voltage vals, check
+      float target_val = getADCtargetValue(whichadc);
+      float diff = (target_val - val)/val;
+      if ( ABS(diff) > 0.05f) {
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\tBAD");
+      }
+    }
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+    if ((SCRATCH_SIZE - copied) < 50 && (whichadc < 20)) {
       ++whichadc;
       return pdTRUE;
     }
