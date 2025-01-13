@@ -251,17 +251,6 @@ struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
-// #elif defined(REV2) || defined(REV3)
-// struct dev_moni2c_addr_t ffl12_f2_moni2c_addrs[NFIREFLIES_IT_F2] = {
-//     {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
-//     {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
-//     {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
-//     {"F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
-//     {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
-//     {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
-// };
-// #else
-// #error "Define board revision"
 #endif
 
 #if defined(REV2) || defined(REV3)
