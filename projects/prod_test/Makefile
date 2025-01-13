@@ -123,8 +123,10 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/printf.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/pinsel.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/commands.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/power_ctl.o
+${COMPILER}/prod_test.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/PowerI2CCommands.o
 #${COMPILER}/prod_test.axf: ${COMPILER}/BoardCommands.o
+
 
 # TIVAWARE
 ${COMPILER}/prod_test.axf: ${COMPILER}/sysctl.o

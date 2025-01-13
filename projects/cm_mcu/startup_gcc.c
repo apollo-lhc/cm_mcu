@@ -312,7 +312,7 @@ static void NmiSR(void)
 // invokes a restart.
 //
 //*****************************************************************************
-void GetRegistersFromStack(uint32_t *pulFaultStackAddress) //
+void GetRegistersFromStack(const uint32_t *pulFaultStackAddress) //
 {
   /* These are volatile to try and prevent the compiler/linker optimizing them
 away as the variables never actually get used.  If the debugger won't show the

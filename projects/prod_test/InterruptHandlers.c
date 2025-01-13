@@ -178,6 +178,7 @@ void SMBusMasterIntHandler6(void)
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+#endif // 0 // not used
 // Stores the handle of the task that will be notified when the
 // ADC conversion is complete.
 TaskHandle_t TaskNotifyADC = NULL;
@@ -229,6 +230,8 @@ void ADCSeq1Interrupt(void)
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   return;
 }
+
+#if 0 // not used
 
 // -----------------------------------------
 TaskHandle_t TaskNotifyI2CSlave = NULL;
