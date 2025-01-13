@@ -100,7 +100,7 @@ BaseType_t power_off_ctl(int argc, char **argv, char *m)
 {
   disable_ps();
   snprintf(m, SCRATCH_SIZE, "Power off\r\n");
-  return pdTRUE;
+  return pdFALSE;
 }
 
 // direct copy paste from other project?

@@ -201,7 +201,7 @@ static void initADC0SecondSequence(void)
 }
 extern TaskHandle_t TaskNotifyADC;
 // ADC monitoring task.
-void ADCMonitorTask(void *parameters)
+void ADCMonitorTask(void *pvParameters)
 {
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();

@@ -58,7 +58,7 @@ BaseType_t help_command_fcn(int argc, char **argv, char *m)
       if (left < len) {
         return pdTRUE;
       }
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s",
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s\r\n",
                          commands[i].commandstr, commands[i].helpstr);
     }
     i = 0;
