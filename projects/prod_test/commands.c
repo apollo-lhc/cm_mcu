@@ -63,13 +63,13 @@ __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
 }
 
 //// power control state names
-//static const char *power_control_state_names[] = {
-//#define X(name) #name,
-//    X_MACRO_PS_STATES
-//#undef X
-//};
+// static const char *power_control_state_names[] = {
+// #define X(name) #name,
+//     X_MACRO_PS_STATES
+// #undef X
+// };
 
-int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float * delta);
+int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float *delta);
 
 // turn on power at the specified level
 BaseType_t power_ctl(int argc, char **argv, char *m)
@@ -84,14 +84,14 @@ BaseType_t power_ctl(int argc, char **argv, char *m)
     return pdFALSE;
   }
   // 0 is automatic
-  if ( level > 0)
+  if (level > 0)
     turn_on_ps_at_prio(true, true, level);
   vTaskDelay(pdMS_TO_TICKS(1000)); // let ADC catch up
   float delta;
   int r = check_ps_at_prio(level, true, true, &delta);
   int copied = snprintf(m, SCRATCH_SIZE, "volt compare at level %d: %s\r\n",
-                        level, (r==0?"good":"bad"));
-  copied += snprintf(m+copied, SCRATCH_SIZE-copied, "delta: %f%%\r\n",
+                        level, (r == 0 ? "good" : "bad"));
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "delta: %f%%\r\n",
                      (double)delta);
 
   return pdFALSE;
@@ -130,10 +130,10 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
     float val = getADCvalue(whichadc);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%14s: %5.2f",
                        getADCname(whichadc), (double)val);
-    if ( whichadc < ADC_INFO_CUR_INIT_CH ) { // for voltage vals, check
+    if (whichadc < ADC_INFO_CUR_INIT_CH) { // for voltage vals, check
       float target_val = getADCtargetValue(whichadc);
-      float diff = (target_val - val)/val;
-      if ( ABS(diff) > 0.05f) {
+      float diff = (target_val - val) / val;
+      if (ABS(diff) > 0.05f) {
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\tBAD");
       }
     }

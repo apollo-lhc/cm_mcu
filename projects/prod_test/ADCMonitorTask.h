@@ -5,7 +5,7 @@
 
 // ADC task
 #define ADC_CHANNEL_COUNT   21
-#define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
+#define ADC_INFO_TEMP_ENTRY 20     // this needs to be manually kept correct.
 #if defined(REV2) || defined(REV3) // REV2
 #define ADC_INFO_GEN_VCC_INIT_CH  0
 #define ADC_INFO_GEN_VCC_4V0_CH   3

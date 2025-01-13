@@ -235,8 +235,6 @@ void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio)
   }
 }
 
-
-
 void blade_power_ok(bool isok)
 {
   uint8_t val = (isok == true) ? 0x1U : 0x0U;

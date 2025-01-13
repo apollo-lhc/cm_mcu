@@ -42,15 +42,14 @@
 
 #include "ADCMonitorTask.h"
 
-
 // a struct to hold some information about the ADC channel.
 struct ADC_Info_t {
-  int channel;      // which of the 20 ADC channels on the TM4C1290NCPDT on Apollo CM v1
-  const char *name; // name
-  float scale;      // scaling, if needed, for signals bigger than 2.5V
-  float offset;     // offset, if needed
+  int channel;        // which of the 20 ADC channels on the TM4C1290NCPDT on Apollo CM v1
+  const char *name;   // name
+  float scale;        // scaling, if needed, for signals bigger than 2.5V
+  float offset;       // offset, if needed
   float target_value; // expected value for this ADC
-  int   sequence;     // sequence at which this power is turned on.
+  int sequence;       // sequence at which this power is turned on.
 };
 
 // parameters for how data is organized in the fADC arrays and how the
@@ -71,33 +70,32 @@ struct ADC_Info_t {
 //
 // -------------------------------------------------
 
-static
-struct ADC_Info_t ADCs[] = {
-    {ADC_CTL_CH0,  "VCC_12V", 6.f, 0.f, 12.f, 0},
-    {ADC_CTL_CH1,  "VCC_M3V3", 2.f, 0.f, 3.3f, 0},
-    {ADC_CTL_CH2,  "VCC_3V3", 2.f, 0.f, 3.3f, 3},
-    {ADC_CTL_CH3,  "VCC_4V0", 2.f, 0.f, 4.0f, 6},
-    {ADC_CTL_CH4,  "VCC_1V8", 1.f, 0.f, 1.8f, 2},
-    {ADC_CTL_CH5,  "F1_VCCINT", 1.f, 0.f, 0.85f, 1},
-    {ADC_CTL_CH6,  "F1_AVCC", 1.f, 0.f, 0.90f, 4},
-    {ADC_CTL_CH7,  "F1_AVTT", 1.f, 0.f, 1.2f, 5},
-    {ADC_CTL_CH8,  "F1_VCCAUX", 1.f, 0.f, 1.8f, 5},
-    {ADC_CTL_CH9,  "F2_VCCINT", 1.f, 0.f, 0.85f, 1},
+static struct ADC_Info_t ADCs[] = {
+    {ADC_CTL_CH0, "VCC_12V", 6.f, 0.f, 12.f, 0},
+    {ADC_CTL_CH1, "VCC_M3V3", 2.f, 0.f, 3.3f, 0},
+    {ADC_CTL_CH2, "VCC_3V3", 2.f, 0.f, 3.3f, 3},
+    {ADC_CTL_CH3, "VCC_4V0", 2.f, 0.f, 4.0f, 6},
+    {ADC_CTL_CH4, "VCC_1V8", 1.f, 0.f, 1.8f, 2},
+    {ADC_CTL_CH5, "F1_VCCINT", 1.f, 0.f, 0.85f, 1},
+    {ADC_CTL_CH6, "F1_AVCC", 1.f, 0.f, 0.90f, 4},
+    {ADC_CTL_CH7, "F1_AVTT", 1.f, 0.f, 1.2f, 5},
+    {ADC_CTL_CH8, "F1_VCCAUX", 1.f, 0.f, 1.8f, 5},
+    {ADC_CTL_CH9, "F2_VCCINT", 1.f, 0.f, 0.85f, 1},
     {ADC_CTL_CH10, "F2_AVCC", 1.f, 0.f, 0.90f, 4},
     {ADC_CTL_CH11, "F2_AVTT", 1.f, 0.f, 1.2f, 5},
     {ADC_CTL_CH12, "F2_VCCAUX", 1.f, 0.f, 1.8f, 5},
-  #ifdef REV2
+#ifdef REV2
     {ADC_CTL_CH13, "CUR_V_12V", 10.f, 0.f, 2.5f, -1},
-  #else // REV3
+#else  // REV3
     {ADC_CTL_CH13, "CUR_V_12V", 12.5f, 0.f, 2.5f, -1},
-  #endif // 
+#endif //
     {ADC_CTL_CH14, "CUR_V_M3V3", 2.f, 0.f, 2.5f, -1},
     {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 0.f, 2.5f, -1},
     {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 1.f, 0.f, 2.5f, -1},
     {ADC_CTL_CH17, "CUR_V_F2VCCAUX", 1.f, 0.f, 2.5f, -1},
-    {ADC_CTL_CH18, "F1_TEMP", (1.004f/1.026f)/0.004f, -273.15f, 35.f, -1}, // degrees C
-    {ADC_CTL_CH19, "F2_TEMP", (1.004f/1.026f)/0.004f, -273.15f, 35.f, -1}, // degrees C
-    {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f, 0.f, -1}, // this one is special, temp in C
+    {ADC_CTL_CH18, "F1_TEMP", (1.004f / 1.026f) / 0.004f, -273.15f, 35.f, -1}, // degrees C
+    {ADC_CTL_CH19, "F2_TEMP", (1.004f / 1.026f) / 0.004f, -273.15f, 35.f, -1}, // degrees C
+    {ADC_CTL_TS, "TM4C_TEMP", 1.f, 0.f, 0.f, -1},                              // this one is special, temp in C
 };
 #else
 #error Need to define revision
@@ -128,7 +126,7 @@ float getADCtargetValue(const int i)
 
 #if defined(REV2) || defined(REV3)
 #define ADC_DIFF_TOLERANCE 0.05f // in percent
-int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float * delta)
+int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float *delta)
 {
   // in the special case where neither f1 or f2 are enabled (no FPGAs),
   // enable both of them (commissioning of new PCB
@@ -138,13 +136,13 @@ int check_ps_at_prio(int prio, bool f2_enable, bool f1_enable, float * delta)
   }
   int retval = 0;
   // loop over the ADC
-  for ( int i = 0; i < ADC_CHANNEL_COUNT; ++i) {
-    if ( ADCs[i].sequence == prio) {
+  for (int i = 0; i < ADC_CHANNEL_COUNT; ++i) {
+    if (ADCs[i].sequence == prio) {
       float current_val = getADCvalue(i);
       float target_val = getADCtargetValue(i);
-      float diff = (current_val - target_val)/target_val;
+      float diff = (current_val - target_val) / target_val;
       *delta = diff;
-      if (ABS(diff) > ADC_DIFF_TOLERANCE ) {
+      if (ABS(diff) > ADC_DIFF_TOLERANCE) {
         retval = 1;
       }
     }

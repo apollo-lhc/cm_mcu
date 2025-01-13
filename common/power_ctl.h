@@ -97,7 +97,6 @@ void setPSStatus(int i, enum ps_state theState);
 // Number of enable and power good/OK pins
 #define PS_NUM_PRIORITIES 6
 
-
 #define N_PS_ENABLES      10
 #define N_PS_OKS          12
 #define PS_OKS_MASK       ((1U << N_PS_OKS) - 1)
