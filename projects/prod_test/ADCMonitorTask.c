@@ -44,7 +44,7 @@
 
 // ADC task
 #define ADC_CHANNEL_COUNT   21
-#define ADC_INFO_TEMP_ENTRY 20 // this needs to be manually kept correct.
+#define ADC_INFO_TEMP_ENTRY 20     // this needs to be manually kept correct.
 #if defined(REV2) || defined(REV3) // REV2
 #define ADC_INFO_GEN_VCC_INIT_CH  0
 #define ADC_INFO_GEN_VCC_4V0_CH   3
@@ -54,8 +54,6 @@
 #define ADC_INFO_CUR_INIT_CH      13
 #define ADC_INFO_CUR_FIN_CH       17
 #endif
-
-
 
 // a struct to hold some information about the ADC channel.
 struct ADC_Info_t {
@@ -84,33 +82,32 @@ struct ADC_Info_t {
 //
 // -------------------------------------------------
 
-static
-struct ADC_Info_t ADCs[] = {
-    {ADC_CTL_CH0,  "VCC_12V", 6.f, 0.f, 12.f},
-    {ADC_CTL_CH1,  "VCC_M3V3", 2.f, 0.f, 3.3f},
-    {ADC_CTL_CH2,  "VCC_3V3", 2.f, 0.f, 3.3f},
-    {ADC_CTL_CH3,  "VCC_4V0", 2.f, 0.f, 4.0f},
-    {ADC_CTL_CH4,  "VCC_1V8", 1.f, 0.f, 1.8f},
-    {ADC_CTL_CH5,  "F1_VCCINT", 1.f, 0.f, 0.85f},
-    {ADC_CTL_CH6,  "F1_AVCC", 1.f, 0.f, 0.90f},
-    {ADC_CTL_CH7,  "F1_AVTT", 1.f, 0.f, 1.2f},
-    {ADC_CTL_CH8,  "F1_VCCAUX", 1.f, 0.f, 1.8f},
-    {ADC_CTL_CH9,  "F2_VCCINT", 1.f, 0.f, 0.85f},
+static struct ADC_Info_t ADCs[] = {
+    {ADC_CTL_CH0, "VCC_12V", 6.f, 0.f, 12.f},
+    {ADC_CTL_CH1, "VCC_M3V3", 2.f, 0.f, 3.3f},
+    {ADC_CTL_CH2, "VCC_3V3", 2.f, 0.f, 3.3f},
+    {ADC_CTL_CH3, "VCC_4V0", 2.f, 0.f, 4.0f},
+    {ADC_CTL_CH4, "VCC_1V8", 1.f, 0.f, 1.8f},
+    {ADC_CTL_CH5, "F1_VCCINT", 1.f, 0.f, 0.85f},
+    {ADC_CTL_CH6, "F1_AVCC", 1.f, 0.f, 0.90f},
+    {ADC_CTL_CH7, "F1_AVTT", 1.f, 0.f, 1.2f},
+    {ADC_CTL_CH8, "F1_VCCAUX", 1.f, 0.f, 1.8f},
+    {ADC_CTL_CH9, "F2_VCCINT", 1.f, 0.f, 0.85f},
     {ADC_CTL_CH10, "F2_AVCC", 1.f, 0.f, 0.90f},
     {ADC_CTL_CH11, "F2_AVTT", 1.f, 0.f, 1.2f},
     {ADC_CTL_CH12, "F2_VCCAUX", 1.f, 0.f, 1.8f},
-  #ifdef REV2
+#ifdef REV2
     {ADC_CTL_CH13, "CUR_V_12V", 10.f, 0.f, 2.5f},
-  #else // REV3
+#else  // REV3
     {ADC_CTL_CH13, "CUR_V_12V", 12.5f, 0.f, 2.5f},
-  #endif // 
+#endif //
     {ADC_CTL_CH14, "CUR_V_M3V3", 2.f, 0.f, 2.5f},
     {ADC_CTL_CH15, "CUR_V_4V0", 2.f, 0.f, 2.5f},
     {ADC_CTL_CH16, "CUR_V_F1VCCAUX", 1.f, 0.f, 2.5f},
     {ADC_CTL_CH17, "CUR_V_F2VCCAUX", 1.f, 0.f, 2.5f},
-    {ADC_CTL_CH18, "F1_TEMP", (1.004f/1.026f)/0.004f, -273.15f, 35.f}, // degrees C
-    {ADC_CTL_CH19, "F2_TEMP", (1.004f/1.026f)/0.004f, -273.15f, 35.f}, // degrees C
-    {ADC_CTL_TS,   "TM4C_TEMP", 1.f, 0.f, 0.f}, // this one is special, temp in C
+    {ADC_CTL_CH18, "F1_TEMP", (1.004f / 1.026f) / 0.004f, -273.15f, 35.f}, // degrees C
+    {ADC_CTL_CH19, "F2_TEMP", (1.004f / 1.026f) / 0.004f, -273.15f, 35.f}, // degrees C
+    {ADC_CTL_TS, "TM4C_TEMP", 1.f, 0.f, 0.f},                              // this one is special, temp in C
 };
 #else
 #error Need to define revision
