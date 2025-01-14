@@ -65,7 +65,8 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
       data[0] = 0x1U << pm_addrs_dcdc[ps].mux_bit;
       r = SMBusMasterI2CWrite(&g_sMaster1, pm_addrs_dcdc[ps].mux_addr, data,
                               1);
-      copied = check_i2c_transaction(r, 500, false, &g_sMaster1, eStatus1, m);
+      copied = check_i2c_transaction(r, LGA80D_MAX_ATTEMPTS, false,
+                                     &g_sMaster1, eStatus1, m);
       if (copied != 0) {
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "(selecting dev %d on MUX)\r\n", ps);
@@ -96,7 +97,8 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
         r = SMBusMasterByteWordRead(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
                                     LGA80D_ADDR_USER_DATA_00, data, 2);
       }
-      copied = check_i2c_transaction(r, 500, false, &g_sMaster1, eStatus1, m);
+      copied = check_i2c_transaction(r, LGA80D_MAX_ATTEMPTS, false,
+                                     &g_sMaster1, eStatus1, m);
       if (copied != 0) {
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "(read/write %d, page %d, dev %d)\r\n", rw, page, ps);
@@ -136,7 +138,8 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
                               pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr,
                               LGA80D_ADDR_PMBUS_REVISION,
                               data, 1);
-  copied = check_i2c_transaction(r, 500, true, &g_sMaster1, eStatus1, m);
+  copied = check_i2c_transaction(r, LGA80D_MAX_ATTEMPTS, true, &g_sMaster1,
+                                 eStatus1, m);
   if (copied == 1) {
     read_fail = true;
   }

@@ -45,9 +45,6 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
  */
 BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
 {
-  // TODO check power is up: currently there is no PowerSupplyTask or similar
-  // so check with Peter what to do here
-
   uint8_t data[2];
   tSMBusStatus r;
   int copied = 0;
@@ -62,7 +59,8 @@ BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
       data[0] = 0x1U << clk_moni2c_addrs[idev].mux_bit;
       r = SMBusMasterI2CWrite(&g_sMaster2, clk_moni2c_addrs[idev].mux_addr,
                               data, 1);
-      copied = check_i2c_transaction(r, 500, false, &g_sMaster2, eStatus2, m);
+      copied = check_i2c_transaction(r, SI5395_MAX_ATTEMPTS, false,
+                                     &g_sMaster2, eStatus2, m);
       if (copied != 0) {
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "(selecting dev %d on MUX)\r\n", idev);
@@ -74,7 +72,8 @@ BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
       data[1] = SI5395_ADDR_SCRATCH_UPPER;
       r = SMBusMasterI2CWrite(&g_sMaster2, clk_moni2c_addrs[idev].dev_addr,
                               data, 2);
-      copied = check_i2c_transaction(r, 500, false, &g_sMaster2, eStatus2, m);
+      copied = check_i2c_transaction(r, SI5395_MAX_ATTEMPTS, false,
+                                     &g_sMaster2, eStatus2, m);
       if (copied != 0) {
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "(selecting page on dev %d)\r\n", idev);
@@ -96,7 +95,8 @@ BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
                                     clk_moni2c_addrs[idev].dev_addr, &data[0],
                                     1, &data[1], 1);
       }
-      copied = check_i2c_transaction(r, 500, false, &g_sMaster2, eStatus2, m);
+      copied = check_i2c_transaction(r, SI5395_MAX_ATTEMPTS, false,
+                                     &g_sMaster2, eStatus2, m);
       if (copied != 0) {
         snprintf(m + copied, SCRATCH_SIZE - copied,
                  "(read/write %d, dev %d)\r\n", rw, idev);
@@ -118,12 +118,11 @@ BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
     } // loop over devices
   } // read/write passes
 
-  // DEBUG: temporarily don't reset to purposely fail
   //  test reset by attempting read; as long as we don't use an address 0x7X,
   //  we shouldn't accidentally address the MUX
-  // write_gpio_pin(_CLOCKS_I2C_RESET, 0x0);
-  // vTaskDelay(pdMS_TO_TICKS(1));
-  // write_gpio_pin(_CLOCKS_I2C_RESET, 0x1);
+  write_gpio_pin(_CLOCKS_I2C_RESET, 0x0);
+  vTaskDelay(pdMS_TO_TICKS(1));
+  write_gpio_pin(_CLOCKS_I2C_RESET, 0x1);
 
   bool read_fail = false;
   // select page
@@ -131,7 +130,8 @@ BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
   data[1] = SI5395_ADDR_OPN_UPPER;
   r = SMBusMasterI2CWrite(&g_sMaster2,
                           clk_moni2c_addrs[NDEVICES_CLK - 1].dev_addr, data, 2);
-  copied = check_i2c_transaction(r, 500, true, &g_sMaster2, eStatus2, m);
+  copied = check_i2c_transaction(r, SI5395_MAX_ATTEMPTS, true, &g_sMaster2,
+                                 eStatus2, m);
   if (copied == 1) {
     read_fail = true;
   }
@@ -141,13 +141,14 @@ BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
   r = SMBusMasterI2CWriteRead(&g_sMaster2,
                               clk_moni2c_addrs[NDEVICES_CLK - 1].dev_addr,
                               &data[0], 1, &data[1], 1);
-  copied = check_i2c_transaction(r, 500, true, &g_sMaster2, eStatus2, m);
+  copied = check_i2c_transaction(r, SI5395_MAX_ATTEMPTS, true, &g_sMaster2,
+                                 eStatus2, m);
   if (copied == 1) {
     read_fail = true;
   }
   // check value read
   if (!read_fail) {
-    if (data[0] != SI5395_OPN0) {
+    if (data[1] != SI5395_OPN0) {
       read_fail = true;
     }
   }

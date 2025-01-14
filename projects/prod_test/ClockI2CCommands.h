@@ -7,6 +7,7 @@
 #define SI5395_ADDR_SCRATCH_UPPER  0x02U
 #define SI5395_ADDR_SCRATCH_LOWER0 0x6BU
 #define SI5395_OPN0                0x95U
+#define SI5395_MAX_ATTEMPTS        500
 
 struct dev_moni2c_addr_t {
   char *name;

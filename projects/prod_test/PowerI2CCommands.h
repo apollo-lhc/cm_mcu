@@ -5,6 +5,7 @@
 #define LGA80D_ADDR_PMBUS_REVISION 0x98
 #define LGA80D_PMBUS_VER           0x22
 #define LGA80D_TEST_CONST          0x3CU
+#define LGA80D_MAX_ATTEMPTS        500
 #define N_PM_ADDRS_DCDC            7
 #define NPAGES_PS                  2
 
