@@ -130,7 +130,7 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/PowerI2CCommands.o
 
 # TIVAWARE
 ${COMPILER}/prod_test.axf: ${COMPILER}/sysctl.o
-${COMPILER}/prod_test.axf: ${COMPILER}/pinout_rev2.o
+${COMPILER}/prod_test.axf: ${COMPILER}/pinout_prod_test.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/gpio.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/uart.o
 ## FreeRTOS
