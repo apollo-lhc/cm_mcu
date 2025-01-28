@@ -30,13 +30,13 @@
 
 // DC-DC device info
 struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
-    {"3V3/1V8",   U103_ADDR, POW3V31V8_MUX_BIT, POW3V31V8_ADDR}, 
-    {"F1VCCINT1", U103_ADDR, F1VCCINT1_MUX_BIT, F1VCCINT1_ADDR}, 
-    {"F1VCCINT2", U103_ADDR, F1VCCINT2_MUX_BIT, F1VCCINT2_ADDR}, 
-    {"F2VCCINT1", U103_ADDR, F2VCCINT1_MUX_BIT, F2VCCINT1_ADDR}, 
-    {"F2VCCINT2", U103_ADDR, F2VCCINT2_MUX_BIT, F2VCCINT2_ADDR}, 
-    {"F1AVTT/CC", U103_ADDR, F1AVTTVCC_MUX_BIT, F1AVTTVCC_ADDR}, 
-    {"F2AVTT/CC", U103_ADDR, F2AVTTVCC_MUX_BIT, F2AVTTVCC_ADDR}, 
+    {"3V3/1V8", U103_ADDR, POW3V31V8_MUX_BIT, POW3V31V8_ADDR},
+    {"F1VCCINT1", U103_ADDR, F1VCCINT1_MUX_BIT, F1VCCINT1_ADDR},
+    {"F1VCCINT2", U103_ADDR, F1VCCINT2_MUX_BIT, F1VCCINT2_ADDR},
+    {"F2VCCINT1", U103_ADDR, F2VCCINT1_MUX_BIT, F2VCCINT1_ADDR},
+    {"F2VCCINT2", U103_ADDR, F2VCCINT2_MUX_BIT, F2VCCINT2_ADDR},
+    {"F1AVTT/CC", U103_ADDR, F1AVTTVCC_MUX_BIT, F1AVTTVCC_ADDR},
+    {"F2AVTT/CC", U103_ADDR, F2AVTTVCC_MUX_BIT, F2AVTTVCC_ADDR},
 };
 
 /**
@@ -68,7 +68,7 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
       }
 
       // select page
-      if (apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr, 
+      if (apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
                           PAGE_COMMAND, &page, 1)) {
         snprintf(m, SCRATCH_SIZE,
                  "ERROR: Failed to select page 0 on dev %d\r\n", ps);
@@ -79,14 +79,14 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
       if (rw == 0) {
         data[0] = ps + 1;
         data[1] = LGA80D_TEST_CONST;
-        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr, 
+        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
                             LGA80D_ADDR_USER_DATA_00, data, 2);
       }
       // read on second pass
       else {
         data[0] = 0x0U;
         data[1] = 0x0U;
-        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr, 
+        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
                             LGA80D_ADDR_USER_DATA_00, data, 2);
       }
       if (r) {
@@ -124,8 +124,8 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
 
   bool read_fail = false;
   data[0] = 0x0U;
-  if (apollo_pmbus_rw(POWER_I2C_BASE, true, 
-                      pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr, 
+  if (apollo_pmbus_rw(POWER_I2C_BASE, true,
+                      pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr,
                       LGA80D_ADDR_PMBUS_REVISION, data, 1)) {
     read_fail = true;
   }

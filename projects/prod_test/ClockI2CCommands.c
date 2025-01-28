@@ -43,14 +43,14 @@ struct dev_ioexpander_addr_t ioexpander_addrs[NDEVICES_CLK_IOEXPANDER] = {
  * @brief Runs 1st stage of clock I2C communication test, testing synth ICs
  *
  * @details
- * Performs a loop over clock synth ICs where some (distinct) data is written 
+ * Performs a loop over clock synth ICs where some (distinct) data is written
  * to a user scratch register on each IC, then a second loop reads the data and
  * verifies that it matches what was written
  *
  * @param [out] m  output string
  * @return true if test passes, false otherwise
  */
-bool run_clock_i2ctest_synth(char* m) 
+bool run_clock_i2ctest_synth(char *m)
 {
   uint8_t mux_data;
   uint32_t data;
@@ -64,7 +64,7 @@ bool run_clock_i2ctest_synth(char* m)
 
       // select the appropriate output for the mux
       mux_data = 0x1U << clk_moni2c_addrs[idev].mux_bit;
-      if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[idev].mux_addr, 1, 
+      if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[idev].mux_addr, 1,
                            mux_data)) {
         snprintf(m, SCRATCH_SIZE, "ERROR: selecting dev %d on MUX\r\n", idev);
         return false;
@@ -72,7 +72,7 @@ bool run_clock_i2ctest_synth(char* m)
 
       // select page
       if (apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[idev].dev_addr,
-                               1, SI5395_ADDR_PAGESEL, 1, 
+                               1, SI5395_ADDR_PAGESEL, 1,
                                SI5395_ADDR_SCRATCH_UPPER)) {
         snprintf(m, SCRATCH_SIZE, "ERROR: selecting page on dev %d\r\n", idev);
         return false;
@@ -80,19 +80,19 @@ bool run_clock_i2ctest_synth(char* m)
 
       // write on first pass
       if (rw == 0) {
-        r = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, 
+        r = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE,
                                  clk_moni2c_addrs[idev].dev_addr,
-                                 1, SI5395_ADDR_SCRATCH_LOWER0, 1, idev+1);
+                                 1, SI5395_ADDR_SCRATCH_LOWER0, 1, idev + 1);
       }
       // read on second pass
       else {
         data = 0x0U;
-        r = apollo_i2c_ctl_reg_r(CLOCK_I2C_BASE, 
+        r = apollo_i2c_ctl_reg_r(CLOCK_I2C_BASE,
                                  clk_moni2c_addrs[idev].dev_addr,
                                  1, SI5395_ADDR_SCRATCH_LOWER0, 1, &data);
       }
       if (r) {
-        snprintf(m, SCRATCH_SIZE, "ERROR: read/write %d, dev %d\r\n", rw, 
+        snprintf(m, SCRATCH_SIZE, "ERROR: read/write %d, dev %d\r\n", rw,
                  idev);
         return false;
       }
@@ -128,35 +128,36 @@ bool run_clock_i2ctest_synth(char* m)
  * @param [out] m  output string. If 0, then no output
  * @return true if read/write succeeds, false otherwise
  */
-bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t* io_data, 
-                    bool read, char* m) {
+bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
+                    bool read, char *m)
+{
   uint8_t mux_data;
-  //select device on MUX
+  // select device on MUX
   mux_data = 0x1U << ioexpander_addrs[device_index].mux_bit;
   if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, ioexpander_addrs[device_index].mux_addr,
                        1, mux_data)) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: selecting %d on MUX\r\n", 
-               U88_MUX_BIT);
+    snprintf(m, SCRATCH_SIZE, "ERROR: selecting %d on MUX\r\n",
+             U88_MUX_BIT);
     return false;
   }
 
   if (!read) {
-    //write to IO expander
-    if (apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, 
+    // write to IO expander
+    if (apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE,
                              ioexpander_addrs[device_index].dev_addr, 1, addr,
                              1, *io_data)) {
-      snprintf(m, SCRATCH_SIZE, 
-               "ERROR: writing %d to %d on IO/expander %d\r\n", 
+      snprintf(m, SCRATCH_SIZE,
+               "ERROR: writing %d to %d on IO/expander %d\r\n",
                *io_data, addr, device_index);
       return false;
     }
   }
   else {
-    //read from IO expander
-    if (apollo_i2c_ctl_reg_r(CLOCK_I2C_BASE, 
+    // read from IO expander
+    if (apollo_i2c_ctl_reg_r(CLOCK_I2C_BASE,
                              ioexpander_addrs[device_index].dev_addr, 1, addr,
                              1, io_data)) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: reading %d from IO/expander %d\r\n", 
+      snprintf(m, SCRATCH_SIZE, "ERROR: reading %d from IO/expander %d\r\n",
                addr, device_index);
       return false;
     }
@@ -176,11 +177,11 @@ bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t* io_data,
  * @param [out] m  output string
  * @return true if test passes, false otherwise
  */
-bool run_clock_i2ctest_ioexpander(char* m) 
+bool run_clock_i2ctest_ioexpander(char *m)
 {
   uint32_t data[1];
 
-  //set pin7 on U88 to low and U83 to high and check
+  // set pin7 on U88 to low and U83 to high and check
   data[0] = U88_REG0_RESET_R0A;
   if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
@@ -192,19 +193,19 @@ bool run_clock_i2ctest_ioexpander(char* m)
   if (!i2c_ioexpander(0, TCA9555_ADDR_INPORT0, data, true, m)) {
     return false;
   }
-  if ((data[0]&IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
+  if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
     snprintf(m, SCRATCH_SIZE, "ERROR: Failed to assert reset on U88\r\n");
     return false;
   }
   if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m)) {
     return false;
   }
-  if ((data[0]&IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
+  if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
     snprintf(m, SCRATCH_SIZE, "ERROR: Failed to deassert reset on U83\r\n");
     return false;
   }
 
-  //set P7 on U88 to high and U83 to low and check
+  // set P7 on U88 to high and U83 to low and check
   data[0] = U88_REG0_DEFAULT;
   if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
@@ -216,19 +217,19 @@ bool run_clock_i2ctest_ioexpander(char* m)
   if (!i2c_ioexpander(0, TCA9555_ADDR_INPORT0, data, true, m)) {
     return false;
   }
-  if ((data[0]&IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
+  if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
     snprintf(m, SCRATCH_SIZE, "ERROR: Failed to deassert reset on U88\r\n");
     return false;
   }
   if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m)) {
     return false;
   }
-  if ((data[0]&IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
+  if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
     snprintf(m, SCRATCH_SIZE, "EROR: Failed to assert reset on U83\r\n");
     return false;
   }
 
-  //return to default settings by deasserting reset on U83
+  // return to default settings by deasserting reset on U83
   data[0] = U83_REG0_DEFAULT;
   if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
@@ -247,13 +248,13 @@ bool run_clock_i2ctest_ioexpander(char* m)
  * @param [out] m  output string
  * @return true if test passes, false otherwise
  */
-bool run_clock_i2ctest_muxreset(char* m) 
+bool run_clock_i2ctest_muxreset(char *m)
 {
   uint8_t mux_data;
   uint32_t data;
 
   mux_data = 0x1U << clk_moni2c_addrs[0].mux_bit;
-  if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[0].mux_addr, 1, 
+  if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[0].mux_addr, 1,
                        mux_data)) {
     snprintf(m, SCRATCH_SIZE, "ERROR: selecting dev 0 on MUX\r\n");
     return false;
@@ -261,7 +262,6 @@ bool run_clock_i2ctest_muxreset(char* m)
 
   //  test reset by attempting read; as long as we don't use an address 0x7X,
   //  we shouldn't accidentally address the MUX
-  //  DEBUG: comment this so this fails
   write_gpio_pin(_CLOCKS_I2C_RESET, 0x0);
   vTaskDelay(pdMS_TO_TICKS(1));
   write_gpio_pin(_CLOCKS_I2C_RESET, 0x1);
@@ -295,10 +295,10 @@ bool run_clock_i2ctest_muxreset(char* m)
  * Tests I2C communication to clock synth chips by first performing a loop
  * where some (distinct) data is written to a user scratch register on each
  * clock synth, then a second loop reads the data and verifies that it matches
- * what was written. Then, communication to each IO expander chip is tested 
+ * what was written. Then, communication to each IO expander chip is tested
  * similarly by writing to the internal registers for an output pin and reading
- * back. Finally, the MUX reset signal is tested by checking a read attempt 
- * fails following a MUX reset. 
+ * back. Finally, the MUX reset signal is tested by checking a read attempt
+ * fails following a MUX reset.
  */
 BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
 {
@@ -336,11 +336,10 @@ BaseType_t init_clock_ioexpanders(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-
 /**
  * @details
  * Initializes IO expanders on the clock I2C MUX, following what is done in
- * central cm_mcu code. This code is currently wholesale copied from 
+ * central cm_mcu code. This code is currently wholesale copied from
  * LocalTasks.c in cm_mcu, can be cleaned if necessary
  */
 int init_registers_clk(void)
@@ -356,7 +355,7 @@ int init_registers_clk(void)
   // The remaining 10 signals are outputs.
 
   // # set I2C switch on channel 2 (U84, address 0x70) to port 6
-  
+
   status += apollo_i2c_ctl_w(2, 0x70, 1, 0x40);
   status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x06, 1, 0x70); //  01110000 [P07..P00]
   status += apollo_i2c_ctl_reg_w(2, 0x20, 1, 0x07, 1, 0xc2); //  11000010 [P17..P10]

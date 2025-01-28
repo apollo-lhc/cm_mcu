@@ -28,14 +28,14 @@ extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;
 extern tSMBus g_sMaster2;
 extern tSMBusStatus eStatus2;
-//extern tSMBus g_sMaster3;
-//extern tSMBusStatus eStatus3;
-//extern tSMBus g_sMaster4;
-//extern tSMBusStatus eStatus4;
-//extern tSMBus g_sMaster5;
-//extern tSMBusStatus eStatus5;
-//extern tSMBus g_sMaster6;
-//extern tSMBusStatus eStatus6;
+// extern tSMBus g_sMaster3;
+// extern tSMBusStatus eStatus3;
+// extern tSMBus g_sMaster4;
+// extern tSMBusStatus eStatus4;
+// extern tSMBus g_sMaster5;
+// extern tSMBusStatus eStatus5;
+// extern tSMBus g_sMaster6;
+// extern tSMBusStatus eStatus6;
 
 tSMBus *const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
@@ -57,14 +57,14 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > I2C_MAX_TRIES) {
-        //log_warn(LOG_I2C, "transfer stuck\r\n");
+        // log_warn(LOG_I2C, "transfer stuck\r\n");
         break;
       }
     }
     r = *p_eStatus;
   }
   else {
-    //log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    // log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
   }
   return r;
 }
@@ -89,14 +89,14 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
     while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > I2C_MAX_TRIES) {
-        //log_warn(LOG_I2C, "transfer stuck\r\n");
+        // log_warn(LOG_I2C, "transfer stuck\r\n");
         break;
       }
     }
     r = *p_status;
   }
   else {
-    //log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    // log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
   }
   // pack the data for return to the caller
   *packed_data = 0UL;
@@ -135,14 +135,14 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > I2C_MAX_TRIES) {
-        //log_warn(LOG_I2C, "transfer stuck\r\n");
+        // log_warn(LOG_I2C, "transfer stuck\r\n");
         break;
       }
     }
     r = *p_eStatus;
   }
   else {
-    //log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+    // log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
   }
 
   return r;
@@ -167,21 +167,21 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
     while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
       vTaskDelay(pdMS_TO_TICKS(10));
       if (tries++ > I2C_MAX_TRIES) {
-        //log_warn(LOG_I2C, "transfer stuck\r\n");
+        // log_warn(LOG_I2C, "transfer stuck\r\n");
         break;
       }
     }
     r = *p_eStatus;
   }
   else {
-    //log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+    // log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
   }
 
   return r;
 }
 
 // for PMBUS commands
-tSMBusStatus apollo_pmbus_rw(uint8_t device, bool read, uint8_t add, 
+tSMBusStatus apollo_pmbus_rw(uint8_t device, bool read, uint8_t add,
                              uint8_t cmd, uint8_t *value, uint8_t size)
 {
   tSMBus *smbus = pSMBus[device];
@@ -195,19 +195,19 @@ tSMBusStatus apollo_pmbus_rw(uint8_t device, bool read, uint8_t add,
     r = SMBusMasterByteWordWrite(smbus, add, cmd, value, size);
   }
   if (r != SMBUS_OK) {
-    //log_error(LOG_I2C, "PMBUS write/read fail %s\r\n", SMBUS_get_error(r));
+    // log_error(LOG_I2C, "PMBUS write/read fail %s\r\n", SMBUS_get_error(r));
     return r;
   }
   int tries = 0;
   while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
     vTaskDelay(pdMS_TO_TICKS(10));
     if (tries++ > I2C_MAX_TRIES) {
-      //log_warn(LOG_I2C, "transfer stuck\r\n");
+      // log_warn(LOG_I2C, "transfer stuck\r\n");
       break;
     }
   }
   if (*smbus_status != SMBUS_OK) {
-    //log_error(LOG_I2C, "PMBUS write/read fail %s\r\n", SMBUS_get_error(r));
+    // log_error(LOG_I2C, "PMBUS write/read fail %s\r\n", SMBUS_get_error(r));
     return *smbus_status;
   }
 
