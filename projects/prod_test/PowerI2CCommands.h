@@ -1,5 +1,23 @@
+#pragma once
+
 #include "FreeRTOS.h" // IWYU pragma: keep
 
+#define POWER_I2C_BASE             1
+#define U103_ADDR                  0x70
+#define POW3V31V8_MUX_BIT          0
+#define F1VCCINT1_MUX_BIT          1
+#define F1VCCINT2_MUX_BIT          2
+#define F2VCCINT1_MUX_BIT          3
+#define F2VCCINT2_MUX_BIT          4
+#define F1AVTTVCC_MUX_BIT          5
+#define F2AVTTVCC_MUX_BIT          6
+#define POW3V31V8_ADDR             0x40
+#define F1VCCINT1_ADDR             0x44
+#define F1VCCINT2_ADDR             0x43
+#define F2VCCINT1_ADDR             0x44
+#define F2VCCINT2_ADDR             0x43
+#define F1AVTTVCC_ADDR             0x40
+#define F2AVTTVCC_ADDR             0x40
 #define PAGE_COMMAND               0x0
 #define LGA80D_ADDR_USER_DATA_00   0xB0
 #define LGA80D_ADDR_PMBUS_REVISION 0x98

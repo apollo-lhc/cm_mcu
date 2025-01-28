@@ -25,19 +25,18 @@
 #include "common/printf.h"
 #include "common/utils.h"
 #include "commands.h"
-#include "InterruptHandlers.h"
 #include "PowerI2CCommands.h"
-#include "I2CUtils.h"
+#include "I2CCommunication.h"
 
-// DC-DC device info, should this be moved somewhere else?
+// DC-DC device info
 struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
-    {"3V3/1V8", 0x70, 0, 0x40},   // Dual supply 1.8 / 3.3 V
-    {"F1VCCINT1", 0x70, 1, 0x44}, // first vccint, F1
-    {"F1VCCINT2", 0x70, 2, 0x43}, // second vccint, F1
-    {"F2VCCINT1", 0x70, 3, 0x44}, // first vccint, F2
-    {"F2VCCINT2", 0x70, 4, 0x43}, // second vccint, F2
-    {"F1AVTT/CC", 0x70, 5, 0x40}, // AVCC/AVTT for F1
-    {"F2AVTT/CC", 0x70, 6, 0x40}, // AVCC/AVTT for F2
+    {"3V3/1V8",   U103_ADDR, POW3V31V8_MUX_BIT, POW3V31V8_ADDR}, 
+    {"F1VCCINT1", U103_ADDR, F1VCCINT1_MUX_BIT, F1VCCINT1_ADDR}, 
+    {"F1VCCINT2", U103_ADDR, F1VCCINT2_MUX_BIT, F1VCCINT2_ADDR}, 
+    {"F2VCCINT1", U103_ADDR, F2VCCINT1_MUX_BIT, F2VCCINT1_ADDR}, 
+    {"F2VCCINT2", U103_ADDR, F2VCCINT2_MUX_BIT, F2VCCINT2_ADDR}, 
+    {"F1AVTT/CC", U103_ADDR, F1AVTTVCC_MUX_BIT, F1AVTTVCC_ADDR}, 
+    {"F2AVTT/CC", U103_ADDR, F2AVTTVCC_MUX_BIT, F2AVTTVCC_ADDR}, 
 };
 
 /**
@@ -51,8 +50,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
 BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
 {
   uint8_t data[2];
-  tSMBusStatus r;
-  int copied = 0;
+  int r;
   uint8_t page = 0;
 
   // do two passes, write the first time and read the second
@@ -62,24 +60,18 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
     for (uint8_t ps = 0; ps < N_PM_ADDRS_DCDC; ++ps) {
 
       // select the appropriate output for the mux
-      data[0] = 0x1U << pm_addrs_dcdc[ps].mux_bit;
-      r = SMBusMasterI2CWrite(&g_sMaster1, pm_addrs_dcdc[ps].mux_addr, data,
-                              1);
-      copied = check_i2c_transaction(r, LGA80D_MAX_ATTEMPTS, false,
-                                     &g_sMaster1, eStatus1, m);
-      if (copied != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "(selecting dev %d on MUX)\r\n", ps);
+      if (apollo_i2c_ctl_w(POWER_I2C_BASE, pm_addrs_dcdc[ps].mux_addr, 1,
+                           0x1U << pm_addrs_dcdc[ps].mux_bit)) {
+        snprintf(m, SCRATCH_SIZE, "ERROR: Failed to select dev %d on MUX)\r\n",
+                 ps);
         return pdFALSE;
       }
 
       // select page
-      r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                   PAGE_COMMAND, &page, 1);
-      copied = check_i2c_transaction(r, -1, false, &g_sMaster1, eStatus1, m);
-      if (copied != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "(selecting page 0 on dev %d)\r\n", ps);
+      if (apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr, 
+                          PAGE_COMMAND, &page, 1)) {
+        snprintf(m, SCRATCH_SIZE,
+                 "ERROR: Failed to select page 0 on dev %d\r\n", ps);
         return pdFALSE;
       }
 
@@ -87,21 +79,19 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
       if (rw == 0) {
         data[0] = ps + 1;
         data[1] = LGA80D_TEST_CONST;
-        r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                     LGA80D_ADDR_USER_DATA_00, data, 2);
+        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr, 
+                            LGA80D_ADDR_USER_DATA_00, data, 2);
       }
       // read on second pass
       else {
         data[0] = 0x0U;
         data[1] = 0x0U;
-        r = SMBusMasterByteWordRead(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                    LGA80D_ADDR_USER_DATA_00, data, 2);
+        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr, 
+                            LGA80D_ADDR_USER_DATA_00, data, 2);
       }
-      copied = check_i2c_transaction(r, LGA80D_MAX_ATTEMPTS, false,
-                                     &g_sMaster1, eStatus1, m);
-      if (copied != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "(read/write %d, page %d, dev %d)\r\n", rw, page, ps);
+      if (r) {
+        snprintf(m, SCRATCH_SIZE,
+                 "ERROR: Failed read/write %d, dev %d\r\n", rw, ps);
         return pdFALSE;
       }
 
@@ -134,13 +124,9 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
 
   bool read_fail = false;
   data[0] = 0x0U;
-  r = SMBusMasterByteWordRead(&g_sMaster1,
-                              pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr,
-                              LGA80D_ADDR_PMBUS_REVISION,
-                              data, 1);
-  copied = check_i2c_transaction(r, LGA80D_MAX_ATTEMPTS, true, &g_sMaster1,
-                                 eStatus1, m);
-  if (copied == 1) {
+  if (apollo_pmbus_rw(POWER_I2C_BASE, true, 
+                      pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr, 
+                      LGA80D_ADDR_PMBUS_REVISION, data, 1)) {
     read_fail = true;
   }
   if (!read_fail) {

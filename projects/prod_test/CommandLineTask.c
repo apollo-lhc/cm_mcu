@@ -36,6 +36,7 @@ struct command_t commands[] = {
     {"help", help_command_fcn, "This help command", -1},
     {"dcdci2ctest", run_dcdc_i2ctest, "Test I2C to DC-DC converters", 0},
     {"clocki2ctest", run_clock_i2ctest, "Test I2C to clock synths", 0},
+    {"initclockreg", init_clock_ioexpanders, "Initialize IO expanders", 0},
     {"poweron", power_ctl, "power on at level n", 1},
     {"poweroff", power_off_ctl, "power off", 0},
     {"restart", restart_mcu, "restart the MCU", 0},
