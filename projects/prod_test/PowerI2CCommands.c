@@ -114,7 +114,7 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
       // wait here for 10 msec
       vTaskDelay(pdMS_TO_TICKS(10));
     } // loop over devices
-  } // read/write passes
+  }   // read/write passes
 
   // test reset by attempting read; as long as we don't use an address 0xAX,
   // we shouldn't accidentally address the MUX
