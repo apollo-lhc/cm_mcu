@@ -35,8 +35,8 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r1c", CLOCK_I2C_MUX_ADDR, CLOCK_I2C_R1C_MUX_BIT, SI5395_I2C_ADDR},
 };
 struct dev_ioexpander_addr_t ioexpander_addrs[NDEVICES_CLK_IOEXPANDER] = {
-    {CLOCK_I2C_MUX_ADDR, CLOCK_I2C_IOEXP_U88_MUX_BIT, IOEXPANDER_U88_I2C_ADDR},
-    {CLOCK_I2C_MUX_ADDR, CLOCK_I2C_IOEXP_U83_MUX_BIT, IOEXPANDER_U83_I2C_ADDR},
+    {CLOCK_I2C_MUX_ADDR, CLOCK_I2C_IOEXP_R0_MUX_BIT, IOEXPANDER_R0_I2C_ADDR},
+    {CLOCK_I2C_MUX_ADDR, CLOCK_I2C_IOEXP_R1_MUX_BIT, IOEXPANDER_R1_I2C_ADDR},
 };
 
 /**
@@ -110,7 +110,7 @@ bool clock_i2ctest_synth_helper(char *m)
       // wait here for 10 msec
       vTaskDelay(pdMS_TO_TICKS(10));
     } // loop over devices
-  }   // read/write passes
+  }  // read/write passes
   return true;
 }
 
@@ -119,9 +119,9 @@ bool clock_i2ctest_synth_helper(char *m)
  *
  * @details
  * Performs I2C transaction that allows one to read or set pins 00-07 on
- * the IO expanders U88 or U83
+ * the IO expanders for R0 and R1
  *
- * @param [in] device_index  0 or 1 to address U88 or U83 respectively
+ * @param [in] device_index  0 or 1 to address R0 or R1 expanders respectively
  * @param [in] addr  I2C register address
  * @param [in] io_data  input data byte if write or output data byte if read
  * @param [in] read  true indicates a read operation, false indicates write
@@ -181,12 +181,12 @@ bool clock_i2ctest_ioexpander_helper(char *m)
 {
   uint32_t data[1];
 
-  // set pin7 on U88 to low and U83 to high and check
-  data[0] = IOEXPANDER_U88_REG0_RESET_R0A;
+  // set pin7 on IO expander R0 to low and R1 to high and check
+  data[0] = IOEXPANDER_R0_REG0_RESET_R0A;
   if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
-  data[0] = IOEXPANDER_U83_REG0_DEFAULT;
+  data[0] = IOEXPANDER_R1_REG0_DEFAULT;
   if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
@@ -194,23 +194,24 @@ bool clock_i2ctest_ioexpander_helper(char *m)
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: Failed to assert reset on U88\r\n");
+    snprintf(m, SCRATCH_SIZE, "ERROR: Failed to assert expander R0 reset\r\n");
     return false;
   }
   if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m)) {
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: Failed to deassert reset on U83\r\n");
+    snprintf(m, SCRATCH_SIZE,
+             "ERROR: Failed to deassert expander R1 reset\r\n");
     return false;
   }
 
-  // set P7 on U88 to high and U83 to low and check
-  data[0] = IOEXPANDER_U88_REG0_DEFAULT;
+  // set P7 on expander R0 to high and R1 to low and check
+  data[0] = IOEXPANDER_R0_REG0_DEFAULT;
   if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
-  data[0] = IOEXPANDER_U83_REG0_RESET_R1A;
+  data[0] = IOEXPANDER_R1_REG0_RESET_R1A;
   if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
@@ -218,19 +219,20 @@ bool clock_i2ctest_ioexpander_helper(char *m)
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: Failed to deassert reset on U88\r\n");
+    snprintf(m, SCRATCH_SIZE,
+             "ERROR: Failed to deassert expander R0 reset\r\n");
     return false;
   }
   if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m)) {
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
-    snprintf(m, SCRATCH_SIZE, "EROR: Failed to assert reset on U83\r\n");
+    snprintf(m, SCRATCH_SIZE, "EROR: Failed to assert expander R1 reset\r\n");
     return false;
   }
 
-  // return to default settings by deasserting reset on U83
-  data[0] = IOEXPANDER_U83_REG0_DEFAULT;
+  // return to default settings by deasserting reset on expander R1
+  data[0] = IOEXPANDER_R1_REG0_DEFAULT;
   if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
