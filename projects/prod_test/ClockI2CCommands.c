@@ -28,19 +28,19 @@
 
 // device info
 struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
-    {"r0a", U84_ADDR, R0A_MUX_BIT, SI5395_I2C_ADDR},
-    {"r0b", U84_ADDR, R0B_MUX_BIT, SI5395_I2C_ADDR},
-    {"r1a", U84_ADDR, R1A_MUX_BIT, SI5395_I2C_ADDR},
-    {"r1b", U84_ADDR, R1B_MUX_BIT, SI5395_I2C_ADDR},
-    {"r1c", U84_ADDR, R1C_MUX_BIT, SI5395_I2C_ADDR},
+    {"r0a", CLOCK_I2C_MUX_ADDR, CLOCK_I2C_R0A_MUX_BIT, SI5395_I2C_ADDR},
+    {"r0b", CLOCK_I2C_MUX_ADDR, CLOCK_I2C_R0B_MUX_BIT, SI5395_I2C_ADDR},
+    {"r1a", CLOCK_I2C_MUX_ADDR, CLOCK_I2C_R1A_MUX_BIT, SI5395_I2C_ADDR},
+    {"r1b", CLOCK_I2C_MUX_ADDR, CLOCK_I2C_R1B_MUX_BIT, SI5395_I2C_ADDR},
+    {"r1c", CLOCK_I2C_MUX_ADDR, CLOCK_I2C_R1C_MUX_BIT, SI5395_I2C_ADDR},
 };
 struct dev_ioexpander_addr_t ioexpander_addrs[NDEVICES_CLK_IOEXPANDER] = {
-    {U84_ADDR, U88_MUX_BIT, U88_ADDR},
-    {U84_ADDR, U83_MUX_BIT, U83_ADDR},
+    {CLOCK_I2C_MUX_ADDR, CLOCK_I2C_IOEXP_U88_MUX_BIT, IOEXPANDER_U88_I2C_ADDR},
+    {CLOCK_I2C_MUX_ADDR, CLOCK_I2C_IOEXP_U83_MUX_BIT, IOEXPANDER_U83_I2C_ADDR},
 };
 
 /**
- * @brief Runs 1st stage of clock I2C communication test, testing synth ICs
+ * @brief Helper function for 1st stage of clock I2C test, testing synth ICs
  *
  * @details
  * Performs a loop over clock synth ICs where some (distinct) data is written
@@ -50,7 +50,7 @@ struct dev_ioexpander_addr_t ioexpander_addrs[NDEVICES_CLK_IOEXPANDER] = {
  * @param [out] m  output string
  * @return true if test passes, false otherwise
  */
-bool run_clock_i2ctest_synth(char *m)
+bool clock_i2ctest_synth_helper(char *m)
 {
   uint8_t mux_data;
   uint32_t data;
@@ -137,7 +137,7 @@ bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
   if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, ioexpander_addrs[device_index].mux_addr,
                        1, mux_data)) {
     snprintf(m, SCRATCH_SIZE, "ERROR: selecting %d on MUX\r\n",
-             U88_MUX_BIT);
+             ioexpander_addrs[device_index].mux_bit);
     return false;
   }
 
@@ -166,7 +166,7 @@ bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
 }
 
 /**
- * @brief Runs 2nd stage of clock I2C communication test, testing IO expanders
+ * @brief Helper function for 2nd stage of clock I2C test, testing IO expanders
  *
  * @details
  * Writes distinct data to the output pins of the two IOexpanders and checks
@@ -177,16 +177,16 @@ bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
  * @param [out] m  output string
  * @return true if test passes, false otherwise
  */
-bool run_clock_i2ctest_ioexpander(char *m)
+bool clock_i2ctest_ioexpander_helper(char *m)
 {
   uint32_t data[1];
 
   // set pin7 on U88 to low and U83 to high and check
-  data[0] = U88_REG0_RESET_R0A;
+  data[0] = IOEXPANDER_U88_REG0_RESET_R0A;
   if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
-  data[0] = U83_REG0_DEFAULT;
+  data[0] = IOEXPANDER_U83_REG0_DEFAULT;
   if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
@@ -206,11 +206,11 @@ bool run_clock_i2ctest_ioexpander(char *m)
   }
 
   // set P7 on U88 to high and U83 to low and check
-  data[0] = U88_REG0_DEFAULT;
+  data[0] = IOEXPANDER_U88_REG0_DEFAULT;
   if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
-  data[0] = U83_REG0_RESET_R1A;
+  data[0] = IOEXPANDER_U83_REG0_RESET_R1A;
   if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
@@ -230,7 +230,7 @@ bool run_clock_i2ctest_ioexpander(char *m)
   }
 
   // return to default settings by deasserting reset on U83
-  data[0] = U83_REG0_DEFAULT;
+  data[0] = IOEXPANDER_U83_REG0_DEFAULT;
   if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
     return false;
   }
@@ -239,7 +239,7 @@ bool run_clock_i2ctest_ioexpander(char *m)
 }
 
 /**
- * @brief Runs 3rd stage of clock I2C communication test, testing MUX reset
+ * @brief Helper function for 3rd stage of clock I2C test, testing MUX reset
  *
  * @details
  * The clock synth I2C MUX reset is tested by checking a read attempt fails
@@ -248,7 +248,7 @@ bool run_clock_i2ctest_ioexpander(char *m)
  * @param [out] m  output string
  * @return true if test passes, false otherwise
  */
-bool run_clock_i2ctest_muxreset(char *m)
+bool clock_i2ctest_muxreset_helper(char *m)
 {
   uint8_t mux_data;
   uint32_t data;
@@ -292,25 +292,25 @@ bool run_clock_i2ctest_muxreset(char *m)
 
 /**
  * @details
- * Tests I2C communication to clock synth chips by first performing a loop
- * where some (distinct) data is written to a user scratch register on each
- * clock synth, then a second loop reads the data and verifies that it matches
- * what was written. Then, communication to each IO expander chip is tested
- * similarly by writing to the internal registers for an output pin and reading
- * back. Finally, the MUX reset signal is tested by checking a read attempt
- * fails following a MUX reset.
+ * CLI function that tests I2C communication to clock synth chips by first
+ * performing a loop where some (distinct) data is written to a user scratch
+ * register on each clock synth, then a second loop reads the data and verifies
+ * that it matches what was written. Then, communication to each IO expander
+ * is tested similarly by writing to the internal registers for an output pin
+ * and reading back. Finally, the MUX reset signal is tested by checking a
+ * read attempt fails following a MUX reset.
  */
-BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
+BaseType_t clock_i2ctest_ctl(int argc, char **argv, char *m)
 {
-  if (!run_clock_i2ctest_synth(m)) {
+  if (!clock_i2ctest_synth_helper(m)) {
     return pdFALSE;
   }
 
-  if (!run_clock_i2ctest_ioexpander(m)) {
+  if (!clock_i2ctest_ioexpander_helper(m)) {
     return pdFALSE;
   }
 
-  if (!run_clock_i2ctest_muxreset(m)) {
+  if (!clock_i2ctest_muxreset_helper(m)) {
     return pdFALSE;
   }
 
@@ -320,9 +320,10 @@ BaseType_t run_clock_i2ctest(int argc, char **argv, char *m)
 
 /**
  * @details
- * Initializes clock IO expanders by calling init_registers_clk
+ * CLI function that initializes clock IO expanders by calling
+ * init_registers_clk
  */
-BaseType_t init_clock_ioexpanders(int argc, char **argv, char *m)
+BaseType_t clock_ioexpanders_init_ctl(int argc, char **argv, char *m)
 {
   int r;
   r = init_registers_clk();

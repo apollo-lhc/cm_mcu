@@ -30,24 +30,32 @@
 
 // DC-DC device info
 struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
-    {"3V3/1V8", U103_ADDR, POW3V31V8_MUX_BIT, POW3V31V8_ADDR},
-    {"F1VCCINT1", U103_ADDR, F1VCCINT1_MUX_BIT, F1VCCINT1_ADDR},
-    {"F1VCCINT2", U103_ADDR, F1VCCINT2_MUX_BIT, F1VCCINT2_ADDR},
-    {"F2VCCINT1", U103_ADDR, F2VCCINT1_MUX_BIT, F2VCCINT1_ADDR},
-    {"F2VCCINT2", U103_ADDR, F2VCCINT2_MUX_BIT, F2VCCINT2_ADDR},
-    {"F1AVTT/CC", U103_ADDR, F1AVTTVCC_MUX_BIT, F1AVTTVCC_ADDR},
-    {"F2AVTT/CC", U103_ADDR, F2AVTTVCC_MUX_BIT, F2AVTTVCC_ADDR},
+    {"3V3/1V8", POWER_I2C_MUX_ADDR, POWER_I2C_POW3V31V8_MUX_BIT,
+     POWER_I2C_POW3V31V8_ADDR},
+    {"F1VCCINT1", POWER_I2C_MUX_ADDR, POWER_I2C_F1VCCINT1_MUX_BIT,
+     POWER_I2C_F1VCCINT1_ADDR},
+    {"F1VCCINT2", POWER_I2C_MUX_ADDR, POWER_I2C_F1VCCINT2_MUX_BIT,
+     POWER_I2C_F1VCCINT2_ADDR},
+    {"F2VCCINT1", POWER_I2C_MUX_ADDR, POWER_I2C_F2VCCINT1_MUX_BIT,
+     POWER_I2C_F2VCCINT1_ADDR},
+    {"F2VCCINT2", POWER_I2C_MUX_ADDR, POWER_I2C_F2VCCINT2_MUX_BIT,
+     POWER_I2C_F2VCCINT2_ADDR},
+    {"F1AVTT/CC", POWER_I2C_MUX_ADDR, POWER_I2C_F1AVTTVCC_MUX_BIT,
+     POWER_I2C_F1AVTTVCC_ADDR},
+    {"F2AVTT/CC", POWER_I2C_MUX_ADDR, POWER_I2C_F2AVTTVCC_MUX_BIT,
+     POWER_I2C_F2AVTTVCC_ADDR},
 };
 
 /**
  * @details
- * Tests I2C communication to the DC-DC converters by first performing a loop
- * where some (distinct) data is written to the B0 (USER_DATA_00) register of
- * each DC-DC converter, then a second loop reads the data and verifies that it
- * matches what was written. Finally, the MUX reset signal is tested by
- * checking a read attempt fails following a MUX reset
+ * CLI command that tests I2C communication to the DC-DC converters by first
+ * performing a loop where some (distinct) data is written to the B0
+ * (USER_DATA_00) register of each DC-DC converter, then a second loop reads
+ * the data and verifies that it matches what was written. Finally, the MUX
+ * reset signal is tested by checking a read attempt fails following a MUX
+ * reset
  */
-BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
+BaseType_t dcdc_i2ctest_ctl(int argc, char **argv, char *m)
 {
   uint8_t data[2];
   int r;
@@ -69,7 +77,7 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
 
       // select page
       if (apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
-                          PAGE_COMMAND, &page, 1)) {
+                          LGA80D_PAGE_COMMAND, &page, 1)) {
         snprintf(m, SCRATCH_SIZE,
                  "ERROR: Failed to select page 0 on dev %d\r\n", ps);
         return pdFALSE;
