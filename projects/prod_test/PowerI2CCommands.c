@@ -25,89 +25,40 @@
 #include "common/printf.h"
 #include "common/utils.h"
 #include "commands.h"
-#include "InterruptHandlers.h"
 #include "PowerI2CCommands.h"
+#include "I2CCommunication.h"
 
 // DC-DC device info
-// TODO move this somewhere else?
 struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
-    {"3V3/1V8", 0x70, 0, 0x40},   // Dual supply 1.8 / 3.3 V
-    {"F1VCCINT1", 0x70, 1, 0x44}, // first vccint, F1
-    {"F1VCCINT2", 0x70, 2, 0x43}, // second vccint, F1
-    {"F2VCCINT1", 0x70, 3, 0x44}, // first vccint, F2
-    {"F2VCCINT2", 0x70, 4, 0x43}, // second vccint, F2
-    {"F1AVTT/CC", 0x70, 5, 0x40}, // AVCC/AVTT for F1
-    {"F2AVTT/CC", 0x70, 6, 0x40}, // AVCC/AVTT for F2
+    {"3V3/1V8", POWER_I2C_MUX_ADDR, POWER_I2C_POW3V31V8_MUX_BIT,
+     POWER_I2C_POW3V31V8_ADDR},
+    {"F1VCCINT1", POWER_I2C_MUX_ADDR, POWER_I2C_F1VCCINT1_MUX_BIT,
+     POWER_I2C_F1VCCINT1_ADDR},
+    {"F1VCCINT2", POWER_I2C_MUX_ADDR, POWER_I2C_F1VCCINT2_MUX_BIT,
+     POWER_I2C_F1VCCINT2_ADDR},
+    {"F2VCCINT1", POWER_I2C_MUX_ADDR, POWER_I2C_F2VCCINT1_MUX_BIT,
+     POWER_I2C_F2VCCINT1_ADDR},
+    {"F2VCCINT2", POWER_I2C_MUX_ADDR, POWER_I2C_F2VCCINT2_MUX_BIT,
+     POWER_I2C_F2VCCINT2_ADDR},
+    {"F1AVTT/CC", POWER_I2C_MUX_ADDR, POWER_I2C_F1AVTTVCC_MUX_BIT,
+     POWER_I2C_F1AVTTVCC_ADDR},
+    {"F2AVTT/CC", POWER_I2C_MUX_ADDR, POWER_I2C_F2AVTTVCC_MUX_BIT,
+     POWER_I2C_F2AVTTVCC_ADDR},
 };
 
 /**
- * @brief helper function to verify I2C/SMBUS transactions sucecssful
- *
  * @details
- * To verify transaction, make a call to this function after calling an SMBUS
- * method such as SMBusMasterI2CWrite. It verifies no errors were generated
- * and that the transaction finishes in specified time
- *
- * @param [in] r  tSMBUSStatus returned by SMBUS call to check
- * @param [in] timeout  time until timeout in units of 10ms, <0 disables check
- * @param [in] no_message  if true, disables printing message
- * @param [out] m  output string
- * @return 0 if no errors encountered, otherwise, size of m buffer used by
- *         error message (no_message false) or 1 (no_message true)
+ * CLI command that tests I2C communication to the DC-DC converters by first
+ * performing a loop where some (distinct) data is written to the B0
+ * (USER_DATA_00) register of each DC-DC converter, then a second loop reads
+ * the data and verifies that it matches what was written. Finally, the MUX
+ * reset signal is tested by checking a read attempt fails following a MUX
+ * reset
  */
-int check_i2c_transaction(tSMBusStatus r, int timeout, bool no_message,
-                          char *m)
-{
-  int copied = 0;
-  if (r != SMBUS_OK) {
-    if (!no_message) {
-      copied = snprintf(m, SCRATCH_SIZE, "ERROR: SMBUS command not OK");
-    }
-    else {
-      copied = 1;
-    }
-    return copied;
-  }
-  int tries = 0;
-  while (SMBusStatusGet(&g_sMaster1) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-    if (timeout > 0) {
-      if (++tries > timeout) {
-        if (!no_message) {
-          copied = snprintf(m, SCRATCH_SIZE, "ERROR: SMBUS timeout");
-        }
-        else {
-          copied = 1;
-        }
-        return copied;
-      }
-    }
-  }
-  if (eStatus1 != SMBUS_OK) {
-    if (!no_message) {
-      copied = snprintf(m, SCRATCH_SIZE, "ERROR: SMBUS not OK");
-    }
-    else {
-      copied = 1;
-    }
-    return copied;
-  }
-  return copied;
-}
-
-/**
- * @details
- * Tests I2C communication to the DC-DC converters by first performing a loop
- * where some (distinct) data is written to the B0 (USER_DATA_00) register of
- * each DC-DC converter, then a second loop reads the data and verifies that it
- * matches what was written. Finally, the MUX reset signal is tested by
- * checking a read attempt fails following a MUX reset
- */
-BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
+BaseType_t dcdc_i2ctest_ctl(int argc, char **argv, char *m)
 {
   uint8_t data[2];
-  tSMBusStatus r;
-  int copied = 0;
+  int r;
   uint8_t page = 0;
 
   // do two passes, write the first time and read the second
@@ -117,23 +68,18 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
     for (uint8_t ps = 0; ps < N_PM_ADDRS_DCDC; ++ps) {
 
       // select the appropriate output for the mux
-      data[0] = 0x1U << pm_addrs_dcdc[ps].mux_bit;
-      r = SMBusMasterI2CWrite(&g_sMaster1, pm_addrs_dcdc[ps].mux_addr, data,
-                              1);
-      copied = check_i2c_transaction(r, 500, false, m);
-      if (copied != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "(selecting dev %d on MUX)\r\n", ps);
+      if (apollo_i2c_ctl_w(POWER_I2C_BASE, pm_addrs_dcdc[ps].mux_addr, 1,
+                           0x1U << pm_addrs_dcdc[ps].mux_bit)) {
+        snprintf(m, SCRATCH_SIZE, "ERROR: Failed to select dev %d on MUX)\r\n",
+                 ps);
         return pdFALSE;
       }
 
       // select page
-      r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                   PAGE_COMMAND, &page, 1);
-      copied = check_i2c_transaction(r, -1, false, m);
-      if (copied != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "(selecting page 0 on dev %d)\r\n", ps);
+      if (apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
+                          LGA80D_PAGE_COMMAND, &page, 1)) {
+        snprintf(m, SCRATCH_SIZE,
+                 "ERROR: Failed to select page 0 on dev %d\r\n", ps);
         return pdFALSE;
       }
 
@@ -141,20 +87,19 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
       if (rw == 0) {
         data[0] = ps + 1;
         data[1] = LGA80D_TEST_CONST;
-        r = SMBusMasterByteWordWrite(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                     LGA80D_ADDR_USER_DATA_00, data, 2);
+        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
+                            LGA80D_ADDR_USER_DATA_00, data, 2);
       }
       // read on second pass
       else {
         data[0] = 0x0U;
         data[1] = 0x0U;
-        r = SMBusMasterByteWordRead(&g_sMaster1, pm_addrs_dcdc[ps].dev_addr,
-                                    LGA80D_ADDR_USER_DATA_00, data, 2);
+        r = apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
+                            LGA80D_ADDR_USER_DATA_00, data, 2);
       }
-      copied = check_i2c_transaction(r, 500, false, m);
-      if (copied != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied,
-                 "(read/write %d, page %d, dev %d)\r\n", rw, page, ps);
+      if (r) {
+        snprintf(m, SCRATCH_SIZE,
+                 "ERROR: Failed read/write %d, dev %d\r\n", rw, ps);
         return pdFALSE;
       }
 
@@ -187,12 +132,9 @@ BaseType_t run_dcdc_i2ctest(int argc, char **argv, char *m)
 
   bool read_fail = false;
   data[0] = 0x0U;
-  r = SMBusMasterByteWordRead(&g_sMaster1,
-                              pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr,
-                              LGA80D_ADDR_PMBUS_REVISION,
-                              data, 1);
-  copied = check_i2c_transaction(r, 500, true, m);
-  if (copied == 1) {
+  if (apollo_pmbus_rw(POWER_I2C_BASE, true,
+                      pm_addrs_dcdc[N_PM_ADDRS_DCDC - 1].dev_addr,
+                      LGA80D_ADDR_PMBUS_REVISION, data, 1)) {
     read_fail = true;
   }
   if (!read_fail) {
