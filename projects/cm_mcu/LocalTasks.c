@@ -180,24 +180,24 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
     {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
     {"F1_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
-    {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
-    {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
-    {"F1_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
-    {"F1_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
-    {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
-    {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"F1_3  12 Tx", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F1_3  12 Rx", FF_I2CMUX_2_ADDR, 1, 0x54}, //
+    {"F1_4  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F1_4  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F1_5 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
 struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
     {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
     {"F2_2  12 Rx", FF_I2CMUX_1_ADDR, 4, 0x54}, //
-    {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
-    {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
-    {"F2_4 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
-    {"F2_5 4 XCVR", FF_I2CMUX_2_ADDR, 0, 0x50}, //
-    {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
-    {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
+    {"F2_3  12 Tx", FF_I2CMUX_2_ADDR, 0, 0x50}, //
+    {"F2_3  12 Rx", FF_I2CMUX_2_ADDR, 1, 0x54}, //
+    {"F2_4  12 Tx", FF_I2CMUX_2_ADDR, 3, 0x50}, //
+    {"F2_4  12 Rx", FF_I2CMUX_2_ADDR, 4, 0x54}, //
+    {"F2_5 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
+    {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 
 };
 
