@@ -227,7 +227,7 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // UART6 Rx and Tx
     IntDefaultHandler,      // UART7 Rx and Tx
     SMBusMasterIntHandler2, // I2C2 Master and Slave
-    IntDefaultHandler,      // I2C3 Master and Slave
+    SMBusMasterIntHandler3, // I2C3 Master and Slave
     IntDefaultHandler,      // Timer 4 subtimer A
     IntDefaultHandler,      // Timer 4 subtimer B
     IntDefaultHandler,      // Timer 5 subtimer A
@@ -235,7 +235,7 @@ void (*nvic_table[])(void) __attribute__((used, section(".isr_vector"))) = {
     IntDefaultHandler,      // FPU
     0,                      // Reserved
     0,                      // Reserved
-    IntDefaultHandler,      // I2C4 Master and Slave
+    SMBusMasterIntHandler4, // I2C4 Master and Slave
     IntDefaultHandler,      // I2C5 Master and Slave
     IntDefaultHandler,      // GPIO Port M
     IntDefaultHandler,      // GPIO Port N
