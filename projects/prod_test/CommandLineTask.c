@@ -22,6 +22,8 @@
 #include "PowerI2CCommands.h"
 #include "ClockI2CCommands.h"
 #include "FireflyI2CCommands.h"
+#include "EEPROMI2CCommands.h"
+#include "FPGAI2CCommands.h"
 
 typedef struct {
   StreamBufferHandle_t UartStreamBuffer;
@@ -38,6 +40,8 @@ struct command_t commands[] = {
     {"dcdci2ctest", dcdc_i2ctest_ctl, "Test I2C to DC-DC converters", 0},
     {"clocki2ctest", clock_i2ctest_ctl, "Test I2C to clock synths", 0},
     {"ffi2ctest", firefly_i2ctest_ctl, "Test I2C to optics", 0},
+    {"eepromi2ctest", eeprom_i2ctest_ctl, "Test I2C to EEPROM", 0},
+    {"fpgai2ctest", fpga_i2ctest_ctl, "Test I2C to FPGAs", 0},
     {"initclockreg", clock_ioexpanders_init_ctl, "Initialize IO expanders", 0},
     {"initffreg", firefly_ioexpanders_init_ctl, "Initialize IO expanders", 0},
     {"poweron", power_ctl, "power on at level n", 1},
