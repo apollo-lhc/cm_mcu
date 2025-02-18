@@ -4,8 +4,8 @@
 
 #define F2FF_I2C_BASE            3
 #define F1FF_I2C_BASE            4
-#define NDEVICES_FF              20            
-#define NDEVICES_FF_IOEXPANDER   4            
+#define NDEVICES_FF              20
+#define NDEVICES_FF_IOEXPANDER   4
 #define FF_I2C_MUX1_ADDR         0x70
 #define FF_I2C_MUX2_ADDR         0x71
 #define FF_I2C_F1_FF1_T_MUX_BIT  0
@@ -46,8 +46,8 @@
 #define TCA9555_ADDR_INPORT1     0x01
 #define IOEXP1_PRESENT_MASK      0xFF
 #define IOEXP2_PRESENT_MASK      0x0C
-#define IOEXP1_PRESENT_EXPECT    0xF3 //FF2TX and FF2RX installed
-#define IOEXP2_PRESENT_EXPECT    0x08 //FF5 installed
+#define IOEXP1_PRESENT_EXPECT    0xF3 // FF2TX and FF2RX installed
+#define IOEXP2_PRESENT_EXPECT    0x08 // FF5 installed
 
 enum device_class {
   DEV_FF_TX,
