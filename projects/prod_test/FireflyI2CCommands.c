@@ -129,28 +129,21 @@ struct dev_ff_i2c_addr_t ff_ioexp_addrs[NDEVICES_FF_IOEXPANDER] = {
      IOEXP2_I2C_ADDR, DEV_IOEXP},
 };
 
-// additional constants for IOexpander test, again based on which devices are
-// installed
-
-const uint8_t ioexp_present_addrs[4] = {TCA9555_ADDR_INPORT1,
-                                        TCA9555_ADDR_INPORT0,
-                                        TCA9555_ADDR_INPORT1,
-                                        TCA9555_ADDR_INPORT0};
-
-const uint32_t ioexp_present_mask[4] = {IOEXP1_PRESENT_MASK,
-                                        IOEXP2_PRESENT_MASK,
-                                        IOEXP1_PRESENT_MASK,
-                                        IOEXP2_PRESENT_MASK};
-
-const uint32_t ioexp_present_expect[4] = {IOEXP1_PRESENT_EXPECT,
-                                          IOEXP2_PRESENT_EXPECT,
-                                          IOEXP1_PRESENT_EXPECT,
-                                          IOEXP2_PRESENT_EXPECT};
-
-const int ioexp_mux_reset[4] = {_F1_OPTICS_I2C_RESET,
-                                _F1_OPTICS_I2C_RESET,
-                                _F2_OPTICS_I2C_RESET,
-                                _F2_OPTICS_I2C_RESET};
+// constants for IOexpander test, based on installed FFs and switches
+struct ff_ioexp_param_t ff_ioexp_params[N_IOEXP_CHECKS] = {
+    {0, TCA9555_ADDR_INPORT1, IOEXP1_PRESENT_MASK1, IOEXP1_PRESENT_EXPECT1,
+     _F1_OPTICS_I2C_RESET},
+    {1, TCA9555_ADDR_INPORT0, IOEXP2_PRESENT_MASK0, IOEXP2_PRESENT_EXPECT0,
+     _F1_OPTICS_I2C_RESET},
+    {1, TCA9555_ADDR_INPORT1, IOEXP2_PRESENT_MASK1, IOEXP2_PRESENT_EXPECT1,
+     _F1_OPTICS_I2C_RESET},
+    {2, TCA9555_ADDR_INPORT1, IOEXP1_PRESENT_MASK1, IOEXP1_PRESENT_EXPECT1,
+     _F2_OPTICS_I2C_RESET},
+    {3, TCA9555_ADDR_INPORT0, IOEXP2_PRESENT_MASK0, IOEXP2_PRESENT_EXPECT0,
+     _F2_OPTICS_I2C_RESET},
+    {3, TCA9555_ADDR_INPORT1, IOEXP2_PRESENT_MASK1, IOEXP2_PRESENT_EXPECT1,
+     _F2_OPTICS_I2C_RESET},
+};
 
 /**
  * @brief Helper for transceiver portion of firefly I2C test
@@ -272,8 +265,11 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied)
  */
 bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copied)
 {
+  uint32_t data;
+
   // loop over devices
-  for (uint8_t idev = 0; idev < NDEVICES_FF_IOEXPANDER; ++idev) {
+  for (uint8_t icheck = 0; icheck < N_IOEXP_CHECKS; ++icheck) {
+    uint8_t idev = ff_ioexp_params[icheck].dev_index;
 
     // select device on MUX
     uint8_t mux_data = 0x1U << ff_ioexp_addrs[idev].mux_bit;
@@ -287,17 +283,16 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copi
 
     // if performing the MUX version of the test, reset the MUX here
     if (mux_reset) {
-      write_gpio_pin(ioexp_mux_reset[idev], 0x0);
+      write_gpio_pin(ff_ioexp_params[icheck].reset_pin, 0x0);
       vTaskDelay(pdMS_TO_TICKS(1));
-      write_gpio_pin(ioexp_mux_reset[idev], 0x1);
+      write_gpio_pin(ff_ioexp_params[icheck].reset_pin, 0x1);
     }
 
     // read present bits
-    uint32_t data;
     bool fail = false;
     if (apollo_i2c_ctl_reg_r(ff_ioexp_addrs[idev].i2c_ctrl,
                              ff_ioexp_addrs[idev].dev_addr, 1,
-                             ioexp_present_addrs[idev], 1, &data)) {
+                             ff_ioexp_params[icheck].present_addr, 1, &data)) {
       if (!mux_reset) {
         (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
                               "ERROR: reading from IOexp %d\r\n", idev);
@@ -307,13 +302,13 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copi
         fail = true;
       }
     }
-    data = data & ioexp_present_mask[idev];
-    if (data != ioexp_present_expect[idev]) {
+    data = data & ff_ioexp_params[icheck].mask;
+    if (data != ff_ioexp_params[icheck].expect) {
       if (!mux_reset) {
         (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
                               "ERROR: present bits on IOexp %d (expected %d,"
                               " got %d)\r\n",
-                              idev, ioexp_present_expect[idev],
+                              idev, ff_ioexp_params[icheck].expect,
                               data);
         return false;
       }
@@ -329,6 +324,68 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copi
     }
 
   } // loop over devices
+
+  // test writing
+  if (!mux_reset) {
+    for (unsigned idev = 1; idev < NDEVICES_FF_IOEXPANDER; idev += 2) {
+      // select device on MUX
+      uint8_t mux_data = 0x1U << ff_ioexp_addrs[idev].mux_bit;
+      if (apollo_i2c_ctl_w(ff_ioexp_addrs[idev].i2c_ctrl,
+                           ff_ioexp_addrs[idev].mux_addr, 1,
+                           mux_data)) {
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: selecting dev %d on MUX\r\n", idev);
+        return false;
+      }
+      // initial read should be deasserted
+      if (apollo_i2c_ctl_reg_r(ff_ioexp_addrs[idev].i2c_ctrl,
+                               ff_ioexp_addrs[idev].dev_addr, 1,
+                               TCA9555_ADDR_INPORT0, 1, &data)) {
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: reading from IOexp %d\r\n", idev);
+        return false;
+      }
+      if ((data & IOEXP2_RESET_MASK) != IOEXP2_DEASSERT_RESET) {
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: reset unexpectedly asserted %d\r\n",
+                              idev);
+        return false;
+      }
+      // write assert
+      data = IOEXP2_ASSERT_RESET;
+      if (apollo_i2c_ctl_reg_w(ff_ioexp_addrs[idev].i2c_ctrl,
+                               ff_ioexp_addrs[idev].dev_addr, 1,
+                               TCA9555_ADDR_OUTPORT0, 1, data)) {
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: writing to IOexp %d\r\n", idev);
+        return false;
+      }
+      // read back
+      if (apollo_i2c_ctl_reg_r(ff_ioexp_addrs[idev].i2c_ctrl,
+                               ff_ioexp_addrs[idev].dev_addr, 1,
+                               TCA9555_ADDR_INPORT0, 1, &data)) {
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: reading from IOexp %d\r\n", idev);
+        return false;
+      }
+      if ((data & IOEXP2_RESET_MASK) != IOEXP2_ASSERT_RESET) {
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: reset unexpectedly unasserted %d\r\n",
+                              idev);
+        return false;
+      }
+      // write deassert
+      data = IOEXP2_DEASSERT_RESET;
+      if (apollo_i2c_ctl_reg_w(ff_ioexp_addrs[idev].i2c_ctrl,
+                               ff_ioexp_addrs[idev].dev_addr, 1,
+                               TCA9555_ADDR_OUTPORT0, 1, data)) {
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: writing to IOexp %d\r\n", idev);
+        return false;
+      }
+    } // loop over second IO expanders
+  } // if not MUX reset test
+
   return true;
 }
 

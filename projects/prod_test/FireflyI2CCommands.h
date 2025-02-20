@@ -7,6 +7,7 @@
 #define F1FF_I2C_BASE            4
 #define NDEVICES_FF              20
 #define NDEVICES_FF_IOEXPANDER   4
+#define N_IOEXP_CHECKS           6
 #define FF_I2C_MUX1_ADDR         0x70
 #define FF_I2C_MUX2_ADDR         0x71
 #define FF_I2C_F1_FF1_T_MUX_BIT  0
@@ -45,10 +46,17 @@
 #define FF_PAGESEL_ADDR          0x7F
 #define TCA9555_ADDR_INPORT0     0x00
 #define TCA9555_ADDR_INPORT1     0x01
-#define IOEXP1_PRESENT_MASK      0xFF
-#define IOEXP2_PRESENT_MASK      0x0C
-#define IOEXP1_PRESENT_EXPECT    0xF3 // FF2TX and FF2RX installed
-#define IOEXP2_PRESENT_EXPECT    0x08 // FF5 installed
+#define TCA9555_ADDR_OUTPORT0    0x02
+#define TCA9555_ADDR_OUTPORT1    0x03
+#define IOEXP1_PRESENT_MASK1     0xFF
+#define IOEXP2_PRESENT_MASK0     0x0C
+#define IOEXP2_PRESENT_MASK1     0xF0
+#define IOEXP1_PRESENT_EXPECT1   0xF3 // FF2TX and FF2RX installed
+#define IOEXP2_PRESENT_EXPECT0   0x08 // FF5 installed
+#define IOEXP2_PRESENT_EXPECT1   0x00 // All switches 3v3
+#define IOEXP2_RESET_MASK        0x80
+#define IOEXP2_DEASSERT_RESET    0x80
+#define IOEXP2_ASSERT_RESET      0x00
 
 enum device_class {
   DEV_FF_TX,
@@ -65,6 +73,14 @@ struct dev_ff_i2c_addr_t {
   uint8_t mux_bit;             // port of the mux; write 0x1U<<mux_bit to select
   uint8_t dev_addr;            // I2C address of device.
   enum device_class dev_class; // Device class
+};
+
+struct ff_ioexp_param_t {
+  uint8_t dev_index;    // index to IOexpander dev_ff_i2c_addr_t
+  uint8_t present_addr; // I2C register address
+  uint32_t mask;        // Mask for returned values
+  uint32_t expect;      // Expected result after masking
+  int reset_pin;        // Associated MUX reset
 };
 
 /**
