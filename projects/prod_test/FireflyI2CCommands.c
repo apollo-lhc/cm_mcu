@@ -162,9 +162,10 @@ const int ioexp_mux_reset[4] = {_F1_OPTICS_I2C_RESET,
  * was set. Finally, all channels are re-enabled.
  *
  * @param [out] m  output string
+ * @param [inout] copied  length of output buffer already used
  * @return true if test passes, false otherwise
  */
-bool firefly_i2ctest_transceiver_helper(char *m)
+bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied)
 {
 
   // do three passes, write the first time, read the second, and reset third
@@ -181,7 +182,8 @@ bool firefly_i2ctest_transceiver_helper(char *m)
       uint8_t mux_data = 0x1U << ff_addrs[idev].mux_bit;
       if (apollo_i2c_ctl_w(ff_addrs[idev].i2c_ctrl, ff_addrs[idev].mux_addr, 1,
                            mux_data)) {
-        snprintf(m, SCRATCH_SIZE, "ERROR: selecting dev %d on MUX\r\n", idev);
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: selecting dev %d on MUX\r\n", idev);
         return false;
       }
 
@@ -202,8 +204,8 @@ bool firefly_i2ctest_transceiver_helper(char *m)
       // page select
       if (apollo_i2c_ctl_reg_w(ff_addrs[idev].i2c_ctrl, i2c_addr,
                                1, FF_PAGESEL_ADDR, 1, FF_12X_DISABLE_PAGE)) {
-        snprintf(m, SCRATCH_SIZE, "ERROR: selecting page on dev %d\r\n",
-                 idev);
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: selecting page on dev %d\r\n", idev);
         return false;
       }
 
@@ -212,8 +214,8 @@ bool firefly_i2ctest_transceiver_helper(char *m)
         if (apollo_i2c_ctl_reg_w(ff_addrs[idev].i2c_ctrl,
                                  i2c_addr, 1,
                                  disable_addr, 1, test_data)) {
-          snprintf(m, SCRATCH_SIZE, "ERROR: writing bits to %d\r\n",
-                   idev);
+          (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                                "ERROR: writing bits to %d\r\n", idev);
           return false;
         }
       }
@@ -223,15 +225,16 @@ bool firefly_i2ctest_transceiver_helper(char *m)
         if (apollo_i2c_ctl_reg_r(ff_addrs[idev].i2c_ctrl,
                                  i2c_addr, 1,
                                  disable_addr, 1, &data)) {
-          snprintf(m, SCRATCH_SIZE, "ERROR: reading bits from %d\r\n",
-                   idev);
+          (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                                "ERROR: reading bits from %d\r\n", idev);
           return false;
         }
         if (data != test_data) {
-          snprintf(m, SCRATCH_SIZE,
-                   "ERROR: incorrect readback on dev %d (expected %d, got %d"
-                   ")\r\n",
-                   idev, test_data, data);
+          (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                                "ERROR: incorrect readback on dev %d "
+                                "(expected %d, got %d)\r\n",
+                                idev, test_data,
+                                data);
           return false;
         }
       }
@@ -240,8 +243,8 @@ bool firefly_i2ctest_transceiver_helper(char *m)
         if (apollo_i2c_ctl_reg_w(ff_addrs[idev].i2c_ctrl,
                                  i2c_addr, 1,
                                  disable_addr, 1, 0x0)) {
-          snprintf(m, SCRATCH_SIZE, "ERROR: resetting bits on %d\r\n",
-                   idev);
+          (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                                "ERROR: resetting bits on %d\r\n", idev);
           return false;
         }
       }
@@ -249,7 +252,6 @@ bool firefly_i2ctest_transceiver_helper(char *m)
     } // loop over devices
   } // read/write loop
 
-  snprintf(m, SCRATCH_SIZE, "Test success");
   return true;
 }
 
@@ -265,9 +267,10 @@ bool firefly_i2ctest_transceiver_helper(char *m)
  *
  * @param [in] mux_reset
  * @param [out] m  output string
+ * @param [inout] copied  length of output buffer already used
  * @return true if test passes, false otherwise
  */
-bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m)
+bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copied)
 {
   // loop over devices
   for (uint8_t idev = 0; idev < NDEVICES_FF_IOEXPANDER; ++idev) {
@@ -277,7 +280,8 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m)
     if (apollo_i2c_ctl_w(ff_ioexp_addrs[idev].i2c_ctrl,
                          ff_ioexp_addrs[idev].mux_addr, 1,
                          mux_data)) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: selecting dev %d on MUX\r\n", idev);
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: selecting dev %d on MUX\r\n", idev);
       return false;
     }
 
@@ -295,7 +299,8 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m)
                              ff_ioexp_addrs[idev].dev_addr, 1,
                              ioexp_present_addrs[idev], 1, &data)) {
       if (!mux_reset) {
-        snprintf(m, SCRATCH_SIZE, "ERROR: reading from IOexp %d\r\n", idev);
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: reading from IOexp %d\r\n", idev);
         return false;
       }
       else {
@@ -305,9 +310,11 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m)
     data = data & ioexp_present_mask[idev];
     if (data != ioexp_present_expect[idev]) {
       if (!mux_reset) {
-        snprintf(m, SCRATCH_SIZE,
-                 "ERROR: present bits on IOexp %d (expected %d, got %d)\r\n",
-                 idev, ioexp_present_expect[idev], data);
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: present bits on IOexp %d (expected %d,"
+                              " got %d)\r\n",
+                              idev, ioexp_present_expect[idev],
+                              data);
         return false;
       }
       else {
@@ -315,8 +322,9 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m)
       }
     }
     if (mux_reset && !fail) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: MUX reset failed for dev %d\r\n",
-               idev);
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: MUX reset failed for dev %d\r\n",
+                            idev);
       return false;
     }
 
@@ -329,21 +337,33 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m)
  * CLI function that tests I2C communication to fireflies/IO expanders/MUX.
  * This is broken into 3 parts, see helper functions above for details
  */
+bool firefly_i2ctest(char *m, int32_t *copied)
+{
+  if (!firefly_i2ctest_transceiver_helper(m, copied)) {
+    return false;
+  }
+
+  if (!firefly_i2ctest_ioexpandermux_helper(false, m, copied)) {
+    return false;
+  }
+
+  if (!firefly_i2ctest_ioexpandermux_helper(true, m, copied)) {
+    return false;
+  }
+
+  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                        "Firefly I2C test: success.\r\n");
+  return true;
+}
+
+/**
+ * @details
+ * Wrapper around firefly_i2ctest
+ */
 BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m)
 {
-  if (!firefly_i2ctest_transceiver_helper(m)) {
-    return pdFALSE;
-  }
-
-  if (!firefly_i2ctest_ioexpandermux_helper(false, m)) {
-    return pdFALSE;
-  }
-
-  if (!firefly_i2ctest_ioexpandermux_helper(true, m)) {
-    return pdFALSE;
-  }
-
-  snprintf(m, SCRATCH_SIZE, "Test success.\r\n");
+  int32_t copied = 0;
+  firefly_i2ctest(m, &copied);
   return pdFALSE;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include <stdbool.h>
 
 #define CLOCK_I2C_BASE               2
 #define NDEVICES_CLK                 5
@@ -47,7 +48,16 @@ struct dev_ioexpander_addr_t {
 };
 
 /**
- * @brief CLI function that tests I2C communication to clock synths
+ * @brief Tests I2C communication to clock synths
+ *
+ * @param [out] m  output string
+ * @param [inout] copied  output already used in buffer
+ * @return true if test succeeds, false otherwise
+ */
+bool clock_i2ctest(char *m, int32_t *copied);
+
+/**
+ * @brief CLI wrapper around clock_i2ctest
  *
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments
