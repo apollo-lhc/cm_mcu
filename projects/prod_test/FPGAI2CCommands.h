@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include <stdbool.h>
 
 #define FPGA_I2C_BASE                     5
 #define N_FPGAS                           2
@@ -31,6 +32,15 @@ uint32_t gen_sysmon_i2cword(uint32_t addr, uint32_t data, bool read);
 
 /**
  * @brief CLI function that tests I2C communication to FPGAs
+ *
+ * @param [out] m  output string
+ * @param [inout] copied  output already used in buffer
+ * @return true if test succeeds, false otherwise
+ */
+bool fpga_i2ctest(char *m, int32_t *copied);
+
+/**
+ * @brief CLI wrapper around fpga_i2ctest
  *
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments

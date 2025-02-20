@@ -25,8 +25,6 @@
 #include "EEPROMI2CCommands.h"
 #include "I2CCommunication.h"
 
-// Should we program the board ID into the configuration register here or wait?
-
 /**
  * @details
  * CLI function that tests I2C communication to EEPROM. First, it writes
@@ -34,7 +32,7 @@
  * the write protect is enabled and it is confirmed that the same process
  * does not succeed
  */
-BaseType_t eeprom_i2ctest_ctl(int argc, char **argv, char *m)
+bool eeprom_i2ctest(char *m, int32_t *copied)
 {
 
   // disable write protect
@@ -48,21 +46,24 @@ BaseType_t eeprom_i2ctest_ctl(int argc, char **argv, char *m)
 
     if (apollo_i2c_ctl_reg_w(EEPROM_I2C_BASE, EEPROM_I2C_ADDR, 2,
                              EEPROM_TEST_ADDR, 1, test_data[idata])) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: Failed to write to EEPROM.\r\n");
-      return pdFALSE;
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: Failed to write to EEPROM.\r\n");
+      return false;
     }
 
     if (apollo_i2c_ctl_reg_r(EEPROM_I2C_BASE, EEPROM_I2C_ADDR, 2,
                              EEPROM_TEST_ADDR, 1, &read_data)) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: Failed to read from EEPROM.\r\n");
-      return pdFALSE;
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: Failed to read from EEPROM.\r\n");
+      return false;
     }
 
     if (read_data != test_data[idata]) {
-      snprintf(m, SCRATCH_SIZE,
-               "ERROR: Incorrect data from EEPROM (expected %d, got %d)\r\n",
-               test_data[idata], read_data);
-      return pdFALSE;
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: Incorrect data from EEPROM (expected %d,"
+                            " got %d)\r\n",
+                            test_data[idata], read_data);
+      return false;
     }
   }
 
@@ -72,27 +73,42 @@ BaseType_t eeprom_i2ctest_ctl(int argc, char **argv, char *m)
 
   if (apollo_i2c_ctl_reg_w(EEPROM_I2C_BASE, EEPROM_I2C_ADDR, 2,
                            EEPROM_TEST_ADDR, 1, EEPROM_TEST_DATA3)) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: Failed to write to EEPROM.\r\n");
-    return pdFALSE;
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: Failed to write to EEPROM.\r\n");
+    return false;
   }
 
   if (apollo_i2c_ctl_reg_r(EEPROM_I2C_BASE, EEPROM_I2C_ADDR, 2,
                            EEPROM_TEST_ADDR, 1, &read_data)) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: Failed to read from EEPROM.\r\n");
-    return pdFALSE;
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: Failed to read from EEPROM.\r\n");
+    return false;
   }
 
   if (read_data != EEPROM_TEST_DATA2) {
-    snprintf(m, SCRATCH_SIZE,
-             "ERROR: Write protect failed (expected %d, got %d)\r\n",
-             EEPROM_TEST_DATA2, read_data);
-    return pdFALSE;
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: Write protect failed (expected %d,"
+                          " got %d)\r\n",
+                          EEPROM_TEST_DATA2, read_data);
+    return false;
   }
 
   // disable write protect
   write_gpio_pin(ID_EEPROM_WP, 0x0);
   vTaskDelay(pdMS_TO_TICKS(50));
 
-  snprintf(m, SCRATCH_SIZE, "Test success.\r\n");
+  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                        "EEPROM I2C test: success.\r\n");
+  return true;
+}
+
+/**
+ * @details
+ * Wrapper around eeprom_i2ctest
+ */
+BaseType_t eeprom_i2ctest_ctl(int argc, char **argv, char *m)
+{
+  int32_t copied = 0;
+  eeprom_i2ctest(m, &copied);
   return pdFALSE;
 }

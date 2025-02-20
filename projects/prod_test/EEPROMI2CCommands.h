@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include <stdbool.h>
 
 #define EEPROM_I2C_BASE   2
 #define EEPROM_I2C_ADDR   0x50
@@ -11,7 +12,16 @@
 #define EEPROM_TEST_DATA3 0xDE
 
 /**
- * @brief CLI function that tests I2C communication to EEPROM
+ * @brief Tests I2C communication to EEPROM
+ *
+ * @param [out] m  output string
+ * @param [inout] copied  output already used in buffer
+ * @return true if test succeeds, false otherwise
+ */
+bool eeprom_i2ctest(char *m, int32_t *copied);
+
+/**
+ * @brief CLI wrapper around eeprom_i2ctest
  *
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments

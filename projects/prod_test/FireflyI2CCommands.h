@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include <stdbool.h>
 
 #define F2FF_I2C_BASE            3
 #define F1FF_I2C_BASE            4
@@ -67,7 +68,16 @@ struct dev_ff_i2c_addr_t {
 };
 
 /**
- * @brief CLI function that tests I2C communication to fireflies/IO expanders
+ * @brief Tests I2C communication to fireflies/IO expanders
+ *
+ * @param [out] m  output string
+ * @param [inout] copied  output already used in buffer
+ * @return true if test succeeds, false otherwise
+ */
+bool firefly_i2ctest(char *m, int32_t *copied);
+
+/**
+ * @brief CLI wrapper around firefly_i2ctest
  *
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments

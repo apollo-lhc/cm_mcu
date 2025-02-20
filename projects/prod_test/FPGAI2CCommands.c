@@ -52,7 +52,7 @@ uint32_t gen_sysmon_i2cword(uint32_t addr, uint32_t data, bool read)
  * to confirm reading and writing work. The MUX reset is then tested by
  * checking a read fails after the reset is asserted
  */
-BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
+bool fpga_i2ctest(char *m, int32_t *copied)
 {
 
   uint8_t mux_bits[N_FPGAS] = {FPGA_I2C_F1_SYSMON_MUXBIT,
@@ -65,7 +65,8 @@ BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
     uint8_t mux_data = 0x1U << mux_bits[idev];
     if (apollo_i2c_ctl_w(FPGA_I2C_BASE, FPGA_I2C_MUX_ADDR, 1,
                          mux_data)) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: selecting dev %d on MUX\r\n", idev);
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: selecting dev %d on MUX\r\n", idev);
       return false;
     }
 
@@ -74,16 +75,17 @@ BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
                              gen_sysmon_i2cword(
                                  VU13P_TEMPERATURE_ADDR, 0x0, true),
                              2, &data)) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: Failed to read from FPGA.\r\n");
-      return pdFALSE;
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: Failed to read from FPGA.\r\n");
+      return false;
     }
     // magic formula from SYSMON guide
     temperature = ((double)data) * 509.314 / 65536.0 - 280.23;
     if (temperature < MIN_FPGA_TEMPERATURE || temperature > MAX_FPGA_TEMPERATURE) {
-      snprintf(m, SCRATCH_SIZE,
-               "ERROR: FPGA temperature out of bounds (%f C)\r\n",
-               temperature);
-      return pdFALSE;
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: FPGA temperature out of bounds (%f C)\r\n",
+                            temperature);
+      return false;
     }
   } // loop over devices
 
@@ -100,10 +102,23 @@ BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
     fail = true;
   }
   if (!fail) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: MUX reset failed.\r\n");
-    return pdFALSE;
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: MUX reset failed.\r\n");
+    return false;
   }
 
-  snprintf(m, SCRATCH_SIZE, "Test success.\r\n");
+  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                        "FPGA I2C test: success.\r\n");
+  return true;
+}
+
+/**
+ * @details
+ * Wrapper around fpga_i2ctest
+ */
+BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
+{
+  int32_t copied = 0;
+  fpga_i2ctest(m, &copied);
   return pdFALSE;
 }

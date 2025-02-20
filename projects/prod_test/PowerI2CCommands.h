@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include <stdbool.h>
 
 #define POWER_I2C_BASE              1
 #define POWER_I2C_MUX_ADDR          0x70
@@ -48,7 +49,16 @@ struct power_monparams_t {
 };
 
 /**
- * @brief CLI command that tests I2C communication to DC-DC converters
+ * @brief Tests I2C communication to DC-DC converters
+ *
+ * @param [out] m  output string
+ * @param [inout] copied  output already used in buffer
+ * @return true if test succeeds, false otherwise
+ */
+bool dcdc_i2ctest(char *m, int32_t *copied);
+
+/**
+ * @brief CLI wrapper around DC-DC I2C converter test. See above
  *
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments
@@ -58,11 +68,20 @@ struct power_monparams_t {
 BaseType_t dcdc_i2ctest_ctl(int argc, char **argv, char *m);
 
 /**
- * @brief CLI command that tries to enable DC-DC converters and check output
+ * @brief Tries to enable DC-DC converters and checks output
+ *
+ * @param [out] m  output string
+ * @param [inout] copied  output already used in buffer
+ * @return true if test succeeds, false otherwise
+ */
+bool dcdc_powerontest(char *m, int32_t *copied);
+
+/**
+ * @brief CLI wrapper around DC-DC power-on test. See above
  *
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments
  * @param [out] m  output string
  * @return pdFALSE
  */
-BaseType_t dcdc_poweron_ctl(int argc, char **argv, char *m);
+BaseType_t dcdc_powerontest_ctl(int argc, char **argv, char *m);
