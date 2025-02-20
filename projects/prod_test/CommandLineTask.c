@@ -38,6 +38,7 @@ struct command_t commands[] = {
     {"bootloader", bl_ctl, "Call bootloader", 0},
     {"help", help_command_fcn, "This help command", -1},
     {"dcdci2ctest", dcdc_i2ctest_ctl, "Test I2C to DC-DC converters", 0},
+    {"dcdcpowertest", dcdc_poweron_ctl, "Test DC-DC power on", 0},
     {"clocki2ctest", clock_i2ctest_ctl, "Test I2C to clock synths", 0},
     {"ffi2ctest", firefly_i2ctest_ctl, "Test I2C to optics", 0},
     {"eepromi2ctest", eeprom_i2ctest_ctl, "Test I2C to EEPROM", 0},
