@@ -16,6 +16,8 @@
 #define VU13P_TUPPER_ALARM_THRESHOLD_ADDR 0x50
 #define FPGA1_TEST_DATA                   0xbf1e // ~100 C temperature
 #define FPGA2_TEST_DATA                   0xbf1f // ~100 C temperature
+#define MIN_FPGA_TEMPERATURE              20
+#define MAX_FPGA_TEMPERATURE              30
 
 /**
  * @brief Generates I2C data for Ultrascale sysmon DRP interactions

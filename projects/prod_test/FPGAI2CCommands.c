@@ -79,7 +79,7 @@ BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
     }
     // magic formula from SYSMON guide
     temperature = ((double)data) * 509.314 / 65536.0 - 280.23;
-    if (temperature < 20 || temperature > 35) {
+    if (temperature < MIN_FPGA_TEMPERATURE || temperature > MAX_FPGA_TEMPERATURE) {
       snprintf(m, SCRATCH_SIZE,
                "ERROR: FPGA temperature out of bounds (%f C)\r\n",
                temperature);
