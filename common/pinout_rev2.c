@@ -370,7 +370,7 @@ PinoutSet(void)
     // Configure the GPIO Pin Mux for PM3
 	// for GPIO_PM3
     //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_3);
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTM_BASE, GPIO_PIN_3);
 
     //
     // Configure the GPIO Pin Mux for PM2
