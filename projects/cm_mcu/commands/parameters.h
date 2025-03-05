@@ -49,7 +49,7 @@
 
 void Print(const char *str);
 
-#define SCRATCH_SIZE      1024
+#define SCRATCH_SIZE 1024
 
 extern tSMBus g_sMaster1;
 extern tSMBusStatus eStatus1;

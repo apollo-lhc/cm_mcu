@@ -1339,66 +1339,65 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 {
   int copied = 0;
   // check if we are looking for FPGA1 or two based on the command argument
-  int fpga = strtol(argv[1], NULL, 10) -1;
-  if ( fpga <0 || fpga >1 ) {
+  int fpga = strtol(argv[1], NULL, 10) - 1;
+  if (fpga < 0 || fpga > 1) {
     snprintf(m, SCRATCH_SIZE, "FPGA should be 1 or 2 (got %s)\r\n", argv[1]);
     return pdFALSE;
   }
 
   char *names[] = {
-    "rw0",
-    "rw1",
-    "clk_200_ext",
-    "lhc_clk",
-    "tcds40_clk",
-    "rt_x4_r0_clk",
-    "rt_x12_r0_clk",
-    "lf_x4_r0_clk",
-    "lf_x12_r0_clk",
-    "clk_100",
-    "clk_325",
-    "rt_r0_p",
-    "rt_r0_n",
-    "rt_r0_l",
-    "rt_r0_i",
-    "rt_r0_g",
-    "rt_r0_e",
-    "rt_r0_b",
-    "lf_r0_y",
-    "lf_r0_w",
-    "lf_r0_u",
-    "lf_r0_r",
-    "lf_r0_af",
-    "lf_r0_ad",
-    "lf_r0_ab",
-    "rt_r1_p",
-    "rt_r1_n",
-    "rt_r1_l",
-    "rt_r1_i",
-    "rt_r1_g",
-    "rt_r1_e",
-    "rt_r1_b",
-    "lf_r1_y",
-    "lf_r1_w",
-    "lf_r1_u",
-    "lf_r1_r",
-    "lf_r1_af",
-    "lf_r1_ad",
-    "lf_r1_ab"
-    };
+      "rw0",
+      "rw1",
+      "clk_200_ext",
+      "lhc_clk",
+      "tcds40_clk",
+      "rt_x4_r0_clk",
+      "rt_x12_r0_clk",
+      "lf_x4_r0_clk",
+      "lf_x12_r0_clk",
+      "clk_100",
+      "clk_325",
+      "rt_r0_p",
+      "rt_r0_n",
+      "rt_r0_l",
+      "rt_r0_i",
+      "rt_r0_g",
+      "rt_r0_e",
+      "rt_r0_b",
+      "lf_r0_y",
+      "lf_r0_w",
+      "lf_r0_u",
+      "lf_r0_r",
+      "lf_r0_af",
+      "lf_r0_ad",
+      "lf_r0_ab",
+      "rt_r1_p",
+      "rt_r1_n",
+      "rt_r1_l",
+      "rt_r1_i",
+      "rt_r1_g",
+      "rt_r1_e",
+      "rt_r1_b",
+      "lf_r1_y",
+      "lf_r1_w",
+      "lf_r1_u",
+      "lf_r1_r",
+      "lf_r1_af",
+      "lf_r1_ad",
+      "lf_r1_ab"};
 
   // take the semaphore to access the I2C bus
   SemaphoreHandle_t s = getSemaphore(5);
   static int i = 0;
-  if ( i == 0 ) {
-    if ( acquireI2CSemaphoreTime(s,1) != pdTRUE) {
+  if (i == 0) {
+    if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
       snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
       return pdFALSE;
     }
 
     // set the mux address for the FPGA generic I2C port
     unsigned mux_val = 0x4; // Schematic page 4.04: default to value for F1
-    if ( fpga == 1 ) {
+    if (fpga == 1) {
       mux_val = 0x1; // Schematic page 4.04: value for F2
     }
     int r = apollo_i2c_ctl_w(5, 0x70, 1, mux_val);
@@ -1412,29 +1411,29 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   // read out 39 registers from the FPGA. each read is 4 bytes.
   for (; i < 39; ++i) {
     uint32_t data;
-    uint16_t reg_addr = i<<2; // addressing in FPGA is byte-based
+    uint16_t reg_addr = i << 2; // addressing in FPGA is byte-based
     int r = apollo_i2c_ctl_reg_r(5, 0x2b, 1, reg_addr, 4, &data);
     if (r != 0) {
       snprintf(m + copied, SCRATCH_SIZE - copied, "Failed to read FPGA registers %d (%s)\r\n", i,
-          SMBUS_get_error(r));
+               SMBUS_get_error(r));
       // release the semaphore
       xSemaphoreGive(s);
-      i=0; // reset the counter
+      i = 0; // reset the counter
       return pdFALSE;
     }
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%d r%02d: % 10d (0x%08x) %s\r\n", fpga + 1, i,
-      data, data, names[i]);
-    if ( (SCRATCH_SIZE - copied) < 50) {
+                       data, data, names[i]);
+    if ((SCRATCH_SIZE - copied) < 50) {
       // do not reset the counter or release the semaphore
       ++i; // increment counter
-      return pdTRUE; 
+      return pdTRUE;
     }
   }
   // clear the mux
   int r = apollo_i2c_ctl_w(5, 0x70, 1, 0);
   if (r != 0) {
-    snprintf(m + copied , SCRATCH_SIZE - copied, "Failed to clear mux %s\r\n",
-        SMBUS_get_error(r));
+    snprintf(m + copied, SCRATCH_SIZE - copied, "Failed to clear mux %s\r\n",
+             SMBUS_get_error(r));
   }
 
   // release the semaphore
@@ -1449,15 +1448,15 @@ BaseType_t clk_prog_name(int argc, char **argv, char *m)
 {
   // argument is which clock chip to read. Should be in range 0-4.
   int i = strtol(argv[1], NULL, 10);
-  if ( i < 0 || i > 4 ) {
+  if (i < 0 || i > 4) {
     snprintf(m, SCRATCH_SIZE, "Clock chip should be in range 0-4 (got %s)\r\n", argv[1]);
     return pdFALSE;
   }
   char from_chip[10];
   char from_eeprom[10];
-  char * names[5] = {"0A", "0B", "1A", "1B", "1C"};
+  char *names[5] = {"0A", "0B", "1A", "1B", "1C"};
   SemaphoreHandle_t s = getSemaphore(2);
-  if ( acquireI2CSemaphoreTime(s,1) != pdTRUE) {
+  if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
     snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
     return pdFALSE;
   }
