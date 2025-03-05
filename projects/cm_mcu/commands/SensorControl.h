@@ -64,6 +64,9 @@ BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m);
 // Clocks
 BaseType_t clkmon_ctl(int argc, char **argv, char *m);
 BaseType_t clkr0amon_ctl(int argc, char **argv, char *m);
+BaseType_t clk_prog_name(int argc, char **argv, char *m);
+BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m);
+
 
 // FPGA
 BaseType_t fpga_ctl(int argc, char **argv, char *m);

@@ -6,7 +6,6 @@
 #include "portmacro.h"
 #include "Semaphore.h"
 #include "projdefs.h"
-#define SCRATCH_SIZE 512
 
 // takes no arguments
 BaseType_t stack_ctl(int argc, char **argv, char *m)
