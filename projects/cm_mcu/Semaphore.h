@@ -8,7 +8,7 @@
 #ifndef PROJECTS_CM_MCU_SEMAPHORE_H_
 #define PROJECTS_CM_MCU_SEMAPHORE_H_
 
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "semphr.h"
 
 // Mutex for UART
