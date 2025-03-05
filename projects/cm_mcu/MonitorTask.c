@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 // FreeRTOS
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "FreeRTOSConfig.h"

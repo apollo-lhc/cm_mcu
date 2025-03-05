@@ -20,6 +20,4 @@ BaseType_t time_ctl(int argc, char **argv, char *m);
 BaseType_t gpio_ctl(int argc, char **argv, char *m);
 BaseType_t v38_ctl(int argc, char **argv, char *m);
 
-
-
 #endif
