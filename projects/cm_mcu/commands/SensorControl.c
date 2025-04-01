@@ -27,15 +27,15 @@
 
 // A NOTE ABOUT THE FIREFLY REGISTER ADDRESSES
 // If you look at the memory maps in the data sheets for the firefly devices, you see that
-// the listed addresses for the internal registers are grouped into pages. 
-// the page select register is always accessible at byte 0x7f (127). 
+// the listed addresses for the internal registers are grouped into pages.
+// the page select register is always accessible at byte 0x7f (127).
 // Bytes above 127 (128 and following) vary in their meaning depending on the value set in the
 // page register. that is to say, byte 128, e.g., is not uniqely defined.
-// not all page register values are valid. 
+// not all page register values are valid.
 // we therefore encode the page number in the register address as follows:
 // lowest 7 bits: register address, 0-127
 // bit 8: unused
-// next 8 bits: page register number. 
+// next 8 bits: page register number.
 // This is used in both the read and write functions.
 int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
 {
@@ -71,20 +71,20 @@ int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value,
   }
 
   if (!res) {
-    // Read from register.  if the register number is > FF_PAGE_SELECT_BYTE (0x7FU), we 
+    // Read from register.  if the register number is > FF_PAGE_SELECT_BYTE (0x7FU), we
     // must first write the page number to page select byte.
-    if ( packed_reg_addr > FF_PAGE_SELECT_BYTE ) {
+    if (packed_reg_addr > FF_PAGE_SELECT_BYTE) {
       uint8_t page = (packed_reg_addr >> 8) & 0xFFU;
-      res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1, 
-        FF_PAGE_SELECT_BYTE, 1, page);
-        if ( res )
-          log_warn(LOG_SERVICE, "%s: FF page write error %d (%s) (ff=%s) ...\r\n", __func__, res,
-                   SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+      res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
+                                 FF_PAGE_SELECT_BYTE, 1, page);
+      if (res)
+        log_warn(LOG_SERVICE, "%s: FF page write error %d (%s) (ff=%s) ...\r\n", __func__, res,
+                 SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
     packed_reg_addr &= 0x00FFU; // clear the page number
     uint32_t uidata;
     res += apollo_i2c_ctl_reg_r(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
-                               packed_reg_addr, size, &uidata);
+                                packed_reg_addr, size, &uidata);
     for (int i = 0; i < size; ++i) {
       value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
     }
@@ -145,15 +145,15 @@ static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int 
   // write to register. First word is reg address, then the data.
   // increment size to account for the register address
   if (!res) {
-    // If the register number is > FF_PAGE_SELECT_BYTE (0x7FU), we 
+    // If the register number is > FF_PAGE_SELECT_BYTE (0x7FU), we
     // must first write the page number to page select byte.
-    if ( reg > FF_PAGE_SELECT_BYTE ) {
+    if (reg > FF_PAGE_SELECT_BYTE) {
       uint8_t page = (reg >> 8) & 0xFFU;
-      res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1, 
-        FF_PAGE_SELECT_BYTE, 1, page);
-        if ( res )
-          log_warn(LOG_SERVICE, "%s: FF page write error %d (%s) (ff=%s) ...\r\n", __func__, res,
-                   SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+      res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
+                                 FF_PAGE_SELECT_BYTE, 1, page);
+      if (res)
+        log_warn(LOG_SERVICE, "%s: FF page write error %d (%s) (ff=%s) ...\r\n", __func__, res,
+                 SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
     }
     reg &= 0x00FFU; // clear the page number
 
