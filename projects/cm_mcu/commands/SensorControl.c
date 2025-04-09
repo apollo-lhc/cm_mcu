@@ -32,7 +32,7 @@
 // page select register.
 // the page select register is always accessible at byte 0x7f (127).
 // Bytes above 127 (128 and following) vary in their meaning depending on the value set in the
-// page register. that is to say, byte 128, e.g., is not uniqely defined.
+// page register. that is to say, byte 128, e.g., is not uniquely defined.
 // not all page register values are valid.
 // we therefore encode the page number in the register address as follows:
 // lowest 8 bits: register address, 0-255.
