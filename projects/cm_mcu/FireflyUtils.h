@@ -99,4 +99,6 @@ extern uint32_t present_0X20_F2, present_0X21_F2, present_FFLDAQ_F1, present_FFL
 extern uint32_t present_FFLDAQ_F1, present_FFL12_F1_bar, present_FFLDAQ_F2, present_FFL12_F2_bar;
 #endif // REV2
 
+#define FF_PAGE_SELECT_BYTE 0x7FU // page select byte
+
 #endif // FIREFLYUTILS_H
