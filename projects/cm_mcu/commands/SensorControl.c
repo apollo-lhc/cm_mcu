@@ -111,7 +111,7 @@ int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value,
 }
 
 // see comments above read_ff_register
-static int write_ff_register(const char *name, uint8_t reg, uint16_t value, int size, int i2c_device)
+static int write_ff_register(const char *name, uint16_t reg, uint16_t value, int size, int i2c_device)
 {
   configASSERT(size <= 2);
   // find the appropriate information for this FF device
@@ -1111,7 +1111,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
           return pdFALSE;
         }
         // register number
-        uint8_t regnum = strtol(argv[2], NULL, 16);
+        uint16_t regnum = strtol(argv[2], NULL, 16);
         copied +=
             snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reading FF %s, register 0x%x\r\n",
                      argv[0], ff_moni2c_addrs[whichFF].name, regnum);
@@ -1143,7 +1143,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         // the two additional arguments
         // register number
         // value to be written
-        uint8_t regnum = strtol(argv[2], NULL, 16);
+        uint16_t regnum = strtol(argv[2], NULL, 16);
         uint16_t value = strtol(argv[3], NULL, 16);
         uint8_t channel = whichFF;
         if (channel == NFIREFLIES) {
