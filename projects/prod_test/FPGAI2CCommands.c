@@ -57,6 +57,7 @@ bool fpga_i2ctest(char *m, int32_t *copied)
 
   uint8_t mux_bits[N_FPGAS] = {FPGA_I2C_F1_SYSMON_MUXBIT,
                                FPGA_I2C_F2_SYSMON_MUXBIT};
+  uint8_t mux_read_data[4];
   uint32_t data;
   double temperature;
 
@@ -70,6 +71,21 @@ bool fpga_i2ctest(char *m, int32_t *copied)
       return false;
     }
 
+    // can't disguish FPGAs directly, so we re-check the MUX setting
+    data = 0x0;
+    if (apollo_i2c_ctl_r(FPGA_I2C_BASE, FPGA_I2C_MUX_ADDR, 1,
+                         mux_read_data)) {
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: reading from MUX\r\n");
+      return false;
+    }
+    if (mux_read_data[0] != mux_data) {
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: updating MUX to dev %d\r\n", idev);
+      return false;
+    }
+
+    // check we can read a reasonable temperature from SYSMON
     data = 0x0;
     if (apollo_i2c_ctl_reg_r(FPGA_I2C_BASE, FPGA_I2C_SYSMON_ADDR, 4,
                              gen_sysmon_i2cword(
