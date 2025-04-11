@@ -243,7 +243,7 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied)
       }
 
     } // loop over devices
-  } // read/write loop
+  }   // read/write loop
 
   return true;
 }
@@ -384,7 +384,7 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copi
         return false;
       }
     } // loop over second IO expanders
-  } // if not MUX reset test
+  }   // if not MUX reset test
 
   return true;
 }
