@@ -392,12 +392,12 @@ uint8_t getFFpartbit(const uint8_t i)
 
 // figure out which parts are 25G and which are not, for 12 channel parts
 // sets ff_bitmask_args[0].ffpart_bit_mask and ff_bitmask_args[2].ffpart_bit_mask
-#define ADJ_AND_PACK_10BIT(x) ( \
-  (((x) & ((x) >> 1) & 0x155) & 0x001)       | \
-  ((((x) & ((x) >> 1) & 0x155) >> 1) & 0x002) | \
-  ((((x) & ((x) >> 1) & 0x155) >> 2) & 0x004) | \
-  ((((x) & ((x) >> 1) & 0x155) >> 3) & 0x008) | \
-  ((((x) & ((x) >> 1) & 0x155) >> 4) & 0x010) )
+#define ADJ_AND_PACK_10BIT(x) (                   \
+    (((x) & ((x) >> 1) & 0x155) & 0x001) |        \
+    ((((x) & ((x) >> 1) & 0x155) >> 1) & 0x002) | \
+    ((((x) & ((x) >> 1) & 0x155) >> 2) & 0x004) | \
+    ((((x) & ((x) >> 1) & 0x155) >> 3) & 0x008) | \
+    ((((x) & ((x) >> 1) & 0x155) >> 4) & 0x010))
 
 uint32_t ff_map_25gb_parts(void)
 {
@@ -429,15 +429,15 @@ uint32_t ff_map_25gb_parts(void)
       log_error(LOG_SERVICE, "Error reading vendor string for FF %d\r\n", i);
       // what to do? FIXME: return error?
     }
-    log_info(LOG_SERVICE, "F%d FF%02d: %s\r\n", i / NFIREFLIES_F1 + 1, i % NFIREFLIES_F1, 
-            name);
+    log_info(LOG_SERVICE, "F%d FF%02d: %s\r\n", i / NFIREFLIES_F1 + 1, i % NFIREFLIES_F1,
+             name);
     // skip 4 channel parts
     if (type == DEVICE_25G4) {
       continue;
     }
     if (strstr(name, "14") == NULL &&
         strstr(name, "CRRNB") == NULL && strstr(name, "CERNB") == NULL) {
-      int shiftval = i%NFIREFLIES_F1 + (i>=NFIREFLIES_F1 ? 16 : 0);
+      int shiftval = i % NFIREFLIES_F1 + (i >= NFIREFLIES_F1 ? 16 : 0);
       ff_25gb_parts |= (0x1U << shiftval);
     }
   }
@@ -449,8 +449,8 @@ uint32_t ff_map_25gb_parts(void)
   log_info(LOG_SERVICE, "F1 25G12 mask: 0x%02x\r\n", ff_bitmask_args[0].ffpart_bit_mask);
   log_info(LOG_SERVICE, "F2 25G12 mask: 0x%02x\r\n", ff_bitmask_args[2].ffpart_bit_mask);
   // pair mask into two parts
-  uint16_t pair_mask_low = ADJ_AND_PACK_10BIT(ff_25gb_parts&0xFFU);        // bottom two bytes
-  uint16_t pair_mask_high = ADJ_AND_PACK_10BIT((ff_25gb_parts>>16)&0xFFU); // top two bytes
+  uint16_t pair_mask_low = ADJ_AND_PACK_10BIT(ff_25gb_parts & 0xFFU);          // bottom two bytes
+  uint16_t pair_mask_high = ADJ_AND_PACK_10BIT((ff_25gb_parts >> 16) & 0xFFU); // top two bytes
   log_info(LOG_SERVICE, "F1 25G pair mask:  0x%02x\r\n", pair_mask_low);
   log_info(LOG_SERVICE, "F2 25G pair mask:  0x%02x\r\n", pair_mask_high);
   // check if the 4v switch settings match
