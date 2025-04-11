@@ -20,6 +20,11 @@
 // #include "inc/hw_memmap.h"
 
 #include "ADCMonitorTask.h"
+#include "ClockI2CCommands.h"
+#include "EEPROMI2CCommands.h"
+#include "FireflyI2CCommands.h"
+#include "FPGAI2CCommands.h"
+#include "PowerI2CCommands.h"
 
 void Print(const char *str);
 
@@ -134,5 +139,43 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
     }
   }
   whichadc = 0;
+  return pdFALSE;
+}
+
+/**
+ * @details
+ * Runs all first step production tests
+ */
+BaseType_t prodtest_firststep_ctl(int argc, char **argv, char *m)
+{
+  int32_t copied = 0;
+  int r;
+  if (!dcdc_i2ctest(m, &copied))
+    return pdFALSE;
+  if (!dcdc_powerontest(m, &copied))
+    return pdFALSE;
+  r = init_registers_clk();
+  if (r) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "ERROR: Failed to initialize clk IO expanders.\r\n");
+    return pdFALSE;
+  }
+  if (!clock_i2ctest(m, &copied))
+    return pdFALSE;
+  if (!fpga_i2ctest(m, &copied))
+    return pdFALSE;
+  r = init_registers_firefly();
+  if (r) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "ERROR: Failed to initialize FF IO expanders.\r\n");
+    return pdFALSE;
+  }
+  if (!firefly_i2ctest(m, &copied))
+    return pdFALSE;
+  if (!eeprom_i2ctest(m, &copied))
+    return pdFALSE;
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                     "All tests successful.\r\n");
+  disable_ps();
   return pdFALSE;
 }
