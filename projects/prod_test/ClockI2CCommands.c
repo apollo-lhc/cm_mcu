@@ -328,8 +328,6 @@ bool clock_i2ctest(char *m, int32_t *copied)
     return false;
   }
 
-  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                        "Clock I2C test: success.\r\n");
   return true;
 }
 
@@ -340,7 +338,9 @@ bool clock_i2ctest(char *m, int32_t *copied)
 BaseType_t clock_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  clock_i2ctest(m, &copied);
+  if (clock_i2ctest(m, &copied))
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Clock I2C test: success.\r\n");
   return pdFALSE;
 }
 

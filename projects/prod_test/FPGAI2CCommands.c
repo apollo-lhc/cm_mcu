@@ -38,10 +38,7 @@ uint32_t gen_sysmon_i2cword(uint32_t addr, uint32_t data, bool read)
   }
   uint32_t i2c_word = (cmd << 26) | ((addr & 0x3FF) << 16) | data;
   // fix endianness
-  i2c_word = (((i2c_word & 0xFF000000) >> 24) |
-              ((i2c_word & 0x00FF0000) >> 8) |
-              ((i2c_word & 0x0000FF00) << 8) |
-              ((i2c_word & 0x000000FF) << 24));
+  i2c_word = __builtin_bswap32(i2c_word);
   return i2c_word;
 }
 
@@ -123,8 +120,6 @@ bool fpga_i2ctest(char *m, int32_t *copied)
     return false;
   }
 
-  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                        "FPGA I2C test: success.\r\n");
   return true;
 }
 
@@ -135,6 +130,8 @@ bool fpga_i2ctest(char *m, int32_t *copied)
 BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  fpga_i2ctest(m, &copied);
+  if (fpga_i2ctest(m, &copied))
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "FPGA I2C test: success.\r\n");
   return pdFALSE;
 }

@@ -49,6 +49,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
 };
 
 // poweron check constants
+// fields represent power level for check, supply index, page, expected voltage
 struct power_monparams_t power_monparams[N_POWERON_CHECKS] = {
     {1, 1, 1, 0.85}, // FPGA VCCINT - F1
     {1, 1, 0, 0.85}, // FPGA VCCINT - F1
@@ -173,9 +174,6 @@ bool dcdc_i2ctest(char *m, int32_t *copied)
     return false;
   }
 
-  // print output
-  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                        "DCDC I2C test: success\r\n");
   return true;
 }
 
@@ -186,7 +184,9 @@ bool dcdc_i2ctest(char *m, int32_t *copied)
 BaseType_t dcdc_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  dcdc_i2ctest(m, &copied);
+  if (dcdc_i2ctest(m, &copied))
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "DCDC I2C test: success\r\n");
   return pdFALSE;
 }
 
@@ -217,14 +217,16 @@ bool dcdc_powerontest(char *m, int32_t *copied)
         if (apollo_i2c_ctl_w(POWER_I2C_BASE, pm_addrs_dcdc[ps].mux_addr, 1,
                              0x1U << pm_addrs_dcdc[ps].mux_bit)) {
           (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                                "ERROR: Failed to select dev %d on MUX\r\n", ps);
+                                "ERROR: Failed to select dev %d on MUX\r\n",
+                                ps);
           return false;
         }
         // select page
         if (apollo_pmbus_rw(POWER_I2C_BASE, false, pm_addrs_dcdc[ps].dev_addr,
                             LGA80D_PAGE_COMMAND, &page, 1)) {
           (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                                "ERROR: Failed to select page 0 on %d\r\n", ps);
+                                "ERROR: Failed to select page 0 on %d\r\n",
+                                ps);
           return false;
         }
         // read voltage
@@ -233,7 +235,8 @@ bool dcdc_powerontest(char *m, int32_t *copied)
         if (apollo_pmbus_rw(POWER_I2C_BASE, true, pm_addrs_dcdc[ps].dev_addr,
                             LGA80D_ADDR_READ_VOUT, data, 2)) {
           (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                                "ERROR: Failed to read voltage from %d\r\n", ps);
+                                "ERROR: Failed to read voltage from %d\r\n",
+                                ps);
           return false;
         }
         uint16_t data_full = (data[1] << 8) | data[0];
@@ -241,8 +244,8 @@ bool dcdc_powerontest(char *m, int32_t *copied)
         delta = (read_voltage - nominal_voltage) / nominal_voltage;
         if (fabs(delta) > POWER_DELTA_TOLERANCE) {
           (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                                "ERROR: LGA80D check %d voltage out of tolerance."
-                                "Expected %f, got %f.\r\n",
+                                "ERROR: LGA80D check %d voltage out of "
+                                "tolerance. Expected %f, got %f.\r\n",
                                 icheck,
                                 (double)nominal_voltage, (double)read_voltage);
           return false;
@@ -251,8 +254,6 @@ bool dcdc_powerontest(char *m, int32_t *copied)
     } // loop over checks
   }   // loop over levels
 
-  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                        "Power-on test: success.\r\n");
   return true;
 }
 
@@ -263,6 +264,8 @@ bool dcdc_powerontest(char *m, int32_t *copied)
 BaseType_t dcdc_powerontest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  dcdc_powerontest(m, &copied);
+  if (dcdc_powerontest(m, &copied))
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Power-on test: success.\r\n");
   return pdFALSE;
 }

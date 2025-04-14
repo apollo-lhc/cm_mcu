@@ -408,8 +408,6 @@ bool firefly_i2ctest(char *m, int32_t *copied)
     return false;
   }
 
-  (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                        "Firefly I2C test: success.\r\n");
   return true;
 }
 
@@ -420,7 +418,9 @@ bool firefly_i2ctest(char *m, int32_t *copied)
 BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  firefly_i2ctest(m, &copied);
+  if (firefly_i2ctest(m, &copied))
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Firefly I2C test: success.\r\n");
   return pdFALSE;
 }
 
