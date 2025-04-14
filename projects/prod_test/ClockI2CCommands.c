@@ -48,9 +48,10 @@ struct dev_ioexpander_addr_t ioexpander_addrs[NDEVICES_CLK_IOEXPANDER] = {
  * verifies that it matches what was written
  *
  * @param [out] m  output string
+ * @param [inout] m  length of output buffer already used
  * @return true if test passes, false otherwise
  */
-bool clock_i2ctest_synth_helper(char *m)
+bool clock_i2ctest_synth_helper(char *m, int32_t *copied)
 {
   uint8_t mux_data;
   uint32_t data;
@@ -66,7 +67,8 @@ bool clock_i2ctest_synth_helper(char *m)
       mux_data = 0x1U << clk_moni2c_addrs[idev].mux_bit;
       if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[idev].mux_addr, 1,
                            mux_data)) {
-        snprintf(m, SCRATCH_SIZE, "ERROR: selecting dev %d on MUX\r\n", idev);
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: selecting dev %d on MUX\r\n", idev);
         return false;
       }
 
@@ -74,7 +76,8 @@ bool clock_i2ctest_synth_helper(char *m)
       if (apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[idev].dev_addr,
                                1, SI5395_ADDR_PAGESEL, 1,
                                SI5395_ADDR_SCRATCH_UPPER)) {
-        snprintf(m, SCRATCH_SIZE, "ERROR: selecting page on dev %d\r\n", idev);
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: selecting page on dev %d\r\n", idev);
         return false;
       }
 
@@ -92,17 +95,18 @@ bool clock_i2ctest_synth_helper(char *m)
                                  1, SI5395_ADDR_SCRATCH_LOWER0, 1, &data);
       }
       if (r) {
-        snprintf(m, SCRATCH_SIZE, "ERROR: read/write %d, dev %d\r\n", rw,
-                 idev);
+        (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                              "ERROR: read/write %d, dev %d\r\n", rw, idev);
         return false;
       }
 
       if (rw == 1) {
         // check read value
         if (data != (idev + 1)) {
-          snprintf(m, SCRATCH_SIZE,
-                   "ERROR: Bad readback on dev %d (expected %d, got %d)\r\n",
-                   idev, idev + 1, data);
+          (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                                "ERROR: Bad readback on dev %d (expected %d,"
+                                " got %d)\r\n",
+                                idev, idev + 1, data);
           return false;
         }
       }
@@ -126,18 +130,20 @@ bool clock_i2ctest_synth_helper(char *m)
  * @param [in] io_data  input data byte if write or output data byte if read
  * @param [in] read  true indicates a read operation, false indicates write
  * @param [out] m  output string. If 0, then no output
+ * @param [inout] copied  length of output buffer already used
  * @return true if read/write succeeds, false otherwise
  */
 bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
-                    bool read, char *m)
+                    bool read, char *m, int32_t *copied)
 {
   uint8_t mux_data;
   // select device on MUX
   mux_data = 0x1U << ioexpander_addrs[device_index].mux_bit;
   if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, ioexpander_addrs[device_index].mux_addr,
                        1, mux_data)) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: selecting %d on MUX\r\n",
-             ioexpander_addrs[device_index].mux_bit);
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: selecting %d on MUX\r\n",
+                          ioexpander_addrs[device_index].mux_bit);
     return false;
   }
 
@@ -146,9 +152,9 @@ bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
     if (apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE,
                              ioexpander_addrs[device_index].dev_addr, 1, addr,
                              1, *io_data)) {
-      snprintf(m, SCRATCH_SIZE,
-               "ERROR: writing %d to %d on IO/expander %d\r\n",
-               *io_data, addr, device_index);
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: writing %d to %d on IO/expander %d\r\n",
+                            *io_data, addr, device_index);
       return false;
     }
   }
@@ -157,8 +163,9 @@ bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
     if (apollo_i2c_ctl_reg_r(CLOCK_I2C_BASE,
                              ioexpander_addrs[device_index].dev_addr, 1, addr,
                              1, io_data)) {
-      snprintf(m, SCRATCH_SIZE, "ERROR: reading %d from IO/expander %d\r\n",
-               addr, device_index);
+      (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                            "ERROR: reading %d from IO/expander %d\r\n",
+                            addr, device_index);
       return false;
     }
   }
@@ -177,63 +184,65 @@ bool i2c_ioexpander(int device_index, uint8_t addr, uint32_t *io_data,
  * @param [out] m  output string
  * @return true if test passes, false otherwise
  */
-bool clock_i2ctest_ioexpander_helper(char *m)
+bool clock_i2ctest_ioexpander_helper(char *m, int32_t *copied)
 {
   uint32_t data[1];
 
   // set pin7 on IO expander R0 to low and R1 to high and check
   data[0] = IOEXPANDER_R0_REG0_RESET_R0A;
-  if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
+  if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m, copied)) {
     return false;
   }
   data[0] = IOEXPANDER_R1_REG0_DEFAULT;
-  if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
+  if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m, copied)) {
     return false;
   }
-  if (!i2c_ioexpander(0, TCA9555_ADDR_INPORT0, data, true, m)) {
+  if (!i2c_ioexpander(0, TCA9555_ADDR_INPORT0, data, true, m, copied)) {
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: Failed to assert expander R0 reset\r\n");
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: Failed to assert expander R0 reset\r\n");
     return false;
   }
-  if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m)) {
+  if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m, copied)) {
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
-    snprintf(m, SCRATCH_SIZE,
-             "ERROR: Failed to deassert expander R1 reset\r\n");
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: Failed to deassert expander R1 reset\r\n");
     return false;
   }
 
   // set P7 on expander R0 to high and R1 to low and check
   data[0] = IOEXPANDER_R0_REG0_DEFAULT;
-  if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m)) {
+  if (!i2c_ioexpander(0, TCA9555_ADDR_OUTPORT0, data, false, m, copied)) {
     return false;
   }
   data[0] = IOEXPANDER_R1_REG0_RESET_R1A;
-  if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
+  if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m, copied)) {
     return false;
   }
-  if (!i2c_ioexpander(0, TCA9555_ADDR_INPORT0, data, true, m)) {
+  if (!i2c_ioexpander(0, TCA9555_ADDR_INPORT0, data, true, m, copied)) {
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT1) {
-    snprintf(m, SCRATCH_SIZE,
-             "ERROR: Failed to deassert expander R0 reset\r\n");
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: Failed to deassert expander R0 reset\r\n");
     return false;
   }
-  if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m)) {
+  if (!i2c_ioexpander(1, TCA9555_ADDR_INPORT0, data, true, m, copied)) {
     return false;
   }
   if ((data[0] & IOEXPANDER_TEST_MASK) != IOEXPANDER_TEST_RESULT0) {
-    snprintf(m, SCRATCH_SIZE, "EROR: Failed to assert expander R1 reset\r\n");
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "EROR: Failed to assert expander R1 reset\r\n");
     return false;
   }
 
   // return to default settings by deasserting reset on expander R1
   data[0] = IOEXPANDER_R1_REG0_DEFAULT;
-  if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m)) {
+  if (!i2c_ioexpander(1, TCA9555_ADDR_OUTPORT0, data, false, m, copied)) {
     return false;
   }
 
@@ -248,9 +257,10 @@ bool clock_i2ctest_ioexpander_helper(char *m)
  * following a MUX reset
  *
  * @param [out] m  output string
+ * @param [inout] copied  output already used in buffer
  * @return true if test passes, false otherwise
  */
-bool clock_i2ctest_muxreset_helper(char *m)
+bool clock_i2ctest_muxreset_helper(char *m, int32_t *copied)
 {
   uint8_t mux_data;
   uint32_t data;
@@ -258,7 +268,8 @@ bool clock_i2ctest_muxreset_helper(char *m)
   mux_data = 0x1U << clk_moni2c_addrs[0].mux_bit;
   if (apollo_i2c_ctl_w(CLOCK_I2C_BASE, clk_moni2c_addrs[0].mux_addr, 1,
                        mux_data)) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: selecting dev 0 on MUX\r\n");
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: selecting dev 0 on MUX\r\n");
     return false;
   }
 
@@ -286,7 +297,8 @@ bool clock_i2ctest_muxreset_helper(char *m)
     }
   }
   if (!read_fail) {
-    snprintf(m, SCRATCH_SIZE, "ERROR: I2C MUX reset did not work.\r\n");
+    (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
+                          "ERROR: I2C MUX reset did not work.\r\n");
     return false;
   }
   return true;
@@ -302,21 +314,33 @@ bool clock_i2ctest_muxreset_helper(char *m)
  * and reading back. Finally, the MUX reset signal is tested by checking a
  * read attempt fails following a MUX reset.
  */
+bool clock_i2ctest(char *m, int32_t *copied)
+{
+  if (!clock_i2ctest_synth_helper(m, copied)) {
+    return false;
+  }
+
+  if (!clock_i2ctest_ioexpander_helper(m, copied)) {
+    return false;
+  }
+
+  if (!clock_i2ctest_muxreset_helper(m, copied)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @details
+ * Wrapper around clock_i2ctest
+ */
 BaseType_t clock_i2ctest_ctl(int argc, char **argv, char *m)
 {
-  if (!clock_i2ctest_synth_helper(m)) {
-    return pdFALSE;
-  }
-
-  if (!clock_i2ctest_ioexpander_helper(m)) {
-    return pdFALSE;
-  }
-
-  if (!clock_i2ctest_muxreset_helper(m)) {
-    return pdFALSE;
-  }
-
-  snprintf(m, SCRATCH_SIZE, "Test success.\r\n");
+  int32_t copied = 0;
+  if (clock_i2ctest(m, &copied))
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "Clock I2C test: success.\r\n");
   return pdFALSE;
 }
 

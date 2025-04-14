@@ -24,29 +24,29 @@ void UART0IntHandler(void);
 
 extern tSMBus g_sMaster1; // for I2C #1
 extern tSMBus g_sMaster2; // for I2C #2
+extern tSMBus g_sMaster3; // for I2C #3
+extern tSMBus g_sMaster4; // for I2C #4
+extern tSMBus g_sMaster5; // for I2C #4
 
 extern volatile tSMBusStatus eStatus1;
 extern volatile tSMBusStatus eStatus2;
+extern volatile tSMBusStatus eStatus3;
+extern volatile tSMBusStatus eStatus4;
+extern volatile tSMBusStatus eStatus5;
 
 void SMBusMasterIntHandler1(void);
 void SMBusMasterIntHandler2(void);
+void SMBusMasterIntHandler3(void);
+void SMBusMasterIntHandler4(void);
+void SMBusMasterIntHandler5(void);
 
 // SMBUs specific handler for I2C
 // extern tSMBus g_sSlave0;  // for I2C #0
 #if 0
-extern tSMBus g_sMaster3; // for I2C #3
-extern tSMBus g_sMaster4; // for I2C #4
-extern tSMBus g_sMaster5; // for I2C #4
 extern tSMBus g_sMaster6; // for I2C #6
 
-extern volatile tSMBusStatus eStatus3;
-extern volatile tSMBusStatus eStatus4;
-extern volatile tSMBusStatus eStatus5;
 extern volatile tSMBusStatus eStatus6;
 
-void SMBusMasterIntHandler3(void);
-void SMBusMasterIntHandler4(void);
-void SMBusMasterIntHandler5(void);
 void SMBusMasterIntHandler6(void);
 
 // I2C Slave
