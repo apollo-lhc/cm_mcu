@@ -392,7 +392,8 @@ uint8_t getFFpartbit(const uint8_t i)
 
 // figure out which parts are 25G and which are not, for 12 channel parts
 // sets ff_bitmask_args[0].ffpart_bit_mask and ff_bitmask_args[2].ffpart_bit_mask
-static inline uint32_t adj_and_pack_10bit(uint32_t x) {
+static inline uint32_t adj_and_pack_10bit(uint32_t x)
+{
   // Perform adjacent bitwise AND and mask bits 0,2,4,6,8
   uint32_t a = x & (x >> 1) & 0x155;
 
