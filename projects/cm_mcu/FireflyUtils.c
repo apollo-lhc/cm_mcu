@@ -392,13 +392,19 @@ uint8_t getFFpartbit(const uint8_t i)
 
 // figure out which parts are 25G and which are not, for 12 channel parts
 // sets ff_bitmask_args[0].ffpart_bit_mask and ff_bitmask_args[2].ffpart_bit_mask
-#define ADJ_AND_PACK_10BIT(x) (                   \
-    (((x) & ((x) >> 1) & 0x155) & 0x001) |        \
-    ((((x) & ((x) >> 1) & 0x155) >> 1) & 0x002) | \
-    ((((x) & ((x) >> 1) & 0x155) >> 2) & 0x004) | \
-    ((((x) & ((x) >> 1) & 0x155) >> 3) & 0x008) | \
-    ((((x) & ((x) >> 1) & 0x155) >> 4) & 0x010))
+static inline uint32_t adj_and_pack_10bit(uint32_t x) {
+  // Perform adjacent bitwise AND and mask bits 0,2,4,6,8
+  uint32_t a = x & (x >> 1) & 0x155;
 
+  // Pack bits 0,2,4,6,8 to 0,1,2,3,4
+  a = ((a >> 0) & 0x01) |
+      ((a >> 1) & 0x02) |
+      ((a >> 2) & 0x04) |
+      ((a >> 3) & 0x08) |
+      ((a >> 4) & 0x10);
+
+  return a;
+}
 uint32_t ff_map_25gb_parts(void)
 {
   static_assert(FF_VENDOR_COUNT_FFDAQ == FF_VENDOR_COUNT_FF12, "FF_VENDOR_COUNT_FFDAQ != FF_VENDOR_COUNT_FF12");
@@ -449,8 +455,8 @@ uint32_t ff_map_25gb_parts(void)
   log_info(LOG_SERVICE, "F1 25G12 mask: 0x%02x\r\n", ff_bitmask_args[0].ffpart_bit_mask);
   log_info(LOG_SERVICE, "F2 25G12 mask: 0x%02x\r\n", ff_bitmask_args[2].ffpart_bit_mask);
   // pair mask into two parts
-  uint16_t pair_mask_low = ADJ_AND_PACK_10BIT(ff_25gb_parts & 0xFFU);          // bottom two bytes
-  uint16_t pair_mask_high = ADJ_AND_PACK_10BIT((ff_25gb_parts >> 16) & 0xFFU); // top two bytes
+  uint16_t pair_mask_low = adj_and_pack_10bit(ff_25gb_parts & 0xFFU);          // bottom two bytes
+  uint16_t pair_mask_high = adj_and_pack_10bit((ff_25gb_parts >> 16) & 0xFFU); // top two bytes
   log_info(LOG_SERVICE, "F1 25G pair mask:  0x%02x\r\n", pair_mask_low);
   log_info(LOG_SERVICE, "F2 25G pair mask:  0x%02x\r\n", pair_mask_high);
   // check if the 4v switch settings match
