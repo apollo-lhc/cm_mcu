@@ -88,9 +88,15 @@ void UART0IntHandler(void)
 
 tSMBus g_sMaster1; // for I2C #1
 tSMBus g_sMaster2; // for I2C #2
+tSMBus g_sMaster3; // for I2C #3
+tSMBus g_sMaster4; // for I2C #4
+tSMBus g_sMaster5; // for I2C #5
 
 volatile tSMBusStatus eStatus1 = SMBUS_OK;
 volatile tSMBusStatus eStatus2 = SMBUS_OK;
+volatile tSMBusStatus eStatus3 = SMBUS_OK;
+volatile tSMBusStatus eStatus4 = SMBUS_OK;
+volatile tSMBusStatus eStatus5 = SMBUS_OK;
 
 // SMBUs specific handler for I2C
 void SMBusMasterIntHandler1(void)
@@ -116,19 +122,6 @@ void SMBusMasterIntHandler2(void)
   // handle errors in the returning function
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-
-#if 0 // not used
-// tSMBus g_sSlave0;  // for I2C #0
-
-tSMBus g_sMaster3; // for I2C #3
-tSMBus g_sMaster4; // for I2C #4
-tSMBus g_sMaster5; // for I2C #5
-tSMBus g_sMaster6; // for I2C #6
-
-volatile tSMBusStatus eStatus3 = SMBUS_OK;
-volatile tSMBusStatus eStatus4 = SMBUS_OK;
-volatile tSMBusStatus eStatus5 = SMBUS_OK;
-volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
 void SMBusMasterIntHandler3(void)
 {
@@ -165,6 +158,13 @@ void SMBusMasterIntHandler5(void)
   // handle errors in the returning function
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+#if 0 // not used
+// tSMBus g_sSlave0;  // for I2C #0
+
+tSMBus g_sMaster6; // for I2C #6
+
+volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
 void SMBusMasterIntHandler6(void)
 {

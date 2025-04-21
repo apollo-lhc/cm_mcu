@@ -81,13 +81,25 @@ void SystemInit(void)
   // initialize interrupts
   UART0Init(g_ui32SysClock); // ZYNQ UART
   initI2C1(g_ui32SysClock);  // controller for power supplies
-  initI2C2(g_ui32SysClock);  // controller for power supplies
+  initI2C2(g_ui32SysClock);  // controller for clocks
+  initI2C3(g_ui32SysClock);  // controller for F2 optics
+  initI2C4(g_ui32SysClock);  // controller for F1 optics
+  initI2C5(g_ui32SysClock);  // controller for F1 optics
   SMBusMasterInit(&g_sMaster1, I2C1_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster2, I2C2_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster3, I2C3_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
+  SMBusMasterInit(&g_sMaster5, I2C5_BASE, g_ui32SysClock);
   ROM_IntPrioritySet(INT_I2C1, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C2, configKERNEL_INTERRUPT_PRIORITY);
+  ROM_IntPrioritySet(INT_I2C3, configKERNEL_INTERRUPT_PRIORITY);
+  ROM_IntPrioritySet(INT_I2C4, configKERNEL_INTERRUPT_PRIORITY);
+  ROM_IntPrioritySet(INT_I2C5, configKERNEL_INTERRUPT_PRIORITY);
   SMBusMasterIntEnable(&g_sMaster1);
   SMBusMasterIntEnable(&g_sMaster2);
+  SMBusMasterIntEnable(&g_sMaster3);
+  SMBusMasterIntEnable(&g_sMaster4);
+  SMBusMasterIntEnable(&g_sMaster5);
 
   setupActiveLowPins();
 
