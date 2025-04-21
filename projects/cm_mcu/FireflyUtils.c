@@ -390,8 +390,6 @@ uint8_t getFFpartbit(const uint8_t i)
   return val;
 }
 
-// figure out which parts are 25G and which are not, for 12 channel parts
-// sets ff_bitmask_args[0].ffpart_bit_mask and ff_bitmask_args[2].ffpart_bit_mask
 static inline uint32_t adj_and_pack_10bit(uint32_t x)
 {
   // Perform adjacent bitwise AND and mask bits 0,2,4,6,8
@@ -406,6 +404,9 @@ static inline uint32_t adj_and_pack_10bit(uint32_t x)
 
   return a;
 }
+
+// figure out which parts are 25G and which are not, for 12 channel parts
+// sets ff_bitmask_args[0].ffpart_bit_mask and ff_bitmask_args[2].ffpart_bit_mask
 uint32_t ff_map_25gb_parts(void)
 {
   static_assert(FF_VENDOR_COUNT_FFDAQ == FF_VENDOR_COUNT_FF12, "FF_VENDOR_COUNT_FFDAQ != FF_VENDOR_COUNT_FF12");
@@ -460,17 +461,17 @@ uint32_t ff_map_25gb_parts(void)
   uint16_t pair_mask_high = adj_and_pack_10bit((ff_25gb_parts >> 16) & 0xFFU); // top two bytes
   log_info(LOG_SERVICE, "F1 25G pair mask:  0x%02x\r\n", pair_mask_low);
   log_info(LOG_SERVICE, "F2 25G pair mask:  0x%02x\r\n", pair_mask_high);
-  // check if the 4v switch settings match
-  // F1
-  if (pair_mask_low != f1_ff12xmit_4v0_sel) {
-    log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
-              f1_ff12xmit_4v0_sel, pair_mask_low);
-  }
-  // F2
-  if (pair_mask_high != f2_ff12xmit_4v0_sel) {
-    log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
-              f2_ff12xmit_4v0_sel, pair_mask_high);
-  }
+  // // check if the 4v switch settings match
+  // // F1
+  // if (pair_mask_low != f1_ff12xmit_4v0_sel) {
+  //   log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
+  //             f1_ff12xmit_4v0_sel, pair_mask_low);
+  // }
+  // // F2
+  // if (pair_mask_high != f2_ff12xmit_4v0_sel) {
+  //   log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
+  //             f2_ff12xmit_4v0_sel, pair_mask_high);
+  // }
   uint32_t ff_25gb_pairs = (pair_mask_high << 16) | pair_mask_low;
   return ff_25gb_pairs;
 }
