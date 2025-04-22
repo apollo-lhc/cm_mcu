@@ -475,4 +475,44 @@ uint32_t ff_map_25gb_parts(void)
   uint32_t ff_25gb_pairs = (pair_mask_high << 16) | pair_mask_low;
   return ff_25gb_pairs;
 }
+
+static inline uint32_t pack_10bit(uint32_t x)
+{
+  // mask bottom 10 bits
+  uint32_t a = x & 0x3FF;
+
+  // Pack bits 0,2,4,6,8 to 0,1,2,3,4
+  a = ((a >> 0) & 0x01) |
+      ((a >> 1) & 0x02) |
+      ((a >> 2) & 0x04) |
+      ((a >> 3) & 0x08) |
+      ((a >> 4) & 0x10);
+
+  return a;
+}
+
+#ifdef REV2
+#define FF_12CH_TX_MASK 0x55U // 12 channel tx indices
+#elif defined(REV3)
+#define FF_12CH_TX_MASK 0x15U // 12 channel tx indices
+#else
+#error "REV2 or REV3 not defined"
+#endif // 
+
+uint16_t getFF25GTxMask(int device)
+{
+  uint16_t mask = ff_bitmask_args[0].ffpart_bit_mask;
+  if (device == 1) {
+    mask = ff_bitmask_args[2].ffpart_bit_mask;
+  }
+  else if (device >1 || device <0 ) {
+    log_error(LOG_SERVICE, "Invalid device %d\r\n", device);
+  }
+  mask &=  FF_12CH_TX_MASK; // Mask to select 12 channel tx indices
+  // suppress empty slots from Rx bits
+  mask = pack_10bit(mask);
+
+  return mask;
+}
+
 #endif
