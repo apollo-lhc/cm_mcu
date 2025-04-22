@@ -127,6 +127,9 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/ADCMonitorTask.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/PowerI2CCommands.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/ClockI2CCommands.o
 ${COMPILER}/prod_test.axf: ${COMPILER}/I2CCommunication.o
+${COMPILER}/prod_test.axf: ${COMPILER}/FireflyI2CCommands.o
+${COMPILER}/prod_test.axf: ${COMPILER}/EEPROMI2CCommands.o
+${COMPILER}/prod_test.axf: ${COMPILER}/FPGAI2CCommands.o
 #${COMPILER}/prod_test.axf: ${COMPILER}/BoardCommands.o
 
 
