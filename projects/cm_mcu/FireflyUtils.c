@@ -499,6 +499,7 @@ uint16_t getFF12Ch25GTxMask(int device)
   }
   else if (device > 1 || device < 0) {
     log_error(LOG_SERVICE, "Invalid device %d\r\n", device);
+    return 0x0U;
   }
   mask &= FF_12CH_TX_MASK; // Mask to select 12 channel tx indices
   // suppress empty slots from Rx bits
