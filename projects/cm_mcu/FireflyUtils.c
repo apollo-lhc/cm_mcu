@@ -390,13 +390,27 @@ uint8_t getFFpartbit(const uint8_t i)
   return val;
 }
 
+static inline uint32_t adj_and_pack_10bit(uint32_t x)
+{
+  // Perform adjacent bitwise AND and mask bits 0,2,4,6,8
+  uint32_t a = x & (x >> 1) & 0x155;
+
+  // Pack bits 0,2,4,6,8 to 0,1,2,3,4
+  a = ((a >> 0) & 0x01) |
+      ((a >> 1) & 0x02) |
+      ((a >> 2) & 0x04) |
+      ((a >> 3) & 0x08) |
+      ((a >> 4) & 0x10);
+
+  return a;
+}
+
 // figure out which parts are 25G and which are not, for 12 channel parts
 // sets ff_bitmask_args[0].ffpart_bit_mask and ff_bitmask_args[2].ffpart_bit_mask
 uint32_t ff_map_25gb_parts(void)
 {
   static_assert(FF_VENDOR_COUNT_FFDAQ == FF_VENDOR_COUNT_FF12, "FF_VENDOR_COUNT_FFDAQ != FF_VENDOR_COUNT_FF12");
   uint32_t ff_25gb_parts = 0U;
-  uint32_t ff_25gb_pairs = 0U;
   for (int i = 0; i < NFIREFLIES; ++i) {
     if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
       continue;
@@ -423,52 +437,75 @@ uint32_t ff_map_25gb_parts(void)
       log_error(LOG_SERVICE, "Error reading vendor string for FF %d\r\n", i);
       // what to do? FIXME: return error?
     }
-    log_info(LOG_SERVICE, "F%d FF%02d: %s\r\n", i / 10 + 1, i % 10, name);
+    log_info(LOG_SERVICE, "F%d FF%02d: %s\r\n", i / NFIREFLIES_F1 + 1, i % NFIREFLIES_F1,
+             name);
     // skip 4 channel parts
     if (type == DEVICE_25G4) {
       continue;
     }
     if (strstr(name, "14") == NULL &&
         strstr(name, "CRRNB") == NULL && strstr(name, "CERNB") == NULL) {
-      ff_25gb_parts |= (0x1U << i);
-      int ipair = i / 2; // counts pairs of 12 channel devices
-      ff_25gb_pairs |= (0x1U << ipair);
+      int shiftval = i % NFIREFLIES_F1 + (i >= NFIREFLIES_F1 ? 16 : 0);
+      ff_25gb_parts |= (0x1U << shiftval);
     }
   }
   log_info(LOG_SERVICE, "ff 25G12 mask: 0x%08lx\r\n", ff_25gb_parts);
   // these masks have one bit per pair of receiver/transceiver
-#ifdef REV2
-  ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_parts & 0x3fU; // six bits
-  ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_parts >> 10) & 0x3fU;
-#elif defined(REV3)
-  ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_parts & 0xffU; // eight bits
-  ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_parts >> 10) & 0xffU;
-#endif
+  ff_bitmask_args[0].ffpart_bit_mask = ff_25gb_parts & 0xFFU;         // bottom two bytes
+  ff_bitmask_args[2].ffpart_bit_mask = (ff_25gb_parts >> 16) & 0xFFU; // top two bytes
   // dump the masks
   log_info(LOG_SERVICE, "F1 25G12 mask: 0x%02x\r\n", ff_bitmask_args[0].ffpart_bit_mask);
   log_info(LOG_SERVICE, "F2 25G12 mask: 0x%02x\r\n", ff_bitmask_args[2].ffpart_bit_mask);
-  log_info(LOG_SERVICE, "Fx 25G12 pair mask: 0x%02x\r\n", ff_25gb_pairs);
   // pair mask into two parts
-#ifdef REV2
-  uint32_t pair_mask_low = ff_25gb_pairs & 0x7U;         // 3 bits
-  uint32_t pair_mask_high = (ff_25gb_pairs >> 5) & 0x7U; // 3 pairs of Tx/Rx + 2 XCVRs = 5 shifts
-#elif defined(REV3)
-  uint32_t pair_mask_low = ff_25gb_pairs & 0xFU;         // 4 bits
-  uint32_t pair_mask_high = (ff_25gb_pairs >> 6) & 0xFU; // 4 pairs of Tx/Rx + 2 XCVRs = 6 shifts
-#endif // Rev2 or 3
-  log_info(LOG_SERVICE, "F1 25G pair mask: 0x%02x\r\n", pair_mask_low);
-  log_info(LOG_SERVICE, "F2 25G pair mask: 0x%02x\r\n", pair_mask_high);
-  // check if the 4v switch settings match
-  // F1
-  if (pair_mask_low != f1_ff12xmit_4v0_sel) {
-    log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
-              f1_ff12xmit_4v0_sel, pair_mask_low);
-  }
-  // F2
-  if (pair_mask_high != f2_ff12xmit_4v0_sel) {
-    log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
-              f2_ff12xmit_4v0_sel, pair_mask_high);
-  }
+  uint16_t pair_mask_low = adj_and_pack_10bit(ff_25gb_parts & 0xFFU);          // bottom two bytes
+  uint16_t pair_mask_high = adj_and_pack_10bit((ff_25gb_parts >> 16) & 0xFFU); // top two bytes
+  log_info(LOG_SERVICE, "F1 25G pair mask:  0x%02x\r\n", pair_mask_low);
+  log_info(LOG_SERVICE, "F2 25G pair mask:  0x%02x\r\n", pair_mask_high);
+  uint32_t ff_25gb_pairs = (pair_mask_high << 16) | pair_mask_low;
   return ff_25gb_pairs;
 }
-#endif
+
+static inline uint32_t pack_10bit(uint32_t x)
+{
+  // mask bottom 10 bits
+  uint32_t a = x & 0x3FF;
+
+  // Pack bits 0,2,4,6,8 to 0,1,2,3,4
+  a = ((a >> 0) & 0x01) |
+      ((a >> 1) & 0x02) |
+      ((a >> 2) & 0x04) |
+      ((a >> 3) & 0x08) |
+      ((a >> 4) & 0x10);
+
+  return a;
+}
+
+#ifdef REV2
+#define FF_12CH_TX_MASK 0x15U // 12 channel tx indices
+#elif defined(REV3)
+#define FF_12CH_TX_MASK 0x55U // 12 channel tx indices
+#else
+#error "REV2 or REV3 not defined"
+#endif // REV2
+
+// get the 12 channel 25G Tx mask. Device is 0 for F1 and 1 for F2
+// assumes that ff_map_25gb_parts has been called first
+uint16_t getFF12Ch25GTxMask(int device)
+{
+  // for historical reasons these are stored at indices 0 and 2, not 0 and 1
+  uint16_t mask = ff_bitmask_args[0].ffpart_bit_mask;
+  if (device == 1) {
+    mask = ff_bitmask_args[2].ffpart_bit_mask;
+  }
+  else if (device > 1 || device < 0) {
+    log_error(LOG_SERVICE, "Invalid device %d\r\n", device);
+    return 0x0U;
+  }
+  mask &= FF_12CH_TX_MASK; // Mask to select 12 channel tx indices
+  // suppress empty slots from Rx bits
+  mask = pack_10bit(mask);
+
+  return mask;
+}
+
+#endif // end REV2 or REV3

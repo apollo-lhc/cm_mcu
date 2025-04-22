@@ -404,19 +404,13 @@ void PowerSupplyTask(void *parameters)
         else {
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
-          uint32_t ff_25gb_pairs = ff_map_25gb_parts();
-          // FIXME code below is also in ff_map_25g_parts()
+          (void)ff_map_25gb_parts();
           // FIXME when no FF are installed the code requires the 4V switch to be off for no good reason
-#ifdef REV2
-          uint32_t pair_mask_low = ff_25gb_pairs & 0x7U;         // 3 bits
-          uint32_t pair_mask_high = (ff_25gb_pairs >> 5) & 0x7U; // 3 pairs of Tx/Rx + 2 XCVRs = 5 shifts
-#elif defined(REV3)
-          uint32_t pair_mask_low = ff_25gb_pairs & 0xFU;         // 4 bits
-          uint32_t pair_mask_high = (ff_25gb_pairs >> 6) & 0xFU; // 4 pairs of Tx/Rx + 2 XCVRs = 6 shifts
-#endif
+          uint32_t pair_mask_f1 = getFF12Ch25GTxMask(0); // F1
+          uint32_t pair_mask_f2 = getFF12Ch25GTxMask(1); // F2
 
           UBaseType_t ffmask[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
-          if ((f1_ff12xmit_4v0_sel == pair_mask_low) && (f2_ff12xmit_4v0_sel == pair_mask_high)) {
+          if ((f1_ff12xmit_4v0_sel == pair_mask_f1) && (f2_ff12xmit_4v0_sel == pair_mask_f2)) {
             int ret = enable_3v8(ffmask, false); // enable v38
             if (ret != 0) {
               log_error(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
@@ -432,7 +426,7 @@ void PowerSupplyTask(void *parameters)
           }
           else {
             log_error(LOG_PWRCTL, "FF 4V0 part check failed: %x!=%x||%x!=%x, power off\r\n",
-                      f1_ff12xmit_4v0_sel, pair_mask_low, f2_ff12xmit_4v0_sel, pair_mask_high);
+                      f1_ff12xmit_4v0_sel, pair_mask_f1, f2_ff12xmit_4v0_sel, pair_mask_f2);
             int ret = enable_3v8(ffmask, true); // disable v38
             if (ret == 0)
               log_info(LOG_PWRCTL, "disable 3v8\r\n");

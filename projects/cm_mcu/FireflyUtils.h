@@ -73,6 +73,7 @@ uint8_t getFFpartbit(const uint8_t i);
 #if defined(REV2) || defined(REV3)
 void getFFpart(void);
 uint32_t ff_map_25gb_parts(void);
+uint16_t getFF12Ch25GTxMask(int device);
 #endif
 
 uint8_t getFFstatus(const uint8_t i);
