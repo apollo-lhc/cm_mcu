@@ -461,17 +461,6 @@ uint32_t ff_map_25gb_parts(void)
   uint16_t pair_mask_high = adj_and_pack_10bit((ff_25gb_parts >> 16) & 0xFFU); // top two bytes
   log_info(LOG_SERVICE, "F1 25G pair mask:  0x%02x\r\n", pair_mask_low);
   log_info(LOG_SERVICE, "F2 25G pair mask:  0x%02x\r\n", pair_mask_high);
-  // // check if the 4v switch settings match
-  // // F1
-  // if (pair_mask_low != f1_ff12xmit_4v0_sel) {
-  //   log_error(LOG_SERVICE, "4v switch and part mismatch F1: 0x%x != 0x%x\r\n",
-  //             f1_ff12xmit_4v0_sel, pair_mask_low);
-  // }
-  // // F2
-  // if (pair_mask_high != f2_ff12xmit_4v0_sel) {
-  //   log_error(LOG_SERVICE, "4v switch and part mismatch F2: 0x%x != 0x%x\r\n",
-  //             f2_ff12xmit_4v0_sel, pair_mask_high);
-  // }
   uint32_t ff_25gb_pairs = (pair_mask_high << 16) | pair_mask_low;
   return ff_25gb_pairs;
 }
@@ -492,27 +481,30 @@ static inline uint32_t pack_10bit(uint32_t x)
 }
 
 #ifdef REV2
-#define FF_12CH_TX_MASK 0x55U // 12 channel tx indices
-#elif defined(REV3)
 #define FF_12CH_TX_MASK 0x15U // 12 channel tx indices
+#elif defined(REV3)
+#define FF_12CH_TX_MASK 0x55U // 12 channel tx indices
 #else
 #error "REV2 or REV3 not defined"
-#endif // 
+#endif // REV2
 
-uint16_t getFF25GTxMask(int device)
+// get the 12 channel 25G Tx mask. Device is 0 for F1 and 1 for F2
+// assumes that ff_map_25gb_parts has been called first
+uint16_t getFF12Ch25GTxMask(int device)
 {
+  // for historical reasons these are stored at indices 0 and 2, not 0 and 1
   uint16_t mask = ff_bitmask_args[0].ffpart_bit_mask;
   if (device == 1) {
     mask = ff_bitmask_args[2].ffpart_bit_mask;
   }
-  else if (device >1 || device <0 ) {
+  else if (device > 1 || device < 0) {
     log_error(LOG_SERVICE, "Invalid device %d\r\n", device);
   }
-  mask &=  FF_12CH_TX_MASK; // Mask to select 12 channel tx indices
+  mask &= FF_12CH_TX_MASK; // Mask to select 12 channel tx indices
   // suppress empty slots from Rx bits
   mask = pack_10bit(mask);
 
   return mask;
 }
 
-#endif
+#endif // end REV2 or REV3
