@@ -262,7 +262,8 @@ config:
       - F2_P3_Rx12 
       - F2_P4_Rx12
     postfixes:
-      - OptPow_Ch1 # samtech numbers these 1-12
+      - OptPow_Ch0
+      - OptPow_Ch1 
       - OptPow_Ch2
       - OptPow_Ch3
       - OptPow_Ch4
@@ -273,7 +274,6 @@ config:
       - OptPow_Ch9
       - OptPow_Ch10
       - OptPow_Ch11
-      - OptPow_Ch12
   - name: firefly_optpow_4
     start: 358
     count: 16
@@ -287,7 +287,7 @@ config:
       - F1_P6_XCVR4 
       - F2_P5_XCVR4 
       - F2_P6_XCVR4 
-    postfixes:  # samtech numbers these 0-3
+    postfixes:  
       - OptPow_Ch0
       - OptPow_Ch1
       - OptPow_Ch2
