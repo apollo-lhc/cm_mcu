@@ -22,20 +22,20 @@ config:
       - F1_P2_Rx12
       - F1_P3_Tx12
       - F1_P3_Rx12 
-      - F1_P4_XCVR4
+      - F1_P4_Tx12
+      - F1_P4_Rx12
       - F1_P5_XCVR4 
       - F1_P6_XCVR4
-      - F1_P7_XCVR4
       - F2_P1_Tx12
       - F2_P1_Rx12 
       - F2_P2_Tx12 
       - F2_P2_Rx12 
       - F2_P3_Tx12 
       - F2_P3_Rx12 
-      - F2_P4_XCVR4
+      - F2_P4_Tx12
+      - F2_P4_Rx12
       - F2_P5_XCVR4 
       - F2_P6_XCVR4
-      - F2_P7_XCVR4
     postfixes: 
       - Temp_C
       - OptPow
@@ -243,5 +243,52 @@ config:
       - F2_FFLDAQ
     postfixes:
       - IS_FF25Gbs
-      - IS_PRESENT
-      
+      - IS_PRESENT      
+  - name: firefly_optpow_12
+    start: 262
+    count: 96
+    mcu_call: firefly_optpow12
+    mcu_extra_call: null
+    type: uint16_t
+    extra: Table=CM_OPTPOW12_MON;Status=1
+    default_col: null
+    names:
+      - F1_P1_Rx12 
+      - F1_P2_Rx12 
+      - F1_P3_Rx12 
+      - F1_P4_Rx12 
+      - F2_P1_Rx12 
+      - F2_P2_Rx12 
+      - F2_P3_Rx12 
+      - F2_P4_Rx12
+    postfixes:
+      - OptPow_Ch1 # samtech numbers these 1-12
+      - OptPow_Ch2
+      - OptPow_Ch3
+      - OptPow_Ch4
+      - OptPow_Ch5
+      - OptPow_Ch6
+      - OptPow_Ch7
+      - OptPow_Ch8
+      - OptPow_Ch9
+      - OptPow_Ch10
+      - OptPow_Ch11
+      - OptPow_Ch12
+  - name: firefly_optpow_4
+    start: 358
+    count: 16
+    mcu_call: firefly_optpow4
+    mcu_extra_call: null
+    type: uint16_t
+    extra: Table=CM_OPTPOW4_MON;Status=1
+    default_col: null
+    names:
+      - F1_P5_XCVR4 
+      - F1_P6_XCVR4 
+      - F2_P5_XCVR4 
+      - F2_P6_XCVR4 
+    postfixes:  # samtech numbers these 0-3
+      - OptPow_Ch0
+      - OptPow_Ch1
+      - OptPow_Ch2
+      - OptPow_Ch3

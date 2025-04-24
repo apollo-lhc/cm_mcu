@@ -315,49 +315,49 @@ float getFFavgoptpow(const uint8_t i)
 // However, trial and error shows that the 4 channel part
 // does need byte swapping.
 #define SWAP_BYTES(x) __builtin_bswap16(x)
-float getFFoptpow(const uint8_t i, const uint8_t ch)
+float getFFoptpow(const uint8_t whichFirefly, const uint8_t ch)
 {
-  configASSERT(i < NFIREFLIES);
+  configASSERT(whichFirefly < NFIREFLIES);
   configASSERT(ch < 12);
   float val;
   // if i is for a 4 channel part and you ask for channel 5
   // or greater, well, good luck then. It's just zero.
   switch (ch) {
     case 0:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH1_data(whichFirefly));
       break;
     case 1:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH2_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH2_data(whichFirefly));
       break;
     case 2:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH3_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH3_data(whichFirefly));
       break;
     case 3:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH4_data(whichFirefly));
       break;
     case 4:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH5_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH5_data(whichFirefly));
       break;
     case 5:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH6_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH6_data(whichFirefly));
       break;
     case 6:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH7_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH7_data(whichFirefly));
       break;
     case 7:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH8_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH8_data(whichFirefly));
       break;
     case 8:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH9_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH9_data(whichFirefly));
       break;
     case 9:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH10_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH10_data(whichFirefly));
       break;
     case 10:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH11_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH11_data(whichFirefly));
       break;
     case 11:
-      val = SWAP_BYTES(get_FF_OPT_POWER_CH12_data(i));
+      val = SWAP_BYTES(get_FF_OPT_POWER_CH12_data(whichFirefly));
       break;
     default:
       log_warn(LOG_SERVICE, "%s: invalid channel %d\r\n", __func__, ch);
