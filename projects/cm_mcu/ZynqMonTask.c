@@ -413,10 +413,18 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
   }
 }
 
-#define ZM_N_OPTICAL_CHANNELS 12
+#define ZM_N_OPTICAL_FF12_NCHANNELS 12
+#define ZM_N_OPTICAL_FF4_NCHANNELS 4
+#ifdef REV2 
 #define ZM_N_OPTICAL_FF12_PER_FPGA 3
+#define ZM_N_OPTICAL_FF4_PER_FPGA  4
+#define ZM_OPTICAL_FF4_START 6
+#else // REV3 due to the enclosing ifdef 
+#define ZM_N_OPTICAL_FF12_PER_FPGA 4
+#define ZM_N_OPTICAL_FF4_PER_FPGA  2
+#define ZM_OPTICAL_FF4_START 8
+#endif
 #define ZM_N_OPTICAL_FF12 (2*ZM_N_OPTICAL_FF12_PER_FPGA)
-#define ZM_N_OPTICAL_FF4_PER_FPGA 2
 #define ZM_N_OPTICAL_FF4 (2*ZM_N_OPTICAL_FF4_PER_FPGA)
 void zm_set_firefly_optpow12(struct zynqmon_data_t data[], int start)
 {
@@ -424,10 +432,11 @@ void zm_set_firefly_optpow12(struct zynqmon_data_t data[], int start)
   int ll = 0;
   for (int j = 0; j < ZM_N_OPTICAL_FF12; ++j) { // loop over ff structs
     bool stale = isFFStale();
+    // where in the range of NFIREFLIES_F1 to NFIREFLIES_F2 is this device?
     int whichTxFF = j%ZM_N_OPTICAL_FF12_PER_FPGA*2 
-                    + NFIREFLIES_F1*((int)j/ZM_N_OPTICAL_FF12_PER_FPGA); // 0, 2, 4 or 10, 12, 14
+                    + NFIREFLIES_F1*((int)j/ZM_N_OPTICAL_FF12_PER_FPGA); 
     // loop over the channels
-    for (int k = 0; k < ZM_N_OPTICAL_CHANNELS; ++k) {
+    for (int k = 0; k < ZM_N_OPTICAL_FF12_NCHANNELS; ++k) {
       if ( stale) {
         data[ll].data.us = 0xff; // special stale value
       }
@@ -447,12 +456,12 @@ void zm_set_firefly_optpow4(struct zynqmon_data_t data[], int start)
   int ll = 0;
   for (int j = 0; j < ZM_N_OPTICAL_FF4; ++j) { // loop over ff structs
     bool stale = isFFStale();
-    // 8, 9 or 18, 19
-    int whichTxFF = 8 + j%ZM_N_OPTICAL_FF4_PER_FPGA*2 
+    // where in the range of NFIREFLIES_F1 to NFIREFLIES_F2 is this device?
+    int whichTxFF = ZM_OPTICAL_FF4_START + j%ZM_N_OPTICAL_FF4_PER_FPGA*2 
                     + NFIREFLIES_F1*((int)j/ZM_N_OPTICAL_FF4_PER_FPGA);
     
     // loop over the channels
-    for (int k = 0; k < ZM_N_OPTICAL_CHANNELS; ++k) {
+    for (int k = 0; k < ZM_N_OPTICAL_FF4_NCHANNELS; ++k) {
       if ( stale) {
         data[ll].data.us = 0xff; // special stale value
       }
