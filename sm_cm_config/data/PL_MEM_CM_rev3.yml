@@ -253,14 +253,14 @@ config:
     extra: Table=CM_OPTPOW12_MON;Status=1
     default_col: null
     names:
-      - F1_P1_Rx12 
-      - F1_P2_Rx12 
-      - F1_P3_Rx12 
-      - F1_P4_Rx12 
-      - F2_P1_Rx12 
-      - F2_P2_Rx12 
-      - F2_P3_Rx12 
-      - F2_P4_Rx12
+      - FF1_P1_Rx12 
+      - FF1_P2_Rx12 
+      - FF1_P3_Rx12 
+      - FF1_P4_Rx12 
+      - FF2_P1_Rx12 
+      - FF2_P2_Rx12 
+      - FF2_P3_Rx12 
+      - FF2_P4_Rx12
     postfixes:
       - OptPow_Ch0
       - OptPow_Ch1 
@@ -283,10 +283,10 @@ config:
     extra: Table=CM_OPTPOW4_MON;Status=1
     default_col: null
     names:
-      - F1_P5_XCVR4 
-      - F1_P6_XCVR4 
-      - F2_P5_XCVR4 
-      - F2_P6_XCVR4 
+      - FF1_P5_XCVR4 
+      - FF1_P6_XCVR4 
+      - FF2_P5_XCVR4 
+      - FF2_P6_XCVR4 
     postfixes:  
       - OptPow_Ch0
       - OptPow_Ch1
