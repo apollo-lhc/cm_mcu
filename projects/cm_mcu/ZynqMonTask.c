@@ -410,6 +410,36 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
     }
     data[ll].sensor = ll + start;
     ++ll;
+    // LOS_ALARM
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_LOS_ALARM_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "LOS_ALARM? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    // CDR_LOL_ALARM
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_CDR_LOL_ALARM_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "CDR_LOL_ALARM? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    // CDR_ENABLE
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_CDR_ENABLE_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "CDR_ENABLE? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
   }
 }
 
