@@ -39,7 +39,7 @@ jobs:
         revision: ["REV1", "REV2", "REV3"]
     steps:
       - name: Download workspace
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: workspace
 
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
