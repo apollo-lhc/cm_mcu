@@ -46,12 +46,13 @@ jobs:
           make ${{ matrix.revision }}=1 release
           mv PL_MEM_CM_${rev_lower}.xml ${{ github.ref_name }}/${{ matrix.revision }}
           mv CornellCM_MCU.tar.gz ${{ github.ref_name }}/${{ matrix.revision }}
-          tar zcvpf cm_mcu_${rev_lower}_${{ github.ref_name }}.tar.gz ${{ github.ref_name }}/${{ matrix.revision }}
+          tar zcvpf cm_mcu_${rev_lower}.tar.gz ${{ github.ref_name }}/${{ matrix.revision }}
+          mv cm_mcu_${rev_lower}.tar.gz ${{ github.ref_name }}/${{ matrix.revision }}
 
       - name: Upload build artifacts for ${{ matrix.revision }}
         uses: actions/upload-artifact@v4
         with:
-          name: cm_mcu-${{ matrix.revision }}-${{ github.ref_name }}
+          name: cm_mcu-${{ matrix.revision }}
           path: ${{ github.ref_name }}/${{ matrix.revision }}
 
   release:
