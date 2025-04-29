@@ -12,6 +12,7 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 #trap 'echo "\"${last_command}\" command failed with exit code $?."' EXIT
 trap 'echo "\"${last_command}\" command failed with exit code $?."' ERR
 
+unset REV1 REV2 REV3
 
 make clean
 make -j REV1=1  > /dev/null

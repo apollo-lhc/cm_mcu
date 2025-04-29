@@ -410,7 +410,101 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
     }
     data[ll].sensor = ll + start;
     ++ll;
+    // LOS_ALARM
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_LOS_ALARM_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "LOS_ALARM? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    // CDR_LOL_ALARM
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_CDR_LOL_ALARM_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "CDR_LOL_ALARM? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    // CDR_ENABLE
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_CDR_ENABLE_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "CDR_ENABLE? for ff argv %d: 0x%02x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
   }
+}
+
+#define ZM_N_OPTICAL_FF12_NCHANNELS 12
+#define ZM_N_OPTICAL_FF4_NCHANNELS  4
+#ifdef REV2
+#define ZM_N_OPTICAL_FF12_PER_FPGA 3
+#define ZM_N_OPTICAL_FF4_PER_FPGA  4
+#define ZM_OPTICAL_FF12_START      1
+#define ZM_OPTICAL_FF4_START       6
+#else // REV3 due to the enclosing ifdef
+#define ZM_N_OPTICAL_FF12_PER_FPGA 4
+#define ZM_N_OPTICAL_FF4_PER_FPGA  2
+#define ZM_OPTICAL_FF12_START      1
+#define ZM_OPTICAL_FF4_START       8
+#endif
+#define ZM_N_OPTICAL_FF12 (2 * ZM_N_OPTICAL_FF12_PER_FPGA)
+#define ZM_N_OPTICAL_FF4  (2 * ZM_N_OPTICAL_FF4_PER_FPGA)
+void zm_set_firefly_optpow12(struct zynqmon_data_t data[], int start)
+{
+  // received optical power for the firefly 12 channel part, 25G only
+  int ll = 0;
+  for (int j = 0; j < ZM_N_OPTICAL_FF12; ++j) { // loop over ff structs
+    bool stale = isFFStale();
+    // where in the range of NFIREFLIES_F1 to NFIREFLIES_F2 is this device?
+    int whichTxFF = ZM_OPTICAL_FF12_START + (j % ZM_N_OPTICAL_FF12_PER_FPGA) * 2 + NFIREFLIES_F1 * ((int)j / ZM_N_OPTICAL_FF12_PER_FPGA);
+    log_debug(LOG_SERVICE, "whichTxFF12 %d\r\n", whichTxFF);
+    // loop over the channels
+    for (int k = 0; k < ZM_N_OPTICAL_FF12_NCHANNELS; ++k) {
+      if (stale) {
+        data[ll].data.us = 0xff; // special stale value
+      }
+      else {
+        data[ll].data.us = (uint16_t)getFFoptpow(whichTxFF, k); // sensor value and type
+        log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, data[ll].data.us);
+      }
+      data[ll].sensor = ll + start;
+      ++ll;
+    } // loop over channels
+  }   // loop over Tx firefly devices
+}
+
+void zm_set_firefly_optpow4(struct zynqmon_data_t data[], int start)
+{
+  // received optical power for the firefly 4 channel part, 25G only
+  int ll = 0;
+  for (int j = 0; j < ZM_N_OPTICAL_FF4; ++j) { // loop over ff structs
+    bool stale = isFFStale();
+    // where in the range of NFIREFLIES_F1 to NFIREFLIES_F2 is this device?
+    int whichTxFF = ZM_OPTICAL_FF4_START + (j % ZM_N_OPTICAL_FF4_PER_FPGA) + NFIREFLIES_F1 * ((int)j / ZM_N_OPTICAL_FF4_PER_FPGA);
+    log_debug(LOG_SERVICE, "whichTxFF4  %d\r\n", whichTxFF);
+
+    // loop over the channels
+    for (int k = 0; k < ZM_N_OPTICAL_FF4_NCHANNELS; ++k) {
+      if (stale) {
+        data[ll].data.us = 0xff; // special stale value
+      }
+      else {
+        data[ll].data.us = (uint16_t)getFFoptpow(whichTxFF, k); // sensor value and type
+        log_debug(LOG_SERVICE, "opt power ? for ff %d: 0x%02x\r\n", j, data[ll].data.us);
+      }
+      data[ll].sensor = ll + start;
+      ++ll;
+    } // loop over channels
+  }   // loop over Tx firefly devices
 }
 
 #endif // REV2 or 3

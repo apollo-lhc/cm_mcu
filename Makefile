@@ -49,11 +49,11 @@ release:
 
 check-for-pr: format
 	@if [ 'x${VERBOSE}' = x ]; then \
-		echo "  SH buildall.sh"; \
+		echo "  SH build_all.sh"; \
 	else \
 		echo "  ./build_all.sh"; \
 	fi
-	@./buildall.sh
+	@./build_all.sh
 
 
 # 2nd dollar sign in grep command is to pass along a single dollar sign to egrep itself
