@@ -12,31 +12,16 @@ on:
         default: "false"
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Code checkout
-        uses: actions/checkout@v4
-
-
-      - name: Upload workspace
-        uses: actions/upload-artifact@v4
-        with:
-          name: workspace
-          path: |
-            ./
-
   build:
-    needs: setup
     runs-on: ubuntu-latest
     strategy:
       matrix:
         revision: ["REV1", "REV2", "REV3"]
     steps:
-      - name: Download workspace
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          name: workspace
+          fetch-depth: 0
 
       - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
         uses: carlosperate/arm-none-eabi-gcc-action@v1
