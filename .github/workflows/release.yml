@@ -51,19 +51,19 @@ jobs:
           cd build
           make clean ${{ matrix.revision }}=1
           make -k NO_ECN001=1 ${{ matrix.revision }}=1
-          cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001_${{ matrix.revision | lower }}.bin
-          cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_${{ matrix.revision | lower }}.axf
+          cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001_${{ toLower(matrix.revision) }}.bin
+          cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_${{ toLower(matrix.revision) }}.axf
           make clean ${{ matrix.revision }}=1
           make -k ${{ matrix.revision }}=1
           mkdir -p ${{ github.ref_name }}/${{ matrix.revision }}
-          cp projects/cm_mcu/gcc/cm_mcu.bin ${{ github.ref_name }}/${{ matrix.revision }}/cm_mcu_${{ matrix.revision | lower }}.bin
-          cp projects/cm_mcu/gcc/cm_mcu.axf ${{ github.ref_name }}/${{ matrix.revision }}/cm_mcu_${{ matrix.revision | lower }}.axf
-          cp projects/boot_loader/gcc/bl_main.bin ${{ github.ref_name }}/${{ matrix.revision }}/bl_main_${{ matrix.revision | lower }}.bin
-          cp projects/boot_loader/gcc/bl_main.axf ${{ github.ref_name }}/${{ matrix.revision }}/bl_main_${{ matrix.revision | lower }}.axf
+          cp projects/cm_mcu/gcc/cm_mcu.bin ${{ github.ref_name }}/${{ matrix.revision }}/cm_mcu_${{ toLower(matrix.revision) }}.bin
+          cp projects/cm_mcu/gcc/cm_mcu.axf ${{ github.ref_name }}/${{ matrix.revision }}/cm_mcu_${{ toLower(matrix.revision) }}.axf
+          cp projects/boot_loader/gcc/bl_main.bin ${{ github.ref_name }}/${{ matrix.revision }}/bl_main_${{ toLower(matrix.revision) }}.bin
+          cp projects/boot_loader/gcc/bl_main.axf ${{ github.ref_name }}/${{ matrix.revision }}/bl_main_${{ toLower(matrix.revision) }}.axf
           make ${{ matrix.revision }}=1 release
-          mv PL_MEM_CM_${{ matrix.revision | lower }}.xml ${{ github.ref_name }}/${{ matrix.revision }}
+          mv PL_MEM_CM_${{ toLower(matrix.revision) }}.xml ${{ github.ref_name }}/${{ matrix.revision }}
           mv CornellCM_MCU.tar.gz ${{ github.ref_name }}/${{ matrix.revision }}
-          tar zcvpf cm_mcu_${{ matrix.revision | lower }}_${{ github.ref_name }}.tar.gz ${{ github.ref_name }}/${{ matrix.revision }}
+          tar zcvpf cm_mcu_${{ toLower(matrix.revision) }}_${{ github.ref_name }}.tar.gz ${{ github.ref_name }}/${{ matrix.revision }}
 
       - name: Upload build artifacts for ${{ matrix.revision }}
         uses: actions/upload-artifact@v3
