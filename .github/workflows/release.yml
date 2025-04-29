@@ -38,21 +38,21 @@ jobs:
           cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_${rev_lower}.axf
           make clean ${{ matrix.revision }}=1
           make -k ${{ matrix.revision }}=1
-          mkdir -p ${rev_lower}
-          cp projects/cm_mcu/gcc/cm_mcu.bin ${rev_lower}/cm_mcu_${rev_lower}.bin
-          cp projects/cm_mcu/gcc/cm_mcu.axf ${rev_lower}/cm_mcu_${rev_lower}.axf
-          cp projects/boot_loader/gcc/bl_main.bin ${rev_lower}/bl_main_${rev_lower}.bin
-          cp projects/boot_loader/gcc/bl_main.axf ${rev_lower}/bl_main_${rev_lower}.axf
+          mkdir -p ${rev}
+          cp projects/cm_mcu/gcc/cm_mcu.bin ${rev}/cm_mcu_${rev_lower}.bin
+          cp projects/cm_mcu/gcc/cm_mcu.axf ${rev}/cm_mcu_${rev_lower}.axf
+          cp projects/boot_loader/gcc/bl_main.bin ${rev}/bl_main_${rev_lower}.bin
+          cp projects/boot_loader/gcc/bl_main.axf ${rev}/bl_main_${rev_lower}.axf
           make ${{ matrix.revision }}=1 release
-          mv PL_MEM_CM_${rev_lower}.xml ${rev_lower}
-          mv CornellCM_MCU.tar.gz ${rev_lower}
-          tar zcvpf cm_mcu_${rev_lower}.tar.gz ${rev_lower}
-          mv cm_mcu_${rev_lower}.tar.gz ${rev_lower}
+          mv PL_MEM_CM_${rev_lower}.xml ${rev}
+          mv CornellCM_MCU.tar.gz ${rev}
+          tar zcvpf cm_mcu_${rev_lower}.tar.gz ${rev}
+          mv cm_mcu_${rev_lower}.tar.gz ${rev}
       - name: Upload build artifacts for ${{ matrix.revision }}
         uses: actions/upload-artifact@v4
         with:
           name: cm_mcu-${{ matrix.revision }}
-          path: ${rev_lower}
+          path: ${{ matrix.revision }}
   release:
     needs: build
     runs-on: ubuntu-latest
