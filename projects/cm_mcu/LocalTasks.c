@@ -1183,9 +1183,11 @@ int init_load_clk(int clk_n)
 
   char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
   uint8_t i2c_addrs = CLOCK_CHIP_COMMON_I2C_ADDR; // i2c address of a clock chip
-  if (clk_n == 0)
+#ifdef REV2 // only Rev2 has a different i2c address for R0A 
+  if (clk_n == 0) {
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
-
+  }
+#endif // REV2
   int status_r = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "Mux error: %s\r\n", SMBUS_get_error(status_r));

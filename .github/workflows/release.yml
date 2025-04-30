@@ -32,22 +32,34 @@ jobs:
         run: |
           rev="${{ matrix.revision }}"
           rev_lower=$(echo "$rev" | tr '[:upper:]' '[:lower:]')
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            tag_name="v0.0.0-dryrun"
+          else
+            tag_name=$(git describe --tags --exact-match 2>/dev/null || echo "no-tag")
+            if [[ ! "$tag_name" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Error: Tag name '$tag_name' is not in semver format (vX.Y.Z)"
+              exit 1
+            fi
+          fi
           make clean ${{ matrix.revision }}=1
           make -k NO_ECN001=1 ${{ matrix.revision }}=1
           cp projects/cm_mcu/gcc/cm_mcu.bin cm_mcu_noecn001_${rev_lower}.bin
           cp projects/cm_mcu/gcc/cm_mcu.axf cm_mcu_noecn001_${rev_lower}.axf
           make clean ${{ matrix.revision }}=1
           make -k ${{ matrix.revision }}=1
-          mkdir -p ${rev}
-          cp projects/cm_mcu/gcc/cm_mcu.bin ${rev}/cm_mcu_${rev_lower}.bin
-          cp projects/cm_mcu/gcc/cm_mcu.axf ${rev}/cm_mcu_${rev_lower}.axf
-          cp projects/boot_loader/gcc/bl_main.bin ${rev}/bl_main_${rev_lower}.bin
-          cp projects/boot_loader/gcc/bl_main.axf ${rev}/bl_main_${rev_lower}.axf
+          dirname="cm_mcu_${tag_name}_${rev_lower}"
+          mkdir -p ${dirname}
+          cp projects/cm_mcu/gcc/cm_mcu.bin ${dirname}/cm_mcu_${rev_lower}.bin
+          cp projects/cm_mcu/gcc/cm_mcu.axf ${dirname}/cm_mcu_${rev_lower}.axf
+          cp projects/boot_loader/gcc/bl_main.bin ${dirname}/bl_main_${rev_lower}.bin
+          cp projects/boot_loader/gcc/bl_main.axf ${dirname}/bl_main_${rev_lower}.axf
           make ${{ matrix.revision }}=1 release
-          mv PL_MEM_CM_${rev_lower}.xml ${rev}
-          mv CornellCM_MCU.tar.gz ${rev}
-          tar zcvpf cm_mcu_${rev_lower}.tar.gz ${rev}
-          mv cm_mcu_${rev_lower}.tar.gz ${rev}
+          mv PL_MEM_CM_${rev_lower}.xml ${dirname}
+          mv CornellCM_MCU.tar.gz ${dirname}
+          tar_file="${dirname}.tar.gz"
+          tar zcvpf "$tar_file" ${dirname}
+          mkdir -p ${rev}
+          mv "$tar_file" ${rev}
       - name: Upload build artifacts for ${{ matrix.revision }}
         uses: actions/upload-artifact@v4
         with:
@@ -82,4 +94,3 @@ jobs:
           prerelease: false
           files: |
             artifacts/**
-            *.tar.gz
