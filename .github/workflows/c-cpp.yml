@@ -31,6 +31,10 @@ jobs:
       run: |
         make REV1=1 clean
         make -k DEBUG=1 REV2=1
+    - name: make with GCC, debug build, Rev3
+      run: |
+        make REV2=1 clean
+        make -k DEBUG=1 REV3=1
     - name: make with GCC, Rev1
       run: |
         make REV1=1 clean
@@ -39,6 +43,10 @@ jobs:
       run: |
         make REV1=1 clean
         make -k REV2=1 
+    - name: make with GCC, Rev 3
+      run: |
+        make REV2=1 clean
+        make -k REV3=1 
 
   build-clang: 
 # this build also needs arm-none-eabi-gcc as some of the clang sysroot stuff depends on it.
@@ -67,6 +75,11 @@ jobs:
          export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
          make -k COMPILER=clang REV1=1 clean
          make -k COMPILER=clang REV2=1
+    - name: make with CLANG, Rev 3
+      run: |
+         export PATH=${PATH}:$HOME/work/_temp/arm-none-eabi/bin:
+         make -k COMPILER=clang REV2=1 clean
+         make -k COMPILER=clang REV3=1
   clang-format:
     runs-on: ubuntu-latest
     steps:

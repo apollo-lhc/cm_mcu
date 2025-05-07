@@ -276,7 +276,6 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
 #elif defined(REV3)
-// FIXME: the offset for R0A will have to change?
 struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r0a", 0x70, 0, 0x6b, 0x45D},  // CLK R0A : Si5395-REVA with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
@@ -1183,9 +1182,11 @@ int init_load_clk(int clk_n)
 
   char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
   uint8_t i2c_addrs = CLOCK_CHIP_COMMON_I2C_ADDR; // i2c address of a clock chip
-  if (clk_n == 0)
+#ifdef REV2                                       // only Rev2 has a different i2c address for R0A
+  if (clk_n == 0) {
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
-
+  }
+#endif // REV2
   int status_r = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_I2C_MUX_ADDR, 1, 1 << clk_n);
   if (status_r != 0) {
     log_error(LOG_SERVICE, "Mux error: %s\r\n", SMBUS_get_error(status_r));
