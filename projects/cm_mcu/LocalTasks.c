@@ -276,7 +276,6 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
 #elif defined(REV3)
-// FIXME: the offset for R0A will have to change?
 struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r0a", 0x70, 0, 0x6b, 0x45D},  // CLK R0A : Si5395-REVA with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x264E will have to change
