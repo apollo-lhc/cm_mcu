@@ -1182,7 +1182,7 @@ int init_load_clk(int clk_n)
 
   char *clk_ids[5] = {"r0a", "r0b", "r1a", "r1b", "r1c"};
   uint8_t i2c_addrs = CLOCK_CHIP_COMMON_I2C_ADDR; // i2c address of a clock chip
-#ifdef REV2 // only Rev2 has a different i2c address for R0A 
+#ifdef REV2                                       // only Rev2 has a different i2c address for R0A
   if (clk_n == 0) {
     i2c_addrs = CLOCK_CHIP_R0A_I2C_ADDR;
   }
