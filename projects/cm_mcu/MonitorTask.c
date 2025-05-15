@@ -15,23 +15,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// memory mappings
-#include "inc/hw_types.h"
-#include "inc/hw_memmap.h"
-
 // FreeRTOS
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "FreeRTOSConfig.h"
 #include "task.h"
 
 // local includes
-#include "common/i2c_reg.h"
 #include "common/utils.h"
 #include "common/smbus.h"
 #include "common/log.h"
-#include "common/printf.h"
 #include "common/smbus_units.h"
-#include "common/power_ctl.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
 #include "Semaphore.h"
@@ -165,7 +158,7 @@ void MonitorTask(void *parameters)
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
-            release_break();
+            release_break(); // BUG: THIS IS NOT GOING TO WORK -- WE ARE STILL ACTING AS IF WE HAVE THE SEMAPHORE IN THE OUTER LOOP
           }
           float val;
           if (args->commands[c].type == PM_LINEAR11) {

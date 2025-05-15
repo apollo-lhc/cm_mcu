@@ -296,6 +296,9 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
 #define LOG_FACILITY LOG_SERVICE
 
 // FPGA arguments for monitoring task
+// Note: the I2C address for SL0 is 0x32 and the PMBUS address for SL0 is 0x36.
+// See UG580 table 3-20 and nearby (v1.10.1)
+// Other SLRs are only accessible if explicitly programmed.
 #ifdef REV1
 struct dev_i2c_addr_t fpga_addrs[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0

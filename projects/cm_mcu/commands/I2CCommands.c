@@ -8,8 +8,6 @@
 #include "I2CCommands.h"
 #include "commands/parameters.h"
 #include "common/smbus_helper.h"
-#include "Semaphore.h"
-#include "projdefs.h"
 
 static bool isValidDevice(int device)
 {
@@ -147,6 +145,7 @@ BaseType_t i2c_ctl_w(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+// you should grab the semaphore before calling this function
 BaseType_t i2c_scan(int argc, char **argv, char *m)
 {
   // takes one argument
@@ -155,18 +154,10 @@ BaseType_t i2c_scan(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "%s: invalid device %d\r\n", argv[0], device);
     return pdFALSE;
   }
-  SemaphoreHandle_t s = getSemaphore(device);
-  if (s == NULL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore\r\n", argv[0]);
-    return pdFALSE;
-  }
-  if (acquireI2CSemaphore(s) == pdFAIL) {
-    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
-    return pdFALSE;
-  }
 
   int copied = 0;
-  copied += snprintf(m, SCRATCH_SIZE - copied, "i2c bus scan, device %d\r\n", device);
+  copied += snprintf(m, SCRATCH_SIZE, "(semaphore?)\r\n");
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "i2c bus scan, device %d\r\n", device);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                      "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n00:         ");
   for (uint8_t i = 0x3; i < 0x78; ++i) {
@@ -184,11 +175,6 @@ BaseType_t i2c_scan(int argc, char **argv, char *m)
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
   configASSERT(copied < SCRATCH_SIZE);
-
-  // if we have a semaphore, give it
-  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(s);
-  }
 
   return pdFALSE;
 }
