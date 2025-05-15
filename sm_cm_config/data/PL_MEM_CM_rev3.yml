@@ -5,10 +5,12 @@ metadata:
   - sm_fw_rev: 2
   - revision: 1
 
-
+# weird overwrites of address at location 0x00 so avoid that
+# location, and start at 0x02 instead. Should figure this out
+# eventually.
 config:
   - name: firefly
-    start: 0
+    start: 2
     count: 120
     mcu_call: firefly_info
     mcu_extra_call: null
@@ -44,7 +46,7 @@ config:
       - CDR_LOL_ALARM
       - CDR_ENABLE
   - name: uptime
-    start: 120
+    start: 122
     count: 2
     type: uint32_t
     mcu_call: uptime
@@ -54,7 +56,7 @@ config:
     names:
       - MCU_UPTIME
   - name: psmon
-    start: 122
+    start: 124
     count: 84
     mcu_call: psmon
     mcu_extra_call: null
@@ -84,7 +86,7 @@ config:
       - IOUT
       - STATUS_WORD
   - name: gitversion
-    start: 206
+    start: 208
     count: 10
     type: char
     size: 5
@@ -94,7 +96,7 @@ config:
     names:
       - MCU_FW_VER
   - name: adcmon
-    start: 216
+    start: 218
     count: 21
     mcu_call: adcmon
     mcu_extra_call: null
@@ -124,7 +126,7 @@ config:
       - F2_TEMP
       - TM4C_TEMP
   - name: fpga
-    start: 238
+    start: 240
     count: 8
     type: fp16
     extra: Table=CM_MON;Status=2
@@ -140,26 +142,8 @@ config:
       - F2_TEMP_SLR1
       - F2_TEMP_SLR2
       - F2_TEMP_SLR3
-  # - name: clkmonr0a
-  #   start: 186
-  #   count: 8
-  #   type: uint16_t
-  #   extra: Table=CM_CLK_MON;Status=1
-  #   mcu_call: clock
-  #   mcu_extra_call: 0
-  #   names: 
-  #     - R0A
-  #   postfixes:
-  #     - PN_BASE0
-  #     - PN_BASE1
-  #     - DEVICE_REV
-  #     - I2C_ADDR
-  #     - STATUS_OR_LOSXAXB
-  #     - LOS_OR_LOSOOF_IN
-  #     - LOSIN_FLG_OR_LOL
-  #     - STICKY_FLG
   - name: clkmon
-    start: 246
+    start: 248
     count: 35
     type: uint16_t
     extra: Table=CM_CLK_MON;Status=1
@@ -181,7 +165,7 @@ config:
       - LOSOOF_IN
       - STICKY_FLG
   - name: clkr0aconfigversion
-    start: 282
+    start: 284
     count: 4
     type: char
     size: 2
@@ -191,7 +175,7 @@ config:
     names:
       - MCU_CLKR0A_VER
   - name: clkr0bconfigversion
-    start: 286
+    start: 288
     count: 4
     type: char
     size: 2
@@ -201,7 +185,7 @@ config:
     names:
       - MCU_CLKR0B_VER
   - name: clkr1aconfigversion
-    start: 290
+    start: 292
     count: 4
     type: char
     size: 2
@@ -211,7 +195,7 @@ config:
     names:
       - MCU_CLKR1A_VER
   - name: clkr1bconfigversion
-    start: 294
+    start: 296
     count: 4
     type: char
     size: 2
@@ -221,7 +205,7 @@ config:
     names:
       - MCU_CLKR1B_VER
   - name: clkr1cconfigversion
-    start: 298
+    start: 300
     count: 4
     type: char
     size: 2
@@ -231,7 +215,7 @@ config:
     names:
       - MCU_CLKR1C_VER
   - name: firefly_bits
-    start: 302
+    start: 304
     count: 8
     type: uint16_t
     extra: Table=CM_FFARGV_MON;Status=1
@@ -247,7 +231,7 @@ config:
       - IS_FF25Gbs
       - IS_PRESENT      
   - name: firefly_optpow_12
-    start: 310
+    start: 312
     count: 96
     mcu_call: firefly_optpow12
     mcu_extra_call: null
@@ -277,7 +261,7 @@ config:
       - CH10
       - CH11
   - name: firefly_optpow_4
-    start: 406
+    start: 408
     count: 16
     mcu_call: firefly_optpow4
     mcu_extra_call: null
