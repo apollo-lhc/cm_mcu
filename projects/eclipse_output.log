@@ -1,6 +1,0 @@
-Apr 04, 2025 12:24:50 PM org.apache.aries.spifly.BaseActivator log
-INFO: Registered provider org.slf4j.simple.SimpleServiceProvider of service org.slf4j.spi.SLF4JServiceProvider in bundle slf4j.simple
-
-(Eclipse:1630891): GVFS-RemoteVolumeMonitor-WARNING **: 12:25:37.581: remote volume monitor with dbus name org.gtk.vfs.GoaVolumeMonitor is not supported
-Unable to find full path for "${cross_prefix}gdb${cross_suffix}"
-Toolchain 'xPack GNU RISC-V Embedded GCC' has custom ID '2273142913' instead of '2273142912'
