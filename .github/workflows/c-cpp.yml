@@ -101,6 +101,7 @@ jobs:
           **/Makefile
           makedefs
           **/*.md
+          **/*.cmd
           **/*.txt
           **/.pylintrc
           **/.gitignore
