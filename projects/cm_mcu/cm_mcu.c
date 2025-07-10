@@ -228,7 +228,8 @@ const char *gitVersion(void)
 }
 
 __attribute__((noreturn)) int main(void)
-{  SystemInit();
+{
+  SystemInit();
 
   initFPGAMon();
 
