@@ -244,7 +244,7 @@ static struct command_t commands[] = {
 #if defined(REV2) || defined(REV3)
     {"clearclk", clearclk_ctl,
      "Reset clk sticky bits\r\n", 0},
-    {"clk_freq_fpga", clk_freq_fpga_cmd, "read out special FPGA i2c regs\r\n", 1},
+    {"clk_freq_fpga", clk_freq_fpga_cmd, "read out special FPGA i2c regs\r\n", 1},   // need to call with which fpga you are checking
     {"clkmon", clkmon_ctl, "CLK chips' status, id:0-4\r\n", 1},
     {"clkname", clk_prog_name, "CLK chip program, id:0-4\r\n", 1},
     {"clkprog", init_load_clock_ctl, "args: <id> <reset>\r\nLoad clock chip program, id:0-4\r\n", 2},

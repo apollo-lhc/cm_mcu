@@ -1346,47 +1346,30 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   }
 
   char *names[] = {
-      "rw0",
-      "rw1",
-      "clk_200_ext",
-      "lhc_clk",
-      "tcds40_clk",
-      "rt_x4_r0_clk",
-      "rt_x12_r0_clk",
-      "lf_x4_r0_clk",
-      "lf_x12_r0_clk",
-      "clk_100",
-      "clk_325",
-      "rt_r0_p",
-      "rt_r0_n",
-      "rt_r0_l",
-      "rt_r0_i",
-      "rt_r0_g",
-      "rt_r0_e",
-      "rt_r0_b",
-      "lf_r0_y",
-      "lf_r0_w",
-      "lf_r0_u",
-      "lf_r0_r",
-      "lf_r0_af",
-      "lf_r0_ad",
-      "lf_r0_ab",
-      "rt_r1_p",
-      "rt_r1_n",
-      "rt_r1_l",
-      "rt_r1_i",
-      "rt_r1_g",
-      "rt_r1_e",
-      "rt_r1_b",
-      "lf_r1_y",
-      "lf_r1_w",
-      "lf_r1_u",
-      "lf_r1_r",
-      "lf_r1_af",
-      "lf_r1_ad",
-      "lf_r1_ab"};
+    "rw0", "rw1", "clk_200_ext", "lhc_clk", "tcds40_clk", "rt_x4_r0_clk",
+    "rt_x12_r0_clk", "lf_x4_r0_clk", "lf_x12_r0_clk", "clk_100", "clk_325",
+    "rt_r0_p", "rt_r0_n", "rt_r0_l", "rt_r0_i", "rt_r0_g", "rt_r0_e", "rt_r0_b",
+    "lf_r0_y", "lf_r0_w", "lf_r0_u", "lf_r0_r", "lf_r0_af", "lf_r0_ad", "lf_r0_ab",
+    "rt_r1_p", "rt_r1_n", "rt_r1_l", "rt_r1_i", "rt_r1_g", "rt_r1_e", "rt_r1_b",
+    "lf_r1_y", "lf_r1_w", "lf_r1_u", "lf_r1_r", "lf_r1_af", "lf_r1_ad", "lf_r1_ab"
+  };
 
-  // take the semaphore to access the I2C bus
+  int name_size = sizeof(names) / sizeof(names[0]);
+
+  float arr1[] = {
+    0, 0, 200000000, 40000000, 55000000, 140000000, 320000000,
+    130000000, 260000000, 100000000, 325000000, 140000000, 320000000,
+    200000000, 320000000, 140000000, 320000000, 320000000, 260000000,
+    130000000, 260000000, 260000000, 130000000, 260000000, 40000000,
+    226000000, 340000000, 136000000, 174000000, 232000000, 348000000,
+    310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
+    148000000, 110000000
+  };
+
+  float arr2[name_size];
+  float tolerance = .001f;
+  char *matches[name_size];
+
   SemaphoreHandle_t s = getSemaphore(5);
   static int i = 0;
   if (i == 0) {
@@ -1395,294 +1378,305 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       return pdFALSE;
     }
 
-    // set the mux address for the FPGA generic I2C port
-    unsigned mux_val = 0x4; // Schematic page 4.04: default to value for F1
+    unsigned mux_val = 0x4; // default to F1
     if (fpga == 1) {
-      mux_val = 0x1; // Schematic page 4.04: value for F2
+      mux_val = 0x1;
     }
     int r = apollo_i2c_ctl_w(5, 0x70, 1, mux_val);
     if (r != 0) {
       snprintf(m, SCRATCH_SIZE, "Failed to set mux (%d, %s)\r\n", r, SMBUS_get_error(r));
-      // release the semaphore
       xSemaphoreGive(s);
       return pdFALSE;
     }
   }
-  // read out 39 registers from the FPGA. each read is 4 bytes.
+
   for (; i < 39; ++i) {
     uint32_t data;
-    uint16_t reg_addr = i << 2; // addressing in FPGA is byte-based
+    uint16_t reg_addr = i << 2;
     int r = apollo_i2c_ctl_reg_r(5, 0x2b, 1, reg_addr, 4, &data);
     if (r != 0) {
-      snprintf(m + copied, SCRATCH_SIZE - copied, "Failed to read FPGA registers %d (%s)\r\n", i,
-               SMBUS_get_error(r));
-      // release the semaphore
+      snprintf(m + copied, SCRATCH_SIZE - copied, "Failed to read FPGA registers %d (%s)\r\n",
+               i, SMBUS_get_error(r));
       xSemaphoreGive(s);
-      i = 0; // reset the counter
+      i = 0;
       return pdFALSE;
     }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "F%d r%02d: % 10d (0x%08x) %s\r\n", fpga + 1, i,
-                       data, data, names[i]);
+
+    arr2[i] = (float)data;
+    float diff = ABS(arr1[i] - arr2[i]);
+    if ((arr1[i] + arr2[i]) != 0) {
+      diff = diff / ((arr1[i] + arr2[i]) / 2.0f);
+    }
+
+    if (i < 2) {
+      matches[i] = "Not-a-Clock";
+    } else if (diff < tolerance || (arr1[i] + arr2[i]) == 0.0f) {
+      matches[i] = "Match";
+    } else {
+      matches[i] = "Non-Match";
+    }
+
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "F%d r%02d: % 10d (0x%08x) %s %s\r\n ",
+                       fpga + 1, i, data, data, names[i], matches[i]);
+
     if ((SCRATCH_SIZE - copied) < 50) {
-      // do not reset the counter or release the semaphore
-      ++i; // increment counter
-      return pdTRUE;
-    }
-  }
-  // clear the mux
-  int r = apollo_i2c_ctl_w(5, 0x70, 1, 0);
-  if (r != 0) {
-    snprintf(m + copied, SCRATCH_SIZE - copied, "Failed to clear mux %s\r\n",
-             SMBUS_get_error(r));
-  }
-
-  // release the semaphore
-  xSemaphoreGive(s);
-
-  i = 0;
-  return pdFALSE;
-}
-
-// read clock program names from clock chips
-BaseType_t clk_prog_name(int argc, char **argv, char *m)
-{
-  // argument is which clock chip to read. Should be in range 0-4.
-  int i = strtol(argv[1], NULL, 10);
-  if (i < 0 || i > 4) {
-    snprintf(m, SCRATCH_SIZE, "Clock chip should be in range 0-4 (got %s)\r\n", argv[1]);
-    return pdFALSE;
-  }
-  char from_chip[10];
-  char from_eeprom[10];
-  char *names[5] = {"0A", "0B", "1A", "1B", "1C"};
-  SemaphoreHandle_t s = getSemaphore(2);
-  if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
-    snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
-    return pdFALSE;
-  }
-  getClockProgram(i, from_chip, from_eeprom);
-  xSemaphoreGive(s);
-
-  snprintf(m, SCRATCH_SIZE, "CLK%d (R%s): %s %s\r\n", i, names[i], from_chip, from_eeprom);
-  return pdFALSE;
-}
-
-BaseType_t fpga_ctl(int argc, char **argv, char *m)
-{
-  if (argc == 2) {
-    if (strncmp(argv[1], "done", 4) == 0) { // print out value of done pins
-      int f1_done_ = read_gpio_pin(_F1_FPGA_DONE);
-      int f2_done_ = read_gpio_pin(_F2_FPGA_DONE);
-      snprintf(m, SCRATCH_SIZE, "F1_DONE* = %d\r\nF2_DONE* = %d\r\n", f1_done_, f2_done_);
-      return pdFALSE;
-    }
-    else {
-      snprintf(m, SCRATCH_SIZE, "%s: invalid command %s\r\n", argv[0], argv[1]);
-      return pdFALSE;
-    }
-  }
-  else if (argc != 1) {
-    // error, invalid
-    snprintf(m, SCRATCH_SIZE, "%s: invalid argument count %d\r\n", argv[0], argc);
-    return pdFALSE;
-  }
-  else {
-    int copied = 0;
-    static int whichfpga = 0;
-    int howmany = fpga_args.n_devices * fpga_args.n_pages;
-    if (whichfpga == 0) {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-
-      if (isFFStale()) {
-        TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-        int mins = (now - last) / 60;
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                           "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-      }
-
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA monitors\r\n");
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", fpga_args.commands[0].name);
-    }
-
-    for (; whichfpga < howmany; ++whichfpga) {
-      float val = fpga_args.pm_values[whichfpga];
-      int tens, frac;
-      float_to_ints(val, &tens, &frac);
-
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%5s: %02d.%02d",
-                         fpga_args.devices[whichfpga].name, tens, frac);
-      if (whichfpga % 2 == 1)
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-      else
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-      if ((SCRATCH_SIZE - copied) < 20) {
-        ++whichfpga;
-        return pdTRUE;
-      }
-    }
-    if (whichfpga % 2 == 1) {
-      m[copied++] = '\r';
-      m[copied++] = '\n';
-      m[copied] = '\0';
-    }
-    whichfpga = 0;
-    return pdFALSE;
-  }
-}
-
-// This command takes 1 argument, either f1 or f2
-#if defined(REV2) || defined(REV3)
-BaseType_t fpga_flash(int argc, char **argv, char *m)
-{
-  const TickType_t kDELAY = 1 / portTICK_PERIOD_MS; // 1 ms delay
-  char *which = NULL;
-  if (strcmp(argv[1], "f2") == 0) {
-    write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
-    write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-    vTaskDelay(kDELAY);
-    write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
-    vTaskDelay(kDELAY);
-    write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-    which = "F2";
-  }
-  if (strcmp(argv[1], "f1") == 0) {
-    write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
-    write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-    vTaskDelay(kDELAY);
-    write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
-    vTaskDelay(kDELAY);
-    write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-    which = "F1";
-  }
-  snprintf(m, SCRATCH_SIZE, "%s programmed via flash\r\n", which);
-  return pdFALSE;
-}
-#endif
-
-// This command takes 1 argument, either f1 or f2
-BaseType_t fpga_reset(int argc, char **argv, char *m)
-{
-  const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
-  char *which = NULL;
-  if (strcmp(argv[1], "f2") == 0) {
-    write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
-    vTaskDelay(delay);
-    write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-    which = "F2";
-  }
-  if (strcmp(argv[1], "f1") == 0) {
-    write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
-    vTaskDelay(delay);
-    write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-    which = "F1";
-  }
-  snprintf(m, SCRATCH_SIZE, "%s has been reset\r\n", which);
-  return pdFALSE;
-}
-
-extern struct MonitorTaskArgs_t dcdc_args;
-extern struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
-extern struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
-
-// Read out registers from LGA80D
-BaseType_t psmon_reg(int argc, char **argv, char *m)
-{
-  int copied = 0;
-  int page = strtol(argv[1], NULL, 10); // which supply within the LGA08D
-  int which = page / 10;
-  page = page % 10;
-  if (page < 0 || page > 1) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
-                       argv[0], page);
-    return pdFALSE;
-  }
-  if (which < 0 || which > (NSUPPLIES_PS - 1)) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
-                       argv[0], which, (NSUPPLIES_PS - 1));
-    return pdFALSE;
-  }
-  UBaseType_t regAddress = strtoul(argv[2], NULL, 16);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s, reg 0x%02lx\r\n", argv[0],
-                     page, pm_addrs_dcdc[which].name, regAddress);
-
-  // acquire the semaphore
-  if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
-    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
-    return pdFALSE;
-  }
-  uint8_t ui8page = page;
-  // page register
-  int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which], &extra_cmds[0], &ui8page);
-  if (r) {
-    Print("error in psmon_reg (page)\r\n");
-  }
-  // read register, 2 bytes
-  uint8_t thevalue[2] = {0, 0};
-  struct pm_command_t thecmd = {regAddress, 2, "dummy", "", PM_STATUS};
-  r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[which], &thecmd, thevalue);
-  if (r) {
-    Print("error in psmon_reg (regr)\r\n");
-  }
-  uint16_t vv = (thevalue[0] | (thevalue[1] << 8));
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
-                     argv[0], vv);
-
-  // release the semaphore
-  if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(dcdc_args.xSem);
-  }
-  return pdFALSE;
-}
-
-// this command takes no arguments
-BaseType_t ff_dump_names(int argc, char **argv, char *m)
-{
-  // ensure at compile-time that the vendor count is the same
-  static_assert(FF_VENDOR_COUNT_FF12 == FF_VENDOR_COUNT_FFDAQ, "Vendor count mismatch");
-  static int i = 0;
-  int copied = 0;
-  if (i == 0) { // not if we are on 2nd iteration
-    copied += snprintf(m, SCRATCH_SIZE, "%s: ID registers\r\n", argv[0]);
-  }
-  for (; i < NFIREFLIES; ++i) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[i].name);
-    if (isEnabledFF(i)) { // process if enabled
-
-      char name[FF_VENDOR_COUNT_FF12 + 1];
-      memset(name, '\0', FF_VENDOR_COUNT_FF12 + 1);
-      int type = FireflyType(i);
-      int startReg = FF_VENDOR_START_BIT_FFDAQ;
-      if (type == DEVICE_CERNB || type == DEVICE_25G12) {
-        startReg = FF_VENDOR_START_BIT_FF12;
-      }
-      int ret = 0;
-      for (unsigned char c = 0; c < FF_VENDOR_COUNT_FF12 / 4; ++c) { // read name 4 chars at a time
-        uint8_t v[4];
-        ret += read_arbitrary_ff_register(startReg + 4 * c, i, v, 4);
-        name[4 * c] = v[0];
-        name[4 * c + 1] = v[1];
-        name[4 * c + 2] = v[2];
-        name[4 * c + 3] = v[3];
-      }
-      if (ret != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
-        return pdFALSE;
-      }
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s", name);
-    }
-    else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "--------------");
-    }
-    bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 45 && (i < NFIREFLIES)) {
       ++i;
       return pdTRUE;
     }
   }
+
+  int r = apollo_i2c_ctl_w(5, 0x70, 1, 0);
+  if (r != 0) {
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "Failed to clear mux %s\r\n", SMBUS_get_error(r));
+  }
+
+  xSemaphoreGive(s);
   i = 0;
   return pdFALSE;
 }
+
+
+ // read clock program names from clock chips
+ BaseType_t clk_prog_name(int argc, char **argv, char *m)
+ {
+   // argument is which clock chip to read. Should be in range 0-4.
+   int i = strtol(argv[1], NULL, 10);
+   if (i < 0 || i > 4) {
+     snprintf(m, SCRATCH_SIZE, "Clock chip should be in range 0-4 (got %s)\r\n", argv[1]);
+     return pdFALSE;
+   }
+   char from_chip[10];
+   char from_eeprom[10];
+   char *names[5] = {"0A", "0B", "1A", "1B", "1C"};
+   SemaphoreHandle_t s = getSemaphore(2);
+   if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
+     snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
+     return pdFALSE;
+   }
+   getClockProgram(i, from_chip, from_eeprom);
+   xSemaphoreGive(s);
+
+   snprintf(m, SCRATCH_SIZE, "CLK%d (R%s): %s %s\r\n", i, names[i], from_chip, from_eeprom);
+   return pdFALSE;
+ }
+
+ BaseType_t fpga_ctl(int argc, char **argv, char *m)
+ {
+   if (argc == 2) {
+     if (strncmp(argv[1], "done", 4) == 0) { // print out value of done pins
+       int f1_done_ = read_gpio_pin(_F1_FPGA_DONE);
+       int f2_done_ = read_gpio_pin(_F2_FPGA_DONE);
+       snprintf(m, SCRATCH_SIZE, "F1_DONE* = %d\r\nF2_DONE* = %d\r\n", f1_done_, f2_done_);
+       return pdFALSE;
+     }
+     else {
+       snprintf(m, SCRATCH_SIZE, "%s: invalid command %s\r\n", argv[0], argv[1]);
+       return pdFALSE;
+     }
+   }
+   else if (argc != 1) {
+     // error, invalid
+     snprintf(m, SCRATCH_SIZE, "%s: invalid argument count %d\r\n", argv[0], argc);
+     return pdFALSE;
+   }
+   else {
+     int copied = 0;
+     static int whichfpga = 0;
+     int howmany = fpga_args.n_devices * fpga_args.n_pages;
+     if (whichfpga == 0) {
+       TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+
+       if (isFFStale()) {
+         TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+         int mins = (now - last) / 60;
+         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                            "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+       }
+
+       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FPGA monitors\r\n");
+       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", fpga_args.commands[0].name);
+     }
+
+     for (; whichfpga < howmany; ++whichfpga) {
+       float val = fpga_args.pm_values[whichfpga];
+       int tens, frac;
+       float_to_ints(val, &tens, &frac);
+
+       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%5s: %02d.%02d",
+                          fpga_args.devices[whichfpga].name, tens, frac);
+       if (whichfpga % 2 == 1)
+         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+       else
+         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+       if ((SCRATCH_SIZE - copied) < 20) {
+         ++whichfpga;
+         return pdTRUE;
+       }
+     }
+     if (whichfpga % 2 == 1) {
+       m[copied++] = '\r';
+       m[copied++] = '\n';
+       m[copied] = '\0';
+     }
+     whichfpga = 0;
+     return pdFALSE;
+   }
+ }
+
+ // This command takes 1 argument, either f1 or f2
+ #if defined(REV2) || defined(REV3)
+ BaseType_t fpga_flash(int argc, char **argv, char *m)
+ {
+   const TickType_t kDELAY = 1 / portTICK_PERIOD_MS; // 1 ms delay
+   char *which = NULL;
+   if (strcmp(argv[1], "f2") == 0) {
+     write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
+     write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
+     vTaskDelay(kDELAY);
+     write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
+     vTaskDelay(kDELAY);
+     write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
+     which = "F2";
+   }
+   if (strcmp(argv[1], "f1") == 0) {
+     write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
+     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
+     vTaskDelay(kDELAY);
+     write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
+     vTaskDelay(kDELAY);
+     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
+     which = "F1";
+   }
+   snprintf(m, SCRATCH_SIZE, "%s programmed via flash\r\n", which);
+   return pdFALSE;
+ }
+ #endif
+
+ // This command takes 1 argument, either f1 or f2
+ BaseType_t fpga_reset(int argc, char **argv, char *m)
+ {
+   const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
+   char *which = NULL;
+   if (strcmp(argv[1], "f2") == 0) {
+     write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
+     vTaskDelay(delay);
+     write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
+     which = "F2";
+   }
+   if (strcmp(argv[1], "f1") == 0) {
+     write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
+     vTaskDelay(delay);
+     write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
+     which = "F1";
+   }
+   snprintf(m, SCRATCH_SIZE, "%s has been reset\r\n", which);
+   return pdFALSE;
+ }
+
+ extern struct MonitorTaskArgs_t dcdc_args;
+ extern struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
+ extern struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
+
+ // Read out registers from LGA80D
+ BaseType_t psmon_reg(int argc, char **argv, char *m)
+ {
+   int copied = 0;
+   int page = strtol(argv[1], NULL, 10); // which supply within the LGA08D
+   int which = page / 10;
+   page = page % 10;
+   if (page < 0 || page > 1) {
+     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
+                        argv[0], page);
+     return pdFALSE;
+   }
+   if (which < 0 || which > (NSUPPLIES_PS - 1)) {
+     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: device %d must be between 0-%d\r\n",
+                        argv[0], which, (NSUPPLIES_PS - 1));
+     return pdFALSE;
+   }
+   UBaseType_t regAddress = strtoul(argv[2], NULL, 16);
+   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d of device %s, reg 0x%02lx\r\n", argv[0],
+                      page, pm_addrs_dcdc[which].name, regAddress);
+
+   // acquire the semaphore
+   if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
+     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
+     return pdFALSE;
+   }
+   uint8_t ui8page = page;
+   // page register
+   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which], &extra_cmds[0], &ui8page);
+   if (r) {
+     Print("error in psmon_reg (page)\r\n");
+   }
+   // read register, 2 bytes
+   uint8_t thevalue[2] = {0, 0};
+   struct pm_command_t thecmd = {regAddress, 2, "dummy", "", PM_STATUS};
+   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[which], &thecmd, thevalue);
+   if (r) {
+     Print("error in psmon_reg (regr)\r\n");
+   }
+   uint16_t vv = (thevalue[0] | (thevalue[1] << 8));
+   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
+                      argv[0], vv);
+
+   // release the semaphore
+   if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {
+     xSemaphoreGive(dcdc_args.xSem);
+   }
+   return pdFALSE;
+ }
+ // this command takes no arguments
+ BaseType_t ff_dump_names(int argc, char **argv, char *m)
+ {
+   // ensure at compile-time that the vendor count is the same
+   static_assert(FF_VENDOR_COUNT_FF12 == FF_VENDOR_COUNT_FFDAQ, "Vendor count mismatch");
+   static int i = 0;
+   int copied = 0;
+   if (i == 0) { // not if we are on 2nd iteration
+     copied += snprintf(m, SCRATCH_SIZE, "%s: ID registers\r\n", argv[0]);
+   }
+   for (; i < NFIREFLIES; ++i) {
+     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[i].name);
+     if (isEnabledFF(i)) { // process if enabled
+
+       char name[FF_VENDOR_COUNT_FF12 + 1];
+       memset(name, '\0', FF_VENDOR_COUNT_FF12 + 1);
+       int type = FireflyType(i);
+       int startReg = FF_VENDOR_START_BIT_FFDAQ;
+       if (type == DEVICE_CERNB || type == DEVICE_25G12) {
+         startReg = FF_VENDOR_START_BIT_FF12;
+       }
+       int ret = 0;
+       for (unsigned char c = 0; c < FF_VENDOR_COUNT_FF12 / 4; ++c) { // read name 4 chars at a time
+         uint8_t v[4];
+         ret += read_arbitrary_ff_register(startReg + 4 * c, i, v, 4);
+         name[4 * c] = v[0];
+         name[4 * c + 1] = v[1];
+         name[4 * c + 2] = v[2];
+         name[4 * c + 3] = v[3];
+       }
+       if (ret != 0) {
+         snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
+         return pdFALSE;
+       }
+       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s", name);
+     }
+     else {
+       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "--------------");
+     }
+     bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
+     if (isTx)
+       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+     else
+       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+     if ((SCRATCH_SIZE - copied) < 45 && (i < NFIREFLIES)) {
+       ++i;
+       return pdTRUE;
+     }
+   }
+   i = 0;
+   return pdFALSE;
+ }
