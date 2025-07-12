@@ -1390,7 +1390,9 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     }
   }
 
-  for (; i < 39; ++i) {
+  const int NUM_REGISTERS = 39;
+
+  for (; i < NUM_REGISTERS; ++i) {
     uint32_t data;
     uint16_t reg_addr = i << 2;
     int r = apollo_i2c_ctl_reg_r(5, 0x2b, 1, reg_addr, 4, &data);
@@ -1402,7 +1404,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       return pdFALSE;
     }
 
-    arr2[i] = (float)data;
+    arr2[i] = data;
     float diff = ABS(arr1[i] - arr2[i]);
     if ((arr1[i] + arr2[i]) != 0) {
       diff = diff / ((arr1[i] + arr2[i]) / 2.0f);
