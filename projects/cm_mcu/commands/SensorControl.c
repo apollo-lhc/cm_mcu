@@ -1355,7 +1355,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 
   int name_size = sizeof(names) / sizeof(names[0]);
 
-  float arr1[] = {
+  const int EXPECTED_FREQ[] = {
       0, 0, 200000000, 40000000, 55000000, 140000000, 320000000,
       130000000, 260000000, 100000000, 325000000, 140000000, 320000000,
       200000000, 320000000, 140000000, 320000000, 320000000, 260000000,
@@ -1364,8 +1364,9 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
       148000000, 110000000};
 
-  float arr2[name_size];
-  float tolerance = .001f;
+  const float TOLERANCE = .001f;
+
+  float actual_freq[name_size];
   char *matches[name_size];
 
   SemaphoreHandle_t s = getSemaphore(5);
@@ -1402,20 +1403,20 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       return pdFALSE;
     }
 
-    arr2[i] = data;
-    float diff = ABS(arr1[i] - arr2[i]);
-    if ((arr1[i] + arr2[i]) != 0) {
-      diff = diff / ((arr1[i] + arr2[i]) / 2.0f);
+    actual_freq[i] = data;
+    float diff = ABS(EXPECTED_FREQ[i] - actual_freq[i]);
+    if ((EXPECTED_FREQ[i] + actual_freq[i]) != 0) {
+      diff = diff / ((EXPECTED_FREQ[i] + actual_freq[i]) / 2.0f);
     }
 
     if (i < 2) {
-      matches[i] = "Not-a-Clock";
+      matches[i] = "N/A";
     }
-    else if (diff < tolerance || (arr1[i] + arr2[i]) == 0.0f) {
-      matches[i] = "Match";
+    else if (diff < TOLERANCE || (EXPECTED_FREQ[i] + actual_freq[i]) == 0.0f) {
+      matches[i] = "MATCH";
     }
     else {
-      matches[i] = "Non-Match";
+      matches[i] = "NON-MATCH";
     }
 
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
