@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        uses: carlosperate/arm-none-eabi-gcc-action@v1.10.1
         with:
           release: "13.2.Rel1"
 
