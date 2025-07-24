@@ -1333,6 +1333,137 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+// read out clock frequency measurements via special i2c port on FPGAs.
+// implemented in production test FPGA bit file.
+BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  // check if we are looking for FPGA1 or two based on the command argument
+  int fpga = strtol(argv[1], NULL, 10) - 1;
+  if (fpga < 0 || fpga > 1) {
+    snprintf(m, SCRATCH_SIZE, "FPGA should be 1 or 2 (got %s)\r\n", argv[1]);
+    return pdFALSE;
+  }
+
+  char *names[] = {
+      "rw0", "rw1", "clk_200_ext", "lhc_clk", "tcds40_clk", "rt_x4_r0_clk",
+      "rt_x12_r0_clk", "lf_x4_r0_clk", "lf_x12_r0_clk", "clk_100", "clk_325",
+      "rt_r0_p", "rt_r0_n", "rt_r0_l", "rt_r0_i", "rt_r0_g", "rt_r0_e", "rt_r0_b",
+      "lf_r0_y", "lf_r0_w", "lf_r0_u", "lf_r0_r", "lf_r0_af", "lf_r0_ad", "lf_r0_ab",
+      "rt_r1_p", "rt_r1_n", "rt_r1_l", "rt_r1_i", "rt_r1_g", "rt_r1_e", "rt_r1_b",
+      "lf_r1_y", "lf_r1_w", "lf_r1_u", "lf_r1_r", "lf_r1_af", "lf_r1_ad", "lf_r1_ab"};
+
+  int name_size = sizeof(names) / sizeof(names[0]);
+
+  const int EXPECTED_FREQ[] = {
+      0, 0, 200000000, 40000000, 55000000, 140000000, 320000000,
+      130000000, 260000000, 100000000, 325000000, 140000000, 320000000,
+      200000000, 320000000, 140000000, 320000000, 320000000, 260000000,
+      130000000, 260000000, 260000000, 130000000, 260000000, 40000000,
+      226000000, 340000000, 136000000, 174000000, 232000000, 348000000,
+      310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
+      148000000, 110000000};
+
+  const float TOLERANCE = .001f;
+
+  float actual_freq[name_size];
+  char *matches[name_size];
+
+  SemaphoreHandle_t s = getSemaphore(5);
+  static int i = 0;
+  if (i == 0) {
+    if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
+      snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
+      return pdFALSE;
+    }
+
+    unsigned mux_val = 0x4; // default to F1
+    if (fpga == 1) {
+      mux_val = 0x1;
+    }
+    int r = apollo_i2c_ctl_w(5, 0x70, 1, mux_val);
+    if (r != 0) {
+      snprintf(m, SCRATCH_SIZE, "Failed to set mux (%d, %s)\r\n", r, SMBUS_get_error(r));
+      xSemaphoreGive(s);
+      return pdFALSE;
+    }
+  }
+
+  const int NUM_REGISTERS = 39;
+
+  for (; i < NUM_REGISTERS; ++i) {
+    uint32_t data;
+    uint16_t reg_addr = i << 2;
+    int r = apollo_i2c_ctl_reg_r(5, 0x2b, 1, reg_addr, 4, &data);
+    if (r != 0) {
+      snprintf(m + copied, SCRATCH_SIZE - copied, "Failed to read FPGA registers %d (%s)\r\n",
+               i, SMBUS_get_error(r));
+      xSemaphoreGive(s);
+      i = 0;
+      return pdFALSE;
+    }
+
+    actual_freq[i] = data;
+    float diff = ABS(EXPECTED_FREQ[i] - actual_freq[i]);
+    if ((EXPECTED_FREQ[i] + actual_freq[i]) != 0) {
+      diff = diff / ((EXPECTED_FREQ[i] + actual_freq[i]) / 2.0f);
+    }
+
+    if (i < 2) {
+      matches[i] = "N/A";
+    }
+    else if (diff < TOLERANCE || (EXPECTED_FREQ[i] + actual_freq[i]) == 0.0f) {
+      matches[i] = "MATCH";
+    }
+    else {
+      matches[i] = "NON-MATCH";
+    }
+
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "F%d r%02d: % 10d (0x%08x) %s %s\r\n ",
+                       fpga + 1, i, data, data, names[i], matches[i]);
+
+    if ((SCRATCH_SIZE - copied) < 50) {
+      ++i;
+      return pdTRUE;
+    }
+  }
+
+  int r = apollo_i2c_ctl_w(5, 0x70, 1, 0);
+  if (r != 0) {
+    snprintf(m + copied, SCRATCH_SIZE - copied,
+             "Failed to clear mux %s\r\n", SMBUS_get_error(r));
+  }
+
+  xSemaphoreGive(s);
+  i = 0;
+  return pdFALSE;
+}
+
+// read clock program names from clock chips
+BaseType_t clk_prog_name(int argc, char **argv, char *m)
+{
+  // argument is which clock chip to read. Should be in range 0-4.
+  int i = strtol(argv[1], NULL, 10);
+  if (i < 0 || i > 4) {
+    snprintf(m, SCRATCH_SIZE, "Clock chip should be in range 0-4 (got %s)\r\n", argv[1]);
+    return pdFALSE;
+  }
+  char from_chip[10];
+  char from_eeprom[10];
+  char *names[5] = {"0A", "0B", "1A", "1B", "1C"};
+  SemaphoreHandle_t s = getSemaphore(2);
+  if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
+    snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
+    return pdFALSE;
+  }
+  getClockProgram(i, from_chip, from_eeprom);
+  xSemaphoreGive(s);
+
+  snprintf(m, SCRATCH_SIZE, "CLK%d (R%s): %s %s\r\n", i, names[i], from_chip, from_eeprom);
+  return pdFALSE;
+}
+
 BaseType_t fpga_ctl(int argc, char **argv, char *m)
 {
   if (argc == 2) {
@@ -1499,7 +1630,6 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
   }
   return pdFALSE;
 }
-
 // this command takes no arguments
 BaseType_t ff_dump_names(int argc, char **argv, char *m)
 {

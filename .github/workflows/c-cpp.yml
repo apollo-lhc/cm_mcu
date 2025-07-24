@@ -21,7 +21,7 @@ jobs:
     - name: Code checkout
       uses: actions/checkout@v4
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-      uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
+      uses: carlosperate/arm-none-eabi-gcc-action@v1.10.1
       with:
         release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
     - name: make with GCC, debug build, Rev1
@@ -61,7 +61,7 @@ jobs:
        version: "17.0"
        directory: ${{ runner.temp }}/llvm
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-      uses: carlosperate/arm-none-eabi-gcc-action@v1.8.1
+      uses: carlosperate/arm-none-eabi-gcc-action@v1.10.1
       with:
         release: '13.2.Rel1' # The arm-none-eabi-gcc release to use.
         # Directory to unpack GCC to. Defaults to a temporary directory.
@@ -101,6 +101,7 @@ jobs:
           **/Makefile
           makedefs
           **/*.md
+          **/*.cmd
           **/*.txt
           **/.pylintrc
           **/.gitignore

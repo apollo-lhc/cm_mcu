@@ -60,6 +60,7 @@ compile_commands.json
 .vscode/*
 c_cpp_properties.json
 .cache
+.directoryhash
 /.metadata/
 projects/cm_mcu/ZynqMon_addresses.c
 projects/cm_mcu/ZynqMon_addresses.h
