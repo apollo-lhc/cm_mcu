@@ -1260,7 +1260,7 @@ int init_load_clk(int clk_n)
   return status_w;
 }
 
-// Load all clocks from EEPROM. Should be run on every transition to the POWER_ON 
+// Load all clocks from EEPROM. Should be run on every transition to the POWER_ON
 // state in the power control state machine.
 // This function will load all clocks from EEPROM, clear sticky bits, and print out
 // the clock program names. It will also acquire the I2C semaphore to ensure
