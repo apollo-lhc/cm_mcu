@@ -436,6 +436,14 @@ void PowerSupplyTask(void *parameters)
             power_supply_alarm = true;
             nextState = POWER_FAILURE;
           }
+          // load all clocks from EEPROM
+          int ret = load_all_clocks();
+          if ( ret != 0 ) {
+            log_error(LOG_PWRCTL, "load_all_clocks failed with %d\r\n", ret);
+            disable_ps(); // turn off power
+            power_supply_alarm = true;
+            nextState = POWER_FAILURE;
+          }
         }
 
         break;

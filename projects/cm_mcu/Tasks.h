@@ -299,6 +299,8 @@ int init_registers_clk(void);
 
 // configuring clock initalization
 int init_load_clk(int clk_n);
+// Load all clocks from EEPROM
+int load_all_clocks(void);
 
 // hibernate/RTC
 void InitRTC(void);

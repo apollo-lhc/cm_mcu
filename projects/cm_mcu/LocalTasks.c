@@ -1259,6 +1259,38 @@ int init_load_clk(int clk_n)
 
   return status_w;
 }
+
+// Load all clocks from EEPROM. Should be run on every transition to the POWER_ON 
+// state in the power control state machine.
+// This function will load all clocks from EEPROM, clear sticky bits, and print out
+// the clock program names. It will also acquire the I2C semaphore to ensure
+int load_all_clocks(void)
+{
+  log_info(LOG_SERVICE, "Start CLK config\r\n");
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c2_sem);
+  int status = 0;
+  for (int i = 0; i < 5; ++i) {
+    status += init_load_clk(i); // load each clock config from EEPROM
+    // get and print out the file name
+    vTaskDelay(pdMS_TO_TICKS(500));
+    getClockProgram(i, clkprog_args[i].progname_clkdesgid, clkprog_args[i].progname_eeprom);
+    log_info(LOG_SERVICE, "CLK%d: %s\r\n", i, clkprog_args[i].progname_clkdesgid);
+  }
+  status += clear_clk_stickybits();
+  if (status != 0) {
+    log_info(LOG_SERVICE, "Clear clock sticky bits failed\r\n");
+  }
+  log_info(LOG_SERVICE, "Clocks configured\r\n");
+  // check if we have the semaphore
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
+
+  return status;
+}
+
 #endif // REV2
 
 #if defined(REV2) || defined(REV3)
