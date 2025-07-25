@@ -1263,7 +1263,7 @@ int init_load_clk(int clk_n)
 // Load all clocks from EEPROM. Should be run on every transition to the POWER_ON
 // state in the power control state machine.
 // This function will load all clocks from EEPROM, clear sticky bits, and print out
-// the clock program names. It will also acquire the I2C semaphore to ensure
+// the clock program names. Use semaphores to ensure unique access to the I2C controller.
 int load_all_clocks(void)
 {
   log_info(LOG_SERVICE, "Start CLK config\r\n");
@@ -1271,7 +1271,7 @@ int load_all_clocks(void)
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c2_sem);
   int status = 0;
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < CLOCK_NUM_CLOCKS; ++i) {
     status += init_load_clk(i); // load each clock config from EEPROM
     // get and print out the file name
     vTaskDelay(pdMS_TO_TICKS(500));

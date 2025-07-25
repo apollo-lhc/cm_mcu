@@ -294,8 +294,7 @@ int init_registers_clk(void);
 #define CLOCK_I2C_MUX_ADDR         0x70
 #define CLOCK_I2C_EEPROM_ADDR      0x50
 
-#define CLOCK_NUM_SI5341 1
-#define CLOCK_NUM_SI5395 4
+#define CLOCK_NUM_CLOCKS 5
 
 // configuring clock initalization
 int init_load_clk(int clk_n);
