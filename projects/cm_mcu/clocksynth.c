@@ -22,7 +22,8 @@ int clear_clk_stickybits(void)
                  (CLOCK_I2C_BASE == 4) || (CLOCK_I2C_BASE == 6)),
                 "Invalid I2C base");
 
-  if (getPowerControlState() != POWER_ON) {
+  if ((getPowerControlState() != POWER_ON) &&
+      (getPowerControlState() != POWER_L6ON)) {
     return 1;
   }
 

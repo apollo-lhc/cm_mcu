@@ -1179,7 +1179,8 @@ static int load_clk_registers(uint32_t reg_count, uint16_t reg_page, uint16_t i2
 int init_load_clk(int clk_n)
 {
   // this function requires semaphore give/take at a larger scope to handle its task.
-  while (getPowerControlState() != POWER_ON) {
+  while ((getPowerControlState() != POWER_ON) &&
+         (getPowerControlState() != POWER_L6ON)) {
     vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
   }
 
@@ -1208,7 +1209,7 @@ int init_load_clk(int clk_n)
 
   if (PreambleList_row == 0xff) {
     log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PreL\r\n", clk_ids[clk_n]);
-    return 1; // fail reading and exit
+    return 0; // don't return error if EEPROM is unprogrammed and exit
   }
 
   uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
