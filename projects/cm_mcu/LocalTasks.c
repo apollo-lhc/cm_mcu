@@ -1179,7 +1179,8 @@ static int load_clk_registers(uint32_t reg_count, uint16_t reg_page, uint16_t i2
 int init_load_clk(int clk_n)
 {
   // this function requires semaphore give/take at a larger scope to handle its task.
-  while (getPowerControlState() != POWER_ON) {
+  while ((getPowerControlState() != POWER_ON) &&
+         (getPowerControlState() != POWER_L6ON)) {
     vTaskDelay(pdMS_TO_TICKS(10)); // delay 10 ms
   }
 
@@ -1208,7 +1209,7 @@ int init_load_clk(int clk_n)
 
   if (PreambleList_row == 0xff) {
     log_warn(LOG_SERVICE, "Quit.. garbage EEPROM of %s PreL\r\n", clk_ids[clk_n]);
-    return 1; // fail reading and exit
+    return 0; // don't return error if EEPROM is unprogrammed and exit
   }
 
   uint32_t RegisterList_row; // the size of register list in a clock config file store at the end of the last eeprom page of a clock
@@ -1259,6 +1260,38 @@ int init_load_clk(int clk_n)
 
   return status_w;
 }
+
+// Load all clocks from EEPROM. Should be run on every transition to the POWER_ON
+// state in the power control state machine.
+// This function will load all clocks from EEPROM, clear sticky bits, and print out
+// the clock program names. Use semaphores to ensure unique access to the I2C controller.
+int load_all_clocks(void)
+{
+  log_info(LOG_SERVICE, "Start CLK config\r\n");
+  // grab the semaphore to ensure unique access to I2C controller
+  // otherwise, block its operations indefinitely until it's available
+  acquireI2CSemaphoreBlock(i2c2_sem);
+  int status = 0;
+  for (int i = 0; i < CLOCK_NUM_CLOCKS; ++i) {
+    status += init_load_clk(i); // load each clock config from EEPROM
+    // get and print out the file name
+    vTaskDelay(pdMS_TO_TICKS(500));
+    getClockProgram(i, clkprog_args[i].progname_clkdesgid, clkprog_args[i].progname_eeprom);
+    log_info(LOG_SERVICE, "CLK%d: %s\r\n", i, clkprog_args[i].progname_clkdesgid);
+  }
+  status += clear_clk_stickybits();
+  if (status != 0) {
+    log_info(LOG_SERVICE, "Clear clock sticky bits failed\r\n");
+  }
+  log_info(LOG_SERVICE, "Clocks configured\r\n");
+  // check if we have the semaphore
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c2_sem);
+  }
+
+  return status;
+}
+
 #endif // REV2
 
 #if defined(REV2) || defined(REV3)

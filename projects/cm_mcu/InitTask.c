@@ -17,7 +17,6 @@
 #include "common/utils.h"
 #include "common/log.h"
 #include "Tasks.h"
-#include "Semaphore.h"
 #include "clocksynth.h"
 
 void InitTask(void *parameters)
@@ -52,31 +51,6 @@ void InitTask(void *parameters)
     log_info(LOG_SERVICE, "Clock I/O expander failed\r\n");
     errbuffer_put(EBUF_CLKINIT_FAILURE, 0);
   }
-#ifndef REV1
-  // grab the semaphore to ensure unique access to I2C controller
-  // otherwise, block its operations indefinitely until it's available
-  acquireI2CSemaphoreBlock(i2c2_sem);
-
-  for (int i = 0; i < 5; ++i) {
-    init_load_clk(i); // load each clock config from EEPROM
-    // get and print out the file name
-    vTaskDelay(pdMS_TO_TICKS(500));
-    // char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME];     // program name from DESIGN_ID register of clock chip
-    // char progname_eeprom[CLOCK_EEPROM_PROGNAME_REG_NAME]; // program name from eeprom
-    getClockProgram(i, clkprog_args[i].progname_clkdesgid, clkprog_args[i].progname_eeprom);
-  }
-  status = clear_clk_stickybits();
-  if (status != 0)
-    log_info(LOG_SERVICE, "Clear clock sticky bits failed\r\n");
-
-  // check if we have the semaphore
-  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle()) {
-    xSemaphoreGive(i2c2_sem);
-  }
-
-  log_info(LOG_SERVICE, "Clocks configured\r\n");
-
-#endif // not REV1
   vTaskSuspend(NULL);
   // Delete this task
   vTaskDelete(xTaskGetCurrentTaskHandle());
