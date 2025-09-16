@@ -53,6 +53,10 @@ jobs:
           cp projects/cm_mcu/gcc/cm_mcu.axf ${dirname}/cm_mcu_${rev_lower}.axf
           cp projects/boot_loader/gcc/bl_main.bin ${dirname}/bl_main_${rev_lower}.bin
           cp projects/boot_loader/gcc/bl_main.axf ${dirname}/bl_main_${rev_lower}.axf
+          if [[ "${{ matrix.revision }}" != "REV1" ]]; then
+            cp projects/prod_test/gcc/prod_test.bin ${dirname}/prod_test_${rev_lower}.bin
+            cp projects/prod_test/gcc/prod_test.axf ${dirname}/prod_test_${rev_lower}.axf
+          fi
           make ${{ matrix.revision }}=1 release
           mv PL_MEM_CM_${rev_lower}.xml ${dirname}
           mv CornellCM_MCU.tar.gz ${dirname}
