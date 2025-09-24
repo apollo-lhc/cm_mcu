@@ -1354,8 +1354,6 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       "rt_r1_p", "rt_r1_n", "rt_r1_l", "rt_r1_i", "rt_r1_g", "rt_r1_e", "rt_r1_b",
       "lf_r1_y", "lf_r1_w", "lf_r1_u", "lf_r1_r", "lf_r1_af", "lf_r1_ad", "lf_r1_ab"};
 
-  int name_size = sizeof(names) / sizeof(names[0]);
-
   // these values are from Table 2 of the Rev3 Synthesizer testing document.
   const uint32_t EXPECTED_FREQ_1[] = {
       0, 0, 200000000, 40000000, 55000000, 280000000, 160000000,
@@ -1364,8 +1362,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       150000000, 300000000, 300000000, 150000000, 300000000, 60000000,
       116000000, 170000000, 272000000, 113000000, 143000000, 286000000,
       155000000, 163000000, 312000000, 176000000, 296000000, 168000000,
-      132000000, 220000000
-  };
+      132000000, 220000000};
 
   const uint32_t EXPECTED_FREQ_2[] = {
       0, 0, 200000000, 40000000, 55000000, 140000000, 320000000,
@@ -1374,20 +1371,16 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       130000000, 260000000, 260000000, 130000000, 260000000, 40000000,
       226000000, 340000000, 136000000, 174000000, 232000000, 348000000,
       310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
-      148000000, 110000000
-  };
+      148000000, 110000000};
 
   uint32_t *EXPECTED_FREQ;
   if (fpga == 0) {
     EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_1;
-  } 
+  }
   else {
     EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_2;
   }
   const float TOLERANCE = .001f;
-
-  float actual_freq[name_size];
-  char *matches[name_size];
 
   SemaphoreHandle_t s = getSemaphore(5);
   static int i = 0;
@@ -1423,32 +1416,30 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       return pdFALSE;
     }
 
-    actual_freq[i] = data;
-    float diff = ABS(EXPECTED_FREQ[i] - actual_freq[i]);
-    if ((EXPECTED_FREQ[i] + actual_freq[i]) != 0) {
-      diff = diff / ((EXPECTED_FREQ[i] + actual_freq[i]) / 2.0f);
-    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "F%d r%02d: % 10d (0x%08x) %s %s",
+                       fpga + 1, i, data, data, names[i]);
 
     if (i < 2) {
-      matches[i] = "N/A";
-    }
-    else if (diff < TOLERANCE || (EXPECTED_FREQ[i] + actual_freq[i]) == 0.0f) {
-      matches[i] = "MATCH";
+      snprintf(m + copied, SCRATCH_SIZE - copied, "N/A\r\n");
     }
     else {
-      matches[i] = "NON-MATCH";
+      uint32_t actual_freq = data;
+      float diff = ABS(1.0f * EXPECTED_FREQ[i] - actual_freq) / EXPECTED_FREQ[i];
+      if (diff < TOLERANCE) {
+        snprintf(m + copied, SCRATCH_SIZE - copied, "MATCH\r\n");
+      }
+      else {
+        snprintf(m + copied, SCRATCH_SIZE - copied, "NON-MATCH (exp %d)\r\n", EXPECTED_FREQ[i]);
+      }
     }
-
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "F%d r%02d: % 10d (0x%08x) %s %s\r\n ",
-                       fpga + 1, i, data, data, names[i], matches[i]);
 
     if ((SCRATCH_SIZE - copied) < 50) {
       ++i;
       return pdTRUE;
     }
   }
-
+  // clear the mux
   int r = apollo_i2c_ctl_w(5, 0x70, 1, 0);
   if (r != 0) {
     snprintf(m + copied, SCRATCH_SIZE - copied,
