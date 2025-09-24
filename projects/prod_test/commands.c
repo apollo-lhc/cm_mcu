@@ -170,8 +170,9 @@ BaseType_t prodtest_firststep_ctl(int argc, char **argv, char *m)
                        "ERROR: Failed to initialize FF IO expanders.\r\n");
     return pdFALSE;
   }
-  if (!firefly_i2ctest(m, &copied))
-    return pdFALSE;
+  // move to second stage test
+  // if (!firefly_i2ctest(m, &copied))
+  //   return pdFALSE;
   if (!eeprom_i2ctest(m, &copied))
     return pdFALSE;
   copied += snprintf(m + copied, SCRATCH_SIZE - copied,
