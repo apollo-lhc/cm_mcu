@@ -104,8 +104,8 @@ BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
 
   if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff) {
     uint32_t board_id, rev, ps_mask, data;
-    board_id = strtoul(argv[1], NULL, 16);
-    rev = strtoul(argv[2], NULL, 16);
+    board_id = strtoul(argv[1], NULL, 10);
+    rev = strtoul(argv[2], NULL, 10);
     ff_USER_mask = strtoul(argv[3], NULL, 16);
     ps_mask = strtoul(argv[4], NULL, 16);
     snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mask %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);

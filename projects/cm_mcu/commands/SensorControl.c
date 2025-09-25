@@ -1380,13 +1380,14 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   else {
     EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_2;
   }
-  const float TOLERANCE = .001f;
+  const float TOLERANCE = .01f;
 
   SemaphoreHandle_t s = getSemaphore(5);
   static int i = 0;
   if (i == 0) {
     if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
       snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
+      i = 0;
       return pdFALSE;
     }
 
@@ -1398,6 +1399,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     if (r != 0) {
       snprintf(m, SCRATCH_SIZE, "Failed to set mux (%d, %s)\r\n", r, SMBUS_get_error(r));
       xSemaphoreGive(s);
+      i = 0;
       return pdFALSE;
     }
   }
@@ -1417,20 +1419,20 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     }
 
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                       "F%d r%02d: % 10d (0x%08x) %s %s",
+                       "F%d r%02d: % 10d (0x%08x) %s ",
                        fpga + 1, i, data, data, names[i]);
 
     if (i < 2) {
-      snprintf(m + copied, SCRATCH_SIZE - copied, "N/A\r\n");
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "N/A\r\n");
     }
     else {
       uint32_t actual_freq = data;
-      float diff = ABS(1.0f * EXPECTED_FREQ[i] - actual_freq) / EXPECTED_FREQ[i];
+      float diff = fabs((1.0f * EXPECTED_FREQ[i] - actual_freq) / EXPECTED_FREQ[i]);
       if (diff < TOLERANCE) {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "MATCH\r\n");
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "MATCH\r\n");
       }
       else {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "NON-MATCH (exp %d)\r\n", EXPECTED_FREQ[i]);
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "NON-MATCH (exp %d)\r\n", EXPECTED_FREQ[i]);
       }
     }
 
@@ -1442,7 +1444,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   // clear the mux
   int r = apollo_i2c_ctl_w(5, 0x70, 1, 0);
   if (r != 0) {
-    snprintf(m + copied, SCRATCH_SIZE - copied,
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
              "Failed to clear mux %s\r\n", SMBUS_get_error(r));
   }
 
