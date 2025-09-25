@@ -1445,7 +1445,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   int r = apollo_i2c_ctl_w(5, 0x70, 1, 0);
   if (r != 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-             "Failed to clear mux %s\r\n", SMBUS_get_error(r));
+                       "Failed to clear mux %s\r\n", SMBUS_get_error(r));
   }
 
   xSemaphoreGive(s);
