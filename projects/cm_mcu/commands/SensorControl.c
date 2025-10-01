@@ -1345,6 +1345,13 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "FPGA should be 1 or 2 (got %s)\r\n", argv[1]);
     return pdFALSE;
   }
+#define MAXTEST 2
+  // which test to run
+  int test = strtol(argv[2], NULL, 10);
+  if (test < 1 || test > MAXTEST) {
+    snprintf(m, SCRATCH_SIZE, "Test should be between 1 and %d (got %s)\r\n", MAXTEST, argv[2]);
+    return pdFALSE;
+  }
 
   char *names[] = {
       "rw0", "rw1", "clk_200_ext", "lhc_clk", "tcds40_clk", "rt_x4_r0_clk",
@@ -1354,8 +1361,8 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       "rt_r1_p", "rt_r1_n", "rt_r1_l", "rt_r1_i", "rt_r1_g", "rt_r1_e", "rt_r1_b",
       "lf_r1_y", "lf_r1_w", "lf_r1_u", "lf_r1_r", "lf_r1_af", "lf_r1_ad", "lf_r1_ab"};
 
-  // these values are from Table 2 of the Rev3 Synthesizer testing document.
-  const uint32_t EXPECTED_FREQ_1[] = {
+  // these values are from Table 2 of the Rev3 Synthesizer testing document. This corresponds to step 1.1.1
+  const uint32_t EXPECTED_FREQ_R0A_F1[] = {
       0, 0, 200000000, 40000000, 55000000, 280000000, 160000000,
       150000000, 300000000, 100000000, 325000000, 280000000, 160000000,
       200000000, 160000000, 280000000, 160000000, 160000000, 300000000,
@@ -1364,7 +1371,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       155000000, 163000000, 312000000, 176000000, 296000000, 168000000,
       132000000, 220000000};
 
-  const uint32_t EXPECTED_FREQ_2[] = {
+  const uint32_t EXPECTED_FREQ_ROA_F2[] = {
       0, 0, 200000000, 40000000, 55000000, 140000000, 320000000,
       130000000, 260000000, 100000000, 325000000, 140000000, 320000000,
       200000000, 320000000, 140000000, 320000000, 320000000, 260000000,
@@ -1372,20 +1379,32 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       226000000, 340000000, 136000000, 174000000, 232000000, 348000000,
       310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
       148000000, 110000000};
+  // these values are from Table 2 of the Rev3 Synthesizer testing document. This corresponds to step 1.1.1
+  const uint32_t EXPECTED_FREQ_R0B_F1[] = {
+      0, 0, 200000000, 40000000, 55000000, 270000000, 155000000,
+      145000000, 290000000, 100000000, 325000000, 270000000, 155000000,
+      200000000, 155000000, 270000000, 155000000, 155000000, 290000000,
+      145000000, 290000000, 290000000, 145000000, 290000000, 60000000,
+      116000000, 170000000, 272000000, 113000000, 143000000, 286000000,
+      155000000, 163000000, 312000000, 176000000, 296000000, 168000000,
+      132000000, 220000000};
 
-  uint32_t *EXPECTED_FREQ;
-  if (fpga == 0) {
-    EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_1;
-  }
-  else {
-    EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_2;
-  }
-  const float TOLERANCE = .01f;
+  const uint32_t EXPECTED_FREQ_ROB_F2[] = {
+      0, 0, 200000000, 40000000, 55000000, 135000000, 310000000,
+      125000000, 250000000, 100000000, 325000000, 135000000, 310000000,
+      200000000, 310000000, 135000000, 310000000, 310000000, 250000000,
+      125000000, 250000000, 250000000, 125000000, 250000000, 40000000,
+      226000000, 340000000, 136000000, 174000000, 232000000, 348000000,
+      310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
+      148000000, 110000000};
 
-  SemaphoreHandle_t s = getSemaphore(5);
+
+  const float TOLERANCE = .01f; // 1% tolerance seems to be needed for 100MHz clock (reads 99.3MHz)
+
+  SemaphoreHandle_t s5 = getSemaphore(5);
   static int i = 0;
   if (i == 0) {
-    if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
+    if (acquireI2CSemaphoreTime(s5, 10) != pdTRUE) {
       snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
       i = 0;
       return pdFALSE;
@@ -1398,11 +1417,65 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     int r = apollo_i2c_ctl_w(5, 0x70, 1, mux_val);
     if (r != 0) {
       snprintf(m, SCRATCH_SIZE, "Failed to set mux (%d, %s)\r\n", r, SMBUS_get_error(r));
-      xSemaphoreGive(s);
+      xSemaphoreGive(s5);
       i = 0;
       return pdFALSE;
     }
   }
+  uint32_t *EXPECTED_FREQ;
+  // select which expected frequency table to use based on test. Also do any other setup for the 
+  // test in question, such as select the appropriate clock input using the I2C I/O expanders.
+  if ( test == 1 ) {
+    if (fpga == 0) {
+      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0A_F1;
+    }
+    else {
+      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_ROA_F2;
+    }
+  }
+  else if ( test == 2 ) {
+    if (fpga == 0) {
+      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0B_F1;
+    }
+    else {
+      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_ROB_F2;
+    }
+    // select R0B input on both FPGAs
+    // grab semaphore for I2C 2
+    SemaphoreHandle_t s2 = getSemaphore(2);
+    if (acquireI2CSemaphoreTime(s2, 10) != pdTRUE) {
+      snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C2 semaphore\r\n");
+      xSemaphoreGive(s5);
+      i = 0;
+      return pdFALSE;
+    }
+    uint8_t channel = 0x40; // channel 6
+    if (fpga == 1) { // f2
+      channel = 0x80; // channel 7
+    }
+    // set the mux to channel as appropriate for F1/F2
+    int r = apollo_i2c_ctl_w(2, 0x70, 1, channel); // set to channel 6
+    uint8_t i2c_addr = 0x20; // f1
+    if (fpga == 1) {
+      i2c_addr = 0x21; // f2
+    }
+    // read-modify-write the clock select register to select R0B
+    uint32_t data;
+    r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, 0x2, 1, &data); // read current value
+    data &= 0xF0; // clear bottom nybble 
+    data |= 0x0F; // set nybble low to 0xF
+    r += apollo_i2c_ctl_reg_w(2, i2c_addr, 1, 0x2, 1, data); // set nybble to 0xF
+    r += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // clear the mux
+    if (r) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "Failed to set R0B input (%d, %s)\r\n", r, SMBUS_get_error(r));
+      xSemaphoreGive(s2);
+      xSemaphoreGive(s5);
+      i = 0;
+      return pdFALSE;
+    }
+  }
+
 
   const int NUM_REGISTERS = 39;
 
@@ -1413,7 +1486,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     if (r != 0) {
       snprintf(m + copied, SCRATCH_SIZE - copied, "Failed to read FPGA registers %d (%s)\r\n",
                i, SMBUS_get_error(r));
-      xSemaphoreGive(s);
+      xSemaphoreGive(s5);
       i = 0;
       return pdFALSE;
     }
@@ -1448,7 +1521,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
                        "Failed to clear mux %s\r\n", SMBUS_get_error(r));
   }
 
-  xSemaphoreGive(s);
+  xSemaphoreGive(s5);
   i = 0;
   return pdFALSE;
 }
