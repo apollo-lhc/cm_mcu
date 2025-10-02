@@ -88,12 +88,12 @@ struct dev_ff_i2c_addr_t ff_ioexp_addrs[NDEVICES_FF_IOEXPANDER] = {
 
 // constants for IOexpander test, based on installed FFs and switches
 struct ff_ioexp_param_t ff_ioexp_params[N_IOEXP_CHECKS] = {
-    {0, TCA9555_ADDR_INPORT1, IOEXP1_PRESENT_MASK1, _F1_OPTICS_I2C_RESET},
-    {1, TCA9555_ADDR_INPORT0, IOEXP2_PRESENT_MASK0, _F1_OPTICS_I2C_RESET},
-    {1, TCA9555_ADDR_INPORT1, IOEXP2_PRESENT_MASK1, _F1_OPTICS_I2C_RESET},
-    {2, TCA9555_ADDR_INPORT1, IOEXP1_PRESENT_MASK1, _F2_OPTICS_I2C_RESET},
-    {3, TCA9555_ADDR_INPORT0, IOEXP2_PRESENT_MASK0, _F2_OPTICS_I2C_RESET},
-    {3, TCA9555_ADDR_INPORT1, IOEXP2_PRESENT_MASK1, _F2_OPTICS_I2C_RESET},
+    {0, TCA9555_ADDR_INPORT1, _F1_OPTICS_I2C_RESET},
+    {1, TCA9555_ADDR_INPORT0, _F1_OPTICS_I2C_RESET},
+    {1, TCA9555_ADDR_INPORT1, _F1_OPTICS_I2C_RESET},
+    {2, TCA9555_ADDR_INPORT1, _F2_OPTICS_I2C_RESET},
+    {3, TCA9555_ADDR_INPORT0, _F2_OPTICS_I2C_RESET},
+    {3, TCA9555_ADDR_INPORT1, _F2_OPTICS_I2C_RESET},
 };
 
 /**
@@ -120,7 +120,7 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied,
     // loop over devices
     for (uint8_t idev = 0; idev < NDEVICES_FF; ++idev) {
 
-      if ((ff_mask >> idev & 0x1)==0) {
+      if (((ff_mask >> idev) & 0x1)==0) {
         continue;
       }
 
@@ -222,15 +222,15 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m,
   uint32_t data;
   // calculate expected present bits from ff_mask
   // IO expander order is quite different, not sure best way to swap bits...
-  uint32_t present_expect[N_IOEXP_CHECKS];
-  present_expect[0] = (ff_mask & 0x3) | (ff_mask & 0x78 >> 1) 
+  uint32_t present_mask[N_IOEXP_CHECKS];
+  present_mask[0] = (ff_mask & 0x3) | ((ff_mask & 0x78) >> 1) 
                       | (ff_mask & 0x300 >> 2);
-  present_expect[1] = (ff_mask & 0x4) | (ff_mask & 0x80 >> 4);
-  present_expect[2] = 0x00;
-  present_expect[3] = (ff_mask & 0xC00 >> 10) | (ff_mask & 0x1E000 >> 11) 
-                      | (ff_mask & 0xC0000 >> 12);
-  present_expect[4] = (ff_mask & 0x1000 >> 10) | (ff_mask & 0x20000 >> 14);
-  present_expect[5] = 0x00;
+  present_mask[1] = (ff_mask & 0x4) | ((ff_mask & 0x80) >> 4);
+  present_mask[2] = 0x00;
+  present_mask[3] = ((ff_mask & 0xC00) >> 10) | ((ff_mask & 0x1E000) >> 11) 
+                      | ((ff_mask & 0xC0000) >> 12);
+  present_mask[4] = ((ff_mask & 0x1000) >> 10) | ((ff_mask & 0x20000) >> 14);
+  present_mask[5] = 0x00;
 
   // loop over devices
   for (uint8_t icheck = 0; icheck < N_IOEXP_CHECKS; ++icheck) {
@@ -267,14 +267,12 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m,
         fail = true;
       }
     }
-    data = data & ff_ioexp_params[icheck].mask;
-    if (data != present_expect[icheck]) {
+    data = data & present_mask[icheck];
+    if (data != 0) {
       if (!mux_reset) {
         (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                              "ERROR: present bits on IOexp %d (expected %d,"
-                              " got %d)\r\n",
-                              idev, present_expect[icheck],
-                              data);
+                              "ERROR: present bits on IOexp %d (expected 0,"
+                              " got %d)\r\n", idev, data);
         return false;
       }
       else {

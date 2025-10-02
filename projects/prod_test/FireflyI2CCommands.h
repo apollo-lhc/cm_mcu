@@ -78,7 +78,6 @@ struct dev_ff_i2c_addr_t {
 struct ff_ioexp_param_t {
   uint8_t dev_index;    // index to IOexpander dev_ff_i2c_addr_t
   uint8_t present_addr; // I2C register address
-  uint32_t mask;        // Mask for returned values
   int reset_pin;        // Associated MUX reset
 };
 
