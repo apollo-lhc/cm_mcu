@@ -45,7 +45,7 @@ struct command_t commands[] = {
     {"fpgai2ctest", fpga_i2ctest_ctl, "Test I2C to FPGAs", 0},
     {"initclockreg", clock_ioexpanders_init_ctl, "Initialize IO expanders", 0},
     {"initffreg", firefly_ioexpanders_init_ctl, "Initialize IO expanders", 0},
-    {"prodtest1", prodtest_firststep_ctl, "Run 1st step prod tests", 0},
+    {"prodtest1", prodtest_firststep_ctl, "Run 1st step prod tests", -1},
     {"poweron", power_ctl, "power on at level n", 1},
     {"poweroff", power_off_ctl, "power off", 0},
     {"restart", restart_mcu, "restart the MCU", 0},

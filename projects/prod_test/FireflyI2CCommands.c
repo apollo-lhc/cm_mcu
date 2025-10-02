@@ -31,7 +31,7 @@
 // to be changed for the actual configuration of fireflies we decide to
 // install for the production tests
 
-//setup with all fireflies installed
+// setup with all fireflies installed
 struct dev_ff_i2c_addr_t ff_addrs[NDEVICES_FF] = {
     {"F1_FF1_XMIT", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF1_T_MUX_BIT,
      0, DEV_FF_TX},
@@ -110,7 +110,7 @@ struct ff_ioexp_param_t ff_ioexp_params[N_IOEXP_CHECKS] = {
  * @param [in] ff_mask  firefly presence bitmap
  * @return true if test passes, false otherwise
  */
-bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied, 
+bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied,
                                         int32_t ff_mask)
 {
 
@@ -120,7 +120,7 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied,
     // loop over devices
     for (uint8_t idev = 0; idev < NDEVICES_FF; ++idev) {
 
-      if (((ff_mask >> idev) & 0x1)==0) {
+      if (((ff_mask >> idev) & 0x1) == 0) {
         continue;
       }
 
@@ -216,19 +216,17 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied,
  * @param [inout] copied  length of output buffer already used
  * @return true if test passes, false otherwise
  */
-bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, 
+bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m,
                                           int32_t *copied, int32_t ff_mask)
 {
   uint32_t data;
   // calculate expected present bits from ff_mask
   // IO expander order is quite different, not sure best way to swap bits...
   uint32_t present_mask[N_IOEXP_CHECKS];
-  present_mask[0] = (ff_mask & 0x3) | ((ff_mask & 0x78) >> 1) 
-                      | (ff_mask & 0x300 >> 2);
+  present_mask[0] = (ff_mask & 0x3) | ((ff_mask & 0x78) >> 1) | (ff_mask & 0x300 >> 2);
   present_mask[1] = (ff_mask & 0x4) | ((ff_mask & 0x80) >> 4);
   present_mask[2] = 0x00;
-  present_mask[3] = ((ff_mask & 0xC00) >> 10) | ((ff_mask & 0x1E000) >> 11) 
-                      | ((ff_mask & 0xC0000) >> 12);
+  present_mask[3] = ((ff_mask & 0xC00) >> 10) | ((ff_mask & 0x1E000) >> 11) | ((ff_mask & 0xC0000) >> 12);
   present_mask[4] = ((ff_mask & 0x1000) >> 10) | ((ff_mask & 0x20000) >> 14);
   present_mask[5] = 0x00;
 
@@ -272,7 +270,8 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m,
       if (!mux_reset) {
         (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
                               "ERROR: present bits on IOexp %d (expected 0,"
-                              " got %d)\r\n", idev, data);
+                              " got %d)\r\n",
+                              idev, data);
         return false;
       }
       else {
@@ -389,18 +388,19 @@ BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m)
 }
 
 /**
- * @details Takes an optional CLI argument that specifies firefly presence as 
+ * @details Takes an optional CLI argument that specifies firefly presence as
  * binary string of 1s and 0s, ex. 11011001001111111111. The order matches the
  * physical order on board, and in ff_addrs. No argument assumes all fireflies
  * installed
  */
-int32_t firefly_string_to_mask(int argc, char** argv) {
+int32_t firefly_string_to_mask(int argc, char **argv)
+{
   int32_t ff_mask = 0xFFFFF;
-  //if arg present, decode into bitmap
+  // if arg present, decode into bitmap
   if (argc >= 2) {
     if (strlen(argv[1]) >= NDEVICES_FF) {
       for (uint8_t idev = 0; idev < NDEVICES_FF; idev++) {
-        if (argv[1][idev]=='0') {
+        if (argv[1][idev] == '0') {
           ff_mask = ff_mask & ~(0x1 << idev);
         }
       }

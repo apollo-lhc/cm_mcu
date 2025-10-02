@@ -108,7 +108,7 @@ BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m);
  * @param [in] argv  CLI arguments
  * @return firefly bit mask, ordered by site
  */
-int32_t firefly_string_to_mask(int argc, char** argv);
+int32_t firefly_string_to_mask(int argc, char **argv);
 
 /**
  * @brief CLI function that initializes optics IO expanders
