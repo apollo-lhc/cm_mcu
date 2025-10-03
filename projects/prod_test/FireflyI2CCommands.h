@@ -73,6 +73,7 @@ struct dev_ff_i2c_addr_t {
   uint8_t mux_bit;             // port of the mux; write 0x1U<<mux_bit to select
   uint8_t dev_addr;            // I2C address of device.
   enum device_class dev_class; // Device class
+  int reset_pin;               // Associated MUX reset
 };
 
 struct ff_ioexp_param_t {
