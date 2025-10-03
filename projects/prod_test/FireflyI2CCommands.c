@@ -194,7 +194,7 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied,
           return false;
         }
       }
-      //reset mux
+      // reset mux
       write_gpio_pin(ff_addrs[idev].reset_pin, 0x0);
       vTaskDelay(pdMS_TO_TICKS(1));
       write_gpio_pin(ff_addrs[idev].reset_pin, 0x1);
