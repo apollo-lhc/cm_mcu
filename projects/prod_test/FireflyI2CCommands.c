@@ -10,6 +10,7 @@
 // includes for types
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -30,93 +31,49 @@
 // to be changed for the actual configuration of fireflies we decide to
 // install for the production tests
 
-// 3002 current setup
+// setup with all fireflies installed
 struct dev_ff_i2c_addr_t ff_addrs[NDEVICES_FF] = {
     {"F1_FF1_XMIT", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF1_T_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_TX, _F1_OPTICS_I2C_RESET},
     {"F1_FF1_RECV", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF1_R_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_RX, _F1_OPTICS_I2C_RESET},
     {"F1_FF5_XCVR", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF5_B_MUX_BIT,
-     0, DEV_FF_B04},
+     0, DEV_FF_B04, _F1_OPTICS_I2C_RESET},
     {"F1_FF2_XMIT", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF2_T_MUX_BIT,
-     0, DEV_FF_TX},
+     0, DEV_FF_TX, _F1_OPTICS_I2C_RESET},
     {"F1_FF2_RECV", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF2_R_MUX_BIT,
-     0, DEV_FF_RX},
+     0, DEV_FF_RX, _F1_OPTICS_I2C_RESET},
     {"F1_FF3_XMIT", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF3_T_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_TX, _F1_OPTICS_I2C_RESET},
     {"F1_FF3_RECV", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF3_R_MUX_BIT,
-     0, DEV_NONE},
-    {"F1_FF6_RECV", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF6_B_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_RX, _F1_OPTICS_I2C_RESET},
+    {"F1_FF6_XCVR", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF6_B_MUX_BIT,
+     0, DEV_FF_B04, _F1_OPTICS_I2C_RESET},
     {"F1_FF4_XMIT", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF4_T_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_TX, _F1_OPTICS_I2C_RESET},
     {"F1_FF4_RECV", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF4_R_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_RX, _F1_OPTICS_I2C_RESET},
     {"F2_FF1_XMIT", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF1_T_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_TX, _F2_OPTICS_I2C_RESET},
     {"F2_FF1_RECV", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF1_R_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_RX, _F2_OPTICS_I2C_RESET},
     {"F2_FF5_XCVR", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF5_B_MUX_BIT,
-     0, DEV_FF_B04},
+     0, DEV_FF_B04, _F2_OPTICS_I2C_RESET},
     {"F2_FF2_XMIT", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF2_T_MUX_BIT,
-     0, DEV_FF_TX},
+     0, DEV_FF_TX, _F2_OPTICS_I2C_RESET},
     {"F2_FF2_RECV", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF2_R_MUX_BIT,
-     0, DEV_FF_RX},
+     0, DEV_FF_RX, _F2_OPTICS_I2C_RESET},
     {"F2_FF3_XMIT", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF3_T_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_TX, _F2_OPTICS_I2C_RESET},
     {"F2_FF3_RECV", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF3_R_MUX_BIT,
-     0, DEV_NONE},
-    {"F2_FF6_RECV", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF6_B_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_RX, _F2_OPTICS_I2C_RESET},
+    {"F2_FF6_XCVR", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF6_B_MUX_BIT,
+     0, DEV_FF_B04, _F2_OPTICS_I2C_RESET},
     {"F2_FF4_XMIT", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF4_T_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_TX, _F2_OPTICS_I2C_RESET},
     {"F2_FF4_RECV", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF4_R_MUX_BIT,
-     0, DEV_NONE},
+     0, DEV_FF_RX, _F2_OPTICS_I2C_RESET},
 };
-
-// setup with all fireflies installed
-// struct dev_i2c_addr_t ff_addrs[NDEVICES_FF] = {
-//    {"F1_FF1_XMIT", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF1_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F1_FF1_RECV", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF1_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//    {"F1_FF5_XCVR", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF5_B_MUX_BIT,
-//     0, DEV_FF_B04},
-//    {"F1_FF2_XMIT", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF2_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F1_FF2_RECV", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_FF2_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//    {"F1_FF3_XMIT", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF3_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F1_FF3_RECV", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF3_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//    {"F1_FF6_RECV", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF6_B_MUX_BIT,
-//     0, DEV_FF_B04},
-//    {"F1_FF4_XMIT", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF4_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F1_FF4_RECV", F1FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F1_FF4_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//    {"F2_FF1_XMIT", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF1_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F2_FF1_RECV", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF1_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//    {"F2_FF5_XCVR", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF5_B_MUX_BIT,
-//     0, DEV_FF_B04},
-//    {"F2_FF2_XMIT", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF2_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F2_FF2_RECV", F2FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F2_FF2_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//    {"F2_FF3_XMIT", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF3_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F2_FF3_RECV", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF3_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//    {"F2_FF6_RECV", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF6_B_MUX_BIT,
-//     0, DEV_FF_B04},
-//    {"F2_FF4_XMIT", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF4_T_MUX_BIT,
-//     0, DEV_FF_TX},
-//    {"F2_FF4_RECV", F2FF_I2C_BASE, FF_I2C_MUX2_ADDR, FF_I2C_F2_FF4_R_MUX_BIT,
-//     0, DEV_FF_RX},
-//};
 
 struct dev_ff_i2c_addr_t ff_ioexp_addrs[NDEVICES_FF_IOEXPANDER] = {
     {"F1_IOEXP1", F1FF_I2C_BASE, FF_I2C_MUX1_ADDR, FF_I2C_F1_IOEXP1_MUX_BIT,
@@ -131,18 +88,12 @@ struct dev_ff_i2c_addr_t ff_ioexp_addrs[NDEVICES_FF_IOEXPANDER] = {
 
 // constants for IOexpander test, based on installed FFs and switches
 struct ff_ioexp_param_t ff_ioexp_params[N_IOEXP_CHECKS] = {
-    {0, TCA9555_ADDR_INPORT1, IOEXP1_PRESENT_MASK1, IOEXP1_PRESENT_EXPECT1,
-     _F1_OPTICS_I2C_RESET},
-    {1, TCA9555_ADDR_INPORT0, IOEXP2_PRESENT_MASK0, IOEXP2_PRESENT_EXPECT0,
-     _F1_OPTICS_I2C_RESET},
-    {1, TCA9555_ADDR_INPORT1, IOEXP2_PRESENT_MASK1, IOEXP2_PRESENT_EXPECT1,
-     _F1_OPTICS_I2C_RESET},
-    {2, TCA9555_ADDR_INPORT1, IOEXP1_PRESENT_MASK1, IOEXP1_PRESENT_EXPECT1,
-     _F2_OPTICS_I2C_RESET},
-    {3, TCA9555_ADDR_INPORT0, IOEXP2_PRESENT_MASK0, IOEXP2_PRESENT_EXPECT0,
-     _F2_OPTICS_I2C_RESET},
-    {3, TCA9555_ADDR_INPORT1, IOEXP2_PRESENT_MASK1, IOEXP2_PRESENT_EXPECT1,
-     _F2_OPTICS_I2C_RESET},
+    {0, TCA9555_ADDR_INPORT1, _F1_OPTICS_I2C_RESET},
+    {1, TCA9555_ADDR_INPORT0, _F1_OPTICS_I2C_RESET},
+    {1, TCA9555_ADDR_INPORT1, _F1_OPTICS_I2C_RESET},
+    {2, TCA9555_ADDR_INPORT1, _F2_OPTICS_I2C_RESET},
+    {3, TCA9555_ADDR_INPORT0, _F2_OPTICS_I2C_RESET},
+    {3, TCA9555_ADDR_INPORT1, _F2_OPTICS_I2C_RESET},
 };
 
 /**
@@ -156,9 +107,11 @@ struct ff_ioexp_param_t ff_ioexp_params[N_IOEXP_CHECKS] = {
  *
  * @param [out] m  output string
  * @param [inout] copied  length of output buffer already used
+ * @param [in] ff_mask  firefly presence bitmap
  * @return true if test passes, false otherwise
  */
-bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied)
+bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied,
+                                        int32_t ff_mask)
 {
 
   // do three passes, write the first time, read the second, and reset third
@@ -167,7 +120,7 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied)
     // loop over devices
     for (uint8_t idev = 0; idev < NDEVICES_FF; ++idev) {
 
-      if (ff_addrs[idev].dev_class == DEV_NONE) {
+      if (((ff_mask >> idev) & 0x1) == 0) {
         continue;
       }
 
@@ -241,6 +194,10 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied)
           return false;
         }
       }
+      // reset mux
+      write_gpio_pin(ff_addrs[idev].reset_pin, 0x0);
+      vTaskDelay(pdMS_TO_TICKS(1));
+      write_gpio_pin(ff_addrs[idev].reset_pin, 0x1);
 
     } // loop over devices
   }   // read/write loop
@@ -263,9 +220,19 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied)
  * @param [inout] copied  length of output buffer already used
  * @return true if test passes, false otherwise
  */
-bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copied)
+bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m,
+                                          int32_t *copied, int32_t ff_mask)
 {
   uint32_t data;
+  // calculate expected present bits from ff_mask
+  // IO expander order is quite different, not sure best way to swap bits...
+  uint32_t present_mask[N_IOEXP_CHECKS];
+  present_mask[0] = (ff_mask & 0x3) | ((ff_mask & 0x78) >> 1) | (ff_mask & 0x300 >> 2);
+  present_mask[1] = (ff_mask & 0x4) | ((ff_mask & 0x80) >> 4);
+  present_mask[2] = 0x00;
+  present_mask[3] = ((ff_mask & 0xC00) >> 10) | ((ff_mask & 0x1E000) >> 11) | ((ff_mask & 0xC0000) >> 12);
+  present_mask[4] = ((ff_mask & 0x1000) >> 10) | ((ff_mask & 0x20000) >> 14);
+  present_mask[5] = 0x00;
 
   // loop over devices
   for (uint8_t icheck = 0; icheck < N_IOEXP_CHECKS; ++icheck) {
@@ -302,14 +269,13 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copi
         fail = true;
       }
     }
-    data = data & ff_ioexp_params[icheck].mask;
-    if (data != ff_ioexp_params[icheck].expect) {
+    data = data & present_mask[icheck];
+    if (data != 0) {
       if (!mux_reset) {
         (*copied) += snprintf(m + (*copied), SCRATCH_SIZE - (*copied),
-                              "ERROR: present bits on IOexp %d (expected %d,"
+                              "ERROR: present bits on IOexp %d (expected 0,"
                               " got %d)\r\n",
-                              idev, ff_ioexp_params[icheck].expect,
-                              data);
+                              idev, data);
         return false;
       }
       else {
@@ -394,17 +360,17 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m, int32_t *copi
  * CLI function that tests I2C communication to fireflies/IO expanders/MUX.
  * This is broken into 3 parts, see helper functions above for details
  */
-bool firefly_i2ctest(char *m, int32_t *copied)
+bool firefly_i2ctest(char *m, int32_t *copied, int32_t ff_mask)
 {
-  if (!firefly_i2ctest_transceiver_helper(m, copied)) {
+  if (!firefly_i2ctest_transceiver_helper(m, copied, ff_mask)) {
     return false;
   }
 
-  if (!firefly_i2ctest_ioexpandermux_helper(false, m, copied)) {
+  if (!firefly_i2ctest_ioexpandermux_helper(false, m, copied, ff_mask)) {
     return false;
   }
 
-  if (!firefly_i2ctest_ioexpandermux_helper(true, m, copied)) {
+  if (!firefly_i2ctest_ioexpandermux_helper(true, m, copied, ff_mask)) {
     return false;
   }
 
@@ -418,10 +384,33 @@ bool firefly_i2ctest(char *m, int32_t *copied)
 BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  if (firefly_i2ctest(m, &copied))
+  int32_t ff_mask = firefly_string_to_mask(argc, argv);
+  if (firefly_i2ctest(m, &copied, ff_mask))
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "Firefly I2C test: success.\r\n");
   return pdFALSE;
+}
+
+/**
+ * @details Takes an optional CLI argument that specifies firefly presence as
+ * binary string of 1s and 0s, ex. 11011001001111111111. The order matches the
+ * physical order on board, and in ff_addrs. No argument assumes all fireflies
+ * installed
+ */
+int32_t firefly_string_to_mask(int argc, char **argv)
+{
+  int32_t ff_mask = 0xFFFFF;
+  // if arg present, decode into bitmap
+  if (argc >= 2) {
+    if (strlen(argv[1]) >= NDEVICES_FF) {
+      for (uint8_t idev = 0; idev < NDEVICES_FF; idev++) {
+        if (argv[1][idev] == '0') {
+          ff_mask = ff_mask & ~(0x1 << idev);
+        }
+      }
+    }
+  }
+  return ff_mask;
 }
 
 /**

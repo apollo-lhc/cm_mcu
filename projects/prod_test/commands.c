@@ -150,31 +150,49 @@ BaseType_t prodtest_firststep_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
   int r;
-  if (!dcdc_i2ctest(m, &copied))
+  if (!dcdc_i2ctest(m, &copied)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "(DCDC I2C Test)\r\n");
     return pdFALSE;
-  if (!dcdc_powerontest(m, &copied))
+  }
+  if (!dcdc_powerontest(m, &copied)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "(Power on Test)\r\n");
     return pdFALSE;
+  }
   r = init_registers_clk();
   if (r) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "ERROR: Failed to initialize clk IO expanders.\r\n");
     return pdFALSE;
   }
-  if (!clock_i2ctest(m, &copied))
+  if (!clock_i2ctest(m, &copied)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "(Clock I2C Test)\r\n");
     return pdFALSE;
-  if (!fpga_i2ctest(m, &copied))
+  }
+  if (!fpga_i2ctest(m, &copied)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "(FPGA I2C Test)\r\n");
     return pdFALSE;
+  }
   r = init_registers_firefly();
   if (r) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "ERROR: Failed to initialize FF IO expanders.\r\n");
     return pdFALSE;
   }
-  // move to second stage test
-  // if (!firefly_i2ctest(m, &copied))
-  //   return pdFALSE;
-  if (!eeprom_i2ctest(m, &copied))
+  int32_t ff_mask = firefly_string_to_mask(argc, argv);
+  if (!firefly_i2ctest(m, &copied, ff_mask)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "(Firefly I2C Test)\r\n");
     return pdFALSE;
+  }
+  if (!eeprom_i2ctest(m, &copied)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "(EEPROM I2C Test)\r\n");
+    return pdFALSE;
+  }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                      "All tests successful.\r\n");
   disable_ps();

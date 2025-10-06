@@ -73,13 +73,12 @@ struct dev_ff_i2c_addr_t {
   uint8_t mux_bit;             // port of the mux; write 0x1U<<mux_bit to select
   uint8_t dev_addr;            // I2C address of device.
   enum device_class dev_class; // Device class
+  int reset_pin;               // Associated MUX reset
 };
 
 struct ff_ioexp_param_t {
   uint8_t dev_index;    // index to IOexpander dev_ff_i2c_addr_t
   uint8_t present_addr; // I2C register address
-  uint32_t mask;        // Mask for returned values
-  uint32_t expect;      // Expected result after masking
   int reset_pin;        // Associated MUX reset
 };
 
@@ -88,9 +87,10 @@ struct ff_ioexp_param_t {
  *
  * @param [out] m  output string
  * @param [inout] copied  output already used in buffer
+ * @param [in] ff_mask  bitmap of firefly presence
  * @return true if test succeeds, false otherwise
  */
-bool firefly_i2ctest(char *m, int32_t *copied);
+bool firefly_i2ctest(char *m, int32_t *copied, int32_t ff_mask);
 
 /**
  * @brief CLI wrapper around firefly_i2ctest
@@ -101,6 +101,15 @@ bool firefly_i2ctest(char *m, int32_t *copied);
  * @return pdFALSE
  */
 BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m);
+
+/**
+ * @brief generates bitmap from binary string
+ *
+ * @param [in] argc  number of CLI arguments
+ * @param [in] argv  CLI arguments
+ * @return firefly bit mask, ordered by site
+ */
+int32_t firefly_string_to_mask(int argc, char **argv);
 
 /**
  * @brief CLI function that initializes optics IO expanders
