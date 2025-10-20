@@ -8,6 +8,7 @@
 #ifndef SENSOR_CONTROL_H_
 #define SENSOR_CONTROL_H_
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include "portmacro.h"
 
 // Register definitions
 // -------------------------------------------------
@@ -65,6 +66,7 @@ BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m);
 BaseType_t clkmon_ctl(int argc, char **argv, char *m);
 BaseType_t clkr0amon_ctl(int argc, char **argv, char *m);
 BaseType_t clk_prog_name(int argc, char **argv, char *m);
+BaseType_t clk_reset(int argc, char **argv, char *m);
 BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m);
 
 // FPGA

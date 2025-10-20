@@ -1272,6 +1272,9 @@ BaseType_t ff_v3v3(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+// names of the clock ids
+static const char *clk_ids[5] = {"0A", "0B", "1A", "1B", "1C"};
+
 // dump clock monitor information
 BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 {
@@ -1285,7 +1288,6 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
   }
   // print out header once
   if (c == 0) {
-    const char *clk_ids[5] = {"0A", "0B", "1A", "1B", "1C"};
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Clock R%s\r\n",
                        clk_ids[i]);
     char *header = "REG_TABLE";
@@ -1464,7 +1466,6 @@ BaseType_t clk_prog_name(int argc, char **argv, char *m)
   }
   char from_chip[10];
   char from_eeprom[10];
-  char *names[5] = {"0A", "0B", "1A", "1B", "1C"};
   SemaphoreHandle_t s = getSemaphore(2);
   if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
     snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
@@ -1473,7 +1474,33 @@ BaseType_t clk_prog_name(int argc, char **argv, char *m)
   getClockProgram(i, from_chip, from_eeprom);
   xSemaphoreGive(s);
 
-  snprintf(m, SCRATCH_SIZE, "CLK%d (R%s): %s %s\r\n", i, names[i], from_chip, from_eeprom);
+  snprintf(m, SCRATCH_SIZE, "CLK%d (R%s): %s %s\r\n", i, clk_ids[i], from_chip, from_eeprom);
+  return pdFALSE;
+}
+
+// reset clock synthesizers
+BaseType_t clk_reset(int argc, char **argv, char *m)
+{
+  // argument is which clock chip to reset. Should be in range 0-4.
+  int i = strtol(argv[1], NULL, 10);
+  if (i < 0 || i > 4) {
+    snprintf(m, SCRATCH_SIZE, "Clock chip should be in range 0-4 (got %s)\r\n", argv[1]);
+    return pdFALSE;
+  }
+  SemaphoreHandle_t s = getSemaphore(2);
+  if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
+    snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
+    return pdFALSE;
+  }
+  int ret = resetClockSynth(i);
+  if ( ret != 0) {
+    snprintf(m, SCRATCH_SIZE, "Failed to reset clock synthesizer R%s (%s)\r\n",
+             clk_ids[i], SMBUS_get_error(ret));
+  }
+  else {
+    snprintf(m, SCRATCH_SIZE, "Clock synthesizer R%s reset\r\n", clk_ids[i]);
+  }
+  xSemaphoreGive(s);
   return pdFALSE;
 }
 

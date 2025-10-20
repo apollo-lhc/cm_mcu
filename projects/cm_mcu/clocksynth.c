@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "MonitorTaskI2C.h"
+#include "common/log.h"
 #include "common/smbus_helper.h"
 #include "clocksynth.h"
 #include "I2CCommunication.h"
@@ -126,4 +127,110 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
       memcpy(progname_clkdesgid, data, CLOCK_PROGNAME_REG_COUNT);
   }
 }
-#endif // REV2
+
+// Reset the clock synthesizer by toggling the reset pin, which is active low
+// the reset pins are connected to the I/O expanders. The schematic names
+// are of the form /SYN_RXX_RESET, where XX is the R[01][ABC] clock name.
+// must grab and release the semaphore in a larger scope when calling this function.
+// return 0 on success, error code otherwise
+int resetClockSynth(int device)
+{
+  // extract info about device
+  // device must be in range 0-4
+  if (device < 0 || device > 4) {
+    log_error(LOG_I2C, "Invalid device %d\r\n", device);
+    return 1;
+  }
+  // Devices are 
+  // 0: R0A
+  // 1: R0B
+  // 2: R1A
+  // 3: R1B
+  // 4: R1C
+  // Rev3: See page 4.03 of the schematic. R0A and R0B reset are on one expander at address 0x20,
+  //       and R1A, R1B, and R1C reset are on another expander at address 0x21.
+  // The first I/O expander is on channel 6 of the Mux. The second I/O expander is on channel 7 of the Mux.
+
+  // the reset bits are as follows for the TCA9555 I/O expanders. 
+  // R0A: bit P07 --> read reg 0, write reg 2, bit 7
+  // R0B: bit P10 --> read reg 1, write reg 3, bit 0
+  // R1A: bit P07 --> read reg 0, write reg 2, bit 7
+  // R1B: bit P10 --> read reg 1, write reg 3, bit 0
+  // R1C: bit P11 --> read reg 1, write reg 3, bit 1
+  int channel = (device < 2) ? 6 : 7;
+  uint8_t mux_addr = CLOCK_SWITCH_I2C_ADDRESS;
+  uint8_t expander_addr = (device < 2) ? CLOCK_R0_EXPANDER_I2C_ADDRESS : CLOCK_R1_EXPANDER_I2C_ADDRESS;
+  // set the mux
+  int res = apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 1 << channel);
+  if (res != 0) {
+    log_warn(LOG_SERVICE, "Mux error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
+             clk_moni2c_addrs[device].name);
+    return res;
+  }
+  int read_reg, write_reg, bit_pos;
+  switch (device) {
+  case 0: // R0A
+    read_reg = CLOCK_EXPANDER_INPUT_PORT_0;
+    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_0;
+    bit_pos = 7;
+    break;
+  case 1: // R0B
+    read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
+    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
+    bit_pos = 0;
+    break;
+  case 2: // R1A
+    read_reg = CLOCK_EXPANDER_INPUT_PORT_0;
+    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_0;
+    bit_pos = 7;
+    break;
+  case 3: // R1B
+    read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
+    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
+    bit_pos = 0;
+    break;
+  case 4: // R1C
+    read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
+    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
+    bit_pos = 1;
+    break;
+  default:
+    log_error(LOG_I2C, "Invalid device %d\r\n", device);
+    return 1;
+  }
+
+
+  // read/modify/write to assert reset (active low)
+  // read current port value 
+  uint32_t output_port;
+  res = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, expander_addr, 1,
+                             read_reg, 1, &output_port);
+  if (res != 0) {
+    log_warn(LOG_SERVICE, "Expander read error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
+             clk_moni2c_addrs[device].name);
+    return res;
+  }
+  // clear the bit corresponding to the reset pin to assert reset (active low)
+  output_port &= ~(1 << bit_pos);
+  res = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, expander_addr, 1,
+                             write_reg, 1, output_port);
+  if (res != 0) {
+    log_warn(LOG_SERVICE, "Expander write error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
+             clk_moni2c_addrs[device].name);
+    return res;
+  }
+  vTaskDelay(pdMS_TO_TICKS(10)); // hold reset low for 10 ms
+  // set the bit corresponding to the reset pin to de-assert reset
+  output_port |= (1 << bit_pos);
+  res = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, expander_addr, 1,
+                             write_reg, 1, output_port);
+  if (res != 0) {
+    log_warn(LOG_SERVICE, "Expander write error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
+             clk_moni2c_addrs[device].name);
+    return res;
+  }
+
+
+  return 0;
+}
+#endif // REV2 || REV3

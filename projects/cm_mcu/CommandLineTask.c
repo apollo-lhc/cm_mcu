@@ -248,6 +248,7 @@ static struct command_t commands[] = {
     {"clkmon", clkmon_ctl, "CLK chips' status, id:0-4\r\n", 1},
     {"clkname", clk_prog_name, "CLK chip program, id:0-4\r\n", 1},
     {"clkprog", init_load_clock_ctl, "args: <id> <reset>\r\nLoad clock chip program, id:0-4\r\n", 2},
+    {"clkreset", clk_reset, "Reset clock chip, id:0-4\r\n", 1},
 #endif // REV2
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM\r\n", 0},
     {"eeprom_read", eeprom_read,
