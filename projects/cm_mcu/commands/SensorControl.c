@@ -1386,13 +1386,22 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 
   SemaphoreHandle_t s = getSemaphore(5);
   static int i = 0;
-  if (i == 0) {
+  if (i == 0) { // on first entry, grab the semaphore and set the mux
     if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
-      snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
-      i = 0;
+      int copied = snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
+      // do I have the semaphore already?
+      if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
+        snprintf(m+copied, SCRATCH_SIZE- copied,  "Note: I2C semaphore already held by this task\r\n");
+      }
+      return pdFALSE;
+    }
+    bool have_semaphore = xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle();
+    if ( !have_semaphore ) {
+      snprintf(m, SCRATCH_SIZE, "Semaphore not held after acquire\r\n");
       return pdFALSE;
     }
 
+    // set the mux to the desired FPGA
     unsigned mux_val = 0x4; // default to F1
     if (fpga == 1) {
       mux_val = 0x1;
@@ -1401,7 +1410,6 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     if (r != 0) {
       snprintf(m, SCRATCH_SIZE, "Failed to set mux (%d, %s)\r\n", r, SMBUS_get_error(r));
       xSemaphoreGive(s);
-      i = 0;
       return pdFALSE;
     }
   }
@@ -1424,7 +1432,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
                        "F%d r%02d: % 10d (0x%08x) %s ",
                        fpga + 1, i, data, data, names[i]);
 
-    if (i < 2) {
+    if (i < 2) { // first two are test r/w registers
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "N/A\r\n");
     }
     else {
@@ -1438,7 +1446,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       }
     }
 
-    if ((SCRATCH_SIZE - copied) < 50) {
+    if ((SCRATCH_SIZE - copied) < 50) { // run out of buffer space -- print out line and resume
       ++i;
       return pdTRUE;
     }
@@ -1449,7 +1457,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "Failed to clear mux %s\r\n", SMBUS_get_error(r));
   }
-
+  // return the semaphore, reset the index
   xSemaphoreGive(s);
   i = 0;
   return pdFALSE;
