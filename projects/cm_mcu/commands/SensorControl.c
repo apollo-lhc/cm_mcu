@@ -1340,7 +1340,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 {
   int copied = 0;
   // check if we are looking for FPGA1 or two based on the command argument
-  int fpga = strtol(argv[1], NULL, 10) - 1;
+  int fpga = strtol(argv[1], NULL, 10) - 1; // FPGA is 0 or 1 (not 1 or 2)
   if (fpga < 0 || fpga > 1) {
     snprintf(m, SCRATCH_SIZE, "FPGA should be 1 or 2 (got %s)\r\n", argv[1]);
     return pdFALSE;
@@ -1352,7 +1352,8 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "Test should be between 1 and %d (got %s)\r\n", MAXTEST, argv[2]);
     return pdFALSE;
   }
-
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Testing F%d, test %d\r\n",
+                     fpga+1, test);
   char *names[] = {
       "rw0", "rw1", "clk_200_ext", "lhc_clk", "tcds40_clk", "rt_x4_r0_clk",
       "rt_x12_r0_clk", "lf_x4_r0_clk", "lf_x12_r0_clk", "clk_100", "clk_325",
@@ -1474,6 +1475,11 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       i = 0;
       return pdFALSE;
     }
+  }
+  else {
+    snprintf(m + copied, SCRATCH_SIZE - copied, "Invalid test and FPGA combo (%d,%d)\r\n",
+             fpga, test);
+    return pdFALSE;
   }
 
 
