@@ -34,13 +34,6 @@
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
-// break out of loop, releasing semaphore if we have it
-#define release_break()                                                      \
-  {                                                                          \
-    if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) \
-      xSemaphoreGive(args->xSem);                                            \
-    break;                                                                   \
-  }
 
 void MonitorTask(void *parameters)
 {
@@ -158,7 +151,7 @@ void MonitorTask(void *parameters)
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
-            break; // BUG: THIS IS NOT GOING TO WORK -- WE ARE STILL ACTING AS IF WE HAVE THE SEMAPHORE IN THE OUTER LOOP
+            break; 
           }
           float val;
           if (args->commands[c].type == PM_LINEAR11) {
