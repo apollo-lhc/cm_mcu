@@ -78,7 +78,7 @@ void MonitorTask(void *parameters)
             log_info(LOG_MON, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
             isFullyPowered = false;
           }
-          release_break(); // skip this iteration
+          break; // skip this iteration
         }
         else {                   // if the power state is fully on
           if (!isFullyPowered) { // was previously off
@@ -109,7 +109,7 @@ void MonitorTask(void *parameters)
       if (*args->smbus_status != SMBUS_OK) {
         log_trace(LOG_MON, "%s:Mux w error %d, break (ps=%d)\r\n", args->name, *args->smbus_status,
                   ps);
-        release_break();
+        break;
       }
 
       // loop over pages on the supply
@@ -158,7 +158,7 @@ void MonitorTask(void *parameters)
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
-            release_break(); // BUG: THIS IS NOT GOING TO WORK -- WE ARE STILL ACTING AS IF WE HAVE THE SEMAPHORE IN THE OUTER LOOP
+            break; // BUG: THIS IS NOT GOING TO WORK -- WE ARE STILL ACTING AS IF WE HAVE THE SEMAPHORE IN THE OUTER LOOP
           }
           float val;
           if (args->commands[c].type == PM_LINEAR11) {
