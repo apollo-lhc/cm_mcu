@@ -1410,12 +1410,12 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     if (acquireI2CSemaphoreTime(s5, 10) != pdTRUE) {
       int copied = snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
       // do I have the semaphore already?
-      if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle()) {
+      if (xSemaphoreGetMutexHolder(s5) == xTaskGetCurrentTaskHandle()) {
         snprintf(m+copied, SCRATCH_SIZE- copied,  "Note: I2C semaphore already held by this task\r\n");
       }
       return pdFALSE;
     }
-    bool have_semaphore = xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle();
+    bool have_semaphore = xSemaphoreGetMutexHolder(s5) == xTaskGetCurrentTaskHandle();
     if ( !have_semaphore ) {
       snprintf(m, SCRATCH_SIZE, "Semaphore not held after acquire\r\n");
       return pdFALSE;
@@ -1461,17 +1461,19 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       i = 0;
       return pdFALSE;
     }
-    uint8_t channel = 0x40; // channel 6
+
+    // set the mux to channel as appropriate for I/O expander for F1/F2
+    uint8_t channel = 0x1 << 6; // channel 6
     if (fpga == 1) { // f2
-      channel = 0x80; // channel 7
+      channel = 0x1 << 7; // channel 7
     }
-    // set the mux to channel as appropriate for F1/F2
-    int r = apollo_i2c_ctl_w(2, 0x70, 1, channel); // set to channel 6
+    int r = apollo_i2c_ctl_w(2, 0x70, 1, channel); // set to appropriate channel
     uint8_t i2c_addr = 0x20; // f1
     if (fpga == 1) {
       i2c_addr = 0x21; // f2
     }
     // read-modify-write the clock select register to select R0B
+    // FIXME: I don't think this is selecting the right bits? 
     uint32_t data;
     r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, 0x2, 1, &data); // read current value
     data &= 0xF0; // clear bottom nybble 
@@ -1481,15 +1483,17 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     if (r) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "Failed to set R0B input (%d, %s)\r\n", r, SMBUS_get_error(r));
-      xSemaphoreGive(s2);
       xSemaphoreGive(s5);
       i = 0;
       return pdFALSE;
     }
+    xSemaphoreGive(s2); // release I2C 2 semaphore
   }
   else {
     snprintf(m + copied, SCRATCH_SIZE - copied, "Invalid test and FPGA combo (%d,%d)\r\n",
              fpga, test);
+    xSemaphoreGive(s5);
+    i = 0;
     return pdFALSE;
   }
 
