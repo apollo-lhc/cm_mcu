@@ -1340,6 +1340,8 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
 // implemented in production test FPGA bit file.
 BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 {
+  static int i = 0;
+
   int copied = 0;
   // check if we are looking for FPGA1 or two based on the command argument
   int fpga = strtol(argv[1], NULL, 10) - 1; // FPGA is 0 or 1 (not 1 or 2)
@@ -1354,8 +1356,20 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "Test should be between 1 and %d (got %s)\r\n", MAXTEST, argv[2]);
     return pdFALSE;
   }
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Testing F%d, test %d\r\n",
-                     fpga+1, test);
+  bool useR0A = true;
+  if (i == 0) { // set this on first pass
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Testing F%d, test %d\r\n",
+        fpga+1, test);
+    // set up which input from clocks to use (R0A or R0B)
+    switch (test) {
+    case 1:
+      useR0A = true;
+      break;
+    case 2:
+      useR0A = false;
+      break;
+    }
+  }
   char *names[] = {
       "rw0", "rw1", "clk_200_ext", "lhc_clk", "tcds40_clk", "rt_x4_r0_clk",
       "rt_x12_r0_clk", "lf_x4_r0_clk", "lf_x12_r0_clk", "clk_100", "clk_325",
@@ -1405,7 +1419,6 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   const float TOLERANCE = .01f; // 1% tolerance seems to be needed for 100MHz clock (reads 99.3MHz)
 
   SemaphoreHandle_t s5 = getSemaphore(5);
-  static int i = 0;
   if (i == 0) { // on first entry, grab the semaphore and set the mux
     if (acquireI2CSemaphoreTime(s5, 10) != pdTRUE) {
       int copied = snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
@@ -1421,10 +1434,10 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       return pdFALSE;
     }
 
-    // set the mux to the desired FPGA
-    unsigned mux_val = 0x4; // default to F1
+    // set the mux to the desired FPGA -- page 4.04 of schematics. Channel 2 for F1, channel 0 for F2
+    unsigned mux_val = 0x1 << 2; // default to F1, which is channel 2
     if (fpga == 1) {
-      mux_val = 0x1;
+      mux_val = 0x1 << 0; // F2 is channel 0
     }
     int r = apollo_i2c_ctl_w(5, 0x70, 1, mux_val);
     if (r != 0) {
@@ -1452,42 +1465,6 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     else {
       EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_ROB_F2;
     }
-    // select R0B input on both FPGAs
-    // grab semaphore for I2C 2
-    SemaphoreHandle_t s2 = getSemaphore(2);
-    if (acquireI2CSemaphoreTime(s2, 10) != pdTRUE) {
-      snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C2 semaphore\r\n");
-      xSemaphoreGive(s5);
-      i = 0;
-      return pdFALSE;
-    }
-
-    // set the mux to channel as appropriate for I/O expander for F1/F2
-    uint8_t channel = 0x1 << 6; // channel 6
-    if (fpga == 1) { // f2
-      channel = 0x1 << 7; // channel 7
-    }
-    int r = apollo_i2c_ctl_w(2, 0x70, 1, channel); // set to appropriate channel
-    uint8_t i2c_addr = 0x20; // f1
-    if (fpga == 1) {
-      i2c_addr = 0x21; // f2
-    }
-    // read-modify-write the clock select register to select R0B
-    // FIXME: I don't think this is selecting the right bits? 
-    uint32_t data;
-    r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, 0x2, 1, &data); // read current value
-    data &= 0xF0; // clear bottom nybble 
-    data |= 0x0F; // set nybble low to 0xF
-    r += apollo_i2c_ctl_reg_w(2, i2c_addr, 1, 0x2, 1, data); // set nybble to 0xF
-    r += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // clear the mux
-    if (r) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "Failed to set R0B input (%d, %s)\r\n", r, SMBUS_get_error(r));
-      xSemaphoreGive(s5);
-      i = 0;
-      return pdFALSE;
-    }
-    xSemaphoreGive(s2); // release I2C 2 semaphore
   }
   else {
     snprintf(m + copied, SCRATCH_SIZE - copied, "Invalid test and FPGA combo (%d,%d)\r\n",
@@ -1496,6 +1473,56 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     i = 0;
     return pdFALSE;
   }
+
+  // ---------------------------------
+  // R0A/R0B selection
+  // ---------------------------------
+  // set clock input
+  // grab semaphore for I2C 2
+  SemaphoreHandle_t s2 = getSemaphore(2);
+  if (acquireI2CSemaphoreTime(s2, 10) != pdTRUE) {
+    snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C2 semaphore\r\n");
+    xSemaphoreGive(s5);
+    i = 0;
+    return pdFALSE;
+  }
+
+  // set the mux to channel as appropriate for I/O expander for F1/F2 (page 4.03 of schematics)
+  uint8_t channel = 0x1 << 6; // channel 6
+  if (fpga == 1) { // f2
+    channel = 0x1 << 7; // channel 7
+  }
+  int r = apollo_i2c_ctl_w(2, 0x70, 1, channel); // set to appropriate channel
+  uint8_t i2c_addr = 0x20; // f1
+  if (fpga == 1) {
+    i2c_addr = 0x21; // f2
+  }
+  // read-modify-write the clock select register to select R0A or R0B. For F1 this is register P0 of U88,
+  // for F2 this is register P0 of U83.
+  // Bit 0-3 selects R0A (0x0) or R0B (0xF)
+  // For the TCA9555, for register P0X, you read from address 0x0, write to address 0x2.
+  // see schematics page 4.03 for I/O expander details.
+#define TCA9555_REG_INPUT_P0  0x0
+#define TCA9555_REG_OUTPUT_P0 0x2
+  uint32_t data;
+  r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
+  data &= 0xF0; // clear bottom nybble
+  if ( useR0A) {
+    data |= 0x0; // set nybble low to 0x0
+  }
+  else {
+    data |= 0xF; // set nybble low to 0xF
+  }
+  r += apollo_i2c_ctl_reg_w(2, i2c_addr, 1, TCA9555_REG_OUTPUT_P0, 1, data); // set nybble to 0xF
+  r += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // clear the mux
+  if (r) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                        "Failed to set R0A/R0B (%d)\r\n", r);
+    xSemaphoreGive(s5);
+    i = 0;
+    return pdFALSE;
+  }
+  xSemaphoreGive(s2); // release I2C 2 semaphore
 
 
   const int NUM_REGISTERS = 39;
@@ -1573,9 +1600,10 @@ BaseType_t clk_prog_name(int argc, char **argv, char *m)
 // reset clock synthesizers
 BaseType_t clk_reset(int argc, char **argv, char *m)
 {
-  // argument is which clock chip to reset. Should be in range 0-4.
-  int i = strtol(argv[1], NULL, 10);
-  if (i < 0 || i > 4) {
+  // argument is which clock chip to reset. Should be in range 0-4, not string.
+  char *endptr;
+  int i = strtol(argv[1], &endptr, 10);
+  if (endptr == argv[1] || *endptr != '\0' || i < 0 || i > 4) { // make sure we don't get e.g. r0a
     snprintf(m, SCRATCH_SIZE, "Clock chip should be in range 0-4 (got %s)\r\n", argv[1]);
     return pdFALSE;
   }
