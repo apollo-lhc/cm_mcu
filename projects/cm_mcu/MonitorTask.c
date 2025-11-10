@@ -34,7 +34,6 @@
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
-
 void MonitorTask(void *parameters)
 {
   // initialize to the current tick time
@@ -151,7 +150,7 @@ void MonitorTask(void *parameters)
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
-            break; 
+            break;
           }
           float val;
           if (args->commands[c].type == PM_LINEAR11) {

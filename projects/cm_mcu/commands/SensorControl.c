@@ -1360,15 +1360,15 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   bool useR0A = true;
   if (i == 0) { // set this on first pass
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Testing F%d, test %d\r\n",
-        fpga+1, test);
+                       fpga + 1, test);
     // set up which input from clocks to use (R0A or R0B)
     switch (test) {
-    case 1:
-      useR0A = true;
-      break;
-    case 2:
-      useR0A = false;
-      break;
+      case 1:
+        useR0A = true;
+        break;
+      case 2:
+        useR0A = false;
+        break;
     }
   }
   char *names[] = {
@@ -1416,7 +1416,6 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
       148000000, 110000000};
 
-
   const float TOLERANCE = .01f; // 1% tolerance seems to be needed for 100MHz clock (reads 99.3MHz)
 
   SemaphoreHandle_t s5 = getSemaphore(5);
@@ -1425,12 +1424,12 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       int copied = snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
       // do I have the semaphore already?
       if (xSemaphoreGetMutexHolder(s5) == xTaskGetCurrentTaskHandle()) {
-        snprintf(m+copied, SCRATCH_SIZE- copied,  "Note: I2C semaphore already held by this task\r\n");
+        snprintf(m + copied, SCRATCH_SIZE - copied, "Note: I2C semaphore already held by this task\r\n");
       }
       return pdFALSE;
     }
     bool have_semaphore = xSemaphoreGetMutexHolder(s5) == xTaskGetCurrentTaskHandle();
-    if ( !have_semaphore ) {
+    if (!have_semaphore) {
       snprintf(m, SCRATCH_SIZE, "Semaphore not held after acquire\r\n");
       return pdFALSE;
     }
@@ -1449,9 +1448,9 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     }
   }
   uint32_t *EXPECTED_FREQ;
-  // select which expected frequency table to use based on test. Also do any other setup for the 
+  // select which expected frequency table to use based on test. Also do any other setup for the
   // test in question, such as select the appropriate clock input using the I2C I/O expanders.
-  if ( test == 1 ) {
+  if (test == 1) {
     if (fpga == 0) {
       EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0A_F1;
     }
@@ -1459,7 +1458,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_ROA_F2;
     }
   }
-  else if ( test == 2 ) {
+  else if (test == 2) {
     if (fpga == 0) {
       EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0B_F1;
     }
@@ -1479,63 +1478,62 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   // R0A/R0B selection
   // ---------------------------------
   // on first entry, set clock input
-  if ( i == 0 ) {
-      // grab semaphore for I2C 2
-      SemaphoreHandle_t s2 = getSemaphore(2);
-      if (acquireI2CSemaphoreTime(s2, 10) != pdTRUE) {
-        snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C2 semaphore\r\n");
-        xSemaphoreGive(s5);
-        i = 0;
-        return pdFALSE;
-      }
+  if (i == 0) {
+    // grab semaphore for I2C 2
+    SemaphoreHandle_t s2 = getSemaphore(2);
+    if (acquireI2CSemaphoreTime(s2, 10) != pdTRUE) {
+      snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C2 semaphore\r\n");
+      xSemaphoreGive(s5);
+      i = 0;
+      return pdFALSE;
+    }
 
-      // set the mux to channel as appropriate for I/O expander for F1/F2 (page 4.03 of schematics)
-      uint8_t channel = 0x1 << 6; // channel 6
-      if (fpga == 1) { // f2
-        channel = 0x1 << 7; // channel 7
-      }
-      int r = apollo_i2c_ctl_w(2, 0x70, 1, channel); // set to appropriate channel
-      uint8_t i2c_addr = 0x20; // f1
-      if (fpga == 1) {
-        i2c_addr = 0x21; // f2
-      }
-      // read-modify-write the clock select register to select R0A or R0B. For F1 this is register P0 of U88,
-      // for F2 this is register P0 of U83.
-      // Bit 0-3 selects R0A (0x0) or R0B (0xF)
-      // For the TCA9555, for register P0X, you read from address 0x0, write to address 0x2.
-      // see schematics page 4.03 for I/O expander details.
+    // set the mux to channel as appropriate for I/O expander for F1/F2 (page 4.03 of schematics)
+    uint8_t channel = 0x1 << 6; // channel 6
+    if (fpga == 1) {            // f2
+      channel = 0x1 << 7;       // channel 7
+    }
+    int r = apollo_i2c_ctl_w(2, 0x70, 1, channel); // set to appropriate channel
+    uint8_t i2c_addr = 0x20;                       // f1
+    if (fpga == 1) {
+      i2c_addr = 0x21; // f2
+    }
+    // read-modify-write the clock select register to select R0A or R0B. For F1 this is register P0 of U88,
+    // for F2 this is register P0 of U83.
+    // Bit 0-3 selects R0A (0x0) or R0B (0xF)
+    // For the TCA9555, for register P0X, you read from address 0x0, write to address 0x2.
+    // see schematics page 4.03 for I/O expander details.
 #define TCA9555_REG_INPUT_P0  0x0
 #define TCA9555_REG_OUTPUT_P0 0x2
-      uint32_t data;
-      r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
-//      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Pre  TCA9555 value: 0x%04x\r\n",
-//                data);
-      data &= 0xF0; // clear bottom nybble
-      if ( useR0A) {
-        data |= 0x0; // set nybble low to 0x0
-      }
-      else {
-        data |= 0xF; // set nybble low to 0xF
-      }
-      r += apollo_i2c_ctl_reg_w(2, i2c_addr, 1, TCA9555_REG_OUTPUT_P0, 1, data); // set nybble to new value
-      // read back for testing
-      r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
-//      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Post TCA9555 value: 0x%04x\r\n",
-//                data);
+    uint32_t data;
+    r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
+                                                                               //      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Pre  TCA9555 value: 0x%04x\r\n",
+                                                                               //                data);
+    data &= 0xF0;                                                              // clear bottom nybble
+    if (useR0A) {
+      data |= 0x0; // set nybble low to 0x0
+    }
+    else {
+      data |= 0xF; // set nybble low to 0xF
+    }
+    r += apollo_i2c_ctl_reg_w(2, i2c_addr, 1, TCA9555_REG_OUTPUT_P0, 1, data); // set nybble to new value
+    // read back for testing
+    r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
+                                                                               //      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Post TCA9555 value: 0x%04x\r\n",
+                                                                               //                data);
 
-      r += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // clear the mux
-      if (r) {
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                            "Failed to set R0A/R0B (%d)\r\n", r);
-        xSemaphoreGive(s5);
-        i = 0;
-        return pdFALSE;
-      }
-      xSemaphoreGive(s2); // release I2C 2 semaphore
-      // need to wait a second or so -- frequency counters in the FPGA count for a second
-      vTaskDelay(pdMS_TO_TICKS(1200));
+    r += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // clear the mux
+    if (r) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "Failed to set R0A/R0B (%d)\r\n", r);
+      xSemaphoreGive(s5);
+      i = 0;
+      return pdFALSE;
+    }
+    xSemaphoreGive(s2); // release I2C 2 semaphore
+    // need to wait a second or so -- frequency counters in the FPGA count for a second
+    vTaskDelay(pdMS_TO_TICKS(1200));
   } // first entry
-
 
   const int NUM_REGISTERS = 39;
 
@@ -1626,7 +1624,7 @@ BaseType_t clk_reset(int argc, char **argv, char *m)
     return pdFALSE;
   }
   int ret = resetClockSynth(i);
-  if ( ret != 0) {
+  if (ret != 0) {
     snprintf(m, SCRATCH_SIZE, "Failed to reset clock synthesizer R%s (%s)\r\n",
              clk_ids[i], SMBUS_get_error(ret));
   }

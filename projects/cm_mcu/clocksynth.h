@@ -48,5 +48,4 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
 // return 0 on success, error code otherwise
 int resetClockSynth(int device);
 
-
 #endif /* PROJECTS_CM_MCU_CLOCKSYNTH_H_ */

@@ -83,7 +83,7 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
                                   CLOCK_CHANGEPAGE_REG_ADDR, 1, page);
 
     // now read out the six bytes of data in two reads
-    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START) & 0xFF;
+    const uint8_t reg = (CLOCK_PROGNAME_REG_ADDR_START)&0xFF;
     uint16_t init_postamble_page = 32 * (device + 1) - 1;
 
     // read the addresses in EEPROM that store the number of registers in Preamble-register, Register, and Postamble-register list per a clock config file
@@ -110,10 +110,10 @@ void getClockProgram(int device, char progname_clkdesgid[CLOCK_PROGNAME_REG_NAME
         // as eepromdata[0] and eepromdat[1],respectively
 
         // third byte from three addresses in EEPROM is a value byte
-        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i) * 3), 3, tempdata);
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + ((i)*3), 3, tempdata);
         eepromdata[0] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
         // third byte from three addresses in EEPROM is a value byte
-        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i) * 3), 3, tempdata);
+        apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, CLOCK_I2C_EEPROM_ADDR, 2, eeprom_progname_reg + 12 + ((i)*3), 3, tempdata);
         eepromdata[1] |= ((tempdata[0] >> (16)) & 0xFF) << (i * 8);
       }
     }
@@ -141,7 +141,7 @@ int resetClockSynth(int device)
     log_error(LOG_I2C, "Invalid device %d\r\n", device);
     return 1;
   }
-  // Devices are 
+  // Devices are
   // 0: R0A
   // 1: R0B
   // 2: R1A
@@ -151,7 +151,7 @@ int resetClockSynth(int device)
   //       and R1A, R1B, and R1C reset are on another expander at address 0x21.
   // The first I/O expander is on channel 6 of the Mux. The second I/O expander is on channel 7 of the Mux.
 
-  // the reset bits are as follows for the TCA9555 I/O expanders. 
+  // the reset bits are as follows for the TCA9555 I/O expanders.
   // R0A: bit P07 --> read reg 0, write reg 2, bit 7
   // R0B: bit P10 --> read reg 1, write reg 3, bit 0
   // R1A: bit P07 --> read reg 0, write reg 2, bit 7
@@ -169,39 +169,38 @@ int resetClockSynth(int device)
   }
   int read_reg, write_reg, bit_pos;
   switch (device) {
-  case 0: // R0A
-    read_reg = CLOCK_EXPANDER_INPUT_PORT_0;
-    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_0;
-    bit_pos = 7;
-    break;
-  case 1: // R0B
-    read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
-    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
-    bit_pos = 0;
-    break;
-  case 2: // R1A
-    read_reg = CLOCK_EXPANDER_INPUT_PORT_0;
-    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_0;
-    bit_pos = 7;
-    break;
-  case 3: // R1B
-    read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
-    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
-    bit_pos = 0;
-    break;
-  case 4: // R1C
-    read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
-    write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
-    bit_pos = 1;
-    break;
-  default:
-    log_error(LOG_I2C, "Invalid device %d\r\n", device);
-    return 1;
+    case 0: // R0A
+      read_reg = CLOCK_EXPANDER_INPUT_PORT_0;
+      write_reg = CLOCK_EXPANDER_OUTPUT_PORT_0;
+      bit_pos = 7;
+      break;
+    case 1: // R0B
+      read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
+      write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
+      bit_pos = 0;
+      break;
+    case 2: // R1A
+      read_reg = CLOCK_EXPANDER_INPUT_PORT_0;
+      write_reg = CLOCK_EXPANDER_OUTPUT_PORT_0;
+      bit_pos = 7;
+      break;
+    case 3: // R1B
+      read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
+      write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
+      bit_pos = 0;
+      break;
+    case 4: // R1C
+      read_reg = CLOCK_EXPANDER_INPUT_PORT_1;
+      write_reg = CLOCK_EXPANDER_OUTPUT_PORT_1;
+      bit_pos = 1;
+      break;
+    default:
+      log_error(LOG_I2C, "Invalid device %d\r\n", device);
+      return 1;
   }
 
-
   // read/modify/write to assert reset (active low)
-  // read current port value 
+  // read current port value
   uint32_t output_port;
   res = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, expander_addr, 1,
                              read_reg, 1, &output_port);
@@ -229,7 +228,6 @@ int resetClockSynth(int device)
              clk_moni2c_addrs[device].name);
     return res;
   }
-
 
   return 0;
 }
