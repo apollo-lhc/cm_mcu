@@ -1357,19 +1357,10 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     snprintf(m, SCRATCH_SIZE, "Test should be between 1 and %d (got %s)\r\n", MAXTEST, argv[2]);
     return pdFALSE;
   }
-  bool useR0A = true;
-  if (i == 0) { // set this on first pass
+  if (i == 0) { // say hello once
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Testing F%d, test %d\r\n",
                        fpga + 1, test);
     // set up which input from clocks to use (R0A or R0B)
-    switch (test) {
-      case 1:
-        useR0A = true;
-        break;
-      case 2:
-        useR0A = false;
-        break;
-    }
   }
   char *names[] = {
       "rw0", "rw1", "clk_200_ext", "lhc_clk", "tcds40_clk", "rt_x4_r0_clk",
@@ -1389,7 +1380,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       155000000, 163000000, 312000000, 176000000, 296000000, 168000000,
       132000000, 220000000};
 
-  const uint32_t EXPECTED_FREQ_ROA_F2[] = {
+  const uint32_t EXPECTED_FREQ_R0A_F2[] = {
       0, 0, 200000000, 40000000, 55000000, 140000000, 320000000,
       130000000, 260000000, 100000000, 325000000, 140000000, 320000000,
       200000000, 320000000, 140000000, 320000000, 320000000, 260000000,
@@ -1407,7 +1398,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       155000000, 163000000, 312000000, 176000000, 296000000, 168000000,
       132000000, 220000000};
 
-  const uint32_t EXPECTED_FREQ_ROB_F2[] = {
+  const uint32_t EXPECTED_FREQ_R0B_F2[] = {
       0, 0, 200000000, 40000000, 55000000, 135000000, 310000000,
       125000000, 250000000, 100000000, 325000000, 135000000, 310000000,
       200000000, 310000000, 135000000, 310000000, 310000000, 250000000,
@@ -1455,7 +1446,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0A_F1;
     }
     else {
-      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_ROA_F2;
+      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0A_F2;
     }
   }
   else if (test == 2) {
@@ -1463,7 +1454,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0B_F1;
     }
     else {
-      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_ROB_F2;
+      EXPECTED_FREQ = (uint32_t *)EXPECTED_FREQ_R0B_F2;
     }
   }
   else {
@@ -1479,6 +1470,16 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
   // ---------------------------------
   // on first entry, set clock input
   if (i == 0) {
+    bool useR0A = true;
+    switch (test) {
+      case 1:
+        useR0A = true;
+        break;
+      case 2:
+        useR0A = false;
+        break;
+    }
+
     // grab semaphore for I2C 2
     SemaphoreHandle_t s2 = getSemaphore(2);
     if (acquireI2CSemaphoreTime(s2, 10) != pdTRUE) {
