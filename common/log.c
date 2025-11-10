@@ -190,7 +190,7 @@ void ApolloLog(log_Event *ev)
   // note to self: before you change the size of this buffer
   // willy-nilly remember that this has to be accomodated on the stack of every
   // FreeRTOS task that calls any of the log_ functions.
-#define SZ 128
+#define SZ 192
   char tmp[SZ];
   int r = 0;
 #ifdef LOG_USE_COLOR
