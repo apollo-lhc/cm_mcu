@@ -266,7 +266,7 @@ static struct command_t commands[] = {
      "Prints information about the eeprom error logger\r\n", 0},
     {"errorlog_reset", errbuff_reset,
      "Resets the eeprom error logger\r\n", 0},
-    {"first_mcu", first_mcu_ctl, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 4},
+    {"first_mcu", set_mcu_id, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 4},
 #if defined(REV2) || defined(REV3)
     {"fpga_flash", fpga_flash, "args # (1|2):  Program FPGA 1(2) via a programmed flash\r\n",
      1},

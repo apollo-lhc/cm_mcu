@@ -99,46 +99,50 @@ BaseType_t board_id_info(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-BaseType_t first_mcu_ctl(int argc, char **argv, char *m)
+// set the board ID, revision, firefly USER mask and power supply ignore mask
+BaseType_t set_mcu_id(int argc, char **argv, char *m)
 {
-
-  if (read_eeprom_single(EEPROM_ID_SN_ADDR) == 0xffffffff) {
-    uint32_t board_id, rev, ps_mask, data;
-    board_id = strtoul(argv[1], NULL, 10);
-    rev = strtoul(argv[2], NULL, 10);
-    ff_USER_mask = strtoul(argv[3], NULL, 16);
-    ps_mask = strtoul(argv[4], NULL, 16);
-    snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mask %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
-
-    data = (board_id << 16) + rev;
-    uint64_t block = EEPROMBlockFromAddr(ADDR_ID);
-
-    uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
-    xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
-
-    uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_ID, data);
-    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-    data = ff_USER_mask;
-
-    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
-    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-    data = ps_mask;
-
-    message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_PS, data);
-    xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
-
-    uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
-    xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
+  uint32_t board_id, rev, ps_mask, data;
+  char *c;
+  board_id = strtoul(argv[1], &c, 10);
+  // make sure board_id is sensible and strtoul worked
+  if (*c != '\0' || c == argv[1] || board_id == 0 || board_id > 0xFFFFU) {
+    snprintf(m, SCRATCH_SIZE, "Invalid board ID %s\r\n", argv[1]);
+    return pdFALSE;
   }
-  else {
-    uint32_t sn = read_eeprom_single(EEPROM_ID_SN_ADDR);
 
-    uint32_t num = (uint32_t)sn >> 16;
-    uint32_t rev = ((uint32_t)sn) & 0xff;
-    snprintf(m, SCRATCH_SIZE, "This is not the first-time loading MCU FW to board #%lx (rev %lx) \r\n", num, rev);
+  rev = strtoul(argv[2], &c, 10);
+  // make sure rev is sensible and strtoul worked
+  if (*c != '\0' || c == argv[2] || rev == 0 || rev > 3) { // only rev 1-3 supported
+    snprintf(m, SCRATCH_SIZE, "Invalid revision %s\r\n", argv[2]);
+    return pdFALSE;
   }
+  // we assume the ff_USER_mask and ps_mask are in hex and that the conversion is ok here
+  ff_USER_mask = strtoul(argv[3], NULL, 16);
+  ps_mask = strtoul(argv[4], NULL, 16);
+  snprintf(m, SCRATCH_SIZE, "Registering board_id %lx revision %lx, USER ff mask %lx and PS ignore mask %lx \r\n", board_id, rev, ff_USER_mask, ps_mask);
+
+  data = (board_id << 16) + rev;
+  uint64_t block = EEPROMBlockFromAddr(ADDR_ID);
+
+  uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
+  xQueueSendToBack(xEPRMQueue_in, &unlock, portMAX_DELAY);
+
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_ID, data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+  data = ff_USER_mask;
+
+  message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_FF, data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+  data = ps_mask;
+
+  message = EPRMMessage((uint64_t)EPRM_WRITE_SINGLE, ADDR_PS, data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+
+  uint64_t lock = EPRMMessage((uint64_t)EPRM_LOCK_BLOCK, block << 32, 0);
+  xQueueSendToBack(xEPRMQueue_in, &lock, portMAX_DELAY);
 
   return pdFALSE;
 }
