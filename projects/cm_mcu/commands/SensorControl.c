@@ -1519,9 +1519,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     }
     r += apollo_i2c_ctl_reg_w(2, i2c_addr, 1, TCA9555_REG_OUTPUT_P0, 1, data); // set nybble to new value
     // read back for testing
-    r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
-                                                                               //      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Post TCA9555 value: 0x%04x\r\n",
-                                                                               //                data);
+    // r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
 
     r += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // clear the mux
     if (r) {

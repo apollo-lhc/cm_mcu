@@ -158,10 +158,9 @@ int resetClockSynth(int device)
   // R1B: bit P10 --> read reg 1, write reg 3, bit 0
   // R1C: bit P11 --> read reg 1, write reg 3, bit 1
   int channel = (device < 2) ? 6 : 7;
-  const uint8_t MUX_ADDR = CLOCK_SWITCH_I2C_ADDRESS;
   uint8_t expander_addr = (device < 2) ? CLOCK_R0_EXPANDER_I2C_ADDRESS : CLOCK_R1_EXPANDER_I2C_ADDRESS;
   // set the mux
-  int res = apollo_i2c_ctl_w(CLOCK_I2C_DEV, MUX_ADDR, 1, 1 << channel);
+  int res = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_SWITCH_I2C_ADDRESS, 1, 1 << channel);
   if (res != 0) {
     log_warn(LOG_SERVICE, "Mux error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
              clk_moni2c_addrs[device].name);
@@ -230,14 +229,12 @@ int resetClockSynth(int device)
   }
 
   // clear the mux
-  res = apollo_i2c_ctl_w(CLOCK_I2C_DEV, MUX_ADDR, 1, 0);
+  res = apollo_i2c_ctl_w(CLOCK_I2C_DEV, CLOCK_SWITCH_I2C_ADDRESS, 1, 0);
   if (res != 0) {
     log_warn(LOG_SERVICE, "Mux error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
              clk_moni2c_addrs[device].name);
     return res;
   }
-
-
 
   return 0;
 }
