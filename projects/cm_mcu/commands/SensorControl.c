@@ -1528,6 +1528,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                          "Failed to set R0A/R0B (%d)\r\n", r);
       xSemaphoreGive(s5);
+      xSemaphoreGive(s2);
       i = 0;
       return pdFALSE;
     }
