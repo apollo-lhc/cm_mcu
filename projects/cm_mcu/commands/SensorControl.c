@@ -364,7 +364,7 @@ BaseType_t psmon_ctl(int argc, char **argv, char *m)
 // send power control commands
 
 // power control state names
-static const char * const power_control_state_names[] = {
+static const char *const power_control_state_names[] = {
 #define X(name) #name,
     X_MACRO_PS_STATES
 #undef X
@@ -1135,7 +1135,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         return pdFALSE;
       }
 
-    }                     // argc == 4
+    } // argc == 4
     else if (argc == 5) { // command + five arguments
       // register write. model:
       // ff regw reg# val (0-23|all)
@@ -1164,8 +1164,8 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         whichFF = 0;
         return pdFALSE;
       }
-                                                  // end regw
-#ifdef FF_TEST_DEBUG                                                  
+      // end regw
+#ifdef FF_TEST_DEBUG
       else if (strncmp(argv[1], "test", 4) == 0) { // test code
         if (whichFF == NFIREFLIES) {
           copied += snprintf(m + copied, SCRATCH_SIZE - copied,
@@ -1276,7 +1276,7 @@ BaseType_t ff_v3v3(int argc, char **argv, char *m)
 }
 
 // names of the clock ids
-static const char * const clk_ids[5] = {"0A", "0B", "1A", "1B", "1C"};
+static const char *const clk_ids[5] = {"0A", "0B", "1A", "1B", "1C"};
 
 // dump clock monitor information
 BaseType_t clkmon_ctl(int argc, char **argv, char *m)
