@@ -174,8 +174,8 @@ void MonitorTask(void *parameters)
           args->updateTick = xTaskGetTickCount(); // current time in ticks, for the sake of stale data
           vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
         } // loop over commands
-      } // loop over pages
-    } // loop over power supplies
+      }   // loop over pages
+    }     // loop over power supplies
     // if we have a semaphore, give it
     if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
       xSemaphoreGive(args->xSem);
