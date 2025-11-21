@@ -147,9 +147,11 @@ int resetClockSynth(int device)
   // 2: R1A
   // 3: R1B
   // 4: R1C
-  // Rev3: See page 4.03 of the schematic. R0A and R0B reset are on one expander at address 0x20,
-  //       and R1A, R1B, and R1C reset are on another expander at address 0x21.
-  // The first I/O expander is on channel 6 of the Mux. The second I/O expander is on channel 7 of the Mux.
+  // Rev3: See page 4.03 of the schematic. R0A and R0B reset are on one
+  // expander at address 0x20, and R1A, R1B, and R1C reset are on another
+  // expander at address 0x21.
+  // The first I/O expander is on channel 6 of the Mux. The second I/O
+  // expander is on channel 7 of the Mux.
 
   // the reset bits are as follows for the TCA9555 I/O expanders.
   // R0A: bit P07 --> read reg 0, write reg 2, bit 7
