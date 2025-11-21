@@ -244,10 +244,11 @@ static struct command_t commands[] = {
 #if defined(REV2) || defined(REV3)
     {"clearclk", clearclk_ctl,
      "Reset clk sticky bits\r\n", 0},
-    {"clk_freq_fpga", clk_freq_fpga_cmd, "read out special FPGA i2c regs\r\n", 1}, // need to call with which fpga you are checking
+    {"clk_freq_fpga", clk_freq_fpga_cmd, "read out special FPGA i2c regs\r\n", 2}, // need to call with which fpga you are checking
     {"clkmon", clkmon_ctl, "CLK chips' status, id:0-4\r\n", 1},
     {"clkname", clk_prog_name, "CLK chip program, id:0-4\r\n", 1},
     {"clkprog", init_load_clock_ctl, "args: <id> <reset>\r\nLoad clock chip program, id:0-4\r\n", 2},
+    {"clkreset", clk_reset, "Reset clock chip, id:0-4\r\n", 1},
 #endif // REV2
     {"eeprom_info", eeprom_info, "Prints information about the EEPROM\r\n", 0},
     {"eeprom_read", eeprom_read,
@@ -265,7 +266,7 @@ static struct command_t commands[] = {
      "Prints information about the eeprom error logger\r\n", 0},
     {"errorlog_reset", errbuff_reset,
      "Resets the eeprom error logger\r\n", 0},
-    {"first_mcu", first_mcu_ctl, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 4},
+    {"first_mcu", set_mcu_id, "args: <board #> <revision #>\r\n Detect first-time setup of MCU and prompt loading internal EEPROM configuration\r\n", 4},
 #if defined(REV2) || defined(REV3)
     {"fpga_flash", fpga_flash, "args # (1|2):  Program FPGA 1(2) via a programmed flash\r\n",
      1},
