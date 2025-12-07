@@ -48,12 +48,12 @@ extern tSMBus g_sMaster6; // for I2C #6
 extern volatile tSMBusStatus eStatus6;
 
 void SMBusMasterIntHandler6(void);
+#endif // 0
 
 // I2C Slave
 extern TaskHandle_t TaskNotifyI2CSlave;
 void I2CSlave0Interrupt(void);
 
-#endif // 0
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
 

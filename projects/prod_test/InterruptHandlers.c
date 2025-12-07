@@ -231,7 +231,6 @@ void ADCSeq1Interrupt(void)
   return;
 }
 
-#if 0 // not used
 
 // -----------------------------------------
 TaskHandle_t TaskNotifyI2CSlave = NULL;
@@ -262,4 +261,3 @@ void I2CSlave0Interrupt(void)
       use and may be called portEND_SWITCHING_ISR(). */
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-#endif

@@ -11,6 +11,7 @@
 #include "driverlib/rom_map.h"
 #include "driverlib/adc.h"
 #include "inc/hw_ints.h"
+#include "driverlib/i2c.h"
 
 // local includes
 #include "common/pinout.h"
@@ -80,6 +81,7 @@ void SystemInit(void)
 
   // initialize interrupts
   UART0Init(g_ui32SysClock); // ZYNQ UART
+  initI2C0(g_ui32SysClock); // Slave controller
   initI2C1(g_ui32SysClock);  // controller for power supplies
   initI2C2(g_ui32SysClock);  // controller for clocks
   initI2C3(g_ui32SysClock);  // controller for F2 optics
@@ -90,6 +92,7 @@ void SystemInit(void)
   SMBusMasterInit(&g_sMaster3, I2C3_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster5, I2C5_BASE, g_ui32SysClock);
+  ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C1, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C2, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C3, configKERNEL_INTERRUPT_PRIORITY);
@@ -100,6 +103,16 @@ void SystemInit(void)
   SMBusMasterIntEnable(&g_sMaster3);
   SMBusMasterIntEnable(&g_sMaster4);
   SMBusMasterIntEnable(&g_sMaster5);
+
+  // I2C slave
+  const uint8_t I2C0_SLAVE_ADDRESS = 0x40U;
+  ROM_I2CSlaveAddressSet(I2C0_BASE, 0, I2C0_SLAVE_ADDRESS);
+
+  ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
+
+  // ignore I2C_SLAVE_INT_START, I2C_SLAVE_INT_STOP
+  ROM_I2CSlaveIntEnableEx(I2C0_BASE, I2C_SLAVE_INT_DATA);
+  ROM_IntEnable(INT_I2C0);
 
   setupActiveLowPins();
 
