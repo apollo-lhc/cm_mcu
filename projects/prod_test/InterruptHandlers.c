@@ -14,15 +14,15 @@
 #include "InterruptHandlers.h"
 
 // local includes
-#include "common/LocalUart.h"
-#include "common/utils.h"
-#include "common/power_ctl.h"
-#include "common/i2c_reg.h"
-#include "common/pinout.h"
-#include "common/pinsel.h"
+// #include "common/LocalUart.h"
+// #include "common/utils.h"
+// #include "common/power_ctl.h"
+// #include "common/i2c_reg.h"
+// #include "common/pinout.h"
+// #include "common/pinsel.h"
 #include "common/smbus.h"
 #include "common/smbus.h"
-#include "common/softuart.h"
+// #include "common/softuart.h"
 
 // TI Includes
 // #include "inc/hw_types.h"
