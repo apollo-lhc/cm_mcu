@@ -31,7 +31,6 @@ typedef struct {
   UBaseType_t stack_size;
 } CommandLineTaskArgs_t;
 
-#define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
 
 struct command_t commands[] = {
     {"adc", adc_ctl, "Display ADC measurements", 0},
@@ -50,6 +49,8 @@ struct command_t commands[] = {
     {"poweroff", power_off_ctl, "power off", 0},
     {"restart", restart_mcu, "restart the MCU", 0},
 };
+
+const int NUM_COMMANDS = (sizeof(commands) / sizeof(commands[0]));
 
 ////////////////////////////////////////////////////////////////////////
 

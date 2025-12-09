@@ -81,7 +81,7 @@ void SystemInit(void)
 
   // initialize interrupts
   UART0Init(g_ui32SysClock); // ZYNQ UART
-  initI2C0(g_ui32SysClock); // Slave controller
+  initI2C0(g_ui32SysClock);  // Slave controller
   initI2C1(g_ui32SysClock);  // controller for power supplies
   initI2C2(g_ui32SysClock);  // controller for clocks
   initI2C3(g_ui32SysClock);  // controller for F2 optics
