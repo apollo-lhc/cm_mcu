@@ -220,6 +220,7 @@ void ADCMonitorTask(void *pvParameters)
   uint32_t iADCvalues[ADC_CHANNEL_COUNT]; // raw adc outputs
 
   const TickType_t xMaxBlockTime = pdMS_TO_TICKS(20000);
+  vTaskDelay(pdMS_TO_TICKS(10000));
 
   for (;;) {
     // First sequence for ADC1

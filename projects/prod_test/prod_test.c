@@ -33,6 +33,7 @@
 SemaphoreHandle_t xUARTMutex = 0;
 void vCommandLineTask(void *pvParameters);
 void ADCMonitorTask(void *pvParameters);
+void I2CSlaveTask(void *pvParameters);
 
 //*****************************************************************************
 //
@@ -176,6 +177,7 @@ __attribute__((noreturn)) int main(void)
 
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(I2CSlaveTask, "I2C0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
   Print("\r\n----------------------------\r\n");
   Print("Staring Apollo CM MCU Production Test firmware ");
