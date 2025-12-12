@@ -385,10 +385,12 @@ BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
   int32_t ff_mask = firefly_string_to_mask(argc, argv);
-  if (firefly_i2ctest(m, &copied, ff_mask))
+  bool passed = firefly_i2ctest(m, &copied, ff_mask);
+  if (passed) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "Firefly I2C test: success.\r\n");
-  return pdFALSE;
+  }
+  return passed ? CLI_OK : CLI_ERROR;
 }
 
 /**

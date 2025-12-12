@@ -98,7 +98,7 @@ bool firefly_i2ctest(char *m, int32_t *copied, int32_t ff_mask);
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments
  * @param [out] m  output string
- * @return pdFALSE
+ * @return CLI_OK on success, CLI_ERROR on failure
  */
 BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m);
 
