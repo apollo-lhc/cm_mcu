@@ -1,0 +1,21 @@
+# Copilot Instructions for cm_mcu
+
+- **Purpose & Platform**: Firmware for Apollo command-module MCU (TM4C1290NCPDT) using TivaWare driverlib (ROM) plus FreeRTOS (submodule). Main entry is `projects/cm_mcu/cm_mcu.c`; reset/vector in `startup_gcc.c`; interrupts also in `InterruptHandlers.c`.
+- **Task Model**: FreeRTOS tasks live in `projects/cm_mcu/*Task.c`. Pattern: short init, then `for(;;){...; vTaskDelayUntil(...); }`. Add new periodic work by following this style and keep periods explicit.
+- **CLI & Commands**: UART CLI commands sit under `projects/cm_mcu/commands/` (e.g., `BoardCommands.c`, `SensorControl.c`). Add commands there; register with the CLI tables alongside existing examples.
+- **Board Revisions**: Exactly one of `REV1`, `REV2`, `REV3` must be set. If none provided, top-level make exports `REV3=1`. Revision drives pin maps (`pinout_rev*.c`) and build flags.
+- **Build Basics**: Use `make -j DEBUG=1 REVx=1` for debug (adds symbols, disables `-Werror`), `make -j REVx=1` for release (`-Werror`). Do not mix debug/non-debug outputs; run `make clean` when switching. Example: ``make -j `nproc` DEBUG=1 REV1=1``.
+- **Compilers**: GCC arm-none-eabi 13.2.Rel1 is the reference toolchain. `COMPILER=clang` works for syntax/static-analysis builds; some FreeRTOS warnings are silenced via flags.
+- **CI Expectations**: GH Actions builds all three revisions with GCC (debug and release) and with Clang. Clang-format lint runs on changed `.c/.h`; keep code passing `clang-format` (style in repo). PRs should tolerate `-Werror` in non-debug builds.
+- **Formatting**: Local helpers: `make format` (lint diff vs `master`), `make format-apply` to write changes. CI `clang-format` uses version 17; match it locally to avoid diffs.
+- **Full Matrix Smoke**: `./build_all.sh` mirrors CI: cleans between builds, runs GCC+Clang across REV1/2/3, then `make format`. Use before PRs.
+- **Generated Sources**: Address-table sources are generated from YAML in `sm_cm_config/data`. Targets: `ZynqMon_addresses.c/.h` (from `PL_MEM_CM_rev*.yml`) and `MonI2C_addresses.c` (from `MON_I2C*.yml`) via Python scripts in `sm_cm_config/src`. `make` regenerates automatically; commit the outputs when YAML changes.
+- **Releases**: `make release` in `projects/cm_mcu` runs XML generation for Zynq address tables and packages via `make_release_xml_tgz.sh` at repo root.
+- **Submodules**: Run `git submodule update --init --recursive` before first build; `make` also checks and initializes if needed.
+- **Logging/IO**: UART CLI expects CRLF on output; see `common/printf.c` and UART helpers in `common/LocalUart.c`. 
+- **Hardware Interfaces**: I2C controller/target tasks (`MonitorTask*`, `I2CSlaveTask`, `I2CCommunication.*`) and GPIO/power control (`PowerSupplyTask`, `pinsel.c`, `power_ctl.c`). Keep hardware accesses centralized in these modules rather than ad-hoc writes.
+- **FreeRTOS Config**: Config in `projects/cm_mcu/FreeRTOSConfig.h`; heap via `heap_4.c`. Use provided semaphores/queues patterns in tasks to maintain determinism.
+- **Sanity Checks**: Avoid introducing new global interrupts without updating vector table and ensuring FreeRTOS-aware handlers. When adding pins, update the correct `pinout_rev*.c` and guard with the matching `REVx` define.
+- **Doc References**: Top-level `README.md` covers toolchain versions and debug tips; `projects/cm_mcu/README.md` lists tasks and boot flow; `sm_cm_config/README.md` explains address-table generation.
+- **Quick start**: `git submodule update --init --recursive && make -j DEBUG=1 REV3=1` builds the default Rev3 debug binary (`projects/cm_mcu/gcc/cm_mcu.axf`).
+- **Pre-PR checklist**: `make clean` → build the target revision (and optionally all via `build_all.sh`) → run `make format` → ensure generated address files updated if YAML changed.
