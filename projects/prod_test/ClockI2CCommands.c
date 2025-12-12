@@ -341,7 +341,7 @@ BaseType_t clock_i2ctest_ctl(int argc, char **argv, char *m)
   if (clock_i2ctest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "Clock I2C test: success.\r\n");
-    return CLI_OK;  
+    return CLI_OK;
   }
   else {
     return CLI_ERROR;

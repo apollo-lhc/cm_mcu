@@ -13,11 +13,10 @@ struct microrl_user_data_t {
 };
 
 typedef enum {
-  CLI_OK = 0,      // success, no more output pending
-  CLI_MORE = 1,    // success, more output chunks to fetch
-  CLI_ERROR = -1,  // command failed
+  CLI_OK = 0,     // success, no more output pending
+  CLI_MORE = 1,   // success, more output chunks to fetch
+  CLI_ERROR = -1, // command failed
 } cli_status_t;
-
 
 #define SCRATCH_SIZE 512
 

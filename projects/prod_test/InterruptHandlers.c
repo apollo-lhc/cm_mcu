@@ -278,7 +278,7 @@ void I2CSlave0Interrupt(void)
                            &xHigherPriorityTaskWoken);
       }
 
-      regPointer = (regPointer + 1) ;//% REG_MAP_SIZE; uint8_t will wrap around for 256 bytes
+      regPointer = (regPointer + 1); //% REG_MAP_SIZE; uint8_t will wrap around for 256 bytes
     }
   }
 

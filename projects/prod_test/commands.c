@@ -91,7 +91,7 @@ BaseType_t power_ctl(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "delta: %f%%\r\n",
                      (double)delta);
 
-  return r==0 ? CLI_OK : CLI_ERROR;
+  return r == 0 ? CLI_OK : CLI_ERROR;
 }
 
 BaseType_t power_off_ctl(int argc, char **argv, char *m)

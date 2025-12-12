@@ -8,7 +8,7 @@
 
 extern uint32_t g_ui32SysClock;
 
-const char* buildTime(void);
-const char* gitVersion(void);
+const char *buildTime(void);
+const char *gitVersion(void);
 
 #endif // PROD_TEST_HH

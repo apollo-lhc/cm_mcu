@@ -31,7 +31,6 @@ typedef struct {
   UBaseType_t stack_size;
 } CommandLineTaskArgs_t;
 
-
 const struct command_t commands[] = {
     {"adc", adc_ctl, "Display ADC measurements", 0},
     {"bootloader", bl_ctl, "Call bootloader", 0},
