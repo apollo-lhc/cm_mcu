@@ -25,6 +25,7 @@
 #include "FireflyI2CCommands.h"
 #include "FPGAI2CCommands.h"
 #include "PowerI2CCommands.h"
+#include "prod_test.h"
 
 void Print(const char *str);
 
@@ -77,7 +78,7 @@ BaseType_t power_ctl(int argc, char **argv, char *m)
   int32_t level = strtol(argv[1], NULL, 16);
   if (level < 0 || level > PS_NUM_PRIORITIES) {
     snprintf(m, SCRATCH_SIZE, "Invalid power level %s\r\n", argv[1]);
-    return pdFALSE;
+    return CLI_ERROR;
   }
   // 0 is automatic
   if (level > 0)
@@ -90,14 +91,14 @@ BaseType_t power_ctl(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "delta: %f%%\r\n",
                      (double)delta);
 
-  return pdFALSE;
+  return r==0 ? CLI_OK : CLI_ERROR;
 }
 
 BaseType_t power_off_ctl(int argc, char **argv, char *m)
 {
   disable_ps();
   snprintf(m, SCRATCH_SIZE, "Power off\r\n");
-  return pdFALSE;
+  return CLI_OK;
 }
 
 // This command takes no arguments
@@ -107,14 +108,14 @@ BaseType_t restart_mcu(int argc, char **argv, char *m)
   snprintf(m, SCRATCH_SIZE, "Restarting MCU\r\n");
   ROM_SysCtlReset(); // This function does not return
   __builtin_unreachable();
-  return pdFALSE;
+  return CLI_OK;
 }
 
 // Display ADC measurements
 BaseType_t adc_ctl(int argc, char **argv, char *m)
 {
   int copied = 0;
-
+  bool passed = true;
   static int whichadc = 0;
   if (whichadc == 0) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "ADC outputs\r\n");
@@ -128,6 +129,7 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
       float diff = (target_val - val) / val;
       if (ABS(diff) > ADC_DIFF_TOLERANCE) {
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\tBAD");
+        passed = false;
       }
     }
     m[copied++] = '\r';
@@ -135,11 +137,11 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
     m[copied] = '\0';
     if ((SCRATCH_SIZE - copied) < 50 && (whichadc < 20)) {
       ++whichadc;
-      return pdTRUE;
+      return CLI_MORE;
     }
   }
   whichadc = 0;
-  return pdFALSE;
+  return passed ? CLI_OK : CLI_ERROR;
 }
 
 /**
@@ -153,48 +155,59 @@ BaseType_t prodtest_firststep_ctl(int argc, char **argv, char *m)
   if (!dcdc_i2ctest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "(DCDC I2C Test)\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   if (!dcdc_powerontest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "(Power on Test)\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   r = init_registers_clk();
   if (r) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "ERROR: Failed to initialize clk IO expanders.\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   if (!clock_i2ctest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "(Clock I2C Test)\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   if (!fpga_i2ctest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "(FPGA I2C Test)\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   r = init_registers_firefly();
   if (r) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "ERROR: Failed to initialize FF IO expanders.\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   int32_t ff_mask = firefly_string_to_mask(argc, argv);
   if (!firefly_i2ctest(m, &copied, ff_mask)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "(Firefly I2C Test)\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   if (!eeprom_i2ctest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "(EEPROM I2C Test)\r\n");
-    return pdFALSE;
+    return CLI_ERROR;
   }
   copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                      "All tests successful.\r\n");
   disable_ps();
-  return pdFALSE;
+  return CLI_OK;
+}
+
+// this command takes no arguments
+BaseType_t ver_ctl(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s built at %s.\r\n", gitVersion(),
+                     buildTime());
+  configASSERT(copied < SCRATCH_SIZE);
+
+  return CLI_OK;
 }
