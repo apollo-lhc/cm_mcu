@@ -236,7 +236,7 @@ void ADCSeq1Interrupt(void)
 TaskHandle_t TaskNotifyI2CSlave = NULL;
 #define REG_MAP_SIZE 256
 // The Shared Register Map
-volatile uint8_t g_ui8SlaveRegisters[REG_MAP_SIZE];
+volatile uint8_t slaveRegistersData[REG_MAP_SIZE];
 
 // The Register Pointer (Index) - Keeps track of where we are reading/writing
 static volatile uint8_t regPointer = 0;
@@ -252,8 +252,8 @@ void I2CSlave0Interrupt(void)
 
   // --- Transmit Request (Master Reading) ---
   if (status == I2C_SLAVE_ACT_TREQ) {
-    ROM_I2CSlaveDataPut(I2C0_BASE, g_ui8SlaveRegisters[regPointer]);
-    regPointer = (regPointer + 1) % REG_MAP_SIZE;
+    ROM_I2CSlaveDataPut(I2C0_BASE, slaveRegistersData[regPointer]);
+    regPointer = (regPointer + 1); // % REG_MAP_SIZE; // uint8_t will wrap around
   }
 
   // --- Receive Request (Master Writing) ---
@@ -266,19 +266,19 @@ void I2CSlave0Interrupt(void)
     }
     else {
       // Subsequent bytes are DATA
-      g_ui8SlaveRegisters[regPointer] = data;
+      slaveRegistersData[regPointer] = data;
 
       // Notify the task!
       // We pass the Register Index as the notification value so the
       // task knows WHICH register was just modified.
-      if (TaskNotifyI2CSlave != NULL) {
+      if (TaskNotifyI2CSlave != NULL && regPointer == 0x10U /* CMD_REG_ADDR */) {
         xTaskNotifyFromISR(TaskNotifyI2CSlave,
                            (uint32_t)regPointer,
                            eSetValueWithOverwrite,
                            &xHigherPriorityTaskWoken);
       }
 
-      regPointer = (regPointer + 1) % REG_MAP_SIZE;
+      regPointer = (regPointer + 1) ;//% REG_MAP_SIZE; uint8_t will wrap around for 256 bytes
     }
   }
 
