@@ -211,3 +211,15 @@ BaseType_t ver_ctl(int argc, char **argv, char *m)
 
   return CLI_OK;
 }
+
+// Report current and minimum-ever heap usage
+BaseType_t heap_ctl(int argc, char **argv, char *m)
+{
+  (void)argc;
+  (void)argv;
+  size_t free_now = xPortGetFreeHeapSize();
+  size_t free_min = xPortGetMinimumEverFreeHeapSize();
+  snprintf(m, SCRATCH_SIZE, "Heap free: %u bytes\r\nHeap min ever free: %u bytes\r\n",
+           (unsigned int)free_now, (unsigned int)free_min);
+  return CLI_OK;
+}

@@ -70,7 +70,7 @@ struct ADC_Info_t {
 //
 // -------------------------------------------------
 
-static struct ADC_Info_t ADCs[] = {
+static const struct ADC_Info_t ADCs[] = {
     {ADC_CTL_CH0, "VCC_12V", 6.f, 0.f, 12.f, 0},
     {ADC_CTL_CH1, "VCC_M3V3", 2.f, 0.f, 3.3f, 0},
     {ADC_CTL_CH2, "VCC_3V3", 2.f, 0.f, 3.3f, 3},

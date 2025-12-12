@@ -35,6 +35,7 @@ const struct command_t commands[] = {
     {"adc", adc_ctl, "Display ADC measurements", 0},
     {"bootloader", bl_ctl, "Call bootloader", 0},
     {"help", help_command_fcn, "This help command", -1},
+    {"heap", heap_ctl, "Show heap free and minimum-ever free", 0},
     {"dcdci2ctest", dcdc_i2ctest_ctl, "Test I2C to DC-DC converters", 0},
     {"dcdcpowertest", dcdc_powerontest_ctl, "Test DC-DC power on", 0},
     {"clocki2ctest", clock_i2ctest_ctl, "Test I2C to clock synths", 0},

@@ -28,6 +28,7 @@ BaseType_t power_off_ctl(int argc, char **argv, char *m);
 BaseType_t restart_mcu(int argc, char **argv, char *m);
 BaseType_t prodtest_firststep_ctl(int argc, char **argv, char *m);
 BaseType_t ver_ctl(int argc, char **argv, char *m);
+BaseType_t heap_ctl(int argc, char **argv, char *m);
 
 // ADC utility functions
 char *const getADCname(int i);
