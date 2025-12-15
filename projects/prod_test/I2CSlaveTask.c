@@ -122,13 +122,13 @@ void I2CSlaveTask(void *parameters)
             continue;
           }
           else if (c.num_args < 0 && argc == 0) {
-            args[1] = '\0';
+            args[1] = '\0'; // args[1] is first argument; args[0] is command. here, no arguments
             argc = 0;
           }
         }
         else {
           argc = 0;
-          args[1] = '\0';
+          args[1] = '\0'; // args[1] is first argument; args[0] is command. here, no arguments
         }
 
         // Execute the command
@@ -151,7 +151,7 @@ void I2CSlaveTask(void *parameters)
         // zero out the response area first
         memset((uint8_t *)slaveRegistersData + CMD_RETURN_MSG_ADDR, 0, CMD_RETURN_MSG_SIZE);
         size_t resp_len = strlen(response);
-        size_t copy_len = (resp_len < CMD_RETURN_MSG_SIZE) ? resp_len : CMD_RETURN_MSG_SIZE;
+        size_t copy_len = (resp_len < (CMD_RETURN_MSG_SIZE - 1)) ? resp_len : (CMD_RETURN_MSG_SIZE - 1);
         memcpy((char *)slaveRegistersData + CMD_RETURN_MSG_ADDR, response, copy_len);
         slaveRegistersData[CMD_RETURN_MSG_ADDR + copy_len] = '\0'; // null terminate
         // set the return value in register CMD_RETURN_ADDR
