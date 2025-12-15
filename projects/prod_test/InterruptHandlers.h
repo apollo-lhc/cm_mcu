@@ -54,6 +54,14 @@ void SMBusMasterIntHandler6(void);
 extern TaskHandle_t TaskNotifyI2CSlave;
 void I2CSlave0Interrupt(void);
 
+extern const uint8_t CMD_REG_ADDR;
+extern const uint8_t CMD_RETURN_ADDR;
+extern const uint8_t CMD_ARGS_ADDR;
+extern const uint8_t CMD_MAX_ARGS_SIZE;
+extern const uint8_t CMD_RETURN_MSG_ADDR;
+extern const uint8_t CMD_RETURN_MSG_SIZE;
+
+
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
 

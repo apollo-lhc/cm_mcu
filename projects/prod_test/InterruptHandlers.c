@@ -16,7 +16,6 @@
 // local includes
 #include "common/smbus.h"
 
-// #include "common/softuart.h"
 
 // TI Includes
 #include "inc/hw_memmap.h"

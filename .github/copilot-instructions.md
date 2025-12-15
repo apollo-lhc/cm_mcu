@@ -18,4 +18,5 @@
 - **Sanity Checks**: Avoid introducing new global interrupts without updating vector table and ensuring FreeRTOS-aware handlers. When adding pins, update the correct `pinout_rev*.c` and guard with the matching `REVx` define.
 - **Doc References**: Top-level `README.md` covers toolchain versions and debug tips; `projects/cm_mcu/README.md` lists tasks and boot flow; `sm_cm_config/README.md` explains address-table generation.
 - **Quick start**: `git submodule update --init --recursive && make -j DEBUG=1 REV3=1` builds the default Rev3 debug binary (`projects/cm_mcu/gcc/cm_mcu.axf`).
+- **Second test binary**: Production test firmware lives in `projects/prod_test`; built automatically with `make -j DEBUG=1 REV3=1 ` to produce (`projects/prod_test/gcc/prod_test.axf`).
 - **Pre-PR checklist**: `make clean` → build the target revision (and optionally all via `build_all.sh`) → run `make format` → ensure generated address files updated if YAML changed.

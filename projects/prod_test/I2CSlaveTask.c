@@ -50,15 +50,17 @@ static char mm[SCRATCH_SIZE];
 static char response[512]; // interpreter assumes the buffer has 512 bytes
 static char args[80];
 
+const uint8_t CMD_REG_ADDR = 0x10;
+const uint8_t CMD_RETURN_ADDR = 0x11;
+const uint8_t CMD_ARGS_ADDR = 0x20;
+const uint8_t CMD_MAX_ARGS_SIZE = 80;
+const uint8_t CMD_RETURN_MSG_ADDR = 0x70;
+const uint8_t CMD_RETURN_MSG_SIZE = 128;
+
+
 void I2CSlaveTask(void *parameters)
 {
   TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
-  const uint8_t CMD_REG_ADDR = 0x10;
-  const uint8_t CMD_RETURN_ADDR = 0x11;
-  const uint8_t CMD_ARGS_ADDR = 0x20;
-  const uint8_t CMD_MAX_ARGS_SIZE = 80;
-  const uint8_t CMD_RETURN_MSG_ADDR = 0x70;
-  const uint8_t CMD_RETURN_MSG_SIZE = 128;
 
   memset((void *)slaveRegistersData, '\0', REG_MAP_SIZE); // zero out registers
   snprintf((char *)slaveRegistersData + CMD_ARGS_ADDR, 16, "I2C Slave Ready");
