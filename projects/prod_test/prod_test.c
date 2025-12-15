@@ -93,7 +93,6 @@ void SystemInit(void)
   SMBusMasterInit(&g_sMaster3, I2C3_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster4, I2C4_BASE, g_ui32SysClock);
   SMBusMasterInit(&g_sMaster5, I2C5_BASE, g_ui32SysClock);
-  ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C1, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C2, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C3, configKERNEL_INTERRUPT_PRIORITY);
