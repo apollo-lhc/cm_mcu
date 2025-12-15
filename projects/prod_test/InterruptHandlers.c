@@ -14,29 +14,13 @@
 #include "InterruptHandlers.h"
 
 // local includes
-// #include "common/LocalUart.h"
-// #include "common/utils.h"
-// #include "common/power_ctl.h"
-// #include "common/i2c_reg.h"
-// #include "common/pinout.h"
-// #include "common/pinsel.h"
 #include "common/smbus.h"
-#include "common/smbus.h"
+
 // #include "common/softuart.h"
 
 // TI Includes
-// #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
-// #include "inc/hw_ints.h"
-// #include "driverlib/pin_map.h"
-// #include "driverlib/sysctl.h"
-// #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
-// #include "driverlib/rom_map.h"
-// #include "driverlib/adc.h"
-// #include "driverlib/uart.h"
-// #include "driverlib/timer.h"
-// #include "driverlib/interrupt.h"
 #include "driverlib/i2c.h"
 
 #include "task.h"
