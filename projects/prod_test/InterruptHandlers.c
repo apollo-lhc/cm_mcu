@@ -253,7 +253,7 @@ void I2CSlave0Interrupt(void)
       // Notify the task!
       // We pass the Register Index as the notification value so the
       // task knows WHICH register was just modified.
-      if (TaskNotifyI2CSlave != NULL && regPointer == 0x10U /* CMD_REG_ADDR */) {
+      if (TaskNotifyI2CSlave != NULL && regPointer == CMD_REG_ADDR) {
         xTaskNotifyFromISR(TaskNotifyI2CSlave,
                            (uint32_t)regPointer,
                            eSetValueWithOverwrite,
