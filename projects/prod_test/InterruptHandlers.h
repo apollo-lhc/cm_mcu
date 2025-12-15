@@ -61,7 +61,6 @@ extern const uint8_t CMD_MAX_ARGS_SIZE;
 extern const uint8_t CMD_RETURN_MSG_ADDR;
 extern const uint8_t CMD_RETURN_MSG_SIZE;
 
-
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
 

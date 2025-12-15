@@ -16,7 +16,6 @@
 // local includes
 #include "common/smbus.h"
 
-
 // TI Includes
 #include "inc/hw_memmap.h"
 #include "driverlib/rom.h"

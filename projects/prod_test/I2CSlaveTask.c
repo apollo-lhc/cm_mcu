@@ -57,11 +57,8 @@ const uint8_t CMD_MAX_ARGS_SIZE = 80;
 const uint8_t CMD_RETURN_MSG_ADDR = 0x70;
 const uint8_t CMD_RETURN_MSG_SIZE = 128;
 
-
 void I2CSlaveTask(void *parameters)
 {
-  TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
-
   memset((void *)slaveRegistersData, '\0', REG_MAP_SIZE); // zero out registers
   snprintf((char *)slaveRegistersData + CMD_ARGS_ADDR, 16, "I2C Slave Ready");
 
@@ -89,6 +86,7 @@ void I2CSlaveTask(void *parameters)
           snprintf(mm, SCRATCH_SIZE, "Received invalid command 0x%02x\r\n", cmd);
           Print(mm);
           slaveRegistersData[CMD_RETURN_ADDR] = 0xffU; // invalid command
+          slaveRegistersData[CMD_REG_ADDR] = 0x00;     // clear command register to acknowledge
           continue;
         }
         struct command_t c = commands[cmd];
