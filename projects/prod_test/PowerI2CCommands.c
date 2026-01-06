@@ -184,10 +184,14 @@ bool dcdc_i2ctest(char *m, int32_t *copied)
 BaseType_t dcdc_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  if (dcdc_i2ctest(m, &copied))
+  if (dcdc_i2ctest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "DCDC I2C test: success\r\n");
-  return pdFALSE;
+    return CLI_OK;
+  }
+  else {
+    return CLI_ERROR;
+  }
 }
 
 /**
@@ -264,8 +268,12 @@ bool dcdc_powerontest(char *m, int32_t *copied)
 BaseType_t dcdc_powerontest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  if (dcdc_powerontest(m, &copied))
+  if (dcdc_powerontest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "Power-on test: success.\r\n");
-  return pdFALSE;
+    return CLI_OK;
+  }
+  else {
+    return CLI_ERROR;
+  }
 }

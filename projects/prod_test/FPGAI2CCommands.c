@@ -130,8 +130,14 @@ bool fpga_i2ctest(char *m, int32_t *copied)
 BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
-  if (fpga_i2ctest(m, &copied))
+  if (fpga_i2ctest(m, &copied)) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "FPGA I2C test: success.\r\n");
-  return pdFALSE;
+    return CLI_OK;
+  } 
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "FPGA I2C test: failure.\r\n");
+    return CLI_ERROR;
+  }
 }

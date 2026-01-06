@@ -426,12 +426,13 @@ BaseType_t firefly_ioexpanders_init_ctl(int argc, char **argv, char *m)
   r = init_registers_firefly();
   if (r) {
     snprintf(m, SCRATCH_SIZE, "ERROR in IO expander initialization.\r\n");
+    return CLI_ERROR;
   }
   else {
     snprintf(m, SCRATCH_SIZE, "IO expanders initialized successfully.\r\n");
+    return CLI_OK;
   }
 
-  return pdFALSE;
 }
 
 /**
