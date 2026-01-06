@@ -200,7 +200,7 @@ bool firefly_i2ctest_transceiver_helper(char *m, int32_t *copied,
       write_gpio_pin(ff_addrs[idev].reset_pin, 0x1);
 
     } // loop over devices
-  } // read/write loop
+  }   // read/write loop
 
   return true;
 }
@@ -350,7 +350,7 @@ bool firefly_i2ctest_ioexpandermux_helper(bool mux_reset, char *m,
         return false;
       }
     } // loop over second IO expanders
-  } // if not MUX reset test
+  }   // if not MUX reset test
 
   return true;
 }

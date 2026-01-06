@@ -114,7 +114,7 @@ bool clock_i2ctest_synth_helper(char *m, int32_t *copied)
       // wait here for 10 msec
       vTaskDelay(pdMS_TO_TICKS(10));
     } // loop over devices
-  } // read/write passes
+  }   // read/write passes
   return true;
 }
 
