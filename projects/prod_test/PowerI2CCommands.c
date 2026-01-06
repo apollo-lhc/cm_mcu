@@ -148,7 +148,7 @@ bool dcdc_i2ctest(char *m, int32_t *copied)
       // wait here for 10 msec
       vTaskDelay(pdMS_TO_TICKS(10));
     } // loop over devices
-  }   // read/write passes
+  } // read/write passes
 
   // test reset by attempting read; as long as we don't use an address 0xAX,
   // we shouldn't accidentally address the MUX
@@ -256,7 +256,7 @@ bool dcdc_powerontest(char *m, int32_t *copied)
         }
       }
     } // loop over checks
-  }   // loop over levels
+  } // loop over levels
 
   return true;
 }

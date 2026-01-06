@@ -1135,7 +1135,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         return pdFALSE;
       }
 
-    }                     // argc == 4
+    } // argc == 4
     else if (argc == 5) { // command + five arguments
       // register write. model:
       // ff regw reg# val (0-23|all)
@@ -1214,7 +1214,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
         return pdFALSE;
       }
 #endif // FF_TEST_DEBUG
-    }  // argc == 5
+    } // argc == 5
     else {
       snprintf(m + copied, SCRATCH_SIZE - copied, "%s: command %s not understood\r\n", argv[0],
                argv[1]);

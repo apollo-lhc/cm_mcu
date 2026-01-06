@@ -134,7 +134,7 @@ BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "FPGA I2C test: success.\r\n");
     return CLI_OK;
-  } 
+  }
   else {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "FPGA I2C test: failure.\r\n");
