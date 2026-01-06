@@ -110,5 +110,5 @@ BaseType_t eeprom_i2ctest_ctl(int argc, char **argv, char *m)
   if (eeprom_i2ctest(m, &copied))
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "EEPROM I2C test: success.\r\n");
-  return pdFALSE;
+  return CLI_OK;
 }

@@ -45,6 +45,6 @@ bool fpga_i2ctest(char *m, int32_t *copied);
  * @param [in] argc  number of CLI arguments
  * @param [in] argv  CLI arguments
  * @param [out] m  output string
- * @return pdFALSE
+ * @return CLI_OK on success, CLI_ERROR on failure
  */
 BaseType_t fpga_i2ctest_ctl(int argc, char **argv, char *m);

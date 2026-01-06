@@ -14,29 +14,12 @@
 #include "InterruptHandlers.h"
 
 // local includes
-#include "common/LocalUart.h"
-#include "common/utils.h"
-#include "common/power_ctl.h"
-#include "common/i2c_reg.h"
-#include "common/pinout.h"
-#include "common/pinsel.h"
 #include "common/smbus.h"
-#include "common/smbus.h"
-#include "common/softuart.h"
 
 // TI Includes
-// #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
-// #include "inc/hw_ints.h"
-// #include "driverlib/pin_map.h"
-// #include "driverlib/sysctl.h"
-// #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
-// #include "driverlib/rom_map.h"
-// #include "driverlib/adc.h"
-// #include "driverlib/uart.h"
-// #include "driverlib/timer.h"
-// #include "driverlib/interrupt.h"
+#include "driverlib/i2c.h"
 
 #include "task.h"
 #include "queue.h"
@@ -231,35 +214,56 @@ void ADCSeq1Interrupt(void)
   return;
 }
 
-#if 0 // not used
-
 // -----------------------------------------
 TaskHandle_t TaskNotifyI2CSlave = NULL;
+#define REG_MAP_SIZE 256
+// The Shared Register Map
+volatile uint8_t slaveRegistersData[REG_MAP_SIZE];
+
+// The Register Pointer (Index) - Keeps track of where we are reading/writing
+static volatile uint8_t regPointer = 0;
 
 void I2CSlave0Interrupt(void)
 {
+  uint8_t data;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  // read the interrupt register
-  uint32_t ui32InterruptStatus = ROM_I2CSlaveIntStatusEx(I2C0_BASE, true);
 
   // clear the interrupt register
   ROM_I2CSlaveIntClear(I2C0_BASE);
-  /* At this point xTaskToNotify should not be NULL as a transmission was
-      in progress. */
-  configASSERT(TaskNotifyI2CSlave != NULL);
+  uint32_t status = ROM_I2CSlaveStatus(I2C0_BASE);
 
-  /* Notify the task that the transmission is complete. */
-  xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus, eSetValueWithOverwrite,
-                     &xHigherPriorityTaskWoken);
+  // --- Transmit Request (Master Reading) ---
+  if (status == I2C_SLAVE_ACT_TREQ) {
+    ROM_I2CSlaveDataPut(I2C0_BASE, slaveRegistersData[regPointer]);
+    regPointer = (regPointer + 1); // % REG_MAP_SIZE; // uint8_t will wrap around
+  }
 
-  /* There are no transmissions in progress, so no tasks to notify. */
-  TaskNotifyI2CSlave = NULL;
+  // --- Receive Request (Master Writing) ---
+  else if (status & I2C_SLAVE_ACT_RREQ) {
+    data = ROM_I2CSlaveDataGet(I2C0_BASE);
 
-  /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
-      should be performed to ensure the interrupt returns directly to the highest
-      priority task.  The macro used for this purpose is dependent on the port in
-      use and may be called portEND_SWITCHING_ISR(). */
+    if (status == I2C_SLAVE_ACT_RREQ_FBR) {
+      // First byte is the Address Pointer
+      regPointer = data;
+    }
+    else {
+      // Subsequent bytes are DATA
+      slaveRegistersData[regPointer] = data;
+
+      // Notify the task!
+      // We pass the Register Index as the notification value so the
+      // task knows WHICH register was just modified.
+      if (TaskNotifyI2CSlave != NULL && regPointer == CMD_REG_ADDR) {
+        xTaskNotifyFromISR(TaskNotifyI2CSlave,
+                           (uint32_t)regPointer,
+                           eSetValueWithOverwrite,
+                           &xHigherPriorityTaskWoken);
+      }
+
+      regPointer = (regPointer + 1); //% REG_MAP_SIZE; uint8_t will wrap around for 256 bytes
+    }
+  }
+
+  // Force context switch if a higher priority task was woken
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-#endif

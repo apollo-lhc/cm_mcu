@@ -93,7 +93,7 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     UART0IntHandler,        // UART0 Rx and Tx
     IntDefaultHandler,      // UART1 Rx and Tx
     IntDefaultHandler,      // SSI0 Rx and Tx
-    IntDefaultHandler,      // I2C0 Master and Slave
+    I2CSlave0Interrupt,     // I2C0 Master and Slave
     IntDefaultHandler,      // PWM Fault
     IntDefaultHandler,      // PWM Generator 0
     IntDefaultHandler,      // PWM Generator 1

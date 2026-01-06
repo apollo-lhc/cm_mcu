@@ -385,10 +385,12 @@ BaseType_t firefly_i2ctest_ctl(int argc, char **argv, char *m)
 {
   int32_t copied = 0;
   int32_t ff_mask = firefly_string_to_mask(argc, argv);
-  if (firefly_i2ctest(m, &copied, ff_mask))
+  bool passed = firefly_i2ctest(m, &copied, ff_mask);
+  if (passed) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                        "Firefly I2C test: success.\r\n");
-  return pdFALSE;
+  }
+  return passed ? CLI_OK : CLI_ERROR;
 }
 
 /**
@@ -424,12 +426,12 @@ BaseType_t firefly_ioexpanders_init_ctl(int argc, char **argv, char *m)
   r = init_registers_firefly();
   if (r) {
     snprintf(m, SCRATCH_SIZE, "ERROR in IO expander initialization.\r\n");
+    return CLI_ERROR;
   }
   else {
     snprintf(m, SCRATCH_SIZE, "IO expanders initialized successfully.\r\n");
+    return CLI_OK;
   }
-
-  return pdFALSE;
 }
 
 /**

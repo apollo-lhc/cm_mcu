@@ -31,12 +31,11 @@ typedef struct {
   UBaseType_t stack_size;
 } CommandLineTaskArgs_t;
 
-#define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
-
-struct command_t commands[] = {
+const struct command_t commands[] = {
     {"adc", adc_ctl, "Display ADC measurements", 0},
     {"bootloader", bl_ctl, "Call bootloader", 0},
     {"help", help_command_fcn, "This help command", -1},
+    {"heap", heap_ctl, "Show heap free and minimum-ever free", 0},
     {"dcdci2ctest", dcdc_i2ctest_ctl, "Test I2C to DC-DC converters", 0},
     {"dcdcpowertest", dcdc_powerontest_ctl, "Test DC-DC power on", 0},
     {"clocki2ctest", clock_i2ctest_ctl, "Test I2C to clock synths", 0},
@@ -49,7 +48,10 @@ struct command_t commands[] = {
     {"poweron", power_ctl, "power on at level n", 1},
     {"poweroff", power_off_ctl, "power off", 0},
     {"restart", restart_mcu, "restart the MCU", 0},
+    {"version", ver_ctl, "Display firmware version", 0},
 };
+
+const int NUM_COMMANDS = (sizeof(commands) / sizeof(commands[0]));
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -68,13 +70,13 @@ BaseType_t help_command_fcn(int argc, char **argv, char *m)
       // need room for command string, help string, newlines, etc, and trailing \0
       unsigned int len = strlen(commands[i].helpstr) + strlen(commands[i].commandstr) + 7;
       if (left < len) {
-        return pdTRUE;
+        return CLI_MORE;
       }
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s\r\n",
                          commands[i].commandstr, commands[i].helpstr);
     }
     i = 0;
-    return pdFALSE;
+    return CLI_OK;
   }
   // help for any command that matches the entered command
   static int j = 0;
@@ -84,7 +86,7 @@ BaseType_t help_command_fcn(int argc, char **argv, char *m)
       // need room for command string, help string, newlines, etc, and trailing \0
       unsigned int len = strlen(commands[j].helpstr) + strlen(commands[j].commandstr) + 7;
       if (left < len) {
-        return pdTRUE;
+        return CLI_MORE;
       }
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n %s\r\n",
                          commands[j].commandstr, commands[j].helpstr);
@@ -95,7 +97,7 @@ BaseType_t help_command_fcn(int argc, char **argv, char *m)
     snprintf(m + copied, SCRATCH_SIZE - copied,
              "%s: No command starting with %s found\r\n", argv[0], argv[1]);
   }
-  return pdFALSE;
+  return CLI_OK;
 }
 
 static int execute(void *p, int argc, char **argv)
@@ -114,7 +116,7 @@ static int execute(void *p, int argc, char **argv)
         int retval = commands[i].interpreter(argc, argv, m);
         if (m[0] != '\0')
           UARTPrint(base, m);
-        while (retval == pdTRUE) {
+        while (retval == CLI_MORE) {
           retval = commands[i].interpreter(argc, argv, m);
           if (m[0] != '\0')
             UARTPrint(base, m);
