@@ -463,30 +463,21 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     uint32_t stat = getTempAlarmStatus();
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08lx\r\n", stat);
 
-    float ff_val = getAlarmTemperature(FF);
-    int tens, frac;
-    float_to_ints(ff_val, &tens, &frac);
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP FFLY: %s \t Threshold: %02d.%02d\r\n",
-                 (stat & ALM_STAT_FIREFLY_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
+        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP FFLY: %s \t Threshold: %d\r\n",
+                 (stat & ALM_STAT_FIREFLY_OVERTEMP) ? "ALARM" : "GOOD", getAlarmTemperature(FF));
 
-    float fpga_val = getAlarmTemperature(FPGA);
-    float_to_ints(fpga_val, &tens, &frac);
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP FPGA: %s \t Threshold: %02d.%02d\r\n",
-                 (stat & ALM_STAT_FPGA_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
+        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP FPGA: %s \t Threshold: %d\r\n",
+                 (stat & ALM_STAT_FPGA_OVERTEMP) ? "ALARM" : "GOOD", getAlarmTemperature(FPGA));
 
-    float dcdc_val = getAlarmTemperature(DCDC);
-    float_to_ints(dcdc_val, &tens, &frac);
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP DCDC: %s \t Threshold: %02d.%02d\r\n",
-                 (stat & ALM_STAT_DCDC_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
+        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP DCDC: %s \t Threshold: %d\r\n",
+                 (stat & ALM_STAT_DCDC_OVERTEMP) ? "ALARM" : "GOOD", getAlarmTemperature(DCDC));
 
-    float tm4c_val = getAlarmTemperature(TM4C);
-    float_to_ints(tm4c_val, &tens, &frac);
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP TM4C: %s \t Threshold: %02d.%02d\r\n",
-                 (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD", tens, frac);
+        snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP TM4C: %s \t Threshold: %d\r\n",
+                 (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD", getAlarmTemperature(TM4C));
 
     uint32_t adc_volt_stat = getVoltAlarmStatus();
     float voltthres = getAlarmVoltageThres() * 100;
@@ -504,7 +495,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       snprintf(m, s, "Invalid command\r\n");
       return pdFALSE;
     }
-    float newtemp = strtof(argv[3], NULL);
+    int16_t newtemp = (int16_t)strtol(argv[3], NULL, 10);
     char *device = argv[2];
     if (!strncasecmp(device, "ff", 2)) {
       setAlarmTemperature(FF, newtemp);

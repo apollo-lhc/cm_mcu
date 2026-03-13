@@ -8,7 +8,6 @@
 #include "common/utils.h"
 #include <assert.h>
 #include <math.h>
-#include <string.h>
 
 ///////////////////////////////////////////////////////////
 //
@@ -18,14 +17,14 @@
 
 extern struct MonitorTaskArgs_t fpga_args;
 
-#define ALM_OVERTEMP_THRESHOLD 5.0f
+#define ALM_OVERTEMP_THRESHOLD 5
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
 // a shutdown message is sent
 
-// current value of the thresholds (initialized to compile-time defaults;
+// current value of the thresholds in integer degrees C (initialized to compile-time defaults;
 // overwritten at startup by loadAlarmTemperaturesFromEEPROM() if EEPROM has valid data)
-static float alarmTemp[4] = {INITIAL_ALARM_TEMP_FF, INITIAL_ALARM_TEMP_DCDC,
-                             INITIAL_ALARM_TEMP_TM4C, INITIAL_ALARM_TEMP_FPGA};
+static int16_t alarmTemp[4] = {INITIAL_ALARM_TEMP_FF, INITIAL_ALARM_TEMP_DCDC,
+                               INITIAL_ALARM_TEMP_TM4C, INITIAL_ALARM_TEMP_FPGA};
 
 // EEPROM addresses for each device's alarm temperature, indexed by enum device
 static const uint32_t alarmTempAddr[4] = {
@@ -46,17 +45,18 @@ uint32_t getTempAlarmStatus(void)
   return status_T;
 }
 
-float getAlarmTemperature(enum device theDevice)
+int16_t getAlarmTemperature(enum device theDevice)
 {
   return alarmTemp[theDevice];
 }
 
-void setAlarmTemperature(enum device theDevice, float temperature)
+void setAlarmTemperature(enum device theDevice, int16_t temperature)
 {
   alarmTemp[theDevice] = temperature;
-  uint32_t raw;
-  memcpy(&raw, &temperature, sizeof(float));
-  write_eeprom(raw, alarmTempAddr[theDevice]);
+  // Zero-extend int16_t to uint32_t for EEPROM storage.
+  // 0xFFFFFFFF is reserved as the uninitialized-EEPROM sentinel and cannot
+  // be produced by zero-extension (upper 16 bits are always 0).
+  write_eeprom((uint32_t)(uint16_t)temperature, alarmTempAddr[theDevice]);
 }
 
 // Load alarm temperature thresholds from EEPROM into the alarmTemp[] array.
@@ -70,9 +70,7 @@ void loadAlarmTemperaturesFromEEPROM(void)
     if (raw == 0xFFFFFFFFU) {
       continue; // uninitialized — keep compile-time default
     }
-    float val;
-    memcpy(&val, &raw, sizeof(float));
-    alarmTemp[i] = val;
+    alarmTemp[i] = (int16_t)(uint16_t)raw;
   }
 }
 

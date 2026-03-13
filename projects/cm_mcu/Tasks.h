@@ -206,8 +206,8 @@ enum powdevice { GEN,
 
 void GenericAlarmTask(void *parameters);
 
-float getAlarmTemperature(enum device device_name);
-void setAlarmTemperature(enum device device_name, float newtemp);
+int16_t getAlarmTemperature(enum device device_name);
+void setAlarmTemperature(enum device device_name, int16_t newtemp);
 uint32_t getTempAlarmStatus(void);
 float getAlarmVoltageThres(void);
 void setAlarmVoltageThres(float voltthres);
