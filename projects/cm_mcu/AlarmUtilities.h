@@ -4,7 +4,7 @@
 #include "Tasks.h"
 
 // Compile-time default temperature alarm thresholds (integer degrees Celsius)
-#define INITIAL_ALARM_TEMP_FF   50
+#define INITIAL_ALARM_TEMP_FF   55
 #define INITIAL_ALARM_TEMP_DCDC 70
 #define INITIAL_ALARM_TEMP_TM4C 70
 #define INITIAL_ALARM_TEMP_FPGA 81

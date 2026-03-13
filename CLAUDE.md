@@ -115,7 +115,7 @@ Defaults (used if EEPROM is uninitialized):
 
 | Device | Default | EEPROM Address |
 |--------|---------|---------------|
-| Firefly | 50°C | 0x180 |
+| Firefly | 55°C | 0x180 |
 | DCDC | 70°C | 0x184 |
 | TM4C MCU | 70°C | 0x188 |
 | FPGA | 81°C | 0x18C |
