@@ -504,7 +504,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       snprintf(m, s, "Invalid command\r\n");
       return pdFALSE;
     }
-    float newtemp = (float)strtol(argv[3], NULL, 10);
+    float newtemp = strtof(argv[3], NULL);
     char *device = argv[2];
     if (!strncasecmp(device, "ff", 2)) {
       setAlarmTemperature(FF, newtemp);
