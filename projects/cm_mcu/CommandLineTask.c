@@ -238,7 +238,13 @@ struct command_t {
 #define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
 static struct command_t commands[] = {
     {"adc", adc_ctl, "Display ADC measurements\r\n", 0},
-    {"alm", alarm_ctl, "args: (clear|status|settemp|setvoltthres|#)\r\nGet or clear status of alarm task\r\n",
+    {"alm", alarm_ctl,
+     "args: (clear|status|settemp|resettemp|setvoltthres|#)\r\n"
+     "  status                              -- show alarm status and current thresholds\r\n"
+     "  settemp [ff|fpga|dcdc|tm4c] T       -- set alarm threshold to T deg C (persists to EEPROM)\r\n"
+     "  resettemp [ff|fpga|dcdc|tm4c|all]   -- reset threshold(s) to compile-time default\r\n"
+     "  setvoltthres PCT                    -- set voltage alarm threshold to +/-PCT%%\r\n"
+     "  clear                               -- clear alarm fault state\r\n",
      -1},
     {"bootloader", bl_ctl, "Call bootloader\r\n", 0},
 #if defined(REV2) || defined(REV3)

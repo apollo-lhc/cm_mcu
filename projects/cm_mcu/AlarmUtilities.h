@@ -3,6 +3,12 @@
 
 #include "Tasks.h"
 
+// Compile-time default temperature alarm thresholds (degrees Celsius)
+#define INITIAL_ALARM_TEMP_FF   50.0f
+#define INITIAL_ALARM_TEMP_DCDC 70.0f
+#define INITIAL_ALARM_TEMP_TM4C 70.0f
+#define INITIAL_ALARM_TEMP_FPGA 81.0f
+
 struct GenericAlarmParams_t {
   int (*checkStatus)(void); // return 0 for normal, 1 for warn, >1 for error
   void (*errorlog_registererror)(void);
@@ -18,6 +24,7 @@ extern struct GenericAlarmParams_t voltAlarmTask;
 //    first some commands for setting/getting the thresholds
 float getAlarmTemperature(enum device theDevice);
 void setAlarmTemperature(enum device theDevice, float temperature);
+void loadAlarmTemperaturesFromEEPROM(void);
 void getAlarmTemperatureStatus(void);
 //    callback functions
 int TempStatus(void);

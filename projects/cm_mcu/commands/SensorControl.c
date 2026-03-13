@@ -508,28 +508,49 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     char *device = argv[2];
     if (!strncasecmp(device, "ff", 2)) {
       setAlarmTemperature(FF, newtemp);
-      snprintf(m, s, "%s: set Firefly alarm temperature to %s\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set Firefly alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
     if (!strncasecmp(device, "fpga", 4)) {
       setAlarmTemperature(FPGA, newtemp);
-      snprintf(m, s, "%s: set FPGA alarm temperature to %s\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set FPGA alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
     if (!strncasecmp(device, "dcdc", 4)) {
       setAlarmTemperature(DCDC, newtemp);
-      snprintf(m, s, "%s: set DCDC alarm temperature to %s\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set DCDC alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
     if (!strncasecmp(device, "tm4c", 4)) {
       setAlarmTemperature(TM4C, newtemp);
-      snprintf(m, s, "%s: set TM4C alarm temperature to %s\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set TM4C alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
     else {
       snprintf(m, s, "%s is not a valid device.\r\n", argv[2]);
       return pdFALSE;
     }
+  }
+  else if (strcmp(argv[1], "resettemp") == 0) {
+    if (argc != 3) {
+      snprintf(m, s, "Usage: %s resettemp [ff|fpga|dcdc|tm4c|all]\r\n", argv[0]);
+      return pdFALSE;
+    }
+    char *device = argv[2];
+    if (!strncasecmp(device, "ff", 2) || !strncasecmp(device, "all", 3)) {
+      setAlarmTemperature(FF, INITIAL_ALARM_TEMP_FF);
+    }
+    if (!strncasecmp(device, "dcdc", 4) || !strncasecmp(device, "all", 3)) {
+      setAlarmTemperature(DCDC, INITIAL_ALARM_TEMP_DCDC);
+    }
+    if (!strncasecmp(device, "tm4c", 4) || !strncasecmp(device, "all", 3)) {
+      setAlarmTemperature(TM4C, INITIAL_ALARM_TEMP_TM4C);
+    }
+    if (!strncasecmp(device, "fpga", 4) || !strncasecmp(device, "all", 3)) {
+      setAlarmTemperature(FPGA, INITIAL_ALARM_TEMP_FPGA);
+    }
+    snprintf(m, s, "%s: reset %s alarm temperature(s) to defaults (saved to EEPROM)\r\n", argv[0], argv[2]);
+    return pdFALSE;
   }
   else if (strcmp(argv[1], "setvoltthres") == 0) {
     if (argc != 3) {
