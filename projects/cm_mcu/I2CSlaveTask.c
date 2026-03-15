@@ -15,6 +15,7 @@
 #include "Tasks.h"
 #include "MonitorTask.h"
 #include "common/log.h"
+#include "common/utils.h"
 #include "FireflyUtils.h"
 
 // Rev 2:
@@ -55,43 +56,68 @@ static uint8_t getSlaveData(uint8_t address)
       value = (uint8_t)(getADCvalue(20) + 0.5f); // always valid
       break;
     case 0x12U: // FPGA F2 temp
-      value = (uint8_t)(local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U);
-      if (value == 0)
-        value = 0xFFU; // invalid value
-      break;
+    {
+      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+      if (checkStale(pdTICKS_TO_S(fpga_args.updateTick), now)) {
+        value = 0xFFU; // stale
+      }
+      else {
+        value = (uint8_t)(local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U);
+        if (value == 0)
+          value = 0xFFU; // invalid value
+      }
+    } break;
     case 0x14U: // FPGA F1 temp
-      value = (uint8_t)(local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U);
-      if (value == 0)
-        value = 0xFFU; // invalid value
-      break;
+    {
+      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+      if (checkStale(pdTICKS_TO_S(fpga_args.updateTick), now)) {
+        value = 0xFFU; // stale
+      }
+      else {
+        value = (uint8_t)(local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U);
+        if (value == 0)
+          value = 0xFFU; // invalid value
+      }
+    } break;
     case 0x16U: // hottest FF temp
     {
-      int8_t imax_temp = -55; // turn off value
-      for (int i = 0; i < NFIREFLIES; ++i) {
-        int8_t v = getFFtemp(i);
-        if (v > imax_temp)
-          imax_temp = v;
+      if (isFFStale()) {
+        value = 0xFFU; // stale
       }
-      if (imax_temp < 0)
-        value = 0xFFU; // invalid
-      else
-        value = (uint8_t)imax_temp;
+      else {
+        int8_t imax_temp = -55; // turn off value
+        for (int i = 0; i < NFIREFLIES; ++i) {
+          int8_t v = getFFtemp(i);
+          if (v > imax_temp)
+            imax_temp = v;
+        }
+        if (imax_temp < 0)
+          value = 0xFFU; // invalid
+        else
+          value = (uint8_t)imax_temp;
+      }
     } break;
     case 0x18U: // hottest regulator temp
     {
-      float max_temp = -99.0f;
-      for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
-        for (int page = 0; page < dcdc_args.n_pages; ++page) {
-          float thistemp = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
-                                               page * dcdc_args.n_commands + 0];
-          if (thistemp > max_temp)
-            max_temp = thistemp;
-        }
+      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+      if (checkStale(pdTICKS_TO_S(dcdc_args.updateTick), now)) {
+        value = 0xFFU; // stale
       }
-      if (max_temp < 0)
-        value = 0xFFU; // invalid
-      else
-        value = (uint8_t)(max_temp + 0.5f);
+      else {
+        float max_temp = -99.0f;
+        for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
+          for (int page = 0; page < dcdc_args.n_pages; ++page) {
+            float thistemp = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
+                                                 page * dcdc_args.n_commands + 0];
+            if (thistemp > max_temp)
+              max_temp = thistemp;
+          }
+        }
+        if (max_temp < 0)
+          value = 0xFFU; // invalid
+        else
+          value = (uint8_t)(max_temp + 0.5f);
+      }
     } break;
     default:
       value = 0xFFU;
