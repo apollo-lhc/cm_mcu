@@ -9,6 +9,8 @@
 #include <strings.h>
 #include <sys/_types.h>
 #include <assert.h>
+#include <limits.h>
+#include <errno.h>
 
 #include "AlarmUtilities.h"
 #include "FireflyUtils.h"
@@ -496,7 +498,14 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       snprintf(m, s, "Invalid command\r\n");
       return pdFALSE;
     }
-    int16_t newtemp = (int16_t)strtol(argv[3], NULL, 10);
+    errno = 0;
+    char *endptr = NULL;
+    long tmp = strtol(argv[3], &endptr, 10);
+    if (endptr == argv[3] || *endptr != '\0' || errno == ERANGE || tmp < INT16_MIN || tmp > INT16_MAX) {
+      snprintf(m, s, "Invalid temperature '%s'; must be a signed 16-bit integer\r\n", argv[3]);
+      return pdFALSE;
+    }
+    int16_t newtemp = (int16_t)tmp;
     char *device = argv[2];
     if (!strncasecmp(device, "ff", 2)) {
       setAlarmTemperature(FF, newtemp);
@@ -529,17 +538,31 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       return pdFALSE;
     }
     char *device = argv[2];
+    int handled = 0;
     if (!strncasecmp(device, "ff", 2) || !strncasecmp(device, "all", 3)) {
       setAlarmTemperature(FF, INITIAL_ALARM_TEMP_FF);
+      handled = 1;
     }
     if (!strncasecmp(device, "dcdc", 4) || !strncasecmp(device, "all", 3)) {
       setAlarmTemperature(DCDC, INITIAL_ALARM_TEMP_DCDC);
+      handled = 1;
     }
     if (!strncasecmp(device, "tm4c", 4) || !strncasecmp(device, "all", 3)) {
       setAlarmTemperature(TM4C, INITIAL_ALARM_TEMP_TM4C);
+      handled = 1;
     }
     if (!strncasecmp(device, "fpga", 4) || !strncasecmp(device, "all", 3)) {
       setAlarmTemperature(FPGA, INITIAL_ALARM_TEMP_FPGA);
+      handled = 1;
+    }
+    if (!handled) {
+      snprintf(m,
+               s,
+               "%s: %s is not a valid device. Usage: %s resettemp [ff|fpga|dcdc|tm4c|all]\r\n",
+               argv[0],
+               argv[2],
+               argv[0]);
+      return pdFALSE;
     }
     snprintf(m, s, "%s: reset %s alarm temperature(s) to defaults (saved to EEPROM)\r\n", argv[0], argv[2]);
     return pdFALSE;

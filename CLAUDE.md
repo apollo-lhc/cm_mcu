@@ -31,7 +31,7 @@ This repository contains bare-metal firmware for the **Apollo command module**, 
 
 ```bash
 # Initialize and update submodules (FreeRTOS)
-git submodule update --init --recursive --remote
+git submodule update --init --recursive
 ```
 
 ### Build Commands
@@ -200,10 +200,10 @@ Block 1:  0x040–0x07F   Apollo board identity (password 0x12345678)
   0x048 ADDR_PS          Power supply ignore mask
 Blocks 2–5: 0x080–0x17F  Error log ring buffer (EBUF_MINBLK=2, EBUF_MAXBLK=5)
 Block 6:  0x180–0x1BF   Temperature alarm thresholds (runtime-configurable)
-  0x180 ADDR_TEMP_FF     Firefly alarm temp (float, 4 bytes)
-  0x184 ADDR_TEMP_DCDC   DCDC alarm temp (float, 4 bytes)
-  0x188 ADDR_TEMP_TM4C   TM4C alarm temp (float, 4 bytes)
-  0x18C ADDR_TEMP_FPGA   FPGA alarm temp (float, 4 bytes)
+  0x180 ADDR_TEMP_FF     Firefly alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
+  0x184 ADDR_TEMP_DCDC   DCDC alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
+  0x188 ADDR_TEMP_TM4C   TM4C alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
+  0x18C ADDR_TEMP_FPGA   FPGA alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
 Blocks 7+: 0x1C0+        Available
 ```
 
@@ -298,9 +298,9 @@ Alarm tolerance: +5°C above threshold triggers power-off (shutdown).
 
 **CLI:**
 ```
-talarm status                              # show current thresholds and alarm status
-talarm settemp [ff|fpga|dcdc|tm4c] <temp> # set threshold (persists to EEPROM)
-talarm resettemp [ff|fpga|dcdc|tm4c|all]  # reset to compile-time defaults
+alm status                                 # show current thresholds and alarm status
+alm settemp [ff|fpga|dcdc|tm4c] <temp>     # set threshold (persists to EEPROM)
+alm resettemp [ff|fpga|dcdc|tm4c|all]      # reset to compile-time defaults
 ```
 
 ## Debugging

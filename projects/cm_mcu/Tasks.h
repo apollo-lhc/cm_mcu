@@ -160,7 +160,9 @@ extern struct clk_program_t clkprog_args[5]; // NSUPPLIES_CLK + NSUPPLIES_CLKR0A
 #define PASS    0x12345678
 
 // Temperature alarm thresholds in EEPROM Block 6 (0x180-0x18F)
-// Each entry is a 32-bit IEEE 754 float. Uninitialized reads as 0xFFFFFFFF.
+// Each entry is stored in a 32-bit word. The lower 16 bits contain a zero-extended
+// int16_t temperature threshold; the upper 16 bits are currently unused/reserved.
+// Erased/uninitialized EEPROM reads as 0xFFFFFFFF (i.e. threshold field 0xFFFF).
 #define ADDR_TEMP_ALARM_BASE 0x180U
 #define ADDR_TEMP_FF         (ADDR_TEMP_ALARM_BASE + 0x00U) // 0x180: Firefly alarm temp
 #define ADDR_TEMP_DCDC       (ADDR_TEMP_ALARM_BASE + 0x04U) // 0x184: DCDC alarm temp
