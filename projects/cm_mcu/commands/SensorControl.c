@@ -501,30 +501,32 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     errno = 0;
     char *endptr = NULL;
     long tmp = strtol(argv[3], &endptr, 10);
-    if (endptr == argv[3] || *endptr != '\0' || errno == ERANGE || tmp < INT16_MIN || tmp > INT16_MAX) {
-      snprintf(m, s, "Invalid temperature '%s'; must be a signed 16-bit integer\r\n", argv[3]);
+    if (endptr == argv[3] || *endptr != '\0' || errno == ERANGE 
+        || tmp < INT16_MIN || tmp > INT16_MAX) {
+      snprintf(m, s, "Invalid temp '%s'; must be a signed 16-bit int\r\n", 
+               argv[3]);
       return pdFALSE;
     }
     int16_t newtemp = (int16_t)tmp;
     char *device = argv[2];
     if (!strncasecmp(device, "ff", 2)) {
       setAlarmTemperature(FF, newtemp);
-      snprintf(m, s, "%s: set Firefly alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set Firefly temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    if (!strncasecmp(device, "fpga", 4)) {
+    else if (!strncasecmp(device, "fpga", 4)) {
       setAlarmTemperature(FPGA, newtemp);
-      snprintf(m, s, "%s: set FPGA alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set FPGA temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    if (!strncasecmp(device, "dcdc", 4)) {
+    else if (!strncasecmp(device, "dcdc", 4)) {
       setAlarmTemperature(DCDC, newtemp);
-      snprintf(m, s, "%s: set DCDC alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set DCDC temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    if (!strncasecmp(device, "tm4c", 4)) {
+    else if (!strncasecmp(device, "tm4c", 4)) {
       setAlarmTemperature(TM4C, newtemp);
-      snprintf(m, s, "%s: set TM4C alarm temperature to %s (saved to EEPROM)\r\n", argv[0], argv[3]);
+      snprintf(m, s, "%s: set TM4C temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
     else {
@@ -564,7 +566,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
                argv[0]);
       return pdFALSE;
     }
-    snprintf(m, s, "%s: reset %s alarm temperature(s) to defaults (saved to EEPROM)\r\n", argv[0], argv[2]);
+    snprintf(m, s, "%s: reset %s alarm temps to defaults\r\n", argv[0], argv[2]);
     return pdFALSE;
   }
   else if (strcmp(argv[1], "setvoltthres") == 0) {

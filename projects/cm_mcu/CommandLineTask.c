@@ -239,12 +239,12 @@ struct command_t {
 static struct command_t commands[] = {
     {"adc", adc_ctl, "Display ADC measurements\r\n", 0},
     {"alm", alarm_ctl,
-     "args: (clear|status|settemp|resettemp|setvoltthres|#)\r\n"
-     "  status                              -- show alarm status and current thresholds\r\n"
-     "  settemp [ff|fpga|dcdc|tm4c] T       -- set alarm threshold to T deg C (persists to EEPROM)\r\n"
-     "  resettemp [ff|fpga|dcdc|tm4c|all]   -- reset threshold(s) to compile-time default\r\n"
-     "  setvoltthres PCT                    -- set voltage alarm threshold to +/-PCT%%\r\n"
-     "  clear                               -- clear alarm fault state\r\n",
+     "args: clear|status|settemp|resettemp|setvoltthres|#\r\n"
+     "  status  -- show alarms/thresh\r\n"
+     "  settemp [ff|fpga|dcdc|tm4c] T -- set temp thresh T C (EEPROM)\r\n"
+     "  resettemp [ff|fpga|dcdc|tm4c|all] -- reset temp thresh default\r\n"
+     "  setvoltthres PCT -- set volt alarm +/-PCT%%\r\n"
+     "  clear -- clear alarm state\r\n",
      -1},
     {"bootloader", bl_ctl, "Call bootloader\r\n", 0},
 #if defined(REV2) || defined(REV3)
