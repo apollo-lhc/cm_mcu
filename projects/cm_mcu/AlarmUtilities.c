@@ -5,6 +5,7 @@
 
 #include "common/log.h"
 #include "common/pinsel.h"
+#include "common/utils.h"
 #include <assert.h>
 #include <math.h>
 
@@ -16,17 +17,22 @@
 
 extern struct MonitorTaskArgs_t fpga_args;
 
-#define INITIAL_ALARM_TEMP_FF   50.0f // in Celsius duh
-#define INITIAL_ALARM_TEMP_DCDC 70.0f
-#define INITIAL_ALARM_TEMP_TM4C 70.0f
-#define INITIAL_ALARM_TEMP_FPGA 81.0f
-#define ALM_OVERTEMP_THRESHOLD  5.0f
+#define ALM_OVERTEMP_THRESHOLD 5
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
 // a shutdown message is sent
 
-// current value of the thresholds
-static float alarmTemp[4] = {INITIAL_ALARM_TEMP_FF, INITIAL_ALARM_TEMP_DCDC,
-                             INITIAL_ALARM_TEMP_TM4C, INITIAL_ALARM_TEMP_FPGA};
+// current value of the thresholds in integer degrees C (initialized to compile-time defaults;
+// overwritten at startup by loadAlarmTemperaturesFromEEPROM() if EEPROM has valid data)
+static int16_t alarmTemp[4] = {INITIAL_ALARM_TEMP_FF, INITIAL_ALARM_TEMP_DCDC,
+                               INITIAL_ALARM_TEMP_TM4C, INITIAL_ALARM_TEMP_FPGA};
+
+// EEPROM addresses for each device's alarm temperature, indexed by enum device
+static const uint32_t alarmTempAddr[4] = {
+    ADDR_TEMP_FF,   // FF   = 0
+    ADDR_TEMP_DCDC, // DCDC = 1
+    ADDR_TEMP_TM4C, // TM4C = 2
+    ADDR_TEMP_FPGA, // FPGA = 3
+};
 // current value of temperatures
 static float currentTemp[4] = {0.f, 0.f, 0.f, 0.f};
 
@@ -39,13 +45,33 @@ uint32_t getTempAlarmStatus(void)
   return status_T;
 }
 
-float getAlarmTemperature(enum device theDevice)
+int16_t getAlarmTemperature(enum device theDevice)
 {
   return alarmTemp[theDevice];
 }
-void setAlarmTemperature(enum device theDevice, float temperature)
+
+void setAlarmTemperature(enum device theDevice, int16_t temperature)
 {
   alarmTemp[theDevice] = temperature;
+  // Zero-extend int16_t to uint32_t for EEPROM storage.
+  // 0xFFFFFFFF is reserved as the uninitialized-EEPROM sentinel and cannot
+  // be produced by zero-extension (upper 16 bits are always 0).
+  write_eeprom((uint32_t)(uint16_t)temperature, alarmTempAddr[theDevice]);
+}
+
+// Load alarm temperature thresholds from EEPROM into the alarmTemp[] array.
+// If a slot reads 0xFFFFFFFF (uninitialized EEPROM), the compile-time default
+// already present in alarmTemp[] is kept unchanged.
+// Must be called after the EEPROM gatekeeper task and its queues are running.
+void loadAlarmTemperaturesFromEEPROM(void)
+{
+  for (int i = 0; i < 4; ++i) {
+    uint32_t raw = read_eeprom_single(alarmTempAddr[i]);
+    if (raw == 0xFFFFFFFFU) {
+      continue; // uninitialized — keep compile-time default
+    }
+    alarmTemp[i] = (int16_t)(uint16_t)raw;
+  }
 }
 
 // check the current temperature status.

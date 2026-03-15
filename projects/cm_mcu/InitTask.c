@@ -17,6 +17,7 @@
 #include "common/utils.h"
 #include "common/log.h"
 #include "Tasks.h"
+#include "AlarmUtilities.h"
 #include "clocksynth.h"
 
 void InitTask(void *parameters)
@@ -34,6 +35,10 @@ void InitTask(void *parameters)
   uint32_t rev;
   get_board_info(&rev, &id);
   log_info(LOG_SERVICE, "Board ID: %d, Revision: %d\r\n", id, rev);
+
+  // Load temperature alarm thresholds from EEPROM (falls back to compile-time
+  // defaults if EEPROM is uninitialized)
+  loadAlarmTemperaturesFromEEPROM();
 
 // wait for 3.3V power to come up. Wait indefinitely.
 // in Rev1 the clocks cannot be accessed before the 3.3 V is on.
