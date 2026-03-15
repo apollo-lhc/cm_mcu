@@ -501,9 +501,8 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     errno = 0;
     char *endptr = NULL;
     long tmp = strtol(argv[3], &endptr, 10);
-    if (endptr == argv[3] || *endptr != '\0' || errno == ERANGE 
-        || tmp < INT16_MIN || tmp > INT16_MAX) {
-      snprintf(m, s, "Invalid temp '%s'; must be a signed 16-bit int\r\n", 
+    if (endptr == argv[3] || *endptr != '\0' || errno == ERANGE || tmp < INT16_MIN || tmp > INT16_MAX) {
+      snprintf(m, s, "Invalid temp '%s'; must be a signed 16-bit int\r\n",
                argv[3]);
       return pdFALSE;
     }
