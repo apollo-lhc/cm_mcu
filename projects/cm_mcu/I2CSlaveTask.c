@@ -59,7 +59,7 @@ static uint8_t getSlaveData(uint8_t address)
     {
       TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
       if (checkStale(pdTICKS_TO_S(fpga_args.updateTick), now)) {
-        value = 0xFFU; // stale
+        value = 0xFEU; // stale
       }
       else {
         value = (uint8_t)(local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U);
@@ -71,7 +71,7 @@ static uint8_t getSlaveData(uint8_t address)
     {
       TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
       if (checkStale(pdTICKS_TO_S(fpga_args.updateTick), now)) {
-        value = 0xFFU; // stale
+        value = 0xFEU; // stale
       }
       else {
         value = (uint8_t)(local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U);
@@ -82,7 +82,7 @@ static uint8_t getSlaveData(uint8_t address)
     case 0x16U: // hottest FF temp
     {
       if (isFFStale()) {
-        value = 0xFFU; // stale
+        value = 0xFEU; // stale
       }
       else {
         int8_t imax_temp = -55; // turn off value
@@ -101,7 +101,7 @@ static uint8_t getSlaveData(uint8_t address)
     {
       TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
       if (checkStale(pdTICKS_TO_S(dcdc_args.updateTick), now)) {
-        value = 0xFFU; // stale
+        value = 0xFEU; // stale
       }
       else {
         float max_temp = -99.0f;
