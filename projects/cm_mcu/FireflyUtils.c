@@ -437,8 +437,7 @@ uint32_t ff_map_25gb_parts(void)
       log_error(LOG_SERVICE, "Error reading vendor string for FF %d\r\n", i);
       // what to do? FIXME: return error?
     }
-    log_info(LOG_SERVICE, "F%d FF%02d: %s\r\n", i / NFIREFLIES_F1 + 1, i % NFIREFLIES_F1,
-             name);
+    log_info(LOG_SERVICE, "%s: %s\r\n", ff_moni2c_addrs[i].name, name);
     // skip 4 channel parts
     if (type == DEVICE_25G4) {
       continue;
