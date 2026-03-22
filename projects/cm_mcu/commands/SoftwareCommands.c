@@ -7,6 +7,46 @@
 #include "Semaphore.h"
 #include "projdefs.h"
 
+// this command takes no arguments and never returns.
+__attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
+{
+  disable_ps();
+  Print("Jumping to bootloader\r\n");
+  ROM_SysCtlDelay(100000);
+  // this code is copied from the JumpToBootLoader()
+  // stack from the boot_demo1 application in the
+  // ek-tm4c129exl part of tiva ware.
+  //
+  // We must make sure we turn off SysTick and its interrupt before entering
+  // the boot loader!
+  //
+  ROM_SysTickIntDisable();
+  ROM_SysTickDisable();
+
+  //
+  // Disable all processor interrupts.  Instead of disabling them
+  // one at a time, a direct write to NVIC is done to disable all
+  // peripheral interrupts.
+  //
+  HWREG(NVIC_DIS0) = 0xffffffff;
+  HWREG(NVIC_DIS1) = 0xffffffff;
+  HWREG(NVIC_DIS2) = 0xffffffff;
+  HWREG(NVIC_DIS3) = 0xffffffff;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+
+  //
+  // Return control to the boot loader.  This is a call to the SVC
+  // handler in the boot loader.
+  //
+  (*((void (*)(void))(*(uint32_t *)0x2c)))();
+
+  // the above points to a memory location in flash.
+#pragma GCC diagnostic pop
+  __builtin_unreachable();
+}
+
 // takes no arguments
 BaseType_t stack_ctl(int argc, char **argv, char *m)
 {
@@ -131,91 +171,6 @@ BaseType_t watchdog_ctl(int argc, char **argv, char *m)
   return pdFALSE;
 }
 #endif
-
-BaseType_t zmon_ctl(int argc, char **argv, char *m)
-{
-  int copied = 0;
-  bool understood = true;
-  uint32_t message = 0;
-  if (argc == 2) {
-    if (strncmp(argv[1], "on", 2) == 0) {
-      message = ZYNQMON_ENABLE_TRANSMIT;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: transmit on\r\n", argv[0]);
-    }
-    else if (strncmp(argv[1], "off", 3) == 0) {
-      message = ZYNQMON_DISABLE_TRANSMIT;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: transmit off\r\n", argv[0]);
-    }
-#ifdef ZYNQMON_TEST_MODE
-    else if (strncmp(argv[1], "debug1", 6) == 0) {
-      message = ZYNQMON_TEST_SINGLE;
-      copied +=
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: debug mode 1 (single)\r\n", argv[0]);
-    }
-    else if (strncmp(argv[1], "debugraw", 8) == 0) {
-      message = ZYNQMON_TEST_RAW;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: debug raw (single)\r\n", argv[0]);
-    }
-    else if (strncmp(argv[1], "debug2", 6) == 0) {
-      message = ZYNQMON_TEST_INCREMENT;
-      copied +=
-          snprintf(m + copied, SCRATCH_SIZE - copied, "%s: debug mode 2 (increment)\r\n", argv[0]);
-    }
-    else if (strncmp(argv[1], "normal", 5) == 0) {
-      message = ZYNQMON_TEST_OFF;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: regular mode\r\n", argv[0]);
-    }
-    else if (strncmp(argv[1], "sendone", 7) == 0) {
-      message = ZYNQMON_TEST_SEND_ONE;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: send one\r\n", argv[0]);
-    }
-    else if (strncmp(argv[1], "status", 5) == 0) {
-      uint8_t mode = getZYNQMonTestMode();
-      uint8_t sensor = getZYNQMonTestSensor();
-      uint16_t data = getZYNQMonTestData();
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: test mode = %s, sensor = 0x%x, data = 0x%x\r\n", argv[0],
-                         mode == 0 ? "single" : "increment", sensor, data);
-    }
-#endif // ZYNQMON_TEST_MODE
-    else {
-      understood = false;
-    }
-  }
-#ifdef ZYNQMON_TEST_MODE
-  else if (argc == 4) {
-    if (strncmp(argv[1], "settest", 7) == 0) {
-      uint8_t sensor = strtol(argv[2], NULL, 16);
-      uint16_t data = strtol(argv[3], NULL, 16);
-      setZYNQMonTestData(sensor, data);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: set test sensor, data to 0x%x, 0x%x\r\n", argv[0], sensor, data);
-    }
-    else {
-      understood = false;
-    }
-  }
-#endif // ZYNQMON_TEST_MODE
-  else {
-    understood = false;
-  }
-
-  if (!understood) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: message not understood >", argv[0]);
-    for (int i = 0; i < argc; ++i) {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s ", argv[i]);
-    }
-    snprintf(m + copied, SCRATCH_SIZE - copied, "<\r\n");
-    return pdFALSE;
-  }
-
-  if (message) {
-    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Sending message %s\r\n", argv[0], argv[1]);
-    // Send a message to the zmon task
-    xQueueSendToBack(xZynqMonQueue, &message, pdMS_TO_TICKS(10));
-  }
-  return pdFALSE;
-}
 
 // this command takes up to two arguments
 BaseType_t log_ctl(int argc, char **argv, char *m)
