@@ -194,6 +194,12 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/BufferCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/SensorControl.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/FireflyCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/ClockCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGACommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o
