@@ -171,6 +171,9 @@ struct GenericAlarmParams_t tempAlarmTask = {
     .errorlog_registererror = &TempErrorLog,
     .errorlog_clearerror = &TempClearErrorLog,
     .stack_size = 4096,
+    .led_warn_msg = LED_STATUS_WARN,
+    .led_alarm_msg = LED_STATUS_ALARM,
+    .led_normal_msg = LED_STATUS_NORMAL,
 };
 
 ///////////////////////////////////////////////////////////

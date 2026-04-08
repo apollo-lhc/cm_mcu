@@ -83,6 +83,14 @@ void LedTask(void *parameters);
 #define GREEN_LED_TOGGLE  (32)
 #define GREEN_LED_TOGGLE3 (33)
 #define GREEN_LED_TOGGLE4 (34)
+// LED status modes — set all three channels atomically
+#define LED_STATUS_INIT       (40) // blue blink (startup / initializing)
+#define LED_STATUS_NORMAL     (41) // green solid (normal operation)
+#define LED_STATUS_WARN       (42) // yellow (R+G) slow blink (temperature warning)
+#define LED_STATUS_ALARM      (43) // red solid (temperature alarm / shutdown)
+#define LED_STATUS_PS_FAULT   (44) // red fast blink (power supply fault)
+#define LED_STATUS_FW_FAULT   (45) // magenta (R+B) fast blink (firmware / watchdog fault)
+#define LED_STATUS_BOOTLOADER (46) // white (R+G+B) solid (bootloader mode)
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task

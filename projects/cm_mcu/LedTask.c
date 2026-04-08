@@ -23,7 +23,11 @@
 #include "FreeRTOSConfig.h"
 #include "queue.h"
 
-enum LEDpattern { OFF = 0, ON = 1, TOGGLE = 2, TOGGLE3, TOGGLE4 };
+enum LEDpattern { OFF = 0,
+                  ON = 1,
+                  TOGGLE = 2,
+                  TOGGLE3,
+                  TOGGLE4 };
 
 // Holds the handle of the created queue for the LED task.
 // gets initialized in main()
@@ -97,6 +101,41 @@ void LedTask(void *parameters)
           break;
         case GREEN_LED_TOGGLE4:
           greenLedPattern = TOGGLE4;
+          break;
+        case LED_STATUS_INIT:
+          redLedPattern = OFF;
+          greenLedPattern = OFF;
+          blueLedPattern = TOGGLE;
+          break;
+        case LED_STATUS_NORMAL:
+          redLedPattern = OFF;
+          greenLedPattern = ON;
+          blueLedPattern = OFF;
+          break;
+        case LED_STATUS_WARN:
+          redLedPattern = TOGGLE3;
+          greenLedPattern = TOGGLE3;
+          blueLedPattern = OFF;
+          break;
+        case LED_STATUS_ALARM:
+          redLedPattern = ON;
+          greenLedPattern = OFF;
+          blueLedPattern = OFF;
+          break;
+        case LED_STATUS_PS_FAULT:
+          redLedPattern = TOGGLE;
+          greenLedPattern = OFF;
+          blueLedPattern = OFF;
+          break;
+        case LED_STATUS_FW_FAULT:
+          redLedPattern = TOGGLE;
+          greenLedPattern = OFF;
+          blueLedPattern = TOGGLE;
+          break;
+        case LED_STATUS_BOOTLOADER:
+          redLedPattern = ON;
+          greenLedPattern = ON;
+          blueLedPattern = ON;
           break;
         default:
           blueLedPattern = TOGGLE4; // message I don't understand? Toggle blue LED

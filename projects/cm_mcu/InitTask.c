@@ -22,6 +22,9 @@
 
 void InitTask(void *parameters)
 {
+  uint32_t led_msg = LED_STATUS_INIT;
+  xQueueSendToBack(xLedQueue, &led_msg, pdMS_TO_TICKS(10));
+
   //  store the reboot into the error buffer, including the reason for the reset
   uint32_t r = ROM_SysCtlResetCauseGet();
   uint16_t restart_reason = (uint16_t)0xFFFFUL & r;
@@ -56,6 +59,9 @@ void InitTask(void *parameters)
     log_info(LOG_SERVICE, "Clock I/O expander failed\r\n");
     errbuffer_put(EBUF_CLKINIT_FAILURE, 0);
   }
+  led_msg = LED_STATUS_NORMAL;
+  xQueueSendToBack(xLedQueue, &led_msg, pdMS_TO_TICKS(10));
+
   vTaskSuspend(NULL);
   // Delete this task
   vTaskDelete(xTaskGetCurrentTaskHandle());
