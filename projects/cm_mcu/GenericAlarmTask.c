@@ -161,6 +161,15 @@ void GenericAlarmTask(void *parameters)
     if (currentState != nextState) {
       log_debug(LOG_ALM, "%s: change from state %s to %s\r\n", taskName,
                 alarm_task_state_names[currentState], alarm_task_state_names[nextState]);
+      uint32_t led_msg = 0;
+      if (nextState == ALM_WARN)
+        led_msg = params->led_warn_msg;
+      else if (nextState == ALM_FAULT_ERRORING)
+        led_msg = params->led_alarm_msg;
+      else if (nextState == ALM_NORMAL)
+        led_msg = params->led_normal_msg;
+      if (led_msg != 0)
+        xQueueSendToBack(xLedQueue, &led_msg, pdMS_TO_TICKS(10));
     }
 
     currentState = nextState;
