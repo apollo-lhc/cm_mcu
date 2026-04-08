@@ -9,11 +9,11 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 trap 'echo "\"${last_command}\" command failed with exit code $?."' ERR
 
 # choose which release this build is for
-REV="2" # default
+REV="3" # default
 if [ "${REV1}" == "1" ]; then
     REV="1"
-elif [ "${REV3}" == "1" ]; then
-    REV="3"
+elif [ "${REV2}" == "1" ]; then
+    REV="2"
 fi
 
 [ -d tmp ] && rm -rf tmp
