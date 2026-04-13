@@ -85,10 +85,27 @@ typedef struct {
 } LedMsg_t;
 
 // Predefined LED status states (defined in LedTask.c)
+//
+// The RGB LED communicates system state at a glance. Tick period is 250 ms.
+//
+//   State           Color        Pattern         Condition
+//   --------------- ------------ --------------- ----------------------------------
+//   INIT            Blue         Fast blink      MCU running, peripherals starting
+//   NORMAL          Green        Solid           Fully operational
+//   PS_LOADING      Green        Slow blink      Power supplies ramping up (L1–L6)
+//   WARN            Yellow (R+G) Medium blink    Temperature above warning threshold
+//   ALARM           Red          Solid           Temperature alarm, power shut off
+//   PS_FAULT        Red          Fast blink      Power supply hardware failure
+//   FW_FAULT        Magenta(R+B) Fast blink      Firmware / watchdog fault
+//   BOOTLOADER      White (R+G+B)Solid           Bootloader mode
+//
+// To send a state from any task:
+//   xQueueSendToBack(xLedQueue, &LED_STATUS_NORMAL, pdMS_TO_TICKS(10));
+//
 extern const LedMsg_t LED_STATUS_INIT;       // blue fast blink (startup / initializing)
 extern const LedMsg_t LED_STATUS_NORMAL;     // green solid (normal operation)
 extern const LedMsg_t LED_STATUS_PS_LOADING; // green slow blink (power supplies ramping up)
-extern const LedMsg_t LED_STATUS_WARN;       // yellow (R+G) blink (temperature warning)
+extern const LedMsg_t LED_STATUS_WARN;       // yellow (R+G) medium blink (temperature warning)
 extern const LedMsg_t LED_STATUS_ALARM;      // red solid (temperature alarm / shutdown)
 extern const LedMsg_t LED_STATUS_PS_FAULT;   // red fast blink (power supply fault)
 extern const LedMsg_t LED_STATUS_FW_FAULT;   // magenta (R+B) fast blink (firmware / watchdog fault)

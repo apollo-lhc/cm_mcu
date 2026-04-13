@@ -41,6 +41,8 @@ static void apply_pattern(enum LEDpattern pattern, uint32_t pin, uint32_t callcn
     write_gpio_pin(pin, 0x0);
   else if (pattern == LED_PAT_ON)
     write_gpio_pin(pin, 0x1);
+  else if (callcnt == 0)
+    write_gpio_pin(pin, 0x1); // start all blink channels HIGH so multi-channel states are in phase
   else if (callcnt % (uint32_t)pattern == 0)
     toggle_gpio_pin(pin);
 }
