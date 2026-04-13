@@ -5,29 +5,39 @@
  *      Author: fatimayousuf
  */
 
+#include <string.h>
+
 #include "commands/SensorControl.h"
 #include "commands/parameters.h"
 #include "common/utils.h"
 #include "Tasks.h"
 #include "projdefs.h"
 
-// send LED commands
+// send LED status commands
 BaseType_t led_ctl(int argc, char **argv, char *m)
 {
-
-  BaseType_t i1 = strtol(argv[1], NULL, 10);
-
-  BaseType_t ones = i1 % 10;
-  BaseType_t tens = i1 / 10; // integer truncation
-
-  uint32_t message = HUH; // default: message not understood
-  if (ones < 5 && tens > 0 && tens < 4) {
-    message = i1;
+  static const struct {
+    const char *name;
+    const LedMsg_t *msg;
+  } statuses[] = {
+      {"init", &LED_STATUS_INIT},
+      {"normal", &LED_STATUS_NORMAL},
+      {"load", &LED_STATUS_PS_LOADING},
+      {"warn", &LED_STATUS_WARN},
+      {"alarm", &LED_STATUS_ALARM},
+      {"psfault", &LED_STATUS_PS_FAULT},
+      {"fwfault", &LED_STATUS_FW_FAULT},
+  };
+  for (size_t i = 0; i < sizeof(statuses) / sizeof(statuses[0]); ++i) {
+    if (strcmp(argv[1], statuses[i].name) == 0) {
+      xQueueSendToBack(xLedQueue, statuses[i].msg, pdMS_TO_TICKS(10));
+      m[0] = '\0';
+      return pdFALSE;
+    }
   }
-  // Send a message to the LED task
-  xQueueSendToBack(xLedQueue, &message, pdMS_TO_TICKS(10));
-  m[0] = '\0'; // no output from this command
-
+  snprintf(m, SCRATCH_SIZE,
+           "Unknown LED status '%s'.\r\nOptions: init normal load warn alarm psfault fwfault\r\n",
+           argv[1]);
   return pdFALSE;
 }
 

@@ -68,29 +68,32 @@ extern QueueHandle_t xLedQueue;
 // control the LED
 void LedTask(void *parameters);
 
-#define RED_LED_OFF       (10)
-#define RED_LED_ON        (11)
-#define RED_LED_TOGGLE    (12)
-#define RED_LED_TOGGLE3   (13)
-#define RED_LED_TOGGLE4   (14)
-#define BLUE_LED_OFF      (20)
-#define BLUE_LED_ON       (21)
-#define BLUE_LED_TOGGLE   (22)
-#define BLUE_LED_TOGGLE3  (23)
-#define BLUE_LED_TOGGLE4  (24)
-#define GREEN_LED_OFF     (30)
-#define GREEN_LED_ON      (31)
-#define GREEN_LED_TOGGLE  (32)
-#define GREEN_LED_TOGGLE3 (33)
-#define GREEN_LED_TOGGLE4 (34)
-// LED status modes — set all three channels atomically
-#define LED_STATUS_INIT       (40) // blue blink (startup / initializing)
-#define LED_STATUS_NORMAL     (41) // green solid (normal operation)
-#define LED_STATUS_WARN       (42) // yellow (R+G) slow blink (temperature warning)
-#define LED_STATUS_ALARM      (43) // red solid (temperature alarm / shutdown)
-#define LED_STATUS_PS_FAULT   (44) // red fast blink (power supply fault)
-#define LED_STATUS_FW_FAULT   (45) // magenta (R+B) fast blink (firmware / watchdog fault)
-#define LED_STATUS_BOOTLOADER (46) // white (R+G+B) solid (bootloader mode)
+// LED channel pattern — value is the toggle period in ticks (250 ms/tick)
+enum LEDpattern {
+  LED_PAT_OFF = 0,
+  LED_PAT_ON = 1,
+  LED_PAT_TOGGLE = 2,  // toggle every 2 ticks (~500 ms half-period)
+  LED_PAT_TOGGLE3 = 3, // toggle every 3 ticks (~750 ms half-period)
+  LED_PAT_TOGGLE4 = 4, // toggle every 4 ticks (~1 s half-period, slow)
+};
+
+// LED message: sets all three channels atomically in a single queue send
+typedef struct {
+  enum LEDpattern red;
+  enum LEDpattern green;
+  enum LEDpattern blue;
+} LedMsg_t;
+
+// Predefined LED status states (defined in LedTask.c)
+extern const LedMsg_t LED_STATUS_INIT;       // blue fast blink (startup / initializing)
+extern const LedMsg_t LED_STATUS_NORMAL;     // green solid (normal operation)
+extern const LedMsg_t LED_STATUS_PS_LOADING; // green slow blink (power supplies ramping up)
+extern const LedMsg_t LED_STATUS_WARN;       // yellow (R+G) blink (temperature warning)
+extern const LedMsg_t LED_STATUS_ALARM;      // red solid (temperature alarm / shutdown)
+extern const LedMsg_t LED_STATUS_PS_FAULT;   // red fast blink (power supply fault)
+extern const LedMsg_t LED_STATUS_FW_FAULT;   // magenta (R+B) fast blink (firmware / watchdog fault)
+extern const LedMsg_t LED_STATUS_BOOTLOADER; // white (R+G+B) solid (bootloader mode)
+
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task

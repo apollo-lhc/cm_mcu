@@ -204,7 +204,7 @@ static struct command_t commands[] = {
         "args: (<fac> FTL|ERR|WRN|INF|DBG|TRC)|dump|status|quiet\r\nConfigure log\r\n",
         -1,
     },
-    {"led", led_ctl, "Manipulate red LED\r\n", 1},
+    {"led", led_ctl, "Set LED status: init|normal|load|warn|alarm|psfault|fwfault\r\n", 1},
     {"mem", mem_ctl, "Size of heap\r\n", 0},
     {
         "pwr",

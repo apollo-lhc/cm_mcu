@@ -14,10 +14,10 @@ struct GenericAlarmParams_t {
   void (*errorlog_registererror)(void);
   void (*errorlog_clearerror)(void);
   QueueHandle_t xAlmQueue;
-  UBaseType_t stack_size;  // stack size of task
-  uint32_t led_warn_msg;   // LED message on WARN entry (0 = none)
-  uint32_t led_alarm_msg;  // LED message on FAULT_ERRORING entry (0 = none)
-  uint32_t led_normal_msg; // LED message on return to NORMAL (0 = none)
+  UBaseType_t stack_size;         // stack size of task
+  const LedMsg_t *led_warn_msg;   // LED state on WARN entry (NULL = no update)
+  const LedMsg_t *led_alarm_msg;  // LED state on FAULT_ERRORING entry (NULL = no update)
+  const LedMsg_t *led_normal_msg; // LED state on return to NORMAL (NULL = no update)
 };
 
 extern struct GenericAlarmParams_t tempAlarmTask;

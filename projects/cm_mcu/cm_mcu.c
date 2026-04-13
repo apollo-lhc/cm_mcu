@@ -313,7 +313,7 @@ __attribute__((noreturn)) int main(void)
   // Initialize all the queues
   // queue for the LED
   xLedQueue = xQueueCreate(3,                 // The maximum number of items the queue can hold.
-                           sizeof(uint32_t)); // The size of each item.
+                           sizeof(LedMsg_t)); // The size of each item.
   configASSERT(xLedQueue != NULL);
 
   xPwrQueue = xQueueCreate(10, sizeof(uint32_t)); // PWR queue
