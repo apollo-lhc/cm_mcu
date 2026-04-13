@@ -90,10 +90,11 @@ typedef struct {
 //
 //   State           Color        Pattern         Condition
 //   --------------- ------------ --------------- ----------------------------------
-//   INIT            Blue         Fast blink      MCU running, peripherals starting
+//   INIT            Blue         Solid           MCU startup, peripherals initializing
+//   PS_OFF          Blue         Slow blink      MCU running, waiting for blade power enable
+//   PS_LOADING      Cyan (G+B)   Slow blink      Power supplies ramping up (L1–L6)
 //   NORMAL          Green        Solid           Fully operational
-//   PS_LOADING      Green        Slow blink      Power supplies ramping up (L1–L6)
-//   WARN            Yellow (R+G) Medium blink    Temperature above warning threshold
+//   WARN            Red          Medium blink    Temperature above warning threshold
 //   ALARM           Red          Solid           Temperature alarm, power shut off
 //   PS_FAULT        Red          Fast blink      Power supply hardware failure
 //   FW_FAULT        Magenta(R+B) Fast blink      Firmware / watchdog fault
@@ -102,10 +103,11 @@ typedef struct {
 // To send a state from any task:
 //   xQueueSendToBack(xLedQueue, &LED_STATUS_NORMAL, pdMS_TO_TICKS(10));
 //
-extern const LedMsg_t LED_STATUS_INIT;       // blue fast blink (startup / initializing)
+extern const LedMsg_t LED_STATUS_INIT;       // blue solid (startup / initializing)
+extern const LedMsg_t LED_STATUS_PS_OFF;     // blue slow blink (waiting for blade power enable)
 extern const LedMsg_t LED_STATUS_NORMAL;     // green solid (normal operation)
-extern const LedMsg_t LED_STATUS_PS_LOADING; // green slow blink (power supplies ramping up)
-extern const LedMsg_t LED_STATUS_WARN;       // yellow (R+G) medium blink (temperature warning)
+extern const LedMsg_t LED_STATUS_PS_LOADING; // cyan (G+B) slow blink (power supplies ramping up)
+extern const LedMsg_t LED_STATUS_WARN;       // red medium blink (temperature warning)
 extern const LedMsg_t LED_STATUS_ALARM;      // red solid (temperature alarm / shutdown)
 extern const LedMsg_t LED_STATUS_PS_FAULT;   // red fast blink (power supply fault)
 extern const LedMsg_t LED_STATUS_FW_FAULT;   // magenta (R+B) fast blink (firmware / watchdog fault)
