@@ -22,15 +22,15 @@
 #include "queue.h"
 
 // Predefined LED status states
-const LedMsg_t LED_STATUS_INIT = {LED_PAT_OFF, LED_PAT_OFF, LED_PAT_ON};             // blue solid
-const LedMsg_t LED_STATUS_PS_OFF = {LED_PAT_OFF, LED_PAT_OFF, LED_PAT_TOGGLE4};     // blue slow blink
-const LedMsg_t LED_STATUS_NORMAL = {LED_PAT_OFF, LED_PAT_ON, LED_PAT_OFF};          // green solid
+const LedMsg_t LED_STATUS_INIT = {LED_PAT_OFF, LED_PAT_OFF, LED_PAT_ON};                // blue solid
+const LedMsg_t LED_STATUS_PS_OFF = {LED_PAT_OFF, LED_PAT_OFF, LED_PAT_TOGGLE4};         // blue slow blink
+const LedMsg_t LED_STATUS_NORMAL = {LED_PAT_OFF, LED_PAT_ON, LED_PAT_OFF};              // green solid
 const LedMsg_t LED_STATUS_PS_LOADING = {LED_PAT_OFF, LED_PAT_TOGGLE4, LED_PAT_TOGGLE4}; // cyan slow blink (G+B)
-const LedMsg_t LED_STATUS_WARN = {LED_PAT_TOGGLE3, LED_PAT_OFF, LED_PAT_OFF};       // red medium blink (temperature warning)
-const LedMsg_t LED_STATUS_ALARM = {LED_PAT_ON, LED_PAT_OFF, LED_PAT_OFF};           // red solid
-const LedMsg_t LED_STATUS_PS_FAULT = {LED_PAT_TOGGLE, LED_PAT_OFF, LED_PAT_OFF};    // red fast blink
-const LedMsg_t LED_STATUS_FW_FAULT = {LED_PAT_TOGGLE, LED_PAT_OFF, LED_PAT_TOGGLE}; // magenta fast blink
-const LedMsg_t LED_STATUS_BOOTLOADER = {LED_PAT_ON, LED_PAT_ON, LED_PAT_ON};        // white solid
+const LedMsg_t LED_STATUS_WARN = {LED_PAT_TOGGLE3, LED_PAT_OFF, LED_PAT_OFF};           // red medium blink (temperature warning)
+const LedMsg_t LED_STATUS_ALARM = {LED_PAT_ON, LED_PAT_OFF, LED_PAT_OFF};               // red solid
+const LedMsg_t LED_STATUS_PS_FAULT = {LED_PAT_TOGGLE, LED_PAT_OFF, LED_PAT_OFF};        // red fast blink
+const LedMsg_t LED_STATUS_FW_FAULT = {LED_PAT_TOGGLE, LED_PAT_OFF, LED_PAT_TOGGLE};     // magenta fast blink
+const LedMsg_t LED_STATUS_BOOTLOADER = {LED_PAT_ON, LED_PAT_ON, LED_PAT_ON};            // white solid
 
 // Holds the handle of the created queue for the LED task.
 // gets initialized in main()

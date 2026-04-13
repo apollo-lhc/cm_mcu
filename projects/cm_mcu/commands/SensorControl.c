@@ -20,15 +20,15 @@ BaseType_t led_ctl(int argc, char **argv, char *m)
     const char *name;
     const LedMsg_t *msg;
   } statuses[] = {
-      {"init",    &LED_STATUS_INIT},
-      {"idle",    &LED_STATUS_PS_OFF},
-      {"load",    &LED_STATUS_PS_LOADING},
-      {"normal",  &LED_STATUS_NORMAL},
-      {"warn",    &LED_STATUS_WARN},
-      {"alarm",   &LED_STATUS_ALARM},
+      {"init", &LED_STATUS_INIT},
+      {"idle", &LED_STATUS_PS_OFF},
+      {"load", &LED_STATUS_PS_LOADING},
+      {"normal", &LED_STATUS_NORMAL},
+      {"warn", &LED_STATUS_WARN},
+      {"alarm", &LED_STATUS_ALARM},
       {"psfault", &LED_STATUS_PS_FAULT},
       {"fwfault", &LED_STATUS_FW_FAULT},
-      {"white",   &LED_STATUS_BOOTLOADER},
+      {"white", &LED_STATUS_BOOTLOADER},
   };
   for (size_t i = 0; i < sizeof(statuses) / sizeof(statuses[0]); ++i) {
     if (strcmp(argv[1], statuses[i].name) == 0) {
