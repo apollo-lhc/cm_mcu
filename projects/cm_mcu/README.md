@@ -75,6 +75,34 @@ The vector table is defined in `startup_gcc.c`. Interrupt handlers are either in
 | PowerSupplyTask.c | Turns non-management power on and off on the board in proper order. Uses GPIOs. |
 | ZynqMonTask.c | Sends monitoring data to the Zynq SoC on the Apollo SM. Acts as a soft UART, with only the Tx function implemented. Uses a hardware timer and GPIOs.|  
 
+## LED Status Signals
+
+The board has a single RGB LED that communicates system state. The LED task runs every 250 ms; blink rates are expressed in multiples of that tick.
+
+| State | Color | Pattern | Condition |
+|-------|-------|---------|-----------|
+| INIT | Blue | Solid | MCU startup, peripherals initializing |
+| PS_OFF (idle) | Blue | Slow blink (~0.5 Hz) | MCU running, waiting for blade power enable |
+| PS_LOADING | Cyan (G+B) | Slow blink (~0.5 Hz) | Power supplies ramping up (L1–L6 sequence) |
+| NORMAL | Green | Solid | Fully operational |
+| WARN | Red | Medium blink (~0.67 Hz) | Temperature above warning threshold |
+| ALARM | Red | Solid | Temperature alarm triggered, power shut off |
+| PS_FAULT | Red | Fast blink (~1 Hz) | Power supply hardware failure |
+| FW_FAULT | Magenta (R+B) | Fast blink (~1 Hz) | Firmware / watchdog fault |
+| BOOTLOADER | White (R+G+B) | Solid | Bootloader mode |
+
+Normal power-up progression: **Blue solid → Blue slow blink → Cyan slow blink → Green solid**
+
+To set the LED from code, send a `LedMsg_t` to `xLedQueue`:
+```c
+xQueueSendToBack(xLedQueue, &LED_STATUS_NORMAL, pdMS_TO_TICKS(10));
+```
+
+The `led` CLI command can force a state for debugging:
+```
+led init | idle | load | normal | warn | alarm | psfault | fwfault | white
+```
+
 ## Building FreeRTOS
 
 FreeRTOS is now included as a git submodule. 

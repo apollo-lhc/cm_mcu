@@ -511,6 +511,17 @@ void PowerSupplyTask(void *parameters)
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);
+      const LedMsg_t *led_msg = NULL;
+      if (nextState == POWER_OFF)
+        led_msg = &LED_STATUS_PS_OFF;
+      else if (nextState == POWER_L1ON)
+        led_msg = &LED_STATUS_PS_LOADING;
+      else if (nextState == POWER_ON)
+        led_msg = &LED_STATUS_NORMAL;
+      else if (nextState == POWER_FAILURE && !external_alarm)
+        led_msg = &LED_STATUS_PS_FAULT;
+      if (led_msg != NULL)
+        xQueueSendToBack(xLedQueue, led_msg, pdMS_TO_TICKS(10));
     }
     currentState = nextState;
 

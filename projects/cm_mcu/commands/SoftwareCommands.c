@@ -6,11 +6,18 @@
 #include "portmacro.h"
 #include "Semaphore.h"
 #include "projdefs.h"
+#include "common/utils.h"
+#include "common/pinsel.h"
 
 // this command takes no arguments and never returns.
 __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
 {
   disable_ps();
+  // Set LED to white (all channels on) to indicate bootloader mode.
+  // Write GPIO directly since the scheduler will be stopped momentarily.
+  write_gpio_pin(MCU_LED_RED, 0x1);
+  write_gpio_pin(MCU_LED_GREEN, 0x1);
+  write_gpio_pin(MCU_LED_BLUE, 0x1);
   Print("Jumping to bootloader\r\n");
   ROM_SysCtlDelay(100000);
   // this code is copied from the JumpToBootLoader()

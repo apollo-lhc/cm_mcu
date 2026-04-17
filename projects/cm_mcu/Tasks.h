@@ -68,21 +68,51 @@ extern QueueHandle_t xLedQueue;
 // control the LED
 void LedTask(void *parameters);
 
-#define RED_LED_OFF       (10)
-#define RED_LED_ON        (11)
-#define RED_LED_TOGGLE    (12)
-#define RED_LED_TOGGLE3   (13)
-#define RED_LED_TOGGLE4   (14)
-#define BLUE_LED_OFF      (20)
-#define BLUE_LED_ON       (21)
-#define BLUE_LED_TOGGLE   (22)
-#define BLUE_LED_TOGGLE3  (23)
-#define BLUE_LED_TOGGLE4  (24)
-#define GREEN_LED_OFF     (30)
-#define GREEN_LED_ON      (31)
-#define GREEN_LED_TOGGLE  (32)
-#define GREEN_LED_TOGGLE3 (33)
-#define GREEN_LED_TOGGLE4 (34)
+// LED channel pattern — value is the toggle period in ticks (250 ms/tick)
+enum LEDpattern {
+  LED_PAT_OFF = 0,
+  LED_PAT_ON = 1,
+  LED_PAT_TOGGLE = 2,  // toggle every 2 ticks (~500 ms half-period)
+  LED_PAT_TOGGLE3 = 3, // toggle every 3 ticks (~750 ms half-period)
+  LED_PAT_TOGGLE4 = 4, // toggle every 4 ticks (~1 s half-period, slow)
+};
+
+// LED message: sets all three channels atomically in a single queue send
+typedef struct {
+  enum LEDpattern red;
+  enum LEDpattern green;
+  enum LEDpattern blue;
+} LedMsg_t;
+
+// Predefined LED status states (defined in LedTask.c)
+//
+// The RGB LED communicates system state at a glance. Tick period is 250 ms.
+//
+//   State           Color        Pattern         Condition
+//   --------------- ------------ --------------- ----------------------------------
+//   INIT            Blue         Solid           MCU startup, peripherals initializing
+//   PS_OFF          Blue         Slow blink      MCU running, waiting for blade power enable
+//   PS_LOADING      Cyan (G+B)   Slow blink      Power supplies ramping up (L1–L6)
+//   NORMAL          Green        Solid           Fully operational
+//   WARN            Red          Medium blink    Temperature above warning threshold
+//   ALARM           Red          Solid           Temperature alarm, power shut off
+//   PS_FAULT        Red          Fast blink      Power supply hardware failure
+//   FW_FAULT        Magenta(R+B) Fast blink      Firmware / watchdog fault
+//   BOOTLOADER      White (R+G+B)Solid           Bootloader mode
+//
+// To send a state from any task:
+//   xQueueSendToBack(xLedQueue, &LED_STATUS_NORMAL, pdMS_TO_TICKS(10));
+//
+extern const LedMsg_t LED_STATUS_INIT;       // blue solid (startup / initializing)
+extern const LedMsg_t LED_STATUS_PS_OFF;     // blue slow blink (waiting for blade power enable)
+extern const LedMsg_t LED_STATUS_NORMAL;     // green solid (normal operation)
+extern const LedMsg_t LED_STATUS_PS_LOADING; // cyan (G+B) slow blink (power supplies ramping up)
+extern const LedMsg_t LED_STATUS_WARN;       // red medium blink (temperature warning)
+extern const LedMsg_t LED_STATUS_ALARM;      // red solid (temperature alarm / shutdown)
+extern const LedMsg_t LED_STATUS_PS_FAULT;   // red fast blink (power supply fault)
+extern const LedMsg_t LED_STATUS_FW_FAULT;   // magenta (R+B) fast blink (firmware / watchdog fault)
+extern const LedMsg_t LED_STATUS_BOOTLOADER; // white (R+G+B) solid (bootloader mode)
+
 // Holds the handle of the created queue for the power supply task.
 
 // --- Power Supply management task
