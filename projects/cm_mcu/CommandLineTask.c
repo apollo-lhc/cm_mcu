@@ -118,6 +118,12 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_pwr_alarm",
+        ff_power_alarm_status,
+        "Show FF optical power alarms\r\n",
+        0,
+    },
+    {
         "ff_ch_dis",
         ff_ch_disable_status,
         "Show FF ch disable status\r\n",
