@@ -141,7 +141,7 @@ static struct command_t commands[] = {
         "dump name registers\r\n",
         0,
     },
-    {        
+    {
         "ff_fw_reg",
         ff_fw_reg,
         "Read FF firmware registers (12ch only, RO).\r\n",
