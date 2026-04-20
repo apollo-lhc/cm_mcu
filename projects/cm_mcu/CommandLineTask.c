@@ -118,6 +118,12 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_pwr_alarm",
+        ff_power_alarm_status,
+        "Show FF optical power alarms\r\n",
+        0,
+    },
+    {
         "ff_ch_dis",
         ff_ch_disable_status,
         "Show FF ch disable status\r\n",
@@ -133,6 +139,12 @@ static struct command_t commands[] = {
         "ff_dump_names",
         ff_dump_names,
         "dump name registers\r\n",
+        0,
+    },
+    {
+        "ff_fw_reg",
+        ff_fw_reg,
+        "Read FF firmware registers (12ch only, RO).\r\n",
         0,
     },
     {

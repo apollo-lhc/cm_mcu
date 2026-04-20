@@ -176,6 +176,13 @@ bool isEnabledFF_F2(int device)
   return isEnabledFF(device + NFIREFLIES_F1);
 }
 
+int FireflyTypeF2(int device)
+{
+  // F2 monitor task passes local indices 0-(NFIREFLIES_F2-1); offset to global
+  // so FireflyType selects the F2 bitmask instead of the F1 bitmask.
+  return FireflyType(device + NFIREFLIES_F1);
+}
+
 struct MonitorTaskI2CArgs_t ff_f1_args = {
     .name = "FF_F1",
     .devices = ff_moni2c_addrs_f1,
@@ -200,7 +207,7 @@ struct MonitorTaskI2CArgs_t ff_f2_args = {
     .selpage_reg = FF_SELPAGE_REG,
     .xSem = NULL,
     .stack_size = 4096U,
-    .typeCallback = FireflyType,
+    .typeCallback = FireflyTypeF2,
     .presentCallback = isEnabledFF_F2,
 };
 

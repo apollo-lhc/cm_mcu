@@ -39,5 +39,7 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m);
 BaseType_t ff_v3v3(int argc, char **argv, char *m);
 BaseType_t ff_ch_disable_status(int argc, char **argv, char *m);
 BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m);
+BaseType_t ff_power_alarm_status(int argc, char **argv, char *m);
+BaseType_t ff_fw_reg(int argc, char **argv, char *m);
 
 #endif

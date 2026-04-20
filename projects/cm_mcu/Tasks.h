@@ -312,6 +312,7 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start);
 void zm_set_allclk(struct zynqmon_data_t data[], int start);
 void zm_set_firefly_optpow12(struct zynqmon_data_t data[], int start);
 void zm_set_firefly_optpow4(struct zynqmon_data_t data[], int start);
+void zm_set_firefly_power_alarm(struct zynqmon_data_t data[], int start);
 
 #ifdef ZYNQMON_TEST_MODE
 void setZYNQMonTestData(uint8_t sensor, uint16_t value);

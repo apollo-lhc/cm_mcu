@@ -274,8 +274,40 @@ config:
       - FF2_P5_XCVR4 
       - FF2_P6_XCVR4
       - FF2_P7_XCVR4
-    postfixes:  
+    postfixes:
       - CH0
       - CH1
       - CH2
       - CH3
+  - name: firefly_power_alarm
+    start: 420
+    count: 40
+    mcu_call: firefly_power_alarm
+    mcu_extra_call: null
+    type: uint16_t
+    extra: Table=CM_FF_MON;Status=1
+    default_col: null
+    names:
+      - F1_P1_Tx12
+      - F1_P1_Rx12
+      - F1_P2_Tx12
+      - F1_P2_Rx12
+      - F1_P3_Tx12
+      - F1_P3_Rx12
+      - F1_P4_XCVR4
+      - F1_P5_XCVR4
+      - F1_P6_XCVR4
+      - F1_P7_XCVR4
+      - F2_P1_Tx12
+      - F2_P1_Rx12
+      - F2_P2_Tx12
+      - F2_P2_Rx12
+      - F2_P3_Tx12
+      - F2_P3_Rx12
+      - F2_P4_XCVR4
+      - F2_P5_XCVR4
+      - F2_P6_XCVR4
+      - F2_P7_XCVR4
+    postfixes:
+      - POWER_ALARM_0
+      - POWER_ALARM_1

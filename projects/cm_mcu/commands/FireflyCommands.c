@@ -672,6 +672,54 @@ BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+BaseType_t ff_power_alarm_status(int argc, char **argv, char *m)
+{
+  int copied = 0;
+
+  static int whichff = 0;
+
+  if (whichff == 0) {
+    // check for stale data
+    if (isFFStale()) {
+      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+      int mins = (now - last) / 60;
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY POWER ALARM:\r\n");
+  }
+
+  for (; whichff < NFIREFLIES; ++whichff) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+    if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
+      uint16_t val0 = get_FF_POWER_ALARM_0_data(whichff);
+      uint16_t val1 = get_FF_POWER_ALARM_1_data(whichff);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x 0x%04x", val0, val1);
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --        --");
+    }
+    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    if ((SCRATCH_SIZE - copied) < 30) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+  if (whichff % 2 == 1) {
+    m[copied++] = '\r';
+    m[copied++] = '\n';
+    m[copied] = '\0';
+  }
+  whichff = 0;
+
+  return pdFALSE;
+}
+
 BaseType_t ff_temp(int argc, char **argv, char *m)
 {
   // argument handling
@@ -1053,5 +1101,45 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
     }
   }
   i = 0;
+  return pdFALSE;
+}
+
+// read the Firefly firmware register at address 111-113 on page 0. This
+// register exists on the CERN-B and 12x25G parts, but does not exist
+// on the 4x25G part.
+#define FF_FW_REG_ADDR 111
+#define FF_FW_REG_SIZE 3
+BaseType_t ff_fw_reg(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  static int whichff = 0;
+  if (whichff == 0) { // title only on first iteration
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Firmware registers\r\n", argv[0]);
+  }
+  for (; whichff < NFIREFLIES; ++whichff) { // loop over all fireflies
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+    if (isEnabledFF(whichff) && FireflyType(whichff) != DEVICE_25G4) { // only read if enabled and if not 4x25G
+      uint8_t fw_reg[FF_FW_REG_SIZE];
+      int ret = read_arbitrary_ff_register(FF_FW_REG_ADDR, whichff, fw_reg, FF_FW_REG_SIZE);
+      if (ret != 0) {
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
+        return pdFALSE;
+      }
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%02x%02x%02x", fw_reg[0], fw_reg[1], fw_reg[2]);
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "   ---   ");
+    }
+    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL); // newline for Tx vs Rx formatting
+    if (isTx)
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+    else
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+    if ((SCRATCH_SIZE - copied) < 30) {
+      ++whichff;
+      return pdTRUE;
+    }
+  }
+  whichff = 0;
   return pdFALSE;
 }
