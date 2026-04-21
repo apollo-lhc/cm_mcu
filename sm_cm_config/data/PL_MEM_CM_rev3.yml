@@ -11,7 +11,7 @@ metadata:
 config:
   - name: firefly
     start: 2
-    count: 120
+    count: 160
     mcu_call: firefly_info
     mcu_extra_call: null
     type: uint16_t

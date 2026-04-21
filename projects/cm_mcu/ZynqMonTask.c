@@ -440,6 +440,26 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
     }
     data[ll].sensor = ll + start;
     ++ll;
+    // POWER_ALARM_0
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_POWER_ALARM_0_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "POWER_ALARM_0 for ff %d: 0x%04x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
+    // POWER_ALARM_1
+    if (isFFStale()) {
+      data[ll].data.us = 0xff; // special stale value
+    }
+    else {
+      data[ll].data.us = get_FF_POWER_ALARM_1_data(j); // sensor value and type
+      log_debug(LOG_SERVICE, "POWER_ALARM_1 for ff %d: 0x%04x\r\n", j, data[ll].data.us);
+    }
+    data[ll].sensor = ll + start;
+    ++ll;
   }
 }
 
@@ -505,32 +525,6 @@ void zm_set_firefly_optpow4(struct zynqmon_data_t data[], int start)
       ++ll;
     } // loop over channels
   }   // loop over Tx firefly devices
-}
-
-void zm_set_firefly_power_alarm(struct zynqmon_data_t data[], int start)
-{
-  int ll = 0;
-  for (int j = 0; j < NFIREFLIES; ++j) {
-    if (isFFStale()) {
-      data[ll].data.us = 0xff;
-    }
-    else {
-      data[ll].data.us = get_FF_POWER_ALARM_0_data(j);
-      log_debug(LOG_SERVICE, "POWER_ALARM_0 for ff %d: 0x%04x\r\n", j, data[ll].data.us);
-    }
-    data[ll].sensor = ll + start;
-    ++ll;
-
-    if (isFFStale()) {
-      data[ll].data.us = 0xff;
-    }
-    else {
-      data[ll].data.us = get_FF_POWER_ALARM_1_data(j);
-      log_debug(LOG_SERVICE, "POWER_ALARM_1 for ff %d: 0x%04x\r\n", j, data[ll].data.us);
-    }
-    data[ll].sensor = ll + start;
-    ++ll;
-  }
 }
 
 #endif // REV2 or 3
