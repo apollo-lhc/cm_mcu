@@ -35,14 +35,17 @@ void UART4Init(uint32_t ui32SysClock)
   MAP_UARTConfigSetExpClk(UART4_BASE, ui32SysClock, 115200,
                           (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 
-  //
-  // Enable the UART interrupt.
-  //
+  // In REV1, UART4 is the front-panel CLI and needs RX interrupts.
+  // In REV2/3, UART4 is TX-only (ZynqMon); no handler is installed in the
+  // vector table, so enabling RX/RT interrupts would call IntDefaultHandler
+  // on any received character or noise. Only enable interrupts in REV1.
+#ifdef REV1
 #ifdef USE_FREERTOS
   MAP_IntPrioritySet(INT_UART4, configKERNEL_INTERRUPT_PRIORITY);
 #endif // USE_FREERTOS
   MAP_IntEnable(INT_UART4);
   MAP_UARTIntEnable(UART4_BASE, UART_INT_RX | UART_INT_RT);
+#endif // REV1
 
   return;
 }

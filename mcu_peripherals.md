@@ -1,7 +1,7 @@
 # Apollo CM MCU Hardware Pin and Peripheral Assignments
 
 **MCU**: TI TM4C1290NCPDT (ARM Cortex-M4F, 80 MHz)  
-**Sources**: `common/`pinout_rev1`.c`, `common/`pinout_rev2`.c`, `common/`gpio_pins_rev2`.def`, `common/pinsel.h`, `projects/`cm_mcu`/ADCMonitorTask.c`, `common/LocalUart.c`, `common/`i2c_reg`.c`
+**Sources**: `common/pinout_rev1.c`, `common/pinout_rev2.c`, `common/gpio_pins_rev2.def`, `common/pinsel.h`, `projects/cm_mcu/ADCMonitorTask.c`, `common/LocalUart.c`, `common/i2c_reg.c`
 
 ---
 
@@ -14,9 +14,9 @@
 | UART0 | PA1 (U0TX) | PA0 (U0RX) | 115200 | (unused / debug) | `ZQ_UART` — Zynq-facing CLI |
 | UART1 | PB1 (U1TX) | PB0 (U1RX) | 115200 | `ZQ_UART` — Zynq-facing CLI | — (PB0/1 reassigned to I2C5) |
 | UART3 | PA5 (U3TX) | PA4 (U3RX) | — | — (PA4/5 are GPIO outputs) | pins muxed in `pinout_rev2.c` but peripheral **not initialized** |
-| UART4 | PA3 (U4TX) | PA2 (U4RX) | 115200 | `FP_UART` — front-panel CLI | `ZynqMonTask` TX-only output to Zynq (hardware UART, no soft-UART) |
+| UART4 | PA3 (U4TX) | PA2 (U4RX) | 115200 | `FP_UART` — front-panel CLI (RX+RT interrupts, `UART4IntHandler`) | `ZynqMonTask` TX-only polling output to Zynq — **no RX interrupts enabled** (see note) |
 
-UART0, UART1 (REV1), and UART4 have RX+RT interrupts enabled with handlers in `InterruptHandlers.c`. In REV2/3, `FP_UART` is not defined — there is no separate front-panel CLI UART.
+UART0 (REV2/3), UART1 (REV1), and UART4 (REV1) have RX+RT interrupts enabled with handlers in `InterruptHandlers.c`. In REV2/3, `FP_UART` is not defined and UART4 RX+RT interrupts are **not** enabled — UART4 is TX-only via `ROM_UARTCharPut` (blocking poll), so no interrupt handler is needed. The vector table has `IntDefaultHandler` for UART4 in REV2/3; enabling RX interrupts there would cause a system hang on any received byte or line noise, since `IntDefaultHandler` loops forever. PA2 (U4RX) is physically unconnected in REV2/3, so the UART RX input sits idle-high and no interrupt is ever generated in practice.
 
 ---
 
