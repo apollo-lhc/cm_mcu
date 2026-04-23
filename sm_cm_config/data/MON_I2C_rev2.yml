@@ -191,7 +191,7 @@ define: &FF_SHARED_REGS
     page: 0
     reg_address: [-1, -1, 98, 74]
     size: 2
-    mask: 0xFFF
+    mask: 0xFFFF
     units: ""
     type: PM_STATUS
     devicetypes: [25G4, 25G12]

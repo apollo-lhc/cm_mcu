@@ -97,8 +97,6 @@ void UART0Init(uint32_t ui32SysClock)
   return;
 }
 
-
-
 //*****************************************************************************
 //
 // Send a string to the UART4
