@@ -8,7 +8,6 @@
 // includes for types
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <assert.h>
 
 // local includes
@@ -405,13 +404,23 @@ void PowerSupplyTask(void *parameters)
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
           (void)ff_map_25gb_parts();
-          // FIXME when no FF are installed the code requires the 4V switch to be off for no good reason
-          uint32_t pair_mask_f1 = getFF12Ch25GTxMask(0); // F1
-          uint32_t pair_mask_f2 = getFF12Ch25GTxMask(1); // F2
+          uint32_t pair_mask_f1 = getFF12Ch25GTxMask(0);        // 25G TX parts, F1
+          uint32_t pair_mask_f2 = getFF12Ch25GTxMask(1);        // 25G TX parts, F2
+          uint32_t present_mask_f1 = getFF12ChPresentTxMask(0); // any part present, F1
+          uint32_t present_mask_f2 = getFF12ChPresentTxMask(1); // any part present, F2
 
-          UBaseType_t ffmask[2] = {f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel};
-          if ((f1_ff12xmit_4v0_sel == pair_mask_f1) && (f2_ff12xmit_4v0_sel == pair_mask_f2)) {
-            int ret = enable_3v8(ffmask, false); // enable v38
+          // Only enable 3.8V for slots that are both present (25G) and wired to 4V0.
+          // Fail if: (a) a 25G part has no 4V0 switch (would be underpowered), or
+          //          (b) a non-25G part (e.g. 14G) occupies a 4V0-switched slot (would be overpowered).
+          // Empty slots with 4V0 switch set are harmless and do not block power-on.
+          UBaseType_t ffmask[2] = {f1_ff12xmit_4v0_sel & pair_mask_f1,
+                                   f2_ff12xmit_4v0_sel & pair_mask_f2};
+          bool mismatch = ((pair_mask_f1 & ~f1_ff12xmit_4v0_sel) != 0) ||
+                          ((pair_mask_f2 & ~f2_ff12xmit_4v0_sel) != 0) ||
+                          ((present_mask_f1 & f1_ff12xmit_4v0_sel & ~pair_mask_f1) != 0) ||
+                          ((present_mask_f2 & f2_ff12xmit_4v0_sel & ~pair_mask_f2) != 0);
+          if (!mismatch) {
+            int ret = enable_3v8(ffmask, false); // enable v38 (no-op if ffmask is {0,0})
             if (ret != 0) {
               log_error(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
               disable_ps(); // turn off power
@@ -425,7 +434,8 @@ void PowerSupplyTask(void *parameters)
             }
           }
           else {
-            log_error(LOG_PWRCTL, "FF 4V0 part check failed: %x!=%x||%x!=%x, power off\r\n",
+            log_error(LOG_PWRCTL, "FF 4V0 part check failed: part present without 4V0 switch"
+                                  " (f1: sel=%x parts=%x, f2: sel=%x parts=%x), power off\r\n",
                       f1_ff12xmit_4v0_sel, pair_mask_f1, f2_ff12xmit_4v0_sel, pair_mask_f2);
             int ret = enable_3v8(ffmask, true); // disable v38
             if (ret == 0)

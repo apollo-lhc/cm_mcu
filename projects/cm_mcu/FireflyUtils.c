@@ -507,4 +507,24 @@ uint16_t getFF12Ch25GTxMask(int device)
   return mask;
 }
 
+// get the physical presence mask for 12 channel Tx slots. Device is 0 for F1 and 1 for F2.
+// Returns a mask in the same bit space as getFF12Ch25GTxMask: any part present, not just 25G.
+// assumes that ff_map_25gb_parts has been called first
+uint16_t getFF12ChPresentTxMask(int device)
+{
+  // for historical reasons these are stored at indices 0 and 2, not 0 and 1
+  uint16_t mask = ff_bitmask_args[0].present_bit_mask;
+  if (device == 1) {
+    mask = ff_bitmask_args[2].present_bit_mask;
+  }
+  else if (device > 1 || device < 0) {
+    log_error(LOG_SERVICE, "Invalid device %d\r\n", device);
+    return 0x0U;
+  }
+  mask &= FF_12CH_TX_MASK; // Mask to select 12 channel tx indices
+  mask = pack_10bit(mask);
+
+  return mask;
+}
+
 #endif // end REV2 or REV3

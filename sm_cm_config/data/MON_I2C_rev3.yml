@@ -9,8 +9,8 @@ define: &FF_SHARED_REGS
   - name: STATUS_REG # register name
     reg_size: 1 # size of register address in bytes
     page: 0 # page of register
-    reg_address: 0x2 # register address, if list: [ cernb, 14g, 25g4, 25g12]
-    size: 2 # size of data in register in bytes, max 2 bytes
+    reg_address: [0x6,0x6, 0x2, 0x6] # register address, if list: [ cernb, 14g, 25g4, 25g12]
+    size: 1 # size of data in register in bytes, max 2 bytes
     mask: 0xFF # mask for valid bits
     units: "" # units for display
     type: PM_STATUS # type of data
@@ -164,7 +164,7 @@ define: &FF_SHARED_REGS
     page: 0
     reg_address: [52, 52, 86, 52]
     size: 2
-    mask: 0xFFF
+    mask: 0xFFFF
     units: ""
     type: PM_STATUS
     devicetypes: [CERNB, 14G, 25G4, 25G12]
@@ -191,7 +191,7 @@ define: &FF_SHARED_REGS
     page: 0
     reg_address: [-1, -1, 98, 74]
     size: 2
-    mask: 0xFFF
+    mask: 0xFFFF
     units: ""
     type: PM_STATUS
     devicetypes: [25G4, 25G12]
