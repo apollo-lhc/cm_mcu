@@ -9,7 +9,7 @@ define: &FF_SHARED_REGS
   - name: STATUS_REG # register name
     reg_size: 1 # size of register address in bytes
     page: 0 # page of register
-    reg_address: 0x6 # register address, if list: [ cernb, 14g, 25g4, 25g12]
+    reg_address: [0x6,0x6, 0x2, 0x6] # register address, if list: [ cernb, 14g, 25g4, 25g12]
     size: 1 # size of data in register in bytes, max 2 bytes
     mask: 0xFF # mask for valid bits
     units: "" # units for display
