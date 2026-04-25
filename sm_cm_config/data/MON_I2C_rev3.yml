@@ -15,24 +15,6 @@ define: &FF_SHARED_REGS
     units: "" # units for display
     type: PM_STATUS # type of data
     devicetypes: [CERNB, 14G, 25G4, 25G12] # device types that use this register
-  - name: TEMPERATURE
-    reg_size: 1
-    page: 0
-    reg_address: 0x16
-    size: 1
-    mask: 0xFF
-    units: C
-    type: PM_NONVOLTAGE
-    devicetypes: [14G, 25G12, 25G4, CERNB]
-  - name: VCC3V3
-    reg_size: 1
-    page: 0
-    reg_address: 26
-    size: 2
-    mask: 0xFFFF
-    units: V
-    type: PM_VOLTAGE
-    devicetypes: [14G, 25G12, 25G4, CERNB]
   - name: LOS_ALARM
     reg_size: 1
     page: 0
@@ -51,6 +33,24 @@ define: &FF_SHARED_REGS
     units: ""
     type: PM_STATUS
     devicetypes: [25G4, 25G12]
+  - name: TEMPERATURE
+    reg_size: 1
+    page: 0
+    reg_address: 0x16
+    size: 1
+    mask: 0xFF
+    units: C
+    type: PM_NONVOLTAGE
+    devicetypes: [14G, 25G12, 25G4, CERNB]
+  - name: VCC3V3
+    reg_size: 1
+    page: 0
+    reg_address: 26
+    size: 2
+    mask: 0xFFFF
+    units: V
+    type: PM_VOLTAGE
+    devicetypes: [14G, 25G12, 25G4, CERNB]
   - name: OPT_POWER_CH1 # 25G12 is on different page than 25G4 >:-|
     reg_size: 1
     page: [0, 0, 0, 1]
