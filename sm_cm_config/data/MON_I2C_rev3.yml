@@ -23,11 +23,47 @@ define: &FF_SHARED_REGS
     mask: 0xFFFF
     units: ""
     type: PM_STATUS
-    devicetypes: [25G12, 25G4]
+    devicetypes: [CERNB, 25G4, 25G12]
+  - name: TX_FAULT_ALARM
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 0x04, 0x09]
+    size: 2
+    mask: 0xFFFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [25G4, 25G12]
+  - name: RX_POWER_ALARM
+    reg_size: 1
+    page: 0
+    reg_address: [-1, -1, 0x09, 0x0E]
+    size: 2
+    mask: 0xFFFF
+    units: ""
+    type: PM_STATUS
+    devicetypes: [25G4, 25G12]
+  - name: TEMPERATURE_ALARM
+    reg_size: 1
+    page: 0
+    reg_address: [0x11, 0x11, 0x06, 0x11]
+    size: 1
+    mask: 0xFF
+    units: C
+    type: PM_STATUS
+    devicetypes: [CERNB, 25G4, 25G12]
+  - name: VCC3V3_ALARM
+    reg_size: 1
+    page: 0
+    reg_address: [0x12, 0x12, 0x07, 0x12]
+    size: 1
+    mask: 0xFF
+    units: V
+    type: PM_VOLTAGE
+    devicetypes: [CERNB, 25G4, 25G12]
   - name: CDR_LOL_ALARM
     reg_size: 1
     page: 0
-    reg_address: [-1, -1, 0x5, 0x14]
+    reg_address: [-1, -1, 0x05, 0x14]
     size: 2
     mask: 0xFFFF
     units: ""
