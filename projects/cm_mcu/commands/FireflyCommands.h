@@ -34,6 +34,12 @@ BaseType_t ff_reset(int argc, char **argv, char *m);
 BaseType_t ff_status(int argc, char **argv, char *m);
 BaseType_t ff_los_alarm(int argc, char **argv, char *m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m);
+#if defined(REV3)
+BaseType_t ff_tx_fault_alarm(int argc, char **argv, char *m);
+BaseType_t ff_rx_power_alarm(int argc, char **argv, char *m);
+BaseType_t ff_temperature_alarm(int argc, char **argv, char *m);
+BaseType_t ff_vcc_alarm(int argc, char **argv, char *m);
+#endif // REV3
 BaseType_t ff_mux_reset(int argc, char **argv, char *m);
 BaseType_t ff_dump_names(int argc, char **argv, char *m);
 BaseType_t ff_v3v3(int argc, char **argv, char *m);

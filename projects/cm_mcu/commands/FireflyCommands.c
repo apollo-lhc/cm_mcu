@@ -479,10 +479,102 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 }
 
 
+// ff_table_row_fn: signature for a single-row formatter used by ff_table_print.
+//
+// Each row function is called once per firefly device per CLI invocation. It is
+// responsible for appending one entry (name + value) to the output buffer `m`
+// starting at offset `copied`, and for appending the row terminator via
+// ff_table_append_row_end (which emits "\t" for Tx devices so that the Tx and Rx
+// columns appear side-by-side, and "\r\n" for everything else).
+//
+// Return value: the new value of `copied` after appending this row.
 typedef int (*ff_table_row_fn)(char *m, int copied, int whichff);
 
+// clang-format off
+//
+// MACRO: FF_TABLE_CMD
+//
+// Expands to a complete BaseType_t CLI command handler that pages through all
+// firefly devices using ff_table_print.
+//
+// The CLI framework calls a command handler repeatedly while it returns pdTRUE,
+// passing the same output buffer `m` each time. ff_table_print uses a cursor
+// (`whichff`) to remember which device to resume from, returning pdTRUE when
+// the buffer is nearly full and pdFALSE when all devices have been printed.
+//
+// `whichff` is declared `static` so it persists across repeated calls for the
+// same multi-page output. Because each macro expansion produces a distinct
+// function body, each expanded function gets its own independent static variable
+// — there is no sharing between, e.g., ff_los_alarm and ff_temp.
+//
+// Parameters:
+//   fn_name  - name of the generated function (e.g. ff_los_alarm)
+//   row_fn   - ff_table_row_fn to call for each device
+//   title    - header line printed before the first device entry
+//   min_rem  - minimum bytes that must remain in the buffer before we stop and
+//              return pdTRUE (leave room for the next row before it overflows)
+//   stale    - if true, prepend a staleness warning when the monitoring task
+//              has not updated the cached register values recently
+#define FF_TABLE_CMD(fn_name, row_fn, title, min_rem, stale)                    \
+  BaseType_t fn_name(int argc, char **argv, char *m)                            \
+  {                                                                               \
+    (void)argc;                                                                   \
+    static int whichff = 0;                                                       \
+    return ff_table_print(m, argv[0], title, &whichff, min_rem, stale, row_fn); \
+  }
+
+// MACRO: FF_U16_HEX_ROW_FN
+//
+// Expands to a static row function that reads one uint16_t monitoring register
+// and prints it as "   <device name>: 0xXXXX" followed by the appropriate
+// row terminator (tab for Tx devices, CRLF for others).
+//
+// WHY A MACRO INSTEAD OF A FUNCTION POINTER?
+// The per-revision monitoring data accessors (e.g. get_FF_LOS_ALARM_data) are
+// defined in MonI2C_addresses.h as preprocessor macros, not as real functions.
+// get_FF_LOS_ALARM_data(which) expands to a ternary that selects the F1 or F2
+// accessor depending on the device index. A macro has no address, so it cannot
+// be passed as a `uint16_t (*getter)(int)` function pointer.
+//
+// A macro cannot be used as a function pointer (it has no address), so the
+// earlier approach of passing a `uint16_t (*getter)(int)` to a shared helper
+// would have required a real wrapper function for each accessor. This macro
+// avoids that by inlining the accessor expression directly into the row body.
+//
+// NAMING COLLISION WARNING:
+// The macro parameter must NOT be named `name`. The struct field accessed as
+// `ff_moni2c_addrs[whichff].name` contains the literal token `name`; if the
+// macro parameter were also called `name`, the preprocessor would substitute it
+// everywhere, turning `.name` into the expanded parameter value. The parameter
+// is therefore called `fn_name` to avoid this silent corruption.
+//
+// Parameters:
+//   fn_name     - name of the generated static function
+//   getter_expr - expression that evaluates to a uint16_t; must use the local
+//                 variable `whichff` (the function parameter) as the device index
+#define FF_U16_HEX_ROW_FN(fn_name, getter_expr)                                \
+  static int fn_name(char *m, int copied, int whichff)                          \
+  {                                                                               \
+    uint16_t val = (getter_expr);                                                \
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",       \
+                       ff_moni2c_addrs[whichff].name, val);                      \
+    return ff_table_append_row_end(m, copied, whichff);                          \
+  }
+// clang-format on
+
+// ff_table_abort_current: out-of-band signal from a row function to ff_table_print.
+//
+// Normally a row function returns normally and ff_table_print continues to the
+// next device. When a row function encounters a fatal per-device error (e.g. an
+// I2C read failure) it sets this flag to true before returning; ff_table_print
+// then resets the cursor and returns pdFALSE immediately, abandoning the rest
+// of the table rather than printing garbage for remaining devices.
 static bool ff_table_abort_current;
 
+// Firefly devices are laid out in the address table as interleaved Tx/Rx pairs.
+// To display them in two columns (Tx on the left, Rx on the right), Tx rows
+// are terminated with a tab instead of CRLF; the following Rx row then lands
+// on the same terminal line.
 static bool ff_table_is_tx(int whichff)
 {
   return strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL;
@@ -495,6 +587,10 @@ static int ff_table_append_row_end(char *m, int copied, int whichff)
   return copied + snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
 }
 
+// Prepends a human-readable staleness warning to the output if the FireflyTask
+// monitoring loop has not updated the cached register values within the expected
+// window. isFFStale() returns the index of the stale monitoring group (non-zero
+// = stale), and getFFupdateTick() returns the tick count of its last update.
 static int ff_table_append_stale_warning(char *m, int copied, const char *name)
 {
   if (isFFStale()) {
@@ -507,6 +603,30 @@ static int ff_table_append_stale_warning(char *m, int copied, const char *name)
   return copied;
 }
 
+// ff_table_print: generic paged table printer for firefly monitoring data.
+//
+// The CLI output buffer `m` is only SCRATCH_SIZE (1024) bytes. With up to
+// NFIREFLIES devices per table, a single call cannot always fit the entire
+// output. ff_table_print therefore acts as a coroutine: it fills `m` up to
+// `min_remaining` bytes from the end, saves its position in `*cursor`, and
+// returns pdTRUE to signal the CLI framework that more output is pending.
+// The framework calls the command handler again; the handler passes the same
+// `cursor` pointer and ff_table_print resumes from where it left off.
+// When all devices have been printed, `*cursor` is reset to 0 and pdFALSE
+// is returned so the framework knows the command is done.
+//
+// The two-column layout (Tx tab-separated from Rx) means that if we stop mid-
+// line (i.e. cursor is odd after the loop), we emit a trailing CRLF to avoid
+// leaving the terminal in a broken state.
+//
+// Parameters:
+//   m                    - output buffer (SCRATCH_SIZE bytes)
+//   stale_name           - command name used in the staleness warning prefix
+//   title                - header line emitted once at the start (*cursor == 0)
+//   cursor               - persistent position across calls; caller owns storage
+//   min_remaining        - stop adding rows when fewer than this many bytes remain
+//   include_stale_warning- whether to call ff_table_append_stale_warning on first call
+//   row_fn               - called once per device to format one table row
 static BaseType_t ff_table_print(char *m, const char *stale_name, const char *title,
                                  int *cursor, int min_remaining, bool include_stale_warning,
                                  ff_table_row_fn row_fn)
@@ -542,73 +662,41 @@ static BaseType_t ff_table_print(char *m, const char *stale_name, const char *ti
   return pdFALSE;
 }
 
-static int ff_u16_hex_row(char *m, int copied, int whichff, uint16_t (*getter)(int which))
-{
-  uint16_t val = getter(whichff);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",
-                     ff_moni2c_addrs[whichff].name, val);
-  return ff_table_append_row_end(m, copied, whichff);
-}
+// The following blocks generate the simple alarm/status display commands.
+//
+// Each get_FF_*_data accessor is a macro defined in MonI2C_addresses.h that
+// dispatches between the F1 and F2 firefly banks based on the device index.
+// For example, get_FF_LOS_ALARM_data(which) expands to:
+//   (which < NFIREFLIES_F1) ? get_FF_F1_LOS_ALARM_data(which)
+//                           : get_FF_F2_LOS_ALARM_data(which - NFIREFLIES_F1)
+//
+// The F1 and F2 functions read from separate in-memory monitoring buffers that
+// are populated by the FireflyTask monitoring loop (MonitorTaskI2C.c). All
+// values are therefore cached; these commands never perform I2C transactions.
+//
+// Row functions (FF_U16_HEX_ROW_FN) — one per register of interest.
+// REV1 and REV2 hardware exposes a smaller register set than REV3; the four
+// alarm registers below (TX fault, RX power, temperature alarm, VCC alarm) are
+// only present in REV3 and are guarded accordingly.
+// clang-format off
+FF_U16_HEX_ROW_FN(ff_los_alarm_row,  get_FF_LOS_ALARM_data(whichff))  // Loss-of-signal per channel
+FF_U16_HEX_ROW_FN(ff_cdr_enable_row, get_FF_CDR_ENABLE_data(whichff)) // Clock/data recovery enable bits
+#if defined(REV3)
+FF_U16_HEX_ROW_FN(ff_tx_fault_alarm_row,    get_FF_TX_FAULT_ALARM_data(whichff))    // Transmitter fault flags
+FF_U16_HEX_ROW_FN(ff_rx_power_alarm_row,    get_FF_RX_POWER_ALARM_data(whichff))    // Received optical power alarm
+FF_U16_HEX_ROW_FN(ff_temperature_alarm_row, get_FF_TEMPERATURE_ALARM_data(whichff)) // On-device temperature alarm flag
+FF_U16_HEX_ROW_FN(ff_vcc_alarm_row,         get_FF_VCC3V3_ALARM_data(whichff))      // 3.3 V supply voltage alarm flag
+#endif // REV3
 
-static uint16_t ff_los_alarm_get(int whichff)
-{
-  return get_FF_LOS_ALARM_data(whichff);
-}
-
-static int ff_los_alarm_row(char *m, int copied, int whichff)
-{
-  return ff_u16_hex_row(m, copied, whichff, ff_los_alarm_get);
-}
-
-static uint16_t ff_cdr_enable_get(int whichff)
-{
-  return get_FF_CDR_ENABLE_data(whichff);
-}
-
-static int ff_cdr_enable_row(char *m, int copied, int whichff)
-{
-  return ff_u16_hex_row(m, copied, whichff, ff_cdr_enable_get);
-}
-
-BaseType_t ff_generic_printout(char *m, char *name, uint16_t (*getter)(int which), int which)
-{
-  (void)which;
-  static int whichff = 0;
-  int copied = 0;
-
-  if (whichff == 0) {
-    copied = ff_table_append_stale_warning(m, copied, name);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s:\r\n", name);
-  }
-
-  for (; whichff < NFIREFLIES; ++whichff) {
-    uint16_t val = getter(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",
-                       ff_moni2c_addrs[whichff].name, val);
-    copied = ff_table_append_row_end(m, copied, whichff);
-    if ((SCRATCH_SIZE - copied) < 20) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-
-  if (whichff % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
-
-  return pdFALSE;
-}
-
-BaseType_t ff_los_alarm(int argc, char **argv, char *m)
-{
-  (void)argc;
-  static int whichff = 0;
-  return ff_table_print(m, argv[0], "FIREFLY LOS ALARM:", &whichff, 20, true,
-                        ff_los_alarm_row);
-}
+// Command functions (FF_TABLE_CMD) — one per CLI command, each paired with its row function above:
+FF_TABLE_CMD(ff_los_alarm, ff_los_alarm_row, "FIREFLY LOS ALARM:", 20, true)
+#if defined(REV3)
+FF_TABLE_CMD(ff_tx_fault_alarm,    ff_tx_fault_alarm_row,    "FIREFLY TX FAULT ALARM:",    20, true)
+FF_TABLE_CMD(ff_rx_power_alarm,    ff_rx_power_alarm_row,    "FIREFLY RX FAULT ALARM:",    20, true)
+FF_TABLE_CMD(ff_temperature_alarm, ff_temperature_alarm_row, "FIREFLY TEMPERATURE ALARM:", 20, true)
+FF_TABLE_CMD(ff_vcc_alarm,         ff_vcc_alarm_row,         "FIREFLY VCC ALARM:",         20, true)
+#endif // REV3
+// clang-format on
 
 static int ff_ch_disable_row(char *m, int copied, int whichff)
 {
@@ -624,13 +712,9 @@ static int ff_ch_disable_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-BaseType_t ff_ch_disable_status(int argc, char **argv, char *m)
-{
-  (void)argc;
-  static int whichff = 0;
-  return ff_table_print(m, argv[0], "FIREFLY CHANNEL DISABLE:", &whichff, 20, true,
-                        ff_ch_disable_row);
-}
+// ff_ch_disable_row has custom logic (prints "--" for disabled devices) so it is
+// written out explicitly above; only the boilerplate command wrapper is generated here.
+FF_TABLE_CMD(ff_ch_disable_status, ff_ch_disable_row, "FIREFLY CHANNEL DISABLE:", 20, true)
 
 static int ff_cdr_lol_alarm_row(char *m, int copied, int whichff)
 {
@@ -646,21 +730,10 @@ static int ff_cdr_lol_alarm_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
-{
-  (void)argc;
-  static int whichff = 0;
-  return ff_table_print(m, argv[0], "FIREFLY CDR LOL ALARM:", &whichff, 30, true,
-                        ff_cdr_lol_alarm_row);
-}
-
-BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m)
-{
-  (void)argc;
-  static int whichff = 0;
-  return ff_table_print(m, argv[0], "FF CDR Enable:", &whichff, 20, true,
-                        ff_cdr_enable_row);
-}
+// ff_cdr_lol_alarm_row and ff_power_alarm_row also have custom logic (they skip
+// non-25G devices) so their row functions are written explicitly; command wrappers only:
+FF_TABLE_CMD(ff_cdr_lol_alarm,    ff_cdr_lol_alarm_row, "FIREFLY CDR LOL ALARM:", 30, true)
+FF_TABLE_CMD(ff_cdr_enable_status, ff_cdr_enable_row,   "FF CDR Enable:",         20, true)
 
 static int ff_power_alarm_row(char *m, int copied, int whichff)
 {
@@ -676,13 +749,7 @@ static int ff_power_alarm_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-BaseType_t ff_power_alarm_status(int argc, char **argv, char *m)
-{
-  (void)argc;
-  static int whichff = 0;
-  return ff_table_print(m, argv[0], "FIREFLY POWER ALARM:", &whichff, 30, true,
-                        ff_power_alarm_row);
-}
+FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:",   30, true)
 
 static int ff_temp_row(char *m, int copied, int whichff)
 {
@@ -696,13 +763,9 @@ static int ff_temp_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-BaseType_t ff_temp(int argc, char **argv, char *m)
-{
-  (void)argc;
-  static int nn = 0;
-  return ff_table_print(m, argv[0], "FF Temperature:", &nn, 20, true,
-                        ff_temp_row);
-}
+// ff_temp_row and ff_v3v3_row have custom formatting (decimal degrees / voltage
+// rather than hex) so they are written out explicitly; command wrappers only:
+FF_TABLE_CMD(ff_temp, ff_temp_row, "FF Temperature:", 20, true)
 
 // loop over all channels on all devices and show optical power
 BaseType_t ff_optpow(int argc, char **argv, char *m)
@@ -952,13 +1015,7 @@ static int ff_v3v3_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-BaseType_t ff_v3v3(int argc, char **argv, char *m)
-{
-  (void)argc;
-  static int nn = 0;
-  return ff_table_print(m, argv[0], "FF 3V3 Mon:", &nn, 50, true,
-                        ff_v3v3_row);
-}
+FF_TABLE_CMD(ff_v3v3, ff_v3v3_row, "FF 3V3 Mon:", 50, true)
 
 static int ff_dump_names_row(char *m, int copied, int whichff)
 {

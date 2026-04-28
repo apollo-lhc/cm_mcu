@@ -165,7 +165,33 @@ static struct command_t commands[] = {
         "Show FF 3v3 mon\r\n",
         0,
     },
-#endif // REV2
+#endif // REV2 || REV3
+#if defined(REV3)
+    {
+        "ff_tx_fault",
+        ff_tx_fault_alarm,
+        "Show FF TX fault alarms\r\n",
+        0,
+    },
+    {
+        "ff_rx_pwr_alarm",
+        ff_rx_power_alarm,
+        "Show FF RX power alarms\r\n",
+        0,
+    },
+    {
+        "ff_temp_alarm",
+        ff_temperature_alarm,
+        "Show FF temperature alarms\r\n",
+        0,
+    },
+    {
+        "ff_vcc_alarm",
+        ff_vcc_alarm,
+        "Show FF VCC alarms\r\n",
+        0,
+    },
+#endif // REV3
     {
         "ff_temp",
         ff_temp,
