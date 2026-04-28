@@ -674,27 +674,27 @@ static BaseType_t ff_table_print(char *m, const char *stale_name, const char *ti
 // values are therefore cached; these commands never perform I2C transactions.
 //
 // Row functions (FF_U16_HEX_ROW_FN) — one per register of interest.
-// REV1 and REV2 hardware exposes a smaller register set than REV3; the four
+// REV1 hardware exposes a smaller register set than REV2/REV3; the four
 // alarm registers below (TX fault, RX power, temperature alarm, VCC alarm) are
-// only present in REV3 and are guarded accordingly.
+// only present in REV2 and REV3 and are guarded accordingly.
 // clang-format off
 FF_U16_HEX_ROW_FN(ff_los_alarm_row,  get_FF_LOS_ALARM_data(whichff))  // Loss-of-signal per channel
 FF_U16_HEX_ROW_FN(ff_cdr_enable_row, get_FF_CDR_ENABLE_data(whichff)) // Clock/data recovery enable bits
-#if defined(REV3)
+#if defined(REV2) || defined(REV3)
 FF_U16_HEX_ROW_FN(ff_tx_fault_alarm_row,    get_FF_TX_FAULT_ALARM_data(whichff))    // Transmitter fault flags
 FF_U16_HEX_ROW_FN(ff_rx_power_alarm_row,    get_FF_RX_POWER_ALARM_data(whichff))    // Received optical power alarm
 FF_U16_HEX_ROW_FN(ff_temperature_alarm_row, get_FF_TEMPERATURE_ALARM_data(whichff)) // On-device temperature alarm flag
 FF_U16_HEX_ROW_FN(ff_vcc_alarm_row,         get_FF_VCC3V3_ALARM_data(whichff))      // 3.3 V supply voltage alarm flag
-#endif // REV3
+#endif // REV2 || REV3
 
 // Command functions (FF_TABLE_CMD) — one per CLI command, each paired with its row function above:
 FF_TABLE_CMD(ff_los_alarm, ff_los_alarm_row, "FIREFLY LOS ALARM:", 20, true)
-#if defined(REV3)
+#if defined(REV2) || defined(REV3)
 FF_TABLE_CMD(ff_tx_fault_alarm,    ff_tx_fault_alarm_row,    "FIREFLY TX FAULT ALARM:",    20, true)
 FF_TABLE_CMD(ff_rx_power_alarm,    ff_rx_power_alarm_row,    "FIREFLY RX FAULT ALARM:",    20, true)
 FF_TABLE_CMD(ff_temperature_alarm, ff_temperature_alarm_row, "FIREFLY TEMPERATURE ALARM:", 20, true)
 FF_TABLE_CMD(ff_vcc_alarm,         ff_vcc_alarm_row,         "FIREFLY VCC ALARM:",         20, true)
-#endif // REV3
+#endif // REV2 || REV3
 // clang-format on
 
 static int ff_ch_disable_row(char *m, int copied, int whichff)

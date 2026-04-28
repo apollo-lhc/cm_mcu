@@ -166,7 +166,7 @@ static struct command_t commands[] = {
         0,
     },
 #endif // REV2 || REV3
-#if defined(REV3)
+#if defined(REV2) || defined(REV3)
     {
         "ff_tx_fault",
         ff_tx_fault_alarm,
@@ -191,7 +191,7 @@ static struct command_t commands[] = {
         "Show FF VCC alarms\r\n",
         0,
     },
-#endif // REV3
+#endif // REV2 || REV3
     {
         "ff_temp",
         ff_temp,
