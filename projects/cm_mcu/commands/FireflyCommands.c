@@ -478,7 +478,6 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-
 // ff_table_row_fn: signature for a single-row formatter used by ff_table_print.
 //
 // Each row function is called once per firefly device per CLI invocation. It is
@@ -732,8 +731,8 @@ static int ff_cdr_lol_alarm_row(char *m, int copied, int whichff)
 
 // ff_cdr_lol_alarm_row and ff_power_alarm_row also have custom logic (they skip
 // non-25G devices) so their row functions are written explicitly; command wrappers only:
-FF_TABLE_CMD(ff_cdr_lol_alarm,    ff_cdr_lol_alarm_row, "FIREFLY CDR LOL ALARM:", 30, true)
-FF_TABLE_CMD(ff_cdr_enable_status, ff_cdr_enable_row,   "FF CDR Enable:",         20, true)
+FF_TABLE_CMD(ff_cdr_lol_alarm, ff_cdr_lol_alarm_row, "FIREFLY CDR LOL ALARM:", 30, true)
+FF_TABLE_CMD(ff_cdr_enable_status, ff_cdr_enable_row, "FF CDR Enable:", 20, true)
 
 static int ff_power_alarm_row(char *m, int copied, int whichff)
 {
@@ -749,7 +748,7 @@ static int ff_power_alarm_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:",   30, true)
+FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:", 30, true)
 
 static int ff_temp_row(char *m, int copied, int whichff)
 {
