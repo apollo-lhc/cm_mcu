@@ -58,9 +58,19 @@ check-for-pr: format
 
 # 2nd dollar sign in grep command is to pass along a single dollar sign to egrep itself
 format:
-	run-clang-format.py $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')
+	@if [ 'x${VERBOSE}' = x ]; then \
+		echo "  PY run-clang-format"; \
+	else \
+		echo "  run-clang-format.py $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')"; \
+	fi
+	@run-clang-format.py $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')
 
 format-apply:
-	run-clang-format.py -i $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')	
+	@if [ 'x${VERBOSE}' = x ]; then \
+		echo "  PY run-clang-format -i"; \
+	else \
+		echo "  run-clang-format.py -i $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')"; \
+	fi
+	@run-clang-format.py -i $(shell git diff --diff-filter=AM --name-only master | egrep '\.[ch]$$')	
 
 .PHONY: all clean $(DIRS) $(DIRSCLEAN) check-and-reinit-submodules

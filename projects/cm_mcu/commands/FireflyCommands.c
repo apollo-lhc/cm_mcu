@@ -20,6 +20,7 @@
 #include "common/smbus_helper.h"
 #include "Semaphore.h"
 #include "Tasks.h"
+#include "portmacro.h"
 #include "projdefs.h"
 
 // A NOTE ABOUT THE FIREFLY REGISTER ADDRESSES
@@ -36,271 +37,265 @@
 // if the register address is > 127, the next 8 bits are the page number.
 // next 8 bits: page register number.
 // This is used in both the read and write functions.
-int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
-{
-  memset(value, 0, size);
-  // find the appropriate information for this FF device
+struct ff_i2c_access_t {
   int ff;
-  for (ff = 0; ff < NFIREFLIES; ++ff) {
+  int i2c_device;
+  SemaphoreHandle_t sem;
+};
+
+static int ff_find_by_name(const char *name)
+{
+  for (int ff = 0; ff < NFIREFLIES; ++ff) {
     if (strncmp(ff_moni2c_addrs[ff].name, name, 10) == 0)
-      break;
+      return ff;
   }
-  if (ff == NFIREFLIES) {
-    return -2; // no match found
-  }
+  return -1;
+}
 
-  int res;
-  SemaphoreHandle_t s = i2c4_sem;
-  if (i2c_device == I2C_DEVICE_F2) {
-    s = i2c3_sem;
-  }
+static int ff_i2c_device_for_index(int ff)
+{
+  return ff < NFIREFLIES_F1 ? I2C_DEVICE_F1 : I2C_DEVICE_F2;
+}
 
-  if (acquireI2CSemaphore(s) == pdFAIL) {
-    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return SEM_ACCESS_ERROR;
-  }
+static SemaphoreHandle_t ff_i2c_sem_for_device(int i2c_device)
+{
+  return i2c_device == I2C_DEVICE_F2 ? i2c3_sem : i2c4_sem;
+}
 
-  // write to the mux
-  // select the appropriate output for the mux
+static int ff_select_mux(int ff, int i2c_device)
+{
   uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
-  res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
+  int res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
   if (res != 0) {
     log_warn(LOG_SERVICE, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
              SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
   }
+  return res;
+}
+
+static int ff_clear_mux(int ff, int i2c_device)
+{
+  int res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, 0x0U);
+  if (res != 0) {
+    log_warn(LOG_SERVICE, "%s: Mux clear error %d (%s) (ff=%s) ...\r\n", __func__, res,
+             SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+  }
+  return res;
+}
+
+static int ff_select_page_if_needed(int ff, int i2c_device, uint16_t *reg)
+{
+  int res = 0;
+  if ((*reg & 0xFFU) > FF_PAGE_SELECT_BYTE) {
+    uint8_t page = (*reg >> 8) & 0xFFU;
+    res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
+                               FF_PAGE_SELECT_BYTE, 1, page);
+    if (res) {
+      log_warn(LOG_SERVICE, "%s: FF page write error %d (%s) (ff=%s) ...\r\n", __func__, res,
+               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+    }
+  }
+  *reg &= 0x00FFU; // select out the register number, bottom 8 bits
+  return res;
+}
+
+static int ff_begin_i2c_access(const char *name, int i2c_device, struct ff_i2c_access_t *access)
+{
+  int ff = ff_find_by_name(name);
+  if (ff < 0) {
+    return -2; // no match found
+  }
+
+  access->ff = ff;
+  access->i2c_device = i2c_device;
+  access->sem = ff_i2c_sem_for_device(i2c_device);
+
+  if (acquireI2CSemaphore(access->sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return SEM_ACCESS_ERROR;
+  }
+
+  return ff_select_mux(ff, i2c_device);
+}
+
+static int ff_end_i2c_access(struct ff_i2c_access_t *access, int res)
+{
+  if (!res) {
+    res = ff_clear_mux(access->ff, access->i2c_device);
+  }
+
+  if (xSemaphoreGetMutexHolder(access->sem) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(access->sem);
+  return res;
+}
+
+int read_ff_register(const char *name, uint16_t packed_reg_addr, uint8_t *value, size_t size, int i2c_device)
+{
+  memset(value, 0, size);
+  struct ff_i2c_access_t access;
+  int res = ff_begin_i2c_access(name, i2c_device, &access);
+  if (res == -2)
+    return res;
 
   if (!res) {
     // Read from register.  if the register number is > FF_PAGE_SELECT_BYTE (0x7FU), we
     // must first write the page number to page select byte.
-    if ((packed_reg_addr & 0xFFU) > FF_PAGE_SELECT_BYTE) {
-      uint8_t page = (packed_reg_addr >> 8) & 0xFFU;
-      res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
-                                 FF_PAGE_SELECT_BYTE, 1, page);
-      if (res)
-        log_warn(LOG_SERVICE, "%s: FF page write error %d (%s) (ff=%s) ...\r\n", __func__, res,
-                 SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-    }
-    packed_reg_addr &= 0x00FFU; // select out the register number, bottom 8 bits
+    res = ff_select_page_if_needed(access.ff, i2c_device, &packed_reg_addr);
     uint32_t uidata;
-    res += apollo_i2c_ctl_reg_r(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
+    res += apollo_i2c_ctl_reg_r(i2c_device, ff_moni2c_addrs[access.ff].dev_addr, 1,
                                 packed_reg_addr, size, &uidata);
     for (int i = 0; i < size; ++i) {
       value[i] = (uint8_t)((uidata >> (i * 8)) & 0xFFU);
     }
     if (res != 0) {
       log_warn(LOG_SERVICE, "%s: FF Regread error %d (%s) (ff=%s) ...\r\n", __func__, res,
-               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-    }
-  }
-  if (!res) { // clear the mux
-    muxmask = 0x0U;
-    res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
-    if (res != 0) {
-      log_warn(LOG_SERVICE, "%s: Mux clear error %d (%s) (ff=%s) ...\r\n", __func__, res,
-               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+               SMBUS_get_error(res), ff_moni2c_addrs[access.ff].name);
     }
   }
 
-  // release the semaphore
-  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
-    xSemaphoreGive(s);
-  return res;
+  return ff_end_i2c_access(&access, res);
 }
 
 // see comments above read_ff_register
 static int write_ff_register(const char *name, uint16_t reg, uint16_t value, int size, int i2c_device)
 {
   configASSERT(size <= 2);
-  // find the appropriate information for this FF device
-  int ff;
-  for (ff = 0; ff < NFIREFLIES; ++ff) {
-    if (strncmp(ff_moni2c_addrs[ff].name, name, 10) == 0)
-      break;
-  }
-  if (ff == NFIREFLIES) {
-    return -2; // no match found
-  }
-
-  int res;
-  SemaphoreHandle_t s = getSemaphore(4);
-  if (i2c_device == I2C_DEVICE_F2) {
-    s = getSemaphore(3);
-  }
-
-  if (acquireI2CSemaphore(s) == pdFAIL) {
-    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return SEM_ACCESS_ERROR;
-  }
-
-  // write to the mux
-  // select the appropriate output for the mux
-  uint8_t muxmask = 0x1U << ff_moni2c_addrs[ff].mux_bit;
-  res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
-  if (res != 0) {
-    log_warn(LOG_SERVICE, "%s: Mux writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-             SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-  }
+  struct ff_i2c_access_t access;
+  int res = ff_begin_i2c_access(name, i2c_device, &access);
+  if (res == -2)
+    return res;
 
   // write to register. First word is reg address, then the data.
   // increment size to account for the register address
   if (!res) {
     // If the register number is > FF_PAGE_SELECT_BYTE (0x7FU), we
     // must first write the page number to page select byte.
-    if ((reg & 0xFFU) > FF_PAGE_SELECT_BYTE) {
-      uint8_t page = (reg >> 8) & 0xFFU;
-      res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1,
-                                 FF_PAGE_SELECT_BYTE, 1, page);
-      if (res)
-        log_warn(LOG_SERVICE, "%s: FF page write error %d (%s) (ff=%s) ...\r\n", __func__, res,
-                 SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-    }
-    reg &= 0x00FFU; // select out the register number, bottom 8 bits
-
-    res = apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[ff].dev_addr, 1, reg, size, (uint32_t)value);
+    res = ff_select_page_if_needed(access.ff, i2c_device, &reg);
+    res += apollo_i2c_ctl_reg_w(i2c_device, ff_moni2c_addrs[access.ff].dev_addr, 1, reg, size, (uint32_t)value);
     if (res != 0) {
       log_warn(LOG_SERVICE, "%s: FF writing error %d (%s) (ff=%s) ...\r\n", __func__, res,
-               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
-    }
-  }
-  if (!res) { // clear the mux
-    muxmask = 0x0U;
-    res = apollo_i2c_ctl_w(i2c_device, ff_moni2c_addrs[ff].mux_addr, 1, muxmask);
-    if (res != 0) {
-      log_warn(LOG_SERVICE, "%s: Mux clear error %d (%s) (ff=%s) ...\r\n", __func__, res,
-               SMBUS_get_error(res), ff_moni2c_addrs[ff].name);
+               SMBUS_get_error(res), ff_moni2c_addrs[access.ff].name);
     }
   }
 
-  // release the semaphore
-  if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
-    xSemaphoreGive(s);
-  return res;
+  return ff_end_i2c_access(&access, res);
+}
+
+typedef int (*ff_apply_fn)(int ff, int i2c_dev, void *ctx);
+
+static bool ff_name_has(int ff, const char *needle)
+{
+  return strstr(ff_moni2c_addrs[ff].name, needle) != NULL;
+}
+
+static bool ff_is_xcvr(int ff)
+{
+  return ff_name_has(ff, "XCVR");
+}
+
+static bool ff_is_tx(int ff)
+{
+  return ff_name_has(ff, "Tx");
+}
+
+static bool ff_is_rx(int ff)
+{
+  return ff_name_has(ff, "Rx");
+}
+
+static int ff_for_each_selected(int num_ff, ff_apply_fn apply, void *ctx)
+{
+  int ret = 0;
+  int i = num_ff;
+  int imax = num_ff + 1;
+
+  if (num_ff == NFIREFLIES) {
+    i = 0;
+    imax = NFIREFLIES;
+  }
+
+  for (; i < imax; ++i) {
+    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
+      continue;
+    ret += apply(i, ff_i2c_device_for_index(i), ctx);
+  }
+
+  return ret;
+}
+
+static int ff_apply_transmit_disable(int ff, int i2c_dev, void *ctx)
+{
+  uint16_t value = *(uint16_t *)ctx;
+
+  if (ff_is_xcvr(ff)) {
+    // only 4 LSB matter, so mask out others.
+    return write_ff_register(ff_moni2c_addrs[ff].name, ECU0_25G_XVCR_TX_DISABLE_REG, value & 0xFU, 1, i2c_dev);
+  }
+  if (ff_is_tx(ff)) { // same for all 12 channel parts
+    return write_ff_register(ff_moni2c_addrs[ff].name, ECU0_14G_TX_DISABLE_REG, value, 2, i2c_dev);
+  }
+  return 0;
 }
 
 static int disable_transmit(bool disable, int num_ff)
 {
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0xffffU; // see data sheet re how bits are arranged; do not set this to 0xfffU!
-  if (disable == false)
-    value = 0x0U;
-  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
-    i = 0;
-    imax = NFIREFLIES;
-  }
-  int i2c_dev;
-  for (; i < imax; ++i) {
-    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-      continue;
-    if (i < NFIREFLIES_F1) {
-      i2c_dev = I2C_DEVICE_F1;
-    }
-    else {
-      i2c_dev = I2C_DEVICE_F2;
-    }
+  uint16_t value = disable ? 0xffffU : 0x0U; // see data sheet re bit arrangement; do not use 0xfffU
+  return ff_for_each_selected(num_ff, ff_apply_transmit_disable, &value);
+}
 
-    if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      // only 4 LSB matter, so mask out others.
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_TX_DISABLE_REG, value & 0xFU, 1, i2c_dev);
-    }
-    else if (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL) { // same for all 12 channel parts
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_TX_DISABLE_REG, value, 2, i2c_dev);
-    }
+static int ff_apply_receiver_disable(int ff, int i2c_dev, void *ctx)
+{
+  uint16_t value = *(uint16_t *)ctx;
+
+  if (ff_is_xcvr(ff)) {
+    return write_ff_register(ff_moni2c_addrs[ff].name, ECU0_25G_XVCR_RX_DISABLE_REG, value & 0x000fU, 1, i2c_dev);
   }
-  return ret;
+  if (ff_is_rx(ff)) { // Same for CERNB vs 25G
+    return write_ff_register(ff_moni2c_addrs[ff].name, ECU0_14G_RX_DISABLE_REG, value, 2, i2c_dev);
+  }
+  return 0;
 }
 
 static int disable_receivers(bool disable, int num_ff)
 {
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  uint16_t value = 0xfff;
-  if (disable == false)
-    value = 0x0;
-  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
-    i = 0;
-    imax = NFIREFLIES;
+  uint16_t value = disable ? 0xfffU : 0x0U;
+  return ff_for_each_selected(num_ff, ff_apply_receiver_disable, &value);
+}
+
+static int ff_apply_cdr(int ff, int i2c_dev, void *ctx)
+{
+  uint8_t value = *(uint8_t *)ctx;
+
+  if (ff_is_xcvr(ff)) {
+    return write_ff_register(ff_moni2c_addrs[ff].name, ECU0_25G_XVCR_CDR_REG, value, 1, i2c_dev);
   }
-  int i2c_dev;
-  for (; i < imax; ++i) {
-    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-      continue;
-    if (i < NFIREFLIES_F1) {
-      i2c_dev = I2C_DEVICE_F1;
-    }
-    else {
-      i2c_dev = I2C_DEVICE_F2;
-    }
-    if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      value &= 0x000fU; // only 4 LSB matter, so mask out others
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_RX_DISABLE_REG, value, 1, i2c_dev);
-    }
-    else if (strstr(ff_moni2c_addrs[i].name, "Rx") != NULL) { // Same for CERNB vs 25G
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_14G_RX_DISABLE_REG, value, 2, i2c_dev);
-    }
-  }
-  return ret;
+
+  uint16_t value16 = value == 0 ? 0U : 0xffffU; // 12 channel parts use one bit per channel
+  return write_ff_register(ff_moni2c_addrs[ff].name, ECU0_25G_TXRX_CDR_REG, value16, 2, i2c_dev);
 }
 
 static int set_xcvr_cdr(uint8_t value, int num_ff)
 {
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
-    i = 0;
-    imax = NFIREFLIES;
-  }
-  int i2c_dev;
-  for (; i < imax; ++i) {
-    if (!isEnabledFF(i)) // skip the FF if it's not enabled via the FF config
-      continue;
-    if (i < NFIREFLIES_F1) {
-      i2c_dev = I2C_DEVICE_F1;
-    }
-    else {
-      i2c_dev = I2C_DEVICE_F2;
-    }
-    if (strstr(ff_moni2c_addrs[i].name, "XCVR") != NULL) {
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_XVCR_CDR_REG, value, 1, i2c_dev);
-    }
-    else {                                          // Tx/Rx
-      uint16_t value16 = value == 0 ? 0U : 0xffffU; // hack
-      ret += write_ff_register(ff_moni2c_addrs[i].name, ECU0_25G_TXRX_CDR_REG, value16, 2, i2c_dev);
-    }
-  }
-  return ret;
+  return ff_for_each_selected(num_ff, ff_apply_cdr, &value);
 }
 
 static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff)
 {
-  int ret = 0, i = num_ff, imax = num_ff + 1;
-  // i and imax are used as limits for the loop below. By default, only iterate once, with i=num_ff.
-  if (num_ff == NFIREFLIES) { // if NFIREFLIES is given for num_ff, loop over ALL transmitters.
-    i = 0;
-    imax = NFIREFLIES;
-  }
-  int i2c_dev;
-  for (; i < imax; ++i) {
-
-    if (num_ff == i)
-      break;
+  if (num_ff >= NFIREFLIES) {
+    return -1;
   }
 
-  if (!isEnabledFF(i)) { // skip the FF if it's not enabled via the FF config
-    log_warn(LOG_SERVICE, "Skip writing to disabled FF %d\r\n", i);
+  if (!isEnabledFF(num_ff)) { // skip the FF if it's not enabled via the FF config
+    log_warn(LOG_SERVICE, "Skip writing to disabled FF %d\r\n", num_ff);
+    return -1;
   }
-  if (i < NFIREFLIES_F1) {
-    i2c_dev = I2C_DEVICE_F1;
-  }
-  else {
-    i2c_dev = I2C_DEVICE_F2;
-  }
-  int ret1 = write_ff_register(ff_moni2c_addrs[i].name, regnumber, value, 1, i2c_dev);
+
+  int ret1 = write_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, 1,
+                               ff_i2c_device_for_index(num_ff));
   if (ret1) {
     log_warn(LOG_SERVICE, "%s: error %s\r\n", __func__, SMBUS_get_error(ret1));
-    ret += ret1;
   }
-  return ret;
+  return ret1;
 }
 
 // read a SINGLE firefly register, size bytes (up to 4 bytes)
@@ -309,14 +304,8 @@ uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *val
   if (num_ff >= NFIREFLIES) {
     return -1;
   }
-  int i2c_dev;
-  if (num_ff < NFIREFLIES_F1) {
-    i2c_dev = I2C_DEVICE_F1;
-  }
-  else {
-    i2c_dev = I2C_DEVICE_F2;
-  }
-  int ret = read_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, size, i2c_dev);
+  int ret = read_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, size,
+                             ff_i2c_device_for_index(num_ff));
   return ret;
 }
 
@@ -453,7 +442,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
       uint8_t val = get_FF_STATUS_REG_data(whichff);
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
     }
-    else { // dummy value
+    else { // empty value
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %4s", ff_moni2c_addrs[whichff].name, "--");
     }
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
@@ -488,285 +477,293 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
-BaseType_t ff_los_alarm(int argc, char **argv, char *m)
+// ff_table_row_fn: signature for a single-row formatter used by ff_table_print.
+//
+// Each row function is called once per firefly device per CLI invocation. It is
+// responsible for appending one entry (name + value) to the output buffer `m`
+// starting at offset `copied`, and for appending the row terminator via
+// ff_table_append_row_end (which emits "\t" for Tx devices so that the Tx and Rx
+// columns appear side-by-side, and "\r\n" for everything else).
+//
+// Return value: the new value of `copied` after appending this row.
+typedef int (*ff_table_row_fn)(char *m, int copied, int whichff);
+
+// clang-format off
+//
+// MACRO: FF_TABLE_CMD
+//
+// Expands to a complete BaseType_t CLI command handler that pages through all
+// firefly devices using ff_table_print.
+//
+// The CLI framework calls a command handler repeatedly while it returns pdTRUE,
+// passing the same output buffer `m` each time. ff_table_print uses a cursor
+// (`whichff`) to remember which device to resume from, returning pdTRUE when
+// the buffer is nearly full and pdFALSE when all devices have been printed.
+//
+// `whichff` is declared `static` so it persists across repeated calls for the
+// same multi-page output. Because each macro expansion produces a distinct
+// function body, each expanded function gets its own independent static variable
+// — there is no sharing between, e.g., ff_los_alarm and ff_temp.
+//
+// Parameters:
+//   fn_name  - name of the generated function (e.g. ff_los_alarm)
+//   row_fn   - ff_table_row_fn to call for each device
+//   title    - header line printed before the first device entry
+//   min_rem  - minimum bytes that must remain in the buffer before we stop and
+//              return pdTRUE (leave room for the next row before it overflows)
+//   stale    - if true, prepend a staleness warning when the monitoring task
+//              has not updated the cached register values recently
+#define FF_TABLE_CMD(fn_name, row_fn, title, min_rem, stale)                    \
+  BaseType_t fn_name(int argc, char **argv, char *m)                            \
+  {                                                                               \
+    (void)argc;                                                                   \
+    static int whichff = 0;                                                       \
+    return ff_table_print(m, argv[0], title, &whichff, min_rem, stale, row_fn); \
+  }
+
+// MACRO: FF_U16_HEX_ROW_FN
+//
+// Expands to a static row function that reads one uint16_t monitoring register
+// and prints it as "   <device name>: 0xXXXX" followed by the appropriate
+// row terminator (tab for Tx devices, CRLF for others).
+//
+// WHY A MACRO INSTEAD OF A FUNCTION POINTER?
+// The per-revision monitoring data accessors (e.g. get_FF_LOS_ALARM_data) are
+// defined in MonI2C_addresses.h as preprocessor macros, not as real functions.
+// get_FF_LOS_ALARM_data(which) expands to a ternary that selects the F1 or F2
+// accessor depending on the device index. A macro has no address, so it cannot
+// be passed as a `uint16_t (*getter)(int)` function pointer.
+//
+// A macro cannot be used as a function pointer (it has no address), so the
+// earlier approach of passing a `uint16_t (*getter)(int)` to a shared helper
+// would have required a real wrapper function for each accessor. This macro
+// avoids that by inlining the accessor expression directly into the row body.
+//
+// NAMING COLLISION WARNING:
+// The macro parameter must NOT be named `name`. The struct field accessed as
+// `ff_moni2c_addrs[whichff].name` contains the literal token `name`; if the
+// macro parameter were also called `name`, the preprocessor would substitute it
+// everywhere, turning `.name` into the expanded parameter value. The parameter
+// is therefore called `fn_name` to avoid this silent corruption.
+//
+// Parameters:
+//   fn_name     - name of the generated static function
+//   getter_expr - expression that evaluates to a uint16_t; must use the local
+//                 variable `whichff` (the function parameter) as the device index
+#define FF_U16_HEX_ROW_FN(fn_name, getter_expr)                                \
+  static int fn_name(char *m, int copied, int whichff)                          \
+  {                                                                               \
+    uint16_t val = (getter_expr);                                                \
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",       \
+                       ff_moni2c_addrs[whichff].name, val);                      \
+    return ff_table_append_row_end(m, copied, whichff);                          \
+  }
+// clang-format on
+
+// ff_table_abort_current: out-of-band signal from a row function to ff_table_print.
+//
+// Normally a row function returns normally and ff_table_print continues to the
+// next device. When a row function encounters a fatal per-device error (e.g. an
+// I2C read failure) it sets this flag to true before returning; ff_table_print
+// then resets the cursor and returns pdFALSE immediately, abandoning the rest
+// of the table rather than printing garbage for remaining devices.
+static bool ff_table_abort_current;
+
+// Firefly devices are laid out in the address table as interleaved Tx/Rx pairs.
+// To display them in two columns (Tx on the left, Rx on the right), Tx rows
+// are terminated with a tab instead of CRLF; the following Rx row then lands
+// on the same terminal line.
+static bool ff_table_is_tx(int whichff)
 {
-  int copied = 0;
-
-  static int whichff = 0;
-  // static int n = 0;
-
-  if (whichff == 0) {
-    // check for stale data
-    if (isFFStale()) {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
-  }
-
-  for (; whichff < NFIREFLIES; ++whichff) {
-    uint16_t val = get_FF_LOS_ALARM_data(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",
-                       ff_moni2c_addrs[whichff].name, val);
-    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 20) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-
-  if (whichff % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
-
-  return pdFALSE;
+  return strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL;
 }
 
-BaseType_t ff_ch_disable_status(int argc, char **argv, char *m)
+static int ff_table_append_row_end(char *m, int copied, int whichff)
 {
-  int copied = 0;
-
-  static int whichff = 0;
-
-  if (whichff == 0) {
-    // check for stale data
-    if (isFFStale()) {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY LOS ALARM:\r\n");
-  }
-
-  for (; whichff < NFIREFLIES; ++whichff) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
-                       ff_moni2c_addrs[whichff].name);
-    if (isEnabledFF(whichff)) {
-      uint16_t val = get_FF_CHANNEL_DISABLE_data(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
-    }
-    else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
-    }
-    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 20) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-
-  if (whichff % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
-
-  return pdFALSE;
+  if (ff_table_is_tx(whichff))
+    return copied + snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
+  return copied + snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
 }
 
-BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m)
+// Prepends a human-readable staleness warning to the output if the FireflyTask
+// monitoring loop has not updated the cached register values within the expected
+// window. isFFStale() returns the index of the stale monitoring group (non-zero
+// = stale), and getFFupdateTick() returns the tick count of its last update.
+static int ff_table_append_stale_warning(char *m, int copied, const char *name)
 {
-  int copied = 0;
-
-  static int whichff = 0;
-
-  if (whichff == 0) {
-    // check for stale data
-    if (isFFStale()) {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY CDR LOL ALARM:\r\n");
-  }
-
-  for (; whichff < NFIREFLIES; ++whichff) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
-                       ff_moni2c_addrs[whichff].name);
-    if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
-      uint16_t val = get_FF_CDR_LOL_ALARM_data(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
-    }
-    else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
-    }
-    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 30) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-  if (whichff % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
-  // n = 0;
-
-  return pdFALSE;
-}
-BaseType_t ff_cdr_enable_status(int argc, char **argv, char *m)
-{
-  int copied = 0;
-
-  static int whichff = 0;
-
-  if (whichff == 0) {
-    // check for stale data
-    if (isFFStale()) {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF CDR Enable:\r\n");
-  }
-
-  for (; whichff < NFIREFLIES; ++whichff) {
-    uint16_t val = get_FF_CDR_ENABLE_data(whichff);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",
-                       ff_moni2c_addrs[whichff].name, val);
-    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 20) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-
-  if (whichff % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
-
-  return pdFALSE;
-}
-
-BaseType_t ff_power_alarm_status(int argc, char **argv, char *m)
-{
-  int copied = 0;
-
-  static int whichff = 0;
-
-  if (whichff == 0) {
-    // check for stale data
-    if (isFFStale()) {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FIREFLY POWER ALARM:\r\n");
-  }
-
-  for (; whichff < NFIREFLIES; ++whichff) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
-    if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
-      uint16_t val0 = get_FF_POWER_ALARM_0_data(whichff);
-      uint16_t val1 = get_FF_POWER_ALARM_1_data(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x 0x%04x", val0, val1);
-    }
-    else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --        --");
-    }
-    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 30) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-  if (whichff % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
-  }
-  whichff = 0;
-
-  return pdFALSE;
-}
-
-BaseType_t ff_temp(int argc, char **argv, char *m)
-{
-  // argument handling
-  int copied = 0;
-
-  static int nn = 0;
-
-  if (nn == 0) {
-    // check for stale data
+  if (isFFStale()) {
     TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
+    TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+    int mins = (now - last) / 60;
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                       "%s: stale data, last update %d minutes ago\r\n", name, mins);
+  }
+  return copied;
+}
 
-    if (isFFStale()) {
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF Temperature:\r\n");
+// ff_table_print: generic paged table printer for firefly monitoring data.
+//
+// The CLI output buffer `m` is only SCRATCH_SIZE (1024) bytes. With up to
+// NFIREFLIES devices per table, a single call cannot always fit the entire
+// output. ff_table_print therefore acts as a coroutine: it fills `m` up to
+// `min_remaining` bytes from the end, saves its position in `*cursor`, and
+// returns pdTRUE to signal the CLI framework that more output is pending.
+// The framework calls the command handler again; the handler passes the same
+// `cursor` pointer and ff_table_print resumes from where it left off.
+// When all devices have been printed, `*cursor` is reset to 0 and pdFALSE
+// is returned so the framework knows the command is done.
+//
+// The two-column layout (Tx tab-separated from Rx) means that if we stop mid-
+// line (i.e. cursor is odd after the loop), we emit a trailing CRLF to avoid
+// leaving the terminal in a broken state.
+//
+// Parameters:
+//   m                    - output buffer (SCRATCH_SIZE bytes)
+//   stale_name           - command name used in the staleness warning prefix
+//   title                - header line emitted once at the start (*cursor == 0)
+//   cursor               - persistent position across calls; caller owns storage
+//   min_remaining        - stop adding rows when fewer than this many bytes remain
+//   include_stale_warning- whether to call ff_table_append_stale_warning on first call
+//   row_fn               - called once per device to format one table row
+static BaseType_t ff_table_print(char *m, const char *stale_name, const char *title,
+                                 int *cursor, int min_remaining, bool include_stale_warning,
+                                 ff_table_row_fn row_fn)
+{
+  int copied = 0;
+  ff_table_abort_current = false;
+
+  if (*cursor == 0) {
+    if (include_stale_warning)
+      copied = ff_table_append_stale_warning(m, copied, stale_name);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", title);
   }
 
-  for (; nn < NFIREFLIES; ++nn) {
-    if (isEnabledFF(nn)) {
-      uint8_t val = get_FF_TEMPERATURE_data(nn);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[nn].name, val);
+  for (; *cursor < NFIREFLIES; ++(*cursor)) {
+    copied = row_fn(m, copied, *cursor);
+    if (ff_table_abort_current) {
+      ff_table_abort_current = false;
+      *cursor = 0;
+      return pdFALSE;
     }
-    else // dummy value
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[nn].name, "--");
-    if ((SCRATCH_SIZE - copied) < 20) {
-      //++whichff;
+    if ((SCRATCH_SIZE - copied) < min_remaining) {
+      ++(*cursor);
       return pdTRUE;
     }
-    bool isTx = (strstr(ff_moni2c_addrs[nn].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
   }
-  nn = 0;
 
-  if (nn % 2 == 1) {
+  if (*cursor % 2 == 1) {
     m[copied++] = '\r';
     m[copied++] = '\n';
     m[copied] = '\0';
   }
-
+  *cursor = 0;
   return pdFALSE;
 }
+
+// The following blocks generate the simple alarm/status display commands.
+//
+// Each get_FF_*_data accessor is a macro defined in MonI2C_addresses.h that
+// dispatches between the F1 and F2 firefly banks based on the device index.
+// For example, get_FF_LOS_ALARM_data(which) expands to:
+//   (which < NFIREFLIES_F1) ? get_FF_F1_LOS_ALARM_data(which)
+//                           : get_FF_F2_LOS_ALARM_data(which - NFIREFLIES_F1)
+//
+// The F1 and F2 functions read from separate in-memory monitoring buffers that
+// are populated by the FireflyTask monitoring loop (MonitorTaskI2C.c). All
+// values are therefore cached; these commands never perform I2C transactions.
+//
+// Row functions (FF_U16_HEX_ROW_FN) — one per register of interest.
+// REV1 hardware exposes a smaller register set than REV2/REV3; the four
+// alarm registers below (TX fault, RX power, temperature alarm, VCC alarm) are
+// only present in REV2 and REV3 and are guarded accordingly.
+// clang-format off
+FF_U16_HEX_ROW_FN(ff_los_alarm_row,  get_FF_LOS_ALARM_data(whichff))  // Loss-of-signal per channel
+FF_U16_HEX_ROW_FN(ff_cdr_enable_row, get_FF_CDR_ENABLE_data(whichff)) // Clock/data recovery enable bits
+#if defined(REV2) || defined(REV3)
+FF_U16_HEX_ROW_FN(ff_tx_fault_alarm_row,    get_FF_TX_FAULT_ALARM_data(whichff))    // Transmitter fault flags
+FF_U16_HEX_ROW_FN(ff_rx_power_alarm_row,    get_FF_RX_POWER_ALARM_data(whichff))    // Received optical power alarm
+FF_U16_HEX_ROW_FN(ff_temperature_alarm_row, get_FF_TEMPERATURE_ALARM_data(whichff)) // On-device temperature alarm flag
+FF_U16_HEX_ROW_FN(ff_vcc_alarm_row,         get_FF_VCC3V3_ALARM_data(whichff))      // 3.3 V supply voltage alarm flag
+#endif // REV2 || REV3
+
+// Command functions (FF_TABLE_CMD) — one per CLI command, each paired with its row function above:
+FF_TABLE_CMD(ff_los_alarm, ff_los_alarm_row, "FIREFLY LOS ALARM:", 20, true)
+#if defined(REV2) || defined(REV3)
+FF_TABLE_CMD(ff_tx_fault_alarm,    ff_tx_fault_alarm_row,    "FIREFLY TX FAULT ALARM:",    20, true)
+FF_TABLE_CMD(ff_rx_power_alarm,    ff_rx_power_alarm_row,    "FIREFLY RX POWER ALARM:",    20, true)
+FF_TABLE_CMD(ff_temperature_alarm, ff_temperature_alarm_row, "FIREFLY TEMPERATURE ALARM:", 20, true)
+FF_TABLE_CMD(ff_vcc_alarm,         ff_vcc_alarm_row,         "FIREFLY VCC ALARM:",         20, true)
+#endif // REV2 || REV3
+// clang-format on
+
+static int ff_ch_disable_row(char *m, int copied, int whichff)
+{
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
+                     ff_moni2c_addrs[whichff].name);
+  if (isEnabledFF(whichff)) {
+    uint16_t val = get_FF_CHANNEL_DISABLE_data(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
+  }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
+  }
+  return ff_table_append_row_end(m, copied, whichff);
+}
+
+// ff_ch_disable_row has custom logic (prints "--" for disabled devices) so it is
+// written out explicitly above; only the boilerplate command wrapper is generated here.
+FF_TABLE_CMD(ff_ch_disable_status, ff_ch_disable_row, "FIREFLY CHANNEL DISABLE:", 20, true)
+
+static int ff_cdr_lol_alarm_row(char *m, int copied, int whichff)
+{
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
+                     ff_moni2c_addrs[whichff].name);
+  if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
+    uint16_t val = get_FF_CDR_LOL_ALARM_data(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
+  }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
+  }
+  return ff_table_append_row_end(m, copied, whichff);
+}
+
+// ff_cdr_lol_alarm_row and ff_power_alarm_row also have custom logic (they skip
+// non-25G devices) so their row functions are written explicitly; command wrappers only:
+FF_TABLE_CMD(ff_cdr_lol_alarm, ff_cdr_lol_alarm_row, "FIREFLY CDR LOL ALARM:", 30, true)
+FF_TABLE_CMD(ff_cdr_enable_status, ff_cdr_enable_row, "FF CDR Enable:", 20, true)
+
+static int ff_power_alarm_row(char *m, int copied, int whichff)
+{
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
+    uint16_t val0 = get_FF_POWER_ALARM_0_data(whichff);
+    uint16_t val1 = get_FF_POWER_ALARM_1_data(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x 0x%04x", val0, val1);
+  }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --        --");
+  }
+  return ff_table_append_row_end(m, copied, whichff);
+}
+
+FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:", 30, true)
+
+static int ff_temp_row(char *m, int copied, int whichff)
+{
+  if (isEnabledFF(whichff)) {
+    uint8_t val = get_FF_TEMPERATURE_data(whichff);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
+  }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
+  }
+  return ff_table_append_row_end(m, copied, whichff);
+}
+
+// ff_temp_row and ff_v3v3_row have custom formatting (decimal degrees / voltage
+// rather than hex) so they are written out explicitly; command wrappers only:
+FF_TABLE_CMD(ff_temp, ff_temp_row, "FF Temperature:", 20, true)
 
 // loop over all channels on all devices and show optical power
 BaseType_t ff_optpow(int argc, char **argv, char *m)
@@ -1001,107 +998,65 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 }
 
 // firefly 3.3V monitor dumper
-BaseType_t ff_v3v3(int argc, char **argv, char *m)
+static int ff_v3v3_row(char *m, int copied, int whichff)
 {
-  // argument handling
-  int copied = 0;
-
-  static int nn = 0;
-
-  if (nn == 0) {
-    // check for stale data
-    TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-
-    if (isFFStale()) {
-      TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
-      int mins = (now - last) / 60;
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
-                         "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
-    }
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "FF 3V3 Mon:\r\n");
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  if (isEnabledFF(whichff)) {
+    float val = (float)__builtin_bswap16(get_FF_VCC3V3_data(whichff)) * 100e-6f; // LSB is 100uV
+    int tens, frac;
+    float_to_ints(val, &tens, &frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "% 2d.%02d", tens, frac);
   }
-
-  for (; nn < NFIREFLIES; ++nn) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[nn].name);
-    if (isEnabledFF(nn)) {
-      float val = (float)__builtin_bswap16(get_FF_VCC3V3_data(nn)) * 100e-6f; // LSB is 100uV
-      int tens, frac;
-      float_to_ints(val, &tens, &frac);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "% 2d.%02d", tens, frac);
-    }
-    else // dummy value
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, " --- ");
-    bool isTx = (strstr(ff_moni2c_addrs[nn].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 50) {
-      return pdTRUE;
-    }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, " --- ");
   }
-  nn = 0;
+  return ff_table_append_row_end(m, copied, whichff);
+}
 
-  if (nn % 2 == 1) {
-    m[copied++] = '\r';
-    m[copied++] = '\n';
-    m[copied] = '\0';
+FF_TABLE_CMD(ff_v3v3, ff_v3v3_row, "FF 3V3 Mon:", 50, true)
+
+static int ff_dump_names_row(char *m, int copied, int whichff)
+{
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  if (isEnabledFF(whichff)) { // process if enabled
+    char name[FF_VENDOR_COUNT_FF12 + 1];
+    memset(name, '\0', FF_VENDOR_COUNT_FF12 + 1);
+    int type = FireflyType(whichff);
+    int startReg = FF_VENDOR_START_BIT_FFDAQ;
+    if (type == DEVICE_CERNB || type == DEVICE_25G12) {
+      startReg = FF_VENDOR_START_BIT_FF12;
+    }
+    int ret = 0;
+    for (unsigned char c = 0; c < FF_VENDOR_COUNT_FF12 / 4; ++c) { // read name 4 chars at a time
+      uint8_t v[4];
+      ret += read_arbitrary_ff_register(startReg + 4 * c, whichff, v, 4);
+      name[4 * c] = v[0];
+      name[4 * c + 1] = v[1];
+      name[4 * c + 2] = v[2];
+      name[4 * c + 3] = v[3];
+    }
+    if (ret != 0) {
+      ff_table_abort_current = true;
+      return copied + snprintf(m + copied, SCRATCH_SIZE - copied, "read failed\r\n");
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s", name);
   }
-
-  return pdFALSE;
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "--------------");
+  }
+  return ff_table_append_row_end(m, copied, whichff);
 }
 
 // this command takes no arguments
 BaseType_t ff_dump_names(int argc, char **argv, char *m)
 {
+  (void)argc;
   // ensure at compile-time that the vendor count is the same
   static_assert(FF_VENDOR_COUNT_FF12 == FF_VENDOR_COUNT_FFDAQ, "Vendor count mismatch");
   static int i = 0;
-  int copied = 0;
-  if (i == 0) { // not if we are on 2nd iteration
-    copied += snprintf(m, SCRATCH_SIZE, "%s: ID registers\r\n", argv[0]);
-  }
-  for (; i < NFIREFLIES; ++i) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[i].name);
-    if (isEnabledFF(i)) { // process if enabled
-
-      char name[FF_VENDOR_COUNT_FF12 + 1];
-      memset(name, '\0', FF_VENDOR_COUNT_FF12 + 1);
-      int type = FireflyType(i);
-      int startReg = FF_VENDOR_START_BIT_FFDAQ;
-      if (type == DEVICE_CERNB || type == DEVICE_25G12) {
-        startReg = FF_VENDOR_START_BIT_FF12;
-      }
-      int ret = 0;
-      for (unsigned char c = 0; c < FF_VENDOR_COUNT_FF12 / 4; ++c) { // read name 4 chars at a time
-        uint8_t v[4];
-        ret += read_arbitrary_ff_register(startReg + 4 * c, i, v, 4);
-        name[4 * c] = v[0];
-        name[4 * c + 1] = v[1];
-        name[4 * c + 2] = v[2];
-        name[4 * c + 3] = v[3];
-      }
-      if (ret != 0) {
-        snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
-        return pdFALSE;
-      }
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s", name);
-    }
-    else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "--------------");
-    }
-    bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 45 && (i < NFIREFLIES)) {
-      ++i;
-      return pdTRUE;
-    }
-  }
-  i = 0;
-  return pdFALSE;
+  char title[64];
+  snprintf(title, sizeof(title), "%s: ID registers", argv[0]);
+  return ff_table_print(m, argv[0], title, &i, 45, false, ff_dump_names_row);
 }
 
 // read the Firefly firmware register at address 111-113 on page 0. This
@@ -1109,37 +1064,29 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
 // on the 4x25G part.
 #define FF_FW_REG_ADDR 111
 #define FF_FW_REG_SIZE 3
+static int ff_fw_reg_row(char *m, int copied, int whichff)
+{
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  if (isEnabledFF(whichff) && FireflyType(whichff) != DEVICE_25G4) { // only read if enabled and if not 4x25G
+    uint8_t fw_reg[FF_FW_REG_SIZE];
+    int ret = read_arbitrary_ff_register(FF_FW_REG_ADDR, whichff, fw_reg, FF_FW_REG_SIZE);
+    if (ret != 0) {
+      ff_table_abort_current = true;
+      return copied + snprintf(m + copied, SCRATCH_SIZE - copied, "read failed\r\n");
+    }
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%02x%02x%02x", fw_reg[0], fw_reg[1], fw_reg[2]);
+  }
+  else {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "   ---   ");
+  }
+  return ff_table_append_row_end(m, copied, whichff);
+}
+
 BaseType_t ff_fw_reg(int argc, char **argv, char *m)
 {
-  int copied = 0;
+  (void)argc;
   static int whichff = 0;
-  if (whichff == 0) { // title only on first iteration
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Firmware registers\r\n", argv[0]);
-  }
-  for (; whichff < NFIREFLIES; ++whichff) { // loop over all fireflies
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
-    if (isEnabledFF(whichff) && FireflyType(whichff) != DEVICE_25G4) { // only read if enabled and if not 4x25G
-      uint8_t fw_reg[FF_FW_REG_SIZE];
-      int ret = read_arbitrary_ff_register(FF_FW_REG_ADDR, whichff, fw_reg, FF_FW_REG_SIZE);
-      if (ret != 0) {
-        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read failed\r\n", argv[0]);
-        return pdFALSE;
-      }
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%02x%02x%02x", fw_reg[0], fw_reg[1], fw_reg[2]);
-    }
-    else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "   ---   ");
-    }
-    bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL); // newline for Tx vs Rx formatting
-    if (isTx)
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-    else
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
-    if ((SCRATCH_SIZE - copied) < 30) {
-      ++whichff;
-      return pdTRUE;
-    }
-  }
-  whichff = 0;
-  return pdFALSE;
+  char title[64];
+  snprintf(title, sizeof(title), "%s: Firmware registers", argv[0]);
+  return ff_table_print(m, argv[0], title, &whichff, 30, false, ff_fw_reg_row);
 }
