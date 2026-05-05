@@ -287,16 +287,15 @@ static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int nu
 
   if (!isEnabledFF(num_ff)) { // skip the FF if it's not enabled via the FF config
     log_warn(LOG_SERVICE, "Skip writing to disabled FF %d\r\n", num_ff);
+    return -1;
   }
 
-  int ret = 0;
   int ret1 = write_ff_register(ff_moni2c_addrs[num_ff].name, regnumber, value, 1,
                                ff_i2c_device_for_index(num_ff));
   if (ret1) {
     log_warn(LOG_SERVICE, "%s: error %s\r\n", __func__, SMBUS_get_error(ret1));
-    ret += ret1;
   }
-  return ret;
+  return ret1;
 }
 
 // read a SINGLE firefly register, size bytes (up to 4 bytes)
@@ -691,7 +690,7 @@ FF_U16_HEX_ROW_FN(ff_vcc_alarm_row,         get_FF_VCC3V3_ALARM_data(whichff))  
 FF_TABLE_CMD(ff_los_alarm, ff_los_alarm_row, "FIREFLY LOS ALARM:", 20, true)
 #if defined(REV2) || defined(REV3)
 FF_TABLE_CMD(ff_tx_fault_alarm,    ff_tx_fault_alarm_row,    "FIREFLY TX FAULT ALARM:",    20, true)
-FF_TABLE_CMD(ff_rx_power_alarm,    ff_rx_power_alarm_row,    "FIREFLY RX FAULT ALARM:",    20, true)
+FF_TABLE_CMD(ff_rx_power_alarm,    ff_rx_power_alarm_row,    "FIREFLY RX POWER ALARM:",    20, true)
 FF_TABLE_CMD(ff_temperature_alarm, ff_temperature_alarm_row, "FIREFLY TEMPERATURE ALARM:", 20, true)
 FF_TABLE_CMD(ff_vcc_alarm,         ff_vcc_alarm_row,         "FIREFLY VCC ALARM:",         20, true)
 #endif // REV2 || REV3
