@@ -115,11 +115,15 @@ int TempStatus(void)
     return retval;
   }
   // FPGA
-  if (fpga_args.n_devices == 2) {
-    currentTemp[FPGA] = MAX(fpga_args.pm_values[0], fpga_args.pm_values[1]);
-  }
-  else {
-    currentTemp[FPGA] = fpga_args.pm_values[0];
+  // loop over the two FPGAs and take the max temp.
+  // we loop over all entries in the pm_values for fpga_args.
+  // Currently there are only FPGA temperatures here. If that 
+  // changes this will be wrong. 
+  currentTemp[FPGA] = -99.0f;
+  for (int i = 0; i < fpga_args.n_values; ++i) {
+    float thistemp = fpga_args.pm_values[i];
+    if (thistemp > currentTemp[FPGA])
+      currentTemp[FPGA] = thistemp;
   }
   excess_temp = currentTemp[FPGA] - getAlarmTemperature(FPGA);
   if (excess_temp > 0.f) {
