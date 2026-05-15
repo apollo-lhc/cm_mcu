@@ -117,8 +117,8 @@ int TempStatus(void)
   // FPGA
   // loop over the two FPGAs and take the max temp.
   // we loop over all entries in the pm_values for fpga_args.
-  // Currently there are only FPGA temperatures here. If that 
-  // changes this will be wrong. 
+  // Currently there are only FPGA temperatures here. If that
+  // changes this will be wrong.
   currentTemp[FPGA] = -99.0f;
   for (int i = 0; i < fpga_args.n_values; ++i) {
     float thistemp = fpga_args.pm_values[i];
