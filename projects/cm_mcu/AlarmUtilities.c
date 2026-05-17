@@ -110,21 +110,22 @@ int TempStatus(void)
     if (excess_temp > ALM_OVERTEMP_THRESHOLD)
       ++retval;
   }
-  // tests below here require the power to be on
-  if (getPowerControlState() != POWER_ON) {
-    return retval;
-  }
   // FPGA
   // loop over the two FPGAs and take the max temp.
   // we loop over all entries in the pm_values for fpga_args.
   // Currently there are only FPGA temperatures here. If that
-  // changes this will be wrong.
+  // changes this will be wrong. Can check the name of the 
+  // register in that case....
   currentTemp[FPGA] = -99.0f;
   for (int i = 0; i < fpga_args.n_values; ++i) {
     float thistemp = fpga_args.pm_values[i];
     if (thistemp > currentTemp[FPGA])
       currentTemp[FPGA] = thistemp;
   }
+  // now check the FPGA diode temperatures as measured by the ADC on the MCU
+  // these are always valid (MCU ADC readout)
+  currentTemp[FPGA] = MAX(currentTemp[FPGA], getADCvalue(ADC_INFO_F1_TEMP_ENTRY));
+  currentTemp[FPGA] = MAX(currentTemp[FPGA], getADCvalue(ADC_INFO_F2_TEMP_ENTRY));
   excess_temp = currentTemp[FPGA] - getAlarmTemperature(FPGA);
   if (excess_temp > 0.f) {
     status_T |= ALM_STAT_FPGA_OVERTEMP;
@@ -133,6 +134,10 @@ int TempStatus(void)
       ++retval;
   }
 
+  // tests below here require the power to be on
+  if (getPowerControlState() != POWER_ON) {
+    return retval;
+  }
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
   // if stale we ignore

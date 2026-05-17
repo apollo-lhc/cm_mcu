@@ -56,6 +56,8 @@ void InitTask(void *parameters);
 #define ADC_INFO_FPGA_VCC_FIN_CH  12
 #define ADC_INFO_CUR_INIT_CH      13
 #define ADC_INFO_CUR_FIN_CH       17
+#define ADC_INFO_F1_TEMP_ENTRY    18 // F1 diode temperature
+#define ADC_INFO_F2_TEMP_ENTRY    19 // F2 diode temperature
 #endif
 
 const char *const getADCname(int i);
