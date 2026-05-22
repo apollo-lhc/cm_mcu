@@ -153,18 +153,20 @@ int TempStatus(void)
   // if stale we ignore
   if (isFFStale())
     return retval;
-  BaseType_t imax_ff_temp = -99;
+  int16_t imax_ff_temp = -99;
   for (size_t i = 0; i < NFIREFLIES; ++i) {
-    int8_t v = getFFtemp(i);
+    int16_t v = getFFtemp(i);
     if (v > imax_ff_temp)
       imax_ff_temp = v;
   }
+  // keep a copy of current temp for external display, but do
+  // calculations in int.
   currentTemp[FF] = (float)imax_ff_temp;
-  excess_temp = currentTemp[FF] - getAlarmTemperature(FF);
-  if (excess_temp > 0.f) {
+  int16_t iexcess_temp = imax_ff_temp - getAlarmTemperature(FF);
+  if (iexcess_temp > 0 ) {
     status_T |= ALM_STAT_FIREFLY_OVERTEMP;
     retval++;
-    if (excess_temp > ALM_OVERTEMP_THRESHOLD)
+    if (iexcess_temp > ALM_OVERTEMP_THRESHOLD)
       ++retval;
   }
   return retval;
