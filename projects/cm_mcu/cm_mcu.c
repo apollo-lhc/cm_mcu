@@ -99,7 +99,9 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
 #elif defined(REV2) || defined(REV3)
-  UART0Init(g_ui32SysClock); // ZYNQ UART
+  UART0Init(g_ui32SysClock); // ZYNQ UART unidirectiona, push mon data to Zynq
+  UART7Init(g_ui32SysClock); // non-CLI command interface to Zynq.
+
 #endif
   UART4Init(g_ui32SysClock); // front panel UART in Rev1 and Zynq comms in Rev2
 

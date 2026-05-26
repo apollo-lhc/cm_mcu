@@ -24,6 +24,7 @@ extern StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer, xUART0Stream
 void UART0IntHandler(void);
 void UART1IntHandler(void);
 void UART4IntHandler(void);
+void UART7IntHandler(void);
 
 // SMBUs specific handler for I2C
 // extern tSMBus g_sSlave0;  // for I2C #0
