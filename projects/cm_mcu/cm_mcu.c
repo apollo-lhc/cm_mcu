@@ -30,6 +30,7 @@
 #include "MonUtils.h"
 #include "Tasks.h"
 #include "AlarmUtilities.h"
+#include "ZynqMonTask.h"
 
 // TI Includes
 #include "driverlib/rom.h"
@@ -287,22 +288,22 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 
 #if defined(REV2) || defined(REV3)
-  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 2 * configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTaskI2C, clk_args.name, 2 * configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTaskI2C, clk_args.name, configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
               NULL);
 
 #endif // REV2
-  xTaskCreate(MonitorTask, dcdc_args.name, 2 * configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, dcdc_args.name, configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
               NULL);
-  xTaskCreate(MonitorTask, fpga_args.name, 2 * configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
+  xTaskCreate(MonitorTask, fpga_args.name, configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
               NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(ZynqMonTask, "ZMON", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
               tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(GenericAlarmTask, "VALM", configMINIMAL_STACK_SIZE, &voltAlarmTask,
