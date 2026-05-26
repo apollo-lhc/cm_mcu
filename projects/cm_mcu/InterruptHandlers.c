@@ -88,6 +88,44 @@ void UART0IntHandler(void)
     documentation for the port in use for port specific instructions. */
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+// UART7. For now just copy received data to the Tx buffer.
+void UART7IntHandler(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  //
+  // Get the interrupt status.
+  //
+  uint32_t ui32Status = ROM_UARTIntStatus(UART7_BASE, true);
+
+  //
+  // Clear the asserted interrupts.
+  //
+  ROM_UARTIntClear(UART7_BASE, ui32Status);
+
+  //
+  // Loop while there are characters in the receive FIFO.
+  //
+  while (ROM_UARTCharsAvail(UART7_BASE)) {
+
+    uint8_t thebyte = (uint8_t)ROM_UARTCharGetNonBlocking(UART7_BASE);
+    // echo the byte back
+    ROM_UARTCharPutNonBlocking(UART7_BASE, thebyte);
+  }
+ 
+  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
+    xStreamBufferReceiveFromISR() then a task that has a priority above the
+    priority of the currently executing task was unblocked and a context
+    switch should be performed to ensure the ISR returns to the unblocked
+    task.  In most FreeRTOS ports this is done by simply passing
+    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
+    variables value, and perform the context switch if necessary.  Check the
+    documentation for the port in use for port specific instructions. */
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+
+
 #endif
 
 #if defined(REV1)
