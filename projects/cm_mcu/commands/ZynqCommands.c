@@ -10,6 +10,7 @@
 #include "commands/parameters.h"
 #include "Tasks.h"
 #include "projdefs.h"
+#include "ZynqMonTask.h"
 
 BaseType_t zmon_ctl(int argc, char **argv, char *m)
 {
