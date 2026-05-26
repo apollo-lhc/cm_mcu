@@ -20,104 +20,46 @@
 #include "FreeRTOS.h"
 #endif // USE_FREERTOS
 
-// Initialize the UART(s)
-// It is hard to generalize these initialization functions as they use
-// a bunch of #define's that are not iterable
-// UART4 is the front panel
-void UART4Init(uint32_t ui32SysClock)
+static void UARTInitCommon(uint32_t periph, uint32_t base, uint32_t intNum,
+                            uint32_t sysClock, bool enableRxInts)
 {
-  // Turn on the UART peripheral
-  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART4);
-
-  //
-  // Configure the UART for 115,200, 8-N-1 operation.
-  //
-  MAP_UARTConfigSetExpClk(UART4_BASE, ui32SysClock, 115200,
-                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
-
-  // In REV1, UART4 is the front-panel CLI and needs RX interrupts.
-  // In REV2/3, UART4 is TX-only (ZynqMon); no handler is installed in the
-  // vector table, so enabling RX/RT interrupts would call IntDefaultHandler
-  // on any received character or noise. Only enable interrupts in REV1.
-#ifdef REV1
+  MAP_SysCtlPeripheralEnable(periph);
+  MAP_UARTConfigSetExpClk(base, sysClock, 115200,
+                          UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
+  if (enableRxInts) {
 #ifdef USE_FREERTOS
-  MAP_IntPrioritySet(INT_UART4, configKERNEL_INTERRUPT_PRIORITY);
+    MAP_IntPrioritySet(intNum, configKERNEL_INTERRUPT_PRIORITY);
 #endif // USE_FREERTOS
-  MAP_IntEnable(INT_UART4);
-  MAP_UARTIntEnable(UART4_BASE, UART_INT_RX | UART_INT_RT);
-#endif // REV1
-
-  return;
-}
-
-// UART1 is the Zynq
-void UART1Init(uint32_t ui32SysClock)
-{
-  // Turn on the UART peripheral
-  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
-
-  //
-  // Configure the UART for 115,200, 8-N-1 operation.
-  //
-  MAP_UARTConfigSetExpClk(UART1_BASE, ui32SysClock, 115200,
-                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
-
-  //
-  // Enable the UART interrupt.
-  //
-#ifdef USE_FREERTOS
-  MAP_IntPrioritySet(INT_UART1, configKERNEL_INTERRUPT_PRIORITY);
-#endif // USE_FREERTOS
-  MAP_IntEnable(INT_UART1);
-  MAP_UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
-
-  return;
+    MAP_IntEnable(intNum);
+    MAP_UARTIntEnable(base, UART_INT_RX | UART_INT_RT);
+  }
 }
 
 void UART0Init(uint32_t ui32SysClock)
 {
-  // Turn on the UART peripheral
-  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+  UARTInitCommon(SYSCTL_PERIPH_UART0, UART0_BASE, INT_UART0, ui32SysClock, true);
+}
 
-  //
-  // Configure the UART for 115,200, 8-N-1 operation.
-  //
-  MAP_UARTConfigSetExpClk(UART0_BASE, ui32SysClock, 115200,
-                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+void UART1Init(uint32_t ui32SysClock)
+{
+  UARTInitCommon(SYSCTL_PERIPH_UART1, UART1_BASE, INT_UART1, ui32SysClock, true);
+}
 
-  //
-  // Enable the UART interrupt.
-  //
-#ifdef USE_FREERTOS
-  MAP_IntPrioritySet(INT_UART0, configKERNEL_INTERRUPT_PRIORITY);
-#endif // USE_FREERTOS
-  MAP_IntEnable(INT_UART0);
-  MAP_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
-
-  return;
+// UART4 is the front panel in REV1, TX-only ZynqMon output in REV2/3.
+// No RX interrupt handler is installed in REV2/3, so RX interrupts must not
+// be enabled there or any received character would call IntDefaultHandler.
+void UART4Init(uint32_t ui32SysClock)
+{
+#ifdef REV1
+  UARTInitCommon(SYSCTL_PERIPH_UART4, UART4_BASE, INT_UART4, ui32SysClock, true);
+#else
+  UARTInitCommon(SYSCTL_PERIPH_UART4, UART4_BASE, INT_UART4, ui32SysClock, false);
+#endif
 }
 
 void UART7Init(uint32_t ui32SysClock)
 {
-  // Turn on the UART peripheral
-  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART7);
-
-  //
-  // Configure the UART for 115,200, 8-N-1 operation.
-  //
-  MAP_UARTConfigSetExpClk(UART7_BASE, ui32SysClock, 115200,
-                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
-
-  //
-  // Enable the UART interrupt.
-  //
-#ifdef USE_FREERTOS
-  MAP_IntPrioritySet(INT_UART7, configKERNEL_INTERRUPT_PRIORITY);
-#endif // USE_FREERTOS
-  MAP_IntEnable(INT_UART7);
-  MAP_UARTIntEnable(UART7_BASE, UART_INT_RX | UART_INT_RT);
-
-  return;
+  UARTInitCommon(SYSCTL_PERIPH_UART7, UART7_BASE, INT_UART7, ui32SysClock, true);
 }
 
 
@@ -127,24 +69,15 @@ void UART7Init(uint32_t ui32SysClock)
 //
 //*****************************************************************************
 
-void UART4Print(const char *str)
-{
-  size_t size = strlen(str);
-  for (int i = 0; i < size; ++i) {
-    //
-    // Write the next character to the UART.
-    //
-    MAP_UARTCharPut(UART4_BASE, str[i]);
-  }
-}
-
 void UARTPrint(uint32_t uart_base, const char *str)
 {
   size_t size = strlen(str);
   for (int i = 0; i < size; ++i) {
-    //
-    // Write the next character to the UART.
-    //
     MAP_UARTCharPut(uart_base, str[i]);
   }
+}
+
+void UART4Print(const char *str)
+{
+  UARTPrint(UART4_BASE, str);
 }
