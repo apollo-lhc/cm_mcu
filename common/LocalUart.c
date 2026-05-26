@@ -97,6 +97,30 @@ void UART0Init(uint32_t ui32SysClock)
   return;
 }
 
+void UART7Init(uint32_t ui32SysClock)
+{
+  // Turn on the UART peripheral
+  MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART7);
+
+  //
+  // Configure the UART for 115,200, 8-N-1 operation.
+  //
+  MAP_UARTConfigSetExpClk(UART7_BASE, ui32SysClock, 115200,
+                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+
+  //
+  // Enable the UART interrupt.
+  //
+#ifdef USE_FREERTOS
+  MAP_IntPrioritySet(INT_UART7, configKERNEL_INTERRUPT_PRIORITY);
+#endif // USE_FREERTOS
+  MAP_IntEnable(INT_UART7);
+  MAP_UARTIntEnable(UART7_BASE, UART_INT_RX | UART_INT_RT);
+
+  return;
+}
+
+
 //*****************************************************************************
 //
 // Send a string to the UART4

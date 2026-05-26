@@ -15,6 +15,7 @@
 void UART0Init(uint32_t ui32SysClock);
 void UART1Init(uint32_t ui32SysClock);
 void UART4Init(uint32_t ui32SysClock);
+void UART7Init(uint32_t ui32SysClock);
 
 //*****************************************************************************
 //
