@@ -35,8 +35,8 @@
 //
 //*****************************************************************************
 
-// This file was automatically generated on 9/7/2021 at 4:35:13 PM
-// by TI PinMux version 1.9.0+2015
+// This file was automatically generated on 5/26/2026 at 10:38:36 AM
+// by TI PinMux version 1.27.1+4634
 //
 //*****************************************************************************
 
@@ -47,6 +47,7 @@
 #include "inc/hw_types.h"
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
+#include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/sysctl.h"
 #include "pinout.h"
@@ -260,7 +261,6 @@ void PinoutSet(void)
   // for GPIO_PH1
   //
   MAP_GPIOPinTypeGPIOInput(GPIO_PORTH_BASE, GPIO_PIN_1);
-  MAP_GPIOPadConfigSet(GPIO_PORTH_BASE, GPIO_PIN_1, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
 
   //
   // Configure the GPIO Pin Mux for PH2
@@ -639,6 +639,20 @@ void PinoutSet(void)
   //
   MAP_GPIOPinConfigure(GPIO_PA3_U4TX);
   MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_3);
+
+  //
+  // Configure the GPIO Pin Mux for PC4
+  // for U7RX
+  //
+  MAP_GPIOPinConfigure(GPIO_PC4_U7RX);
+  MAP_GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_4);
+
+  //
+  // Configure the GPIO Pin Mux for PC5
+  // for U7TX
+  //
+  MAP_GPIOPinConfigure(GPIO_PC5_U7TX);
+  MAP_GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_5);
 }
 
 //*****************************************************************************

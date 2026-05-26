@@ -15,6 +15,7 @@
 | UART1 | PB1 (U1TX) | PB0 (U1RX) | 115200 | `ZQ_UART` — Zynq-facing CLI | — (PB0/1 reassigned to I2C5) |
 | UART3 | PA5 (U3TX) | PA4 (U3RX) | — | — (PA4/5 are GPIO outputs) | pins muxed in `pinout_rev2.c` but peripheral **not initialized** |
 | UART4 | PA3 (U4TX) | PA2 (U4RX) | 115200 | `FP_UART` — front-panel CLI (RX+RT interrupts, `UART4IntHandler`) | `ZynqMonTask` TX-only polling output to Zynq — **no RX interrupts enabled** (see note) |
+| UART7 | PC5 (U7TX) | PC4 (U7RX) | 115200 | - | `ZC_UART` -- Zynq-facing control channel |
 
 UART0 (REV2/3), UART1 (REV1), and UART4 (REV1) have RX+RT interrupts enabled with handlers in `InterruptHandlers.c`. In REV2/3, `FP_UART` is not defined and UART4 RX+RT interrupts are **not** enabled — UART4 is TX-only via `ROM_UARTCharPut` (blocking poll), so no interrupt handler is needed. The vector table has `IntDefaultHandler` for UART4 in REV2/3; enabling RX interrupts there would cause a system hang on any received byte or line noise, since `IntDefaultHandler` loops forever. PA2 (U4RX) is physically unconnected in REV2/3, so the UART RX input sits idle-high and no interrupt is ever generated in practice.
 
