@@ -64,8 +64,10 @@ BaseType_t stack_ctl(int argc, char **argv, char *m)
 
 BaseType_t mem_ctl(int argc, char **argv, char *m)
 {
-  size_t heapSize = xPortGetFreeHeapSize();
-  snprintf(m, SCRATCH_SIZE, "heap: %u bytes\r\n", heapSize);
+  size_t heapFree = xPortGetFreeHeapSize();
+  size_t heapMin = xPortGetMinimumEverFreeHeapSize();
+  snprintf(m, SCRATCH_SIZE, "heap: %u free, %u min free (peak usage %u)\r\n",
+           heapFree, heapMin, configTOTAL_HEAP_SIZE - heapMin);
   return pdFALSE;
 }
 

@@ -141,12 +141,20 @@ MonI2C_addresses.c: ${MONI2C_YAML_FILES}
 	fi
 	@python ${ROOT}/sm_cm_config/src/mon_generate.py -o $@ ${MONI2C_YAML_FILES}
 
-
 # these rules are required to force the generation of the ZynqMon_addresses.c
 # and .h file. The second one depends on the .h file only, but putting that
 # in as a target causes the rule above to be called 2x. So we lie to make.
-${COMPILER}/ZynqMon_addresses.o: ZynqMon_addresses.c 
+${COMPILER}/ZynqMon_addresses.o: ZynqMon_addresses.c
 ${COMPILER}/ZynqMonTask.o: ZynqMon_addresses.c
+${COMPILER}/cm_mcu.o: ZynqMon_addresses.c
+${COMPILER}/ZynqCommands.o: ZynqMon_addresses.c
+
+# Same pattern for MonI2C_addresses: mon_generate.py produces both .c and .h,
+# so any .o that includes MonI2C_addresses.h must wait for the generator.
+${COMPILER}/ZynqMonTask.o: MonI2C_addresses.c
+${COMPILER}/MonUtils.o: MonI2C_addresses.c
+${COMPILER}/FireflyUtils.o: MonI2C_addresses.c
+${COMPILER}/FireflyCommands.o: MonI2C_addresses.c
 #
 # Rules for building the project
 # 

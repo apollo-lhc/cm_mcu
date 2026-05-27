@@ -29,10 +29,10 @@
 
 #include "Tasks.h"
 #include "MonitorTask.h"
-#include "clocksynth.h"
 #include "common/log.h"
 
 #include "ZynqMon_addresses.h"
+#include "ZynqMonTask.h"
 
 // Rev 2
 // this was split into a SoftUART version (Rev1) and a hard UART version (Rev2+)

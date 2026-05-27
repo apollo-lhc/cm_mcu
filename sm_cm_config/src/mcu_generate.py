@@ -48,7 +48,7 @@ with open(args.output, 'w', encoding="ascii") as fout:
     print(f"// Generated: {timestamp}", file=fout)
     print(r"//", file=fout)
 
-    print("#include \"Tasks.h\"", file=fout)
+    print("#include \"ZynqMonTask.h\"", file=fout)
     # include the header file we will write later
     print(f"#include \"{header_fname}\"", file=fout)
 
