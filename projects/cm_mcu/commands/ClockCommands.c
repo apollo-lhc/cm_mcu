@@ -108,7 +108,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
                        fpga + 1, test);
     // set up which input from clocks to use (R0A or R0B)
   }
-  char *names[] = {
+  static const char *names[] = {
       "rw0", "rw1", "clk_200_ext", "lhc_clk", "tcds40_clk", "rt_x4_r0_clk",
       "rt_x12_r0_clk", "lf_x4_r0_clk", "lf_x12_r0_clk", "clk_100", "clk_325",
       "rt_r0_p", "rt_r0_n", "rt_r0_l", "rt_r0_i", "rt_r0_g", "rt_r0_e", "rt_r0_b",
@@ -117,7 +117,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       "lf_r1_y", "lf_r1_w", "lf_r1_u", "lf_r1_r", "lf_r1_af", "lf_r1_ad", "lf_r1_ab"};
 
   // these values are from Table 2 of the Rev3 Synthesizer testing document. This corresponds to step 1.1.1
-  const uint32_t EXPECTED_FREQ_R0A_F1[] = {
+  static const uint32_t EXPECTED_FREQ_R0A_F1[] = {
       0, 0, 200000000, 40000000, 55000000, 280000000, 160000000,
       150000000, 300000000, 100000000, 325000000, 280000000, 160000000,
       200000000, 160000000, 280000000, 160000000, 160000000, 300000000,
@@ -126,7 +126,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       155000000, 163000000, 312000000, 176000000, 296000000, 168000000,
       132000000, 220000000};
 
-  const uint32_t EXPECTED_FREQ_R0A_F2[] = {
+  static const uint32_t EXPECTED_FREQ_R0A_F2[] = {
       0, 0, 200000000, 40000000, 55000000, 140000000, 320000000,
       130000000, 260000000, 100000000, 325000000, 140000000, 320000000,
       200000000, 320000000, 140000000, 320000000, 320000000, 260000000,
@@ -135,7 +135,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       310000000, 134000000, 336000000, 326000000, 268000000, 156000000,
       148000000, 110000000};
   // these values are from Table 2 of the Rev3 Synthesizer testing document. This corresponds to step 1.1.3
-  const uint32_t EXPECTED_FREQ_R0B_F1[] = {
+  static const uint32_t EXPECTED_FREQ_R0B_F1[] = {
       0, 0, 200000000, 40000000, 55000000, 270000000, 155000000,
       145000000, 290000000, 100000000, 325000000, 270000000, 155000000,
       200000000, 155000000, 270000000, 155000000, 155000000, 290000000,
@@ -144,7 +144,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       155000000, 163000000, 312000000, 176000000, 296000000, 168000000,
       132000000, 220000000};
 
-  const uint32_t EXPECTED_FREQ_R0B_F2[] = {
+  static const uint32_t EXPECTED_FREQ_R0B_F2[] = {
       0, 0, 200000000, 40000000, 55000000, 135000000, 310000000,
       125000000, 250000000, 100000000, 325000000, 135000000, 310000000,
       200000000, 310000000, 135000000, 310000000, 310000000, 250000000,
