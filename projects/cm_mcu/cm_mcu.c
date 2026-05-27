@@ -135,7 +135,7 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   initI2C6(g_ui32SysClock); // controller for FPGAs
 #elif defined(REV2) || defined(REV3)
-  initI2C5(g_ui32SysClock); // controller for FPGAs
+  initI2C5(g_ui32SysClock);  // controller for FPGAs
 #endif
 
   // smbus
@@ -279,35 +279,27 @@ __attribute__((noreturn)) int main(void)
     fpga_args.pm_values[i] = -999.f;
 
   // start the tasks here
-  xTaskCreate(PowerSupplyTask, "POW", 2 * configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(LedTask, "LED", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
-  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(PowerSupplyTask, "POW", 384, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(LedTask, "LED", 128, NULL, tskIDLE_PRIORITY + 2, NULL);
+  xTaskCreate(vCommandLineTask, "CLIZY", 384, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
 #ifdef REV1
-  xTaskCreate(vCommandLineTask, "CLIFP", 512, &cli_uart4, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(vCommandLineTask, "CLIFP", 384, &cli_uart4, tskIDLE_PRIORITY + 4, NULL);
 #endif // REV1
-  xTaskCreate(ADCMonitorTask, "ADC", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(ADCMonitorTask, "ADC", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
 
 #if defined(REV2) || defined(REV3)
-  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorTaskI2C, clk_args.name, configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4,
-              NULL);
-
+  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(MonitorTaskI2C, clk_args.name, configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 4, NULL);
 #endif // REV2
-  xTaskCreate(MonitorTask, dcdc_args.name, configMINIMAL_STACK_SIZE, &dcdc_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(MonitorTask, fpga_args.name, configMINIMAL_STACK_SIZE, &fpga_args, tskIDLE_PRIORITY + 4,
-              NULL);
-  xTaskCreate(I2CSlaveTask, "I2CS0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(EEPROMTask, "EPRM", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(MonitorTask, dcdc_args.name, 192, &dcdc_args, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(MonitorTask, fpga_args.name, 192, &fpga_args, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(I2CSlaveTask, "I2CS0", 192, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(ZynqMonTask, "ZMON", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(GenericAlarmTask, "TALM", configMINIMAL_STACK_SIZE, &tempAlarmTask,
-              tskIDLE_PRIORITY + 5, NULL);
-  xTaskCreate(GenericAlarmTask, "VALM", configMINIMAL_STACK_SIZE, &voltAlarmTask,
-              tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", 192, NULL, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(GenericAlarmTask, "TALM", 192, &tempAlarmTask, tskIDLE_PRIORITY + 5, NULL);
+  xTaskCreate(GenericAlarmTask, "VALM", 192, &voltAlarmTask, tskIDLE_PRIORITY + 5, NULL);
   //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------
