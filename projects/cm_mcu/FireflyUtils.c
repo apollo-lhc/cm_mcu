@@ -47,7 +47,7 @@ void setFFmask(uint32_t ff_combined_present)
 #ifdef REV1
   uint32_t data = (~ff_combined_present) & 0x1FFFFFFU;
 #elif defined(REV2) || defined(REV3) // TODO: check
-  uint32_t data = (ff_combined_present)&0xFFFFFU;
+  uint32_t data = (ff_combined_present) & 0xFFFFFU;
 #endif                               // REV1
   ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
   ff_PRESENT_mask = data;
@@ -205,10 +205,10 @@ void readFFpresent(void)
   ff_bitmask_args[3].present_bit_mask = (~present_FFL4_F2_bar) & 0xFU;   // 4 bits
   ff_bitmask_args[2].present_bit_mask = (~present_FFL12_F2_bar) & 0x3FU; // 6 bits
 #elif defined(REV3)
-  present_FFL12_F1_bar = present_FFL12_F1_bar & 0xFFU;             // bottom 8 bits
-  present_FFL12_F2_bar = present_FFL12_F2_bar & 0xFFU;             // bottom 8 bits
-  present_FFL4_F1_bar = (present_FFL4_F1_bar >> 2) & 0x3U;         // bits 2-3
-  present_FFL4_F2_bar = (present_FFL4_F2_bar >> 2) & 0x3U;         // bits 2-3
+  present_FFL12_F1_bar = present_FFL12_F1_bar & 0xFFU;     // bottom 8 bits
+  present_FFL12_F2_bar = present_FFL12_F2_bar & 0xFFU;     // bottom 8 bits
+  present_FFL4_F1_bar = (present_FFL4_F1_bar >> 2) & 0x3U; // bits 2-3
+  present_FFL4_F2_bar = (present_FFL4_F2_bar >> 2) & 0x3U; // bits 2-3
 
   // active low
   uint32_t ff_combined_present_bar = ((present_FFL4_F2_bar) << 18) |  // 2 bits

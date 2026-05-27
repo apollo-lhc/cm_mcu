@@ -1,8 +1,18 @@
 # CLAUDE.md — Apollo Command Module MCU Firmware
 
+## Our interactions
+
+* Research FIRST, then advise. Always web-search before giving product-specific advice, pricing, or recommendations. Your training data goes stale. Today's answer matters immensely!
+* Challenge my reasoning instead of validating it. If my approach has a flaw, say so. 
+* When there's a tradeoff, present options with evidence and let me decide. Don't silently pick the easy path.
+* If there's a known issue, raise it. "Good enough" is not good enough.
+* If you're unsure about something, say so. DO NOT guess or fabricate.
+* If my request is ambiguous, clarify before proceeding.
+* Be concise. Don't explain basics I already know.
+
 ## Project Overview
 
-This repository contains bare-metal firmware for the **Apollo command module**, targeting the **TI Tiva TM4C1290NCPDT** (ARM Cortex-M4F with FPU, 80 MHz). The firmware manages power sequencing, temperature/voltage monitoring, I2C communication, and FPGA/Firefly control for high-energy physics detector readout systems.
+This repository contains bare-metal firmware for the **Apollo command module**, targeting the **TI Tiva TM4C1290NCPDT** (ARM Cortex-M4F with FPU, 80 MHz). The firmware manages power sequencing, temperature/voltage monitoring, I2C communication, and FPGA/Firefly control for high-energy physics detector readout systems. It controls low-level functionality of the command module of an ATCA blade. The blade is to be used at the HL-LHC.
 
 ## Hardware
 
@@ -18,11 +28,11 @@ This repository contains bare-metal firmware for the **Apollo command module**, 
 - **Compiler**: `arm-none-eabi-gcc` 13.2.Rel1 — download from ARM, do **not** use the distribution-provided version (usually too old)
 - **Build System**: Make
 - **Version Control**: Git (with submodule support)
-- **Optional IDE**: Eclipse with GNU MCU Eclipse plugin
+- **Optional IDE**: Eclipse with GNU MCU Eclipse plugin or VS Code
 
 ### Platform Support
 
-- **Fully Supported**: Linux (RHEL7/SC7), macOS
+- **Fully Supported**: Linux (ALMA9), macOS
 - **Experimental**: Windows via WSL (recommended) or Cygwin (requires `make clean` between builds)
 
 ## Build
