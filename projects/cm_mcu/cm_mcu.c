@@ -281,7 +281,7 @@ __attribute__((noreturn)) int main(void)
   // start the tasks here
   xTaskCreate(PowerSupplyTask, "POW", 384, NULL, tskIDLE_PRIORITY + 5, NULL);
   xTaskCreate(LedTask, "LED", 128, NULL, tskIDLE_PRIORITY + 2, NULL);
-  xTaskCreate(vCommandLineTask, "CLIZY", 384, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 4, NULL);
 #ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 384, &cli_uart4, tskIDLE_PRIORITY + 4, NULL);
 #endif // REV1
