@@ -147,6 +147,8 @@ MonI2C_addresses.c: ${MONI2C_YAML_FILES}
 ${COMPILER}/ZynqMon_addresses.o: ZynqMon_addresses.c
 ${COMPILER}/ZynqMonTask.o: ZynqMon_addresses.c
 ${COMPILER}/cm_mcu.o: ZynqMon_addresses.c
+${COMPILER}/ZynqCommands.o: ZynqMon_addresses.c
+
 # Same pattern for MonI2C_addresses: mon_generate.py produces both .c and .h,
 # so any .o that includes MonI2C_addresses.h must wait for the generator.
 ${COMPILER}/ZynqMonTask.o: MonI2C_addresses.c
