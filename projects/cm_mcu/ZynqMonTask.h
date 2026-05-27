@@ -21,8 +21,6 @@
 #define ZYNQMON_TEST_SEND_ONE    0x6
 #define ZYNQMON_TEST_RAW         0x7
 
-
-
 extern QueueHandle_t xZynqMonQueue;
 void ZynqMonTask(void *parameters);
 // data for zynqmon task to be sent to Zynq
