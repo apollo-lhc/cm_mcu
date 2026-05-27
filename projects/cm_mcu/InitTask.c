@@ -60,7 +60,7 @@ void InitTask(void *parameters)
   }
   xQueueSendToBack(xLedQueue, &LED_STATUS_NORMAL, pdMS_TO_TICKS(10));
 
-  vTaskSuspend(NULL);
   // Delete this task
-  vTaskDelete(xTaskGetCurrentTaskHandle());
+  vTaskDelete(NULL);
+  __builtin_unreachable();
 }
