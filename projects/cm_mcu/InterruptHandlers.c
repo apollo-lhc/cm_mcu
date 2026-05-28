@@ -9,12 +9,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <string.h>
-
 #include "InterruptHandlers.h"
 
 // local includes
-#include "common/LocalUart.h"
 #include "common/utils.h"
 #include "common/power_ctl.h"
 #include "common/i2c_reg.h"
@@ -194,72 +191,47 @@ volatile tSMBusStatus eStatus5 = SMBUS_OK;
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
 TaskHandle_t TaskNotifySMBus[10] = {NULL}; // indexed same as pSMBus[]
+static void SMBusMasterIntHandlerCore(uint8_t device, tSMBus *master, volatile tSMBusStatus *status)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  *status = SMBusMasterIntProcess(master);
+  if (SMBusStatusGet(master) != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[device] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[device], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[device] = NULL;
+  }
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
 
 // SMBUs specific handler for I2C
 void SMBusMasterIntHandler1(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
-  if (eStatus1 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[1] != NULL) {
-    vTaskNotifyGiveFromISR(TaskNotifySMBus[1], &xHigherPriorityTaskWoken);
-    TaskNotifySMBus[1] = NULL;
-  }
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(1, &g_sMaster1, &eStatus1);
 }
 
 void SMBusMasterIntHandler2(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  eStatus2 = SMBusMasterIntProcess(&g_sMaster2);
-  if (eStatus2 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[2] != NULL) {
-    vTaskNotifyGiveFromISR(TaskNotifySMBus[2], &xHigherPriorityTaskWoken);
-    TaskNotifySMBus[2] = NULL;
-  }
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(2, &g_sMaster2, &eStatus2);
 }
 
 void SMBusMasterIntHandler3(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  eStatus3 = SMBusMasterIntProcess(&g_sMaster3);
-  if (eStatus3 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[3] != NULL) {
-    vTaskNotifyGiveFromISR(TaskNotifySMBus[3], &xHigherPriorityTaskWoken);
-    TaskNotifySMBus[3] = NULL;
-  }
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(3, &g_sMaster3, &eStatus3);
 }
 
 void SMBusMasterIntHandler4(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  eStatus4 = SMBusMasterIntProcess(&g_sMaster4);
-  if (eStatus4 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[4] != NULL) {
-    vTaskNotifyGiveFromISR(TaskNotifySMBus[4], &xHigherPriorityTaskWoken);
-    TaskNotifySMBus[4] = NULL;
-  }
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(4, &g_sMaster4, &eStatus4);
 }
 
 void SMBusMasterIntHandler5(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  eStatus5 = SMBusMasterIntProcess(&g_sMaster5);
-  if (eStatus5 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[5] != NULL) {
-    vTaskNotifyGiveFromISR(TaskNotifySMBus[5], &xHigherPriorityTaskWoken);
-    TaskNotifySMBus[5] = NULL;
-  }
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(5, &g_sMaster5, &eStatus5);
 }
 
 void SMBusMasterIntHandler6(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  eStatus6 = SMBusMasterIntProcess(&g_sMaster6);
-  if (eStatus6 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[6] != NULL) {
-    vTaskNotifyGiveFromISR(TaskNotifySMBus[6], &xHigherPriorityTaskWoken);
-    TaskNotifySMBus[6] = NULL;
-  }
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(6, &g_sMaster6, &eStatus6);
 }
 
 // Stores the handle of the task that will be notified when the

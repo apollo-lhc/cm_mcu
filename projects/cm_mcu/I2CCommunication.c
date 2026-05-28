@@ -43,13 +43,19 @@ volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus
 
 #define I2C_TIMEOUT_MS 250
 
+static void i2c_arm_notify_slot(uint8_t device)
+{
+  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+}
+
 static void i2c_wait_for_transfer(uint8_t device)
 {
   // Caller must have already set TaskNotifySMBus[device]
   if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(I2C_TIMEOUT_MS)) == 0) {
     // timeout — no notification arrived
+    *eStatus[device] = SMBUS_TIMEOUT;
     TaskNotifySMBus[device] = NULL;
-    log_warn(LOG_I2C, "transfer stuck\r\n");
+    log_warn(LOG_I2C, "transfer stuck, dev %d\r\n", device);
   }
 }
 
@@ -60,11 +66,12 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
 
   configASSERT(p_sMaster != NULL);
 
-  memset(data, 0, nbytes * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
-  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+  memset(data, 0, nbytes * sizeof(data[0]));
+
+  i2c_arm_notify_slot(device);
 
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the read was successfully initiated
@@ -74,6 +81,12 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+  }
+  if (r != SMBUS_OK) {
+    log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
+  }
+  else {
+    log_debug(LOG_I2C, "dev %d read success 0x%0*X\r\n", device, nbytes * 2, data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24));
   }
   return r;
 }
@@ -92,7 +105,10 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   }
   uint8_t data[MAX_BYTES];
 
-  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+  if (nbytes > MAX_BYTES)
+    nbytes = MAX_BYTES;
+
+  i2c_arm_notify_slot(device);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, reg_address, nbytes_addr, data, nbytes);
   if (r == SMBUS_OK) { // the WriteRead was successfully initiated
@@ -108,6 +124,12 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   nbytes = (nbytes > MAX_BYTES) ? MAX_BYTES : nbytes;
   for (int i = 0; i < nbytes; ++i) {
     *packed_data |= data[i] << (i * 8);
+  }
+  if (r != SMBUS_OK) {
+    log_error(LOG_I2C, "dev %d reg read fail %s\r\n", device, SMBUS_get_error(r));
+  }
+  else {
+    log_debug(LOG_I2C, "dev %d reg read success 0x%0*X\r\n", device, nbytes * 2, *packed_data);
   }
   return r;
 }
@@ -134,7 +156,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   if (nbytes > MAX_BYTES + nbytes_addr)
     nbytes = MAX_BYTES + nbytes_addr;
 
-  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+  i2c_arm_notify_slot(device);
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
@@ -143,9 +165,15 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
-    log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+    log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
   }
 
+  if (r != SMBUS_OK) {
+    log_error(LOG_I2C, "dev %d reg write fail %s\r\n", device, SMBUS_get_error(r));
+  }
+  else {
+    log_debug(LOG_I2C, "dev %d reg write success 0x%0*X\r\n", device, nbytes * 2, packed_data);
+  }
   return r;
 }
 
@@ -162,7 +190,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
-  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+  i2c_arm_notify_slot(device);
 
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
@@ -171,9 +199,15 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
-    log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+    log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
   }
 
+  if (r != SMBUS_OK) {
+    log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+  }
+  else {
+    log_debug(LOG_I2C, "dev %d write success 0x%0*X\r\n", device, nbytes * 2, value);
+  }
   return r;
 }
 // for PMBUS commands
@@ -204,8 +238,8 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
     return r;
   }
 
-  // TRANSACTION 2: device read/write
-  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+  // TRANSACTION 2: device read/write. PMBus/SMBus command.
+  i2c_arm_notify_slot(device);
   if (read) {
     r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
@@ -218,6 +252,8 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
     return r;
   }
   i2c_wait_for_transfer(device);
+  // ISR writes the per-bus status (SMBUS_OK or specific error).
+  r = *smbus_status;
 
-  return *smbus_status;
+  return r;
 }
