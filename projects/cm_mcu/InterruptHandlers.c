@@ -193,76 +193,72 @@ volatile tSMBusStatus eStatus4 = SMBUS_OK;
 volatile tSMBusStatus eStatus5 = SMBUS_OK;
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
+TaskHandle_t TaskNotifySMBus[10] = {NULL}; // indexed same as pSMBus[]
+
 // SMBUs specific handler for I2C
 void SMBusMasterIntHandler1(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
   eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
-  // handle errors in the returning function
+  if (eStatus1 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[1] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[1], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[1] = NULL;
+  }
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void SMBusMasterIntHandler2(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
   eStatus2 = SMBusMasterIntProcess(&g_sMaster2);
-  // handle errors in the returning function
+  if (eStatus2 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[2] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[2], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[2] = NULL;
+  }
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void SMBusMasterIntHandler3(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
   eStatus3 = SMBusMasterIntProcess(&g_sMaster3);
-  // handle errors in the returning function
+  if (eStatus3 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[3] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[3], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[3] = NULL;
+  }
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void SMBusMasterIntHandler4(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
   eStatus4 = SMBusMasterIntProcess(&g_sMaster4);
-  // handle errors in the returning function
+  if (eStatus4 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[4] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[4], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[4] = NULL;
+  }
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void SMBusMasterIntHandler5(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
   eStatus5 = SMBusMasterIntProcess(&g_sMaster5);
-  // handle errors in the returning function
+  if (eStatus5 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[5] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[5], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[5] = NULL;
+  }
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void SMBusMasterIntHandler6(void)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
   eStatus6 = SMBusMasterIntProcess(&g_sMaster6);
-  // handle errors in the returning function
+  if (eStatus6 != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[6] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[6], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[6] = NULL;
+  }
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 

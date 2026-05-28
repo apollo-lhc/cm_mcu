@@ -32,7 +32,7 @@ extern tSMBus g_sMaster1; // for I2C #1
 extern tSMBus g_sMaster2; // for I2C #2
 extern tSMBus g_sMaster3; // for I2C #3
 extern tSMBus g_sMaster4; // for I2C #4
-extern tSMBus g_sMaster5; // for I2C #4
+extern tSMBus g_sMaster5; // for I2C #5
 extern tSMBus g_sMaster6; // for I2C #6
 
 extern volatile tSMBusStatus eStatus1;
@@ -41,6 +41,8 @@ extern volatile tSMBusStatus eStatus3;
 extern volatile tSMBusStatus eStatus4;
 extern volatile tSMBusStatus eStatus5;
 extern volatile tSMBusStatus eStatus6;
+
+extern TaskHandle_t TaskNotifySMBus[10];
 
 void SMBusMasterIntHandler1(void);
 void SMBusMasterIntHandler2(void);

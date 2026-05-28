@@ -26,31 +26,37 @@
 #include "I2CCommunication.h"
 #include "common/smbus_helper.h"
 
+#include "InterruptHandlers.h"
+
 extern tSMBus g_sMaster1;
-extern tSMBusStatus eStatus1;
 extern tSMBus g_sMaster2;
-extern tSMBusStatus eStatus2;
 extern tSMBus g_sMaster3;
-extern tSMBusStatus eStatus3;
 extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
 extern tSMBus g_sMaster5;
-extern tSMBusStatus eStatus5;
 extern tSMBus g_sMaster6;
-extern tSMBusStatus eStatus6;
 
 tSMBus *const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
-tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
+volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
 
 #define MAX_BYTES_ADDR 2
 #define MAX_BYTES      4
 
-#define I2C_MAX_TRIES 25
+#define I2C_TIMEOUT_MS 250
+
+static void i2c_wait_for_transfer(uint8_t device)
+{
+  // Caller must have already set TaskNotifySMBus[device]
+  if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(I2C_TIMEOUT_MS)) == 0) {
+    // timeout — no notification arrived
+    TaskNotifySMBus[device] = NULL;
+    log_warn(LOG_I2C, "transfer stuck\r\n");
+  }
+}
 
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
   tSMBus *p_sMaster = pSMBus[device];
-  tSMBusStatus *p_eStatus = eStatus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
 
   configASSERT(p_sMaster != NULL);
 
@@ -58,19 +64,15 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
+  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+
   tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the read was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_eStatus;
   }
   else {
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
   }
   return r;
@@ -81,7 +83,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
                          uint32_t *packed_data)
 {
   tSMBus *smbus = pSMBus[device];
-  tSMBusStatus *p_status = eStatus[device];
+  volatile tSMBusStatus *p_status = eStatus[device];
 
   configASSERT(smbus != NULL);
   uint8_t reg_address[MAX_BYTES_ADDR];
@@ -90,19 +92,15 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   }
   uint8_t data[MAX_BYTES];
 
+  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+
   tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, reg_address, nbytes_addr, data, nbytes);
   if (r == SMBUS_OK) { // the WriteRead was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_status;
   }
   else {
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
   }
   // pack the data for return to the caller
@@ -117,7 +115,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
 int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, uint16_t packed_reg_address, uint8_t nbytes, uint32_t packed_data)
 {
   tSMBus *p_sMaster = pSMBus[device];
-  tSMBusStatus *p_eStatus = eStatus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
 
   configASSERT(p_sMaster != NULL);
 
@@ -136,19 +134,15 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   if (nbytes > MAX_BYTES + nbytes_addr)
     nbytes = MAX_BYTES + nbytes_addr;
 
+  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_eStatus;
   }
   else {
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
   }
 
@@ -158,7 +152,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
 int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned int value)
 {
   tSMBus *p_sMaster = pSMBus[device];
-  tSMBusStatus *p_eStatus = eStatus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
   configASSERT(p_sMaster != NULL);
 
   uint8_t data[MAX_BYTES];
@@ -168,65 +162,62 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
+  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_eStatus;
   }
   else {
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
   }
 
   return r;
 }
 // for PMBUS commands
+static uint8_t smbus_get_device_index(tSMBus *smbus)
+{
+  for (int i = 1; i <= 6; i++) {
+    if (pSMBus[i] == smbus) {
+      return i;
+    }
+  }
+  return 0; // error/not found
+}
+
 tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bool read,
                              struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
 {
-  // select the appropriate output for the mux
+  uint8_t device = smbus_get_device_index(smbus);
+  if (device == 0) {
+    log_error(LOG_I2C, "PMBUS invalid device\r\n");
+    return SMBUS_PERIPHERAL_BUSY;
+  }
+
+  // TRANSACTION 1: mux selection via existing helper
   uint8_t data = 0x1U << add->mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+  tSMBusStatus r = apollo_i2c_ctl_w(device, add->mux_addr, 1, data);
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "PMBUS write fail %s\r\n", SMBUS_get_error(r));
+    log_error(LOG_I2C, "PMBUS mux write fail %s\r\n", SMBUS_get_error(r));
     return r;
   }
-  int tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-    if (tries++ > I2C_MAX_TRIES) {
-      log_warn(LOG_I2C, "transfer stuck\r\n");
-      break;
-    }
-  }
-  if (*smbus_status != SMBUS_OK) {
-    return *smbus_status;
-  }
-  // read/write to the device itself
+
+  // TRANSACTION 2: device read/write
+  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
   if (read) {
     r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
-  else { // write
+  else {
     r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "PMBUS write/read fail %s\r\n", SMBUS_get_error(r));
+    log_error(LOG_I2C, "PMBUS read/write fail %s\r\n", SMBUS_get_error(r));
+    TaskNotifySMBus[device] = NULL;
     return r;
   }
-  tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-    if (tries++ > I2C_MAX_TRIES) {
-      log_warn(LOG_I2C, "transfer stuck\r\n");
-      break;
-    }
-  }
+  i2c_wait_for_transfer(device);
 
-  return r;
+  return *smbus_status;
 }

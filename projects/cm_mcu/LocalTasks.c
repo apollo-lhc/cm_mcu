@@ -1275,7 +1275,7 @@ int load_all_clocks(void)
   for (int i = 0; i < CLOCK_NUM_CLOCKS; ++i) {
     status += init_load_clk(i); // load each clock config from EEPROM
     // get and print out the file name
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(50));
     getClockProgram(i, clkprog_args[i].progname_clkdesgid, clkprog_args[i].progname_eeprom);
     log_info(LOG_SERVICE, "CLK%d: %s\r\n", i, clkprog_args[i].progname_clkdesgid);
   }
