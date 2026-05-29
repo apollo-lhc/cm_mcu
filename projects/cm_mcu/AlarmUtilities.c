@@ -163,7 +163,7 @@ int TempStatus(void)
   // calculations in int.
   currentTemp[FF] = (float)imax_ff_temp;
   int16_t iexcess_temp = imax_ff_temp - getAlarmTemperature(FF);
-  if (iexcess_temp > 0 ) {
+  if (iexcess_temp > 0) {
     status_T |= ALM_STAT_FIREFLY_OVERTEMP;
     retval++;
     if (iexcess_temp > ALM_OVERTEMP_THRESHOLD)
