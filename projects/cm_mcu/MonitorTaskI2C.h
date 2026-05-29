@@ -38,6 +38,7 @@ struct MonitorTaskI2CArgs_t {
   struct i2c_reg_command_t *commands;    // list of commands
   const uint8_t n_commands;              // number of commands
   const uint16_t selpage_reg;            // register for selecting page
+  const int mux_reset_pin_bar;           // MCU pin for resetting the I2C Mux. active low.
   TickType_t updateTick;                 // last update time, in ticks
   SemaphoreHandle_t xSem;                // semaphore for controlling access to device
   UBaseType_t stack_size;                // stack size of task

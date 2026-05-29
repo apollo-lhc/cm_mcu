@@ -37,7 +37,7 @@ void stopwatch_reset(void);
 #define configCPU_CLOCK_HZ                      40000000
 #define configMAX_PRIORITIES                    (5)
 #define configMINIMAL_STACK_SIZE                ((unsigned short)256)
-#define configTOTAL_HEAP_SIZE                   ((size_t)(24 * 1024))
+#define configTOTAL_HEAP_SIZE                   ((size_t)(25 * 1024))
 #define configMAX_TASK_NAME_LEN                 (6)
 #define configUSE_TRACE_FACILITY                1
 #define configUSE_16_BIT_TICKS                  0

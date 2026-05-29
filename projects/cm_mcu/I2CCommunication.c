@@ -81,6 +81,7 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    return r;
   }
   if (r != SMBUS_OK) {
     log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
@@ -118,6 +119,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    return r;
   }
   // pack the data for return to the caller
   *packed_data = 0UL;
@@ -166,6 +168,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+    return r;
   }
 
   if (r != SMBUS_OK) {
@@ -200,6 +203,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+    return r;
   }
 
   if (r != SMBUS_OK) {

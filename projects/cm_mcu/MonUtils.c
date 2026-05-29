@@ -3,6 +3,7 @@
 #include "FireflyUtils.h"
 #include "Tasks.h"
 #include "common/log.h"
+#include "common/pinsel.h"
 #include "MonUtils.h"
 
 #ifdef REV1
@@ -191,6 +192,7 @@ struct MonitorTaskI2CArgs_t ff_f1_args = {
     .commands = sm_command_test_FF_F1,
     .n_commands = NCOMMANDS_FF_F1,
     .selpage_reg = FF_SELPAGE_REG,
+    .mux_reset_pin_bar = _F1_OPTICS_I2C_RESET,
     .xSem = NULL,
     .stack_size = 4096U,
     .typeCallback = FireflyType,
@@ -205,6 +207,7 @@ struct MonitorTaskI2CArgs_t ff_f2_args = {
     .commands = sm_command_test_FF_F2,
     .n_commands = NCOMMANDS_FF_F2,
     .selpage_reg = FF_SELPAGE_REG,
+    .mux_reset_pin_bar = _F2_OPTICS_I2C_RESET,
     .xSem = NULL,
     .stack_size = 4096U,
     .typeCallback = FireflyTypeF2,
@@ -220,6 +223,7 @@ struct MonitorTaskI2CArgs_t clk_args = {
     .commands = sm_command_test_CLK,
     .n_commands = NCOMMANDS_CLK,
     .selpage_reg = CLK_SELPAGE_REG,
+    .mux_reset_pin_bar = _CLOCKS_I2C_RESET,
     .xSem = NULL,
     .stack_size = 4096U,
     .typeCallback = ClockType,

@@ -286,9 +286,9 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(ADCMonitorTask, "ADC", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
 
 #if defined(REV2) || defined(REV3)
-  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTaskI2C, clk_args.name, configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 384, &ff_f1_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 384, &ff_f2_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTaskI2C, clk_args.name, 384, &clk_args, tskIDLE_PRIORITY + 3, NULL);
 #endif // REV2
   xTaskCreate(MonitorTask, dcdc_args.name, 192, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(MonitorTask, fpga_args.name, 192, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
