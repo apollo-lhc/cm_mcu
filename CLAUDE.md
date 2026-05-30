@@ -12,7 +12,7 @@
 
 ## Project Overview
 
-This repository contains bare-metal firmware for the **Apollo command module**, targeting the **TI Tiva TM4C1290NCPDT** (ARM Cortex-M4F with FPU, 80 MHz). The firmware manages power sequencing, temperature/voltage monitoring, I2C communication, and FPGA/Firefly control for high-energy physics detector readout systems. It controls low-level functionality of the command module of an ATCA blade. The blade is to be used at the HL-LHC.
+This repository contains bare-metal firmware for the **Apollo command module**, targeting the **TI Tiva TM4C1290NCPDT** (ARM Cortex-M4F with FPU, running at 40 MHz). The firmware manages power sequencing, temperature/voltage monitoring, I2C communication, and FPGA/Firefly control for high-energy physics detector readout systems. It controls low-level functionality of the command module of an ATCA blade. The blade is to be used at the HL-LHC.
 
 ## Hardware
 
@@ -269,6 +269,8 @@ Uninitialized EEPROM words read as `0xFFFFFFFF`. Code that loads EEPROM config m
 
 **I2C bus assignments** (initialized in `SystemInit()`):
 
+These are for Rev2 and later. 
+
 | Bus | Role |
 | --- | ---- |
 | I2C0 | I2C slave (responds to external master) |
@@ -276,7 +278,7 @@ Uninitialized EEPROM words read as `0xFFFFFFFF`. Code that loads EEPROM config m
 | I2C2 | SMBus master → clock synthesizers |
 | I2C3 | SMBus master → F2 Firefly optics |
 | I2C4 | SMBus master → F1 Firefly optics |
-| I2C5 | SMBus master → F1 Firefly optics (additional) |
+| I2C5 | SMBus master → FPGA F1 & F2 diagnostic registers |
 
 **prod_test CLI commands:**
 
