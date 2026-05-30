@@ -25,8 +25,16 @@
 #include "Tasks.h"
 #include "I2CCommunication.h"
 #include "common/smbus_helper.h"
+#include "common/utils.h" // DELAY_US
 
 #include "InterruptHandlers.h"
+
+// TI hardware register access for I2C master state diagnostics
+#include "inc/hw_types.h"      // HWREG
+#include "inc/hw_i2c.h"        // I2C_O_MCS, I2C_MCS_BUSY, I2C_MCS_BUSBSY
+#include "driverlib/i2c.h"     // I2CMasterBusy
+#include "driverlib/rom.h"     // ROM_SysCtlDelay (used by DELAY_US)
+#include "driverlib/rom_map.h" // MAP_I2CMasterBusy
 
 extern tSMBus g_sMaster1;
 extern tSMBus g_sMaster2;
@@ -43,9 +51,40 @@ volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus
 
 #define I2C_TIMEOUT_MS 250
 
+// Bounded wait (microseconds) for the on-chip I2C master FSM to finish a prior
+// transaction's STOP before we initiate a new one. This targets the suspected
+// PERIPHERAL_BUSY race where a task is notified and resumes before the hardware
+// auto-STOP completes. See i2c_lockup_notes.md.
+#define I2C_IDLE_WAIT_US 250
+
 static void i2c_arm_notify_slot(uint8_t device)
 {
+  // Bounded spin until the master FSM is idle, so a late-completing previous
+  // STOP cannot make this transaction's initiation return PERIPHERAL_BUSY.
+  uint32_t base = pSMBus[device]->ui32I2CBase;
+  uint32_t us = 0;
+  while (MAP_I2CMasterBusy(base) && us < I2C_IDLE_WAIT_US) {
+    DELAY_US(1);
+    ++us;
+  }
+  if (us) {
+    log_debug(LOG_I2C, "dev %d waited %u us for master idle\r\n", device, us);
+  }
+
   TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+}
+
+// Diagnostic: log the raw I2C master control/status register at the moment an
+// initiation returns PERIPHERAL_BUSY (or other non-OK). Must be called BEFORE
+// any recovery (e.g. mux reset) so it captures the true on-chip state.
+//   BUSY set, BUSBSY clear  -> on-chip master still finishing its STOP (FSM race)
+//   BUSBSY set              -> bus line held externally (device/mux)
+static void i2c_log_busy(uint8_t device, const char *op, tSMBusStatus r)
+{
+  uint32_t mcs = HWREG(pSMBus[device]->ui32I2CBase + I2C_O_MCS);
+  log_warn(LOG_I2C, "dev %d %s %s MCS=0x%02lx BUSY=%d BUSBSY=%d\r\n", device, op,
+           SMBUS_get_error(r), (unsigned long)mcs, !!(mcs & I2C_MCS_BUSY),
+           !!(mcs & I2C_MCS_BUSBSY));
 }
 
 static void i2c_wait_for_transfer(uint8_t device)
@@ -80,7 +119,7 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
-    log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    i2c_log_busy(device, "read", r);
     return r;
   }
   if (r != SMBUS_OK) {
@@ -118,7 +157,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
-    log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    i2c_log_busy(device, "reg read", r);
     return r;
   }
   // pack the data for return to the caller
@@ -167,7 +206,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
-    log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+    i2c_log_busy(device, "reg write", r);
     return r;
   }
 
@@ -202,7 +241,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
-    log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+    i2c_log_busy(device, "write", r);
     return r;
   }
 
@@ -251,7 +290,7 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
     r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "PMBUS read/write fail %s\r\n", SMBUS_get_error(r));
+    i2c_log_busy(device, read ? "pmbus read" : "pmbus write", r);
     TaskNotifySMBus[device] = NULL;
     return r;
   }

@@ -181,6 +181,46 @@ The firmware uses a FreeRTOS multi-task architecture. All significant work happe
 - `LedTask` — status LED blink patterns
 - `I2CSlaveTask` — responds to commands from an external I2C master
 
+### cm_mcu: I2C/SMBus Architecture (notification-based)
+
+The codebase was converted from polling to interrupt-driven (notification-based) I2C. Each I2C master bus (1–6) has:
+
+- A global `tSMBus g_sMasterN` struct (defined in `InterruptHandlers.c`)
+- A global `volatile tSMBusStatus eStatusN` for the per-bus completion status
+- An entry in `pSMBus[10]` and `eStatus[10]` lookup arrays (index = bus number, 0/7–9 are NULL)
+- A dedicated ISR (`SMBusMasterIntHandlerN`) that calls the shared `SMBusMasterIntHandlerCore`
+
+**Transaction flow:**
+
+```c
+i2c_arm_notify_slot(device);        // stores xTaskGetCurrentTaskHandle() in TaskNotifySMBus[device]
+r = SMBusMasterXxx(...);            // initiates transfer; returns SMBUS_PERIPHERAL_BUSY if hw busy
+if (r == SMBUS_OK) {
+    i2c_wait_for_transfer(device);  // ulTaskNotifyTake with 250ms timeout
+    r = *eStatus[device];           // ISR wrote the final status here
+} else {
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+}
+```
+
+The ISR (`SMBusMasterIntHandlerCore`, `InterruptHandlers.c:194`) calls `SMBusMasterIntProcess` (the TI state machine), then — if `FLAG_TRANSFER_IN_PROGRESS` is cleared AND `TaskNotifySMBus[device] != NULL` — calls `vTaskNotifyGiveFromISR` and nulls the slot.
+
+**Bus locking:** Each bus has a FreeRTOS mutex (`i2c1_sem` … `i2c6_sem`, defined in `Semaphore.c`). Callers acquire the mutex before a transaction sequence and release it after. Two helpers are provided:
+- `acquireI2CSemaphore(s)` — tries up to 500 times with a 10-tick wait each try
+- `acquireI2CSemaphoreBlock(s)` — tries up to 500 times with a 0-tick wait (immediate poll each try)
+
+The mutex is passed as part of the task argument struct (`args->xSem`) in `MonitorTask` and `MonitorTaskI2C`, and accessed directly by name in `LocalTasks.c`.
+
+**`apollo_pmbus_rw`** performs two sequential transactions on the same bus: a mux-select write (`apollo_i2c_ctl_w`) followed by the device read/write (`SMBusMasterByteWordRead/Write`). It re-arms the notify slot between them.
+
+**Known fragility in the notification scheme** — see [`i2c_lockup_notes.md`](i2c_lockup_notes.md) for full analysis:
+
+1. *Hardware-timeout / auto-STOP race* — When `I2C_MASTER_INT_TIMEOUT` fires (35ms SMBus hw timeout, e.g. slave stretching clock), the ISR clears `FLAG_TRANSFER_IN_PROGRESS` and immediately notifies the task, but the hardware then issues an automatic STOP that takes ~2.5–20 μs (400–100 kHz). A context switch lands the task before the STOP completes; the next `SMBusMasterXxx` call sees `MAP_I2CMasterBusy() == true` → `SMBUS_PERIPHERAL_BUSY`.
+
+2. *`SMBUS_STATE_IDLE` conditional clear* — For write-only transactions, `FLAG_TRANSFER_IN_PROGRESS` is cleared in the `SMBUS_STATE_IDLE` ISR case only if `!MAP_I2CMasterBusy()` (`smbus.c:2440`). If the DATA interrupt fires while BUSY is briefly still asserted (possible race), the flag stays set and no further ISR fires. The FreeRTOS 250ms timeout then fires; a late ISR arriving after the next `i2c_arm_notify_slot` can deliver a spurious notification, causing the following transaction to see PERIPHERAL_BUSY.
+
+3. *NACK error status overwrite* — On address/data NACK, the first ISR issues `BURST_SEND_ERROR_STOP` but does not clear the flag or notify. A second ISR fires in `SMBUS_STATE_IDLE`, clears the flag, and returns `SMBUS_OK`, overwriting the NACK error in `eStatusN`. The caller sees `SMBUS_OK` on a failed transaction.
+
 ### cm_mcu: EEPROM Access Pattern
 
 > **This pattern applies only to cm_mcu**, which has a dedicated `EEPROMTask` gatekeeper. The `prod_test` project does not use this pattern.
