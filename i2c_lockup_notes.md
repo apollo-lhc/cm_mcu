@@ -191,3 +191,71 @@ Instrument `I2CCommunication.c`:
   `BUSY` only ⇒ on-chip ⇒ (b); `BUSBSY` ⇒ line held externally ⇒ (a).
 - **Close the logging gap:** the read path (`I2CCommunication.c:121`) logs neither bus nor slave
   address; add `address` so failures map to a physical port, not just a `ps` slot index.
+
+---
+
+## Companion anomaly: a `log_debug` printed once at `FTL` level (silent memory corruption)
+
+Observed in the same overnight log, exactly once:
+
+```
+202605291910 MONI2C FTL MonitorTaskI2C.c:125:FF_F2: command OPT_POWER_CH7 not for device 8 (mask: 8 this: 4)
+```
+
+The source at that line is a **`log_debug`** call (level `LOG_DEBUG == 4`), yet it printed and was
+tagged `FTL` (`LOG_FATAL == 0`). Debug is normally suppressed for `MONI2C`.
+
+### Why this is proof of a flipped value, not a config change
+
+In `common/log.c`:
+- gate (line 326): `if (!L.quiet && level <= L.level[facility])`
+- tag (line 200): `level_strings[ev->level]`, with `level_strings[0] == "FTL"`
+
+For the line to **print and read `FTL`**, `level` had to be `0` both at the gate and in `ApolloLog`
+(`ev.level` is set `= level` at line 317, before both uses). `0 <= L.level[fac]` is true for any
+threshold — which is exactly why a normally-suppressed debug line printed. So a single transient
+corruption flipped the `level` value **4 → 0** inside `log_log`'s stack frame. Logging merely
+*surfaced* a stray write into the calling task's stack frame; it is not a logging bug.
+
+### Ruled out
+- **Not a log-config change**: no `log_set_lock` is ever installed, no level change.
+- **Not interrupt-priority misconfig**: all I2C ISRs are at `configKERNEL_INTERRUPT_PRIORITY`
+  (`cm_mcu.c:152–178`), same as ADC/UART → legal for `...FromISR`.
+- **Not classic task-stack overflow**: `configCHECK_FOR_STACK_OVERFLOW=2` is on and high-water shows
+  >100 words free on every MonitorI2C task. (But high-water/end-canary do **not** catch a *localized*
+  OOB write that lands inside the still-valid stack — so this does not exonerate a stray write.)
+
+### Likely cause and relation to PERIPHERAL_BUSY
+The `FTL` flip needs a write into the **task's own stack frame** (a stack local). That points away
+from the ISR (context is HW-saved, priorities correct) and toward a **localized OOB write in the
+MonitorI2C task context**, most economically fed by the *same* not-airtight completion handshake
+(#2/#3): a spurious/late notification or NACK-overwritten-as-OK lets `ulTaskNotifyTake` return with
+**stale/garbage data**, which is then used as an index/size. Amplifiers in the path:
+- `devtype = 31 - __builtin_clz(devtype_mask)` (`MonitorTaskI2C.c:119`): if `devtype_mask == 0`,
+  `__builtin_clz(0)` is **undefined** → huge `devtype` → wild `commands[c].page[devtype]` /
+  `command[devtype]` indexing.
+- data-derived indices into `storeData(..., device)` etc.
+
+Contributing latent bug (parallel, not the flip itself): **`log_log` is not thread-safe** — no lock
+installed, so every task writes the shared global ring buffer `b`/`log_buffer` with no mutual
+exclusion. Benign under the old `vTaskDelay` cadence; genuinely concurrent now. Corrupts globals
+(saved text), not `ev.level`, so it does not explain the `FTL` flip — but remove it to de-noise.
+
+**Verdict:** treat PERIPHERAL_BUSY and the `FTL`/corruption as the **same family, different
+severity** — both new since dropping the polling wait, both rooted in the ISR/notification handshake.
+The busy error is benign; the corruption is the dangerous cousin.
+
+### Investigation ideas
+1. **`-fstack-protector-strong`** on `MonitorTaskI2C.c` + `MonUtils.c` to trap a localized stack
+   overrun at function return; or a J-Link **DWT data watchpoint** on the target once reproducible.
+2. **Paint the MSP/system (startup) stack** and scan low-water — `configCHECK_FOR_STACK_OVERFLOW`
+   does not cover handler-mode MSP. (Ranked lower: MSP overflow would hit globals, not `ev.level`.)
+3. **Install `log_set_lock`** (mutex / critical section) to remove the unprotected shared-buffer
+   corruptor as a confound.
+4. **Guard the UB**: `if (devtype_mask == 0) continue;` before `__builtin_clz`, and bounds-check
+   `devtype` against the type-table size. Verify `FireflyType*/ClockType` cannot transiently return 0.
+5. **Test the shared root**: apply the #2/#3 handshake hardening; if the `FTL`/corruption anomalies
+   vanish together with reduced PERIPHERAL_BUSY, the common cause is confirmed.
+6. **Correlate with more data**: log a monotonic counter + instance on every busy event and every
+   anomaly; check whether corruption events cluster near busy events on the same bus. (The single
+   `FTL`, 19:10 FF_F2, sits among FF_F2 busy errors at 18:54 / 19:20 — suggestive, not conclusive.)

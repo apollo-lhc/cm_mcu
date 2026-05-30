@@ -54,7 +54,12 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
       continue;
     }
     uint16_t val = clk_args.commands[c].retrieveData(i);
-    int devtype = 31 - __builtin_clz(ClockType(i));
+    int type = ClockType(i);
+    if ( type == 0) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ERROR device %d type 0 for CLZ call\r\n", argv[0], i);
+      continue; // skip if type is 0 (e.g., not determined)
+    }
+    int devtype = 31 - __builtin_clz(type); // clz is undefined if argument is zero
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%-15s : 0x%04x   0x%04x    0x%04x\r\n",
                        clk_args.commands[c].name, clk_args.commands[c].command[devtype],
                        clk_args.commands[c].bit_mask, val);

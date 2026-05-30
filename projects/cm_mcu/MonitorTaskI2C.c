@@ -116,6 +116,11 @@ void MonitorTaskI2C(void *parameters)
 
       // what kind of device is this
       uint32_t devtype_mask = args->typeCallback(device);
+      if (devtype_mask == 0) {
+        log_warn(LOG_MONI2C, "%s: device %d type 0 for CLZ call\r\n", args->name, device);
+        continue; // skip if type is 0 (e.g., not determined)
+      }
+      // clz behavior is undefined if argument is zero. 
       uint32_t devtype = 31 - __builtin_clz(devtype_mask); // highest bit set FIXME: this is backwards
       // Loop to read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
