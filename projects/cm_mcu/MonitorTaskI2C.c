@@ -122,6 +122,14 @@ void MonitorTaskI2C(void *parameters)
       }
       // clz behavior is undefined if argument is zero. 
       uint32_t devtype = 31 - __builtin_clz(devtype_mask); // highest bit set FIXME: this is backwards
+      // devtype indexes page[] and command[] (same dimension). A devtype past the end of those
+      // arrays -- e.g. DEVICE_NONE (0x80) -> 7, or any misread/garbage mask with a bit above the
+      // top valid type bit -- would read out of bounds. Bound by the array size, skip otherwise.
+      if (devtype >= sizeof(args->commands->page)) {
+        log_warn(LOG_MONI2C, "%s: device %d unexpected type mask 0x%x (devtype %u), skipping\r\n",
+                 args->name, device, devtype_mask, devtype);
+        continue;
+      }
       // Loop to read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
         // check if the command is for this device
