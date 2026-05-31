@@ -49,6 +49,15 @@ volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus
 #define MAX_BYTES_ADDR 2
 #define MAX_BYTES      4
 
+// Per-bus scratch buffers for I2C transfers, indexed by device the same as pSMBus[].
+// The TI SMBus driver keeps a *pointer* (pui8Rx/TxBuffer) to the caller's buffer and its
+// ISR reads/writes it as bytes arrive. Passing these persistent .bss buffers instead of a
+// stack local means a late ISR completing after the wrapper has returned writes here, not
+// into a freed/reused stack frame (the memory-corruption root cause; see i2c_lockup_notes.md).
+// Safe to share per bus because each bus is serialized by its own semaphore.
+static uint8_t i2c_rxbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES];
+static uint8_t i2c_txbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES_ADDR + MAX_BYTES];
+
 #define I2C_TIMEOUT_MS 250
 
 // Bounded wait (microseconds) for the on-chip I2C master FSM to finish a prior
@@ -108,11 +117,14 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
-  memset(data, 0, nbytes * sizeof(data[0]));
+  // Read into the persistent per-bus buffer rather than the caller's (possibly stack) buffer,
+  // so a late ISR completing after this function returns can't write into a freed/reused frame.
+  uint8_t *rxbuf = i2c_rxbuf[device];
+  memset(rxbuf, 0, nbytes * sizeof(rxbuf[0]));
 
   i2c_arm_notify_slot(device);
 
-  tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
+  tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, rxbuf, nbytes);
   if (r == SMBUS_OK) { // the read was successfully initiated
     i2c_wait_for_transfer(device);
     r = *p_eStatus;
@@ -120,8 +132,10 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
     i2c_log_busy(device, "read", r);
+    memcpy(data, rxbuf, nbytes); // hand back zeros (rxbuf was memset)
     return r;
   }
+  memcpy(data, rxbuf, nbytes); // copy results to the caller before returning
   if (r != SMBUS_OK) {
     log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
   }
@@ -139,11 +153,11 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   volatile tSMBusStatus *p_status = eStatus[device];
 
   configASSERT(smbus != NULL);
-  uint8_t reg_address[MAX_BYTES_ADDR];
+  uint8_t *reg_address = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < nbytes_addr; ++i) {
     reg_address[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
-  uint8_t data[MAX_BYTES];
+  uint8_t *data = i2c_rxbuf[device]; // persistent per-bus RX buffer
 
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
@@ -183,7 +197,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   configASSERT(p_sMaster != NULL);
 
   // first byte (if write to one of five clock chips) or two bytes (if write to EEPROM) is the register, others are the data
-  uint8_t data[MAX_BYTES_ADDR + MAX_BYTES];
+  uint8_t *data = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < nbytes_addr; ++i) {
     data[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
@@ -225,7 +239,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   volatile tSMBusStatus *p_eStatus = eStatus[device];
   configASSERT(p_sMaster != NULL);
 
-  uint8_t data[MAX_BYTES];
+  uint8_t *data = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < MAX_BYTES; ++i) {
     data[i] = (value >> i * 8) & 0xFFUL;
   }
