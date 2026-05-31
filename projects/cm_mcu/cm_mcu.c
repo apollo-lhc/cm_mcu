@@ -358,17 +358,24 @@ __attribute__((noreturn)) int main(void)
   __builtin_unreachable();
 }
 
-uintptr_t __stack_chk_guard = 0xdeadbeef;
-
-__attribute__((noreturn)) void __stack_chk_fail(void)
+uintptr_t __stack_chk_guard = 0xdeadbeef; // NOLINT(bugprone-reserved-identifier)
+// decode this with arm-none-eabi-addr2line -e gcc/cm_mcu.axf 0x...
+__attribute__((noreturn)) void __stack_chk_fail(void) // NOLINT(bugprone-reserved-identifier)
 {
-  // fall back to lower-level routine since if we get here things are broken
-  UARTPrint(ZQ_UART, "Stack smashing detected\r\n");
-  while (MAP_UARTBusy(ZQ_UART))
+  uint32_t v = (uint32_t)GET_LR() & ~1u;   // &~1 clears the Thumb bit so addr2line maps it directly
+  static const char hex[] = "0123456789ABCDEF";
+  char buf[] = "Stack smashing detected, LR=0x00000000\r\n";
+  // last hex digit sits just before "\r\n\0" => index sizeof(buf)-4; fill LSB-first
+  for (int i = 0; i < 8; ++i) {
+    buf[sizeof(buf) - 4 - i] = hex[v & 0xF];
+    v >>= 4;
+  }
+  UARTPrint(ZQ_UART, buf);
+  while (MAP_UARTBusy(ZQ_UART)) ;
+  configASSERT(1 == 0);
+  while (true) {
     ;
-  configASSERT(1 == 0); // capture in eeprom
-  while (true)
-    ;
+  }   
 }
 
 int SystemStackWaterHighWaterMark(void)
@@ -378,8 +385,9 @@ int SystemStackWaterHighWaterMark(void)
   // we need to disable interrupts since we are looking at the system stack
   taskENTER_CRITICAL();
   for (i = 0; i < SYSTEM_STACK_SIZE; ++i) {
-    if (stack[i] != 0xdeadbeefUL)
+    if (stack[i] != 0xdeadbeefUL) {
       break;
+    }
   }
   taskEXIT_CRITICAL();
   return i;
