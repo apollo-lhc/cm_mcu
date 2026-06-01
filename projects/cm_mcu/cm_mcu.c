@@ -232,14 +232,16 @@ __attribute__((noreturn)) int main(void)
 
   initFPGAMon();
 
+  // Initialize all semaphores
+  initSemaphores();
+  // Set up logging
   // all facilities start at INFO
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
     log_set_level(LOG_INFO, i);
   }
   log_set_level(LOG_ERROR, LOG_MON); // for now
+  log_set_lock(vGiveOrTakeSemaphore, log_sem);
 
-  // Initialize all semaphores
-  initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   fpga_args.xSem = i2c5_sem;
 #if defined(REV2) || defined(REV3)

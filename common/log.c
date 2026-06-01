@@ -185,6 +185,9 @@ void log_dump(void (*f)(const char *s))
   f("\033[0m\r\n"); // turn off color and add a newline to ensure that everything is cleaned up.
 }
 
+static bool lock(void);
+static void unlock(void);
+
 void ApolloLog(log_Event *ev)
 {
   // note to self: before you change the size of this buffer
@@ -203,17 +206,25 @@ void ApolloLog(log_Event *ev)
   r += snprintf(tmp + r, SZ - r, "%s", "\033[0m");
 #endif
   configASSERT(r < SZ); // not the best way to go but ....
-  log_add_string(tmp, &b);
+  // Only the shared ring buffer needs protection, and only briefly. If we
+  // cannot get the lock (near-impossible at 0-tick contention), drop the
+  // buffer append rather than block; the UART output below is unaffected and
+  // self-serializes via xUARTMutex in Print().
+  if (lock()) {
+    log_add_string(tmp, &b);
+    unlock();
+  }
   Print(tmp);
 }
 
 // apollo log specfic functions end
 
-static void lock(void)
+static bool lock(void)
 {
   if (L.lock) {
-    L.lock(true, L.udata);
+    return L.lock(true, L.udata);
   }
+  return true; // no lock configured -> proceed
 }
 
 static void unlock(void)
@@ -319,7 +330,6 @@ void log_log(int level, const char *file, int line, enum log_facility_t facility
       .fac = facility,
   };
 
-  lock();
   if (facility >= NUM_LOG_FACILITIES) {
     facility = LOG_DEFAULT; //
   }
@@ -348,6 +358,4 @@ void log_log(int level, const char *file, int line, enum log_facility_t facility
       }
     }
   }
-
-  unlock();
 }

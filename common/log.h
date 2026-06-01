@@ -49,7 +49,7 @@ typedef struct {
 } log_Event;
 
 typedef void (*log_LogFn)(log_Event *ev);
-typedef void (*log_LockFn)(bool lock, void *udata);
+typedef bool (*log_LockFn)(bool lock, void *udata);
 
 #define log_trace(LOG_FACILITY, ...) log_log(LOG_TRACE, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)
 #define log_debug(LOG_FACILITY, ...) log_log(LOG_DEBUG, __FILE_NAME__, __LINE__, LOG_FACILITY, __VA_ARGS__)

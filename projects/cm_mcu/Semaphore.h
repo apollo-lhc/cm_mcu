@@ -21,6 +21,11 @@ extern SemaphoreHandle_t i2c4_sem;
 extern SemaphoreHandle_t i2c5_sem;
 extern SemaphoreHandle_t i2c6_sem;
 
+// semaphore for the log_XXX functions
+extern SemaphoreHandle_t log_sem;
+
+bool vGiveOrTakeSemaphore(bool take, void *sem);
+
 void initSemaphores(void);
 
 SemaphoreHandle_t getSemaphore(int number);
