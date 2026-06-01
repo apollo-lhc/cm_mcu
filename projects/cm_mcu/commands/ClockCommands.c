@@ -55,7 +55,7 @@ BaseType_t clkmon_ctl(int argc, char **argv, char *m)
     }
     uint16_t val = clk_args.commands[c].retrieveData(i);
     int type = ClockType(i);
-    if ( type == 0) {
+    if (type == 0) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: ERROR device %d type 0 for CLZ call\r\n", argv[0], i);
       continue; // skip if type is 0 (e.g., not determined)
     }

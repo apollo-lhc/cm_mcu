@@ -364,7 +364,7 @@ uintptr_t __stack_chk_guard = 0xdeadbeef; // NOLINT(bugprone-reserved-identifier
 // decode this with arm-none-eabi-addr2line -e gcc/cm_mcu.axf 0x...
 __attribute__((noreturn)) void __stack_chk_fail(void) // NOLINT(bugprone-reserved-identifier)
 {
-  uint32_t v = (uint32_t)GET_LR() & ~1u;   // &~1 clears the Thumb bit so addr2line maps it directly
+  uint32_t v = (uint32_t)GET_LR() & ~1u; // &~1 clears the Thumb bit so addr2line maps it directly
   static const char hex[] = "0123456789ABCDEF";
   char buf[] = "Stack smashing detected, LR=0x00000000\r\n";
   // last hex digit sits just before "\r\n\0" => index sizeof(buf)-4; fill LSB-first
@@ -373,11 +373,12 @@ __attribute__((noreturn)) void __stack_chk_fail(void) // NOLINT(bugprone-reserve
     v >>= 4;
   }
   UARTPrint(ZQ_UART, buf);
-  while (MAP_UARTBusy(ZQ_UART)) ;
+  while (MAP_UARTBusy(ZQ_UART))
+    ;
   configASSERT(1 == 0);
   while (true) {
     ;
-  }   
+  }
 }
 
 int SystemStackWaterHighWaterMark(void)

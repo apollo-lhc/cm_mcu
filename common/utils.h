@@ -198,7 +198,7 @@ inline unsigned long long maxull(unsigned long long const x, unsigned long long 
 // busy-loop a delay from Tivaware ROM. SysCtlDelay is 3 clock cyles.
 // round the us number with this arithmetic.
 #define DELAY_US(us) \
-  ROM_SysCtlDelay((((us)*configCPU_CLOCK_HZ) + 1500000UL) / 3000000UL)
+  ROM_SysCtlDelay((((us) * configCPU_CLOCK_HZ) + 1500000UL) / 3000000UL)
 #endif // USE_FREERTOS
 
 #endif /* COMMON_UTILS_H_ */

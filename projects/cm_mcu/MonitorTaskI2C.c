@@ -120,7 +120,7 @@ void MonitorTaskI2C(void *parameters)
         log_warn(LOG_MONI2C, "%s: device %d type 0 for CLZ call\r\n", args->name, device);
         continue; // skip if type is 0 (e.g., not determined)
       }
-      // clz behavior is undefined if argument is zero. 
+      // clz behavior is undefined if argument is zero.
       uint32_t devtype = 31 - __builtin_clz(devtype_mask); // highest bit set FIXME: this is backwards
       // devtype indexes page[] and command[] (same dimension). A devtype past the end of those
       // arrays -- e.g. DEVICE_NONE (0x80) -> 7, or any misread/garbage mask with a bit above the
