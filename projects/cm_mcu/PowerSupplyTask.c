@@ -73,8 +73,9 @@ static uint16_t getPSFailMask(void)
 
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
 {
-  log_error(LOG_PWRCTL, "psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n", failed_mask,
-            supply_ok_mask, supply_bitset);
+  const char *state = getPowerControlStateName(currentState);
+  log_error(LOG_PWRCTL, "%s: psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n",
+            state, failed_mask, supply_ok_mask, supply_bitset);
 }
 
 static const char *const power_system_state_names[] = {
@@ -349,9 +350,6 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
-          // read the present bits for the firefiles
-          // the 3.3V is needed for the 3.8V sel switches.
-          readFFpresent();
           turn_on_ps_at_prio(f2_enable, f1_enable, 5);
           nextState = POWER_L5ON;
         }
@@ -406,6 +404,10 @@ void PowerSupplyTask(void *parameters)
         else {
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
+          // read the present bits for the firefiles, as well as the 3.8V sel switches.
+          // the 3.3V is needed for the 3.8V sel switches.
+          readFFpresent();
+
           (void)ff_map_25gb_parts();
           uint32_t pair_mask_f1 = getFF12Ch25GTxMask(0);        // 25G TX parts, F1
           uint32_t pair_mask_f2 = getFF12Ch25GTxMask(1);        // 25G TX parts, F2
