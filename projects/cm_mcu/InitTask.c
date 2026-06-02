@@ -49,9 +49,9 @@ void InitTask(void *parameters)
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 #endif                               // REV1
-  init_registers_ff();               // initialize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
-  int status = init_registers_clk(); // initialize I/O expander for clocks
-  readFFpresent();
+  int status = init_registers_ff();  // initialize I/O expander for fireflies -- with FF monitoring via I2C in other threads, it grabs semaphore inside
+  log_info(LOG_SERVICE, "Firefly I/O expander init %s\r\n", status==0?"OK":"Fail");
+  status = init_registers_clk(); // initialize I/O expander for clocks
   if (status == 0)
     log_info(LOG_SERVICE, "Clock I/O expander initialized\r\n");
   else {

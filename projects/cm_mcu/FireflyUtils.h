@@ -81,7 +81,7 @@ uint16_t getFF12ChPresentTxMask(int device);
 uint8_t getFFstatus(const uint8_t i);
 unsigned isFFStale(void);
 TickType_t getFFupdateTick(int ff_t);
-void init_registers_ff(void);
+int init_registers_ff(void);
 
 uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size);
 
