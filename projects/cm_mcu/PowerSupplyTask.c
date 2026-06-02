@@ -349,6 +349,9 @@ void PowerSupplyTask(void *parameters)
           nextState = POWER_FAILURE;
         }
         else {
+          // read the present bits for the firefiles
+          // the 3.3V is needed for the 3.8V sel switches.
+          readFFpresent();
           turn_on_ps_at_prio(f2_enable, f1_enable, 5);
           nextState = POWER_L5ON;
         }
