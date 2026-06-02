@@ -99,6 +99,12 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_present",
+        ff_present,
+        "Live read+show FF present bits\r\n",
+        0,
+    },
+    {
         "ff_los",
         ff_los_alarm,
         "Show FF loss of signal alarms\r\n",

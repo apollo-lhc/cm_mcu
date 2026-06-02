@@ -65,6 +65,7 @@ bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 void readFFpresent(void);
+uint32_t readFFpresentSignals(bool acquire_sem);
 uint16_t getFFtemp(const uint8_t i);
 float getFFavgoptpow(const uint8_t i);
 float getFFoptpow(const uint8_t i, const uint8_t ch);

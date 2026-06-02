@@ -32,6 +32,7 @@ BaseType_t ff_optpow_dev(int argc, char **argv, char *m);
 BaseType_t ff_temp(int argc, char **argv, char *m);
 BaseType_t ff_reset(int argc, char **argv, char *m);
 BaseType_t ff_status(int argc, char **argv, char *m);
+BaseType_t ff_present(int argc, char **argv, char *m);
 BaseType_t ff_los_alarm(int argc, char **argv, char *m);
 BaseType_t ff_cdr_lol_alarm(int argc, char **argv, char *m);
 #if defined(REV2) || defined(REV3)

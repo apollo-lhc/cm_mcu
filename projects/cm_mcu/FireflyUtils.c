@@ -65,7 +65,16 @@ void setFFmask(uint32_t ff_combined_present)
   return;
 }
 
-void readFFpresent(void)
+// Read the *PRESENT pins from the I/O expanders live over I2C and return the
+// combined, active-high present word. Also refreshes the per-FF present bit
+// masks (ff_bitmask_args) and the 4v0 select globals. Does NOT touch the EEPROM
+// or the enable masks (ff_PRESENT_mask/ff_USER_mask) -- that is done by the
+// readFFpresent() wrapper via setFFmask().
+//
+// If acquire_sem is true the i2c3/i2c4 bus semaphores are taken around the
+// transfers (boot path). Pass false to skip all semaphore handling -- used by
+// the CLI, which must not block on / take the bus mutexes.
+uint32_t readFFpresentSignals(bool acquire_sem)
 {
   // outputs from *_PRESENT pins for constructing ff_PRESENT_mask
 #ifdef REV1
@@ -85,7 +94,9 @@ void readFFpresent(void)
 
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
-  acquireI2CSemaphoreBlock(i2c4_sem);
+  if (acquire_sem) {
+    acquireI2CSemaphoreBlock(i2c4_sem);
+  }
 
 #ifdef REV1
   // to port 7
@@ -129,7 +140,9 @@ void readFFpresent(void)
 
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
-  acquireI2CSemaphoreBlock(i2c3_sem);
+  if (acquire_sem) {
+    acquireI2CSemaphoreBlock(i2c3_sem);
+  }
 
 #ifdef REV1
   // to port 0
@@ -234,6 +247,13 @@ void readFFpresent(void)
   log_info(LOG_SERVICE, "F2  4-ch FF mask: 0x%02x\r\n", ff_bitmask_args[3].present_bit_mask);
 #endif
 
+  return ff_combined_present;
+}
+
+// Read the present signals at boot and persist the derived mask to EEPROM.
+void readFFpresent(void)
+{
+  uint32_t ff_combined_present = readFFpresentSignals(true);
   setFFmask(ff_combined_present);
 }
 
