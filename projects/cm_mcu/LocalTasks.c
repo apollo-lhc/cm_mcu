@@ -430,13 +430,10 @@ struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
     {0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
 };
 
-void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+// Does the snapshot transactions; assumes i2c1_sem is already held.
+// Returns early on the first failed transaction.
+static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
-  // grab the semaphore to ensure unique access to I2C controller
-  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
-    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return;
-  }
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
@@ -451,18 +448,12 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
     log_error(LOG_SERVICE, "ctrl w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
     return;
   }
-  // actual command -- read snapshot
-  tSMBusStatus r2 =
-      SMBusMasterBlockRead(&g_sMaster1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
-  if (r2 != SMBUS_OK) {
-    log_error(LOG_SERVICE, "block %d\r\n", r2);
+  // actual command -- read snapshot (variable-length SMBus block read, via the
+  // notification handshake)
+  r = apollo_i2c_ctl_block_r(1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
+  if (r != SMBUS_OK) {
+    log_error(LOG_SERVICE, "block %d\r\n", r);
     return;
-  }
-  while ((r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-  }
-  if (r2 != SMBUS_TRANSFER_COMPLETE) {
-    log_error(LOG_SERVICE, "SMBUS %d\r\n", r2);
   }
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
@@ -472,8 +463,19 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
       log_error(LOG_SERVICE, "error reset %s\r\n", add->name);
     }
   }
+}
 
-  // if we have a semaphore, give it
+void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+{
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return;
+  }
+
+  snapdump_locked(add, page, snapshot, reset);
+
+  // always release the semaphore, including on the helper's error paths
   if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c1_sem);
   }
