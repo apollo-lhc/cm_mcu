@@ -431,6 +431,14 @@ void PowerSupplyTask(void *parameters)
               log_info(LOG_PWRCTL, "enable 3v8\r\n");
               blade_power_ok(true);
               nextState = POWER_ON;
+              // load all clocks from EEPROM
+              int ret = load_all_clocks();
+              if (ret != 0) {
+                log_error(LOG_PWRCTL, "load_all_clocks failed with %d\r\n", ret);
+                disable_ps(); // turn off power
+                power_supply_alarm = true;
+                nextState = POWER_FAILURE;
+              }
             }
           }
           else {
@@ -443,14 +451,6 @@ void PowerSupplyTask(void *parameters)
             else
               log_warn(LOG_PWRCTL, "disable 3v8 failed with %d\r\n", ret);
             disable_ps();
-            power_supply_alarm = true;
-            nextState = POWER_FAILURE;
-          }
-          // load all clocks from EEPROM
-          int ret = load_all_clocks();
-          if (ret != 0) {
-            log_error(LOG_PWRCTL, "load_all_clocks failed with %d\r\n", ret);
-            disable_ps(); // turn off power
             power_supply_alarm = true;
             nextState = POWER_FAILURE;
           }
