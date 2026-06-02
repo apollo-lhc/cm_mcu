@@ -465,3 +465,54 @@ bus 4, …). It's a device-**model** behavior **across buses**, not "device 8." 
   six buses uniformly.
 - Still unverified (would need the Samtec datasheet for P/N `B0425040011201`): *why* this model
   clock-stretches and whether it's spec'd or marginal. Does not gate the firmware fix.
+
+---
+
+## First soak WITH the structural fix (2026-06-01): buffer fix held, benign busy-error persists
+
+Build under test: **`0fc7091`** ("move to static buffer for use-after-release bug",
+`v0.99.22-10-g0fc7091`, 2026-05-31 12:56) — the **first soak with the per-bus static RX/TX buffers in
+place** (not a timing-perturbed diagnostic build). Ran **726 min (12.1 h)**:
+
+```
+202606010458 I2C   WRN I2CCommunication.c:94 :dev 3 reg read PERIPHERAL_BUSY MCS=0x41 BUSY=1 BUSBSY=1
+202606010458 MONI2C ERR MonitorTaskI2C.c:160:FF_F2: TEMPERATURE_ALARM read Error PERIPHERAL_BUSY, break (ps=8)
+```
+
+**No `bkpt`, no memory corruption** in 726 min.
+
+### Read
+
+1. **Corruption stayed away on the real fix.** Earlier clean runs were quieter/noisier diagnostic
+   builds with no logic change → I (correctly) flagged them as "improved/masked." This run has the
+   actual `.bss`-buffer change: a late completion ISR now writes into a persistent per-bus buffer, not
+   a freed stack frame. If the use-after-return model is right, the corruption path is **closed**, not
+   hidden. One soak ≠ proof (the event was always rare, and invisible-byte hits — large I2C data
+   values — wouldn't print), but this is the first evidence that weighs toward *fixed* over *masked*.
+
+2. **The benign `PERIPHERAL_BUSY` persists exactly as predicted.** Same fingerprint: **dev 3 / ps=8**
+   (F2_5, the B0425040011201 4-ch XCVR) / **MCS=0x41**. The static buffer is a **memory-safety net
+   only** — it does nothing to the early-wake race, so this residual is expected, not a regression.
+   Rate (1 event / 12.1 h) is the same order as the prior single-sample leak-through (~1 / 17.5 h).
+
+### Diagnostic gap on this event
+
+The `waited N us` line is back at **`log_debug`** (suppressed), so we **cannot tell whether the bounded
+idle-wait engaged** on this event. The whole single-sample-fooled diagnosis hinged on *no preceding
+`waited` line ⇒ `us==0`*; without it, this event neither confirms nor refutes that theory — just "still
+happening at the expected rate." `MCS=0x41` caveats unchanged: **BUSY=1 invalidates the other MCS bits**,
+so `BUSBSY=1` here is indeterminate (not "bus held externally"); and it's sampled at the *failing*
+`SMBusMasterI2CWriteRead` entry, ~1 µs after the wait's own sample.
+
+### Recommendation (unchanged, reaffirmed)
+
+To retire the benign error (and the underlying stale-read risk) — correctness fix, not more diagnostics:
+1. **Cheap:** spin the idle-wait while `(MCS & (I2C_MCS_BUSY | I2C_MCS_BUSBSY))`, not just
+   `MAP_I2CMasterBusy()` (BUSY). BUSBSY is valid once BUSY reads 0 — catches the transient BUSY-low that
+   fools the single sample. One-liner in `i2c_arm_notify_slot`, lowest-risk test of the residual.
+2. **Proper:** notify on the TM4C **STOP interrupt** (`I2C_MASTER_INT_STOP`, unused) instead of the last
+   DATA interrupt — removes the race at the source. Bigger change, separate.
+
+If instrumenting first: flip only the `waited` line back to `log_warn` (or log only when `us` hits the
+250 cap) so the next leak-through reveals whether the wait engaged. User is letting `0fc7091` soak
+longer before changing anything.

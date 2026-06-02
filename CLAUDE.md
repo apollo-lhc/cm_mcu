@@ -408,7 +408,7 @@ A `.gdbinit` file is provided: `cm_mcu.gdbinit`. Connect via Segger J-LINK EDU.
 
 ## Development Notes for AI Assistants
 
-- **Don't fix or fret about code formatting** (`clang-format` / `make format`). The maintainer handles formatting separately — `clang-format` is fiddly and sensitive to exact version mismatches. Write reasonable code and leave formatting cleanup to them; do not run `format-apply` or block on format errors.
+- **Don't fix or fret about code formatting** (`clang-format` / `make format`). The maintainer handles formatting separately — `clang-format` is fiddly and sensitive to exact version mismatches. Write reasonable code and leave formatting cleanup to them; do not run `format-apply` or block on format errors. Let the maintainer run the build tests.
 - Integers: use `uint32_t`, `int32_t`, etc. — not bare `int` for register-width values
 - Float-to-uint32 conversion for EEPROM: use `memcpy(&u32, &f, sizeof(float))` — not union type-punning
 - All EEPROM writes from tasks must use `write_eeprom()` (queue-based), never direct driver calls
