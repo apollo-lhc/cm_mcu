@@ -436,7 +436,7 @@ void vCommandLineTask(void *pvParameters)
   StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
   uint32_t uart_base = args->uart_base;
 
-  UARTPrint(uart_base, pcWelcomeMessage);
+  Print(pcWelcomeMessage);
   struct microrl_user_data_t rl_userdata = {
       .uart_base = uart_base,
   };
