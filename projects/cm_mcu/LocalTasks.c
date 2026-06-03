@@ -728,7 +728,7 @@ int init_registers_clk(void)
   }
   return status;
 }
-void init_registers_ff(void)
+int init_registers_ff(void)
 {
 
   // =====================================================
@@ -825,6 +825,7 @@ void init_registers_ff(void)
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c3_sem);
   }
+  return 0; // dummy value
 }
 #endif // REV1
 #if defined(REV2) || defined(REV3)
@@ -900,7 +901,7 @@ int init_registers_clk(void)
 #endif // REV2 || REV3
 
 #ifdef REV2
-void init_registers_ff(void)
+int init_registers_ff(void)
 {
   log_info(LOG_SERVICE, "%s\r\n", __func__);
   int result;
@@ -961,6 +962,7 @@ void init_registers_ff(void)
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c3_sem);
+  int r1 = result;
   result = 0;
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
@@ -1012,6 +1014,7 @@ void init_registers_ff(void)
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c3_sem);
   }
+  return r1 + result;
 }
 #elif defined(REV3)
 int init_registers_ff(void)
