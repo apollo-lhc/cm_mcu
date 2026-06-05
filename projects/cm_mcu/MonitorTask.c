@@ -75,6 +75,9 @@ void MonitorTask(void *parameters)
         else {                   // if the power state is fully on
           if (!isFullyPowered) { // was previously off
             log_info(LOG_MON, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
+            for (int i = 0; i < args->n_values; ++i) {
+              args->pm_values[i] = __builtin_nanf("");
+            }
             isFullyPowered = true;
           }
         }
