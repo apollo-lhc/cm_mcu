@@ -480,6 +480,14 @@ BaseType_t ff_status(int argc, char **argv, char *m)
 // Re-read the firefly *PRESENT signals live from the I/O expanders and print
 // them. This is the on-demand equivalent of the boot-time readFFpresent(), but
 // it does NOT write the EEPROM or change the firefly enable masks.
+//
+// EXPERT TOOL: this calls readFFpresentSignals(false), i.e. it touches buses 3/4
+// WITHOUT taking their mutexes, so it works even when a bus is wedged. The
+// tradeoff is that, if a MonitorTaskI2C is driving the same bus at the same time,
+// the reading can be garbage or time out (250 ms) -- never a crash, but not
+// trustworthy. For a reliable read, lock the buses manually around the command:
+//   sem_ctl 3 take ; sem_ctl 4 take ; ff_present ; sem_ctl 3 release ; sem_ctl 4 release
+// See README.md "Higher-level semaphore-free helpers and unprogrammed exploration".
 BaseType_t ff_present(int argc, char **argv, char *m)
 {
   int copied = 0;

@@ -72,8 +72,18 @@ void setFFmask(uint32_t ff_combined_present)
 // readFFpresent() wrapper via setFFmask().
 //
 // If acquire_sem is true the i2c3/i2c4 bus semaphores are taken around the
-// transfers (boot path). Pass false to skip all semaphore handling -- used by
-// the CLI, which must not block on / take the bus mutexes.
+// transfers (boot path). Pass false to skip all semaphore handling.
+//
+// acquire_sem == false is an EXPERT-ONLY path. It exists so the CLI can read the
+// present signals even when the bus mutex is held by a stuck transaction (wedged
+// bus) -- blocking on the mutex there would defeat the diagnostic. It is NOT
+// internally race-free: without the bus mutex these transfers share the per-bus
+// scratch buffers and the single TaskNotifySMBus[bus] completion slot with any
+// MonitorTaskI2C running buses 3/4 concurrently. Because those buffers are static
+// .bss the failure mode is a wrong value or a 250 ms SMBUS_TIMEOUT, never memory
+// corruption -- but the result is unreliable. For trustworthy results, hold the
+// bus manually around the call: sem_ctl 3 take / sem_ctl 4 take ... sem_ctl release.
+// See README.md "Higher-level semaphore-free helpers and unprogrammed exploration".
 uint32_t readFFpresentSignals(bool acquire_sem)
 {
   // outputs from *_PRESENT pins for constructing ff_PRESENT_mask
@@ -129,7 +139,6 @@ uint32_t readFFpresentSignals(bool acquire_sem)
   r += apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   r += apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1_bar); // active low
   r += apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-  log_info(LOG_SERVICE, "raw read f1_ff12xmit_4v0_sel: 0x%x\r\n", f1_ff12xmit_4v0_sel);
   f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0xF; // bits 4-7
   r += apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                 // clear the mux
   if (r) {
@@ -179,7 +188,6 @@ uint32_t readFFpresentSignals(bool acquire_sem)
   r += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   r += apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
   r += apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-  log_info(LOG_SERVICE, "raw read f2_ff12xmit_4v0_sel: 0x%x\r\n", f2_ff12xmit_4v0_sel);
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF; // bits 4-7
   r += apollo_i2c_ctl_w(3, 0x71, 1, 0x0);                 // clear the mux
   if (r) {

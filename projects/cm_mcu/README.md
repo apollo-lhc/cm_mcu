@@ -133,6 +133,50 @@ the raw-command + I2C path will break silently. The robust fix is to give I2C co
 notification index (`configTASK_NOTIFICATION_ARRAY_ENTRIES = 2`, using the `…Indexed` notify APIs),
 leaving index 0 to the stream buffer. See `i2c_lockup_notes.md` for the full analysis.
 
+### Higher-level semaphore-free helpers and unprogrammed exploration
+
+A few *higher-level* helpers also intentionally skip the bus mutex so they stay usable for expert
+exploration and when a bus is wedged (i.e. when the mutex is held by a stuck transaction and blocking
+on it would defeat the diagnostic). The current examples are `readFFpresentSignals(acquire_sem=false)`
+and its CLI front-end `ff_present`, which walk the F1/F2 optics I/O-expander muxes on buses 3 and 4.
+
+**This is no longer a memory-safety hazard.** The original crash was a *stack* use-after-return — the
+SMBus ISR writing into a freed/reused stack frame after the wrapper returned. The wrappers now use
+persistent per-bus `.bss` scratch buffers (`i2c_txbuf` / `i2c_rxbuf` in `I2CCommunication.c`) instead
+of stack locals, so a late ISR or a concurrent caller can only ever produce a *wrong value* — never
+corrupt an unrelated frame.
+
+**What is still shared and unprotected if you skip the mutex while a monitor task runs the same bus:**
+
+- the per-bus scratch buffers — a concurrent `MonitorTaskI2C` transaction can interleave bytes into
+  the same `i2c_txbuf[bus]`/`i2c_rxbuf[bus]`, giving a garbage reading;
+- `TaskNotifySMBus[bus]`, the *single* per-bus completion slot — last writer wins, so the loser never
+  gets its `vTaskNotifyGiveFromISR` and waits out the full 250 ms timeout, returning `SMBUS_TIMEOUT`.
+
+Neither corrupts memory; both just make the result unreliable.
+
+**Safe workflow today:** wrap the exploration in a manually held lock, exactly like the raw commands
+above — `sem_ctl 3 take` / `sem_ctl 4 take`, run the semaphore-free helper(s), then `sem_ctl … release`.
+That excludes the monitor tasks for the duration and makes the shared buffer/notify-slot races moot.
+
+**For future consideration** (increasing robustness), if the manual-lock workflow proves too easy to
+forget:
+
+1. Default the one-shot diagnostics (`ff_present`) to a *bounded-timeout* acquire
+   (`acquireI2CSemaphoreTime(s, pdMS_TO_TICKS(100))`) and print `bus busy, try again` on failure;
+   keep an explicit `force` argument for the genuine wedged-bus case rather than skipping the lock by
+   default.
+2. Give the `force`/bypass path its **own dedicated scratch buffer**, separate from the monitor-task
+   buffers, so even bypass mode can never alias `i2c_txbuf`/`i2c_rxbuf`. (The notify-slot race
+   remains, but only costs a 250 ms timeout — not corruption.)
+3. Add a maintenance **pause** (`mon_pause` / `mon_resume`) that `vTaskSuspend`s the three
+   `MonitorTaskI2C` instances. This is the only option that gives exploration *exclusive*,
+   uncontended bus access **and** persistent mux state across a sequence of commands — the monitor
+   tasks otherwise reset the mux to 0 between their own transactions. It needs the task handles, which
+   are currently created with `NULL` in `cm_mcu.c`; the cleanest wiring is for each task to store
+   `xTaskGetCurrentTaskHandle()` into its own `args` struct at startup, which the CLI already
+   references.
+
 ## Logging and the log mutex
 
 The logger is a modified copy of [rxi/log.c](https://github.com/rxi/log.c) in `common/log.c`. The

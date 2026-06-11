@@ -54,7 +54,17 @@ volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus
 // ISR reads/writes it as bytes arrive. Passing these persistent .bss buffers instead of a
 // stack local means a late ISR completing after the wrapper has returned writes here, not
 // into a freed/reused stack frame (the memory-corruption root cause; see i2c_lockup_notes.md).
-// Safe to share per bus because each bus is serialized by its own semaphore.
+//
+// OWNERSHIP CONTRACT: these buffers are shared by every caller of a given bus and are NOT
+// internally locked. They are safe ONLY because each bus is serialized by its own mutex
+// (i2c1_sem..i2c6_sem) and the caller is required to hold that mutex across the whole
+// transaction sequence. If two callers touch the same bus without that mutex (e.g. the
+// deliberately semaphore-free CLI exploration helpers -- readFFpresentSignals(false),
+// ff_present -- running concurrently with a MonitorTaskI2C on the same bus), they race on
+// these buffers AND on TaskNotifySMBus[bus]. Because the storage is static .bss the worst
+// case is a wrong value or a 250 ms SMBUS_TIMEOUT, never memory corruption -- but the result
+// is unreliable. See README.md "Higher-level semaphore-free helpers and unprogrammed
+// exploration" for the safe workflow (manual sem_ctl lock) and hardening options.
 static uint8_t i2c_rxbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES];
 static uint8_t i2c_txbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES_ADDR + MAX_BYTES];
 
