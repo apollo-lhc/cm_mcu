@@ -277,8 +277,37 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   }
   return r;
 }
-// for PMBUS commands
-static uint8_t smbus_get_device_index(tSMBus *smbus)
+// read a variable-length SMBus block from an I2C device, through the
+// notification handshake. The slave reports the length; on success the data
+// is in data[] and the count is available via SMBusRxPacketSizeGet().
+int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uint8_t *data)
+{
+  tSMBus *p_sMaster = pSMBus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
+  configASSERT(p_sMaster != NULL);
+
+  i2c_arm_notify_slot(device);
+
+  tSMBusStatus r = SMBusMasterBlockRead(p_sMaster, address, command, data);
+  if (r == SMBUS_OK) { // the block read was successfully initiated
+    i2c_wait_for_transfer(device);
+    r = *p_eStatus;
+  }
+  else {
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
+    return r;
+  }
+
+  if (r != SMBUS_OK) {
+    log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
+  }
+  return r;
+}
+
+// for PMBUS commands. Returns the I2C bus/device index (1-6) for a given
+// SMBus controller pointer, or 0 if not found.
+uint8_t smbus_get_device_index(tSMBus *smbus)
 {
   for (int i = 1; i <= 6; i++) {
     if (pSMBus[i] == smbus) {

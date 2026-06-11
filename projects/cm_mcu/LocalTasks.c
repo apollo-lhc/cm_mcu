@@ -448,7 +448,6 @@ static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t sn
     log_error(LOG_SERVICE, "ctrl w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
     return;
   }
-#if 0
   // actual command -- read snapshot (variable-length SMBus block read, via the
   // notification handshake)
   r = apollo_i2c_ctl_block_r(1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
@@ -456,7 +455,7 @@ static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t sn
     log_error(LOG_SERVICE, "block %d\r\n", r);
     return;
   }
-#endif // 0
+
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
     cmd = 0x3;
