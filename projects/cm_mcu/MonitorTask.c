@@ -23,11 +23,13 @@
 // local includes
 #include "common/utils.h"
 #include "common/smbus.h"
+#include "common/smbus_helper.h"
 #include "common/log.h"
 #include "common/smbus_units.h"
 #include "MonitorTask.h"
 #include "Tasks.h"
 #include "Semaphore.h"
+#include "I2CCommunication.h"
 
 // Todo: rewrite to get away from awkward/bad SMBUS implementation from TI
 
@@ -43,6 +45,11 @@ void MonitorTask(void *parameters)
   struct MonitorTaskArgs_t *args = parameters;
 
   configASSERT(args->name != 0);
+
+  // derive the I2C bus index (1-6) from the controller pointer so we can use
+  // the notification-based apollo_i2c_ctl_* wrappers.
+  uint8_t i2c_dev = smbus_get_device_index(args->smbus);
+  configASSERT(i2c_dev != 0);
 
   bool log = false;
   args->updateTick = xLastWakeTime; // initial value
@@ -74,7 +81,7 @@ void MonitorTask(void *parameters)
         }
         else {                   // if the power state is fully on
           if (!isFullyPowered) { // was previously off
-            log_info(LOG_MON, "%s: PWR on. (Re)starting I2C monitoring.\r\n", args->name);
+            log_info(LOG_MON, "%s: PWR on. (Re)start PMBUS mon\r\n", args->name);
             isFullyPowered = true;
           }
         }
@@ -84,39 +91,20 @@ void MonitorTask(void *parameters)
       // select the appropriate output for the mux
       data[0] = 0x1U << args->devices[ps].mux_bit;
       log_trace(LOG_MON, "%s: mux to 0x%02x\r\n", args->name, data[0]);
-      tSMBusStatus r = SMBusMasterI2CWrite(args->smbus, args->devices[ps].mux_addr, data, 1);
-      if (r != SMBUS_OK) {
-        log_debug(LOG_MON, "%s: I2CBus command failed  (setting mux)\r\n", args->name);
-        continue;
-      }
-      int tries = 0;
-      while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-        if (++tries > 500) {
-          log_warn(LOG_MON, "timed out (SMBUSxfer mux) (%s, dev=%d)\r\n",
-                   args->name, ps);
-          break;
-        }
-      }
-      if (*args->smbus_status != SMBUS_OK) {
-        log_trace(LOG_MON, "%s:Mux w error %d, break (ps=%d)\r\n", args->name, *args->smbus_status,
-                  ps);
+      int r = apollo_i2c_ctl_w(i2c_dev, args->devices[ps].mux_addr, 1, data[0]);
+      if (r != SMBUS_OK) { // mux should always be accessible
+        log_warn(LOG_MON, "%s:Mux w error %s, break (ps=%d)\r\n", args->name, SMBUS_get_error(r), ps);
         break;
       }
 
       // loop over pages on the supply
       for (uint8_t page = 0; page < args->n_pages; ++page) {
-        r = SMBusMasterByteWordWrite(args->smbus, args->devices[ps].dev_addr, PAGE_COMMAND, &page,
-                                     1);
+        r = apollo_i2c_ctl_reg_w(i2c_dev, args->devices[ps].dev_addr, 1, PAGE_COMMAND, 1, page);
         if (r != SMBUS_OK) {
-          log_warn(LOG_MON, "SMBUS page failed %s\r\n", args->name);
-        }
-        while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-        }
-        // this is checking the return from the interrupt
-        if (*args->smbus_status != SMBUS_OK) {
-          log_warn(LOG_MON, "%s: Page SMBUS ERROR: %d\r\n", args->name, *args->smbus_status);
+          if (!args->ignoreNACK && SMBUS_is_NACK(r)) {
+            log_warn(LOG_MON, "%s: Page SMBUS ERROR: %s\r\n", args->name, SMBUS_get_error(r));
+          }
+          continue;
         }
         log_trace(LOG_MON, "%s: Page %d\r\n", args->name, page);
 
@@ -124,34 +112,22 @@ void MonitorTask(void *parameters)
         for (int c = 0; c < args->n_commands; ++c) {
           int index = ps * (args->n_commands * args->n_pages) + page * args->n_commands + c;
 
-          data[0] = 0x0U;
-          data[1] = 0x0U;
-          r = SMBusMasterByteWordRead(args->smbus, args->devices[ps].dev_addr,
-                                      args->commands[c].command, data, args->commands[c].size);
+          uint32_t output_raw = 0;
+          r = apollo_i2c_ctl_reg_r(i2c_dev, args->devices[ps].dev_addr, 1,
+                                   args->commands[c].command, args->commands[c].size, &output_raw);
           if (r != SMBUS_OK) {
-            log_warn(LOG_MON, "%s: SMBUS failed (master/bus busy, (ps=%d,c=%d,p=%d)\r\n", args->name,
-                     ps, c, page);
-            args->pm_values[index] = __builtin_nanf("");
-            continue; // abort reading this register
-          }
-          tries = 0;
-          while (SMBusStatusGet(args->smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
-            if (++tries > 500) {
-              log_warn(LOG_MON, "timed out (SMBUSxfer) (%s, c=%d,dev=%d)\r\n",
-                       args->name, c, ps);
-              break;
+            if (!args->ignoreNACK && SMBUS_is_NACK(r)) {
+              log_warn(LOG_MON, "%s: Error %s, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
+                       SMBUS_get_error(r), ps, c, page);
             }
-          }
-          if (*args->smbus_status != SMBUS_OK) {
-            log_warn(LOG_MON, "%s: Error %d, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
-                     *args->smbus_status, ps, c, page);
             // abort reading this device
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
             break;
           }
+          data[0] = output_raw & 0xFFU;
+          data[1] = (output_raw >> 8) & 0xFFU;
           float val;
           if (args->commands[c].type == PM_LINEAR11) {
             linear11_val_t ii;

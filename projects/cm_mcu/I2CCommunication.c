@@ -68,6 +68,9 @@ volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus
 static uint8_t i2c_rxbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES];
 static uint8_t i2c_txbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES_ADDR + MAX_BYTES];
 
+#define MAX_BLOCK_BYTES 32 // SMBus spec maximum block-read payload
+static uint8_t i2c_block_rxbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BLOCK_BYTES];
+
 #define I2C_TIMEOUT_MS 250
 
 // Bounded wait (microseconds) for the on-chip I2C master FSM to finish a prior
@@ -82,12 +85,15 @@ static void i2c_arm_notify_slot(uint8_t device)
   // STOP cannot make this transaction's initiation return PERIPHERAL_BUSY.
   uint32_t base = pSMBus[device]->ui32I2CBase;
   uint32_t us = 0;
-  while (MAP_I2CMasterBusy(base) && us < I2C_IDLE_WAIT_US) {
+  uint32_t mcs = 0;
+  while (((mcs = HWREG(base + I2C_O_MCS)) & (I2C_MCS_BUSY | I2C_MCS_BUSBSY)) &&
+         us < I2C_IDLE_WAIT_US) {
     DELAY_US(1);
     ++us;
   }
   if (us) {
-    log_debug(LOG_I2C, "dev %d waited %u us for master idle\r\n", device, us);
+    log_debug(LOG_I2C, "dev %d waited %u us for idle (MCS=0x%02lx)\r\n", device, us,
+              (unsigned long)mcs);
   }
 
   TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
@@ -147,7 +153,12 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   }
   memcpy(data, rxbuf, nbytes); // copy results to the caller before returning
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d read NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
+    }
   }
   else {
     log_debug(LOG_I2C, "dev %d read success 0x%0*X\r\n", device, nbytes * 2, data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24));
@@ -191,7 +202,12 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
     *packed_data |= data[i] << (i * 8);
   }
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "dev %d reg read fail %s\r\n", device, SMBUS_get_error(r));
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d reg read NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d reg read fail %s\r\n", device, SMBUS_get_error(r));
+    }
   }
   else {
     log_debug(LOG_I2C, "dev %d reg read success 0x%0*X\r\n", device, nbytes * 2, *packed_data);
@@ -235,7 +251,12 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   }
 
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "dev %d reg write fail %s\r\n", device, SMBUS_get_error(r));
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d reg write NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d reg write fail %s\r\n", device, SMBUS_get_error(r));
+    }
   }
   else {
     log_debug(LOG_I2C, "dev %d reg write success 0x%0*X\r\n", device, nbytes * 2, packed_data);
@@ -270,7 +291,12 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   }
 
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d write NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+    }
   }
   else {
     log_debug(LOG_I2C, "dev %d write success 0x%0*X\r\n", device, nbytes * 2, value);
@@ -279,16 +305,21 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
 }
 // read a variable-length SMBus block from an I2C device, through the
 // notification handshake. The slave reports the length; on success the data
-// is in data[] and the count is available via SMBusRxPacketSizeGet().
+// is copied into data[] (caller must supply at least MAX_BLOCK_BYTES bytes).
+// Uses a persistent per-bus .bss buffer so a late ISR completing after this
+// function returns cannot write into a freed/reused stack frame.
 int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uint8_t *data)
 {
   tSMBus *p_sMaster = pSMBus[device];
   volatile tSMBusStatus *p_eStatus = eStatus[device];
   configASSERT(p_sMaster != NULL);
 
+  uint8_t *rxbuf = i2c_block_rxbuf[device];
+  memset(rxbuf, 0, MAX_BLOCK_BYTES);
+
   i2c_arm_notify_slot(device);
 
-  tSMBusStatus r = SMBusMasterBlockRead(p_sMaster, address, command, data);
+  tSMBusStatus r = SMBusMasterBlockRead(p_sMaster, address, command, rxbuf);
   if (r == SMBUS_OK) { // the block read was successfully initiated
     i2c_wait_for_transfer(device);
     r = *p_eStatus;
@@ -300,7 +331,18 @@ int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uin
   }
 
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d block read NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
+    }
+  }
+  else {
+    uint8_t received = SMBusRxPacketSizeGet(p_sMaster);
+    if (received > MAX_BLOCK_BYTES)
+      received = MAX_BLOCK_BYTES;
+    memcpy(data, rxbuf, received);
   }
   return r;
 }

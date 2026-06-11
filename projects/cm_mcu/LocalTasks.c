@@ -376,6 +376,7 @@ struct MonitorTaskArgs_t fpga_args = {
     .smbus_status = &eStatus5,
 #endif
     .xSem = NULL,
+    .ignoreNACK = true,
     .requirePower = true,
     .stack_size = 4096U,
 };
@@ -448,6 +449,11 @@ static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t sn
     log_error(LOG_SERVICE, "ctrl w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
     return;
   }
+  // The device needs time to copy NVRAM into the snapshot register after the
+  // SNAPSHOT_CONTROL write. The old polling code provided ~20ms of implicit
+  // delay via vTaskDelay(10ms) per poll. Without an explicit wait here the
+  // device returns a zero-length block read (DATA_SIZE_ERROR).
+  vTaskDelay(pdMS_TO_TICKS(20));
   // actual command -- read snapshot (variable-length SMBus block read, via the
   // notification handshake)
   r = apollo_i2c_ctl_block_r(1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
@@ -575,6 +581,7 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
     .xSem = NULL,
+    .ignoreNACK = false,
     .requirePower = false,
     .stack_size = 4096U,
 };

@@ -139,8 +139,8 @@ uint32_t readFFpresentSignals(bool acquire_sem)
   r += apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
   r += apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1_bar); // active low
   r += apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0xF; // bits 4-7
-  r += apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                 // clear the mux
+  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0xF;               // bits 4-7
+  r += apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                               // clear the mux
   if (r) {
     log_error(LOG_SERVICE, "\tFailed to read F1 optics presence (r=%d)\r\n", r);
   }
@@ -188,8 +188,8 @@ uint32_t readFFpresentSignals(bool acquire_sem)
   r += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
   r += apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
   r += apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF; // bits 4-7
-  r += apollo_i2c_ctl_w(3, 0x71, 1, 0x0);                 // clear the mux
+  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF;               // bits 4-7
+  r += apollo_i2c_ctl_w(3, 0x71, 1, 0x0);                               // clear the mux
   if (r) {
     log_error(LOG_SERVICE, "\tFailed to read F2 optics presence (r=%d)\r\n", r);
   }

@@ -43,6 +43,7 @@ struct MonitorTaskArgs_t {
   tSMBus *smbus;                       // pointer to I2C controller
   volatile tSMBusStatus *smbus_status; // pointer to I2C status
   volatile TickType_t updateTick;      // last update time, in ticks
+  bool ignoreNACK;                     // true if NACKs should be ignored
   SemaphoreHandle_t xSem;              // semaphore for controlling access to device
   const bool requirePower;             // true if device requires power
   UBaseType_t stack_size;              // stack size of task

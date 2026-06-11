@@ -239,7 +239,6 @@ __attribute__((noreturn)) int main(void)
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
     log_set_level(LOG_INFO, i);
   }
-  log_set_level(LOG_ERROR, LOG_MON); // for now
   log_set_lock(vGiveOrTakeSemaphore, log_sem);
 
   dcdc_args.xSem = i2c1_sem;
@@ -292,8 +291,8 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 384, &ff_f2_args, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(MonitorTaskI2C, clk_args.name, 384, &clk_args, tskIDLE_PRIORITY + 3, NULL);
 #endif // REV2
-  xTaskCreate(MonitorTask, dcdc_args.name, 192, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTask, fpga_args.name, 192, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTask, dcdc_args.name, 256, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTask, fpga_args.name, 256, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
@@ -403,8 +402,14 @@ __attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */
   taskDISABLE_INTERRUPTS();
+  // get the link register
+  // Danger: only valid if stack isn't too corrupted
+  StackType_t *pxTopOfStack = *(StackType_t **)pxTask; // first field of TCB_t
+  uint32_t savedPC = pxTopOfStack[6];                  // PC in stacked frame
+  uint32_t savedLR = pxTopOfStack[5];                  // LR in stacked frame
   char tmp[256];
-  snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
+  snprintf(tmp, 256, "Stack overflow: task %s, PC=0x%08x, LR=0x%08x\r\n",
+           pcTaskName, savedPC, savedLR);
   UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
   while (MAP_UARTBusy(ZQ_UART))
