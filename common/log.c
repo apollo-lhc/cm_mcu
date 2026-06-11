@@ -333,13 +333,6 @@ void log_log(int level, const char *file, int line, enum log_facility_t facility
   if (facility >= NUM_LOG_FACILITIES) {
     facility = LOG_DEFAULT; //
   }
-  if (level != level_chk) {
-#ifdef GET_LR                     // not defined for prod_test e.g.
-    volatile void *lr = GET_LR(); // who called log_log
-    (void)lr;
-#endif
-    __asm volatile("bkpt #0");
-  }
   if (!L.quiet && level <= L.level[facility]) {
     init_event(&ev, NULL);
     va_start(ev.ap, fmt);
