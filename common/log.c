@@ -321,7 +321,6 @@ static void init_event(log_Event *ev, void *udata)
 void log_log(int level, const char *file, int line, enum log_facility_t facility,
              const char *fmt, ...)
 {
-  volatile int level_chk = level;
   log_Event ev = {
       .fmt = fmt,
       .file = file,
