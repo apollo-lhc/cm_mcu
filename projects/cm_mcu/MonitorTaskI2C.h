@@ -41,7 +41,7 @@ struct MonitorTaskI2CArgs_t {
   const int mux_reset_pin_bar;           // MCU pin for resetting the I2C Mux. active low.
   TickType_t updateTick;                 // last update time, in ticks
   SemaphoreHandle_t xSem;                // semaphore for controlling access to device
-  UBaseType_t stack_size;                // stack size of task
+  UBaseType_t stack_size;                // high water mark of stack size of task
   MonTaskFcnPointer presentCallback;     // callback for present check
   MonTaskI2CTypeFcnPointer typeCallback; // callback for type check
 };
