@@ -84,6 +84,7 @@ static void i2c_arm_notify_slot(uint8_t device)
   // Bounded spin until the master FSM is idle, so a late-completing previous
   // STOP cannot make this transaction's initiation return PERIPHERAL_BUSY.
   uint32_t base = pSMBus[device]->ui32I2CBase;
+  configASSERT(base != 0);
   uint32_t us = 0;
   uint32_t mcs = 0;
   while (((mcs = HWREG(base + I2C_O_MCS)) & (I2C_MCS_BUSY | I2C_MCS_BUSBSY)) &&
@@ -160,9 +161,6 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
       log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
     }
   }
-  else {
-    log_debug(LOG_I2C, "dev %d read success 0x%0*X\r\n", device, nbytes * 2, data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24));
-  }
   return r;
 }
 
@@ -208,9 +206,6 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
     else {
       log_error(LOG_I2C, "dev %d reg read fail %s\r\n", device, SMBUS_get_error(r));
     }
-  }
-  else {
-    log_debug(LOG_I2C, "dev %d reg read success 0x%0*X\r\n", device, nbytes * 2, *packed_data);
   }
   return r;
 }
@@ -258,9 +253,6 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
       log_error(LOG_I2C, "dev %d reg write fail %s\r\n", device, SMBUS_get_error(r));
     }
   }
-  else {
-    log_debug(LOG_I2C, "dev %d reg write success 0x%0*X\r\n", device, nbytes * 2, packed_data);
-  }
   return r;
 }
 
@@ -297,9 +289,6 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
     else {
       log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
     }
-  }
-  else {
-    log_debug(LOG_I2C, "dev %d write success 0x%0*X\r\n", device, nbytes * 2, value);
   }
   return r;
 }
@@ -340,8 +329,9 @@ int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uin
   }
   else {
     uint8_t received = SMBusRxPacketSizeGet(p_sMaster);
-    if (received > MAX_BLOCK_BYTES)
+    if (received > MAX_BLOCK_BYTES) {
       received = MAX_BLOCK_BYTES;
+    }
     memcpy(data, rxbuf, received);
   }
   return r;
@@ -379,7 +369,9 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
   // TRANSACTION 2: device read/write. PMBus/SMBus command.
   i2c_arm_notify_slot(device);
   if (read) {
-    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
+    uint8_t *v = i2c_rxbuf[device];
+    const size_t sz = cmd->size;
+    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, v, sz);
   }
   else {
     r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
@@ -390,6 +382,12 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
     return r;
   }
   i2c_wait_for_transfer(device);
+  if (read) {
+    // copy the result back to the value
+    for (int i = 0; i < cmd->size; ++i) {
+      value[i] = i2c_rxbuf[device][i];
+    }
+  }
   // ISR writes the per-bus status (SMBUS_OK or specific error).
   r = *smbus_status;
 

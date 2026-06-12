@@ -49,8 +49,17 @@ void setFFmask(uint32_t ff_combined_present)
 #elif defined(REV2) || defined(REV3) // TODO: check
   uint32_t data = (ff_combined_present) & 0xFFFFFU;
 #endif                               // REV1
-  ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
+  uint32_t current = read_eeprom_single(EEPROM_ID_FF_ADDR);
+  ff_USER_mask = current;
   ff_PRESENT_mask = data;
+
+  // read/modify/write: only touch the EEPROM if the stored value differs from
+  // what we are about to write (avoids unnecessary write/wear and unlock/lock churn)
+  if (current == data) {
+    log_debug(LOG_SERVICE, "%s:FF EEPROM mask unchanged (0x%lx), skipping write\r\n", __func__, data);
+    return;
+  }
+
   uint64_t block = EEPROMBlockFromAddr(ADDR_FF);
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
