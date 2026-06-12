@@ -1,5 +1,25 @@
 # I2C Rare Lockup / PERIPHERAL_BUSY Analysis
 
+> **STATUS (2026-06-11): fixes landed in PR #284 (`feature/i2c_speedup`, HEAD `d4f9a16`).**
+> - **Memory corruption (use-after-return) — FIXED.** Per-bus static `.bss` RX/TX scratch buffers
+>   (`i2c_rxbuf`/`i2c_txbuf`/`i2c_block_rxbuf` in `I2CCommunication.c`) replace stack locals across
+>   *all* wrappers including `apollo_pmbus_rw`'s read path. A late ISR now lands in `.bss`, not a
+>   freed frame. The static-buffer build has now soaked **multiple days with no `bkpt` and no
+>   corruption** (the visible corruption ran ~2/16 h pre-fix), so the use-after-return path is
+>   considered **closed** — not a formal proof (invisible large-byte hits wouldn't print), but strong.
+> - **`SMBUS_PERIPHERAL_BUSY` (benign) — mitigated.** `i2c_arm_notify_slot` now spins the bounded
+>   idle-wait on `MCS & (BUSY|BUSBSY)` (not just `BUSY`), closing the single-sample race. The
+>   *proper* fix (notify on the STOP interrupt) is still open but lower priority.
+> - **Also landed:** `SMBUS_is_NACK()` classification + `ignoreNACK` flag; `clz(0)` and
+>   `page[devtype]`/`command[devtype]` OOB guards; `snapdump` semaphore-leak fix; `MonitorTask`
+>   (dcdc/fpga) migrated to the `apollo_i2c_ctl_*` wrappers; per-transaction success `log_debug`
+>   removed from the hot path; `setFFmask` read/modify/write EEPROM guard; `readFFpresent()` moved
+>   to the power-on path. Diagnostics retained: `-fstack-protector-strong` on
+>   `MonitorTaskI2C`/`MonUtils`/`log`, `__stack_chk_fail` LR decode, shadow-`bkpt` in `log.c`.
+>
+> The dated sections below are the running investigation history that led here; read them for the
+> reasoning, not the current state.
+
 **Branch:** `feature/i2c_speedup`
 **Soak-test baseline firmware:** `06f23fb` (`v0.99.22-7-g06f23fb`, "claude.md error fix", 2026-05-30) —
 this is the build the overnight soak ran on. Return to it with `git checkout 06f23fb` to reproduce the
