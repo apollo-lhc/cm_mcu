@@ -65,6 +65,7 @@ bool getFFch_low(uint8_t val, int channel);
 bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 void readFFpresent(void);
+uint32_t readFFpresentSignals(bool acquire_sem);
 uint16_t getFFtemp(const uint8_t i);
 float getFFavgoptpow(const uint8_t i);
 float getFFoptpow(const uint8_t i, const uint8_t ch);
@@ -80,7 +81,7 @@ uint16_t getFF12ChPresentTxMask(int device);
 uint8_t getFFstatus(const uint8_t i);
 unsigned isFFStale(void);
 TickType_t getFFupdateTick(int ff_t);
-void init_registers_ff(void);
+int init_registers_ff(void);
 
 uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size);
 

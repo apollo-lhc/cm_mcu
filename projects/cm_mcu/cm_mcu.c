@@ -232,14 +232,15 @@ __attribute__((noreturn)) int main(void)
 
   initFPGAMon();
 
+  // Initialize all semaphores
+  initSemaphores();
+  // Set up logging
   // all facilities start at INFO
   for (enum log_facility_t i = 0; i < NUM_LOG_FACILITIES; ++i) {
     log_set_level(LOG_INFO, i);
   }
-  log_set_level(LOG_ERROR, LOG_MON); // for now
+  log_set_lock(vGiveOrTakeSemaphore, log_sem);
 
-  // Initialize all semaphores
-  initSemaphores();
   dcdc_args.xSem = i2c1_sem;
   fpga_args.xSem = i2c5_sem;
 #if defined(REV2) || defined(REV3)
@@ -286,12 +287,12 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(ADCMonitorTask, "ADC", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
 
 #if defined(REV2) || defined(REV3)
-  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, configMINIMAL_STACK_SIZE, &ff_f1_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, configMINIMAL_STACK_SIZE, &ff_f2_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTaskI2C, clk_args.name, configMINIMAL_STACK_SIZE, &clk_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 384, &ff_f1_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 384, &ff_f2_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTaskI2C, clk_args.name, 384, &clk_args, tskIDLE_PRIORITY + 3, NULL);
 #endif // REV2
-  xTaskCreate(MonitorTask, dcdc_args.name, 192, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTask, fpga_args.name, 192, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTask, dcdc_args.name, 256, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTask, fpga_args.name, 256, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
@@ -358,17 +359,25 @@ __attribute__((noreturn)) int main(void)
   __builtin_unreachable();
 }
 
-uintptr_t __stack_chk_guard = 0xdeadbeef;
-
-__attribute__((noreturn)) void __stack_chk_fail(void)
+uintptr_t __stack_chk_guard = 0xdeadbeef; // NOLINT(bugprone-reserved-identifier)
+// decode this with arm-none-eabi-addr2line -e gcc/cm_mcu.axf 0x...
+__attribute__((noreturn)) void __stack_chk_fail(void) // NOLINT(bugprone-reserved-identifier)
 {
-  // fall back to lower-level routine since if we get here things are broken
-  UARTPrint(ZQ_UART, "Stack smashing detected\r\n");
+  uint32_t v = (uint32_t)GET_LR() & ~1u; // &~1 clears the Thumb bit so addr2line maps it directly
+  static const char hex[] = "0123456789ABCDEF";
+  char buf[] = "Stack smashing detected, LR=0x00000000\r\n";
+  // last hex digit sits just before "\r\n\0" => index sizeof(buf)-4; fill LSB-first
+  for (int i = 0; i < 8; ++i) {
+    buf[sizeof(buf) - 4 - i] = hex[v & 0xF];
+    v >>= 4;
+  }
+  UARTPrint(ZQ_UART, buf);
   while (MAP_UARTBusy(ZQ_UART))
     ;
-  configASSERT(1 == 0); // capture in eeprom
-  while (true)
+  configASSERT(1 == 0);
+  while (true) {
     ;
+  }
 }
 
 int SystemStackWaterHighWaterMark(void)
@@ -378,8 +387,9 @@ int SystemStackWaterHighWaterMark(void)
   // we need to disable interrupts since we are looking at the system stack
   taskENTER_CRITICAL();
   for (i = 0; i < SYSTEM_STACK_SIZE; ++i) {
-    if (stack[i] != 0xdeadbeefUL)
+    if (stack[i] != 0xdeadbeefUL) {
       break;
+    }
   }
   taskEXIT_CRITICAL();
   return i;
@@ -392,8 +402,14 @@ __attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */
   taskDISABLE_INTERRUPTS();
+  // get the link register
+  // Danger: only valid if stack isn't too corrupted
+  StackType_t *pxTopOfStack = *(StackType_t **)pxTask; // first field of TCB_t
+  uint32_t savedPC = pxTopOfStack[6];                  // PC in stacked frame
+  uint32_t savedLR = pxTopOfStack[5];                  // LR in stacked frame
   char tmp[256];
-  snprintf(tmp, 256, "Stack overflow: task %s\r\n", pcTaskName);
+  snprintf(tmp, 256, "Stack overflow: task %s, PC=0x%08x, LR=0x%08x\r\n",
+           pcTaskName, savedPC, savedLR);
   UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
   while (MAP_UARTBusy(ZQ_UART))

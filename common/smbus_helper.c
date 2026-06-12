@@ -65,3 +65,6 @@ const char *SMBUS_get_error(tSMBusStatus error)
       break;
   }
 }
+
+// provide external linkage to this inline function
+extern inline bool SMBUS_is_NACK(tSMBusStatus error);

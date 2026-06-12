@@ -49,8 +49,17 @@ void setFFmask(uint32_t ff_combined_present)
 #elif defined(REV2) || defined(REV3) // TODO: check
   uint32_t data = (ff_combined_present) & 0xFFFFFU;
 #endif                               // REV1
-  ff_USER_mask = read_eeprom_single(EEPROM_ID_FF_ADDR);
+  uint32_t current = read_eeprom_single(EEPROM_ID_FF_ADDR);
+  ff_USER_mask = current;
   ff_PRESENT_mask = data;
+
+  // read/modify/write: only touch the EEPROM if the stored value differs from
+  // what we are about to write (avoids unnecessary write/wear and unlock/lock churn)
+  if (current == data) {
+    log_debug(LOG_SERVICE, "%s:FF EEPROM mask unchanged (0x%lx), skipping write\r\n", __func__, data);
+    return;
+  }
+
   uint64_t block = EEPROMBlockFromAddr(ADDR_FF);
 
   uint64_t unlock = EPRMMessage((uint64_t)EPRM_UNLOCK_BLOCK, block, PASS);
@@ -65,7 +74,26 @@ void setFFmask(uint32_t ff_combined_present)
   return;
 }
 
-void readFFpresent(void)
+// Read the *PRESENT pins from the I/O expanders live over I2C and return the
+// combined, active-high present word. Also refreshes the per-FF present bit
+// masks (ff_bitmask_args) and the 4v0 select globals. Does NOT touch the EEPROM
+// or the enable masks (ff_PRESENT_mask/ff_USER_mask) -- that is done by the
+// readFFpresent() wrapper via setFFmask().
+//
+// If acquire_sem is true the i2c3/i2c4 bus semaphores are taken around the
+// transfers (boot path). Pass false to skip all semaphore handling.
+//
+// acquire_sem == false is an EXPERT-ONLY path. It exists so the CLI can read the
+// present signals even when the bus mutex is held by a stuck transaction (wedged
+// bus) -- blocking on the mutex there would defeat the diagnostic. It is NOT
+// internally race-free: without the bus mutex these transfers share the per-bus
+// scratch buffers and the single TaskNotifySMBus[bus] completion slot with any
+// MonitorTaskI2C running buses 3/4 concurrently. Because those buffers are static
+// .bss the failure mode is a wrong value or a 250 ms SMBUS_TIMEOUT, never memory
+// corruption -- but the result is unreliable. For trustworthy results, hold the
+// bus manually around the call: sem_ctl 3 take / sem_ctl 4 take ... sem_ctl release.
+// See README.md "Higher-level semaphore-free helpers and unprogrammed exploration".
+uint32_t readFFpresentSignals(bool acquire_sem)
 {
   // outputs from *_PRESENT pins for constructing ff_PRESENT_mask
 #ifdef REV1
@@ -85,7 +113,9 @@ void readFFpresent(void)
 
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
-  acquireI2CSemaphoreBlock(i2c4_sem);
+  if (acquire_sem) {
+    acquireI2CSemaphoreBlock(i2c4_sem);
+  }
 
 #ifdef REV1
   // to port 7
@@ -110,16 +140,19 @@ void readFFpresent(void)
   apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                               // clear the mux
 #elif defined(REV3)
   // to port 7
-  apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1_bar); // active low
-  apollo_i2c_ctl_w(4, 0x70, 1, 0x8);                                // clear the mux
+  int r = apollo_i2c_ctl_w(4, 0x70, 1, 0x80);
+  r += apollo_i2c_ctl_reg_r(4, 0x20, 1, 0x01, 1, &present_FFL12_F1_bar); // active low
+  r += apollo_i2c_ctl_w(4, 0x70, 1, 0x8);                                // clear the mux
 
   // to port 6
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1_bar); // active low
-  apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0xF;          // bits 4-7
-  apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                               // clear the mux
+  r += apollo_i2c_ctl_w(4, 0x71, 1, 0x40);
+  r += apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x00, 1, &present_FFL4_F1_bar); // active low
+  r += apollo_i2c_ctl_reg_r(4, 0x21, 1, 0x01, 1, &f1_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
+  f1_ff12xmit_4v0_sel = (f1_ff12xmit_4v0_sel >> 4) & 0xF;               // bits 4-7
+  r += apollo_i2c_ctl_w(4, 0x71, 1, 0x0);                               // clear the mux
+  if (r) {
+    log_error(LOG_SERVICE, "\tFailed to read F1 optics presence (r=%d)\r\n", r);
+  }
 #endif
 
   // if we have a semaphore, give it
@@ -129,7 +162,9 @@ void readFFpresent(void)
 
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
-  acquireI2CSemaphoreBlock(i2c3_sem);
+  if (acquire_sem) {
+    acquireI2CSemaphoreBlock(i2c3_sem);
+  }
 
 #ifdef REV1
   // to port 0
@@ -152,17 +187,22 @@ void readFFpresent(void)
   f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0x7;          // bits 4-6
   apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
 #elif defined(REV3)
+  r = 0;
   // to port 7
-  apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
-  apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low
-  apollo_i2c_ctl_w(3, 0x70, 1, 0x8);                                // clear the mux
+  r += apollo_i2c_ctl_w(3, 0x70, 1, 0x80);
+  r += apollo_i2c_ctl_reg_r(3, 0x20, 1, 0x01, 1, &present_FFL12_F2_bar); // active low
+  r += apollo_i2c_ctl_w(3, 0x70, 1, 0x8);                                // clear the mux
 
   // to port 6
-  apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
-  apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA1 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
-  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF;          // bits 4-7
-  apollo_i2c_ctl_w(3, 0x71, 1, 0x0);                               // clear the mux
+  r += apollo_i2c_ctl_w(3, 0x71, 1, 0x40);
+  r += apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x00, 1, &present_FFL4_F2_bar); // active low
+  r += apollo_i2c_ctl_reg_r(3, 0x21, 1, 0x01, 1, &f2_ff12xmit_4v0_sel); // reading FPGA2 12-ch xmit FF's power-supply physical selection (i.e either 3.3v or 4.0v)
+  f2_ff12xmit_4v0_sel = (f2_ff12xmit_4v0_sel >> 4) & 0xF;               // bits 4-7
+  r += apollo_i2c_ctl_w(3, 0x71, 1, 0x0);                               // clear the mux
+  if (r) {
+    log_error(LOG_SERVICE, "\tFailed to read F2 optics presence (r=%d)\r\n", r);
+  }
+  log_info(LOG_SERVICE, "sel switches: F1: 0x%x, F2: 0x%x\r\n", f1_ff12xmit_4v0_sel, f2_ff12xmit_4v0_sel);
 
 #endif
   // if we have a semaphore, give it
@@ -234,6 +274,13 @@ void readFFpresent(void)
   log_info(LOG_SERVICE, "F2  4-ch FF mask: 0x%02x\r\n", ff_bitmask_args[3].present_bit_mask);
 #endif
 
+  return ff_combined_present;
+}
+
+// Read the present signals at boot and persist the derived mask to EEPROM.
+void readFFpresent(void)
+{
+  uint32_t ff_combined_present = readFFpresentSignals(true);
   setFFmask(ff_combined_present);
 }
 

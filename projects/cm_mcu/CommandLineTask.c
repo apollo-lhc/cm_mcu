@@ -99,6 +99,12 @@ static struct command_t commands[] = {
         0,
     },
     {
+        "ff_present",
+        ff_present,
+        "Live read+show FF present bits\r\n",
+        0,
+    },
+    {
         "ff_los",
         ff_los_alarm,
         "Show FF loss of signal alarms\r\n",
@@ -430,7 +436,7 @@ void vCommandLineTask(void *pvParameters)
   StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
   uint32_t uart_base = args->uart_base;
 
-  UARTPrint(uart_base, pcWelcomeMessage);
+  Print(pcWelcomeMessage);
   struct microrl_user_data_t rl_userdata = {
       .uart_base = uart_base,
   };

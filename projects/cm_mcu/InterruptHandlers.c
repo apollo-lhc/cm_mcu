@@ -9,12 +9,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <string.h>
-
 #include "InterruptHandlers.h"
 
 // local includes
-#include "common/LocalUart.h"
 #include "common/utils.h"
 #include "common/power_ctl.h"
 #include "common/i2c_reg.h"
@@ -193,77 +190,48 @@ volatile tSMBusStatus eStatus4 = SMBUS_OK;
 volatile tSMBusStatus eStatus5 = SMBUS_OK;
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
-// SMBUs specific handler for I2C
-void SMBusMasterIntHandler1(void)
+TaskHandle_t TaskNotifySMBus[10] = {NULL}; // indexed same as pSMBus[]
+static void SMBusMasterIntHandlerCore(uint8_t device, tSMBus *master, volatile tSMBusStatus *status)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  //
-  // Process the interrupt.
-  //
-  eStatus1 = SMBusMasterIntProcess(&g_sMaster1);
-  // handle errors in the returning function
+  *status = SMBusMasterIntProcess(master);
+  if (SMBusStatusGet(master) != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[device] != NULL) {
+    vTaskNotifyGiveFromISR(TaskNotifySMBus[device], &xHigherPriorityTaskWoken);
+    TaskNotifySMBus[device] = NULL;
+  }
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+// SMBUs specific handler for I2C
+void SMBusMasterIntHandler1(void)
+{
+  SMBusMasterIntHandlerCore(1, &g_sMaster1, &eStatus1);
 }
 
 void SMBusMasterIntHandler2(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus2 = SMBusMasterIntProcess(&g_sMaster2);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(2, &g_sMaster2, &eStatus2);
 }
 
 void SMBusMasterIntHandler3(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus3 = SMBusMasterIntProcess(&g_sMaster3);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(3, &g_sMaster3, &eStatus3);
 }
 
 void SMBusMasterIntHandler4(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus4 = SMBusMasterIntProcess(&g_sMaster4);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(4, &g_sMaster4, &eStatus4);
 }
 
 void SMBusMasterIntHandler5(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus5 = SMBusMasterIntProcess(&g_sMaster5);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(5, &g_sMaster5, &eStatus5);
 }
 
 void SMBusMasterIntHandler6(void)
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-  //
-  // Process the interrupt.
-  //
-  eStatus6 = SMBusMasterIntProcess(&g_sMaster6);
-  // handle errors in the returning function
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  SMBusMasterIntHandlerCore(6, &g_sMaster6, &eStatus6);
 }
 
 // Stores the handle of the task that will be notified when the

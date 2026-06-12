@@ -73,8 +73,9 @@ static uint16_t getPSFailMask(void)
 
 void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bitset)
 {
-  log_error(LOG_PWRCTL, "psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n", failed_mask,
-            supply_ok_mask, supply_bitset);
+  const char *state = getPowerControlStateName(currentState);
+  log_error(LOG_PWRCTL, "%s: psfail: fail, supply_mask, bitset =  %x,%x,%x\r\n",
+            state, failed_mask, supply_ok_mask, supply_bitset);
 }
 
 static const char *const power_system_state_names[] = {
@@ -403,6 +404,10 @@ void PowerSupplyTask(void *parameters)
         else {
           // check 12-ch FF parts from vendors on FPGA1/2
           vTaskDelay(pdMS_TO_TICKS(1000));
+          // read the present bits for the firefiles, as well as the 3.8V sel switches.
+          // the 3.3V is needed for the 3.8V sel switches.
+          readFFpresent();
+
           (void)ff_map_25gb_parts();
           uint32_t pair_mask_f1 = getFF12Ch25GTxMask(0);        // 25G TX parts, F1
           uint32_t pair_mask_f2 = getFF12Ch25GTxMask(1);        // 25G TX parts, F2
@@ -431,6 +436,14 @@ void PowerSupplyTask(void *parameters)
               log_info(LOG_PWRCTL, "enable 3v8\r\n");
               blade_power_ok(true);
               nextState = POWER_ON;
+              // load all clocks from EEPROM
+              int ret = load_all_clocks();
+              if (ret != 0) {
+                log_error(LOG_PWRCTL, "load_all_clocks failed with %d\r\n", ret);
+                disable_ps(); // turn off power
+                power_supply_alarm = true;
+                nextState = POWER_FAILURE;
+              }
             }
           }
           else {
@@ -443,14 +456,6 @@ void PowerSupplyTask(void *parameters)
             else
               log_warn(LOG_PWRCTL, "disable 3v8 failed with %d\r\n", ret);
             disable_ps();
-            power_supply_alarm = true;
-            nextState = POWER_FAILURE;
-          }
-          // load all clocks from EEPROM
-          int ret = load_all_clocks();
-          if (ret != 0) {
-            log_error(LOG_PWRCTL, "load_all_clocks failed with %d\r\n", ret);
-            disable_ps(); // turn off power
             power_supply_alarm = true;
             nextState = POWER_FAILURE;
           }

@@ -477,6 +477,39 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+// Re-read the firefly *PRESENT signals live from the I/O expanders and print
+// them. This is the on-demand equivalent of the boot-time readFFpresent(), but
+// it does NOT write the EEPROM or change the firefly enable masks.
+//
+// EXPERT TOOL: this calls readFFpresentSignals(false), i.e. it touches buses 3/4
+// WITHOUT taking their mutexes, so it works even when a bus is wedged. The
+// tradeoff is that, if a MonitorTaskI2C is driving the same bus at the same time,
+// the reading can be garbage or time out (250 ms) -- never a crash, but not
+// trustworthy. For a reliable read, lock the buses manually around the command:
+//   sem_ctl 3 take ; sem_ctl 4 take ; ff_present ; sem_ctl 3 release ; sem_ctl 4 release
+// See README.md "Higher-level semaphore-free helpers and unprogrammed exploration".
+BaseType_t ff_present(int argc, char **argv, char *m)
+{
+  int copied = 0;
+
+  uint32_t combined = readFFpresentSignals(false); // CLI must not take bus semaphores
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                     "%s: PRESENT signals (live read)\r\n", argv[0]);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                     "combined (active high): 0x%06lx\r\n", (unsigned long)combined);
+#if defined(REV2) || defined(REV3)
+  char *ff_bitmask_names[4] = {"F1_12", "F1_4 ", "F2_12", "F2_4 "};
+  for (int i = 0; i < 4; ++i) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s present: 0x%02x\r\n",
+                       ff_bitmask_names[i], getFFpresentbit(i));
+  }
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                     "F1 4v0 sel: 0x%lx  F2 4v0 sel: 0x%lx\r\n",
+                     (unsigned long)f1_ff12xmit_4v0_sel, (unsigned long)f2_ff12xmit_4v0_sel);
+#endif // REV2 || REV3
+  return pdFALSE;
+}
+
 // ff_table_row_fn: signature for a single-row formatter used by ff_table_print.
 //
 // Each row function is called once per firefly device per CLI invocation. It is

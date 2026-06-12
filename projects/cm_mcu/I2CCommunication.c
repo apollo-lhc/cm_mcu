@@ -25,53 +25,141 @@
 #include "Tasks.h"
 #include "I2CCommunication.h"
 #include "common/smbus_helper.h"
+#include "common/utils.h" // DELAY_US
+
+#include "InterruptHandlers.h"
+
+// TI hardware register access for I2C master state diagnostics
+#include "inc/hw_types.h"      // HWREG
+#include "inc/hw_i2c.h"        // I2C_O_MCS, I2C_MCS_BUSY, I2C_MCS_BUSBSY
+#include "driverlib/i2c.h"     // I2CMasterBusy
+#include "driverlib/rom.h"     // ROM_SysCtlDelay (used by DELAY_US)
+#include "driverlib/rom_map.h" // MAP_I2CMasterBusy
 
 extern tSMBus g_sMaster1;
-extern tSMBusStatus eStatus1;
 extern tSMBus g_sMaster2;
-extern tSMBusStatus eStatus2;
 extern tSMBus g_sMaster3;
-extern tSMBusStatus eStatus3;
 extern tSMBus g_sMaster4;
-extern tSMBusStatus eStatus4;
 extern tSMBus g_sMaster5;
-extern tSMBusStatus eStatus5;
 extern tSMBus g_sMaster6;
-extern tSMBusStatus eStatus6;
 
 tSMBus *const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
-tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
+volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
 
 #define MAX_BYTES_ADDR 2
 #define MAX_BYTES      4
 
-#define I2C_MAX_TRIES 25
+// Per-bus scratch buffers for I2C transfers, indexed by device the same as pSMBus[].
+// The TI SMBus driver keeps a *pointer* (pui8Rx/TxBuffer) to the caller's buffer and its
+// ISR reads/writes it as bytes arrive. Passing these persistent .bss buffers instead of a
+// stack local means a late ISR completing after the wrapper has returned writes here, not
+// into a freed/reused stack frame (the memory-corruption root cause; see i2c_lockup_notes.md).
+//
+// OWNERSHIP CONTRACT: these buffers are shared by every caller of a given bus and are NOT
+// internally locked. They are safe ONLY because each bus is serialized by its own mutex
+// (i2c1_sem..i2c6_sem) and the caller is required to hold that mutex across the whole
+// transaction sequence. If two callers touch the same bus without that mutex (e.g. the
+// deliberately semaphore-free CLI exploration helpers -- readFFpresentSignals(false),
+// ff_present -- running concurrently with a MonitorTaskI2C on the same bus), they race on
+// these buffers AND on TaskNotifySMBus[bus]. Because the storage is static .bss the worst
+// case is a wrong value or a 250 ms SMBUS_TIMEOUT, never memory corruption -- but the result
+// is unreliable. See README.md "Higher-level semaphore-free helpers and unprogrammed
+// exploration" for the safe workflow (manual sem_ctl lock) and hardening options.
+static uint8_t i2c_rxbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES];
+static uint8_t i2c_txbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES_ADDR + MAX_BYTES];
+
+#define MAX_BLOCK_BYTES 32 // SMBus spec maximum block-read payload
+static uint8_t i2c_block_rxbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BLOCK_BYTES];
+
+#define I2C_TIMEOUT_MS 250
+
+// Bounded wait (microseconds) for the on-chip I2C master FSM to finish a prior
+// transaction's STOP before we initiate a new one. This targets the suspected
+// PERIPHERAL_BUSY race where a task is notified and resumes before the hardware
+// auto-STOP completes. See i2c_lockup_notes.md.
+#define I2C_IDLE_WAIT_US 250
+
+static void i2c_arm_notify_slot(uint8_t device)
+{
+  // Bounded spin until the master FSM is idle, so a late-completing previous
+  // STOP cannot make this transaction's initiation return PERIPHERAL_BUSY.
+  uint32_t base = pSMBus[device]->ui32I2CBase;
+  configASSERT(base != 0);
+  uint32_t us = 0;
+  uint32_t mcs = 0;
+  while (((mcs = HWREG(base + I2C_O_MCS)) & (I2C_MCS_BUSY | I2C_MCS_BUSBSY)) &&
+         us < I2C_IDLE_WAIT_US) {
+    DELAY_US(1);
+    ++us;
+  }
+  if (us) {
+    log_debug(LOG_I2C, "dev %d waited %u us for idle (MCS=0x%02lx)\r\n", device, us,
+              (unsigned long)mcs);
+  }
+
+  TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
+}
+
+// Diagnostic: log the raw I2C master control/status register at the moment an
+// initiation returns PERIPHERAL_BUSY (or other non-OK). Must be called BEFORE
+// any recovery (e.g. mux reset) so it captures the true on-chip state.
+//   BUSY set, BUSBSY clear  -> on-chip master still finishing its STOP (FSM race)
+//   BUSBSY set              -> bus line held externally (device/mux)
+static void i2c_log_busy(uint8_t device, const char *op, tSMBusStatus r)
+{
+  uint32_t mcs = HWREG(pSMBus[device]->ui32I2CBase + I2C_O_MCS);
+  log_warn(LOG_I2C, "dev %d %s %s MCS=0x%02lx BUSY=%d BUSBSY=%d\r\n", device, op,
+           SMBUS_get_error(r), (unsigned long)mcs, !!(mcs & I2C_MCS_BUSY),
+           !!(mcs & I2C_MCS_BUSBSY));
+}
+
+static void i2c_wait_for_transfer(uint8_t device)
+{
+  // Caller must have already set TaskNotifySMBus[device]
+  if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(I2C_TIMEOUT_MS)) == 0) {
+    // timeout — no notification arrived
+    *eStatus[device] = SMBUS_TIMEOUT;
+    TaskNotifySMBus[device] = NULL;
+    log_warn(LOG_I2C, "transfer stuck, dev %d\r\n", device);
+  }
+}
 
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[MAX_BYTES])
 {
   tSMBus *p_sMaster = pSMBus[device];
-  tSMBusStatus *p_eStatus = eStatus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
 
   configASSERT(p_sMaster != NULL);
 
-  memset(data, 0, nbytes * sizeof(data[0]));
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
-  tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, data, nbytes);
+  // Read into the persistent per-bus buffer rather than the caller's (possibly stack) buffer,
+  // so a late ISR completing after this function returns can't write into a freed/reused frame.
+  uint8_t *rxbuf = i2c_rxbuf[device];
+  memset(rxbuf, 0, nbytes * sizeof(rxbuf[0]));
+
+  i2c_arm_notify_slot(device);
+
+  tSMBusStatus r = SMBusMasterI2CRead(p_sMaster, address, rxbuf, nbytes);
   if (r == SMBUS_OK) { // the read was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_eStatus;
   }
   else {
-    log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_log_busy(device, "read", r);
+    memcpy(data, rxbuf, nbytes); // hand back zeros (rxbuf was memset)
+    return r;
+  }
+  memcpy(data, rxbuf, nbytes); // copy results to the caller before returning
+  if (r != SMBUS_OK) {
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d read NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
+    }
   }
   return r;
 }
@@ -81,29 +169,29 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
                          uint32_t *packed_data)
 {
   tSMBus *smbus = pSMBus[device];
-  tSMBusStatus *p_status = eStatus[device];
+  volatile tSMBusStatus *p_status = eStatus[device];
 
   configASSERT(smbus != NULL);
-  uint8_t reg_address[MAX_BYTES_ADDR];
+  uint8_t *reg_address = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < nbytes_addr; ++i) {
     reg_address[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
-  uint8_t data[MAX_BYTES];
+  uint8_t *data = i2c_rxbuf[device]; // persistent per-bus RX buffer
+
+  if (nbytes > MAX_BYTES)
+    nbytes = MAX_BYTES;
+
+  i2c_arm_notify_slot(device);
 
   tSMBusStatus r = SMBusMasterI2CWriteRead(smbus, address, reg_address, nbytes_addr, data, nbytes);
   if (r == SMBUS_OK) { // the WriteRead was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_status;
   }
   else {
-    log_error(LOG_I2C, "read fail %s\r\n", SMBUS_get_error(r));
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_log_busy(device, "reg read", r);
+    return r;
   }
   // pack the data for return to the caller
   *packed_data = 0UL;
@@ -111,18 +199,26 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   for (int i = 0; i < nbytes; ++i) {
     *packed_data |= data[i] << (i * 8);
   }
+  if (r != SMBUS_OK) {
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d reg read NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d reg read fail %s\r\n", device, SMBUS_get_error(r));
+    }
+  }
   return r;
 }
 
 int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, uint16_t packed_reg_address, uint8_t nbytes, uint32_t packed_data)
 {
   tSMBus *p_sMaster = pSMBus[device];
-  tSMBusStatus *p_eStatus = eStatus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
 
   configASSERT(p_sMaster != NULL);
 
   // first byte (if write to one of five clock chips) or two bytes (if write to EEPROM) is the register, others are the data
-  uint8_t data[MAX_BYTES_ADDR + MAX_BYTES];
+  uint8_t *data = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < nbytes_addr; ++i) {
     data[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
@@ -136,97 +232,164 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   if (nbytes > MAX_BYTES + nbytes_addr)
     nbytes = MAX_BYTES + nbytes_addr;
 
+  i2c_arm_notify_slot(device);
+
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_eStatus;
   }
   else {
-    log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_log_busy(device, "reg write", r);
+    return r;
   }
 
+  if (r != SMBUS_OK) {
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d reg write NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d reg write fail %s\r\n", device, SMBUS_get_error(r));
+    }
+  }
   return r;
 }
 
 int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned int value)
 {
   tSMBus *p_sMaster = pSMBus[device];
-  tSMBusStatus *p_eStatus = eStatus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
   configASSERT(p_sMaster != NULL);
 
-  uint8_t data[MAX_BYTES];
+  uint8_t *data = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < MAX_BYTES; ++i) {
     data[i] = (value >> i * 8) & 0xFFUL;
   }
   if (nbytes > MAX_BYTES)
     nbytes = MAX_BYTES;
 
+  i2c_arm_notify_slot(device);
+
   tSMBusStatus r = SMBusMasterI2CWrite(p_sMaster, address, data, nbytes);
   if (r == SMBUS_OK) { // the write was successfully initiated
-    int tries = 0;
-    while (SMBusStatusGet(p_sMaster) == SMBUS_TRANSFER_IN_PROGRESS) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-      if (tries++ > I2C_MAX_TRIES) {
-        log_warn(LOG_I2C, "transfer stuck\r\n");
-        break;
-      }
-    }
+    i2c_wait_for_transfer(device);
     r = *p_eStatus;
   }
   else {
-    log_error(LOG_I2C, "write fail %s\r\n", SMBUS_get_error(r));
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_log_busy(device, "write", r);
+    return r;
   }
 
+  if (r != SMBUS_OK) {
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d write NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+    }
+  }
   return r;
 }
-// for PMBUS commands
+// read a variable-length SMBus block from an I2C device, through the
+// notification handshake. The slave reports the length; on success the data
+// is copied into data[] (caller must supply at least MAX_BLOCK_BYTES bytes).
+// Uses a persistent per-bus .bss buffer so a late ISR completing after this
+// function returns cannot write into a freed/reused stack frame.
+int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uint8_t *data)
+{
+  tSMBus *p_sMaster = pSMBus[device];
+  volatile tSMBusStatus *p_eStatus = eStatus[device];
+  configASSERT(p_sMaster != NULL);
+
+  uint8_t *rxbuf = i2c_block_rxbuf[device];
+  memset(rxbuf, 0, MAX_BLOCK_BYTES);
+
+  i2c_arm_notify_slot(device);
+
+  tSMBusStatus r = SMBusMasterBlockRead(p_sMaster, address, command, rxbuf);
+  if (r == SMBUS_OK) { // the block read was successfully initiated
+    i2c_wait_for_transfer(device);
+    r = *p_eStatus;
+  }
+  else {
+    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
+    return r;
+  }
+
+  if (r != SMBUS_OK) {
+    if (SMBUS_is_NACK(r)) {
+      log_debug(LOG_I2C, "dev %d block read NACK\r\n", device);
+    }
+    else {
+      log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
+    }
+  }
+  else {
+    uint8_t received = SMBusRxPacketSizeGet(p_sMaster);
+    if (received > MAX_BLOCK_BYTES) {
+      received = MAX_BLOCK_BYTES;
+    }
+    memcpy(data, rxbuf, received);
+  }
+  return r;
+}
+
+// for PMBUS commands. Returns the I2C bus/device index (1-6) for a given
+// SMBus controller pointer, or 0 if not found.
+uint8_t smbus_get_device_index(tSMBus *smbus)
+{
+  for (int i = 1; i <= 6; i++) {
+    if (pSMBus[i] == smbus) {
+      return i;
+    }
+  }
+  return 0; // error/not found
+}
+
 tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bool read,
                              struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
 {
-  // select the appropriate output for the mux
+  uint8_t device = smbus_get_device_index(smbus);
+  if (device == 0) {
+    log_error(LOG_I2C, "PMBUS invalid device\r\n");
+    return SMBUS_PERIPHERAL_BUSY;
+  }
+
+  // TRANSACTION 1: mux selection via existing helper
   uint8_t data = 0x1U << add->mux_bit;
-  tSMBusStatus r = SMBusMasterI2CWrite(smbus, add->mux_addr, &data, 1);
+  tSMBusStatus r = apollo_i2c_ctl_w(device, add->mux_addr, 1, data);
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "PMBUS write fail %s\r\n", SMBUS_get_error(r));
+    log_error(LOG_I2C, "PMBUS mux write fail %s\r\n", SMBUS_get_error(r));
     return r;
   }
-  int tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-    if (tries++ > I2C_MAX_TRIES) {
-      log_warn(LOG_I2C, "transfer stuck\r\n");
-      break;
-    }
-  }
-  if (*smbus_status != SMBUS_OK) {
-    return *smbus_status;
-  }
-  // read/write to the device itself
+
+  // TRANSACTION 2: device read/write. PMBus/SMBus command.
+  i2c_arm_notify_slot(device);
   if (read) {
-    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, value, cmd->size);
+    uint8_t *v = i2c_rxbuf[device];
+    const size_t sz = cmd->size;
+    r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, v, sz);
   }
-  else { // write
+  else {
     r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
   if (r != SMBUS_OK) {
-    log_error(LOG_I2C, "PMBUS write/read fail %s\r\n", SMBUS_get_error(r));
+    i2c_log_busy(device, read ? "pmbus read" : "pmbus write", r);
+    TaskNotifySMBus[device] = NULL;
     return r;
   }
-  tries = 0;
-  while (SMBusStatusGet(smbus) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10));
-    if (tries++ > I2C_MAX_TRIES) {
-      log_warn(LOG_I2C, "transfer stuck\r\n");
-      break;
+  i2c_wait_for_transfer(device);
+  if (read) {
+    // copy the result back to the value
+    for (int i = 0; i < cmd->size; ++i) {
+      value[i] = i2c_rxbuf[device][i];
     }
   }
+  // ISR writes the per-bus status (SMBUS_OK or specific error).
+  r = *smbus_status;
 
   return r;
 }

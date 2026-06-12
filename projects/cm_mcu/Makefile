@@ -155,9 +155,16 @@ ${COMPILER}/ZynqMonTask.o: MonI2C_addresses.c
 ${COMPILER}/MonUtils.o: MonI2C_addresses.c
 ${COMPILER}/FireflyUtils.o: MonI2C_addresses.c
 ${COMPILER}/FireflyCommands.o: MonI2C_addresses.c
+
+# Stack-smashing detection on just the three translation units implicated in the
+# rare memory-corruption anomaly (see i2c_lockup_notes.md). Per-object via a
+# target-specific variable, so the rest of the firmware is unaffected. The SSP
+# runtime symbols (__stack_chk_guard / __stack_chk_fail) are provided by
+# cm_mcu.c, which is itself NOT instrumented.
+${COMPILER}/MonitorTaskI2C.o ${COMPILER}/MonUtils.o ${COMPILER}/log.o: CFLAGS += -fstack-protector-strong
 #
 # Rules for building the project
-# 
+#
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/cm_mcu.o
 ifdef REV1
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/pinout_rev1.o

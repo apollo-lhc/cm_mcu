@@ -67,7 +67,7 @@ void MonitorTaskI2C(void *parameters)
     // -------------------------------
     for (int device = 0; device < args->n_devices; ++device) {
       log_debug(LOG_MONI2C, "%s: device %s\r\n", args->name, args->devices[device].name);
-      // if there is a present call back and it reurns false, skip this device
+      // if there is a present call back and it returns false, skip this device
       if (args->presentCallback && !args->presentCallback(device)) {
         log_debug(LOG_MONI2C, "%s: device %d not present\r\n", args->name, device);
         continue;
@@ -103,13 +103,33 @@ void MonitorTaskI2C(void *parameters)
       int res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[device].mux_addr, 1, data);
       if (res != 0) {
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, device);
+        // toggle the MUX reset line. According to TCA9548A this can be as short as
+        // 6 ns
+        if (args->mux_reset_pin_bar > 0) {
+          write_gpio_pin(args->mux_reset_pin_bar, 0); // active low
+          DELAY_US(1);
+          write_gpio_pin(args->mux_reset_pin_bar, 1); // active low
+        }
         break;
       }
       uint8_t last_page_reg_value = 0xff;
 
       // what kind of device is this
       uint32_t devtype_mask = args->typeCallback(device);
+      if (devtype_mask == 0) {
+        log_warn(LOG_MONI2C, "%s: device %d type 0 for CLZ call\r\n", args->name, device);
+        continue; // skip if type is 0 (e.g., not determined)
+      }
+      // clz behavior is undefined if argument is zero.
       uint32_t devtype = 31 - __builtin_clz(devtype_mask); // highest bit set FIXME: this is backwards
+      // devtype indexes page[] and command[] (same dimension). A devtype past the end of those
+      // arrays -- e.g. DEVICE_NONE (0x80) -> 7, or any misread/garbage mask with a bit above the
+      // top valid type bit -- would read out of bounds. Bound by the array size, skip otherwise.
+      if (devtype >= sizeof(args->commands->page)) {
+        log_warn(LOG_MONI2C, "%s: device %d unexpected type mask 0x%x (devtype %u), skipping\r\n",
+                 args->name, device, devtype_mask, devtype);
+        continue;
+      }
       // Loop to read I2C registers/commands
       for (int c = 0; c < args->n_commands; ++c) {
         // check if the command is for this device
@@ -136,8 +156,6 @@ void MonitorTaskI2C(void *parameters)
         uint32_t output_raw;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[device].dev_addr, args->commands[c].reg_size,
                                        args->commands[c].command[devtype], args->commands[c].size, &output_raw);
-        log_debug(LOG_MONI2C, "%s: dev%02d<<reg %s (pg %d add 0x%x), value 0x%x\r\n", args->name, device, args->commands[c].name, page_reg_value,
-                  args->commands[c].command[devtype], output_raw);
         if (res != 0) {
           log_error(LOG_MONI2C, "%s: %s read Error %s, break (ps=%d)\r\n",
                     args->name, args->commands[c].name, SMBUS_get_error(res), device);
@@ -145,6 +163,9 @@ void MonitorTaskI2C(void *parameters)
           break;
         }
         else {
+          log_debug(LOG_MONI2C, "%s: dev%02d<<reg %s (pg %d add 0x%x), value 0x%x\r\n",
+                    args->name, device, args->commands[c].name, page_reg_value,
+                    args->commands[c].command[devtype], output_raw);
           uint16_t masked_output = output_raw & args->commands[c].bit_mask;
           args->commands[c].storeData(masked_output, device);
         }
@@ -158,6 +179,13 @@ void MonitorTaskI2C(void *parameters)
       res = apollo_i2c_ctl_w(args->i2c_dev, args->devices[device].mux_addr, 1, 0);
       if (res != 0) {
         log_warn(LOG_MONI2C, "Mux write error %s, break (instance=%s,ps=%d)\r\n", SMBUS_get_error(res), args->name, device);
+        // toggle the MUX reset line. According to TCA9548A this can be as short as
+        // 6 ns
+        if (args->mux_reset_pin_bar > 0) {
+          write_gpio_pin(args->mux_reset_pin_bar, 0); // active low
+          DELAY_US(1);
+          write_gpio_pin(args->mux_reset_pin_bar, 1); // active low
+        }
         break;
       }
       log_debug(LOG_MONI2C, "%s: reset mux\r\n", args->name);

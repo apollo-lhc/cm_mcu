@@ -15,6 +15,7 @@ SemaphoreHandle_t i2c3_sem = 0;
 SemaphoreHandle_t i2c4_sem = 0;
 SemaphoreHandle_t i2c5_sem = 0;
 SemaphoreHandle_t i2c6_sem = 0;
+SemaphoreHandle_t log_sem = 0;
 
 void initSemaphores(void)
 {
@@ -25,6 +26,7 @@ void initSemaphores(void)
   i2c4_sem = xSemaphoreCreateMutex();
   i2c5_sem = xSemaphoreCreateMutex();
   i2c6_sem = xSemaphoreCreateMutex();
+  log_sem = xSemaphoreCreateMutex();
 }
 
 SemaphoreHandle_t getSemaphore(int number)
@@ -73,4 +75,21 @@ int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits)
     }
   }
   return retval;
+}
+
+// Used as the log_set_lock() callback. take==true acquires, false releases.
+// Returns whether the requested operation succeeded; the logging code uses a
+// false return on acquire to drop a message rather than block. Acquire is
+// non-blocking (0 tick wait): logging must never stall a task on the lock.
+bool vGiveOrTakeSemaphore(bool take, void *sem)
+{
+  SemaphoreHandle_t s = (SemaphoreHandle_t)sem;
+  if (s == NULL) {
+    return true; // no lock configured -> proceed
+  }
+  if (take) {
+    return xSemaphoreTake(s, 0) == pdTRUE;
+  }
+  xSemaphoreGive(s);
+  return true;
 }

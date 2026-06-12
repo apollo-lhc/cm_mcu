@@ -27,8 +27,12 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
 int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr,
                          uint16_t packed_reg_address, uint8_t nbytes,
                          uint32_t packed_data);
+// read a variable-length SMBus block (slave reports length) from an I2C device
+int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uint8_t *data);
 // read/write a register using the PMBUS protocol
 tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
                              struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value);
+// return the I2C bus/device index (1-6) for an SMBus controller, or 0 if not found
+uint8_t smbus_get_device_index(tSMBus *smbus);
 
 #endif /* PROJECTS_CM_MCU_I2CCOMMUNICATION_H_ */

@@ -376,6 +376,7 @@ struct MonitorTaskArgs_t fpga_args = {
     .smbus_status = &eStatus5,
 #endif
     .xSem = NULL,
+    .ignoreNACK = true,
     .requirePower = true,
     .stack_size = 4096U,
 };
@@ -430,13 +431,10 @@ struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
     {0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
 };
 
-void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+// Does the snapshot transactions; assumes i2c1_sem is already held.
+// Returns early on the first failed transaction.
+static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
-  // grab the semaphore to ensure unique access to I2C controller
-  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
-    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return;
-  }
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
@@ -451,19 +449,19 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
     log_error(LOG_SERVICE, "ctrl w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
     return;
   }
-  // actual command -- read snapshot
-  tSMBusStatus r2 =
-      SMBusMasterBlockRead(&g_sMaster1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
-  if (r2 != SMBUS_OK) {
-    log_error(LOG_SERVICE, "block %d\r\n", r2);
+  // The device needs time to copy NVRAM into the snapshot register after the
+  // SNAPSHOT_CONTROL write. The old polling code provided ~20ms of implicit
+  // delay via vTaskDelay(10ms) per poll. Without an explicit wait here the
+  // device returns a zero-length block read (DATA_SIZE_ERROR).
+  vTaskDelay(pdMS_TO_TICKS(20));
+  // actual command -- read snapshot (variable-length SMBus block read, via the
+  // notification handshake)
+  r = apollo_i2c_ctl_block_r(1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
+  if (r != SMBUS_OK) {
+    log_error(LOG_SERVICE, "block %d\r\n", r);
     return;
   }
-  while ((r2 = SMBusStatusGet(&g_sMaster1)) == SMBUS_TRANSFER_IN_PROGRESS) {
-    vTaskDelay(pdMS_TO_TICKS(10)); // wait
-  }
-  if (r2 != SMBUS_TRANSFER_COMPLETE) {
-    log_error(LOG_SERVICE, "SMBUS %d\r\n", r2);
-  }
+
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
     cmd = 0x3;
@@ -472,8 +470,19 @@ void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bo
       log_error(LOG_SERVICE, "error reset %s\r\n", add->name);
     }
   }
+}
 
-  // if we have a semaphore, give it
+void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+{
+  // grab the semaphore to ensure unique access to I2C controller
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return;
+  }
+
+  snapdump_locked(add, page, snapshot, reset);
+
+  // always release the semaphore, including on the helper's error paths
   if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c1_sem);
   }
@@ -572,6 +581,7 @@ struct MonitorTaskArgs_t dcdc_args = {
     .smbus = &g_sMaster1,
     .smbus_status = &eStatus1,
     .xSem = NULL,
+    .ignoreNACK = false,
     .requirePower = false,
     .stack_size = 4096U,
 };
@@ -724,7 +734,7 @@ int init_registers_clk(void)
   }
   return status;
 }
-void init_registers_ff(void)
+int init_registers_ff(void)
 {
 
   // =====================================================
@@ -821,6 +831,7 @@ void init_registers_ff(void)
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c3_sem);
   }
+  return 0; // dummy value
 }
 #endif // REV1
 #if defined(REV2) || defined(REV3)
@@ -896,7 +907,7 @@ int init_registers_clk(void)
 #endif // REV2 || REV3
 
 #ifdef REV2
-void init_registers_ff(void)
+int init_registers_ff(void)
 {
   log_info(LOG_SERVICE, "%s\r\n", __func__);
   int result;
@@ -957,6 +968,7 @@ void init_registers_ff(void)
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c3_sem);
+  int r1 = result;
   result = 0;
   // =====================================================
   // CMv2 Schematic 4.06 I2C FPGA#2 OPTICS
@@ -1008,9 +1020,10 @@ void init_registers_ff(void)
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c3_sem);
   }
+  return r1 + result;
 }
 #elif defined(REV3)
-void init_registers_ff(void)
+int init_registers_ff(void)
 {
   log_info(LOG_SERVICE, "%s\r\n", __func__);
   int result;
@@ -1071,6 +1084,7 @@ void init_registers_ff(void)
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c3_sem);
+  int r1 = result;
   result = 0;
   // =====================================================
   // CMv3 Schematic 4.06 I2C FPGA#2 OPTICS
@@ -1122,6 +1136,7 @@ void init_registers_ff(void)
   if (xSemaphoreGetMutexHolder(i2c3_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c3_sem);
   }
+  return r1 + result;
 }
 
 #endif // REV2
@@ -1275,7 +1290,7 @@ int load_all_clocks(void)
   for (int i = 0; i < CLOCK_NUM_CLOCKS; ++i) {
     status += init_load_clk(i); // load each clock config from EEPROM
     // get and print out the file name
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(50));
     getClockProgram(i, clkprog_args[i].progname_clkdesgid, clkprog_args[i].progname_eeprom);
     log_info(LOG_SERVICE, "CLK%d: %s\r\n", i, clkprog_args[i].progname_clkdesgid);
   }

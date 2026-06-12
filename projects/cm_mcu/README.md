@@ -103,9 +103,109 @@ The `led` CLI command can force a state for debugging:
 led init | idle | load | normal | warn | alarm | psfault | fwfault | white
 ```
 
+## I2C bus access and semaphores
+
+Each I2C master bus (1–6) is protected by its own FreeRTOS mutex (`i2c1_sem` … `i2c6_sem`, see
+`Semaphore.c`). Any task that issues a transaction sequence on a bus must hold that bus's mutex for
+the duration. The monitor tasks, the `clocksynth`/`FireflyUtils` helpers, and the `commands/`
+handlers (`FireflyCommands`, `ClockCommands`, `PowerCommands`) all acquire the correct per-bus mutex.
+
+**Deliberate exception — the raw CLI commands.** The generic raw-access commands in
+`commands/I2CCommands.c` (`i2cr`, `i2crr`, `i2cw`, `i2cwr`, `i2c_scan`) **intentionally do not take
+the semaphore.** This lets a user compose a longer interactive sequence under a *manually* held lock
+via the `sem_ctl <bus> take` / `sem_ctl <bus> release` command (`commands/SoftwareCommands.c`).
+The intended workflow is:
+
+```
+sem_ctl 2 take      # manually grab the bus-2 (clocks) mutex
+i2cw  2 0x70 1 0x4  # ... raw transactions, mutually excluded from the monitors ...
+i2cr  2 0x6b 1
+sem_ctl 2 release   # hand the bus back to the monitor tasks
+```
+
+This still works under the interrupt/notification-based I2C driver: the I2C completion handshake
+(`ulTaskNotifyTake` / `vTaskNotifyGiveFromISR`) and the UART stream buffer both use task-notification
+index 0, but they never overlap — the stream buffer only notifies the CLI task while it is parked
+inside `xStreamBufferReceive`, which is mutually exclusive with the task waiting on an I2C
+transaction. **Caveat / footgun:** this safety relies on that single shared notification index never
+being contended. If the CLI task is ever made to wait on its task notification for another purpose,
+the raw-command + I2C path will break silently. The robust fix is to give I2C completion its own
+notification index (`configTASK_NOTIFICATION_ARRAY_ENTRIES = 2`, using the `…Indexed` notify APIs),
+leaving index 0 to the stream buffer. See `i2c_lockup_notes.md` for the full analysis.
+
+### Higher-level semaphore-free helpers and unprogrammed exploration
+
+A few *higher-level* helpers also intentionally skip the bus mutex so they stay usable for expert
+exploration and when a bus is wedged (i.e. when the mutex is held by a stuck transaction and blocking
+on it would defeat the diagnostic). The current examples are `readFFpresentSignals(acquire_sem=false)`
+and its CLI front-end `ff_present`, which walk the F1/F2 optics I/O-expander muxes on buses 3 and 4.
+
+**This is no longer a memory-safety hazard.** The original crash was a *stack* use-after-return — the
+SMBus ISR writing into a freed/reused stack frame after the wrapper returned. The wrappers now use
+persistent per-bus `.bss` scratch buffers (`i2c_txbuf` / `i2c_rxbuf` in `I2CCommunication.c`) instead
+of stack locals, so a late ISR or a concurrent caller can only ever produce a *wrong value* — never
+corrupt an unrelated frame.
+
+**What is still shared and unprotected if you skip the mutex while a monitor task runs the same bus:**
+
+- the per-bus scratch buffers — a concurrent `MonitorTaskI2C` transaction can interleave bytes into
+  the same `i2c_txbuf[bus]`/`i2c_rxbuf[bus]`, giving a garbage reading;
+- `TaskNotifySMBus[bus]`, the *single* per-bus completion slot — last writer wins, so the loser never
+  gets its `vTaskNotifyGiveFromISR` and waits out the full 250 ms timeout, returning `SMBUS_TIMEOUT`.
+
+Neither corrupts memory; both just make the result unreliable.
+
+**Safe workflow today:** wrap the exploration in a manually held lock, exactly like the raw commands
+above — `sem_ctl 3 take` / `sem_ctl 4 take`, run the semaphore-free helper(s), then `sem_ctl … release`.
+That excludes the monitor tasks for the duration and makes the shared buffer/notify-slot races moot.
+
+**For future consideration** (increasing robustness), if the manual-lock workflow proves too easy to
+forget:
+
+1. Default the one-shot diagnostics (`ff_present`) to a *bounded-timeout* acquire
+   (`acquireI2CSemaphoreTime(s, pdMS_TO_TICKS(100))`) and print `bus busy, try again` on failure;
+   keep an explicit `force` argument for the genuine wedged-bus case rather than skipping the lock by
+   default.
+2. Give the `force`/bypass path its **own dedicated scratch buffer**, separate from the monitor-task
+   buffers, so even bypass mode can never alias `i2c_txbuf`/`i2c_rxbuf`. (The notify-slot race
+   remains, but only costs a 250 ms timeout — not corruption.)
+3. Add a maintenance **pause** (`mon_pause` / `mon_resume`) that `vTaskSuspend`s the three
+   `MonitorTaskI2C` instances. This is the only option that gives exploration *exclusive*,
+   uncontended bus access **and** persistent mux state across a sequence of commands — the monitor
+   tasks otherwise reset the mux to 0 between their own transactions. It needs the task handles, which
+   are currently created with `NULL` in `cm_mcu.c`; the cleanest wiring is for each task to store
+   `xTaskGetCurrentTaskHandle()` into its own `args` struct at startup, which the CLI already
+   references.
+
+## Logging and the log mutex
+
+The logger is a modified copy of [rxi/log.c](https://github.com/rxi/log.c) in `common/log.c`. The
+Apollo-specific sink `ApolloLog()` does two things per line: it appends the formatted text to an
+in-RAM circular scrollback buffer (`log_buffer` / `struct buff_t b`, dumpable from the CLI via
+`log_dump`), and it writes the line to the UART(s) through `Print()`.
+
+`Print()` busy-waits one character at a time on the UART FIFO (`MAP_UARTCharPut`), so emitting a full
+line takes on the order of the line's transmit time (several ms at typical baud). `Print()` is
+independently serialized by its own `xUARTMutex`.
+
+**The log mutex (`log_sem`) protects only the shared scrollback buffer**, not the UART. It is wired in
+via rxi's `log_set_lock()` hook, with `vGiveOrTakeSemaphore()` (in `Semaphore.c`) as the callback:
+
+- The critical section is just the `log_add_string()` append inside `ApolloLog()` — microseconds.
+  `Print()` is deliberately left *outside* the log mutex so a slow UART transmit in one task never
+  blocks another task's logging.
+- Acquire is **non-blocking** (`xSemaphoreTake(s, 0)`). The `log_LockFn` contract returns `bool`; on a
+  failed acquire `ApolloLog()` **drops the scrollback append and still prints the line**. Logging must
+  never stall a task on the lock, and the live UART output is never lost — only the in-RAM copy.
+- `log_set_lock()` captures the mutex handle by value, so `initSemaphores()` **must run before**
+  `log_set_lock()` in `main()`. With the order reversed the handle is still `0` and the lock is
+  silently a no-op.
+- Polarity: the `log_LockFn` first argument is `true` to **acquire**, `false` to release
+  (`vGiveOrTakeSemaphore(bool take, …)` — `take==true` ⇒ `xSemaphoreTake`).
+
+**Constraint:** `log_*` is task-context only. The lock uses `xSemaphoreTake`/`Give`, which must not be
+called from an ISR. ISR-side logging would need the `FromISR` variants or a separate lockless path.
+
 ## Building FreeRTOS
 
 FreeRTOS is now included as a git submodule. 
-
-```make
-```
