@@ -8,6 +8,7 @@
 #include "common/utils.h"
 #include <assert.h>
 #include <math.h>
+#include <stdbool.h>
 
 ///////////////////////////////////////////////////////////
 //
@@ -20,6 +21,13 @@ extern struct MonitorTaskArgs_t fpga_args;
 #define ALM_OVERTEMP_THRESHOLD 5
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
 // a shutdown message is sent
+
+// Hysteresis deadband (degrees C) for clearing a warn condition. A device's
+// warn bit is set as soon as its temperature rises above the threshold, but is
+// only cleared once the temperature drops at least this far below it. This
+// prevents the alarm from flapping when a sensor dithers right at the limit
+// (e.g. Firefly integer temps reading 55<->56 against a 55 C threshold).
+#define ALM_TEMP_HYSTERESIS 3
 
 // current value of the thresholds in integer degrees C (initialized to compile-time defaults;
 // overwritten at startup by loadAlarmTemperaturesFromEEPROM() if EEPROM has valid data)
@@ -38,6 +46,35 @@ static float currentTemp[4] = {0.f, 0.f, 0.f, 0.f};
 
 // Status flags of the temperature alarm task
 static uint32_t status_T = 0x0;
+
+// Latched per-device warn state for the hysteresis deadband. Uses the same
+// ALM_STAT_*_OVERTEMP bit positions as status_T.
+static uint32_t warnLatch = 0x0;
+
+// Evaluate one device's over-temperature condition with hysteresis.
+// excess = (measured temp - threshold) in degrees C. Updates status_T and the
+// warnLatch for `bit` and returns this device's contribution to retval:
+//   0 = normal, 1 = warn, 2 = error (excess beyond ALM_OVERTEMP_THRESHOLD).
+// The warn state latches: set above the threshold, held inside the deadband,
+// cleared only once excess falls below -ALM_TEMP_HYSTERESIS.
+static int evalTempHyst(float excess, uint32_t bit)
+{
+  bool warn;
+  if (excess > 0.f)
+    warn = true; // above threshold: set
+  else if (excess < -(float)ALM_TEMP_HYSTERESIS)
+    warn = false; // clearly below: clear
+  else
+    warn = (warnLatch & bit) != 0; // in the deadband: hold previous state
+
+  if (!warn) {
+    warnLatch &= ~bit;
+    return 0;
+  }
+  warnLatch |= bit;
+  status_T |= bit;
+  return (excess > ALM_OVERTEMP_THRESHOLD) ? 2 : 1;
+}
 
 // read-only, so no need to use queue
 uint32_t getTempAlarmStatus(void)
@@ -83,13 +120,7 @@ int TempStatus(void)
 
   // microcontroller
   currentTemp[TM4C] = getADCvalue(ADC_INFO_TEMP_ENTRY);
-  float excess_temp = currentTemp[TM4C] - getAlarmTemperature(TM4C);
-  if (excess_temp > 0.f) { // over temperature
-    status_T |= ALM_STAT_TM4C_OVERTEMP;
-    retval++;
-    if (excess_temp > ALM_OVERTEMP_THRESHOLD)
-      ++retval;
-  }
+  retval += evalTempHyst(currentTemp[TM4C] - getAlarmTemperature(TM4C), ALM_STAT_TM4C_OVERTEMP);
 
   // DCDC. The first command is READ_TEMPERATURE_1.
   // I am assuming it stays that way!!!!!!!!
@@ -103,16 +134,13 @@ int TempStatus(void)
         currentTemp[DCDC] = thistemp;
     }
   }
-  excess_temp = currentTemp[DCDC] - getAlarmTemperature(DCDC);
-  if (excess_temp > 0.f) {
-    status_T |= ALM_STAT_DCDC_OVERTEMP;
-    retval++;
-    if (excess_temp > ALM_OVERTEMP_THRESHOLD)
-      ++retval;
-  }
+  retval += evalTempHyst(currentTemp[DCDC] - getAlarmTemperature(DCDC), ALM_STAT_DCDC_OVERTEMP);
 #ifdef REV1
   // tests below here require the power to be on
   if (getPowerControlState() != POWER_ON) {
+    // FPGA and Firefly are not evaluated when power is off; clear their latched
+    // warn state so they start fresh when power returns.
+    warnLatch &= ~(ALM_STAT_FPGA_OVERTEMP | ALM_STAT_FIREFLY_OVERTEMP);
     return retval;
   }
 #endif // REV1
@@ -135,24 +163,23 @@ int TempStatus(void)
   currentTemp[FPGA] = MAX(currentTemp[FPGA], getADCvalue(ADC_INFO_F1_TEMP_ENTRY));
   currentTemp[FPGA] = MAX(currentTemp[FPGA], getADCvalue(ADC_INFO_F2_TEMP_ENTRY));
 #endif // REV2 or 3
-  excess_temp = currentTemp[FPGA] - getAlarmTemperature(FPGA);
-  if (excess_temp > 0.f) {
-    status_T |= ALM_STAT_FPGA_OVERTEMP;
-    retval++;
-    if (excess_temp > ALM_OVERTEMP_THRESHOLD)
-      ++retval;
-  }
+  retval += evalTempHyst(currentTemp[FPGA] - getAlarmTemperature(FPGA), ALM_STAT_FPGA_OVERTEMP);
 #if defined REV2 || defined(REV3)
   // tests below here require the power to be on
   if (getPowerControlState() != POWER_ON) {
+    // Firefly is not evaluated when power is off; clear its latched warn state.
+    warnLatch &= ~ALM_STAT_FIREFLY_OVERTEMP;
     return retval;
   }
 #endif // REV2 or 3
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
   // if stale we ignore
-  if (isFFStale())
+  if (isFFStale()) {
+    // not evaluated this cycle; clear latched warn state.
+    warnLatch &= ~ALM_STAT_FIREFLY_OVERTEMP;
     return retval;
+  }
   int16_t imax_ff_temp = -99;
   for (size_t i = 0; i < NFIREFLIES; ++i) {
     int16_t v = getFFtemp(i);
@@ -162,13 +189,7 @@ int TempStatus(void)
   // keep a copy of current temp for external display, but do
   // calculations in int.
   currentTemp[FF] = (float)imax_ff_temp;
-  int16_t iexcess_temp = imax_ff_temp - getAlarmTemperature(FF);
-  if (iexcess_temp > 0) {
-    status_T |= ALM_STAT_FIREFLY_OVERTEMP;
-    retval++;
-    if (iexcess_temp > ALM_OVERTEMP_THRESHOLD)
-      ++retval;
-  }
+  retval += evalTempHyst((float)(imax_ff_temp - getAlarmTemperature(FF)), ALM_STAT_FIREFLY_OVERTEMP);
   return retval;
 }
 
