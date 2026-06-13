@@ -42,10 +42,18 @@ void MonitorTaskI2C(void *parameters)
     log_error(LOG_MONI2C, "%s: no sem\r\n", args->name);
   }
 
-  // wait for the power to come up
-  vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(5000));
+  // Local phase reference for vTaskDelayUntil. This MUST be kept separate from
+  // args->updateTick: vTaskDelayUntil rewrites its reference every cycle from the
+  // clock alone (whether or not any I2C read succeeded), so it can never be used
+  // as a data-freshness timestamp, and the power-off backdate written into it
+  // below would be erased on the next call. args->updateTick is a pure freshness
+  // stamp: advanced when we complete a poll pass, backdated on power-off.
+  TickType_t xLastWakeTime = xTaskGetTickCount();
 
-  // initialize to the current tick time
+  // wait for the power to come up
+  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5000));
+
+  // initialize freshness stamp to the current tick time
   args->updateTick = xTaskGetTickCount();
 
   bool good = false;
@@ -57,7 +65,7 @@ void MonitorTaskI2C(void *parameters)
     if (args->xSem != NULL) {
       if (acquireI2CSemaphore(args->xSem) == pdFAIL) {
         log_debug(LOG_MONI2C, "%s could'nt get sem; delay & continue\r\n", args->name);
-        vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(10)); // wait
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); // wait
         continue;
       }
     }
@@ -77,6 +85,19 @@ void MonitorTaskI2C(void *parameters)
         if (good) {
           log_info(LOG_MONI2C, "%s: PWR off. Disable I2Cmon.\r\n", args->name);
           good = false;
+          // set the data to sentinel value for all devices and all commands
+          for (int d = 0; d < args->n_devices; ++d) {
+            for (int i = 0; i < args->n_commands; ++i) {
+              args->commands[i].storeData(0xFFFFU, d);
+            }
+          }
+          // Also force the freshness stamp into the stale window so consumers
+          // using updateTick/checkStale() (notably isFFStale(), the temp-alarm
+          // gate, and I2CSlaveTask) reject these values. Without this, a stale
+          // pre-power-off temperature could be re-evaluated after power-on and
+          // trip a false alarm. This backdate only sticks because updateTick is
+          // no longer the vTaskDelayUntil reference (see top of task).
+          args->updateTick = xTaskGetTickCount() - pdMS_TO_TICKS(60000);
           task_watchdog_unregister_task(kWatchdogTaskID_MonitorI2CTask);
         }
         if (xSemaphoreGetMutexHolder(args->xSem) == xTaskGetCurrentTaskHandle()) {
@@ -173,6 +194,8 @@ void MonitorTaskI2C(void *parameters)
       } // loop over commands
 
       log_debug(LOG_MONI2C, "%s: end loop commands\r\n", args->name);
+      // freshness stamp: we completed a poll pass for this device. Consumers
+      // (isFFStale()/checkStale()) read this; the power-off path backdates it.
       args->updateTick = xTaskGetTickCount(); // current time in ticks
 
       // clear out the I2C mux
@@ -201,6 +224,6 @@ void MonitorTaskI2C(void *parameters)
     CHECK_TASK_STACK_USAGE(args->stack_size);
 
     // task_watchdog_feed_task(kWatchdogTaskID_MonitorI2CTask);
-    vTaskDelayUntil(&(args->updateTick), pdMS_TO_TICKS(250));
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(250));
   } // infinite loop for task
 }

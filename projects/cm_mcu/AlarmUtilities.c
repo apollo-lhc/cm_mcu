@@ -154,8 +154,9 @@ int TempStatus(void)
   currentTemp[FPGA] = -99.0f;
   for (int i = 0; i < fpga_args.n_values; ++i) {
     float thistemp = fpga_args.pm_values[i];
-    if (thistemp > currentTemp[FPGA])
+    if (thistemp > currentTemp[FPGA]) {
       currentTemp[FPGA] = thistemp;
+    }
   }
 #if defined REV2 || defined(REV3)
   // now check the FPGA diode temperatures as measured by the ADC on the MCU
