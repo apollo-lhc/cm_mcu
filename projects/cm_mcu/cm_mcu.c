@@ -409,7 +409,8 @@ __attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask
   // 9 sw-saved words (R4-R11,R14); +16 if FPU context (S16-S31) was stacked
   uint32_t hwOff = 9u + (((excReturn & 0x10u) == 0u) ? 16u : 0u);
   uint32_t savedLR = pxTopOfStack[hwOff + 5];
-  uint32_t savedPC = pxTopOfStack[hwOff + 6];  char tmp[256];
+  uint32_t savedPC = pxTopOfStack[hwOff + 6];
+  char tmp[256];
   snprintf(tmp, 256, "Stack overflow: task %s, PC=0x%08x, LR=0x%08x\r\n",
            pcTaskName, savedPC, savedLR);
   UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
