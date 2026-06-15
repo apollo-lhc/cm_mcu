@@ -2,8 +2,9 @@
 
 ## Our interactions
 
+* Play devil's advocate. Don't flatter, challenge.
 * Research FIRST, then advise. Always web-search before giving product-specific advice, pricing, or recommendations. Your training data goes stale. Today's answer matters immensely!
-* Challenge my reasoning instead of validating it. If my approach has a flaw, say so. 
+* Challenge my reasoning instead of validating it. If my approach has a flaw, say so.
 * When there's a tradeoff, present options with evidence and let me decide. Don't silently pick the easy path.
 * If there's a known issue, raise it. "Good enough" is not good enough.
 * If you're unsure about something, say so. DO NOT guess or fabricate.
@@ -168,6 +169,7 @@ apollo_cm_mcu/
 The firmware uses a FreeRTOS multi-task architecture. All significant work happens in dedicated tasks communicating via queues.
 
 **Key tasks:**
+
 - `EEPROMTask` — gatekeeper for all EEPROM access (queue-based, thread-safe)
 - `InitTask` — runs once at startup to load board config and initialize peripherals
 - `GenericAlarmTask` — state machine for temperature/voltage alarms (runs every 50 ms)
@@ -363,7 +365,7 @@ A `.gdbinit` file is provided: `cm_mcu.gdbinit`. Connect via Segger J-LINK EDU.
 1. Run `make format-apply` to auto-format code
 2. Run `make check-for-pr` to verify all builds pass
 3. Ensure no new warnings (CI treats warnings as errors)
-4. Test on actual hardware if possible
+4. Test on actual hardware
 
 ### Key Considerations
 
