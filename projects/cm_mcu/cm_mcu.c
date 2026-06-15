@@ -402,17 +402,8 @@ __attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */
   taskDISABLE_INTERRUPTS();
-  // get the link register
-  // Danger: only valid if stack isn't too corrupted
-  StackType_t *pxTopOfStack = *(StackType_t **)pxTask; // TCB.pxTopOfStack
-  uint32_t excReturn = pxTopOfStack[8];                // saved R14/EXC_RETURN
-  // 9 sw-saved words (R4-R11,R14); +16 if FPU context (S16-S31) was stacked
-  uint32_t hwOff = 9u + (((excReturn & 0x10u) == 0u) ? 16u : 0u);
-  uint32_t savedLR = pxTopOfStack[hwOff + 5];
-  uint32_t savedPC = pxTopOfStack[hwOff + 6];
-  char tmp[256];
-  snprintf(tmp, 256, "Stack overflow: task %s, PC=0x%08x, LR=0x%08x\r\n",
-           pcTaskName, savedPC, savedLR);
+  char tmp[64];
+  snprintf(tmp, sizeof(tmp), "Stack overflow: task %.16s\r\n", pcTaskName);
   UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
   while (MAP_UARTBusy(ZQ_UART))
