@@ -51,6 +51,12 @@ static uint32_t status_T = 0x0;
 // ALM_STAT_*_OVERTEMP bit positions as status_T.
 static uint32_t warnLatch = 0x0;
 
+// Clear the warning latch.
+void clearWarnLatch(void)
+{
+  warnLatch = 0x0;
+}
+
 // Evaluate one device's over-temperature condition with hysteresis.
 // excess = (measured temp - threshold) in degrees C. Updates status_T and the
 // warnLatch for `bit` and returns this device's contribution to retval:
@@ -194,6 +200,8 @@ int TempStatus(void)
   return retval;
 }
 
+// this function logs the temperature error. It doesn't know the context of the error,
+// it just logs the current temperature values.
 void TempErrorLog(void)
 {
   log_warn(LOG_ALM, "Temperature high: status: 0x%04x MCU: %d F: %d FF:%d PS:%d\r\n",
@@ -213,6 +221,7 @@ struct GenericAlarmParams_t tempAlarmTask = {
     .checkStatus = &TempStatus,
     .errorlog_registererror = &TempErrorLog,
     .errorlog_clearerror = &TempClearErrorLog,
+    .clearHysteresis = &clearWarnLatch,
     .stack_size = 4096,
     .led_warn_msg = &LED_STATUS_WARN,
     .led_alarm_msg = &LED_STATUS_ALARM,
