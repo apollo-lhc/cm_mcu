@@ -358,14 +358,8 @@ A `.gdbinit` file is provided: `cm_mcu.gdbinit`. Connect via Segger J-LINK EDU.
 1. Check which hardware revision you're targeting
 2. Ensure FreeRTOS submodule is up to date: `git submodule update --init --recursive --remote`
 3. Build with `DEBUG=1` for development
-4. Check code formatting: `make format`
 
-### Before Committing
-
-1. Run `make format-apply` to auto-format code
-2. Run `make check-for-pr` to verify all builds pass
-3. Ensure no new warnings (CI treats warnings as errors)
-4. Test on actual hardware
+Do not offer to commit any code; the user will do that themselves. 
 
 ### Key Considerations
 
@@ -385,6 +379,7 @@ A `.gdbinit` file is provided: `cm_mcu.gdbinit`. Connect via Segger J-LINK EDU.
 - Block 6 (temperature alarms) is unprotected — direct `write_eeprom()` calls are sufficient
 - `Tasks.h` is the central header; most inter-task definitions live there
 - When adding a new CLI subcommand, update the help string in `CommandLineTask.c`
+- don't offer to commit any code. User will do that.
 
 ## Related Resources
 
