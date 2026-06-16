@@ -206,6 +206,26 @@ via rxi's `log_set_lock()` hook, with `vGiveOrTakeSemaphore()` (in `Semaphore.c`
 **Constraint:** `log_*` is task-context only. The lock uses `xSemaphoreTake`/`Give`, which must not be
 called from an ISR. ISR-side logging would need the `FromISR` variants or a separate lockless path.
 
+## Temperature sources and stale-value invalidation (`TempStatus`)
+
+`TempStatus()` (`AlarmUtilities.c`) computes the per-device max temperature each cycle:
+
+- **TM4C**: on-chip ADC (always valid).
+- **DCDC**: max over `dcdc_args.pm_values` (I2C/PMBus; monitored on management power, `requirePower=false`).
+- **FPGA**: max over `fpga_args.pm_values` (I2C) **and**, on REV2/REV3, the MCU-ADC FPGA diode temps
+  (`ADC_INFO_F1_TEMP_ENTRY`/`F2_TEMP_ENTRY`, ADC CH18/19). The ADC diodes are power-independent and read
+  sanely even when the FPGA is unpowered (bench-verified), so REV2/3 evaluates the FPGA alarm regardless
+  of power state. REV1 (no FPGA diodes) skips the FPGA/FF checks when power is off.
+- **Firefly**: max `getFFtemp()` (whole °C, `uint16_t`), gated by `isFFStale()`; checked only when powered.
+
+**Stale-value invalidation (fix for the alarm re-triggering after a power cycle):** when a
+`requirePower` `MonitorTask` (FPGA) sees power leave `POWER_ON`, it clears its `pm_values[]` to the
+`-999.f` sentinel and backdates `updateTick` 60 s into the past. Both are needed: `-999` is ignored by
+numeric consumers (the `TempStatus` max-loops seed at `-99`, so `-999` never wins), while the stale
+`updateTick` makes `checkStale()`-based consumers (notably `I2CSlaveTask`, which casts `pm_values` to
+`uint8_t`) reject the entry instead of reading the sentinel. `-999.f` is the codebase-wide "no/stale
+data" sentinel for `pm_values` (also the boot-time init in `cm_mcu.c`).
+
 ## Building FreeRTOS
 
 FreeRTOS is now included as a git submodule. 

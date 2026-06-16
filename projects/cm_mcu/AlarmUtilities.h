@@ -13,6 +13,7 @@ struct GenericAlarmParams_t {
   int (*checkStatus)(void); // return 0 for normal, 1 for warn, >1 for error
   void (*errorlog_registererror)(void);
   void (*errorlog_clearerror)(void);
+  void (*clearHysteresis)(void); // called on ALM_CLEAR_ALL; NULL = no-op
   QueueHandle_t xAlmQueue;
   UBaseType_t stack_size;         // stack size of task
   const LedMsg_t *led_warn_msg;   // LED state on WARN entry (NULL = no update)
@@ -33,6 +34,7 @@ void getAlarmTemperatureStatus(void);
 int TempStatus(void);
 void TempErrorLog(void);
 void TempClearErrorLog(void);
+void clearWarnLatch(void);
 
 // voltage alarms
 //    first some commands for setting/getting the thresholds

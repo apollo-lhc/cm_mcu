@@ -297,8 +297,8 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(ZynqMonTask, "ZMON", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(GenericAlarmTask, "TALM", 192, &tempAlarmTask, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(GenericAlarmTask, "VALM", 192, &voltAlarmTask, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(GenericAlarmTask, "TALM", 256, &tempAlarmTask, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(GenericAlarmTask, "VALM", 256, &voltAlarmTask, tskIDLE_PRIORITY + 4, NULL);
   //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------
@@ -402,14 +402,8 @@ __attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask
   /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
      function will automatically get called if a task overflows its stack. */
   taskDISABLE_INTERRUPTS();
-  // get the link register
-  // Danger: only valid if stack isn't too corrupted
-  StackType_t *pxTopOfStack = *(StackType_t **)pxTask; // first field of TCB_t
-  uint32_t savedPC = pxTopOfStack[6];                  // PC in stacked frame
-  uint32_t savedLR = pxTopOfStack[5];                  // LR in stacked frame
-  char tmp[256];
-  snprintf(tmp, 256, "Stack overflow: task %s, PC=0x%08x, LR=0x%08x\r\n",
-           pcTaskName, savedPC, savedLR);
+  char tmp[64];
+  snprintf(tmp, sizeof(tmp), "Stack overflow: task %.16s\r\n", pcTaskName);
   UARTPrint(ZQ_UART, tmp); // can't use Print() here -- this gets called
   // from an ISR-like context.
   while (MAP_UARTBusy(ZQ_UART))

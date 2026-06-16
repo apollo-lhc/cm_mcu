@@ -2,8 +2,9 @@
 
 ## Our interactions
 
+* Play devil's advocate. Don't flatter, challenge.
 * Research FIRST, then advise. Always web-search before giving product-specific advice, pricing, or recommendations. Your training data goes stale. Today's answer matters immensely!
-* Challenge my reasoning instead of validating it. If my approach has a flaw, say so. 
+* Challenge my reasoning instead of validating it. If my approach has a flaw, say so.
 * When there's a tradeoff, present options with evidence and let me decide. Don't silently pick the easy path.
 * If there's a known issue, raise it. "Good enough" is not good enough.
 * If you're unsure about something, say so. DO NOT guess or fabricate.
@@ -168,6 +169,7 @@ apollo_cm_mcu/
 The firmware uses a FreeRTOS multi-task architecture. All significant work happens in dedicated tasks communicating via queues.
 
 **Key tasks:**
+
 - `EEPROMTask` — gatekeeper for all EEPROM access (queue-based, thread-safe)
 - `InitTask` — runs once at startup to load board config and initialize peripherals
 - `GenericAlarmTask` — state machine for temperature/voltage alarms (runs every 50 ms)
@@ -203,23 +205,14 @@ if (r == SMBUS_OK) {
 }
 ```
 
-The ISR (`SMBusMasterIntHandlerCore`, `InterruptHandlers.c:194`) calls `SMBusMasterIntProcess` (the TI state machine), then — if `FLAG_TRANSFER_IN_PROGRESS` is cleared AND `TaskNotifySMBus[device] != NULL` — calls `vTaskNotifyGiveFromISR` and nulls the slot.
+The ISR (`SMBusMasterIntHandlerCore`, `InterruptHandlers.c`) calls `SMBusMasterIntProcess` (the TI state machine), then — if the transfer is done and `TaskNotifySMBus[device] != NULL` — calls `vTaskNotifyGiveFromISR` and nulls the slot.
 
-**Bus locking:** Each bus has a FreeRTOS mutex (`i2c1_sem` … `i2c6_sem`, defined in `Semaphore.c`). Callers acquire the mutex before a transaction sequence and release it after. Two helpers are provided:
-- `acquireI2CSemaphore(s)` — tries up to 500 times with a 10-tick wait each try
-- `acquireI2CSemaphoreBlock(s)` — tries up to 500 times with a 0-tick wait (immediate poll each try)
+**Bus locking:** each bus has a FreeRTOS mutex (`i2c1_sem` … `i2c6_sem`, `Semaphore.c`). A caller holds the mutex for the whole transaction sequence (passed as `args->xSem` in the monitor tasks). `acquireI2CSemaphore(s)` retries with a 10-tick wait; `acquireI2CSemaphoreBlock(s)` polls with 0-tick.
 
-The mutex is passed as part of the task argument struct (`args->xSem`) in `MonitorTask` and `MonitorTaskI2C`, and accessed directly by name in `LocalTasks.c`.
-
-**`apollo_pmbus_rw`** performs two sequential transactions on the same bus: a mux-select write (`apollo_i2c_ctl_w`) followed by the device read/write (`SMBusMasterByteWordRead/Write`). It re-arms the notify slot between them.
-
-**Known fragility in the notification scheme** — see [`i2c_lockup_notes.md`](i2c_lockup_notes.md) for full analysis:
-
-1. *Hardware-timeout / auto-STOP race* — When `I2C_MASTER_INT_TIMEOUT` fires (35ms SMBus hw timeout, e.g. slave stretching clock), the ISR clears `FLAG_TRANSFER_IN_PROGRESS` and immediately notifies the task, but the hardware then issues an automatic STOP that takes ~2.5–20 μs (400–100 kHz). A context switch lands the task before the STOP completes; the next `SMBusMasterXxx` call sees `MAP_I2CMasterBusy() == true` → `SMBUS_PERIPHERAL_BUSY`.
-
-2. *`SMBUS_STATE_IDLE` conditional clear* — For write-only transactions, `FLAG_TRANSFER_IN_PROGRESS` is cleared in the `SMBUS_STATE_IDLE` ISR case only if `!MAP_I2CMasterBusy()` (`smbus.c:2440`). If the DATA interrupt fires while BUSY is briefly still asserted (possible race), the flag stays set and no further ISR fires. The FreeRTOS 250ms timeout then fires; a late ISR arriving after the next `i2c_arm_notify_slot` can deliver a spurious notification, causing the following transaction to see PERIPHERAL_BUSY.
-
-3. *NACK error status overwrite* — On address/data NACK, the first ISR issues `BURST_SEND_ERROR_STOP` but does not clear the flag or notify. A second ISR fires in `SMBUS_STATE_IDLE`, clears the flag, and returns `SMBUS_OK`, overwriting the NACK error in `eStatusN`. The caller sees `SMBUS_OK` on a failed transaction.
+**Key implementation details (kept elsewhere, not in this file):**
+- The wrappers use **per-bus static `.bss` scratch buffers** (not stack locals) and a **bounded `BUSY|BUSBSY` idle-wait** before arming. These fixed the use-after-return memory corruption and the `SMBUS_PERIPHERAL_BUSY` race respectively. Full design + ownership contract: [`projects/cm_mcu/README.md`](projects/cm_mcu/README.md).
+- NACKs are classified via `SMBUS_is_NACK()` (`common/smbus_helper.h`); `MonitorTask` has an `ignoreNACK` flag for expected NACKs from absent devices.
+- Residual races (TI-driver auto-STOP / `SMBUS_STATE_IDLE`; the unused STOP-interrupt completion option) and the full investigation history: [`i2c_lockup_notes.md`](i2c_lockup_notes.md).
 
 ### cm_mcu: EEPROM Access Pattern
 
@@ -280,37 +273,7 @@ These are for Rev2 and later.
 | I2C4 | SMBus master → F1 Firefly optics |
 | I2C5 | SMBus master → FPGA F1 & F2 diagnostic registers |
 
-**prod_test CLI commands:**
-
-| Command | Description |
-| ------- | ----------- |
-| `adc` | Display ADC voltage/current measurements with pass/fail |
-| `poweron <level>` | Enable power supplies up to the given priority level |
-| `poweroff` | Disable all power supplies |
-| `dcdci2ctest` | Test I2C communication to DCDC converters |
-| `dcdcpowertest` | Test DCDC power-on and voltage levels |
-| `clocki2ctest` | Test I2C to clock synthesizers |
-| `ffi2ctest [mask]` | Test I2C to Firefly optics (optional channel mask) |
-| `eepromi2ctest` | Test I2C to external EEPROM |
-| `fpgai2ctest` | Test I2C to FPGAs |
-| `initclockreg` | Initialize clock synthesizer IO expanders |
-| `initffreg` | Initialize Firefly IO expanders |
-| `prodtest1 [mask]` | Run full first-step production test sequence (see below) |
-| `version` | Display firmware version and build time |
-| `heap` | Show free and minimum-ever-free heap |
-| `bootloader` | Jump to ROM bootloader |
-| `restart` | Reset the MCU |
-
-**`prodtest1` sequence** (stops on first failure):
-
-1. DCDC I2C connectivity check
-2. DCDC power-on and voltage verification
-3. Initialize clock IO expanders
-4. Clock I2C test
-5. FPGA I2C test
-6. Initialize Firefly IO expanders
-7. Firefly I2C test
-8. External EEPROM I2C test
+The full prod_test CLI command table and the `prodtest1` sequence live in [`projects/prod_test/README.md`](projects/prod_test/README.md).
 
 ### CLI Command Pattern
 
@@ -355,6 +318,12 @@ alm settemp [ff|fpga|dcdc|tm4c] <temp>     # set threshold (persists to EEPROM)
 alm resettemp [ff|fpga|dcdc|tm4c|all]      # reset to compile-time defaults
 ```
 
+`TempStatus()` (`AlarmUtilities.c`) takes the per-device max temperature each cycle from the ADC and/or
+the I2C `pm_values`. On power-off, stale `pm_values` are invalidated (a `-999.f` sentinel plus a
+backdated `updateTick`) so a prior alarm doesn't re-trigger after a power cycle. Details — per-device
+sources, the REV2/3 MCU-ADC FPGA diode fallback, and why both invalidation mechanisms are needed — are
+in [`projects/cm_mcu/README.md`](projects/cm_mcu/README.md).
+
 ## Debugging
 
 ### GDB
@@ -389,14 +358,8 @@ A `.gdbinit` file is provided: `cm_mcu.gdbinit`. Connect via Segger J-LINK EDU.
 1. Check which hardware revision you're targeting
 2. Ensure FreeRTOS submodule is up to date: `git submodule update --init --recursive --remote`
 3. Build with `DEBUG=1` for development
-4. Check code formatting: `make format`
 
-### Before Committing
-
-1. Run `make format-apply` to auto-format code
-2. Run `make check-for-pr` to verify all builds pass
-3. Ensure no new warnings (CI treats warnings as errors)
-4. Test on actual hardware if possible
+Do not offer to commit any code; the user will do that themselves. 
 
 ### Key Considerations
 
@@ -416,6 +379,7 @@ A `.gdbinit` file is provided: `cm_mcu.gdbinit`. Connect via Segger J-LINK EDU.
 - Block 6 (temperature alarms) is unprotected — direct `write_eeprom()` calls are sufficient
 - `Tasks.h` is the central header; most inter-task definitions live there
 - When adding a new CLI subcommand, update the help string in `CommandLineTask.c`
+- don't offer to commit any code. User will do that.
 
 ## Related Resources
 

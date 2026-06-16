@@ -44,9 +44,9 @@ static const char *alarm_task_state_names[] = {
 //  |   NORMAL  +----->+  WARN   +----->+ FAULT |--->| ERR_c |
 //  +-----+-----+      +-+-------+      +-------+    +---+---+
 //        ^              |                     	       	 |
-//        +--------------+                   		 |
-//        ^                                  		 |
-//        +------------------------------------- --------+
+//        +--------------+                   		         |
+//        ^                                  		         |
+//        +----------------------------------------------+
 // once we get into the ERROR state the only way to clear an error is via a message
 // sent to the CLI.
 // Fault_erroring means the error is active and we are in a fault state
@@ -73,6 +73,8 @@ void GenericAlarmTask(void *parameters)
       switch (message) {
         case ALM_CLEAR_ALL: // clear all alarms
           external_reset = true;
+          if (params->clearHysteresis)
+            params->clearHysteresis();
           break;
         default:
           break;
@@ -114,7 +116,7 @@ void GenericAlarmTask(void *parameters)
           // this message always goes to the power queue, for all
           // alarms.
           xQueueSendToFront(xPwrQueue, &message, 100);
-          log_debug(LOG_ALM, "sent message %d (%s) to power queue\r\n", TEMP_ALARM,
+          log_error(LOG_ALM, "Powering off %d (%s)\r\n", TEMP_ALARM,
                     msgqueue_message_text[TEMP_ALARM]);
           nextState = ALM_FAULT_ERRORING;
         }

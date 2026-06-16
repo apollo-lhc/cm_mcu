@@ -74,8 +74,14 @@ void MonitorTask(void *parameters)
         enum power_system_state power_state = getPowerControlState();
         if (power_state != POWER_ON) { // if the power state is not fully on
           if (isFullyPowered) {        // was previously on
-            log_info(LOG_MON, "%s: PWR off. Disabling I2C monitoring.\r\n", args->name);
+            log_info(LOG_MON, "%s: PWR off. Disabling *BUS monitoring.\r\n", args->name);
             isFullyPowered = false;
+            // clear the now-stale data by setting to sentinel value -999
+            for (int i = 0; i < args->n_values; ++i)
+              args->pm_values[i] = -999.f;
+            // also force the sample timestamp into the stale window so
+            // consumers using updateTick/checkStale() reject these values
+            args->updateTick = xTaskGetTickCount() - pdMS_TO_TICKS(60000);
           }
           break; // skip this iteration
         }
