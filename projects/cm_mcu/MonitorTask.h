@@ -32,21 +32,21 @@ struct dev_i2c_addr_t {
 };
 
 struct MonitorTaskArgs_t {
-  const char *name;                    // name to be assigned to the task
-  struct dev_i2c_addr_t *devices;      // list of devices to query
-  int n_devices;                       // number of devices
-  struct pm_command_t *commands;       // list of commands
-  const uint8_t n_commands;            // number of commands
-  float *pm_values;                    // place to store results
-  const int n_values;                  // number of results
-  const uint8_t n_pages;               // number of pages to loop over
-  tSMBus *smbus;                       // pointer to I2C controller
-  volatile tSMBusStatus *smbus_status; // pointer to I2C status
-  volatile TickType_t updateTick;      // last update time, in ticks
-  bool ignoreNACK;                     // true if NACKs should be ignored
-  SemaphoreHandle_t xSem;              // semaphore for controlling access to device
-  const bool requirePower;             // true if device requires power
-  UBaseType_t stack_size;              // stack size of task
+  const char *name;                     // name to be assigned to the task
+  const struct dev_i2c_addr_t *devices; // list of devices to query
+  int n_devices;                        // number of devices
+  const struct pm_command_t *commands;  // list of commands
+  const uint8_t n_commands;             // number of commands
+  float *pm_values;                     // place to store results
+  const int n_values;                   // number of results
+  const uint8_t n_pages;                // number of pages to loop over
+  tSMBus *smbus;                        // pointer to I2C controller
+  volatile tSMBusStatus *smbus_status;  // pointer to I2C status
+  volatile TickType_t updateTick;       // last update time, in ticks
+  bool ignoreNACK;                      // true if NACKs should be ignored
+  SemaphoreHandle_t xSem;               // semaphore for controlling access to device
+  const bool requirePower;              // true if device requires power
+  UBaseType_t stack_size;               // stack size of task
 };
 // DC-DC converter
 #ifdef REV1

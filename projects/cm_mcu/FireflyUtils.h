@@ -55,9 +55,9 @@ struct arg_moni2c_ff_t {
   uint8_t num_dev;                  // number of devices in this ff arg.
 };
 
-extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
-extern struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1];
-extern struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2];
+extern const struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
+extern const struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1];
+extern const struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2];
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 
 // Samtec firefly specific commands
