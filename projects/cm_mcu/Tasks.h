@@ -297,7 +297,7 @@ void InitRTC(void);
 #endif // REV2 or 3
 
 struct dev_i2c_addr_t; // forward reference
-void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
+void snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
 
 // Xilinx MonitorTask
 int get_f1_index(void);
@@ -316,6 +316,9 @@ void task_watchdog_register_task(uint16_t task_id);
 void task_watchdog_unregister_task(uint16_t task_id);
 void task_watchdog_feed_task(uint16_t task_id);
 uint16_t task_watchdog_get_status(void);
+
+// Programmatic UART interface for Zynq to send commands to the CM. Not a CLI interface.
+void ProgComTask(void *parameters);
 
 // general
 // monitor stack usage for this task
