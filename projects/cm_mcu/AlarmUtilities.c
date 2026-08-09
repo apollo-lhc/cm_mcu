@@ -314,7 +314,8 @@ int VoltStatus(void)
   // Loop over ADC values.
   const float threshold = getAlarmVoltageThres();
   uint32_t ch_alm_mask = 0x0U;
-  for (int i = 0; i < VALM_HIGHEST_V_CH; ++i) {
+  // VALM_HIGHEST_V_CH is 0-based, so the highest channel must be included
+  for (int i = 0; i <= VALM_HIGHEST_V_CH; ++i) {
     // check if the current channel contains a voltage measurement we care about
     if (!(ch_mask & (0x1U << i))) {
       continue; // if not, continue to then ext loop iteration

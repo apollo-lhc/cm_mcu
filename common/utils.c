@@ -111,8 +111,9 @@ uint8_t toggle_gpio_pin(int pin)
   return val;
 }
 
-// Set up all the active low pins to be off (i.e., high)
-static const int pins[] = {
+// Set up all the active low pins to be off (i.e., high).
+// uint8_t: the largest pin index is 110 (_F2_JTAG_BYPASS, REV2/3)
+static const uint8_t pins[] = {
     _FPGA_I2C_RESET,      //
     _PWR_I2C_RESET,       //
     _CLOCKS_I2C_RESET,    //
@@ -123,11 +124,11 @@ static const int pins[] = {
     _F2_JTAG_BYPASS, //
 #endif               // REV2
 };
-#define NPINS (sizeof(pins) / pins[0])
+#define NPINS (sizeof(pins) / sizeof(pins[0]))
 
 void setupActiveLowPins(void)
 {
-  for (int i = 0; i < NPINS; ++i) {
+  for (size_t i = 0; i < NPINS; ++i) {
     write_gpio_pin(pins[i], 0x1);
   }
 }
@@ -159,6 +160,17 @@ static const char *ebuf_errstrings[] = {
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
+// snprintf returns the length it WOULD have written, so on truncation copied > s
+// and the next call gets m + copied (past the end) with s - copied wrapped to a
+// huge size_t. Clamping to s leaves a remaining size of 0, which snprintf handles
+// by writing nothing. noinline: 11 call sites, not worth expanding at each.
+__attribute__((noinline)) static int clamp_copied(int copied, size_t s)
+{
+  if (copied < 0) // encoding error
+    return 0;
+  return ((size_t)copied > s) ? (int)s : copied;
+}
+
 // put the error string into the provided buffer and return
 // the number of chars copied into the buffer.
 int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
@@ -173,43 +185,49 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
   uint16_t minutes = EBUF_ENTRY_TIMESTAMP_MINS(word);
 
   if (errcode > (EBUF_N_ERRSTRINGS - 1)) {
-    return snprintf(m, s, "\r\n\t%s %d (word %d)", " Invalid error code:", errcode, (int)word);
+    return clamp_copied(
+        snprintf(m, s, "\r\n\t%s %d (word %d)", " Invalid error code:", errcode, (int)word), s);
   }
-  int copied = snprintf(m, s, "\r\n %02u %02u:%02u \t %x %s ", days, hours, minutes, realcount,
-                        ebuf_errstrings[errcode]);
+  int copied = clamp_copied(snprintf(m, s, "\r\n %02u %02u:%02u \t %x %s ", days, hours, minutes,
+                                     realcount, ebuf_errstrings[errcode]),
+                            s);
+  // append to m, keeping copied within [0, s] so the next call stays in bounds
+#define ERRBUF_APPEND(...) \
+  copied = clamp_copied(copied + snprintf(m + copied, s - copied, __VA_ARGS__), s)
   // below handle those cases where additional data is available
   switch (errcode) {
     case EBUF_RESTART:
       if (errdata & EBUF_RESTART_SW)
-        copied += snprintf(m + copied, s - copied, "(SW)");
+        ERRBUF_APPEND("(SW)");
       if (errdata & EBUF_RESTART_EXT)
-        copied += snprintf(m + copied, s - copied, "(EXT)");
+        ERRBUF_APPEND("(EXT)");
       if (errdata & EBUF_RESTART_WDOG)
-        copied += snprintf(m + copied, s - copied, "(WDOG)");
+        ERRBUF_APPEND("(WDOG)");
       if (errdata & EBUF_RESTART_POR)
-        copied += snprintf(m + copied, s - copied, "(POR)");
+        ERRBUF_APPEND("(POR)");
       break;
     case EBUF_HARDFAULT:
-      copied += snprintf(m + copied, s - copied, "(ISRNUM= 0x%02x)", errdata);
+      ERRBUF_APPEND("(ISRNUM= 0x%02x)", errdata);
       break;
     case EBUF_PWR_FAILURE:
-      copied += snprintf(m + copied, s - copied, "(supply mask) 0x%02x", errdata);
+      ERRBUF_APPEND("(supply mask) 0x%02x", errdata);
       break;
     case EBUF_ASSERT:
-      copied += snprintf(m + copied, s - copied, "(pc) 0x%02x", errdata);
+      ERRBUF_APPEND("(pc) 0x%02x", errdata);
       break;
     case EBUF_I2C:
-      copied += snprintf(m + copied, s - copied, " (dev = %c)", (char)errdata);
+      ERRBUF_APPEND(" (dev = %c)", (char)errdata);
       break;
     case EBUF_CLKINIT_FAILURE:
-      copied += snprintf(m + copied, s - copied, " ");
+      ERRBUF_APPEND(" ");
       break;
     default:
       if (errcode > EBUF_WITH_DATA) {
-        copied += snprintf(m + copied, s - copied, "0x%02x", errdata);
+        ERRBUF_APPEND("0x%02x", errdata);
       }
       break;
   }
+#undef ERRBUF_APPEND
   return copied;
 }
 

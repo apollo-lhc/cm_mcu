@@ -46,8 +46,8 @@ extern tSMBus g_sMaster6;
 tSMBus *const pSMBus[10] = {NULL, &g_sMaster1, &g_sMaster2, &g_sMaster3, &g_sMaster4, &g_sMaster5, &g_sMaster6, NULL, NULL, NULL};
 volatile tSMBusStatus *const eStatus[10] = {NULL, &eStatus1, &eStatus2, &eStatus3, &eStatus4, &eStatus5, &eStatus6, NULL, NULL, NULL};
 
-#define MAX_BYTES_ADDR 2
-#define MAX_BYTES      4
+// MAX_BYTES_ADDR and MAX_BYTES are defined in I2CCommunication.h so the CLI
+// handlers can validate against the same bounds.
 
 // Per-bus scratch buffers for I2C transfers, indexed by device the same as pSMBus[].
 // The TI SMBus driver keeps a *pointer* (pui8Rx/TxBuffer) to the caller's buffer and its
@@ -172,14 +172,17 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   volatile tSMBusStatus *p_status = eStatus[device];
 
   configASSERT(smbus != NULL);
+  // clamp before touching i2c_txbuf: nbytes_addr can arrive unvalidated from the CLI
+  if (nbytes_addr > MAX_BYTES_ADDR)
+    nbytes_addr = MAX_BYTES_ADDR;
+  if (nbytes > MAX_BYTES)
+    nbytes = MAX_BYTES;
+
   uint8_t *reg_address = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < nbytes_addr; ++i) {
     reg_address[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
   uint8_t *data = i2c_rxbuf[device]; // persistent per-bus RX buffer
-
-  if (nbytes > MAX_BYTES)
-    nbytes = MAX_BYTES;
 
   i2c_arm_notify_slot(device);
 
@@ -217,20 +220,24 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
 
   configASSERT(p_sMaster != NULL);
 
+  // clamp before touching i2c_txbuf; clamping nbytes here rather than after the
+  // += below also avoids wrapping the uint8_t sum
+  if (nbytes_addr > MAX_BYTES_ADDR)
+    nbytes_addr = MAX_BYTES_ADDR;
+  if (nbytes > MAX_BYTES)
+    nbytes = MAX_BYTES;
+
   // first byte (if write to one of five clock chips) or two bytes (if write to EEPROM) is the register, others are the data
   uint8_t *data = i2c_txbuf[device]; // persistent per-bus TX buffer (see note at top)
   for (int i = 0; i < nbytes_addr; ++i) {
     data[i] = (packed_reg_address >> (nbytes_addr - 1 - i) * 8) & 0xFF; // the first byte is high byte in EEPROM's two-byte reg address
   }
-  nbytes += nbytes_addr;
   // pack the bytes into the data array, offset by
   // one or two due to the address
-  for (int i = nbytes_addr; i < MAX_BYTES + nbytes_addr; ++i) {
-    data[i] = (packed_data >> (i - nbytes_addr) * 8) & 0xFF;
+  for (int i = 0; i < nbytes; ++i) {
+    data[nbytes_addr + i] = (packed_data >> (i * 8)) & 0xFF;
   }
-
-  if (nbytes > MAX_BYTES + nbytes_addr)
-    nbytes = MAX_BYTES + nbytes_addr;
+  nbytes += nbytes_addr;
 
   i2c_arm_notify_slot(device);
 

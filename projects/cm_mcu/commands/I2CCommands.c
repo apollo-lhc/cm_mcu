@@ -19,12 +19,26 @@ static bool isValidDevice(int device)
   return isValidDevice;
 }
 
+// Check widths on BaseType_t, before they narrow to uint8_t at the
+// apollo_i2c_ctl_reg_* call sites. Returns true if OK.
+#define STR_(x) #x
+#define STR(x)  STR_(x)
+__attribute__((noinline)) static bool checkWidths(char *m, BaseType_t nbytes_addr, BaseType_t nbytes)
+{
+  if (nbytes_addr < 1 || nbytes_addr > MAX_BYTES_ADDR || nbytes < 1 || nbytes > MAX_BYTES) {
+    snprintf(m, SCRATCH_SIZE,
+             "nbytes_addr must be 1-" STR(MAX_BYTES_ADDR) ", nbytes 1-" STR(MAX_BYTES) "\r\n");
+    return false;
+  }
+  return true;
+}
+
 BaseType_t i2c_ctl_r(int argc, char **argv, char *m)
 {
   BaseType_t device = strtol(argv[1], NULL, 10);
   BaseType_t address = strtol(argv[2], NULL, 16);
   BaseType_t nbytes = strtol(argv[3], NULL, 10);
-  uint8_t data[I2C_CTL_MAX_BYTES] = {0, 0, 0, 0};
+  uint8_t data[MAX_BYTES] = {0, 0, 0, 0};
   if (nbytes == 0) {
     snprintf(m, SCRATCH_SIZE, "%s: cannot read 0 bytes\r\n", argv[0]);
     return pdFALSE;
@@ -62,8 +76,7 @@ BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m)
   packed_reg_address = strtol(argv[4], NULL, 16);
   nbytes = strtol(argv[5], NULL, 10);
 
-  if (nbytes == 0 || nbytes_addr == 0) {
-    snprintf(m, SCRATCH_SIZE, "%s: nbytes or nbytes_addr is zero\r\n", argv[0]);
+  if (!checkWidths(m, nbytes_addr, nbytes)) {
     return pdFALSE;
   }
 
@@ -98,8 +111,7 @@ BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m)
   packed_reg_address = strtoul(argv[4], NULL, 16); // register
   nbytes = strtol(argv[5], NULL, 16);              // number of bytes
   packed_data = strtoul(argv[6], NULL, 16);        // data
-  if (nbytes == 0 || nbytes_addr == 0) {
-    snprintf(m, SCRATCH_SIZE, "%s: nbytes or nbytes_addr is zero\r\n", argv[0]);
+  if (!checkWidths(m, nbytes_addr, nbytes)) {
     return pdFALSE;
   }
 
