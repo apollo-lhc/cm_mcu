@@ -18,13 +18,18 @@
 #include "stream_buffer.h"
 #include "task.h"
 
-extern StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer, xUART0StreamBuffer;
-
 // UART
-void UART0IntHandler(void);
+#ifdef REV1
+extern StreamBufferHandle_t xUART1StreamBuffer;
+extern StreamBufferHandle_t xUART4StreamBuffer;
 void UART1IntHandler(void);
 void UART4IntHandler(void);
+#else  // REV2 or REV3
+extern StreamBufferHandle_t xUART0StreamBuffer;
+extern StreamBufferHandle_t xUART7StreamBuffer;
+void UART0IntHandler(void);
 void UART7IntHandler(void);
+#endif // REV1
 
 // SMBUs specific handler for I2C
 // extern tSMBus g_sSlave0;  // for I2C #0

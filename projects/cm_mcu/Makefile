@@ -191,6 +191,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTaskI2C.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/GenericAlarmTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/ProgComTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmUtilities.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
