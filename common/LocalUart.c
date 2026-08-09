@@ -21,7 +21,7 @@
 #endif // USE_FREERTOS
 
 static void UARTInitCommon(uint32_t periph, uint32_t base, uint32_t intNum,
-                            uint32_t sysClock, bool enableRxInts)
+                           uint32_t sysClock, bool enableRxInts)
 {
   MAP_SysCtlPeripheralEnable(periph);
   MAP_UARTConfigSetExpClk(base, sysClock, 115200,
@@ -61,7 +61,6 @@ void UART7Init(uint32_t ui32SysClock)
 {
   UARTInitCommon(SYSCTL_PERIPH_UART7, UART7_BASE, INT_UART7, ui32SysClock, true);
 }
-
 
 //*****************************************************************************
 //
