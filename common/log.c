@@ -196,16 +196,30 @@ void ApolloLog(log_Event *ev)
 #define SZ 192
   char tmp[SZ];
   int r = 0;
+  // (v)snprintf returns the length it WOULD have written, so a truncated call
+  // leaves r > SZ; without the clamp the next call gets tmp + r (past the array)
+  // and SZ - r wrapped to a huge size_t, smashing this task's stack. Overflow is
+  // now impossible by construction, so the old configASSERT(r < SZ) is gone: it
+  // would have turned a benign truncated log line into an MCU reset.
+#define LOG_CLAMP()  \
+  do {               \
+    if (r > SZ)      \
+      r = SZ;        \
+  } while (0)
 #ifdef LOG_USE_COLOR
   r = snprintf(tmp, SZ, "%s", level_colors[ev->level]);
+  LOG_CLAMP();
 #endif // LOG_USE_COLOR
   r += snprintf(tmp + r, SZ - r, "20%u %-3s %-3s %s:%u:", ev->time,
                 facility_strings[ev->fac], level_strings[ev->level], ev->file, ev->line);
+  LOG_CLAMP();
   r += vsnprintf(tmp + r, SZ - r, ev->fmt, ev->ap);
+  LOG_CLAMP();
 #ifdef LOG_USE_COLOR
   r += snprintf(tmp + r, SZ - r, "%s", "\033[0m");
+  LOG_CLAMP();
 #endif
-  configASSERT(r < SZ); // not the best way to go but ....
+#undef LOG_CLAMP
   // Only the shared ring buffer needs protection, and only briefly. If we
   // cannot get the lock (near-impossible at 0-tick contention), drop the
   // buffer append rather than block; the UART output below is unaffected and

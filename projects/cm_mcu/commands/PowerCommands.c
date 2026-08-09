@@ -207,14 +207,10 @@ typedef struct __attribute__((packed)) {
 
 BaseType_t sn_all(int argc, char **argv, char *m)
 {
-  int which = 0;
-  int page_d = 0;
-  for (; which < N_PM_ADDRS_DCDC; ++which) {
-    for (; page_d < 2; ++page_d) { // for reading two pages per device
-      bool reset = false;
-      reset = true;
+  for (int which = 0; which < N_PM_ADDRS_DCDC; ++which) {
+    for (int page_d = 0; page_d < 2; ++page_d) { // for reading two pages per device
       uint8_t sn[32];
-      snapdump(&pm_addrs_dcdc[which], page_d, sn, reset);
+      snapdump(&pm_addrs_dcdc[which], page_d, sn, true);
     }
   }
   return pdFALSE;

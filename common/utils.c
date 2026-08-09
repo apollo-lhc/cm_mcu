@@ -160,11 +160,7 @@ static const char *ebuf_errstrings[] = {
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
-// snprintf returns the length it WOULD have written, so on truncation copied > s
-// and the next call gets m + copied (past the end) with s - copied wrapped to a
-// huge size_t. Clamping to s leaves a remaining size of 0, which snprintf handles
-// by writing nothing. noinline: 11 call sites, not worth expanding at each.
-__attribute__((noinline)) static int clamp_copied(int copied, size_t s)
+__attribute__((noinline)) int clamp_copied(int copied, size_t s)
 {
   if (copied < 0) // encoding error
     return 0;

@@ -108,6 +108,13 @@ uint16_t errbuffer_continue(void);
 
 uint32_t errbuffer_entry(uint16_t errcode, uint16_t errdata);
 
+// Clamp an accumulated snprintf length to the buffer size. snprintf returns the
+// length it WOULD have written, so on truncation the running total exceeds the
+// buffer and the next append gets a pointer past the end with a size_t size that
+// has wrapped. Clamping to s leaves a remaining size of 0, which snprintf handles
+// by writing nothing, and m + s is a valid one-past-end pointer.
+int clamp_copied(int copied, size_t s);
+
 // put the error string into the provided buffer and return
 // the number of chars copied into the buffer.
 int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s);

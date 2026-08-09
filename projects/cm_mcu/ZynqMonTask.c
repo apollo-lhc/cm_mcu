@@ -597,7 +597,7 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
         }
         else {
           data[ll].data.f = (__fp16)dcdc_args.pm_values[index];
-          if (data[l].data.f < -900.f)
+          if (data[ll].data.f < -900.f) // power-off sentinel from MonitorTask
             data[ll].data.f = (__fp16)__builtin_nanf("");
         }
         data[ll].sensor = ll + start;

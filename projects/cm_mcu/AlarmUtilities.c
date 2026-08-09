@@ -314,6 +314,8 @@ int VoltStatus(void)
   // Loop over ADC values.
   const float threshold = getAlarmVoltageThres();
   uint32_t ch_alm_mask = 0x0U;
+  excess_volt = 0.0f; // reset, so a cleared alarm doesn't report stale data
+  excess_volt_which_ch = 0;
   // VALM_HIGHEST_V_CH is 0-based, so the highest channel must be included
   for (int i = 0; i <= VALM_HIGHEST_V_CH; ++i) {
     // check if the current channel contains a voltage measurement we care about
@@ -323,14 +325,26 @@ int VoltStatus(void)
     float target_value = getADCtargetValue(i);
     float now_value = getADCvalue(i);
     float excess = (now_value - target_value) / target_value;
+    float aexcess = ABS(excess);
 
-    if (ABS(excess) > threshold) {
+    if (aexcess > threshold) {
       ch_alm_mask |= (0x1U << i); // mark bit for failing supply
+      if (aexcess * 100.f > excess_volt) { // keep the worst offender, in percent
+        excess_volt = aexcess * 100.f;
+        excess_volt_which_ch = i;
+      }
       int tens, frac;
       float_to_ints(excess * 100, &tens, &frac);
       log_debug(LOG_ALM, "VoltAlm: %s: %02d.%02d %% off target\r\n", getADCname(i), tens, frac);
     }
   }
+  // record which rails failed, per group, for the EEPROM error buffer. The shift
+  // makes the bits group-relative; the ctz of each mask is a compile-time constant.
+#define VALM_GRP(msk) (uint8_t)((ch_alm_mask & (msk)) >> __builtin_ctz(msk))
+  currentVoltStatus[GEN] = VALM_GRP(VALM_BASE_MASK | VALM_GEN_MASK);
+  currentVoltStatus[FPGA1] = VALM_GRP(VALM_F1_MASK);
+  currentVoltStatus[FPGA2] = VALM_GRP(VALM_F2_MASK);
+#undef VALM_GRP
   status_V = 0x0U;
   if (ch_alm_mask & (VALM_BASE_MASK | VALM_GEN_MASK)) {
     status_V |= ALM_STAT_GEN_OVERVOLT;
