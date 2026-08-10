@@ -249,10 +249,12 @@ void zm_set_gitversion(struct zynqmon_data_t data[], int start)
       break; // success, I found the string
     ++v_temp;
   }
-  const char *v;
-  int ch = 'v';
-  v = strrchr(v_temp, ch);
-  // on failure I send an empty string
+  // Search from the END of the string, not the start: on a tagged build
+  // GIT_VERSION carries the tag twice ("... (tag: v0.99.4) v0.99.4") and the scan
+  // above stops at the first copy, inside the parentheses. See issue #194.
+  const char *v = strrchr(v_temp, 'v');
+  if (v == NULL) // no tag reachable (shallow clone, no tags): send an empty string
+    v = "";
 
   // get the git version and copy it into the buffer
   strncpy(buff, v, ZM_GIT_VERSION_LENGTH);

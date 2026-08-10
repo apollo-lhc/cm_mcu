@@ -120,21 +120,17 @@ struct buff_t b = {
     .last = 0,
 };
 
-static size_t lenx(const char *s, size_t maxlen)
-{
-  // I need the cast here to tell the ptrdiff the size of the pointer.
-  ptrdiff_t plen = (char *)__builtin_memchr(s, '\0', maxlen) - s;
-  size_t len = plen;
-  return len > maxlen ? maxlen : len;
-}
-
 static void log_add_string(const char *s, struct buff_t *b)
 {
   // add a string to the circular buffer. the "last" element should
   // always point to the '\0' of the last string added.
   // two cases: either the string fits in one copy, or in two
-  long left = b->size - b->last;
-  size_t len = lenx(s, left) + 1; // +1 for string terminator
+  size_t len = strlen(s) + 1; // +1 for string terminator
+  if (len > b->size) {        // longer than the whole ring: keep the tail
+    s += len - b->size;
+    len = b->size;
+  }
+  size_t left = b->size - b->last;
   if (len <= left) {
     // single copy is going to work
     memcpy(b->data + b->last, s, len);
@@ -142,8 +138,7 @@ static void log_add_string(const char *s, struct buff_t *b)
   }
   else { // need two copies, len > left
     memcpy(b->data + b->last, s, left);
-    long len2 = len - left;
-    memcpy(b->data, s + left, len2);
+    memcpy(b->data, s + left, len - left);
     b->last = len - left - 1;
   }
 }
@@ -169,10 +164,17 @@ void log_add_string2(const char *s, struct buff_t *bu)
   }
 }
 #endif // NOTDEF
-// This does not handle the case if sz is too small (i.e., smaller than bu->size)
+// b.last indexes the '\0' of the newest string, so the older half starts just
+// past it -- except when that is one past the end of the ring, where there is no
+// older half to print.
 int log_dump_buffer_to_string(char *s, size_t sz)
 {
-  int copied = snprintf(s, sz, "%s", b.data + b.last + 1);
+  size_t tail = b.last + 1;
+  int copied = 0;
+  if (tail < b.size)
+    copied = snprintf(s, sz, "%s", b.data + tail);
+  if ((size_t)copied > sz) // snprintf returns the would-be length
+    copied = (int)sz;
   copied += snprintf(s + copied, sz - copied, "%s", b.data);
   return copied;
 }
@@ -180,7 +182,9 @@ int log_dump_buffer_to_string(char *s, size_t sz)
 // print to callback
 void log_dump(void (*f)(const char *s))
 {
-  f(b.data + b.last + 1);
+  size_t tail = b.last + 1;
+  if (tail < b.size)
+    f(b.data + tail);
   f(b.data);
   f("\033[0m\r\n"); // turn off color and add a newline to ensure that everything is cleaned up.
 }

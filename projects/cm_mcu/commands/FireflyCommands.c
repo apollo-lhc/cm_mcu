@@ -24,10 +24,28 @@
 #include "projdefs.h"
 
 // Bytes that must remain in the CLI scratch buffer before a paged command starts
-// another row. One value for every table: the widest row produced anywhere here is
-// 37 chars ("%17s: " + a 16-char vendor name + CRLF), so 40 always fits. Per-command
-// tuning was the old scheme and it drifted out of step with the format strings.
+// another row. One value for every table; per-command tuning was the old scheme
+// and it drifted out of step with the format strings. The static_asserts below
+// fail the build if a row ever outgrows it.
 #define FF_ROW_MIN_REM 40
+
+// Row geometry. The name field uses %17.17s -- the precision matters: it caps the
+// field at exactly FF_NAME_W, so these bounds hold for any name. A bare %17s sets
+// only a minimum and a long name would silently widen the row past the asserts.
+#define FF_NAME_W    17                  // "%17.17s"
+#define FF_SEP_W     2                   // ": "
+#define FF_ROWEND_W  2                   // "\r\n", or "\t" on a Tx row
+#define FF_ROW_W(value_w) (FF_NAME_W + FF_SEP_W + (value_w) + FF_ROWEND_W)
+
+// Widest value field of any ff_table_print row: ff_dump_names prints the raw
+// vendor string. The hex/decimal rows are all narrower ("0x%04x 0x%04x" = 13).
+static_assert(FF_ROW_MIN_REM >= FF_ROW_W(FF_VENDOR_COUNT_FF12),
+              "FF_ROW_MIN_REM too small for the widest ff_table_print row");
+// ff_status builds its own row: "0x%02x" plus, on Tx, " 3v8?(%x) \t". sizeof-1 is
+// a safe upper bound because each conversion is narrower than its literal spec.
+static_assert(FF_ROW_MIN_REM >= FF_NAME_W + FF_SEP_W + (int)sizeof("0x%02x") - 1 +
+                                    (int)sizeof(" 3v8?(%x) \t") - 1,
+              "FF_ROW_MIN_REM too small for the widest ff_status row");
 
 // A NOTE ABOUT THE FIREFLY REGISTER ADDRESSES
 // If you look at the memory maps in the data sheets for the firefly devices, you see that
@@ -446,10 +464,10 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   for (; whichff < NFIREFLIES; ++whichff) {
     if (isEnabledFF(whichff)) {
       uint8_t val = get_FF_STATUS_REG_data(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
     }
     else { // empty value
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %4s", ff_moni2c_addrs[whichff].name, "--");
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %4s", ff_moni2c_addrs[whichff].name, "--");
     }
     copied = clamp_copied(copied, SCRATCH_SIZE);
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
@@ -596,7 +614,7 @@ typedef int (*ff_table_row_fn)(char *m, int copied, int whichff);
   static int fn_name(char *m, int copied, int whichff)                          \
   {                                                                               \
     uint16_t val = (getter_expr);                                                \
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",       \
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: 0x%04x",       \
                        ff_moni2c_addrs[whichff].name, val);                      \
     return ff_table_append_row_end(m, copied, whichff);                          \
   }
@@ -635,7 +653,7 @@ static int ff_table_append_row_end(char *m, int copied, int whichff)
 // the clamp between a row's two appends.
 static int ff_table_append_name(char *m, int copied, int whichff)
 {
-  return clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
+  return clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: ",
                                         ff_moni2c_addrs[whichff].name),
                       SCRATCH_SIZE);
 }
@@ -808,10 +826,10 @@ static int ff_temp_row(char *m, int copied, int whichff)
 {
   uint8_t val = get_FF_TEMPERATURE_data(whichff);
   if (isEnabledFF(whichff) && val != 0xFFU) { // 0xFF is a dummy value
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %2d", ff_moni2c_addrs[whichff].name, val);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %2s", ff_moni2c_addrs[whichff].name, "--");
   }
   return ff_table_append_row_end(m, copied, whichff);
 }
@@ -835,11 +853,11 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
       float val = getFFavgoptpow(i);
       int tens, frac;
       float_to_ints(val, &tens, &frac);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: % 5d.%02d",
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: % 5d.%02d",
                          ff_moni2c_addrs[i].name, tens, frac);
     }
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s:     ---",
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s:     ---",
                          ff_moni2c_addrs[i].name);
     }
     if (isTx) {
