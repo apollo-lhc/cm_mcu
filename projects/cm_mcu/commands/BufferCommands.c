@@ -8,7 +8,7 @@
 #include "BufferCommands.h"
 
 // This command takes 1 arg, the data to be written to the buffer
-BaseType_t errbuff_in(int argc, char **argv, char* m)
+BaseType_t errbuff_in(int argc, char **argv, char *m)
 {
   int copied = 0;
 
@@ -24,7 +24,7 @@ BaseType_t errbuff_in(int argc, char **argv, char* m)
 // must exceed the longest errbuffer_get_messagestr() output: ~47-char header
 // ("Temp High (TM4C FPGA FF DCDC)" + timestamp/count) + 20-char suffix
 #define EBUFFOUT_MIN_REMAINING 80
-BaseType_t errbuff_out(int argc, char **argv, char* m)
+BaseType_t errbuff_out(int argc, char **argv, char *m)
 {
   int copied = 0;
 
@@ -63,7 +63,7 @@ BaseType_t errbuff_out(int argc, char **argv, char* m)
 }
 
 // Takes no arguments
-BaseType_t errbuff_info(int argc, char **argv, char* m)
+BaseType_t errbuff_info(int argc, char **argv, char *m)
 {
   int copied = 0;
   uint32_t cap, minaddr, maxaddr, head;
@@ -89,7 +89,7 @@ BaseType_t errbuff_info(int argc, char **argv, char* m)
 }
 
 // Takes no arguments
-BaseType_t errbuff_reset(int argc, char **argv, char* m)
+BaseType_t errbuff_reset(int argc, char **argv, char *m)
 {
   errbuffer_reset();
   return pdFALSE;

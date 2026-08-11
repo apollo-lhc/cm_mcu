@@ -32,9 +32,9 @@
 // Row geometry. The name field uses %17.17s -- the precision matters: it caps the
 // field at exactly FF_NAME_W, so these bounds hold for any name. A bare %17s sets
 // only a minimum and a long name would silently widen the row past the asserts.
-#define FF_NAME_W    17                  // "%17.17s"
-#define FF_SEP_W     2                   // ": "
-#define FF_ROWEND_W  2                   // "\r\n", or "\t" on a Tx row
+#define FF_NAME_W         17 // "%17.17s"
+#define FF_SEP_W          2  // ": "
+#define FF_ROWEND_W       2  // "\r\n", or "\t" on a Tx row
 #define FF_ROW_W(value_w) (FF_NAME_W + FF_SEP_W + (value_w) + FF_ROWEND_W)
 
 // Widest value field of any ff_table_print row: ff_dump_names prints the raw

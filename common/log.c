@@ -205,10 +205,10 @@ void ApolloLog(log_Event *ev)
   // and SZ - r wrapped to a huge size_t, smashing this task's stack. Overflow is
   // now impossible by construction, so the old configASSERT(r < SZ) is gone: it
   // would have turned a benign truncated log line into an MCU reset.
-#define LOG_CLAMP()  \
-  do {               \
-    if (r > SZ)      \
-      r = SZ;        \
+#define LOG_CLAMP() \
+  do {              \
+    if (r > SZ)     \
+      r = SZ;       \
   } while (0)
 #ifdef LOG_USE_COLOR
   r = snprintf(tmp, SZ, "%s", level_colors[ev->level]);

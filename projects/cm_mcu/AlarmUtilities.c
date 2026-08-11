@@ -328,7 +328,7 @@ int VoltStatus(void)
     float aexcess = ABS(excess);
 
     if (aexcess > threshold) {
-      ch_alm_mask |= (0x1U << i); // mark bit for failing supply
+      ch_alm_mask |= (0x1U << i);          // mark bit for failing supply
       if (aexcess * 100.f > excess_volt) { // keep the worst offender, in percent
         excess_volt = aexcess * 100.f;
         excess_volt_which_ch = i;
