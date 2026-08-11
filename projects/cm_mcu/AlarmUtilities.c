@@ -340,6 +340,16 @@ int VoltStatus(void)
   }
   // record which rails failed, per group, for the EEPROM error buffer. The shift
   // makes the bits group-relative; the ctz of each mask is a compile-time constant.
+  //
+  // This packing is only lossless on REV2/3, where each group mask is contiguous
+  // and at most 5 bits wide once shifted down. On REV1 the F1/F2 masks are
+  // interleaved rather than contiguous, so shifting by ctz leaves a 13-bit value
+  // (0xCCC80 >> 7 == 0x1999) and (0x33340 >> 6 == 0xCCD), and the uint8_t cast
+  // silently drops the high bits: the F1/F2 entries in the error log are partial.
+  // status_V below is unaffected -- it tests the masks directly -- so the alarm
+  // itself is still correct on REV1; only the logged detail is lossy. REV1 is
+  // deprecated, so this is recorded rather than fixed. A fix would need a
+  // bit-gather, not a shift.
 #define VALM_GRP(msk) (uint8_t)((ch_alm_mask & (msk)) >> __builtin_ctz(msk))
   currentVoltStatus[GEN] = VALM_GRP(VALM_BASE_MASK | VALM_GEN_MASK);
   currentVoltStatus[FPGA1] = VALM_GRP(VALM_F1_MASK);

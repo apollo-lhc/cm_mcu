@@ -475,6 +475,9 @@ static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t sn
 
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
+  // zero out snapshot buffer, in case of early return on error
+  memset(snapshot, 0, 32);
+
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");

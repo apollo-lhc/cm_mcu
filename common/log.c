@@ -125,12 +125,18 @@ static void log_add_string(const char *s, struct buff_t *b)
   // add a string to the circular buffer. the "last" element should
   // always point to the '\0' of the last string added.
   // two cases: either the string fits in one copy, or in two
+  // The final byte is reserved as a permanent NUL: strings are stored
+  // back-to-back with no separator (each append overwrites the previous
+  // terminator), so the only NUL is at b->last. Without the sentinel the wrap
+  // branch fills data[size-1] with a real character and the readers in
+  // log_dump() walk off the end of the ring.
+  const size_t cap = b->size - 1;
   size_t len = strlen(s) + 1; // +1 for string terminator
-  if (len > b->size) {        // longer than the whole ring: keep the tail
-    s += len - b->size;
-    len = b->size;
+  if (len > cap) {            // longer than the whole ring: keep the tail
+    s += len - cap;
+    len = cap;
   }
-  size_t left = b->size - b->last;
+  size_t left = cap - b->last;
   if (len <= left) {
     // single copy is going to work
     memcpy(b->data + b->last, s, len);
@@ -163,7 +169,6 @@ void log_add_string2(const char *s, struct buff_t *bu)
     bu->last = len - left + 1; // +1 for \0 string terminator
   }
 }
-#endif // NOTDEF
 // b.last indexes the '\0' of the newest string, so the older half starts just
 // past it -- except when that is one past the end of the ring, where there is no
 // older half to print.
@@ -178,6 +183,7 @@ int log_dump_buffer_to_string(char *s, size_t sz)
   copied += snprintf(s + copied, sz - copied, "%s", b.data);
   return copied;
 }
+#endif // NOTDEF
 
 // print to callback
 void log_dump(void (*f)(const char *s))
