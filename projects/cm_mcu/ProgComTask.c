@@ -25,7 +25,7 @@ If the command was a write command, the MCU responds with the following:
 If MCU encountered an error, it responds with the following:
 
 - error marker: "e" + space symbol
-- optionally, but strongly suggested: a string with error description. 
+- optionally, but strongly suggested: a string with error description.
   Example: "invalid address"
 - line terminator: "\n" symbol (code 0x0A)
 */
@@ -50,14 +50,14 @@ struct ProgComTaskArgs_t {
   size_t stack_size;
 };
 
-#define CMD_SZ 256
-#define POWER_I2C_BASE              1
-#define POWER_PAGE_COMMAND         0x0
-#define CLOCK_I2C_BASE              2
-#define CLOCK_PAGE_COMMAND         0x0FF // dummy
-#define FF_F1_I2C_BASE             3
-#define FF_F2_I2C_BASE             4
-#define FF_PAGE_COMMAND             0x7F // 127
+#define CMD_SZ             256
+#define POWER_I2C_BASE     1
+#define POWER_PAGE_COMMAND 0x0
+#define CLOCK_I2C_BASE     2
+#define CLOCK_PAGE_COMMAND 0x0FF // dummy
+#define FF_F1_I2C_BASE     3
+#define FF_F2_I2C_BASE     4
+#define FF_PAGE_COMMAND    0x7F // 127
 
 extern const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
 
@@ -80,19 +80,22 @@ enum progcom_dev_t {
 struct progcom_cmd_t {
   enum progcom_op_t op;
   enum progcom_dev_t dev;
-  uint8_t dev_num;                  // device number within the device type
-  uint8_t page;                     // page register value
-  uint8_t address;                  // register address within the page
-  uint8_t data[PROGCOM_MAX_DATA];   // write payload; empty for reads
-  size_t ndata;                     // number of valid bytes in data[]
+  uint8_t dev_num;                // device number within the device type
+  uint8_t page;                   // page register value
+  uint8_t address;                // register address within the page
+  uint8_t data[PROGCOM_MAX_DATA]; // write payload; empty for reads
+  size_t ndata;                   // number of valid bytes in data[]
 };
 
 static uint8_t hex_digit(char c)
 {
-    if (c >= '0' && c <= '9') return c - '0';
-    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-    return 0;  // or handle invalid input appropriately
+  if (c >= '0' && c <= '9')
+    return c - '0';
+  if (c >= 'A' && c <= 'F')
+    return c - 'A' + 10;
+  if (c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+  return 0; // or handle invalid input appropriately
 }
 
 // hex_digit() cannot report failure (0 is a valid result), so callers must
@@ -244,9 +247,11 @@ static const char *progcom_execute_read(const struct progcom_cmd_t *cmd, uint8_t
     case PROGCOM_DEV_FF:
       if (cmd->dev_num < NFIREFLIES_F1) {
         i2c_dev = FF_F1_I2C_BASE;
-      } else if (cmd->dev_num < NFIREFLIES_F1 + NFIREFLIES_F2) {
+      }
+      else if (cmd->dev_num < NFIREFLIES_F1 + NFIREFLIES_F2) {
         i2c_dev = FF_F2_I2C_BASE;
-      } else {
+      }
+      else {
         return "invalid Firefly device number";
       }
       // Firefly uses dev_moni2c_addr_t, not dev_i2c_addr_t
@@ -335,9 +340,11 @@ static const char *progcom_execute_write(const struct progcom_cmd_t *cmd)
     case PROGCOM_DEV_FF:
       if (cmd->dev_num < NFIREFLIES_F1) {
         i2c_dev = FF_F1_I2C_BASE;
-      } else if (cmd->dev_num < NFIREFLIES_F1 + NFIREFLIES_F2) {
+      }
+      else if (cmd->dev_num < NFIREFLIES_F1 + NFIREFLIES_F2) {
         i2c_dev = FF_F2_I2C_BASE;
-      } else {
+      }
+      else {
         return "invalid Firefly device number";
       }
       // Firefly uses dev_moni2c_addr_t, not dev_i2c_addr_t
@@ -433,24 +440,28 @@ void add_progcom_char(uint8_t c)
         const char *exec_err = progcom_execute_read(&cmd, data, &nout);
         if (exec_err != NULL) {
           snprintf(response, sizeof(response), "e %s\r\n", exec_err);
-        } else {
+        }
+        else {
           // Format response: "d <hex_bytes>\r\n"
           size_t pos = 0;
           response[pos++] = 'd';
           response[pos++] = ' ';
           for (size_t i = 0; i < nout; ++i) {
-            if (i > 0) response[pos++] = ' ';
+            if (i > 0)
+              response[pos++] = ' ';
             pos += snprintf(response + pos, sizeof(response) - pos, "%02X", data[i]);
           }
           response[pos++] = '\r';
           response[pos++] = '\n';
           response[pos] = '\0';
         }
-      } else if (cmd.op == PROGCOM_OP_WRITE) {
+      }
+      else if (cmd.op == PROGCOM_OP_WRITE) {
         const char *exec_err = progcom_execute_write(&cmd);
         if (exec_err != NULL) {
           snprintf(response, sizeof(response), "e %s\r\n", exec_err);
-        } else {
+        }
+        else {
           snprintf(response, sizeof(response), "c\r\n");
         }
       }
@@ -461,11 +472,13 @@ void add_progcom_char(uint8_t c)
       }
     }
     cmd_index = 0; // reset index for next command
-  } else {
+  }
+  else {
     // incoming char, not command terminator
     if (cmd_index < sizeof(cmd_buffer) - 1) {
       cmd_buffer[cmd_index++] = c;
-    } else {
+    }
+    else {
       // buffer overflow, reset and ignore
       cmd_index = 0;
     }
