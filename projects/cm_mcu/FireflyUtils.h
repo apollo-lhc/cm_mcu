@@ -89,6 +89,7 @@ TickType_t getFFupdateTick(int ff_t);
 int init_registers_ff(void);
 
 uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size);
+int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff);
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;

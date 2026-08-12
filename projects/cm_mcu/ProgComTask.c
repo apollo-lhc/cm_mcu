@@ -4,12 +4,14 @@
 The remote host initiates all transactions by transmitting a command as a string containing a series of fields separated by spaces:
 
 - command: "r" = read, "w" = write
-- device type: "DC" = DC-DC converter, "FF" = Firefly, "CL" = clock devices
+- device type: "DC" = DC-DC converter, "FF" = Firefly, "CL" = clock devices, "MC" = MCU
 - device number: hex number representing the device number (one byte)
 - page: hex number which is the page address (one byte)
 - address: hex number that is the register address within the selected page (one byte)
 - only for write commands: data to write: one or several hex numbers that are the data bytes to be written.
-- line terminator: "\n" symbol (code 0x0A)
+- line terminator: "\n" symbol (code 0x0A). A preceding "\r" is tolerated and ignored.
+
+Reads always return exactly one byte; a read command with any trailing token is a syntax error.
 
 If the command was a read command, the MCU responds with the data read out from the device
 by transmitting a string in the following format:
@@ -25,8 +27,7 @@ If the command was a write command, the MCU responds with the following:
 If MCU encountered an error, it responds with the following:
 
 - error marker: "e" + space symbol
-- optionally, but strongly suggested: a string with error description.
-  Example: "invalid address"
+- a string with error description. Example: "invalid address"
 - line terminator: "\n" symbol (code 0x0A)
 */
 
@@ -36,6 +37,10 @@ If MCU encountered an error, it responds with the following:
 #include <string.h>
 
 #include "FreeRTOSConfig.h" // IWYU pragma: keep
+#include "ProgComTask.h"
+
+#if defined(REV2) || defined(REV3)
+
 #include "InterruptHandlers.h"
 #include "Tasks.h"
 #include "FireflyUtils.h"
@@ -43,26 +48,20 @@ If MCU encountered an error, it responds with the following:
 #include "Semaphore.h"
 #include "MonitorTask.h"
 #include "MonitorTaskI2C.h"
+#include "clocksynth.h"
+#include "common/LocalUart.h"
+#include "common/smbus_helper.h"
 
-struct ProgComTaskArgs_t {
-  StreamBufferHandle_t UartStreamBuffer;
-  uint32_t uart_base;
-  size_t stack_size;
-};
+// size of the buffer holding an incoming command line
+#define CMD_SZ 256
+// size of the buffer holding a response. Longest is an error string.
+#define PROGCOM_RESP_SZ 64
+// maximum number of data bytes accepted on a single write command. The
+// underlying I2C helpers cap out at MAX_BYTES (4) per transaction.
+#define PROGCOM_MAX_DATA 4
 
-#define CMD_SZ             256
-#define POWER_I2C_BASE     1
-#define POWER_PAGE_COMMAND 0x0
-#define CLOCK_I2C_BASE     2
-#define CLOCK_PAGE_COMMAND 0x0FF // dummy
-#define FF_F1_I2C_BASE     3
-#define FF_F2_I2C_BASE     4
-#define FF_PAGE_COMMAND    0x7F // 127
-
-extern const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
-
-// maximum number of data bytes accepted on a single write command
-#define PROGCOM_MAX_DATA 16
+extern const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC]; // LocalTasks.c
+extern const struct pm_command_t extra_cmds[N_EXTRA_CMDS];         // LocalTasks.c
 
 enum progcom_op_t {
   PROGCOM_OP_READ,
@@ -108,8 +107,8 @@ static inline bool is_hex_digit(char c)
 // ---------------------------------------------------------------------------
 // Command parser
 //
-// Grammar (fields separated by one or more spaces, line terminator optional
-// since the caller may have stripped it):
+// Grammar (fields separated by one or more spaces, line terminator already
+// stripped by the caller):
 //   <r|w> <DC|FF|CL|MC> <devnum> <page> <addr> [<data> ...]
 // All numeric fields are one or two hex digits, i.e. a single byte.
 // ---------------------------------------------------------------------------
@@ -147,7 +146,7 @@ static inline const char *progcom_parse_byte(const char *p, uint8_t *out)
 // Parse a full command line into cmd. Returns NULL on success, or a short
 // human-readable description of the failure suitable for the "e " response.
 // The input is not modified; the caller keeps ownership of it.
-const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
+static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
 {
   if (line == NULL || cmd == NULL)
     return "internal error";
@@ -222,285 +221,232 @@ const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
   return NULL; // success
 }
 
-// Execute a parsed read command. Returns NULL on success, or an error string.
-// On success, writes up to PROGCOM_MAX_DATA bytes to out_data and sets *nout.
-static const char *progcom_execute_read(const struct progcom_cmd_t *cmd, uint8_t *out_data, size_t *nout)
+// ---------------------------------------------------------------------------
+// Device access. Each helper returns NULL on success or an error string.
+// On a successful read the single data byte is stored in *out.
+// ---------------------------------------------------------------------------
+
+// Buffer for error messages that embed the SMBus error string. A single static
+// buffer is safe here: only ProgComTask calls into these helpers.
+static char progcom_errbuf[56];
+
+static const char *progcom_i2c_error(const char *what, int r)
 {
-  uint8_t i2c_dev = 0;
-  const struct dev_i2c_addr_t *addr = NULL;
-  uint8_t dev_addr = 0;
-  uint8_t mux_addr = 0;
-  uint8_t mux_bit = 0;
-  *nout = 0;
-
-  // Select I2C bus and device based on device type
-  switch (cmd->dev) {
-    case PROGCOM_DEV_DCDC:
-      i2c_dev = POWER_I2C_BASE;
-      if (cmd->dev_num >= N_PM_ADDRS_DCDC)
-        return "invalid DCDC device number";
-      addr = &pm_addrs_dcdc[cmd->dev_num];
-      dev_addr = addr->dev_addr;
-      mux_addr = addr->mux_addr;
-      mux_bit = addr->mux_bit;
-      break;
-    case PROGCOM_DEV_FF:
-      if (cmd->dev_num < NFIREFLIES_F1) {
-        i2c_dev = FF_F1_I2C_BASE;
-      }
-      else if (cmd->dev_num < NFIREFLIES_F1 + NFIREFLIES_F2) {
-        i2c_dev = FF_F2_I2C_BASE;
-      }
-      else {
-        return "invalid Firefly device number";
-      }
-      // Firefly uses dev_moni2c_addr_t, not dev_i2c_addr_t
-      // For now, use a simplified approach - direct I2C read
-      // TODO: integrate with FireflyUtils for proper register access
-      dev_addr = 0x50; // Example default address
-      mux_addr = 0x70; // Example mux address
-      mux_bit = cmd->dev_num & 0x7;
-      break;
-    case PROGCOM_DEV_CLK:
-      i2c_dev = CLOCK_I2C_BASE;
-      if (cmd->dev_num >= NDEVICES_CLK)
-        return "invalid clock device number";
-      // clk_moni2c_addrs is dev_moni2c_addr_t, but we only need dev_addr field
-      // which is at the same offset as in dev_i2c_addr_t
-      dev_addr = clk_moni2c_addrs[cmd->dev_num].dev_addr;
-      mux_addr = clk_moni2c_addrs[cmd->dev_num].mux_addr;
-      mux_bit = clk_moni2c_addrs[cmd->dev_num].mux_bit;
-      break;
-    case PROGCOM_DEV_MCU:
-      return "MCU read not implemented";
-    default:
-      return "unknown device type";
-  }
-
-  // Acquire I2C semaphore
-  SemaphoreHandle_t sem = getSemaphore(i2c_dev);
-  if (sem == NULL || acquireI2CSemaphore(sem) == pdFAIL) {
-    return "failed to acquire I2C semaphore";
-  }
-
-  tSMBusStatus r;
-  // Step 1: Set mux (if applicable)
-  if (mux_addr != 0) {
-    r = apollo_i2c_ctl_w(i2c_dev, mux_addr, 1, 0x1U << mux_bit);
-    if (r != SMBUS_OK) {
-      xSemaphoreGive(sem);
-      return "mux select failed";
-    }
-  }
-
-  // Step 2: Set page register
-  r = apollo_i2c_ctl_reg_w(i2c_dev, dev_addr, 1, cmd->page, 1, cmd->page);
-  if (r != SMBUS_OK) {
-    xSemaphoreGive(sem);
-    return "page select failed";
-  }
-
-  // Step 3: Read data from register address
-  uint8_t data[PROGCOM_MAX_DATA];
-  r = apollo_i2c_ctl_reg_r(i2c_dev, dev_addr, 1, cmd->address, 1, (uint32_t *)data);
-  xSemaphoreGive(sem);
-
-  if (r != SMBUS_OK) {
-    return "read failed";
-  }
-
-  out_data[0] = data[0];
-  *nout = 1;
-  return NULL; // success
+  snprintf(progcom_errbuf, sizeof(progcom_errbuf), "%s: %s", what, SMBUS_get_error((tSMBusStatus)r));
+  return progcom_errbuf;
 }
 
-// Execute a parsed write command. Returns NULL on success, or an error string.
-static const char *progcom_execute_write(const struct progcom_cmd_t *cmd)
+// Fireflies: read_arbitrary_ff_register()/write_arbitrary_ff_register() already
+// handle bus selection, the mux, the page select byte and the semaphore.
+static const char *progcom_access_ff(const struct progcom_cmd_t *cmd, uint8_t *out)
 {
-  uint8_t i2c_dev = 0;
-  const struct dev_i2c_addr_t *addr = NULL;
-  uint8_t dev_addr = 0;
-  uint8_t mux_addr = 0;
-  uint8_t mux_bit = 0;
+  if (cmd->dev_num >= NFIREFLIES)
+    return "invalid Firefly device number";
+  if (!isEnabledFF(cmd->dev_num))
+    return "Firefly not enabled";
 
-  if (cmd->ndata == 0 || cmd->ndata > PROGCOM_MAX_DATA)
-    return "invalid data length";
+  // FF register numbers are packed as page<<8 | address. The page is only
+  // written to the page select byte for addresses above FF_PAGE_SELECT_BYTE;
+  // see ff_select_page_if_needed() in commands/FireflyCommands.c.
+  uint16_t packed_reg = ((uint16_t)cmd->page << 8) | cmd->address;
 
-  // Select I2C bus and device based on device type
-  switch (cmd->dev) {
-    case PROGCOM_DEV_DCDC:
-      i2c_dev = POWER_I2C_BASE;
-      if (cmd->dev_num >= N_PM_ADDRS_DCDC)
-        return "invalid DCDC device number";
-      addr = &pm_addrs_dcdc[cmd->dev_num];
-      dev_addr = addr->dev_addr;
-      mux_addr = addr->mux_addr;
-      mux_bit = addr->mux_bit;
-      break;
-    case PROGCOM_DEV_FF:
-      if (cmd->dev_num < NFIREFLIES_F1) {
-        i2c_dev = FF_F1_I2C_BASE;
-      }
-      else if (cmd->dev_num < NFIREFLIES_F1 + NFIREFLIES_F2) {
-        i2c_dev = FF_F2_I2C_BASE;
-      }
-      else {
-        return "invalid Firefly device number";
-      }
-      // Firefly uses dev_moni2c_addr_t, not dev_i2c_addr_t
-      // For now, use a simplified approach - direct I2C write
-      // TODO: integrate with FireflyUtils for proper register access
-      dev_addr = 0x50; // Example default
-      mux_addr = 0x70;
-      mux_bit = cmd->dev_num & 0x7;
-      break;
-    case PROGCOM_DEV_CLK:
-      i2c_dev = CLOCK_I2C_BASE;
-      if (cmd->dev_num >= NDEVICES_CLK)
-        return "invalid clock device number";
-      // clk_moni2c_addrs is dev_moni2c_addr_t, extract fields individually
-      dev_addr = clk_moni2c_addrs[cmd->dev_num].dev_addr;
-      mux_addr = clk_moni2c_addrs[cmd->dev_num].mux_addr;
-      mux_bit = clk_moni2c_addrs[cmd->dev_num].mux_bit;
-      break;
-    case PROGCOM_DEV_MCU:
-      return "MCU write not implemented";
-    default:
-      return "unknown device type";
-  }
-
-  // Acquire I2C semaphore
-  SemaphoreHandle_t sem = getSemaphore(i2c_dev);
-  if (sem == NULL || acquireI2CSemaphore(sem) == pdFAIL) {
-    return "failed to acquire I2C semaphore";
-  }
-
-  tSMBusStatus r;
-  // Step 1: Set mux (if applicable)
-  if (mux_addr != 0) {
-    r = apollo_i2c_ctl_w(i2c_dev, mux_addr, 1, 0x1U << mux_bit);
-    if (r != SMBUS_OK) {
-      xSemaphoreGive(sem);
-      return "mux select failed";
-    }
-  }
-
-  // Step 2: Set page register
-  r = apollo_i2c_ctl_reg_w(i2c_dev, dev_addr, 1, cmd->page, 1, cmd->page);
-  if (r != SMBUS_OK) {
-    xSemaphoreGive(sem);
-    return "page select failed";
-  }
-
-  // Step 3: Write data to register address
-  uint32_t packed_data = 0;
-  for (size_t i = 0; i < cmd->ndata && i < 4; ++i) {
-    packed_data |= ((uint32_t)cmd->data[i]) << (i * 8);
-  }
-  r = apollo_i2c_ctl_reg_w(i2c_dev, dev_addr, 1, cmd->address, cmd->ndata, packed_data);
-  xSemaphoreGive(sem);
-
-  if (r != SMBUS_OK) {
-    return "write failed";
-  }
-
-  return NULL; // success
-}
-
-void add_progcom_char(uint8_t c)
-{
-  // handle received character and process command when \r\n is received
-  static char cmd_buffer[CMD_SZ];
-  static size_t cmd_index = 0;
-
-  // check for carriage return and line feed, signaling end of a command
-  if (c == '\n' && cmd_index > 0 && cmd_buffer[cmd_index - 1] == '\r') {
-    if (cmd_index > 0) {
-      cmd_buffer[cmd_index] = '\0'; // null-terminate the command string
-
-      // Parse the command using the structured parser
-      struct progcom_cmd_t cmd;
-      const char *parse_err = progcom_parse(cmd_buffer, &cmd);
-      if (parse_err != NULL) {
-        // Send error response
-        char response[CMD_SZ];
-        snprintf(response, sizeof(response), "e %s\r\n", parse_err);
-        xStreamBufferSend(xUART7StreamBuffer, response, strlen(response), portMAX_DELAY);
-        cmd_index = 0;
-        return;
-      }
-
-      // Execute the command
-      char response[CMD_SZ];
-      response[0] = '\0';
-
-      if (cmd.op == PROGCOM_OP_READ) {
-        uint8_t data[PROGCOM_MAX_DATA];
-        size_t nout = 0;
-        const char *exec_err = progcom_execute_read(&cmd, data, &nout);
-        if (exec_err != NULL) {
-          snprintf(response, sizeof(response), "e %s\r\n", exec_err);
-        }
-        else {
-          // Format response: "d <hex_bytes>\r\n"
-          size_t pos = 0;
-          response[pos++] = 'd';
-          response[pos++] = ' ';
-          for (size_t i = 0; i < nout; ++i) {
-            if (i > 0)
-              response[pos++] = ' ';
-            pos += snprintf(response + pos, sizeof(response) - pos, "%02X", data[i]);
-          }
-          response[pos++] = '\r';
-          response[pos++] = '\n';
-          response[pos] = '\0';
-        }
-      }
-      else if (cmd.op == PROGCOM_OP_WRITE) {
-        const char *exec_err = progcom_execute_write(&cmd);
-        if (exec_err != NULL) {
-          snprintf(response, sizeof(response), "e %s\r\n", exec_err);
-        }
-        else {
-          snprintf(response, sizeof(response), "c\r\n");
-        }
-      }
-
-      // Send response back to the UART stream buffer
-      if (response[0] != '\0') {
-        xStreamBufferSend(xUART7StreamBuffer, response, strlen(response), portMAX_DELAY);
-      }
-    }
-    cmd_index = 0; // reset index for next command
+  int r;
+  if (cmd->op == PROGCOM_OP_READ) {
+    r = (int16_t)read_arbitrary_ff_register(packed_reg, cmd->dev_num, out, 1);
   }
   else {
-    // incoming char, not command terminator
-    if (cmd_index < sizeof(cmd_buffer) - 1) {
-      cmd_buffer[cmd_index++] = c;
+    if (cmd->ndata != 1)
+      return "Firefly write takes one data byte";
+    r = write_arbitrary_ff_register(packed_reg, cmd->data[0], cmd->dev_num);
+  }
+
+  if (r == 0)
+    return NULL;
+  if (r == SEM_ACCESS_ERROR)
+    return "could not get I2C semaphore";
+  if (r < 0)
+    return "Firefly access error";
+  return progcom_i2c_error(cmd->op == PROGCOM_OP_READ ? "read failed" : "write failed", r);
+}
+
+// LGA80D DC-DC converters, via PMBus. apollo_pmbus_rw() selects the mux itself,
+// so we only need the semaphore and the PAGE command.
+static const char *progcom_access_dcdc(const struct progcom_cmd_t *cmd, uint8_t *out)
+{
+  if (cmd->dev_num >= NSUPPLIES_PS)
+    return "invalid DCDC device number";
+  if (cmd->page >= NPAGES_PS)
+    return "invalid DCDC page";
+
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL)
+    return "could not get I2C semaphore";
+
+  const char *err = NULL;
+  uint8_t page = cmd->page;
+  // extra_cmds[0] is the PMBus PAGE command (register 0x0, one byte)
+  tSMBusStatus r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[cmd->dev_num],
+                                   &extra_cmds[0], &page);
+  if (r != SMBUS_OK) {
+    err = progcom_i2c_error("page select failed", r);
+  }
+  else if (cmd->op == PROGCOM_OP_READ) {
+    struct pm_command_t thecmd = {cmd->address, 1, "progcom", "", PM_STATUS};
+    r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[cmd->dev_num], &thecmd, out);
+    if (r != SMBUS_OK)
+      err = progcom_i2c_error("read failed", r);
+  }
+  else {
+    struct pm_command_t thecmd = {cmd->address, cmd->ndata, "progcom", "", PM_STATUS};
+    uint8_t data[PROGCOM_MAX_DATA];
+    memcpy(data, cmd->data, cmd->ndata); // apollo_pmbus_rw() wants a writable buffer
+    r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[cmd->dev_num], &thecmd, data);
+    if (r != SMBUS_OK)
+      err = progcom_i2c_error("write failed", r);
+  }
+
+  if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(i2c1_sem);
+  return err;
+}
+
+// Clock synthesizers. Same shape as clear_clk_stickybits()/getClockProgram()
+// in clocksynth.c: mux select, page select, transaction, mux clear.
+static const char *progcom_access_clk(const struct progcom_cmd_t *cmd, uint8_t *out)
+{
+  if (cmd->dev_num >= NDEVICES_CLK)
+    return "invalid clock device number";
+
+  const uint8_t mux_addr = clk_moni2c_addrs[cmd->dev_num].mux_addr;
+  const uint8_t mux_bit = clk_moni2c_addrs[cmd->dev_num].mux_bit;
+  const uint8_t dev_addr = clk_moni2c_addrs[cmd->dev_num].dev_addr;
+
+  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL)
+    return "could not get I2C semaphore";
+
+  const char *err = NULL;
+  int r = apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 0x1U << mux_bit);
+  if (r != SMBUS_OK) {
+    err = progcom_i2c_error("mux select failed", r);
+  }
+  else {
+    r = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, dev_addr, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, cmd->page);
+    if (r != SMBUS_OK) {
+      err = progcom_i2c_error("page select failed", r);
+    }
+    else if (cmd->op == PROGCOM_OP_READ) {
+      uint32_t data = 0;
+      r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, cmd->address, 1, &data);
+      if (r != SMBUS_OK)
+        err = progcom_i2c_error("read failed", r);
+      else
+        *out = (uint8_t)(data & 0xFFU);
     }
     else {
-      // buffer overflow, reset and ignore
-      cmd_index = 0;
+      // apollo_i2c_ctl_reg_w() sends the packed data least significant byte first
+      uint32_t packed_data = 0;
+      for (size_t i = 0; i < cmd->ndata; ++i)
+        packed_data |= ((uint32_t)cmd->data[i]) << (i * 8);
+      r = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, dev_addr, 1, cmd->address, cmd->ndata, packed_data);
+      if (r != SMBUS_OK)
+        err = progcom_i2c_error("write failed", r);
+    }
+    apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 0x0U); // clear the mux
+  }
+
+  if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(i2c2_sem);
+  return err;
+}
+
+// Parse and execute one command line, then send the response out the UART.
+static void progcom_handle_line(uint32_t uart_base, const char *line)
+{
+  struct progcom_cmd_t cmd;
+  uint8_t value = 0;
+
+  const char *err = progcom_parse(line, &cmd);
+  if (err == NULL) {
+    switch (cmd.dev) {
+      case PROGCOM_DEV_DCDC:
+        err = progcom_access_dcdc(&cmd, &value);
+        break;
+      case PROGCOM_DEV_FF:
+        err = progcom_access_ff(&cmd, &value);
+        break;
+      case PROGCOM_DEV_CLK:
+        err = progcom_access_clk(&cmd, &value);
+        break;
+      case PROGCOM_DEV_MCU:
+        err = "MCU device not implemented";
+        break;
+      default:
+        err = "unknown device type";
+        break;
     }
   }
+
+  char response[PROGCOM_RESP_SZ];
+  if (err != NULL)
+    snprintf(response, sizeof(response), "e %s\n", err);
+  else if (cmd.op == PROGCOM_OP_READ)
+    snprintf(response, sizeof(response), "d %02X\n", value);
+  else
+    snprintf(response, sizeof(response), "c\n");
+
+  UARTPrint(uart_base, response);
 }
+
+// Accumulate one character. On the line terminator the command is executed and
+// the response sent. An over-long line is discarded up to the next terminator.
+static void add_progcom_char(uint32_t uart_base, uint8_t c)
+{
+  static char cmd_buffer[CMD_SZ];
+  static size_t cmd_index = 0;
+  static bool too_long = false;
+
+  if (c == '\n') {
+    if (too_long) {
+      UARTPrint(uart_base, "e command too long\n");
+    }
+    else if (cmd_index > 0) {
+      if (cmd_buffer[cmd_index - 1] == '\r')
+        --cmd_index; // tolerate \r\n line endings
+      cmd_buffer[cmd_index] = '\0';
+      if (cmd_index > 0)
+        progcom_handle_line(uart_base, cmd_buffer);
+    }
+    cmd_index = 0;
+    too_long = false;
+    return;
+  }
+
+  // incoming char, not command terminator
+  if (cmd_index < sizeof(cmd_buffer) - 1)
+    cmd_buffer[cmd_index++] = (char)c;
+  else
+    too_long = true; // discard the rest of the line
+}
+
 // FreeRTOS Task itself
 void ProgComTask(void *pvParameters)
 {
   // cast the parameters to the correct type
-  struct ProgComTaskArgs_t *args = (struct ProgComTaskArgs_t *)pvParameters;
-  StreamBufferHandle_t uartStreamBuffer = args->UartStreamBuffer;
-  uint32_t uart_base = args->uart_base;
-  (void)uart_base; // avoid unused variable warning
+  ProgComTaskArgs_t *args = (ProgComTaskArgs_t *)pvParameters;
 
   uint8_t cRxedChar;
   for (;;) {
     /* This implementation reads a single character at a time.  Wait in the
     Blocked state until a character is received. */
-    xStreamBufferReceive(uartStreamBuffer, &cRxedChar, 1,
+    xStreamBufferReceive(args->UartStreamBuffer, &cRxedChar, 1,
                          portMAX_DELAY);
-    add_progcom_char(cRxedChar);
+    add_progcom_char(args->uart_base, cRxedChar);
     // monitor stack usage for this task
     CHECK_TASK_STACK_USAGE(args->stack_size);
   }
 }
+
+#else // REV1 -- there is no programmatic UART on Rev 1 hardware
+
+typedef int progcom_not_supported_on_rev1_t;
+
+#endif // REV2 || REV3
