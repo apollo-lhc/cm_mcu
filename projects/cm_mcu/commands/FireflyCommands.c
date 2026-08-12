@@ -303,7 +303,7 @@ static int set_xcvr_cdr(uint8_t value, int num_ff)
   return ff_for_each_selected(num_ff, ff_apply_cdr, &value);
 }
 
-static int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff)
+int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff)
 {
   if (num_ff >= NFIREFLIES) {
     return -1;
