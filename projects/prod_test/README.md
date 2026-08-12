@@ -7,6 +7,19 @@ If you compile and run it on a rev 1 board, caveat emptor.
 `vCommandLineTask` (UART0 CLI), `ADCMonitorTask` (continuous on-chip ADC sampling, read via the `adc`
 command), and `I2CSlaveTask` (responds to an external I2C master on I2C0, slave address `0x40`).
 
+## I2C bus assignments
+
+Initialized in `SystemInit()`. REV2 and later; these match `cm_mcu`.
+
+| Bus | Role |
+| --- | ---- |
+| I2C0 | I2C slave (responds to an external master) |
+| I2C1 | SMBus master → DCDC power supplies |
+| I2C2 | SMBus master → clock synthesizers |
+| I2C3 | SMBus master → F2 Firefly optics |
+| I2C4 | SMBus master → F1 Firefly optics |
+| I2C5 | SMBus master → FPGA F1 & F2 diagnostic registers |
+
 ## CLI commands
 
 | Command | Description |

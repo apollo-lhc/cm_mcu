@@ -1,389 +1,204 @@
 # CLAUDE.md — Apollo Command Module MCU Firmware
 
-## Our interactions
+Bare-metal FreeRTOS firmware for the **Apollo command module**, the ATCA blade destined for the
+HL-LHC. It handles power sequencing, temperature/voltage monitoring, I2C/SMBus communication, and
+FPGA/Firefly control for high-energy-physics detector readout.
 
-* Play devil's advocate. Don't flatter, challenge.
-* Research FIRST, then advise. Always web-search before giving product-specific advice, pricing, or recommendations. Your training data goes stale. Today's answer matters immensely!
-* Challenge my reasoning instead of validating it. If my approach has a flaw, say so.
-* When there's a tradeoff, present options with evidence and let me decide. Don't silently pick the easy path.
-* If there's a known issue, raise it. "Good enough" is not good enough.
-* If you're unsure about something, say so. DO NOT guess or fabricate.
-* If my request is ambiguous, clarify before proceeding.
-* Be concise. Don't explain basics I already know.
+- **MCU**: TI Tiva TM4C1290NCPDT, ARM Cortex-M4F with FPU, 40 MHz
+- **Revisions**: REV1, REV2, REV3 (default REV3) — exactly one may be defined at build time
+- **Compiler**: `arm-none-eabi-gcc` 13.2.Rel1 from ARM — **not** the distribution package, which is
+  usually too old. `clang` (LLVM Embedded Toolchain for Arm) is also supported and built in CI.
+- **Debugger**: Segger J-LINK
 
-## Project Overview
+The revision drives the pin maps (`common/pinout_rev*.c`) and a good deal of conditional code.
+REV1 differs from REV2/REV3 in: the FPGA I2C bus (I2C6 vs I2C5), UART assignments, ADC channel-to-
+signal mapping, and Firefly/clock/DCDC device counts. REV2 and REV3 differ mainly in Firefly part
+populations and clock-chip identities. Assume nothing is shared until you have checked the `#if`s.
 
-This repository contains bare-metal firmware for the **Apollo command module**, targeting the **TI Tiva TM4C1290NCPDT** (ARM Cortex-M4F with FPU, running at 40 MHz). The firmware manages power sequencing, temperature/voltage monitoring, I2C communication, and FPGA/Firefly control for high-energy physics detector readout systems. It controls low-level functionality of the command module of an ATCA blade. The blade is to be used at the HL-LHC.
+`ECN001` is a hardware change note affecting REV1 power sequencing (`PowerSupplyTask.c`). It is
+defined by default; `make NO_ECN001=1` builds the pre-ECN variant, and releases ship both.
 
-## Hardware
+## Detailed documentation
 
-- **MCU**: TM4C1290NCPDT (Texas Instruments Tiva C Series)
-- **Architecture**: ARM Cortex-M4F with FPU
-- **Hardware Revisions**: REV1, REV2, REV3 (default: REV3)
-- **Programmer/Debugger**: Segger J-LINK EDU (with JTAG adapter for Xilinx headers)
+This file is deliberately short — read the linked file before working in that area.
 
-## Development Environment
-
-### Required Tools
-
-- **Compiler**: `arm-none-eabi-gcc` 13.2.Rel1 — download from ARM, do **not** use the distribution-provided version (usually too old)
-- **Build System**: Make
-- **Version Control**: Git (with submodule support)
-- **Optional IDE**: Eclipse with GNU MCU Eclipse plugin or VS Code
-
-### Platform Support
-
-- **Fully Supported**: Linux (ALMA9), macOS
-- **Experimental**: Windows via WSL (recommended) or Cygwin (requires `make clean` between builds)
+| Topic | File |
+| ----- | ---- |
+| Full source tree, file by file | [`repo_layout.md`](repo_layout.md) |
+| cm_mcu internals: boot sequence, task table, LED states, I2C transaction/semaphore contract, EEPROM layout, logging, temperature alarms, ProgCom UART protocol | [`projects/cm_mcu/README.md`](projects/cm_mcu/README.md) |
+| prod_test: architecture, I2C bus map, CLI table, `prodtest1` sequence | [`projects/prod_test/README.md`](projects/prod_test/README.md) |
+| MCU peripheral assignments (UARTs, timers, pins) | [`mcu_peripherals.md`](mcu_peripherals.md) |
+| I2C lockup investigation and residual races | [`i2c_lockup_notes.md`](i2c_lockup_notes.md) |
 
 ## Build
 
-### Initial Setup
+On macOS use `sysctl -n hw.ncpu` in place of `nproc`.
 
 ```bash
-# Initialize and update submodules (FreeRTOS)
-git submodule update --init --recursive
+git submodule update --init --recursive   # FreeRTOS, first time only
+make -j $(nproc)              # standard build -> projects/cm_mcu/cm_mcu.axf
+make -j $(nproc) DEBUG=1      # debug build (symbols; asserts spin instead of resetting)
+make -j $(nproc) VERBOSE=1    # show full command lines
+make REV1=1                   # or REV2=1, REV3=1
+make COMPILER=clang REV3=1    # clang build, as run in CI
+make check-for-pr             # format check + full build matrix (runs build_all.sh)
+make release                  # release binaries + tarball
+# also: all (default), clean, format, format-apply
 ```
 
-### Build Commands
+**Always `make clean` when switching revision, compiler, or between DEBUG and non-DEBUG.** The
+Makefile does not track flag changes, so a stale object tree silently links a binary built for the
+previous configuration — with no warning. The top-level Makefile defaults to `REV3=1`, but the
+per-project ones do not, so `make clean` run from inside `projects/cm_mcu` fails with
+`"No Revision defined"` unless you pass `REVn=1`.
 
-```bash
-# Standard build (produces projects/cm_mcu/cm_mcu.axf)
-make -j $(nproc)
+## Repository layout
 
-# Debug build (with symbols)
-make -j $(nproc) DEBUG=1
+`projects/cm_mcu/` is the primary runtime firmware (`cm_mcu.c` holds `main`; `commands/` holds the
+CLI handlers). `projects/prod_test/` is the production test firmware (CLI + ADC + I2C slave only);
+`projects/` also has `boot_loader`, `blinky`, `i2c-sensors`, `uart_echo`. `common/` is shared code
+(utils, log, printf, UART, SMBus, per-revision pinout), `inc/` + `driverlib/` are TI TivaWare,
+`FreeRTOS-Kernel/` is a submodule, `sm_cm_config/` holds board config and the codegen scripts.
 
-# Verbose output
-make -j $(nproc) VERBOSE=1
+`projects/cm_mcu/Tasks.h` is the central header: task prototypes, queue/semaphore externs, and most
+inter-task definitions live there. Full tree: [`repo_layout.md`](repo_layout.md).
 
-# Build specific hardware revision
-make REV1=1   # or REV2=1, REV3=1
+## Architecture essentials
 
-# Check formatting + build all configurations (run before PR)
-make check-for-pr
+**Tasks.** All significant work happens in dedicated FreeRTOS tasks that communicate via queues:
+`EEPROMTask` (EEPROM gatekeeper), `InitTask` (one-shot startup), `GenericAlarmTask` (temperature and
+voltage alarm state machines, 50 ms), `CommandLineTask` (UART CLI), `ProgComTask` (programmatic UART7
+interface, REV2/3), `MonitorTask`/`MonitorTaskI2C` (SMBus/I2C polling), `PowerSupplyTask`,
+`ADCMonitorTask`, `ZynqMonTask`, `WatchdogTask`, `LedTask`, `I2CSlaveTask`. Full table with source
+files in the cm_mcu README.
 
-# Create release package
-make release
-```
+Higher priority number wins. The safety-critical tasks (`PowerSupplyTask`, `I2CSlaveTask`,
+`InitTask`, `ZynqMonTask`, `GenericAlarmTask`) run at `tskIDLE_PRIORITY + 4`; monitoring, CLI and
+ProgCom run at `+3`; `LedTask` at `+1`. Most tasks are a short init block followed by a
+`vTaskDelayUntil` loop.
 
-**Do not mix debug and non-debug builds.** Run `make clean` if switching.
+**Power state machine.** `PowerSupplyTask` walks
+`POWER_FAILURE → POWER_INIT → POWER_DOWN → POWER_OFF → POWER_L1ON … POWER_L6ON → POWER_ON`
+(the `X_MACRO_PS_SYSTEM_STATES` list in `Tasks.h`). A `TEMP_ALARM` forces a transition to
+`POWER_OFF`.
 
-### Build Targets
-
-| Target | Description |
-| ------ | ----------- |
-| `all` (default) | Build all projects |
-| `clean` | Remove all build artifacts |
-| `format` | Check formatting of modified files |
-| `format-apply` | Auto-format modified files |
-| `check-for-pr` | Format check + build all configurations |
-| `release` | Build release binaries and create tarball |
-
-### Hardware Revisions
-
-Only **one** revision can be defined at build time — the Makefile enforces this:
-
-- `REV1=1` — Revision 1
-- `REV2=1` — Revision 2
-- `REV3=1` — Revision 3 (default if none specified)
-
-## Project Structure
-
-```
-apollo_cm_mcu/
-├── projects/
-│   ├── cm_mcu/                  # PRIMARY: command module runtime firmware
-│   │   ├── cm_mcu.c             # Main entry point, task creation
-│   │   ├── cm_mcu.ld            # Linker script
-│   │   ├── Tasks.h              # Central header: all task/queue/semaphore externs
-│   │   ├── FreeRTOSConfig.h     # FreeRTOS tuning (tick rate, stack sizes, etc.)
-│   │   │
-│   │   ├── InitTask.c           # One-shot startup: loads EEPROM config, init peripherals
-│   │   ├── EEPROMTask.c         # EEPROM gatekeeper task (queue-based, thread-safe)
-│   │   ├── CommandLineTask.c/h  # UART CLI interface (two instances); registers all commands
-│   │   ├── GenericAlarmTask.c   # Alarm state machine (runs every 50 ms)
-│   │   ├── AlarmUtilities.c/h   # Temperature and voltage alarm logic
-│   │   ├── PowerSupplyTask.c    # Power sequencing and TEMP_ALARM response
-│   │   ├── MonitorTask.c/h      # SMBus/PMBus polling of power supplies
-│   │   ├── MonitorTaskI2C.c/h   # I2C polling of FPGAs
-│   │   ├── MonI2C_addresses.c/h # I2C address tables for MonitorTaskI2C
-│   │   ├── MonUtils.c/h         # Shared monitor utilities (value decoding, etc.)
-│   │   ├── FireflyUtils.c/h     # SamTec Firefly transceiver register access
-│   │   ├── ZynqMonTask.c        # Zynq FPGA monitoring task
-│   │   ├── ZynqMon_addresses.c/h# Zynq I2C register address tables
-│   │   ├── ADCMonitorTask.c     # On-chip ADC monitoring (TM4C internal sensors)
-│   │   ├── I2CCommunication.c/h # Low-level I2C transaction abstraction
-│   │   ├── I2CSlaveTask.c/h     # I2C slave interface (responds to external master)
-│   │   ├── clocksynth.c/h       # Clock synthesizer (Si5395) control
-│   │   ├── LedTask.c            # Status LED blink patterns
-│   │   ├── WatchdogTask.c       # Hardware watchdog refresh task
-│   │   ├── InterruptHandlers.c/h# ISR implementations
-│   │   ├── Semaphore.c/h        # I2C bus semaphore helpers
-│   │   ├── LocalTasks.c         # Miscellaneous local task utilities
-│   │   ├── startup_gcc.c        # GCC startup / vector table
-│   │   ├── startup_clang.c      # Clang startup / vector table
-│   │   └── commands/            # CLI command handler implementations
-│   │       ├── BoardCommands.c/h    # Board ID, EEPROM identity, GPIO commands
-│   │       ├── BufferCommands.c/h   # Error log ring buffer commands
-│   │       ├── EEPROMCommands.c/h   # Low-level EEPROM read/write commands
-│   │       ├── I2CCommands.c/h      # I2C bus scan and raw access commands
-│   │       ├── SensorControl.c/h    # talarm, sensor monitoring commands
-│   │       ├── SoftwareCommands.c/h # Software version, reset, watchdog commands
-│   │       └── parameters.h         # Shared CLI parameter definitions
-│   │
-│   ├── prod_test/               # SECONDARY: production test firmware
-│   │   ├── prod_test.c/h        # Main entry point and test framework
-│   │   ├── prod_test.ld         # Linker script
-│   │   ├── CommandLineTask.c    # CLI task (prod_test-specific command set)
-│   │   ├── commands.c/h         # Top-level command dispatch
-│   │   ├── ADCMonitorTask.c/h   # ADC verification tests
-│   │   ├── I2CCommunication.c/h # I2C abstraction (shared with cm_mcu)
-│   │   ├── I2CSlaveTask.c/h     # I2C slave interface
-│   │   ├── InterruptHandlers.c/h# ISRs
-│   │   ├── ClockI2CCommands.c/h # Clock synthesizer I2C test commands
-│   │   ├── EEPROMI2CCommands.c/h# EEPROM I2C test commands
-│   │   ├── FPGAI2CCommands.c/h  # FPGA I2C test commands
-│   │   ├── FireflyI2CCommands.c/h# Firefly I2C test commands
-│   │   └── PowerI2CCommands.c/h # Power supply I2C test commands
-│   │
-│   ├── boot_loader/             # Bootloader
-│   ├── blinky/                  # LED blink sanity test
-│   ├── i2c-sensors/             # I2C sensor demos
-│   └── uart_echo/               # UART loopback test
-│
-├── common/                      # Shared utilities across all projects
-│   ├── utils.c/h                # EEPROM helpers, error buffer, float utilities
-│   └── log.c/h                  # Logging macros
-├── inc/                         # TI Tivaware driver library headers
-├── driverlib/                   # TI Tivaware driver library source
-├── FreeRTOS-Kernel/             # FreeRTOS (git submodule)
-├── sm_cm_config/                # Board configuration files
-└── makedefs                     # Common Makefile variable definitions
-```
-
-## Architecture
-
-### cm_mcu: FreeRTOS Tasks
-
-The firmware uses a FreeRTOS multi-task architecture. All significant work happens in dedicated tasks communicating via queues.
-
-**Key tasks:**
-
-- `EEPROMTask` — gatekeeper for all EEPROM access (queue-based, thread-safe)
-- `InitTask` — runs once at startup to load board config and initialize peripherals
-- `GenericAlarmTask` — state machine for temperature/voltage alarms (runs every 50 ms)
-- `CommandLineTask` — UART CLI interface (two instances: front panel + Zynq UART)
-- `MonitorTask` / `MonitorI2CTask` — periodic SMBus/I2C polling for power supplies and FPGAs
-- `FireflyTask` — SamTec Firefly transceiver monitoring
-- `PowerSupplyTask` — power supply sequencing and TEMP_ALARM response
-- `ADCMonitorTask` — on-chip ADC monitoring (internal TM4C temperature, voltages)
-- `ZynqMonTask` — Zynq FPGA monitoring via I2C
-- `WatchdogTask` — hardware watchdog refresh
-- `LedTask` — status LED blink patterns
-- `I2CSlaveTask` — responds to commands from an external I2C master
-
-### cm_mcu: I2C/SMBus Architecture (notification-based)
-
-The codebase was converted from polling to interrupt-driven (notification-based) I2C. Each I2C master bus (1–6) has:
-
-- A global `tSMBus g_sMasterN` struct (defined in `InterruptHandlers.c`)
-- A global `volatile tSMBusStatus eStatusN` for the per-bus completion status
-- An entry in `pSMBus[10]` and `eStatus[10]` lookup arrays (index = bus number, 0/7–9 are NULL)
-- A dedicated ISR (`SMBusMasterIntHandlerN`) that calls the shared `SMBusMasterIntHandlerCore`
-
-**Transaction flow:**
-
-```c
-i2c_arm_notify_slot(device);        // stores xTaskGetCurrentTaskHandle() in TaskNotifySMBus[device]
-r = SMBusMasterXxx(...);            // initiates transfer; returns SMBUS_PERIPHERAL_BUSY if hw busy
-if (r == SMBUS_OK) {
-    i2c_wait_for_transfer(device);  // ulTaskNotifyTake with 250ms timeout
-    r = *eStatus[device];           // ISR wrote the final status here
-} else {
-    TaskNotifySMBus[device] = NULL; // clean up if initiation failed
-}
-```
-
-The ISR (`SMBusMasterIntHandlerCore`, `InterruptHandlers.c`) calls `SMBusMasterIntProcess` (the TI state machine), then — if the transfer is done and `TaskNotifySMBus[device] != NULL` — calls `vTaskNotifyGiveFromISR` and nulls the slot.
-
-**Bus locking:** each bus has a FreeRTOS mutex (`i2c1_sem` … `i2c6_sem`, `Semaphore.c`). A caller holds the mutex for the whole transaction sequence (passed as `args->xSem` in the monitor tasks). `acquireI2CSemaphore(s)` retries with a 10-tick wait; `acquireI2CSemaphoreBlock(s)` polls with 0-tick.
-
-**Key implementation details (kept elsewhere, not in this file):**
-- The wrappers use **per-bus static `.bss` scratch buffers** (not stack locals) and a **bounded `BUSY|BUSBSY` idle-wait** before arming. These fixed the use-after-return memory corruption and the `SMBUS_PERIPHERAL_BUSY` race respectively. Full design + ownership contract: [`projects/cm_mcu/README.md`](projects/cm_mcu/README.md).
-- NACKs are classified via `SMBUS_is_NACK()` (`common/smbus_helper.h`); `MonitorTask` has an `ignoreNACK` flag for expected NACKs from absent devices.
-- Residual races (TI-driver auto-STOP / `SMBUS_STATE_IDLE`; the unused STOP-interrupt completion option) and the full investigation history: [`i2c_lockup_notes.md`](i2c_lockup_notes.md).
-
-### cm_mcu: EEPROM Access Pattern
-
-> **This pattern applies only to cm_mcu**, which has a dedicated `EEPROMTask` gatekeeper. The `prod_test` project does not use this pattern.
-
-**Always use the gatekeeper API** — never write to EEPROM directly from tasks:
-
-```c
-// Queue-based (safe from any task):
-write_eeprom(uint32_t data, uint32_t addr);
-uint32_t read_eeprom_single(uint32_t addr);
-uint64_t read_eeprom_multi(uint32_t addr);
-
-// Raw/direct (ISR-safe only, bypass queue):
-write_eeprom_raw(uint32_t data, uint32_t addr);
-uint32_t read_eeprom_raw(uint32_t addr);
-```
-
-For block password operations, use `EPRMMessage()` + `xQueueSendToBack(xEPRMQueue_in, ...)` directly (see `BoardCommands.c`).
-
-### cm_mcu: EEPROM Layout (Internal EEPROM, 6 KB total)
-
-```
-Block 0:  0x000–0x03F   (free)
-Block 1:  0x040–0x07F   Apollo board identity (password 0x12345678)
-  0x040 ADDR_ID          board_id (upper 16b) + revision (lower 16b)
-  0x044 ADDR_FF          Firefly USER config mask
-  0x048 ADDR_PS          Power supply ignore mask
-Blocks 2–5: 0x080–0x17F  Error log ring buffer (EBUF_MINBLK=2, EBUF_MAXBLK=5)
-Block 6:  0x180–0x1BF   Temperature alarm thresholds (runtime-configurable)
-  0x180 ADDR_TEMP_FF     Firefly alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
-  0x184 ADDR_TEMP_DCDC   DCDC alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
-  0x188 ADDR_TEMP_TM4C   TM4C alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
-  0x18C ADDR_TEMP_FPGA   FPGA alarm temp (int16_t degrees C in lower 16b of 32b word; upper 16b reserved)
-Blocks 7+: 0x1C0+        Available
-```
-
-Uninitialized EEPROM words read as `0xFFFFFFFF`. Code that loads EEPROM config must check for this sentinel and fall back to compile-time defaults.
-
-### prod_test: Architecture
-
-`prod_test` is a minimal FreeRTOS application — no alarm, EEPROM, or monitor tasks. It has three tasks:
-
-- `vCommandLineTask` — UART CLI on UART0 (Zynq UART), single instance
-- `ADCMonitorTask` — continuously samples on-chip ADC; values read by `adc` CLI command
-- `I2CSlaveTask` — responds to an external I2C master on I2C0 (slave address `0x40`)
-
-**I2C bus assignments** (initialized in `SystemInit()`):
-
-These are for Rev2 and later. 
+**I2C buses.** Fixed assignment, `cm_mcu` and `prod_test` alike:
 
 | Bus | Role |
 | --- | ---- |
-| I2C0 | I2C slave (responds to external master) |
-| I2C1 | SMBus master → DCDC power supplies |
-| I2C2 | SMBus master → clock synthesizers |
-| I2C3 | SMBus master → F2 Firefly optics |
-| I2C4 | SMBus master → F1 Firefly optics |
-| I2C5 | SMBus master → FPGA F1 & F2 diagnostic registers |
+| I2C0 | I2C slave, address `0x40` (external master / IPMC) |
+| I2C1 | DCDC power supplies (PMBus) |
+| I2C2 | Clock synthesizers (Si5395) |
+| I2C3 | F2 Firefly optics (`I2C_DEVICE_F2`) |
+| I2C4 | F1 Firefly optics (`I2C_DEVICE_F1`) |
+| I2C5 | FPGA monitoring — **REV2/REV3** |
+| I2C6 | FPGA monitoring — **REV1** |
 
-The full prod_test CLI command table and the `prodtest1` sequence live in [`projects/prod_test/README.md`](projects/prod_test/README.md).
-
-### CLI Command Pattern
-
-Command handlers in **both projects** share this signature:
+**I2C/SMBus.** Interrupt/notification-based, not polling. A caller arms a per-bus completion slot,
+starts the transfer, then blocks on `ulTaskNotifyTake` with a 250 ms timeout. Each bus (1–6) has its
+own FreeRTOS mutex (`i2c1_sem` … `i2c6_sem`) which **the caller must hold for the whole transaction
+sequence** — mux select, page select and data are separate transactions sharing per-bus `.bss` scratch
+buffers. Release with the guarded give used everywhere in the tree:
 
 ```c
-BaseType_t my_command(int argc, char **argv, char *m);
+if (xSemaphoreGetMutexHolder(sem) == xTaskGetCurrentTaskHandle())
+  xSemaphoreGive(sem);
 ```
 
-- `argv[0]` is the command name, `argv[1..argc-1]` are arguments
-- Write output to `m` using `snprintf`
-- Registered in `CommandLineTask.c` in the static `commands[]` array
+The raw `i2c*` CLI commands deliberately skip the mutex so a user can compose a sequence under
+`sem_ctl <bus> take`/`release`. Details, rationale and the ownership contract: cm_mcu README.
 
-**Return values differ between the two projects:**
+**EEPROM.** Never touch the internal EEPROM directly from a task — go through the `EEPROMTask`
+gatekeeper (`write_eeprom()`, `read_eeprom_single()`, `read_eeprom_multi()`). Block 1 is password
+protected; block 6 (temperature alarms) is not. Layout and the raw/ISR-only variants: cm_mcu README.
+`prod_test` has no gatekeeper and does not use this pattern.
 
-| Project | Return type | Values |
-| ------- | ----------- | ------ |
-| `cm_mcu` | `BaseType_t` | `pdFALSE` = done, `pdTRUE` = more output pending |
-| `prod_test` | `cli_status_t` | `CLI_OK` = done, `CLI_MORE` = more output pending, `CLI_ERROR` = failed |
+**CLI handlers.** Both projects share the signature `BaseType_t my_command(int argc, char **argv,
+char *m)` — `argv[0]` is the command name, output is written to `m` with `snprintf`, and the command
+is registered in the static `commands[]` array in `CommandLineTask.c`. The return conventions differ:
 
-**`SCRATCH_SIZE`** (output buffer): **1024** bytes in `cm_mcu`, **512** bytes in `prod_test`.
+| Project | Return type | Values | `SCRATCH_SIZE` |
+| ------- | ----------- | ------ | -------------- |
+| `cm_mcu` | `BaseType_t` | `pdFALSE` done, `pdTRUE` more output pending | 1024 |
+| `prod_test` | `cli_status_t` | `CLI_OK`, `CLI_MORE`, `CLI_ERROR` | 512 |
 
-In `prod_test`, each command registration also declares `num_args` (the exact number of required arguments, or `-1` to accept any). The dispatcher enforces this before calling the handler.
+`prod_test` registrations also declare `num_args` (exact count required, or `-1` for any); the
+dispatcher enforces it before calling the handler.
 
-## Temperature Alarm Thresholds
+## Generated sources — do not hand-edit
 
-Defaults (used if EEPROM is uninitialized):
+Two address tables are generated from the YAML in `sm_cm_config/data` by scripts in
+`sm_cm_config/src`, with rules in `projects/cm_mcu/Makefile`:
 
-| Device | Default | EEPROM Address |
-|--------|---------|---------------|
-| Firefly | 55°C | 0x180 |
-| DCDC | 70°C | 0x184 |
-| TM4C MCU | 70°C | 0x188 |
-| FPGA | 81°C | 0x18C |
+| Generated | From | Script |
+| --------- | ---- | ------ |
+| `ZynqMon_addresses.c` / `.h` | `PL_MEM*.yml` | `mcu_generate.py` |
+| `MonI2C_addresses.c` | `MON_I2C*.yml` | `mon_generate.py` |
 
-Alarm tolerance: +5°C above threshold triggers power-off (shutdown).
-
-**CLI:**
-```
-alm status                                 # show current thresholds and alarm status
-alm settemp [ff|fpga|dcdc|tm4c] <temp>     # set threshold (persists to EEPROM)
-alm resettemp [ff|fpga|dcdc|tm4c|all]      # reset to compile-time defaults
-```
-
-`TempStatus()` (`AlarmUtilities.c`) takes the per-device max temperature each cycle from the ADC and/or
-the I2C `pm_values`. On power-off, stale `pm_values` are invalidated (a `-999.f` sentinel plus a
-backdated `updateTick`) so a prior alarm doesn't re-trigger after a power cycle. Details — per-device
-sources, the REV2/3 MCU-ADC FPGA diode fallback, and why both invalidation mechanisms are needed — are
-in [`projects/cm_mcu/README.md`](projects/cm_mcu/README.md).
+`make` regenerates them whenever the YAML is newer, so edits to the `.c`/`.h` are silently lost.
+Change the YAML instead, and commit the regenerated output alongside it. The `release` target
+additionally runs `xml_generate.py` to produce the Zynq-side XML.
 
 ## Debugging
 
-### GDB
+- GDB: use the provided `cm_mcu.gdbinit`, connecting via Segger J-LINK EDU.
+- Serial terminal: send `\n` on Enter; firmware prints `\r\n` for broad compatibility.
+- Runtime introspection from the CLI: `mem` (heap free / min-ever-free), `taskstats`, `taskinfo`,
+  `stack_usage`, `log`, `errorlog`, `semaphore`.
 
-A `.gdbinit` file is provided: `cm_mcu.gdbinit`. Connect via Segger J-LINK EDU.
+Three runtime safety nets exist; read their reports rather than working around them.
+`configCHECK_FOR_STACK_OVERFLOW` is `2`, so an overflow hits `vApplicationStackOverflowHook()`
+(halts under `DEBUG`, resets otherwise). `-fstack-protector-strong` is on for `MonitorTaskI2C.c`,
+`MonUtils.c` and `log.c` only (see `projects/cm_mcu/Makefile`); `__stack_chk_fail()` records the
+caller's LR, decodable with `arm-none-eabi-addr2line`. Heap exhaustion calls
+`vApplicationMallocFailedHook()`, so a task that fails to start is loud rather than silent.
 
-### Serial Terminal
+## CI and code quality
 
-- Terminal should send `\n` on Enter
-- Code should print `\r\n` for broad compatibility
+- GitHub Actions on pull requests (`.github/workflows/c-cpp.yml`) builds nine configurations:
+  gcc × {REV1, REV2, REV3} × {DEBUG, release}, plus clang × three revisions (release only). Non-debug
+  builds carry `-Werror`.
+- Formatting is enforced separately by `clang-format` **version 17** (`DoozyX/clang-format-lint-action`).
+  Matching that exact version locally matters; see the rules below.
+- `release.yml` builds gcc-only release artifacts per revision, with and without `NO_ECN001=1`.
+- `build_all.sh` is the local equivalent of the build matrix (six configs: three revisions × two
+  compilers) and is what `make check-for-pr` runs.
+- **There is no unit test suite.** Verification is builds plus hardware integration testing — don't
+  go looking for tests, and don't invent a test harness unless asked.
 
-## CI / Code Quality
+## Common issues
 
-- GitHub Actions runs on pull requests: format check + build verification with `-Werror`
-- Multi-revision builds (REV1, REV2, REV3) — release binaries published on GitHub releases
-- Code formatting: `clang-format` (see `.clang-format`) — run `make format-apply` before committing
-- Static analysis: `clang-tidy` (see `.clang-tidy`)
-
-## Common Issues
-
-| Symptom | Cause | Solution |
-| ------- | ----- | -------- |
+| Symptom | Cause | Fix |
+| ------- | ----- | --- |
 | FreeRTOS build errors | Submodule not initialized | `git submodule update --init --recursive --remote` |
-| Linker errors / weird runtime behavior | Mixed debug/release build | `make clean`, then rebuild consistently |
-| Compilation errors / unsupported flags | Wrong compiler version | Install `arm-none-eabi-gcc` 13.2.Rel1 from ARM website |
-| Incremental builds fail on Windows | Cygwin limitation | Use WSL, or run `make clean` between each build |
+| Linker errors, wrong-revision behavior | Stale objects after a revision/compiler/DEBUG switch | `make clean` (or `rm -rf projects/*/gcc projects/*/clang`), rebuild |
+| Unsupported compiler flags | Wrong compiler version | Install `arm-none-eabi-gcc` 13.2.Rel1 from the ARM website |
+| Task silently never starts | FreeRTOS heap exhausted (`configTOTAL_HEAP_SIZE`, 25 KB) | Check `mem` on the CLI; shrink a task stack or raise the heap |
+| `SMBUS_PERIPHERAL_BUSY` returns | I2C master FSM race | Already mitigated by the bounded idle-wait; background in [`i2c_lockup_notes.md`](i2c_lockup_notes.md) |
+| Temperature alarm re-fires after a power cycle | Stale `pm_values` | Already fixed via the `-999.f` sentinel + backdated `updateTick`; don't undo either half |
+| Edits to `ZynqMon_addresses.*` / `MonI2C_addresses.c` disappear | They are generated from YAML | Edit `sm_cm_config/data/*.yml` instead |
 
-## When Working on This Project
+## Rules when working in this repo
 
-### Before Making Changes
+- **Do not offer to commit.** The maintainer commits their own code.
+- **Do not fix or fret about formatting.** `clang-format` is version-sensitive and the maintainer
+  handles it separately. Do not run `format-apply`, and do not block on format errors.
+- **Stay narrowly on the task at hand.** Do not expand scope beyond what was asked.
+- Check which hardware revision you are targeting before changing anything, and build `DEBUG=1`
+  during development.
+- This is bare-metal firmware: memory is constrained, heap allocation after startup is to be avoided,
+  and task stack sizes are tight. Prefer the ROM-based TivaWare (`ROM_`/`MAP_`) drivers.
+- Thread safety means FreeRTOS primitives — mutexes, queues, task notifications. Changes may land in
+  time-critical interrupt handlers, which must use the `…FromISR` API variants and must not log:
+  `log_*` is task-context only, and its lock is a non-blocking 0-tick acquire so logging never stalls
+  a caller.
+- Use sized integer types (`uint32_t`, `int32_t`, …) rather than bare `int` for register-width values.
+- Float↔`uint32_t` conversion for EEPROM: `memcpy(&u32, &f, sizeof(float))`, never union type-punning.
+- When adding a CLI subcommand, update the help string in `CommandLineTask.c` too.
 
-1. Check which hardware revision you're targeting
-2. Ensure FreeRTOS submodule is up to date: `git submodule update --init --recursive --remote`
-3. Build with `DEBUG=1` for development
+## Related resources
 
-Do not offer to commit any code; the user will do that themselves. 
-
-### Key Considerations
-
-- This is bare-metal firmware with FreeRTOS — not a hosted OS
-- Memory is constrained: avoid heap allocation, be mindful of task stack sizes
-- ROM-based TivaWare drivers are preferred (already in MCU ROM)
-- Thread safety requires FreeRTOS primitives (mutexes, queues, etc.)
-- Changes may affect time-critical interrupt handlers
-
-## Development Notes for AI Assistants
-
-- **Don't fix or fret about code formatting** (`clang-format` / `make format`). The maintainer handles formatting separately — `clang-format` is fiddly and sensitive to exact version mismatches. Write reasonable code and leave formatting cleanup to them; do not run `format-apply` or block on format errors. Let the maintainer run the build tests.
-- Integers: use `uint32_t`, `int32_t`, etc. — not bare `int` for register-width values
-- Float-to-uint32 conversion for EEPROM: use `memcpy(&u32, &f, sizeof(float))` — not union type-punning
-- All EEPROM writes from tasks must use `write_eeprom()` (queue-based), never direct driver calls
-- Block 1 EEPROM is password-protected — requires `EPRM_UNLOCK_BLOCK` / `EPRM_LOCK_BLOCK` messages around writes
-- Block 6 (temperature alarms) is unprotected — direct `write_eeprom()` calls are sufficient
-- `Tasks.h` is the central header; most inter-task definitions live there
-- When adding a new CLI subcommand, update the help string in `CommandLineTask.c`
-- don't offer to commit any code. User will do that.
-
-## Related Resources
-
-- [TM4C1290NCPDT Datasheet](https://www.ti.com/product/TM4C1290NCPDT)
-- [FreeRTOS Documentation](https://freertos.org)
-- [TivaWare Peripheral Driver Library](https://www.ti.com/tool/SW-TM4C)
-- [Segger J-LINK](https://www.segger.com)
+[TM4C1290NCPDT datasheet](https://www.ti.com/product/TM4C1290NCPDT) ·
+[FreeRTOS docs](https://freertos.org) ·
+[TivaWare driver library](https://www.ti.com/tool/SW-TM4C) ·
+[Segger J-LINK](https://www.segger.com)
