@@ -317,8 +317,8 @@ void task_watchdog_unregister_task(uint16_t task_id);
 void task_watchdog_feed_task(uint16_t task_id);
 uint16_t task_watchdog_get_status(void);
 
-// Programmatic UART interface for Zynq to send commands to the CM. Not a CLI interface.
-void ProgComTask(void *parameters);
+// Programmatic UART interface for Zynq to send commands to the CM. Not a CLI
+// interface -- see ProgComTask.h.
 
 // general
 // monitor stack usage for this task

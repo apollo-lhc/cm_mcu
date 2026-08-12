@@ -34,7 +34,7 @@ void Print(const char *);
 // Holds the handle of the created queue for the power supply task.
 QueueHandle_t xPwrQueue = NULL;
 
-enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
+static enum power_system_state currentState = POWER_INIT; // start in POWER_INIT state
 
 enum power_system_state getPowerControlState(void)
 {
