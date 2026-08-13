@@ -824,9 +824,9 @@ FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:", 
 
 static int ff_temp_row(char *m, int copied, int whichff)
 {
-  uint8_t val = get_FF_TEMPERATURE_data(whichff);
-  if (isEnabledFF(whichff) && val != 0xFFU) { // 0xFF is a dummy value
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %2d", ff_moni2c_addrs[whichff].name, val);
+  int16_t val = getFFtemp(whichff);
+  if (isEnabledFF(whichff) && val != FF_TEMP_INVALID) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
   }
   else {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %2s", ff_moni2c_addrs[whichff].name, "--");

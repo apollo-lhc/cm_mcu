@@ -66,7 +66,12 @@ bool getFFch_high(uint8_t val, int channel);
 bool isEnabledFF(int ff);
 void readFFpresent(void);
 uint32_t readFFpresentSignals(bool acquire_sem);
-uint16_t getFFtemp(const uint8_t i);
+// Returned by getFFtemp() when the stored word is not a temperature: either the
+// monitor task's error/power-off sentinel, or a value the device flagged
+// negative. Out of band for the 0..127 the register can legitimately report.
+#define FF_TEMP_INVALID ((int16_t)INT16_MIN)
+int16_t getFFtemp(const uint8_t i);
+uint16_t getFFtempRaw(const uint8_t i);
 float getFFavgoptpow(const uint8_t i);
 float getFFoptpow(const uint8_t i, const uint8_t ch);
 uint16_t getFFpresentbit(const uint8_t i);

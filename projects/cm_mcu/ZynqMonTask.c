@@ -290,10 +290,13 @@ void zm_set_firefly_temps(struct zynqmon_data_t data[], int start)
   // update the data for ZMON
   for (uint8_t i = 0; i < NFIREFLIES; i++) {
     data[i].sensor = i + start; // sensor id
-    if (!isFFStale()) {
-      data[i].data.us = getFFtemp(i); // sensor value and type
+    int16_t t = isFFStale() ? FF_TEMP_INVALID : getFFtemp(i);
+    if (t != FF_TEMP_INVALID) {
+      data[i].data.us = (uint16_t)t; // sensor value and type
     }
     else {
+      // no usable reading: stale, read error, or a negative (out of range)
+      // value from the device. All reported with the existing stale marker.
       data[i].data.i = -56; // special stale value
     }
     log_debug(LOG_SERVICE, " ff %d opt pow : 0x%02x\r\n", i, data[i].data.us);
@@ -383,12 +386,14 @@ void zm_set_firefly_info(struct zynqmon_data_t data[], int start)
 
   for (int j = 0; j < NFIREFLIES; ++j) { // loop over ff structs
 
-    if (isFFStale()) {
+    int16_t t = isFFStale() ? FF_TEMP_INVALID : getFFtemp(j);
+    if (t == FF_TEMP_INVALID) {
+      // stale, read error, or a negative (out of range) value from the device
       data[ll].data.us = 0xff; // special stale value
     }
     else {
-      data[ll].data.us = getFFtemp(j); // sensor value and type
-      log_debug(LOG_SERVICE, "temp ? for ff %d: 0x%02x\r\n", j, getFFtemp(j));
+      data[ll].data.us = (uint16_t)t; // sensor value and type
+      log_debug(LOG_SERVICE, "temp ? for ff %d: 0x%02x\r\n", j, t);
     }
     data[ll].sensor = ll + start;
     ++ll;

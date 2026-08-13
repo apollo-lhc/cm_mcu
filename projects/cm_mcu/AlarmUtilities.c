@@ -190,6 +190,11 @@ int TempStatus(void)
   int16_t imax_ff_temp = -99;
   for (size_t i = 0; i < NFIREFLIES; ++i) {
     int16_t v = getFFtemp(i);
+    if (v == FF_TEMP_INVALID) {
+      log_warn(LOG_ALM, "Firefly %zu: current temp is invalid (raw 0x%04x)\r\n", i,
+               getFFtempRaw(i));
+      continue;
+    }
     if (v > imax_ff_temp)
       imax_ff_temp = v;
   }

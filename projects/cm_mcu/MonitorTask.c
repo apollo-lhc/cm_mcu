@@ -126,7 +126,8 @@ void MonitorTask(void *parameters)
               log_warn(LOG_MON, "%s: Error %s, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
                        SMBUS_get_error(r), ps, c, page);
             }
-            // abort reading this device
+            // abort reading this device. NOTE this leaves the other values of this device stale.
+            // FIXME -- should we set the other values to sentinel value -999?
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
