@@ -157,9 +157,11 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
   // command: r or w
   switch (*p) {
     case 'r':
+    case 'R':
       cmd->op = PROGCOM_OP_READ;
       break;
     case 'w':
+    case 'W':
       cmd->op = PROGCOM_OP_WRITE;
       break;
     default:
