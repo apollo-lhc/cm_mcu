@@ -113,7 +113,8 @@ whole translation unit compiles away. Protocol per [issue #210](https://github.c
 The remote host sends one command per line; the MCU replies with exactly one line.
 
 ```
-<r|w> <DC|FF|CL|MC> <devnum> <page> <addr> [<data> ...] \n
+r <DC|FF|CL|MC> <devnum> <page> <addr> [<length>] \n
+w <DC|FF|CL|MC> <devnum> <page> <addr> <data> ... \n
 ```
 
 | Field | Meaning |
@@ -122,28 +123,30 @@ The remote host sends one command per line; the MCU replies with exactly one lin
 | `DC` `FF` `CL` `MC` | LGA80D DC-DC, Firefly, clock synth, MCU |
 | `devnum` | device index within that type, 1–2 hex digits |
 | `page` | page register value, 1–2 hex digits |
-| `addr` | register address within the page, 1–2 hex digits |
-| `data` | write payload, 1–4 space-separated hex bytes; must be absent for reads |
+| `addr` | register address within the page, 1-2 hex digits |
+| `length` | optional read length, 1-4 bytes; defaults to 1 when omitted |
+| `data` | write payload, 1-4 space-separated hex bytes |
 
 Fields are separated by one or more spaces or tabs. Lines are terminated by `\n`; a preceding
 `\r` is accepted and ignored. Responses always end in a bare `\n`.
 
 | Response | Meaning |
 | --- | --- |
-| `d XX` | read succeeded, one byte of data in hex |
+| `d XX [XX ...]` | read succeeded, with 1-4 data bytes in wire order |
 | `c` | write succeeded |
 | `e <description>` | failure, e.g. `e invalid page`, `e read failed: NACK` |
 
-**Reads always return exactly one byte.** A read command carrying any data token is rejected with
-`e read takes no data bytes`. Errors originating from an I2C transaction append the
+Reads return one to four bytes. A read without a length retains the legacy one-byte behavior.
+Invalid lengths are rejected with `e read length must be 1-4`. Errors originating from an I2C transaction append the
 `SMBUS_get_error()` string, so an absent device or a bad page is distinguishable from a syntax error.
 
 Examples:
 ```
 r FF 0 0 16      ->  d 2C
 w FF 0 0 56 01   ->  c
-r DC 0 0 8B      ->  d 1A
+r DC 0 0 8B 2    ->  d 1A 20
 r CL 0 1 2       ->  d 5F
+r CL 0 0 2 2     ->  d 95 53
 r MC 0 0 0       ->  e MCU device not implemented
 ```
 

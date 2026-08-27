@@ -8,10 +8,11 @@ The remote host initiates all transactions by transmitting a command as a string
 - device number: hex number representing the device number (one byte)
 - page: hex number which is the page address (one byte)
 - address: hex number that is the register address within the selected page (one byte)
-- only for write commands: data to write: one or several hex numbers that are the data bytes to be written.
+- for read commands: optional number of bytes to read (1-4, default 1).
+- for write commands: one or several data bytes to write.
 - line terminator: "\n" symbol (code 0x0A). A preceding "\r" is tolerated and ignored.
 
-Reads always return exactly one byte; a read command with any trailing token is a syntax error.
+Reads return one to four bytes. Omitting the read length preserves the legacy one-byte behavior.
 
 If the command was a read command, the MCU responds with the data read out from the device
 by transmitting a string in the following format:
@@ -82,6 +83,7 @@ struct progcom_cmd_t {
   uint8_t dev_num;                // device number within the device type
   uint8_t page;                   // page register value
   uint8_t address;                // register address within the page
+  uint8_t read_len;               // bytes requested by a read (1-4)
   uint8_t data[PROGCOM_MAX_DATA]; // write payload; empty for reads
   size_t ndata;                   // number of valid bytes in data[]
 };
@@ -109,7 +111,8 @@ static inline bool is_hex_digit(char c)
 //
 // Grammar (fields separated by one or more spaces, line terminator already
 // stripped by the caller):
-//   <r|w> <DC|FF|CL|MC> <devnum> <page> <addr> [<data> ...]
+//   r <DC|FF|CL|MC> <devnum> <page> <addr> [<length>]
+//   w <DC|FF|CL|MC> <devnum> <page> <addr> <data> ...
 // All numeric fields are one or two hex digits, i.e. a single byte.
 // ---------------------------------------------------------------------------
 
@@ -152,6 +155,7 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
     return "internal error";
 
   memset(cmd, 0, sizeof(*cmd));
+  cmd->read_len = 1;
   const char *p = progcom_skip_spaces(line);
 
   // command: r or w
@@ -204,28 +208,40 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
     return "invalid address";
   p = progcom_skip_spaces(p);
 
-  // remaining tokens are data bytes (write only)
-  while (!progcom_at_end(p)) {
-    if (cmd->ndata >= PROGCOM_MAX_DATA)
-      return "too many data bytes";
-    p = progcom_parse_byte(p, &cmd->data[cmd->ndata]);
-    if (p == NULL)
-      return "invalid data byte";
-    ++cmd->ndata;
-    p = progcom_skip_spaces(p);
+  if (cmd->op == PROGCOM_OP_READ) {
+    if (!progcom_at_end(p)) {
+      p = progcom_parse_byte(p, &cmd->read_len);
+      if (p == NULL)
+        return "invalid read length";
+      p = progcom_skip_spaces(p);
+      if (!progcom_at_end(p))
+        return "read takes one length byte";
+    }
+    if (cmd->read_len < 1 || cmd->read_len > PROGCOM_MAX_DATA)
+      return "read length must be 1-4";
+  }
+  else {
+    // remaining tokens are write data bytes
+    while (!progcom_at_end(p)) {
+      if (cmd->ndata >= PROGCOM_MAX_DATA)
+        return "too many data bytes";
+      p = progcom_parse_byte(p, &cmd->data[cmd->ndata]);
+      if (p == NULL)
+        return "invalid data byte";
+      ++cmd->ndata;
+      p = progcom_skip_spaces(p);
+    }
   }
 
   if (cmd->op == PROGCOM_OP_WRITE && cmd->ndata == 0)
     return "write with no data";
-  if (cmd->op == PROGCOM_OP_READ && cmd->ndata != 0)
-    return "read takes no data bytes";
 
   return NULL; // success
 }
 
 // ---------------------------------------------------------------------------
 // Device access. Each helper returns NULL on success or an error string.
-// On a successful read the single data byte is stored in *out.
+// On a successful read cmd->read_len bytes are stored in out[].
 // ---------------------------------------------------------------------------
 
 // Buffer for error messages that embed the SMBus error string. A single static
@@ -254,7 +270,7 @@ static const char *progcom_access_ff(const struct progcom_cmd_t *cmd, uint8_t *o
 
   int r;
   if (cmd->op == PROGCOM_OP_READ) {
-    r = (int16_t)read_arbitrary_ff_register(packed_reg, cmd->dev_num, out, 1);
+    r = (int16_t)read_arbitrary_ff_register(packed_reg, cmd->dev_num, out, cmd->read_len);
   }
   else {
     if (cmd->ndata != 1)
@@ -292,7 +308,7 @@ static const char *progcom_access_dcdc(const struct progcom_cmd_t *cmd, uint8_t 
     err = progcom_i2c_error("page select failed", r);
   }
   else if (cmd->op == PROGCOM_OP_READ) {
-    struct pm_command_t thecmd = {cmd->address, 1, "progcom", "", PM_STATUS};
+    struct pm_command_t thecmd = {cmd->address, cmd->read_len, "progcom", "", PM_STATUS};
     r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[cmd->dev_num], &thecmd, out);
     if (r != SMBUS_OK)
       err = progcom_i2c_error("read failed", r);
@@ -336,12 +352,15 @@ static const char *progcom_access_clk(const struct progcom_cmd_t *cmd, uint8_t *
       err = progcom_i2c_error("page select failed", r);
     }
     else if (cmd->op == PROGCOM_OP_READ) {
-      uint32_t data = 0;
-      r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, cmd->address, 1, &data);
+      uint32_t packed_data = 0;
+      r = apollo_i2c_ctl_reg_r(CLOCK_I2C_DEV, dev_addr, 1, cmd->address,
+                               cmd->read_len, &packed_data);
       if (r != SMBUS_OK)
         err = progcom_i2c_error("read failed", r);
-      else
-        *out = (uint8_t)(data & 0xFFU);
+      else {
+        for (size_t i = 0; i < cmd->read_len; ++i)
+          out[i] = (uint8_t)((packed_data >> (i * 8)) & 0xFFU);
+      }
     }
     else {
       // apollo_i2c_ctl_reg_w() sends the packed data least significant byte first
@@ -364,19 +383,19 @@ static const char *progcom_access_clk(const struct progcom_cmd_t *cmd, uint8_t *
 static void progcom_handle_line(uint32_t uart_base, const char *line)
 {
   struct progcom_cmd_t cmd;
-  uint8_t value = 0;
+  uint8_t value[PROGCOM_MAX_DATA] = {0};
 
   const char *err = progcom_parse(line, &cmd);
   if (err == NULL) {
     switch (cmd.dev) {
       case PROGCOM_DEV_DCDC:
-        err = progcom_access_dcdc(&cmd, &value);
+        err = progcom_access_dcdc(&cmd, value);
         break;
       case PROGCOM_DEV_FF:
-        err = progcom_access_ff(&cmd, &value);
+        err = progcom_access_ff(&cmd, value);
         break;
       case PROGCOM_DEV_CLK:
-        err = progcom_access_clk(&cmd, &value);
+        err = progcom_access_clk(&cmd, value);
         break;
       case PROGCOM_DEV_MCU:
         err = "MCU device not implemented";
@@ -390,8 +409,12 @@ static void progcom_handle_line(uint32_t uart_base, const char *line)
   char response[PROGCOM_RESP_SZ];
   if (err != NULL)
     snprintf(response, sizeof(response), "e %s\n", err);
-  else if (cmd.op == PROGCOM_OP_READ)
-    snprintf(response, sizeof(response), "d %02X\n", value);
+  else if (cmd.op == PROGCOM_OP_READ) {
+    size_t used = (size_t)snprintf(response, sizeof(response), "d");
+    for (size_t i = 0; i < cmd.read_len; ++i)
+      used += (size_t)snprintf(response + used, sizeof(response) - used, " %02X", value[i]);
+    snprintf(response + used, sizeof(response) - used, "\n");
+  }
   else
     snprintf(response, sizeof(response), "c\n");
 
