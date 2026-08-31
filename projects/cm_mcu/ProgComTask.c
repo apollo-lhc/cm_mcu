@@ -4,7 +4,8 @@
 The remote host initiates all transactions by transmitting a command as a string containing a series of fields separated by spaces:
 
 - command: "r" = read, "w" = write
-- device type: "DC" = DC-DC converter, "FF" = Firefly, "CL" = clock devices, "MC" = MCU
+- device type: "DC" = DC-DC converter, "FF" = Firefly, "CL" = clock devices, "MC" = MCU,
+  "FP" = FPGA generic I2C register (device number 0 = F1, 1 = F2; page must be 0)
 - device number: hex number representing the device number (one byte)
 - page: hex number which is the page address (one byte)
 - address: hex number that is the register address within the selected page (one byte)
@@ -45,6 +46,7 @@ If MCU encountered an error, it responds with the following:
 #include "InterruptHandlers.h"
 #include "Tasks.h"
 #include "FireflyUtils.h"
+#include "FPGAUtils.h"
 #include "I2CCommunication.h"
 #include "Semaphore.h"
 #include "MonitorTask.h"
@@ -74,6 +76,7 @@ enum progcom_dev_t {
   PROGCOM_DEV_FF,   // "FF"
   PROGCOM_DEV_CLK,  // "CL"
   PROGCOM_DEV_MCU,  // "MC"
+  PROGCOM_DEV_FPGA, // "FP"
 };
 
 // a parsed command line
@@ -111,8 +114,8 @@ static inline bool is_hex_digit(char c)
 //
 // Grammar (fields separated by one or more spaces, line terminator already
 // stripped by the caller):
-//   r <DC|FF|CL|MC> <devnum> <page> <addr> [<length>]
-//   w <DC|FF|CL|MC> <devnum> <page> <addr> <data> ...
+//   r <DC|FF|CL|MC|FP> <devnum> <page> <addr> [<length>]
+//   w <DC|FF|CL|MC|FP> <devnum> <page> <addr> <data> ...
 // All numeric fields are one or two hex digits, i.e. a single byte.
 // ---------------------------------------------------------------------------
 
@@ -185,6 +188,8 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
     cmd->dev = PROGCOM_DEV_CLK;
   else if (strncmp(p, "MC", 2) == 0)
     cmd->dev = PROGCOM_DEV_MCU;
+  else if (strncmp(p, "FP", 2) == 0)
+    cmd->dev = PROGCOM_DEV_FPGA;
   else
     return "invalid device type";
   p += 2;
@@ -379,6 +384,46 @@ static const char *progcom_access_clk(const struct progcom_cmd_t *cmd, uint8_t *
   return err;
 }
 
+// FPGA generic I2C diagnostic-register block. fpga_i2c_reg_r/w() (FPGAUtils.c)
+// handle the mux select/clear; we only own the semaphore. Page is required to
+// be zero: a future wider-address capability belongs in an explicit protocol
+// extension, not a silent reinterpretation of this field.
+static const char *progcom_access_fpga(const struct progcom_cmd_t *cmd, uint8_t *out)
+{
+  if (cmd->dev_num > 1)
+    return "invalid FPGA device number";
+  if (cmd->page != 0)
+    return "invalid FPGA page";
+
+  if (acquireI2CSemaphore(i2c5_sem) == pdFAIL)
+    return "could not get I2C semaphore";
+
+  const char *err = NULL;
+  int r;
+  if (cmd->op == PROGCOM_OP_READ) {
+    uint32_t packed_data = 0;
+    r = fpga_i2c_reg_r(cmd->dev_num, cmd->address, cmd->read_len, &packed_data);
+    if (r != 0)
+      err = progcom_i2c_error("read failed", r);
+    else {
+      for (size_t i = 0; i < cmd->read_len; ++i)
+        out[i] = (uint8_t)((packed_data >> (i * 8)) & 0xFFU);
+    }
+  }
+  else {
+    uint32_t packed_data = 0;
+    for (size_t i = 0; i < cmd->ndata; ++i)
+      packed_data |= ((uint32_t)cmd->data[i]) << (i * 8);
+    r = fpga_i2c_reg_w(cmd->dev_num, cmd->address, cmd->ndata, packed_data);
+    if (r != 0)
+      err = progcom_i2c_error("write failed", r);
+  }
+
+  if (xSemaphoreGetMutexHolder(i2c5_sem) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(i2c5_sem);
+  return err;
+}
+
 // Parse and execute one command line, then send the response out the UART.
 static void progcom_handle_line(uint32_t uart_base, const char *line)
 {
@@ -399,6 +444,9 @@ static void progcom_handle_line(uint32_t uart_base, const char *line)
         break;
       case PROGCOM_DEV_MCU:
         err = "MCU device not implemented";
+        break;
+      case PROGCOM_DEV_FPGA:
+        err = progcom_access_fpga(&cmd, value);
         break;
       default:
         err = "unknown device type";
