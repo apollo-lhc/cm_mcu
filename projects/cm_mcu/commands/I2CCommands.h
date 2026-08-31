@@ -10,15 +10,13 @@
 #ifndef I2C_COMMANDS_H_
 #define I2C_COMMANDS_H_
 
-#define I2C_CTL_MAX_BYTES 4
+// payload width bound: see MAX_BYTES in I2CCommunication.h
 
-BaseType_t i2c_ctl_set_dev(int argc, char **argv, char* m);
-BaseType_t i2c_ctl_r(int argc, char **argv, char* m);
-BaseType_t i2c_ctl_reg_r(int argc, char **argv, char* m);
-BaseType_t i2c_ctl_reg_w(int argc, char **argv, char* m);
-BaseType_t i2c_ctl_w(int argc, char **argv, char* m);
-BaseType_t i2c_scan(int argc, char **argv, char* m);
-
-
+BaseType_t i2c_ctl_set_dev(int argc, char **argv, char *m);
+BaseType_t i2c_ctl_r(int argc, char **argv, char *m);
+BaseType_t i2c_ctl_reg_r(int argc, char **argv, char *m);
+BaseType_t i2c_ctl_reg_w(int argc, char **argv, char *m);
+BaseType_t i2c_ctl_w(int argc, char **argv, char *m);
+BaseType_t i2c_scan(int argc, char **argv, char *m);
 
 #endif

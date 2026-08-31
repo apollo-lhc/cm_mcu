@@ -120,21 +120,23 @@ struct buff_t b = {
     .last = 0,
 };
 
-static size_t lenx(const char *s, size_t maxlen)
-{
-  // I need the cast here to tell the ptrdiff the size of the pointer.
-  ptrdiff_t plen = (char *)__builtin_memchr(s, '\0', maxlen) - s;
-  size_t len = plen;
-  return len > maxlen ? maxlen : len;
-}
-
 static void log_add_string(const char *s, struct buff_t *b)
 {
   // add a string to the circular buffer. the "last" element should
   // always point to the '\0' of the last string added.
   // two cases: either the string fits in one copy, or in two
-  long left = b->size - b->last;
-  size_t len = lenx(s, left) + 1; // +1 for string terminator
+  // The final byte is reserved as a permanent NUL: strings are stored
+  // back-to-back with no separator (each append overwrites the previous
+  // terminator), so the only NUL is at b->last. Without the sentinel the wrap
+  // branch fills data[size-1] with a real character and the readers in
+  // log_dump() walk off the end of the ring.
+  const size_t cap = b->size - 1;
+  size_t len = strlen(s) + 1; // +1 for string terminator
+  if (len > cap) {            // longer than the whole ring: keep the tail
+    s += len - cap;
+    len = cap;
+  }
+  size_t left = cap - b->last;
   if (len <= left) {
     // single copy is going to work
     memcpy(b->data + b->last, s, len);
@@ -142,8 +144,7 @@ static void log_add_string(const char *s, struct buff_t *b)
   }
   else { // need two copies, len > left
     memcpy(b->data + b->last, s, left);
-    long len2 = len - left;
-    memcpy(b->data, s + left, len2);
+    memcpy(b->data, s + left, len - left);
     b->last = len - left - 1;
   }
 }
@@ -168,19 +169,28 @@ void log_add_string2(const char *s, struct buff_t *bu)
     bu->last = len - left + 1; // +1 for \0 string terminator
   }
 }
-#endif // NOTDEF
-// This does not handle the case if sz is too small (i.e., smaller than bu->size)
+// b.last indexes the '\0' of the newest string, so the older half starts just
+// past it -- except when that is one past the end of the ring, where there is no
+// older half to print.
 int log_dump_buffer_to_string(char *s, size_t sz)
 {
-  int copied = snprintf(s, sz, "%s", b.data + b.last + 1);
+  size_t tail = b.last + 1;
+  int copied = 0;
+  if (tail < b.size)
+    copied = snprintf(s, sz, "%s", b.data + tail);
+  if ((size_t)copied > sz) // snprintf returns the would-be length
+    copied = (int)sz;
   copied += snprintf(s + copied, sz - copied, "%s", b.data);
   return copied;
 }
+#endif // NOTDEF
 
 // print to callback
 void log_dump(void (*f)(const char *s))
 {
-  f(b.data + b.last + 1);
+  size_t tail = b.last + 1;
+  if (tail < b.size)
+    f(b.data + tail);
   f(b.data);
   f("\033[0m\r\n"); // turn off color and add a newline to ensure that everything is cleaned up.
 }
@@ -196,16 +206,30 @@ void ApolloLog(log_Event *ev)
 #define SZ 192
   char tmp[SZ];
   int r = 0;
+  // (v)snprintf returns the length it WOULD have written, so a truncated call
+  // leaves r > SZ; without the clamp the next call gets tmp + r (past the array)
+  // and SZ - r wrapped to a huge size_t, smashing this task's stack. Overflow is
+  // now impossible by construction, so the old configASSERT(r < SZ) is gone: it
+  // would have turned a benign truncated log line into an MCU reset.
+#define LOG_CLAMP() \
+  do {              \
+    if (r > SZ)     \
+      r = SZ;       \
+  } while (0)
 #ifdef LOG_USE_COLOR
   r = snprintf(tmp, SZ, "%s", level_colors[ev->level]);
+  LOG_CLAMP();
 #endif // LOG_USE_COLOR
   r += snprintf(tmp + r, SZ - r, "20%u %-3s %-3s %s:%u:", ev->time,
                 facility_strings[ev->fac], level_strings[ev->level], ev->file, ev->line);
+  LOG_CLAMP();
   r += vsnprintf(tmp + r, SZ - r, ev->fmt, ev->ap);
+  LOG_CLAMP();
 #ifdef LOG_USE_COLOR
   r += snprintf(tmp + r, SZ - r, "%s", "\033[0m");
+  LOG_CLAMP();
 #endif
-  configASSERT(r < SZ); // not the best way to go but ....
+#undef LOG_CLAMP
   // Only the shared ring buffer needs protection, and only briefly. If we
   // cannot get the lock (near-impossible at 0-tick contention), drop the
   // buffer append rather than block; the UART output below is unaffected and

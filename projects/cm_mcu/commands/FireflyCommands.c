@@ -23,6 +23,30 @@
 #include "portmacro.h"
 #include "projdefs.h"
 
+// Bytes that must remain in the CLI scratch buffer before a paged command starts
+// another row. One value for every table; per-command tuning was the old scheme
+// and it drifted out of step with the format strings. The static_asserts below
+// fail the build if a row ever outgrows it.
+#define FF_ROW_MIN_REM 40
+
+// Row geometry. The name field uses %17.17s -- the precision matters: it caps the
+// field at exactly FF_NAME_W, so these bounds hold for any name. A bare %17s sets
+// only a minimum and a long name would silently widen the row past the asserts.
+#define FF_NAME_W         17 // "%17.17s"
+#define FF_SEP_W          2  // ": "
+#define FF_ROWEND_W       2  // "\r\n", or "\t" on a Tx row
+#define FF_ROW_W(value_w) (FF_NAME_W + FF_SEP_W + (value_w) + FF_ROWEND_W)
+
+// Widest value field of any ff_table_print row: ff_dump_names prints the raw
+// vendor string. The hex/decimal rows are all narrower ("0x%04x 0x%04x" = 13).
+static_assert(FF_ROW_MIN_REM >= FF_ROW_W(FF_VENDOR_COUNT_FF12),
+              "FF_ROW_MIN_REM too small for the widest ff_table_print row");
+// ff_status builds its own row: "0x%02x" plus, on Tx, " 3v8?(%x) \t". sizeof-1 is
+// a safe upper bound because each conversion is narrower than its literal spec.
+static_assert(FF_ROW_MIN_REM >= FF_NAME_W + FF_SEP_W + (int)sizeof("0x%02x") - 1 +
+                                    (int)sizeof(" 3v8?(%x) \t") - 1,
+              "FF_ROW_MIN_REM too small for the widest ff_status row");
+
 // A NOTE ABOUT THE FIREFLY REGISTER ADDRESSES
 // If you look at the memory maps in the data sheets for the firefly devices, you see that
 // the listed addresses for the internal registers are grouped into pages.
@@ -440,11 +464,12 @@ BaseType_t ff_status(int argc, char **argv, char *m)
   for (; whichff < NFIREFLIES; ++whichff) {
     if (isEnabledFF(whichff)) {
       uint8_t val = get_FF_STATUS_REG_data(whichff);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
     }
     else { // empty value
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %4s", ff_moni2c_addrs[whichff].name, "--");
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %4s", ff_moni2c_addrs[whichff].name, "--");
     }
+    copied = clamp_copied(copied, SCRATCH_SIZE);
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
     if (isTx) {
 #ifdef REV1
@@ -462,12 +487,14 @@ BaseType_t ff_status(int argc, char **argv, char *m)
     else {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
     }
-    if ((SCRATCH_SIZE - copied) < 20) {
+    copied = clamp_copied(copied, SCRATCH_SIZE);
+    if ((SCRATCH_SIZE - copied) < FF_ROW_MIN_REM) {
       ++whichff;
       return pdTRUE;
     }
   }
   if (whichff % 2 == 1) {
+    copied = clamp_copied(copied, SCRATCH_SIZE - 3); // room for \r\n\0
     m[copied++] = '\r';
     m[copied++] = '\n';
     m[copied] = '\0';
@@ -587,7 +614,7 @@ typedef int (*ff_table_row_fn)(char *m, int copied, int whichff);
   static int fn_name(char *m, int copied, int whichff)                          \
   {                                                                               \
     uint16_t val = (getter_expr);                                                \
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: 0x%04x",       \
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: 0x%04x",       \
                        ff_moni2c_addrs[whichff].name, val);                      \
     return ff_table_append_row_end(m, copied, whichff);                          \
   }
@@ -611,11 +638,24 @@ static bool ff_table_is_tx(int whichff)
   return strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL;
 }
 
+// Every table row ends here, so clamping on both sides keeps copied <= SCRATCH_SIZE
+// as an invariant at the start of each row: a row body that truncated cannot hand
+// the next append a pointer past the end of m.
 static int ff_table_append_row_end(char *m, int copied, int whichff)
 {
-  if (ff_table_is_tx(whichff))
-    return copied + snprintf(m + copied, SCRATCH_SIZE - copied, "\t");
-  return copied + snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
+  copied = clamp_copied(copied, SCRATCH_SIZE);
+  const char *end = ff_table_is_tx(whichff) ? "\t" : "\r\n";
+  return clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%s", end),
+                      SCRATCH_SIZE);
+}
+
+// The name prefix is identical in every custom row function; sharing it also puts
+// the clamp between a row's two appends.
+static int ff_table_append_name(char *m, int copied, int whichff)
+{
+  return clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: ",
+                                        ff_moni2c_addrs[whichff].name),
+                      SCRATCH_SIZE);
 }
 
 // Prepends a human-readable staleness warning to the output if the FireflyTask
@@ -667,8 +707,9 @@ static BaseType_t ff_table_print(char *m, const char *stale_name, const char *ti
 
   if (*cursor == 0) {
     if (include_stale_warning)
-      copied = ff_table_append_stale_warning(m, copied, stale_name);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", title);
+      copied = clamp_copied(ff_table_append_stale_warning(m, copied, stale_name), SCRATCH_SIZE);
+    copied = clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%s\r\n", title),
+                          SCRATCH_SIZE);
   }
 
   for (; *cursor < NFIREFLIES; ++(*cursor)) {
@@ -685,6 +726,7 @@ static BaseType_t ff_table_print(char *m, const char *stale_name, const char *ti
   }
 
   if (*cursor % 2 == 1) {
+    copied = clamp_copied(copied, SCRATCH_SIZE - 3); // room for \r\n\0
     m[copied++] = '\r';
     m[copied++] = '\n';
     m[copied] = '\0';
@@ -720,19 +762,18 @@ FF_U16_HEX_ROW_FN(ff_vcc_alarm_row,         get_FF_VCC3V3_ALARM_data(whichff))  
 #endif // REV2 || REV3
 
 // Command functions (FF_TABLE_CMD) — one per CLI command, each paired with its row function above:
-FF_TABLE_CMD(ff_los_alarm, ff_los_alarm_row, "FIREFLY LOS ALARM:", 20, true)
+FF_TABLE_CMD(ff_los_alarm, ff_los_alarm_row, "FIREFLY LOS ALARM:", FF_ROW_MIN_REM, true)
 #if defined(REV2) || defined(REV3)
-FF_TABLE_CMD(ff_tx_fault_alarm,    ff_tx_fault_alarm_row,    "FIREFLY TX FAULT ALARM:",    20, true)
-FF_TABLE_CMD(ff_rx_power_alarm,    ff_rx_power_alarm_row,    "FIREFLY RX POWER ALARM:",    20, true)
-FF_TABLE_CMD(ff_temperature_alarm, ff_temperature_alarm_row, "FIREFLY TEMPERATURE ALARM:", 20, true)
-FF_TABLE_CMD(ff_vcc_alarm,         ff_vcc_alarm_row,         "FIREFLY VCC ALARM:",         20, true)
+FF_TABLE_CMD(ff_tx_fault_alarm,    ff_tx_fault_alarm_row,    "FIREFLY TX FAULT ALARM:",    FF_ROW_MIN_REM, true)
+FF_TABLE_CMD(ff_rx_power_alarm,    ff_rx_power_alarm_row,    "FIREFLY RX POWER ALARM:",    FF_ROW_MIN_REM, true)
+FF_TABLE_CMD(ff_temperature_alarm, ff_temperature_alarm_row, "FIREFLY TEMPERATURE ALARM:", FF_ROW_MIN_REM, true)
+FF_TABLE_CMD(ff_vcc_alarm,         ff_vcc_alarm_row,         "FIREFLY VCC ALARM:",         FF_ROW_MIN_REM, true)
 #endif // REV2 || REV3
 // clang-format on
 
 static int ff_ch_disable_row(char *m, int copied, int whichff)
 {
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
-                     ff_moni2c_addrs[whichff].name);
+  copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff)) {
     uint16_t val = get_FF_CHANNEL_DISABLE_data(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
@@ -745,12 +786,11 @@ static int ff_ch_disable_row(char *m, int copied, int whichff)
 
 // ff_ch_disable_row has custom logic (prints "--" for disabled devices) so it is
 // written out explicitly above; only the boilerplate command wrapper is generated here.
-FF_TABLE_CMD(ff_ch_disable_status, ff_ch_disable_row, "FIREFLY CHANNEL DISABLE:", 20, true)
+FF_TABLE_CMD(ff_ch_disable_status, ff_ch_disable_row, "FIREFLY CHANNEL DISABLE:", FF_ROW_MIN_REM, true)
 
 static int ff_cdr_lol_alarm_row(char *m, int copied, int whichff)
 {
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ",
-                     ff_moni2c_addrs[whichff].name);
+  copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
     uint16_t val = get_FF_CDR_LOL_ALARM_data(whichff);
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
@@ -763,12 +803,12 @@ static int ff_cdr_lol_alarm_row(char *m, int copied, int whichff)
 
 // ff_cdr_lol_alarm_row and ff_power_alarm_row also have custom logic (they skip
 // non-25G devices) so their row functions are written explicitly; command wrappers only:
-FF_TABLE_CMD(ff_cdr_lol_alarm, ff_cdr_lol_alarm_row, "FIREFLY CDR LOL ALARM:", 30, true)
-FF_TABLE_CMD(ff_cdr_enable_status, ff_cdr_enable_row, "FF CDR Enable:", 20, true)
+FF_TABLE_CMD(ff_cdr_lol_alarm, ff_cdr_lol_alarm_row, "FIREFLY CDR LOL ALARM:", FF_ROW_MIN_REM, true)
+FF_TABLE_CMD(ff_cdr_enable_status, ff_cdr_enable_row, "FF CDR Enable:", FF_ROW_MIN_REM, true)
 
 static int ff_power_alarm_row(char *m, int copied, int whichff)
 {
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff) && (FireflyType(whichff) == DEVICE_25G12 || FireflyType(whichff) == DEVICE_25G4)) {
     uint16_t val0 = get_FF_POWER_ALARM_0_data(whichff);
     uint16_t val1 = get_FF_POWER_ALARM_1_data(whichff);
@@ -780,23 +820,23 @@ static int ff_power_alarm_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:", 30, true)
+FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:", FF_ROW_MIN_REM, true)
 
 static int ff_temp_row(char *m, int copied, int whichff)
 {
-  uint8_t val = get_FF_TEMPERATURE_data(whichff);
-  if (isEnabledFF(whichff) && val != 0xFFU) { // 0xFF is a dummy value
+  int16_t val = getFFtemp(whichff);
+  if (isEnabledFF(whichff) && val != FF_TEMP_INVALID) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2s", ff_moni2c_addrs[whichff].name, "--");
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %2s", ff_moni2c_addrs[whichff].name, "--");
   }
   return ff_table_append_row_end(m, copied, whichff);
 }
 
 // ff_temp_row and ff_v3v3_row have custom formatting (decimal degrees / voltage
 // rather than hex) so they are written out explicitly; command wrappers only:
-FF_TABLE_CMD(ff_temp, ff_temp_row, "FF Temperature:", 20, true)
+FF_TABLE_CMD(ff_temp, ff_temp_row, "FF Temperature:", FF_ROW_MIN_REM, true)
 
 // loop over all channels on all devices and show optical power
 BaseType_t ff_optpow(int argc, char **argv, char *m)
@@ -813,11 +853,11 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
       float val = getFFavgoptpow(i);
       int tens, frac;
       float_to_ints(val, &tens, &frac);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: % 5d.%02d",
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: % 5d.%02d",
                          ff_moni2c_addrs[i].name, tens, frac);
     }
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s:     ---",
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s:     ---",
                          ff_moni2c_addrs[i].name);
     }
     if (isTx) {
@@ -1033,7 +1073,7 @@ BaseType_t ff_ctl(int argc, char **argv, char *m)
 // firefly 3.3V monitor dumper
 static int ff_v3v3_row(char *m, int copied, int whichff)
 {
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff)) {
     float val = (float)__builtin_bswap16(get_FF_VCC3V3_data(whichff)) * 100e-6f; // LSB is 100uV
     int tens, frac;
@@ -1046,11 +1086,11 @@ static int ff_v3v3_row(char *m, int copied, int whichff)
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-FF_TABLE_CMD(ff_v3v3, ff_v3v3_row, "FF 3V3 Mon:", 50, true)
+FF_TABLE_CMD(ff_v3v3, ff_v3v3_row, "FF 3V3 Mon:", FF_ROW_MIN_REM, true)
 
 static int ff_dump_names_row(char *m, int copied, int whichff)
 {
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff)) { // process if enabled
     char name[FF_VENDOR_COUNT_FF12 + 1];
     memset(name, '\0', FF_VENDOR_COUNT_FF12 + 1);
@@ -1089,7 +1129,7 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
   static int i = 0;
   char title[64];
   snprintf(title, sizeof(title), "%s: ID registers", argv[0]);
-  return ff_table_print(m, argv[0], title, &i, 45, false, ff_dump_names_row);
+  return ff_table_print(m, argv[0], title, &i, FF_ROW_MIN_REM, false, ff_dump_names_row);
 }
 
 // read the Firefly firmware register at address 111-113 on page 0. This
@@ -1099,7 +1139,7 @@ BaseType_t ff_dump_names(int argc, char **argv, char *m)
 #define FF_FW_REG_SIZE 3
 static int ff_fw_reg_row(char *m, int copied, int whichff)
 {
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: ", ff_moni2c_addrs[whichff].name);
+  copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff) && FireflyType(whichff) != DEVICE_25G4) { // only read if enabled and if not 4x25G
     uint8_t fw_reg[FF_FW_REG_SIZE];
     int ret = read_arbitrary_ff_register(FF_FW_REG_ADDR, whichff, fw_reg, FF_FW_REG_SIZE);
@@ -1121,5 +1161,5 @@ BaseType_t ff_fw_reg(int argc, char **argv, char *m)
   static int whichff = 0;
   char title[64];
   snprintf(title, sizeof(title), "%s: Firmware registers", argv[0]);
-  return ff_table_print(m, argv[0], title, &whichff, 30, false, ff_fw_reg_row);
+  return ff_table_print(m, argv[0], title, &whichff, FF_ROW_MIN_REM, false, ff_fw_reg_row);
 }

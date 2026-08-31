@@ -331,7 +331,27 @@ TickType_t getFFupdateTick(int mask)
   return 0;
 }
 
-uint16_t getFFtemp(const uint8_t i)
+// The FireFly reports its temperature in the low byte of register 0x16 as a
+// sign bit plus magnitude, valid over 0-70 C. The monitor task masks a good
+// read to 0x00FF and stores it zero-extended in a uint16_t, and stores 0xFFFF
+// as the sentinel for a read error or for power being off (MonitorTaskI2C.c).
+// We never need to decode a negative reading, so don't try: anything with the
+// top bit of the byte set is out of range under either sign-magnitude or two's
+// complement, as is the sentinel. Both come back as FF_TEMP_INVALID; callers
+// wanting to tell them apart for diagnostics should use getFFtempRaw().
+int16_t getFFtemp(const uint8_t i)
+{
+  configASSERT(i < NFIREFLIES);
+  uint16_t raw = get_FF_TEMPERATURE_data(i);
+  if (raw > 0x007FU)
+    return FF_TEMP_INVALID;
+  return (int16_t)raw;
+}
+
+// The undecoded temperature word, for logging when getFFtemp() rejects one:
+// 0xffff is a read error or power-off, anything else is the device reporting a
+// negative (out of range) temperature.
+uint16_t getFFtempRaw(const uint8_t i)
 {
   configASSERT(i < NFIREFLIES);
   return get_FF_TEMPERATURE_data(i);

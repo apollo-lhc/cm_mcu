@@ -14,6 +14,11 @@
 #include "common/smbus.h"
 #include "MonitorTask.h"
 
+// bounds on the per-bus scratch buffers in I2CCommunication.c; in the header so
+// the CLI handlers can validate against the same numbers
+#define MAX_BYTES_ADDR 2
+#define MAX_BYTES      4
+
 // Command line interface
 // read an I2C device, without restart
 int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t data[4]);

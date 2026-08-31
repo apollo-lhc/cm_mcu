@@ -190,6 +190,11 @@ int TempStatus(void)
   int16_t imax_ff_temp = -99;
   for (size_t i = 0; i < NFIREFLIES; ++i) {
     int16_t v = getFFtemp(i);
+    if (v == FF_TEMP_INVALID) {
+      log_warn(LOG_ALM, "Firefly %zu: current temp is invalid (raw 0x%04x)\r\n", i,
+               getFFtempRaw(i));
+      continue;
+    }
     if (v > imax_ff_temp)
       imax_ff_temp = v;
   }
@@ -314,7 +319,10 @@ int VoltStatus(void)
   // Loop over ADC values.
   const float threshold = getAlarmVoltageThres();
   uint32_t ch_alm_mask = 0x0U;
-  for (int i = 0; i < VALM_HIGHEST_V_CH; ++i) {
+  excess_volt = 0.0f; // reset, so a cleared alarm doesn't report stale data
+  excess_volt_which_ch = 0;
+  // VALM_HIGHEST_V_CH is 0-based, so the highest channel must be included
+  for (int i = 0; i <= VALM_HIGHEST_V_CH; ++i) {
     // check if the current channel contains a voltage measurement we care about
     if (!(ch_mask & (0x1U << i))) {
       continue; // if not, continue to then ext loop iteration
@@ -322,14 +330,36 @@ int VoltStatus(void)
     float target_value = getADCtargetValue(i);
     float now_value = getADCvalue(i);
     float excess = (now_value - target_value) / target_value;
+    float aexcess = ABS(excess);
 
-    if (ABS(excess) > threshold) {
-      ch_alm_mask |= (0x1U << i); // mark bit for failing supply
+    if (aexcess > threshold) {
+      ch_alm_mask |= (0x1U << i);          // mark bit for failing supply
+      if (aexcess * 100.f > excess_volt) { // keep the worst offender, in percent
+        excess_volt = aexcess * 100.f;
+        excess_volt_which_ch = i;
+      }
       int tens, frac;
       float_to_ints(excess * 100, &tens, &frac);
       log_debug(LOG_ALM, "VoltAlm: %s: %02d.%02d %% off target\r\n", getADCname(i), tens, frac);
     }
   }
+  // record which rails failed, per group, for the EEPROM error buffer. The shift
+  // makes the bits group-relative; the ctz of each mask is a compile-time constant.
+  //
+  // This packing is only lossless on REV2/3, where each group mask is contiguous
+  // and at most 5 bits wide once shifted down. On REV1 the F1/F2 masks are
+  // interleaved rather than contiguous, so shifting by ctz leaves a 13-bit value
+  // (0xCCC80 >> 7 == 0x1999) and (0x33340 >> 6 == 0xCCD), and the uint8_t cast
+  // silently drops the high bits: the F1/F2 entries in the error log are partial.
+  // status_V below is unaffected -- it tests the masks directly -- so the alarm
+  // itself is still correct on REV1; only the logged detail is lossy. REV1 is
+  // deprecated, so this is recorded rather than fixed. A fix would need a
+  // bit-gather, not a shift.
+#define VALM_GRP(msk) (uint8_t)((ch_alm_mask & (msk)) >> __builtin_ctz(msk))
+  currentVoltStatus[GEN] = VALM_GRP(VALM_BASE_MASK | VALM_GEN_MASK);
+  currentVoltStatus[FPGA1] = VALM_GRP(VALM_F1_MASK);
+  currentVoltStatus[FPGA2] = VALM_GRP(VALM_F2_MASK);
+#undef VALM_GRP
   status_V = 0x0U;
   if (ch_alm_mask & (VALM_BASE_MASK | VALM_GEN_MASK)) {
     status_V |= ALM_STAT_GEN_OVERVOLT;

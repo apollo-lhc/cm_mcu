@@ -453,7 +453,8 @@ static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t sn
   // SNAPSHOT_CONTROL write. The old polling code provided ~20ms of implicit
   // delay via vTaskDelay(10ms) per poll. Without an explicit wait here the
   // device returns a zero-length block read (DATA_SIZE_ERROR).
-  vTaskDelay(pdMS_TO_TICKS(20));
+  // 20 ms delay here caused regular failures, 2x that seems to be enough.
+  vTaskDelay(pdMS_TO_TICKS(40));
   // actual command -- read snapshot (variable-length SMBus block read, via the
   // notification handshake)
   r = apollo_i2c_ctl_block_r(1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
@@ -474,6 +475,9 @@ static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t sn
 
 void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
+  // zero out snapshot buffer, in case of early return on error
+  memset(snapshot, 0, 32);
+
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");

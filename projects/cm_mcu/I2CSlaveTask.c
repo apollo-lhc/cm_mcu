@@ -85,9 +85,11 @@ static uint8_t getSlaveData(uint8_t address)
         value = 0xFEU; // stale
       }
       else {
-        int8_t imax_temp = -55; // turn off value
+        int16_t imax_temp = -55; // turn off value
         for (int i = 0; i < NFIREFLIES; ++i) {
-          int8_t v = getFFtemp(i);
+          int16_t v = getFFtemp(i);
+          if (v == FF_TEMP_INVALID)
+            continue; // not a temperature; leave it out of the max
           if (v > imax_temp)
             imax_temp = v;
         }

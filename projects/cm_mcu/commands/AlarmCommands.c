@@ -148,9 +148,17 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       snprintf(m, s, "Invalid command\r\n");
       return pdFALSE;
     }
-    float voltthres = (float)strtol(argv[2], NULL, 10);
-    setAlarmVoltageThres(voltthres);
-    snprintf(m, s, "alarm voltages are set their threshold by +/-%s %% \r\n", argv[2]);
+    errno = 0;
+    char *endptr = NULL;
+    long pct = strtol(argv[2], &endptr, 10);
+    if (endptr == argv[2] || *endptr != '\0' || errno == ERANGE || pct < 1 || pct > 50) {
+      snprintf(m, s, "Invalid pct '%s'; must be 1-50\r\n", argv[2]);
+      return pdFALSE;
+    }
+    // stored as a fraction, not a percent: VoltStatus() compares it against
+    // (now - target)/target, and alarm_ctl status prints it back * 100
+    setAlarmVoltageThres((float)pct / 100.f);
+    snprintf(m, s, "alarm voltages are set their threshold by +/-%ld %% \r\n", pct);
     return pdFALSE;
   }
   else {

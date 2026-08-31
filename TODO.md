@@ -127,3 +127,32 @@ Retry counts, delays, and channel indices are scattered throughout the codebase 
 - Hardcoded `5` suppliers in loop (SensorControl.c)
 
 **Action:** Extract all magic numbers into named `#define` constants in appropriate headers.
+
+### 17. SMBus ISR Silently Overwrites Real NACK Status with `SMBUS_OK`
+
+`SMBusMasterIntHandlerCore()` (`InterruptHandlers.c:198`) does `*status = SMBusMasterIntProcess(master);`
+unconditionally, on every interrupt for a transaction. For a device that address-NACKs (e.g. an
+unprogrammed FPGA SLR sysmon address), the *first* interrupt correctly returns `SMBUS_ADDR_ACK_ERROR`
+(`common/smbus.c:2406`), but the transfer-in-progress flag is still set at that point (a STOP is issued
+instead, `smbus.c:2387-2389`), so `SMBusMasterIntHandlerCore` does not yet notify the waiting task. The
+STOP's completion fires a *second* interrupt, which lands in the `SMBUS_STATE_IDLE` case
+(`smbus.c:2433-2451`), clears the flag, and falls through to the function's default `return(SMBUS_OK)`
+(`smbus.c:3249`). That second write to `*status` clobbers the real error, and — because it coincides with
+the flag finally clearing — it's the value the waiting task actually observes via `i2c_wait_for_transfer`.
+
+Effect: `apollo_i2c_ctl_reg_w`/`_r` (`I2CCommunication.c`) report `SMBUS_OK` for transactions that
+genuinely NACK'd. Every `r != SMBUS_OK` check downstream (e.g. the stale-data invalidation in
+`MonitorTask.c`) is checking a status that was already corrupted before it got there, so those checks
+never fire. Concretely: `fpga_args.pm_values[]` (`FPGACommands.c`'s `fpga` command, and the max-temp scan
+in `AlarmUtilities.c`) never gets invalidated when an FPGA SLR goes from programmed back to absent after
+a reset/reprogram — the last successfully-read temperature just sits there looking live.
+
+This is a shared ISR used by all six I2C buses, not FPGA-specific — already flagged as open item #3 in
+[`i2c_lockup_notes.md`](i2c_lockup_notes.md) ("NACK error recovery overwrites error status with
+SMBUS_OK"), which notes it "masks real errors" but was not part of the fixes landed in PR #284.
+
+**Action:** Latch the genuine error status (`SMBUS_ADDR_ACK_ERROR`/`SMBUS_DATA_ACK_ERROR`) the first time
+it's seen and don't let the subsequent STOP-completion interrupt's default `SMBUS_OK` overwrite it —
+e.g. only assign `*status` in `SMBusMasterIntHandlerCore` when the transfer is actually complete, or have
+`SMBusMasterIntProcess` remember a latched error across calls for the same transaction. Needs care: this
+is core interrupt-handler code touching every I2C bus in the system.
