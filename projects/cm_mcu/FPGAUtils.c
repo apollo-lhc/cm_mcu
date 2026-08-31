@@ -19,7 +19,6 @@ static inline uint8_t fpga_i2c_mux_val(int fpga)
   return (fpga == 0) ? (0x1U << 2) : (0x1U << 0);
 }
 
-
 int fpga_i2c_reg_r(int fpga, uint16_t reg, uint8_t nbytes, uint32_t *data)
 {
   // mux select
