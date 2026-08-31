@@ -357,7 +357,7 @@ uint8_t smbus_get_device_index(tSMBus *smbus)
 }
 
 tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bool read,
-                             struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
+                             const struct dev_i2c_addr_t *add, const struct pm_command_t *cmd, uint8_t *value)
 {
   uint8_t device = smbus_get_device_index(smbus);
   if (device == 0) {

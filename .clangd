@@ -7,5 +7,8 @@ Diagnostics:
             readability-uppercase-literal-suffix,
             readability-function-cognitive-complexity,
             ]
-#CompileFlags:
-  #Add: [-Wunused-parameter]
+CompileFlags:
+  CompilationDatabase: .
+  Compiler: /Applications/ArmGNUToolchain/13.2.Rel1/arm-none-eabi/bin/arm-none-eabi-gcc
+  Remove: [-mfp16-format=ieee]
+  Add: [-Wunused-parameter]

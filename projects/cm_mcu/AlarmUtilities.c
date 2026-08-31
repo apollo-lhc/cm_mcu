@@ -179,6 +179,7 @@ int TempStatus(void)
     return retval;
   }
 #endif // REV2 or 3
+
   // Fireflies. These are reported as ints but we are asked
   // to report a float.
   // if stale we ignore

@@ -31,19 +31,19 @@ typedef bool (*MonTaskFcnPointer)(int device);
 typedef int (*MonTaskI2CTypeFcnPointer)(int); // what kind of device we have (i.e., for FF, CERN-B, B04, Y12-14, Y12-25, etc.)
 
 struct MonitorTaskI2CArgs_t {
-  const char *name;                      // name to be assigned to the task
-  struct dev_moni2c_addr_t *devices;     // list of devices to query
-  int i2c_dev;                           // i2c controller #
-  int n_devices;                         // number of devices
-  struct i2c_reg_command_t *commands;    // list of commands
-  const uint8_t n_commands;              // number of commands
-  const uint16_t selpage_reg;            // register for selecting page
-  const int mux_reset_pin_bar;           // MCU pin for resetting the I2C Mux. active low.
-  TickType_t updateTick;                 // last update time, in ticks
-  SemaphoreHandle_t xSem;                // semaphore for controlling access to device
-  UBaseType_t stack_size;                // high water mark of stack size of task
-  MonTaskFcnPointer presentCallback;     // callback for present check
-  MonTaskI2CTypeFcnPointer typeCallback; // callback for type check
+  const char *name;                         // name to be assigned to the task
+  const struct dev_moni2c_addr_t *devices;  // list of devices to query
+  int i2c_dev;                              // i2c controller #
+  int n_devices;                            // number of devices
+  const struct i2c_reg_command_t *commands; // list of commands
+  const uint8_t n_commands;                 // number of commands
+  const uint16_t selpage_reg;               // register for selecting page
+  const int mux_reset_pin_bar;              // MCU pin for resetting the I2C Mux. active low.
+  TickType_t updateTick;                    // last update time, in ticks
+  SemaphoreHandle_t xSem;                   // semaphore for controlling access to device
+  UBaseType_t stack_size;                   // high water mark of stack size of task
+  MonTaskFcnPointer presentCallback;        // callback for present check
+  MonTaskI2CTypeFcnPointer typeCallback;    // callback for type check
 };
 
 #define FF_SELPAGE_REG  0x7f
@@ -67,6 +67,6 @@ struct MonitorTaskI2CArgs_t {
 
 #define DEVICE_NONE 0x80
 
-extern struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK];
+extern const struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK];
 
 #endif /* PROJECTS_CM_MCU_MONITORTASKI2C_H_ */

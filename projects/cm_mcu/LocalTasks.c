@@ -36,7 +36,7 @@
 //
 // -------------------------------------------------
 
-struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"K01  12 Rx GTH", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"K02  12 Tx GTH", FF_I2CMUX_1_ADDR, 2, 0x50}, //
@@ -63,7 +63,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"V12  12 Tx GTY", FF_I2CMUX_2_ADDR, 4, 0x50}, //
     {"V12  12 Rx GTY", FF_I2CMUX_2_ADDR, 5, 0x54}, //
 };
-struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
     {"K01  12 Tx GTH", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"K01  12 Rx GTH", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"K02  12 Tx GTH", FF_I2CMUX_1_ADDR, 2, 0x50}, //
@@ -76,7 +76,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
     {"K07  12 Tx GTY", FF_I2CMUX_2_ADDR, 3, 0x50}, //
     {"K07  12 Rx GTY", FF_I2CMUX_2_ADDR, 4, 0x54}, //
 };
-struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
     {"V01 4 XCVR GTY", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"V02 4 XCVR GTY", FF_I2CMUX_1_ADDR, 1, 0x50}, //
     {"V03 4 XCVR GTY", FF_I2CMUX_1_ADDR, 2, 0x50}, //
@@ -98,7 +98,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
 // REV 2
 //
 // -------------------------------------------------
-struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
@@ -121,7 +121,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F2_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 
 };
-struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
@@ -133,7 +133,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
     {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 1, 0x50}, //
     {"F1_7 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
-struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
     {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
@@ -152,7 +152,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
 // REV 3
 //
 // -------------------------------------------------
-struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
@@ -175,7 +175,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES] = {
     {"F2_6 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 
 };
-struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
     {"F1_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F1_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F1_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
@@ -187,7 +187,7 @@ struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1] = {
     {"F1_5 4 XCVR", FF_I2CMUX_1_ADDR, 2, 0x50}, //
     {"F1_6 4 XCVR", FF_I2CMUX_2_ADDR, 2, 0x50}, //
 };
-struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
+const struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2] = {
     {"F2_1  12 Tx", FF_I2CMUX_1_ADDR, 0, 0x50}, //
     {"F2_1  12 Rx", FF_I2CMUX_1_ADDR, 1, 0x54}, //
     {"F2_2  12 Tx", FF_I2CMUX_1_ADDR, 3, 0x50}, //
@@ -268,7 +268,7 @@ struct clk_program_t clkprog_args[] = {
 
 #ifdef REV2
 
-struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
+const struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r0a", 0x70, 0, 0x77, 0x45D},  // CLK R0A : Si5341-REVD with #regs = 378 (read at 0x1F7D in EEPROM) if change, addr 0x45D will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x3F7D in EEPROM) if change, addr 0x264E will have to change
     {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
@@ -276,7 +276,7 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r1c", 0x70, 4, 0x6b, 0x864E}, // CLK R1C : Si5395-REVA #regs = 587 (read at 0x9F7D in EEPROM) if change, addr 0x864E will have to change
 };
 #elif defined(REV3)
-struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
+const struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
     {"r0a", 0x70, 0, 0x6b, 0x064E}, // CLK R0A : Si5395-REVA #regs = 587 (read at 0x1F7D in EEPROM) if change, addr 0x064E will have to change
     {"r0b", 0x70, 1, 0x6b, 0x264E}, // CLK R0B : Si5395-REVA #regs = 587 (read at 0x3F7D in EEPROM) if change, addr 0x264E will have to change
     {"r1a", 0x70, 2, 0x6b, 0x464E}, // CLK R1A : Si5395-REVA #regs = 587 (read at 0x5F7D in EEPROM) if change, addr 0x464E will have to change
@@ -300,26 +300,26 @@ struct dev_moni2c_addr_t clk_moni2c_addrs[NDEVICES_CLK] = {
 // See UG580 table 3-20 and nearby (v1.10.1)
 // Other SLRs are only accessible if explicitly programmed.
 #ifdef REV1
-struct dev_i2c_addr_t fpga_addrs[] = {
+const struct dev_i2c_addr_t fpga_addrs[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
     {"KU15P", 0x70, 0, 0x36},   // KU15P FPGA
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
 #define F1F2_NDEVICES 3
 
-struct dev_i2c_addr_t fpga_addrs_f1only[] = {
+const struct dev_i2c_addr_t fpga_addrs_f1only[] = {
     {"KU15P", 0x70, 0, 0x36},
 };
 #define F1_NDEVICES 1
 
-struct dev_i2c_addr_t fpga_addrs_f2only[] = {
+const struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"VU7P", 0x70, 1, 0x36},    // VU7P FPGA SL0
     {"VU7PSL1", 0x70, 1, 0x34}, // VU7P FPGA SL1
 };
 #define F2_NDEVICES 2
 
 #elif defined(REV2) || defined(REV3)
-struct dev_i2c_addr_t fpga_addrs[] = {
+const struct dev_i2c_addr_t fpga_addrs[] = {
     {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
     {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
     {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
@@ -331,7 +331,7 @@ struct dev_i2c_addr_t fpga_addrs[] = {
 };
 #define F1F2_NDEVICES 8
 
-struct dev_i2c_addr_t fpga_addrs_f1only[] = {
+const struct dev_i2c_addr_t fpga_addrs_f1only[] = {
     {"F1_0", 0x70, 3, 0x36}, // F1 X0Y0
     {"F1_1", 0x70, 3, 0x34}, // F1 X0Y1
     {"F1_2", 0x70, 3, 0x47}, // F1 X1Y0
@@ -339,7 +339,7 @@ struct dev_i2c_addr_t fpga_addrs_f1only[] = {
 };
 #define F1_NDEVICES   4
 
-struct dev_i2c_addr_t fpga_addrs_f2only[] = {
+const struct dev_i2c_addr_t fpga_addrs_f2only[] = {
     {"F2_0", 0x70, 1, 0x36}, // F2 X0Y0
     {"F2_1", 0x70, 1, 0x34}, // F2 X0Y1
     {"F2_2", 0x70, 1, 0x47}, // F2 X1Y0
@@ -349,7 +349,7 @@ struct dev_i2c_addr_t fpga_addrs_f2only[] = {
 
 #endif
 
-struct pm_command_t pm_command_fpga[] = {
+const struct pm_command_t pm_command_fpga[] = {
     {0x8d, 2, "READ_TEMPERATURE_1", "C",
      PM_LINEAR11},
 };
@@ -389,7 +389,7 @@ struct MonitorTaskArgs_t fpga_args = {
 //       0x43     | KVCCINT  |     1
 //       0x46     | VVCCINT  |     1
 //       0x45     | VVCCINT  |     1
-struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
+const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
     {"3V3/1V8", 0x70, 0, 0x40},  // Dual supply 1.8 / 3.3 V
     {"KVCCINT1", 0x70, 1, 0x44}, // first vccint, KU15P
     {"KVCCINT2", 0x70, 2, 0x43}, // second vccint, KU15P
@@ -406,7 +406,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
 //       0x46     | F2VCCINT  |     1
 //       0x45     | F2VCCINT  |     1
 
-struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
+const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
     {"3V3/1V8", 0x70, 0, 0x40},   // Dual supply 1.8 / 3.3 V
     {"F1VCCINT1", 0x70, 1, 0x44}, // first vccint, F1
     {"F1VCCINT2", 0x70, 2, 0x43}, // second vccint, F1
@@ -421,7 +421,7 @@ struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC] = {
 #endif // REV
 
 // this function is run once in the dcdc monitoring task
-struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
+const struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
     {0x0, 1, "PAGE", "", PM_STATUS},
     {0x1, 1, "OPERATION", "", PM_STATUS},
     {0x33, 2, "FREQUENCY_SWITCH", "Hz", PM_LINEAR11},
@@ -433,7 +433,7 @@ struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
 
 // Does the snapshot transactions; assumes i2c1_sem is already held.
 // Returns early on the first failed transaction.
-static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+static void snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
@@ -473,7 +473,7 @@ static void snapdump_locked(struct dev_i2c_addr_t *add, uint8_t page, uint8_t sn
   }
 }
 
-void snapdump(struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+void snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
   // zero out snapshot buffer, in case of early return on error
   memset(snapshot, 0, 32);
@@ -549,7 +549,7 @@ void LGA80D_init(void)
 
 // if you change the length of this array, you also need to change
 // NCOMMANDS_PS in MonitorTask.h
-struct pm_command_t pm_command_dcdc[] = {
+const struct pm_command_t pm_command_dcdc[] = {
     {0x8d, 2, "READ_TEMPERATURE_1", "C", PM_LINEAR11},
     {0x8f, 2, "READ_TEMPERATURE_3", "C", PM_LINEAR11},
     {0x88, 2, "READ_VIN", "V", PM_LINEAR11},

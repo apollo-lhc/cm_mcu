@@ -40,11 +40,13 @@
 #include "semphr.h"
 #include "portmacro.h"
 
-#if defined(REV1)
 // Stream buffers for UART communication
-StreamBufferHandle_t xUART4StreamBuffer, xUART1StreamBuffer;
+#if defined(REV1)
+StreamBufferHandle_t xUART1StreamBuffer;
+StreamBufferHandle_t xUART4StreamBuffer;
 #elif defined(REV2) || defined(REV3)
 StreamBufferHandle_t xUART0StreamBuffer;
+StreamBufferHandle_t xUART7StreamBuffer;
 #endif // Revision
 
 #if defined(REV2) || defined(REV3)
@@ -88,6 +90,49 @@ void UART0IntHandler(void)
     documentation for the port in use for port specific instructions. */
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+// UART7. Programmatic interface for Zynq to send commands to the CM. Not a CLI interface.
+void UART7IntHandler(void)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  //
+  // Get the interrupt status.
+  //
+  uint32_t ui32Status = ROM_UARTIntStatus(UART7_BASE, true);
+
+  //
+  // Clear the asserted interrupts.
+  //
+  ROM_UARTIntClear(UART7_BASE, ui32Status);
+
+  //
+  // Loop while there are characters in the receive FIFO.
+  //
+  uint8_t bytes[8];
+  int received = 0;
+  while (ROM_UARTCharsAvail(UART7_BASE)) {
+
+    bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART7_BASE);
+    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    if (++received == 8) {
+      xStreamBufferSendFromISR(xUART7StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      received = 0;
+    }
+  }
+  if (received)
+    xStreamBufferSendFromISR(xUART7StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+
+  /* If xHigherPriorityTaskWoken was set to pdTRUE inside
+    xStreamBufferReceiveFromISR() then a task that has a priority above the
+    priority of the currently executing task was unblocked and a context
+    switch should be performed to ensure the ISR returns to the unblocked
+    task.  In most FreeRTOS ports this is done by simply passing
+    xHigherPriorityTaskWoken into taskYIELD_FROM_ISR(), which will test the
+    variables value, and perform the context switch if necessary.  Check the
+    documentation for the port in use for port specific instructions. */
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
 #endif
 
 #if defined(REV1)
