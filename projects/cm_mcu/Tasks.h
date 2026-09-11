@@ -158,7 +158,7 @@ struct power_snapshot_t {
   bool blade_power_en;
   bool cli_inhibit;
   bool progcom_inhibit;
-  bool fault_latch;   // power_supply_alarm
+  bool fault_latch; // power_supply_alarm
   bool alarm_shutdown_latch;
   bool f1_enable;
   bool f2_enable;

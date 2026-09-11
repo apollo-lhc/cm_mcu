@@ -56,7 +56,7 @@ static const struct field_span SYSTEM_FIELDS[] = {
 };
 
 static enum mcu_reg_result validate_span(const struct field_span *fields, size_t nfields,
-                                          uint8_t address, uint8_t length)
+                                         uint8_t address, uint8_t length)
 {
   for (size_t i = 0; i < nfields; ++i) {
     uint8_t start = fields[i].offset;
@@ -117,8 +117,8 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
 static enum mcu_reg_result mcu_local_read0(uint8_t address, uint8_t length, uint8_t out[4])
 {
   enum mcu_reg_result r = validate_span(SYSTEM_FIELDS,
-                                         sizeof(SYSTEM_FIELDS) / sizeof(SYSTEM_FIELDS[0]),
-                                         address, length);
+                                        sizeof(SYSTEM_FIELDS) / sizeof(SYSTEM_FIELDS[0]),
+                                        address, length);
   if (r != MCU_REG_OK)
     return r;
 
@@ -148,8 +148,8 @@ static void build_adc_page(uint8_t buf[ADC_PAGE_VALUES_LEN])
 static enum mcu_reg_result mcu_local_read3(uint8_t address, uint8_t length, uint8_t out[4])
 {
   enum mcu_reg_result r = validate_span(ADC_FIELDS,
-                                         sizeof(ADC_FIELDS) / sizeof(ADC_FIELDS[0]),
-                                         address, length);
+                                        sizeof(ADC_FIELDS) / sizeof(ADC_FIELDS[0]),
+                                        address, length);
   if (r != MCU_REG_OK)
     return r;
 
@@ -188,8 +188,8 @@ static void build_alarm_page(uint8_t buf[ALM_PAGE_USED_LEN])
 static enum mcu_reg_result mcu_local_read2(uint8_t address, uint8_t length, uint8_t out[4])
 {
   enum mcu_reg_result r = validate_span(ALARM_FIELDS,
-                                         sizeof(ALARM_FIELDS) / sizeof(ALARM_FIELDS[0]),
-                                         address, length);
+                                        sizeof(ALARM_FIELDS) / sizeof(ALARM_FIELDS[0]),
+                                        address, length);
   if (r != MCU_REG_OK)
     return r;
 
@@ -249,8 +249,8 @@ static void build_power_page(uint8_t buf[PWR_PAGE_USED_LEN])
 static enum mcu_reg_result mcu_local_read1(uint8_t address, uint8_t length, uint8_t out[4])
 {
   enum mcu_reg_result r = validate_span(POWER_FIELDS,
-                                         sizeof(POWER_FIELDS) / sizeof(POWER_FIELDS[0]),
-                                         address, length);
+                                        sizeof(POWER_FIELDS) / sizeof(POWER_FIELDS[0]),
+                                        address, length);
   if (r != MCU_REG_OK)
     return r;
 
