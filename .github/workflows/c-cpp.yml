@@ -59,6 +59,12 @@ jobs:
       uses: egor-tensin/setup-clang@v2.3
       with:
         version: "17"
+    - name: Symlink versioned LLVM tools to unversioned names
+      run: |
+        sudo ln -sf "$(command -v ld.lld-17)" /usr/local/bin/ld.lld
+        sudo ln -sf "$(command -v llvm-ar-17)" /usr/local/bin/llvm-ar
+        sudo ln -sf "$(command -v llvm-objcopy-17)" /usr/local/bin/llvm-objcopy
+        sudo ln -sf "$(command -v llvm-size-17)" /usr/local/bin/llvm-size
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
       uses: carlosperate/arm-none-eabi-gcc-action@v1.13.0
       with:
