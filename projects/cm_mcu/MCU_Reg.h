@@ -58,10 +58,10 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define SYS_GIT_VERSION_LEN 20
 #define SYS_PAGE_USED_LEN   (SYS_OFF_GIT_VERSION + SYS_GIT_VERSION_LEN)
 
-#define MCU_CAP_SYSTEM         (1U << 0)
-#define MCU_CAP_POWER          (1U << 1)
-#define MCU_CAP_ALARMS         (1U << 2)
-#define MCU_CAP_ADC            (1U << 3)
+#define MCU_CAP_SYSTEM (1U << 0)
+#define MCU_CAP_POWER  (1U << 1)
+#define MCU_CAP_ALARMS (1U << 2)
+#define MCU_CAP_ADC    (1U << 3)
 // bit 4 reserved -- formerly ADC_TARGETS (page 0x04), dropped from the
 // design entirely. Not reassigned.
 #define MCU_CAP_PERSISTENT_LOG (1U << 5)
@@ -86,14 +86,14 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 
 #define MCU_REG_PAGE_ALARM 0x02
 
-#define ALM_OFF_TEMP_STATE   0x00 // 1  temperature-alarm task FSM state (0-4)
-#define ALM_OFF_VOLT_STATE   0x01 // 1  voltage-alarm task FSM state (0-4)
-#define ALM_OFF_STATUS_T     0x04 // 4  status_T bitmap
-#define ALM_OFF_WARN_LATCH   0x08 // 4  warnLatch bitmap
-#define ALM_OFF_VOLT_GEN     0x0c // 1  currentVoltStatus[GEN]
-#define ALM_OFF_VOLT_FPGA1   0x0d // 1  currentVoltStatus[FPGA1]
-#define ALM_OFF_VOLT_FPGA2   0x0e // 1  currentVoltStatus[FPGA2]
-#define ALM_PAGE_USED_LEN    0x0f
+#define ALM_OFF_TEMP_STATE 0x00 // 1  temperature-alarm task FSM state (0-4)
+#define ALM_OFF_VOLT_STATE 0x01 // 1  voltage-alarm task FSM state (0-4)
+#define ALM_OFF_STATUS_T   0x04 // 4  status_T bitmap
+#define ALM_OFF_WARN_LATCH 0x08 // 4  warnLatch bitmap
+#define ALM_OFF_VOLT_GEN   0x0c // 1  currentVoltStatus[GEN]
+#define ALM_OFF_VOLT_FPGA1 0x0d // 1  currentVoltStatus[FPGA1]
+#define ALM_OFF_VOLT_FPGA2 0x0e // 1  currentVoltStatus[FPGA2]
+#define ALM_PAGE_USED_LEN  0x0f
 
 // ---- Page 0x01 (Power) wire layout. Keeps a generation counter, unlike
 // pages 0x02/0x03 -- see MCU_FIRMWARE_IMPLEMENTATION_PLAN.md for why these
