@@ -56,10 +56,9 @@ jobs:
     - name: Code checkout
       uses: actions/checkout@v7
     - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v2
+      uses: egor-tensin/setup-clang@v2.3
       with:
-       version: "17.0"
-       directory: ${{ runner.temp }}/llvm
+        version: "17"
     - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
       uses: carlosperate/arm-none-eabi-gcc-action@v1.13.0
       with:
