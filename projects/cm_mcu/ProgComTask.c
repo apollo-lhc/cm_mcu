@@ -1,6 +1,7 @@
-// FreeRTOS task for programmatic interface to the CM.
-// The Interface is a UART and the commands have a simple structure
 /*
+FreeRTOS task for programmatic interface to the CM.
+The Interface is a UART and the commands have a simple structure
+
 The remote host initiates all transactions by transmitting a command as a string containing a series of fields separated by spaces:
 
 - command: "r" = read, "w" = write
@@ -54,6 +55,7 @@ If MCU encountered an error, it responds with the following:
 #include "clocksynth.h"
 #include "common/LocalUart.h"
 #include "common/smbus_helper.h"
+#include "MCU_Reg.h"
 
 // size of the buffer holding an incoming command line
 #define CMD_SZ 256
@@ -213,6 +215,7 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
     return "invalid address";
   p = progcom_skip_spaces(p);
 
+  // read command
   if (cmd->op == PROGCOM_OP_READ) {
     if (!progcom_at_end(p)) {
       p = progcom_parse_byte(p, &cmd->read_len);
@@ -225,7 +228,7 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
     if (cmd->read_len < 1 || cmd->read_len > PROGCOM_MAX_DATA)
       return "read length must be 1-4";
   }
-  else {
+  else { // write below here
     // remaining tokens are write data bytes
     while (!progcom_at_end(p)) {
       if (cmd->ndata >= PROGCOM_MAX_DATA)
@@ -290,6 +293,52 @@ static const char *progcom_access_ff(const struct progcom_cmd_t *cmd, uint8_t *o
   if (r < 0)
     return "Firefly access error";
   return progcom_i2c_error(cmd->op == PROGCOM_OP_READ ? "read failed" : "write failed", r);
+}
+
+// MCU, internal access
+static const char *progcom_mcu_error(enum mcu_reg_result r)
+{
+  switch (r) {
+    case MCU_REG_OK:
+      return NULL;
+    case MCU_REG_INVALID_DEVICE:
+      return "invalid MCU device number";
+    case MCU_REG_INVALID_PAGE:
+      return "invalid MCU page";
+    case MCU_REG_INVALID_ADDRESS:
+      return "invalid MCU address";
+    case MCU_REG_INVALID_LENGTH:
+      return "invalid MCU read span";
+    case MCU_REG_READ_ONLY:
+      return "MCU register is read only";
+    case MCU_REG_WRITE_ONLY:
+      return "MCU register is write only";
+    case MCU_REG_BUSY:
+      return "MCU data busy";
+    case MCU_REG_QUEUE_FULL:
+      return "MCU queue full";
+    case MCU_REG_INVALID_COMMAND:
+      return "invalid MCU command";
+    case MCU_REG_INTERNAL_ERROR:
+    default:
+      return "MCU internal error";
+  }
+}
+
+static const char *progcom_access_mcu(const struct progcom_cmd_t *cmd, uint8_t *out)
+{
+  // device number must be zero
+  if (cmd->dev_num != 0)
+    return "invalid MCU device number";
+  if (cmd->op == PROGCOM_OP_READ) {
+    return progcom_mcu_error(mcu_reg_read(cmd->page, cmd->address, cmd->read_len, out));
+  }
+  else if (cmd->op == PROGCOM_OP_WRITE) {
+    return progcom_mcu_error(mcu_reg_write(cmd->page, cmd->address, cmd->data, cmd->ndata));
+  }
+  else {
+    return "invalid MCU OP";
+  }
 }
 
 // LGA80D DC-DC converters, via PMBus. apollo_pmbus_rw() selects the mux itself,
@@ -443,7 +492,7 @@ static void progcom_handle_line(uint32_t uart_base, const char *line)
         err = progcom_access_clk(&cmd, value);
         break;
       case PROGCOM_DEV_MCU:
-        err = "MCU device not implemented";
+        err = progcom_access_mcu(&cmd, value);
         break;
       case PROGCOM_DEV_FPGA:
         err = progcom_access_fpga(&cmd, value);
