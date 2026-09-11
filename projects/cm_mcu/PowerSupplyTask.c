@@ -102,7 +102,7 @@ const uint16_t getPowerControlIgnoreMask(void)
   return ignore_mask;
 }
 
-// published once per loop iteration; see struct power_snapshot_t (Tasks.h)
+// Published when its contents change; see struct power_snapshot_t (Tasks.h).
 static struct power_snapshot_t power_snapshot;
 const struct power_snapshot_t *getPowerSnapshot(void)
 {
@@ -556,18 +556,48 @@ void PowerSupplyTask(void *parameters)
     }
     currentState = nextState;
 
-    // publish this cycle's diagnostic snapshot for MC page 0x01
-    power_snapshot.generation++; // odd
-    power_snapshot.blade_power_en = blade_power_enable;
-    power_snapshot.cli_inhibit = cli_powerdown_request;
-    power_snapshot.progcom_inhibit = progcom_inhibit_request;
-    power_snapshot.fault_latch = power_supply_alarm;
-    power_snapshot.f1_enable = f1_enable;
-    power_snapshot.f2_enable = f2_enable;
-    power_snapshot.live_mask = supply_bitset;
-    power_snapshot.expected_mask = supply_ok_mask;
-    power_snapshot.failed_mask = failed_mask;
-    power_snapshot.generation++; // even
+    // Publish a new MC page 0x01 snapshot only when its contents change. A
+    // remote read takes longer than this task's 25ms period, so incrementing
+    // generation unconditionally would prevent any coherent read completing.
+    uint8_t supply_states[N_PS_OKS];
+    bool snapshot_changed =
+        power_snapshot.fsm_state != (uint8_t)currentState ||
+        power_snapshot.blade_power_en != blade_power_enable ||
+        power_snapshot.cli_inhibit != cli_powerdown_request ||
+        power_snapshot.progcom_inhibit != progcom_inhibit_request ||
+        power_snapshot.fault_latch != power_supply_alarm ||
+        power_snapshot.alarm_shutdown_latch != external_alarm ||
+        power_snapshot.f1_enable != f1_enable || power_snapshot.f2_enable != f2_enable ||
+        power_snapshot.live_mask != supply_bitset ||
+        power_snapshot.expected_mask != supply_ok_mask ||
+        power_snapshot.software_ignore_mask != ignore_mask ||
+        power_snapshot.failed_mask != failed_mask;
+    for (int i = 0; i < N_PS_OKS; ++i) {
+      supply_states[i] = (uint8_t)getPSStatus(i);
+      if (power_snapshot.supply_states[i] != supply_states[i])
+        snapshot_changed = true;
+    }
+
+    if (snapshot_changed) {
+      taskENTER_CRITICAL();
+      power_snapshot.generation++; // odd
+      power_snapshot.fsm_state = (uint8_t)currentState;
+      power_snapshot.blade_power_en = blade_power_enable;
+      power_snapshot.cli_inhibit = cli_powerdown_request;
+      power_snapshot.progcom_inhibit = progcom_inhibit_request;
+      power_snapshot.fault_latch = power_supply_alarm;
+      power_snapshot.alarm_shutdown_latch = external_alarm;
+      power_snapshot.f1_enable = f1_enable;
+      power_snapshot.f2_enable = f2_enable;
+      power_snapshot.live_mask = supply_bitset;
+      power_snapshot.expected_mask = supply_ok_mask;
+      power_snapshot.software_ignore_mask = ignore_mask;
+      power_snapshot.failed_mask = failed_mask;
+      for (int i = 0; i < N_PS_OKS; ++i)
+        power_snapshot.supply_states[i] = supply_states[i];
+      power_snapshot.generation++; // even
+      taskEXIT_CRITICAL();
+    }
 
     // monitor stack usage for this task
     static UBaseType_t vv = 4096;

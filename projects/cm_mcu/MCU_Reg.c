@@ -218,7 +218,7 @@ static void build_power_page(uint8_t buf[PWR_PAGE_USED_LEN])
   const struct power_snapshot_t *snap = getPowerSnapshot();
 
   put_u32_le(buf + PWR_OFF_GENERATION, snap->generation);
-  buf[PWR_OFF_STATE] = (uint8_t)getPowerControlState();
+  buf[PWR_OFF_STATE] = snap->fsm_state;
 
   uint8_t flags = 0;
   if (snap->blade_power_en)
@@ -229,7 +229,7 @@ static void build_power_page(uint8_t buf[PWR_PAGE_USED_LEN])
     flags |= PWR_FLAG_PROGCOM_INHIBIT;
   if (snap->fault_latch)
     flags |= PWR_FLAG_FAULT_LATCH;
-  if (getPowerControlExternalAlarmState())
+  if (snap->alarm_shutdown_latch)
     flags |= PWR_FLAG_ALARM_SHUTDOWN_LATCH;
   if (snap->f1_enable)
     flags |= PWR_FLAG_F1_ENABLE;
@@ -239,11 +239,11 @@ static void build_power_page(uint8_t buf[PWR_PAGE_USED_LEN])
 
   put_u32_le(buf + PWR_OFF_LIVE_MASK, snap->live_mask);
   put_u32_le(buf + PWR_OFF_EXPECTED_MASK, snap->expected_mask);
-  put_u32_le(buf + PWR_OFF_IGNORE_MASK, getPowerControlIgnoreMask());
+  put_u32_le(buf + PWR_OFF_IGNORE_MASK, snap->software_ignore_mask);
   put_u32_le(buf + PWR_OFF_FAILED_MASK, snap->failed_mask);
   buf[PWR_OFF_SUPPLY_COUNT] = N_PS_OKS;
   for (int i = 0; i < N_PS_OKS; ++i)
-    buf[PWR_OFF_SUPPLY_STATES + i] = (uint8_t)getPSStatus(i);
+    buf[PWR_OFF_SUPPLY_STATES + i] = snap->supply_states[i];
 }
 
 static enum mcu_reg_result mcu_local_read1(uint8_t address, uint8_t length, uint8_t out[4])

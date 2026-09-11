@@ -221,7 +221,9 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ClockCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGACommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqCommands.o
+ifndef REV1 
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MCU_Reg.o
+endif
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o
