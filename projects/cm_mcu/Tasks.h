@@ -146,23 +146,28 @@ const char *getPowerControlStateName(enum power_system_state);
 const bool getPowerControlExternalAlarmState(void);
 const uint16_t getPowerControlIgnoreMask(void);
 
-// Task-owned snapshot of PowerSupplyTask's per-cycle diagnostic state,
-// published once per ~25ms loop iteration. generation is odd while being
-// written, even and stable otherwise -- a remote client should read it
-// before and after a multi-transaction read of page 0x01 and retry if it
-// changed, per the "Coherent publication" rule.
+// Task-owned snapshot of PowerSupplyTask's diagnostic state. It is published
+// only when its contents change. generation is odd while being written, even
+// and stable otherwise -- a remote client should read it before and after a
+// multi-transaction read of page 0x01 and retry if it changed, per the
+// "Coherent publication" rule.
+#define POWER_SNAPSHOT_MAX_SUPPLIES 14
 struct power_snapshot_t {
   uint32_t generation;
+  uint8_t fsm_state;
   bool blade_power_en;
   bool cli_inhibit;
   bool progcom_inhibit;
   bool fault_latch;   // power_supply_alarm
+  bool alarm_shutdown_latch;
   bool f1_enable;
   bool f2_enable;
   uint16_t live_mask;     // supply_bitset, freshest reading each cycle
   uint16_t expected_mask; // supply_ok_mask: full/final target, not a
                           // per-sequencing-level submask
+  uint16_t software_ignore_mask;
   uint16_t failed_mask;
+  uint8_t supply_states[POWER_SNAPSHOT_MAX_SUPPLIES];
 };
 const struct power_snapshot_t *getPowerSnapshot(void);
 
