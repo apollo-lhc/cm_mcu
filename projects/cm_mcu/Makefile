@@ -76,10 +76,14 @@ IPATH+=${ROOT}
 IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 
-# GIT 
+# GIT
 GIT_VERSION="$(shell git --no-pager  show -s --format="commit date %ci  %d"  ; git describe  --dirty --always --tags )"
+# Just the describe output, for the MC ProgCom device's fixed-width version
+# field -- GIT_VERSION above is multi-line and not suitable for that.
+GIT_DESCRIBE="$(shell git describe --dirty --always --tags)"
 
 CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
+CFLAGS+= -DGIT_DESCRIBE=\"$(GIT_DESCRIBE)\"
 
 
 #
@@ -217,6 +221,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ClockCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGACommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqCommands.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/MCU_Reg.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o

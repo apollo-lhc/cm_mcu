@@ -102,6 +102,13 @@ const uint16_t getPowerControlIgnoreMask(void)
   return ignore_mask;
 }
 
+// published once per loop iteration; see struct power_snapshot_t (Tasks.h)
+static struct power_snapshot_t power_snapshot;
+const struct power_snapshot_t *getPowerSnapshot(void)
+{
+  return &power_snapshot;
+}
+
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
@@ -112,6 +119,9 @@ void PowerSupplyTask(void *parameters)
 
   // powerdown request from the CLI
   bool cli_powerdown_request = false;
+  // independent powerdown request from ProgCom (MC page 0x7f); the CLI and
+  // ProgCom interfaces may each alter only their own bit
+  bool progcom_inhibit_request = false;
 
   // masks to enable/check appropriate supplies
   uint16_t supply_ok_mask = PS_OKS_GEN_MASK;
@@ -206,6 +216,12 @@ void PowerSupplyTask(void *parameters)
           power_supply_alarm = false;
           failed_mask = 0x0U;
           break;
+        case PS_PROGCOM_OFF:
+          progcom_inhibit_request = true;
+          break;
+        case PS_PROGCOM_ON:
+          progcom_inhibit_request = false;
+          break;
         default:
           break;
       }
@@ -270,7 +286,7 @@ void PowerSupplyTask(void *parameters)
           disable_ps();
           nextState = POWER_FAILURE;
         }
-        else if (!blade_power_enable || cli_powerdown_request) {
+        else if (!blade_power_enable || cli_powerdown_request || progcom_inhibit_request) {
           log_info(LOG_PWRCTL, "power-down requested\r\n");
           nextState = POWER_DOWN;
         }
@@ -288,8 +304,8 @@ void PowerSupplyTask(void *parameters)
       }
       case POWER_OFF: {
         // start power-on sequence
-        if (blade_power_enable && !cli_powerdown_request && !external_alarm &&
-            !power_supply_alarm) {
+        if (blade_power_enable && !cli_powerdown_request && !progcom_inhibit_request &&
+            !external_alarm && !power_supply_alarm) {
           log_info(LOG_PWRCTL, "power-up requested\r\n");
           turn_on_ps_at_prio(f2_enable, f1_enable, 1);
           errbuffer_put(EBUF_POWER_ON, 0);
@@ -539,6 +555,19 @@ void PowerSupplyTask(void *parameters)
         xQueueSendToBack(xLedQueue, led_msg, pdMS_TO_TICKS(10));
     }
     currentState = nextState;
+
+    // publish this cycle's diagnostic snapshot for MC page 0x01
+    power_snapshot.generation++; // odd
+    power_snapshot.blade_power_en = blade_power_enable;
+    power_snapshot.cli_inhibit = cli_powerdown_request;
+    power_snapshot.progcom_inhibit = progcom_inhibit_request;
+    power_snapshot.fault_latch = power_supply_alarm;
+    power_snapshot.f1_enable = f1_enable;
+    power_snapshot.f2_enable = f2_enable;
+    power_snapshot.live_mask = supply_bitset;
+    power_snapshot.expected_mask = supply_ok_mask;
+    power_snapshot.failed_mask = failed_mask;
+    power_snapshot.generation++; // even
 
     // monitor stack usage for this task
     static UBaseType_t vv = 4096;

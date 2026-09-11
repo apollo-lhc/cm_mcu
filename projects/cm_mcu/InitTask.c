@@ -19,6 +19,7 @@
 #include "Tasks.h"
 #include "AlarmUtilities.h"
 #include "clocksynth.h"
+#include "MCU_Reg.h"
 
 void InitTask(void *parameters)
 {
@@ -26,6 +27,7 @@ void InitTask(void *parameters)
 
   //  store the reboot into the error buffer, including the reason for the reset
   uint32_t r = ROM_SysCtlResetCauseGet();
+  mcu_reg_set_reset_cause(r); // publish the full-width cause for MC page 0x00
   uint16_t restart_reason = (uint16_t)0xFFFFUL & r;
   // clear RESC register
   ROM_SysCtlResetCauseClear(r);
