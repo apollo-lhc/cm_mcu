@@ -92,9 +92,9 @@ jobs:
 
       - name: Create GitHub Release
         if: ${{ inputs.dry_run != 'true' }}
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: softprops/action-gh-release@v3.0.3
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
             artifacts/**
