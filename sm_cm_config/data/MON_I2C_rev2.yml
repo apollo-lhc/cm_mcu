@@ -18,8 +18,8 @@ define: &FF_SHARED_REGS
   - name: LOS_ALARM
     reg_size: 1
     page: 0
-    reg_address: 0x07
-    size: 2
+    reg_address: [0x07, 0x07, 0x03, 0x07] # 25G4 LOS alarms are at 0x03, 1 byte (Table 27/29)
+    size: [2, 2, 1, 2]
     mask: 0xFFFF
     units: ""
     type: PM_STATUS
@@ -28,7 +28,7 @@ define: &FF_SHARED_REGS
     reg_size: 1
     page: 0
     reg_address: [-1, -1, 0x04, 0x09]
-    size: 2
+    size: [1, 1, 1, 2] # 25G4 Tx fault alarms are 1 byte; a 2-byte read spills into CDR_LOL_ALARM
     mask: 0xFFFF
     units: ""
     type: PM_STATUS
@@ -64,7 +64,7 @@ define: &FF_SHARED_REGS
     reg_size: 1
     page: 0
     reg_address: [-1, -1, 0x05, 0x14]
-    size: 2
+    size: [1, 1, 1, 2] # 25G4 CDR LOL alarms are 1 byte; a 2-byte read spills into TEMPERATURE_ALARM
     mask: 0xFFFF
     units: ""
     type: PM_STATUS
@@ -199,7 +199,7 @@ define: &FF_SHARED_REGS
     reg_size: 1
     page: 0
     reg_address: [52, 52, 86, 52]
-    size: 2
+    size: [2, 2, 1, 2] # 25G4 Transmit Channel Disable is 1 byte; a 2-byte read spills into reserved memory
     mask: 0xFFFF
     units: ""
     type: PM_STATUS
@@ -207,7 +207,7 @@ define: &FF_SHARED_REGS
   - name: POWER_ALARM_0
     reg_size: 1
     page: 0
-    reg_address: [-1, -1, 9, 14] 
+    reg_address: [-1, -1, 9, 14]
     size: 2
     mask: 0xFFFF
     units: ""
@@ -216,8 +216,8 @@ define: &FF_SHARED_REGS
   - name: POWER_ALARM_1
     reg_size: 1
     page: 0
-    reg_address: [-1, -1, -1, 16] 
-    size: 2
+    reg_address: [-1, -1, -1, 16]
+    size: [1, 1, 1, 1] # 1 byte only: a 2-byte read spills into TEMPERATURE_ALARM at addr 17
     mask: 0xFF
     units: ""
     type: PM_STATUS
@@ -226,7 +226,7 @@ define: &FF_SHARED_REGS
     reg_size: 1
     page: 0
     reg_address: [-1, -1, 98, 74]
-    size: 2
+    size: [1, 1, 1, 2] # 25G4 CDR Enable is 1 byte; a 2-byte read spills into CDR Rate Select
     mask: 0xFFFF
     units: ""
     type: PM_STATUS

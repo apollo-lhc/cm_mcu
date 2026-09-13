@@ -136,8 +136,12 @@ def main():
                         # ditto for the page
                         page_list = c['page']
                         page_list_str = int_to_list(ndev_types, prefix, page_list)
-                        s = addr_template.substitute(c, reg_list=reg_list_str, prefix=prefix, 
-                                                     page=page_list_str)
+                        # ditto for size: allow either a scalar (broadcast to all device
+                        # types, the historical behavior) or an explicit per-device-type list
+                        size_list = c['size']
+                        size_list_str = int_to_list(ndev_types, prefix, size_list)
+                        s = addr_template.substitute(c, reg_list=reg_list_str, prefix=prefix,
+                                                     page=page_list_str, size=size_list_str)
                         print(s, file=fout_source)
                     print(r"};", file=fout_source)
     
