@@ -49,6 +49,11 @@ extern volatile tSMBusStatus eStatus5;
 extern volatile tSMBusStatus eStatus6;
 
 extern TaskHandle_t TaskNotifySMBus[10];
+// Set true by SMBusMasterIntHandlerCore on the first error interrupt of a
+// transfer, cleared by i2c_arm_notify_slot() when a new transfer is armed.
+// Prevents a NACK's trailing STOP-completion interrupt (which reports
+// SMBUS_OK) from clobbering the real error status. See i2c_lockup_notes.md #3.
+extern volatile bool I2CMasterErrorLatched[10];
 
 void SMBusMasterIntHandler1(void);
 void SMBusMasterIntHandler2(void);

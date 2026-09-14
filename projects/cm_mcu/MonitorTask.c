@@ -45,6 +45,7 @@ void MonitorTask(void *parameters)
   struct MonitorTaskArgs_t *args = parameters;
 
   configASSERT(args->name != 0);
+  configASSERT(args->n_devices * args->n_pages <= 32);
 
   // derive the I2C bus index (1-6) from the controller pointer so we can use
   // the notification-based apollo_i2c_ctl_* wrappers.
@@ -52,6 +53,7 @@ void MonitorTask(void *parameters)
   configASSERT(i2c_dev != 0);
 
   bool log = false;
+  uint32_t pageNackMask = 0;
   args->updateTick = xLastWakeTime; // initial value
 
   // wait for the power to come up
@@ -105,12 +107,25 @@ void MonitorTask(void *parameters)
 
       // loop over pages on the supply
       for (uint8_t page = 0; page < args->n_pages; ++page) {
+        uint32_t pageNackBit = 1UL << (ps * args->n_pages + page);
         r = apollo_i2c_ctl_reg_w(i2c_dev, args->devices[ps].dev_addr, 1, PAGE_COMMAND, 1, page);
         if (r != SMBUS_OK) {
           if (!args->ignoreNACK && SMBUS_is_NACK(r)) {
-            log_warn(LOG_MON, "%s: Page SMBUS ERROR: %s\r\n", args->name, SMBUS_get_error(r));
+            if (!(pageNackMask & pageNackBit)) {
+              log_warn(LOG_MON,
+                       "%s: %s page %u SMBUS ERROR: %s (mux=0x%02x/%u, addr=0x%02x)\r\n",
+                       args->name, args->devices[ps].name, page, SMBUS_get_error(r),
+                       args->devices[ps].mux_addr, args->devices[ps].mux_bit,
+                       args->devices[ps].dev_addr);
+              pageNackMask |= pageNackBit;
+            }
           }
           continue;
+        }
+        if (pageNackMask & pageNackBit) {
+          log_info(LOG_MON, "%s: %s page %u SMBUS recovered\r\n", args->name,
+                   args->devices[ps].name, page);
+          pageNackMask &= ~pageNackBit;
         }
         log_trace(LOG_MON, "%s: Page %d\r\n", args->name, page);
 
