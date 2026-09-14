@@ -190,12 +190,25 @@ volatile tSMBusStatus eStatus4 = SMBUS_OK;
 volatile tSMBusStatus eStatus5 = SMBUS_OK;
 volatile tSMBusStatus eStatus6 = SMBUS_OK;
 
-TaskHandle_t TaskNotifySMBus[10] = {NULL}; // indexed same as pSMBus[]
+TaskHandle_t TaskNotifySMBus[10] = {NULL};         // indexed same as pSMBus[]
+volatile bool I2CMasterErrorLatched[10] = {false}; // indexed same as pSMBus[]
 static void SMBusMasterIntHandlerCore(uint8_t device, tSMBus *master, volatile tSMBusStatus *status)
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  *status = SMBusMasterIntProcess(master);
+  tSMBusStatus thisResult = SMBusMasterIntProcess(master);
+
+  // NACK recovery fires a second interrupt (the completing STOP) that reports
+  // SMBUS_OK with no error bits set (see common/smbus.c's comment on the two
+  // interrupts a NACK generates, ~line 2377). Once a real error is latched
+  // for this transfer, don't let that trailing OK overwrite it.
+  if (thisResult != SMBUS_OK || !I2CMasterErrorLatched[device]) {
+    *status = thisResult;
+  }
+  if (thisResult != SMBUS_OK) {
+    I2CMasterErrorLatched[device] = true;
+  }
+
   if (SMBusStatusGet(master) != SMBUS_TRANSFER_IN_PROGRESS && TaskNotifySMBus[device] != NULL) {
     vTaskNotifyGiveFromISR(TaskNotifySMBus[device], &xHigherPriorityTaskWoken);
     TaskNotifySMBus[device] = NULL;
