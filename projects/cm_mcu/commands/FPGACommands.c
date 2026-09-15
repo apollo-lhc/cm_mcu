@@ -40,8 +40,8 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
     if (whichfpga == 0) {
       TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
 
-      if (isFFStale()) {
-        TickType_t last = pdTICKS_TO_S(getFFupdateTick(isFFStale()));
+      TickType_t last = pdTICKS_TO_S(fpga_args.updateTick);
+      if (checkStale(last, now)) {
         int mins = (now - last) / 60;
         copied += snprintf(m + copied, SCRATCH_SIZE - copied,
                            "%s: stale data, last update %d minutes ago\r\n", argv[0], mins);
