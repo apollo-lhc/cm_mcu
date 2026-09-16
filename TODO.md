@@ -248,6 +248,34 @@ which needs to make those reads safe anyway).
 
 **Action:** Extract into named `#define` constants in the appropriate headers.
 
+### 17. ProgCom I2C Stall Can Starve the UART7 RX Path — OPEN (partial mitigation landed)
+
+`progcom_access_clk()` (`ProgComTask.c:403`) and `progcom_access_fpga()` (`:452`) each hold a bus
+mutex (`i2c2_sem`, `i2c5_sem`) across 3-4 chained I2C transactions (mux select, page select, data,
+mux clear). Any transaction hitting an unresponsive/NAK'ing device blocks the full
+`I2C_TIMEOUT_MS` (250 ms, `I2CCommunication.c:74,120`) via `ulTaskNotifyTake()` — worst case
+~750-1000 ms per ProgCom command, all inside `ProgComTask`, the same task that drains
+`xUART7StreamBuffer`.
+
+While stalled, `UART7IntHandler` keeps pushing incoming bytes into the 128-byte buffer with nobody
+to service it. `9bbc2aa` ("overflow in uart7") landed detection for the resulting overflow: the ISR
+sets `progcom_rx_overflow` (`InterruptHandlers.c:50,120,127`) when `xStreamBufferSendFromISR()`
+can't take every byte, and `add_progcom_char()` (`ProgComTask.c:543`) discards through the next line
+and replies `"e uart overflow, resync\n"` instead of silently splicing two commands together into a
+different, valid-looking one. **That closes the corruption failure mode, not the stall.** Two things
+are still true:
+
+- The command in flight during the stall is simply lost — the Zynq side must notice the error
+  string and retry; nothing here retries automatically.
+- Any other task sharing the same I2C bus (e.g. `MonitorTaskI2C` polling clock-synth or FPGA status)
+  blocks on the same mutex for the same window, so one unresponsive ProgCom target can also stall
+  unrelated monitoring on that bus.
+
+**Action:** Fully closing this means moving the I2C work off `ProgComTask` onto a separate
+queue-driven worker so the task servicing UART7 never blocks on I2C, or bounding the exposure with a
+protocol-level ack/retry. Both are larger, cross-cutting changes — treat as a separate follow-up from
+the overflow-detection mitigation already landed.
+
 ## Retracted
 
 ### 4. Hardware Revision Abstraction Layer — DROPPED (superseded by the REV1 retirement plan)
