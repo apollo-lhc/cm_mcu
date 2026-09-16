@@ -47,6 +47,7 @@ StreamBufferHandle_t xUART4StreamBuffer;
 #elif defined(REV2) || defined(REV3)
 StreamBufferHandle_t xUART0StreamBuffer;
 StreamBufferHandle_t xUART7StreamBuffer;
+volatile bool progcom_rx_overflow = false;
 #endif // Revision
 
 #if defined(REV2) || defined(REV3)
@@ -115,12 +116,16 @@ void UART7IntHandler(void)
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART7_BASE);
     // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
     if (++received == 8) {
-      xStreamBufferSendFromISR(xUART7StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
+      if (xStreamBufferSendFromISR(xUART7StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken) != 8)
+        progcom_rx_overflow = true; // buffer full -- ProgComTask stalled or falling behind
       received = 0;
     }
   }
-  if (received)
-    xStreamBufferSendFromISR(xUART7StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken);
+  if (received) {
+    if (xStreamBufferSendFromISR(xUART7StreamBuffer, &bytes, received, &xHigherPriorityTaskWoken) !=
+        (size_t)received)
+      progcom_rx_overflow = true;
+  }
 
   /* If xHigherPriorityTaskWoken was set to pdTRUE inside
     xStreamBufferReceiveFromISR() then a task that has a priority above the

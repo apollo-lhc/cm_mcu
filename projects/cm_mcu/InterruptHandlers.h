@@ -29,6 +29,12 @@ extern StreamBufferHandle_t xUART0StreamBuffer;
 extern StreamBufferHandle_t xUART7StreamBuffer;
 void UART0IntHandler(void);
 void UART7IntHandler(void);
+// Set true by UART7IntHandler when xStreamBufferSendFromISR() could not
+// accept every byte just read from the FIFO (ProgComTask stalled, e.g. in a
+// slow/timing-out I2C transaction, so nobody is draining the buffer).
+// Cleared by the consumer (add_progcom_char() in ProgComTask.c) once it has
+// resynchronized to the next line boundary.
+extern volatile bool progcom_rx_overflow;
 #endif // REV1
 
 // SMBUs specific handler for I2C
