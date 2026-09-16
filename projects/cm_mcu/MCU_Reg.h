@@ -26,8 +26,6 @@ enum mcu_reg_result mcu_reg_write(
     uint8_t page, uint8_t address,
     const uint8_t *data, size_t length);
 
-const char *mcu_reg_result_string(enum mcu_reg_result result);
-
 // Called once from InitTask.c with the raw (untruncated) value from
 // ROM_SysCtlResetCauseGet(), before that value is truncated for the
 // persistent error-log entry and the hardware register is cleared. Publishes

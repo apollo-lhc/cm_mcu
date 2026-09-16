@@ -337,22 +337,3 @@ mcu_reg_write(uint8_t page, uint8_t address, const uint8_t *data, size_t length)
   }
 }
 
-const char *mcu_reg_result_string(enum mcu_reg_result result)
-{
-  static const char *const s[] = {
-      "MCU_REG_OK",
-      "MCU_REG_INVALID_DEVICE",
-      "MCU_REG_INVALID_PAGE",
-      "MCU_REG_INVALID_ADDRESS",
-      "MCU_REG_INVALID_LENGTH",
-      "MCU_REG_READ_ONLY",
-      "MCU_REG_WRITE_ONLY",
-      "MCU_REG_BUSY",
-      "MCU_REG_QUEUE_FULL",
-      "MCU_REG_INVALID_COMMAND",
-      "MCU_REG_INTERNAL_ERROR",
-  };
-  if (result > MCU_REG_INTERNAL_ERROR)
-    result = MCU_REG_INTERNAL_ERROR;
-  return s[result];
-}
