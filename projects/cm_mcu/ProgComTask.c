@@ -262,6 +262,23 @@ static const char *progcom_i2c_error(const char *what, int r)
   return progcom_errbuf;
 }
 
+// apollo_i2c_ctl_reg_r/w() and fpga_i2c_reg_r/w() move a register's bytes as
+// one packed uint32_t, least significant byte first. Shared by
+// progcom_access_clk() and progcom_access_fpga().
+static uint32_t progcom_pack_le(const uint8_t *data, size_t ndata)
+{
+  uint32_t packed_data = 0;
+  for (size_t i = 0; i < ndata; ++i)
+    packed_data |= ((uint32_t)data[i]) << (i * 8);
+  return packed_data;
+}
+
+static void progcom_unpack_le(uint32_t packed_data, uint8_t *out, size_t nbytes)
+{
+  for (size_t i = 0; i < nbytes; ++i)
+    out[i] = (uint8_t)((packed_data >> (i * 8)) & 0xFFU);
+}
+
 // Fireflies: read_arbitrary_ff_register()/write_arbitrary_ff_register() already
 // handle bus selection, the mux, the page select byte and the semaphore.
 static const char *progcom_access_ff(const struct progcom_cmd_t *cmd, uint8_t *out)
@@ -411,16 +428,11 @@ static const char *progcom_access_clk(const struct progcom_cmd_t *cmd, uint8_t *
                                cmd->read_len, &packed_data);
       if (r != SMBUS_OK)
         err = progcom_i2c_error("read failed", r);
-      else {
-        for (size_t i = 0; i < cmd->read_len; ++i)
-          out[i] = (uint8_t)((packed_data >> (i * 8)) & 0xFFU);
-      }
+      else
+        progcom_unpack_le(packed_data, out, cmd->read_len);
     }
     else {
-      // apollo_i2c_ctl_reg_w() sends the packed data least significant byte first
-      uint32_t packed_data = 0;
-      for (size_t i = 0; i < cmd->ndata; ++i)
-        packed_data |= ((uint32_t)cmd->data[i]) << (i * 8);
+      uint32_t packed_data = progcom_pack_le(cmd->data, cmd->ndata);
       r = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, dev_addr, 1, cmd->address, cmd->ndata, packed_data);
       if (r != SMBUS_OK)
         err = progcom_i2c_error("write failed", r);
@@ -454,15 +466,11 @@ static const char *progcom_access_fpga(const struct progcom_cmd_t *cmd, uint8_t 
     r = fpga_i2c_reg_r(cmd->dev_num, cmd->address, cmd->read_len, &packed_data);
     if (r != 0)
       err = progcom_i2c_error("read failed", r);
-    else {
-      for (size_t i = 0; i < cmd->read_len; ++i)
-        out[i] = (uint8_t)((packed_data >> (i * 8)) & 0xFFU);
-    }
+    else
+      progcom_unpack_le(packed_data, out, cmd->read_len);
   }
   else {
-    uint32_t packed_data = 0;
-    for (size_t i = 0; i < cmd->ndata; ++i)
-      packed_data |= ((uint32_t)cmd->data[i]) << (i * 8);
+    uint32_t packed_data = progcom_pack_le(cmd->data, cmd->ndata);
     r = fpga_i2c_reg_w(cmd->dev_num, cmd->address, cmd->ndata, packed_data);
     if (r != 0)
       err = progcom_i2c_error("write failed", r);
