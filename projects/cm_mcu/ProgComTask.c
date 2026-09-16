@@ -525,9 +525,23 @@ static void add_progcom_char(uint32_t uart_base, uint8_t c)
   static char cmd_buffer[CMD_SZ];
   static size_t cmd_index = 0;
   static bool too_long = false;
+  static bool overflowed = false;
+
+  // UART7IntHandler couldn't fit every received byte into the stream buffer
+  // (we were stalled, e.g. in a slow I2C transaction) -- bytes between here
+  // and the next '\n' may be missing or spliced from two commands, so treat
+  // this exactly like an over-long line: discard through the next terminator
+  // rather than risk executing a corrupted command.
+  if (progcom_rx_overflow) {
+    progcom_rx_overflow = false;
+    overflowed = true;
+  }
 
   if (c == '\n') {
-    if (too_long) {
+    if (overflowed) {
+      UARTPrint(uart_base, "e uart overflow, resync\n");
+    }
+    else if (too_long) {
       UARTPrint(uart_base, "e command too long\n");
     }
     else if (cmd_index > 0) {
@@ -539,6 +553,7 @@ static void add_progcom_char(uint32_t uart_base, uint8_t c)
     }
     cmd_index = 0;
     too_long = false;
+    overflowed = false;
     return;
   }
 
