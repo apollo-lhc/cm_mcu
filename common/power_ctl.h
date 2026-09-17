@@ -27,6 +27,8 @@
   X(PS_OFF, "Power Supply Off")                                  \
   X(PS_ERROR, "Power Supply Error")                              \
   X(PS_STATUS, "Power Supply Status")                            \
+  X(PS_PROGCOM_OFF, "Power Supply ProgCom Off")                  \
+  X(PS_PROGCOM_ON, "Power Supply ProgCom On")                    \
   X(HUH, "Undefined Message")
 
 // Generate enum and text arrays using X-macros

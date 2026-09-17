@@ -97,6 +97,7 @@ static void i2c_arm_notify_slot(uint8_t device)
               (unsigned long)mcs);
   }
 
+  I2CMasterErrorLatched[device] = false; // fresh per-transfer latch, see InterruptHandlers.c
   TaskNotifySMBus[device] = xTaskGetCurrentTaskHandle();
 }
 
@@ -357,14 +358,13 @@ uint8_t smbus_get_device_index(tSMBus *smbus)
 }
 
 tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_status, bool read,
-                             struct dev_i2c_addr_t *add, struct pm_command_t *cmd, uint8_t *value)
+                             const struct dev_i2c_addr_t *add, const struct pm_command_t *cmd, uint8_t *value)
 {
   uint8_t device = smbus_get_device_index(smbus);
   if (device == 0) {
     log_error(LOG_I2C, "PMBUS invalid device\r\n");
     return SMBUS_PERIPHERAL_BUSY;
   }
-
   // TRANSACTION 1: mux selection via existing helper
   uint8_t data = 0x1U << add->mux_bit;
   tSMBusStatus r = apollo_i2c_ctl_w(device, add->mux_addr, 1, data);

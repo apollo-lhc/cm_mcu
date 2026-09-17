@@ -123,9 +123,9 @@ def main():
                     print(f"#define NCOMMANDS_{prefix} {ncommands}", file=fout_header)
                     print(f"// {prefix} has {ndev} devices and {ncommands} commands", file=fout_source)
                     print(f"#define {prefix}_NOT_COVERED (-1)", file=fout_source)
-                    print(f"struct i2c_reg_command_t sm_command_test_{prefix}[NCOMMANDS_{prefix}] = {{",
+                    print(f"const struct i2c_reg_command_t sm_command_test_{prefix}[NCOMMANDS_{prefix}] = {{",
                         file=fout_source)
-                    print(f"extern struct i2c_reg_command_t sm_command_test_{prefix}[NCOMMANDS_{prefix}];",
+                    print(f"extern const struct i2c_reg_command_t sm_command_test_{prefix}[NCOMMANDS_{prefix}];",
                         file=fout_header)
                     for c in config:
                         reg_list = c['reg_address']

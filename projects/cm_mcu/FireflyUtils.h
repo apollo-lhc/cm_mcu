@@ -55,9 +55,9 @@ struct arg_moni2c_ff_t {
   uint8_t num_dev;                  // number of devices in this ff arg.
 };
 
-extern struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
-extern struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1];
-extern struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2];
+extern const struct dev_moni2c_addr_t ff_moni2c_addrs[NFIREFLIES];
+extern const struct dev_moni2c_addr_t ff_moni2c_addrs_f1[NFIREFLIES_F1];
+extern const struct dev_moni2c_addr_t ff_moni2c_addrs_f2[NFIREFLIES_F2];
 extern struct arg_moni2c_ff_t ff_moni2c_arg[NFIREFLY_ARG];
 
 // Samtec firefly specific commands
@@ -89,6 +89,7 @@ TickType_t getFFupdateTick(int ff_t);
 int init_registers_ff(void);
 
 uint16_t read_arbitrary_ff_register(uint16_t regnumber, int num_ff, uint8_t *value, uint8_t size);
+int write_arbitrary_ff_register(uint16_t regnumber, uint8_t value, int num_ff);
 
 extern uint32_t ff_PRESENT_mask;
 extern uint32_t ff_USER_mask;

@@ -19,12 +19,12 @@ jobs:
         revision: ["REV1", "REV2", "REV3"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Install Embedded Arm Toolchain arm-none-eabi-gcc
-        uses: carlosperate/arm-none-eabi-gcc-action@v1.10.1
+        uses: carlosperate/arm-none-eabi-gcc-action@v1.13.0
         with:
           release: "13.2.Rel1"
 
@@ -65,7 +65,7 @@ jobs:
           mkdir -p ${rev}
           mv "$tar_file" ${rev}
       - name: Upload build artifacts for ${{ matrix.revision }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cm_mcu-${{ matrix.revision }}
           path: ${{ matrix.revision }}
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts/
 
@@ -92,9 +92,9 @@ jobs:
 
       - name: Create GitHub Release
         if: ${{ inputs.dry_run != 'true' }}
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: softprops/action-gh-release@v3.0.3
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
             artifacts/**

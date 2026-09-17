@@ -34,8 +34,12 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
 
     return pdFALSE;
   }
-  else if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
+  if (strncmp(argv[1], "status", 5) == 0) { // report status to UART
     int copied = 0;
+    // power state machine status
+    const enum power_system_state state = getPowerControlState();
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: Power state: %s\r\n",
+                       argv[0], getPowerControlStateName(state));
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: TALARM status\r\n", argv[0]);
     uint32_t stat = getTempAlarmStatus();
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Raw: 0x%08lx\r\n", stat);
@@ -68,7 +72,7 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
 
     return pdFALSE;
   }
-  else if (strcmp(argv[1], "settemp") == 0) {
+  if (strcmp(argv[1], "settemp") == 0) {
     if (argc != 4) {
       snprintf(m, s, "Invalid command\r\n");
       return pdFALSE;
@@ -88,25 +92,23 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
       snprintf(m, s, "%s: set Firefly temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    else if (!strncasecmp(device, "fpga", 4)) {
+    if (!strncasecmp(device, "fpga", 4)) {
       setAlarmTemperature(FPGA, newtemp);
       snprintf(m, s, "%s: set FPGA temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    else if (!strncasecmp(device, "dcdc", 4)) {
+    if (!strncasecmp(device, "dcdc", 4)) {
       setAlarmTemperature(DCDC, newtemp);
       snprintf(m, s, "%s: set DCDC temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    else if (!strncasecmp(device, "tm4c", 4)) {
+    if (!strncasecmp(device, "tm4c", 4)) {
       setAlarmTemperature(TM4C, newtemp);
       snprintf(m, s, "%s: set TM4C temp to %s (saved)\r\n", argv[0], argv[3]);
       return pdFALSE;
     }
-    else {
-      snprintf(m, s, "%s is not a valid device.\r\n", argv[2]);
-      return pdFALSE;
-    }
+    snprintf(m, s, "%s is not a valid device.\r\n", argv[2]);
+    return pdFALSE;
   }
   else if (strcmp(argv[1], "resettemp") == 0) {
     if (argc != 3) {
