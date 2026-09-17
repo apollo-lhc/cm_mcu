@@ -336,4 +336,3 @@ mcu_reg_write(uint8_t page, uint8_t address, const uint8_t *data, size_t length)
       return MCU_REG_INVALID_PAGE;
   }
 }
-
