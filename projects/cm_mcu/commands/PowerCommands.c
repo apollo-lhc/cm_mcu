@@ -133,8 +133,8 @@ BaseType_t power_ctl(int argc, char **argv, char *m)
 }
 
 extern struct MonitorTaskArgs_t dcdc_args;
-extern struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
-extern struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
+extern const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
+extern const struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
 
 // Read out registers from LGA80D
 BaseType_t psmon_reg(int argc, char **argv, char *m)

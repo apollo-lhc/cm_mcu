@@ -38,7 +38,7 @@ struct command_t {
 };
 
 #define NUM_COMMANDS (sizeof(commands) / sizeof(commands[0]))
-static struct command_t commands[] = {
+static const struct command_t commands[] = {
     {"adc", adc_ctl, "Display ADC measurements\r\n", 0},
     {"alm", alarm_ctl,
      "args: clear|status|settemp|resettemp|setvoltthres|#\r\n"
