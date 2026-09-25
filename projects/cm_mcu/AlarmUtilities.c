@@ -137,6 +137,10 @@ int TempStatus(void)
   // DCDC. The first command is READ_TEMPERATURE_1.
   // I am assuming it stays that way!!!!!!!!
   currentTemp[DCDC] = -99.0f;
+  // one bit per LGA80D device/page: set while its temperature is out of range,
+  // so the warning is logged once per transition rather than every 50 ms cycle
+  static uint32_t dcdcInvalidMask = 0;
+  configASSERT(dcdc_args.n_devices * dcdc_args.n_pages <= 32);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     for (int page = 0; page < dcdc_args.n_pages; ++page) {
       size_t index =
@@ -144,12 +148,21 @@ int TempStatus(void)
       float thistemp = dcdc_args.pm_values[index];
       if (thistemp <= -999.f)
         continue; // sentinel
+      uint32_t bit = 1UL << (ps * dcdc_args.n_pages + page);
       if (!(thistemp >= LGA80D_TEMP_MIN_C && thistemp <= LGA80D_TEMP_MAX_C)) {
-        int tens, fractions;
-        float_to_ints(thistemp, &tens, &fractions);
-        log_debug(LOG_ALM, "LGA80D %s page %d: invalid temp %d.%02d C; ignore\r\n",
-                 dcdc_args.devices[ps].name, page, tens, fractions);
+        if (!(dcdcInvalidMask & bit)) {
+          int tens, fractions;
+          float_to_ints(thistemp, &tens, &fractions);
+          log_warn(LOG_ALM, "LGA80D %s page %d: invalid temp %d.%02d C; ignoring\r\n",
+                   dcdc_args.devices[ps].name, page, tens, fractions);
+          dcdcInvalidMask |= bit;
+        }
         continue;
+      }
+      if (dcdcInvalidMask & bit) {
+        log_info(LOG_ALM, "LGA80D %s page %d: temp valid again\r\n", dcdc_args.devices[ps].name,
+                 page);
+        dcdcInvalidMask &= ~bit;
       }
       if (thistemp > currentTemp[DCDC])
         currentTemp[DCDC] = thistemp;
