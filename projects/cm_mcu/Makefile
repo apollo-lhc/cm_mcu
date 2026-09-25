@@ -76,10 +76,14 @@ IPATH+=${ROOT}
 IPATH+=${FREERTOS_ROOT}/include
 IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 
-# GIT 
+# GIT
 GIT_VERSION="$(shell git --no-pager  show -s --format="commit date %ci  %d"  ; git describe  --dirty --always --tags )"
+# Just the describe output, for the MC ProgCom device's fixed-width version
+# field -- GIT_VERSION above is multi-line and not suitable for that.
+GIT_DESCRIBE="$(shell git describe --dirty --always --tags)"
 
 CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
+CFLAGS+= -DGIT_DESCRIBE=\"$(GIT_DESCRIBE)\"
 
 
 #
@@ -183,6 +187,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_helper.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommunication.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGAUtils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o
@@ -191,6 +196,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MonitorTaskI2C.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CSlaveTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/GenericAlarmTask.o
+${COMPILER}/cm_mcu.axf: ${COMPILER}/ProgComTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmUtilities.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/LedTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/microrl.o
@@ -215,6 +221,9 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/AlarmCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ClockCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGACommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqCommands.o
+ifndef REV1 
+${COMPILER}/cm_mcu.axf: ${COMPILER}/MCU_Reg.o
+endif
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
 ## FreeRTOS
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/tasks.o

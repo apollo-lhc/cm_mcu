@@ -113,38 +113,44 @@ whole translation unit compiles away. Protocol per [issue #210](https://github.c
 The remote host sends one command per line; the MCU replies with exactly one line.
 
 ```
-<r|w> <DC|FF|CL|MC> <devnum> <page> <addr> [<data> ...] \n
+r <DC|FF|CL|MC> <devnum> <page> <addr> [<length>] \n
+w <DC|FF|CL|MC> <devnum> <page> <addr> <data> ... \n
 ```
 
 | Field | Meaning |
 | --- | --- |
 | `r` / `w` | read or write |
-| `DC` `FF` `CL` `MC` | LGA80D DC-DC, Firefly, clock synth, MCU |
+| `DC` `FF` `CL` `MC` `FP` | LGA80D DC-DC, Firefly, clock synth, MCU, FPGA generic endpoint |
 | `devnum` | device index within that type, 1–2 hex digits |
 | `page` | page register value, 1–2 hex digits |
-| `addr` | register address within the page, 1–2 hex digits |
-| `data` | write payload, 1–4 space-separated hex bytes; must be absent for reads |
+| `addr` | register address within the page, 1-2 hex digits |
+| `length` | optional read length, 1-4 bytes; defaults to 1 when omitted |
+| `data` | write payload, 1-4 space-separated hex bytes |
 
 Fields are separated by one or more spaces or tabs. Lines are terminated by `\n`; a preceding
 `\r` is accepted and ignored. Responses always end in a bare `\n`.
 
 | Response | Meaning |
 | --- | --- |
-| `d XX` | read succeeded, one byte of data in hex |
+| `d XX [XX ...]` | read succeeded, with 1-4 data bytes in wire order |
 | `c` | write succeeded |
 | `e <description>` | failure, e.g. `e invalid page`, `e read failed: NACK` |
 
-**Reads always return exactly one byte.** A read command carrying any data token is rejected with
-`e read takes no data bytes`. Errors originating from an I2C transaction append the
+Reads return one to four bytes. A read without a length retains the legacy one-byte behavior.
+Invalid lengths are rejected with `e read length must be 1-4`. Errors originating from an I2C transaction append the
 `SMBUS_get_error()` string, so an absent device or a bad page is distinguishable from a syntax error.
 
 Examples:
 ```
 r FF 0 0 16      ->  d 2C
 w FF 0 0 56 01   ->  c
-r DC 0 0 8B      ->  d 1A
+r DC 0 0 8B 2    ->  d 1A 20
 r CL 0 1 2       ->  d 5F
-r MC 0 0 0       ->  e MCU device not implemented
+r CL 0 0 2 2     ->  d 95 53
+r MC 0 0 0 4     ->  d 43 4D 43 55
+r MC 0 0 14 4    ->  d 2A 01 00 00
+w MC 0 7F 0 03   ->  c
+r FP 0 0 12 4    ->  d 00 00 00 01
 ```
 
 Per-device notes:
@@ -159,9 +165,22 @@ Per-device notes:
   (`0 … NPAGES_PS-1`). Uses `apollo_pmbus_rw()`, which selects the mux itself.
 * **`CL`** — `devnum` is the clock synth index (`0 … NDEVICES_CLK-1`, ordering of
   `clk_moni2c_addrs[]`), `page` is written to `CLOCK_CHANGEPAGE_REG_ADDR` (`0x01`).
-* **`MC`** — reserved for MCU state (power FSM, alarm bits, …); not implemented yet.
+* **`MC`** — MCU-internal state. `devnum` must be `0`; `page` selects a register page
+  and `addr` a byte offset within it. Implemented pages: `0x00` System (magic, map version,
+  hardware revision, capability and health bitmaps, board ID, uptime, reset cause, git
+  version), `0x01` Power (generation counter, FSM state, flags, PG masks, per-supply state),
+  `0x02` Alarm, `0x03` ADC (21 little-endian binary16 values) and `0x7f` Control (write-only,
+  one command byte). Pages `0x30`/`0x31` (persistent error log) are frozen but not served.
+  Multi-byte values are little-endian; a read may not cross a field boundary, and reserved
+  offsets return `e invalid MCU address` rather than zero. No I2C and no blocking.
+  See `MCU_Reg.h` and `cm_interface/MCU_REGISTER_MAP.md` for the authoritative layout.
+* **`FP`** — FPGA generic I2C endpoint. `devnum` is `0` for F1 or `1` for F2, `page` must be
+  `0`, and `addr` is a register in the FPGA diagnostic block. Goes through
+  `fpga_i2c_reg_r/w()` on I2C bus 5 via mux `0x70` to slave address `0x2b` only; takes
+  `i2c5_sem`. The register map is defined by the loaded bitfile, not by this firmware.
 
-All three device paths take the same per-bus semaphore as the monitor tasks, so an in-flight
+The four I2C-backed device paths (`DC`, `FF`, `CL`, `FP`) take the same per-bus semaphore as
+the monitor tasks, so an in-flight
 ProgCom transaction blocks (rather than corrupts) concurrent monitoring, and vice versa.
 Composite/high-level commands (e.g. CDR on/off for all Fireflies, clock program load) are not
 implemented; they would extend the grammar with a new verb.

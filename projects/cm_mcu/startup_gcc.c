@@ -157,9 +157,13 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
 #else
     IntDefaultHandler, // UART4 Rx and Tx
 #endif
-    IntDefaultHandler,      // UART5 Rx and Tx
-    IntDefaultHandler,      // UART6 Rx and Tx
-    IntDefaultHandler,      // UART7 Rx and Tx
+    IntDefaultHandler, // UART5 Rx and Tx
+    IntDefaultHandler, // UART6 Rx and Tx
+#ifdef REV1
+    IntDefaultHandler, // UART7 Rx and Tx
+#else                  // not REV1
+    UART7IntHandler, // UART7 Rx and Tx -- non-CLI interface to Zynq in REV2/3
+#endif
     SMBusMasterIntHandler2, // I2C2 Master and Slave
     SMBusMasterIntHandler3, // I2C3 Master and Slave
     IntDefaultHandler,      // Timer 4 subtimer A

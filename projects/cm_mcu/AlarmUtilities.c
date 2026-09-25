@@ -94,6 +94,20 @@ uint32_t getTempAlarmStatus(void)
   return status_T;
 }
 
+uint32_t getWarnLatch(void)
+{
+  return warnLatch;
+}
+
+// Published by the TALM task's own GenericAlarmTask() instance; see
+// struct GenericAlarmParams_t's published_state field.
+static enum alarm_task_state tempAlarmState = ALM_INIT;
+
+enum alarm_task_state getTempAlarmTaskState(void)
+{
+  return tempAlarmState;
+}
+
 int16_t getAlarmTemperature(enum device theDevice)
 {
   return alarmTemp[theDevice];
@@ -259,6 +273,7 @@ struct GenericAlarmParams_t tempAlarmTask = {
     .led_warn_msg = &LED_STATUS_WARN,
     .led_alarm_msg = &LED_STATUS_ALARM,
     .led_normal_msg = &LED_STATUS_NORMAL,
+    .published_state = &tempAlarmState,
 };
 
 ///////////////////////////////////////////////////////////
@@ -292,6 +307,20 @@ static int excess_volt_which_ch = 0;
 uint32_t getVoltAlarmStatus(void)
 {
   return status_V;
+}
+
+uint8_t getVoltStatusGroup(enum powdevice which)
+{
+  return currentVoltStatus[which];
+}
+
+// Published by the VALM task's own GenericAlarmTask() instance; see
+// struct GenericAlarmParams_t's published_state field.
+static enum alarm_task_state voltAlarmState = ALM_INIT;
+
+enum alarm_task_state getVoltAlarmTaskState(void)
+{
+  return voltAlarmState;
 }
 // check the current voltage status.
 // returns +1 for warning, +2 or higher for error
@@ -429,6 +458,7 @@ struct GenericAlarmParams_t voltAlarmTask = {
     .errorlog_registererror = &VoltErrorLog,
     .errorlog_clearerror = &VoltClearErrorLog,
     .stack_size = 4096,
+    .published_state = &voltAlarmState,
 };
 
 ///////////////////////////////////////////////////////////
