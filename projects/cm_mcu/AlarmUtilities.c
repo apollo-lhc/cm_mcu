@@ -22,6 +22,12 @@ extern struct MonitorTaskArgs_t fpga_args;
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
 // a shutdown message is sent
 
+// The LGA80D specifies 0..175 C for its temperature thresholds. Treat a
+// READ_TEMPERATURE_1 value outside that range as invalid rather than allowing
+// a malformed but ACKed Linear11 word to power down the board.
+#define LGA80D_TEMP_MIN_C (0.0f)
+#define LGA80D_TEMP_MAX_C (175.0f)
+
 // Hysteresis deadband (degrees C) for clearing a warn condition. A device's
 // warn bit is set as soon as its temperature rises above the threshold, but is
 // only cleared once the temperature drops at least this far below it. This
@@ -136,6 +142,15 @@ int TempStatus(void)
       size_t index =
           ps * (dcdc_args.n_commands * dcdc_args.n_pages) + page * dcdc_args.n_commands + 0;
       float thistemp = dcdc_args.pm_values[index];
+      if (thistemp <= -999.f)
+        continue; // sentinel
+      if (!(thistemp >= LGA80D_TEMP_MIN_C && thistemp <= LGA80D_TEMP_MAX_C)) {
+        int tens, fractions;
+        float_to_ints(thistemp, &tens, &fractions);
+        log_debug(LOG_ALM, "LGA80D %s page %d: invalid temp %d.%02d C; ignore\r\n",
+                 dcdc_args.devices[ps].name, page, tens, fractions);
+        continue;
+      }
       if (thistemp > currentTemp[DCDC])
         currentTemp[DCDC] = thistemp;
     }
@@ -191,8 +206,8 @@ int TempStatus(void)
   for (size_t i = 0; i < NFIREFLIES; ++i) {
     int16_t v = getFFtemp(i);
     if (v == FF_TEMP_INVALID) {
-      log_warn(LOG_ALM, "Firefly %zu: current temp is invalid (raw 0x%04x)\r\n", i,
-               getFFtempRaw(i));
+      log_debug(LOG_ALM, "Firefly %zu: current temp is invalid (raw 0x%04x)\r\n", i,
+                getFFtempRaw(i));
       continue;
     }
     if (v > imax_ff_temp)
