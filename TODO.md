@@ -108,6 +108,8 @@ The EEPROMTask gatekeeper ignores return codes from ROM EEPROM functions. A fail
 
 ### 14. ZynqMonTask `zm_set_psmon()` Bug
 
+Fixed by PR #286
+
 Line 580 uses loop variable `l` instead of data index `ll` in the NaN-check condition.
 
 **Action:** Fix `data[l].data.f` to `data[ll].data.f`.
@@ -129,6 +131,8 @@ Retry counts, delays, and channel indices are scattered throughout the codebase 
 **Action:** Extract all magic numbers into named `#define` constants in appropriate headers.
 
 ### 17. SMBus ISR Silently Overwrites Real NACK Status with `SMBUS_OK`
+
+(Fixed by PR #293)
 
 `SMBusMasterIntHandlerCore()` (`InterruptHandlers.c:198`) does `*status = SMBusMasterIntProcess(master);`
 unconditionally, on every interrupt for a transaction. For a device that address-NACKs (e.g. an
@@ -156,3 +160,48 @@ it's seen and don't let the subsequent STOP-completion interrupt's default `SMBU
 e.g. only assign `*status` in `SMBusMasterIntHandlerCore` when the transfer is actually complete, or have
 `SMBusMasterIntProcess` remember a latched error across calls for the same transaction. Needs care: this
 is core interrupt-handler code touching every I2C bus in the system.
+
+## FireFly Register Map (from the 2026-09-12 CERNB/25G4/25G12 audit)
+Found while fixing the 25G4 `LOS_ALARM`/`CDR_LOL_ALARM` address/size bug (see the PR for `fix/ff-register-sizes`). These were deliberately deferred rather than folded into that fix — two
+are structural, one is an open question needing hardware knowledge, one is a minor cleanup.
+
+### 18. FireFly Tx/Rx Sub-Device Register Collision (CERNB, 25G12)
+
+CERNB and 25G12 optical modules are each wired as two separate I2C sub-devices — Tx at address 0x50, Rx at
+0x54 (`LocalTasks.c`) — but `MonUtils.c`'s `FireflyType()` assigns both sides the same device-type bit, so
+every register-table entry in `MON_I2C_rev{2,3}.yml` is polled identically on both. Most entries really are
+identical on both sides (`STATUS_REG`, `TEMPERATURE_ALARM`, `VCC3V3_ALARM`, `TEMPERATURE`, `VCC3V3` —
+confirmed against all three datasheets), but two are not:
+
+- `LOS_ALARM` for CERNB: correct on the Rx map (addr 7-8) but reads *reserved* memory on the Tx map — the
+  real Tx-side laser-fault register (addr 9-10) has no entry of its own for CERNB at all, so CERNB's
+  Tx-side fault alarm is never read by any entry today.
+- `TX_FAULT_ALARM` / `RX_POWER_ALARM` (+`POWER_ALARM_0`) for 25G12: each is correctly addressed for one
+  side (Tx fault at addr 9, Rx power at addr 14) but polled on both, so `ff_tx_fault_alarm` shows garbage
+  on Rx devices and `ff_rx_power_alarm`/`ff_power_alarm_status` show garbage on Tx devices.
+
+`ff_optpow` (`FireflyCommands.c`, ~line 851) already has an `isTx = strstr(name,"Tx")` guard for exactly
+this kind of split — the likely pattern to extend, or a device-type split (e.g.
+`DEVICE_25G12_TX`/`DEVICE_25G12_RX`), done carefully so as not to break the entries that are genuinely
+shared.
+
+**Action:** Design a Tx/Rx-aware register mechanism (display-side filter or device-type split) and add the
+missing CERNB Tx-side fault-alarm entry.
+
+### 19. 25G12 `OPT_POWER_CH1`..`CH12` Channel-Number Order (needs schematic review)
+
+Firmware's channel numbering runs opposite to the datasheet's Rx0..Rx11 address order (CH1→datasheet's
+Rx11, CH12→Rx00), while the 25G4 table runs forward (CH1→Rx1). Every individual address is itself
+correctly sized/paged — nothing is misread — so this may be an intentional physical-fiber-numbering
+convention rather than a bug.
+
+**Action:** Confirm against the board schematic/pinout whether "channel 1" as displayed by `ff_optpow` is
+meant to match the physical fiber labeled 1; fix the YAML ordering if not.
+
+### 20. Duplicate `RX_POWER_ALARM` / `POWER_ALARM_0` Entries
+
+`MON_I2C_rev{2,3}.yml` define `RX_POWER_ALARM` and `POWER_ALARM_0` as byte-for-byte identical entries
+(same address, size, mask, devicetypes) — apparently `POWER_ALARM_0` was added later as part of a
+rename/rework and the old entry was never removed.
+
+**Action:** Dedup — remove one and update any CLI/telemetry references accordingly.
