@@ -119,13 +119,15 @@ further ISR is generated**.  The FreeRTOS 250 ms timeout then fires:
 
 ---
 
-### 3. NACK error recovery overwrites error status with `SMBUS_OK` (latent correctness bug) — FIXED
+### 3. NACK error recovery overwrites error status with `SMBUS_OK` (latent correctness bug) — FIX APPLIED, NOT YET OBSERVED
 
-> **FIXED** on `fix/i2c-nack-status-clobber`: `SMBusMasterIntHandlerCore`
-> (`InterruptHandlers.c`) now latches the first real error per transfer
-> (`I2CMasterErrorLatched[10]`, reset in `i2c_arm_notify_slot()`) so the
-> trailing spurious `SMBUS_OK` from the second (STOP-completion) interrupt
-> can no longer overwrite it. `smbus.c` itself (vendor TI code) is untouched.
+> **Fix applied**, not yet seen catching a live NACK on hardware:
+> `SMBusMasterIntHandlerCore` (`InterruptHandlers.c`) now latches the first
+> real error per transfer (`I2CMasterErrorLatched[10]`, reset in
+> `i2c_arm_notify_slot()`) so the trailing spurious `SMBUS_OK` from the second
+> (STOP-completion) interrupt can no longer overwrite it. `smbus.c` itself
+> (vendor TI code) is untouched. Confirmation would be a `MonitorTask`
+> "page N SMBUS ERROR" warning in the log.
 
 **Where:** `SMBusMasterIntProcess`, `smbus.c:2369–2421`
 
