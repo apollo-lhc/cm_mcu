@@ -38,6 +38,6 @@ int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits);
   acquireI2CSemaphoreTime(s, 10)
 
 #define acquireI2CSemaphoreBlock(s) \
-  acquireI2CSemaphoreTime(s, 0)
+  acquireI2CSemaphoreTime(s, portMAX_DELAY)
 
 #endif /* PROJECTS_CM_MCU_SEMAPHORE_H_ */

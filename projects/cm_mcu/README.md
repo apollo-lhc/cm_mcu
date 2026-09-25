@@ -211,8 +211,9 @@ the duration. The monitor tasks, the `clocksynth`/`FireflyUtils` helpers, and th
 handlers (`FireflyCommands`, `ClockCommands`, `PowerCommands`) all acquire the correct per-bus mutex.
 
 Both acquire macros wrap `acquireI2CSemaphoreTime(s, ticks)`, which retries up to `MAX_TRIES` (500)
-and returns `pdTRUE` or `pdFAIL`. Note the names are counter-intuitive: `acquireI2CSemaphore(s)`
-waits 10 ticks per attempt, while `acquireI2CSemaphoreBlock(s)` uses a 0-tick wait, i.e. it spins.
+and returns `pdTRUE` or `pdFAIL`. `acquireI2CSemaphore(s)` waits 10 ticks per attempt;
+`acquireI2CSemaphoreBlock(s)` waits `portMAX_DELAY`, i.e. it blocks until the mutex is free and
+does not return `pdFAIL` for a valid handle (`INCLUDE_vTaskSuspend` is 1).
 Release with the guarded give used throughout the tree:
 
 ```c
