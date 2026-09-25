@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Code checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
     - name: Get origin/master base ref
@@ -17,7 +17,7 @@ jobs:
         echo "base_sha=$(git rev-parse  "$(git merge-base origin/master "$(git rev-parse --abbrev-ref HEAD )")") >> $GITHUB_OUTPUT"
     - name: Get changed files from origin/master
       id: changed-files
-      uses: tj-actions/changed-files@v45.0.8
+      uses: tj-actions/changed-files@v47
       with:
         base_sha: ${{ steps.get-base-sha.outputs.base_sha }}
         files_ignore: |
@@ -36,7 +36,7 @@ jobs:
           **/.git*
           **/LICENSE 
     - name: Format changed files
-      uses: DoozyX/clang-format-lint-action@v0.17
+      uses: DoozyX/clang-format-lint-action@v0.20
       if: steps.changed-files.outputs.any_changed == 'true'
       with:
         source: ${{ steps.changed-files.outputs.all_changed_files }}
@@ -44,7 +44,7 @@ jobs:
         clangFormatVersion: 17
         inplace: true
         style: file
-    - uses: EndBug/add-and-commit@v9
+    - uses: EndBug/add-and-commit@v11
       with:
         message: 'Committing clang-format changes'
       env:
