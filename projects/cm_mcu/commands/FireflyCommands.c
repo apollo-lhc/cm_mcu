@@ -756,7 +756,7 @@ FF_U16_HEX_ROW_FN(ff_los_alarm_row,  get_FF_LOS_ALARM_data(whichff))  // Loss-of
 FF_U16_HEX_ROW_FN(ff_cdr_enable_row, get_FF_CDR_ENABLE_data(whichff)) // Clock/data recovery enable bits
 #if defined(REV2) || defined(REV3)
 FF_U16_HEX_ROW_FN(ff_tx_fault_alarm_row,    get_FF_TX_FAULT_ALARM_data(whichff))    // Transmitter fault flags
-FF_U16_HEX_ROW_FN(ff_rx_power_alarm_row,    get_FF_RX_POWER_ALARM_data(whichff))    // Received optical power alarm
+FF_U16_HEX_ROW_FN(ff_rx_power_alarm_row,    get_FF_POWER_ALARM_0_data(whichff))     // Received optical power alarm, bytes 0-1 (byte 2 via ff_power_alarm_status)
 FF_U16_HEX_ROW_FN(ff_temperature_alarm_row, get_FF_TEMPERATURE_ALARM_data(whichff)) // On-device temperature alarm flag
 FF_U16_HEX_ROW_FN(ff_vcc_alarm_row,         get_FF_VCC3V3_ALARM_data(whichff))      // 3.3 V supply voltage alarm flag
 #endif // REV2 || REV3

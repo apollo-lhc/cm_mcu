@@ -39,10 +39,24 @@ def write_boilderplate(fout: io.TextIOWrapper):
     print(f"// Generated: {timestamp}", file=fout)
     print(r"//", file=fout)
 
-def int_to_list(ndev_types, prefix, var_list: list) -> str:
-    """Convert an integer to a list of integers of length ndev_types"""
+def int_to_list(ndev_types, prefix, var_list, where="value") -> str:
+    """Convert a scalar or a per-device-type list into a C array initializer.
+
+    A scalar is broadcast to all ndev_types device types. An explicit list must have
+    exactly ndev_types entries: a short list is not an error to the C compiler, which
+    silently zero-fills the tail. That is harmless-looking and is not -- a zero in
+    `size` makes apollo_i2c_ctl_reg_r() read no bytes at all and cache a clean
+    "no alarm" value, indistinguishable from a healthy part.
+    """
+    ndev_types = int(ndev_types)
     if isinstance(var_list, int):
-        var_list = [var_list]*int(ndev_types)
+        var_list = [var_list]*ndev_types
+    if not isinstance(var_list, list):
+        raise TypeError(f"{where}: expected an int or a list, got {var_list!r}")
+    if len(var_list) != ndev_types:
+        raise ValueError(
+            f"{where}: {len(var_list)} entries for {ndev_types} device types ({var_list}); "
+            "a per-device-type list needs exactly one entry per device type")
     var_list_str = '{'
     for r in var_list:
         if r >= 0:
@@ -132,12 +146,28 @@ def main():
                         #print(f"reg list is >{reg_list}<")
                         # if reg_list is an integer, convert it to a list of ndev_types integers
                         # this handles the case where all ndev types share the same address
-                        reg_list_str = int_to_list(ndev_types, prefix, reg_list)
+                        reg_list_str = int_to_list(ndev_types, prefix, reg_list,
+                                                   f"{prefix} {c['name']} reg_address")
                         # ditto for the page
                         page_list = c['page']
-                        page_list_str = int_to_list(ndev_types, prefix, page_list)
-                        s = addr_template.substitute(c, reg_list=reg_list_str, prefix=prefix, 
-                                                     page=page_list_str)
+                        page_list_str = int_to_list(ndev_types, prefix, page_list,
+                                                    f"{prefix} {c['name']} page")
+                        # ditto for size: allow either a scalar (broadcast to all device
+                        # types, the historical behavior) or an explicit per-device-type list
+                        size_list = c['size']
+                        # size goes into an unsigned char and is passed straight to
+                        # apollo_i2c_ctl_reg_r(): 0 reads nothing, and a negative would be
+                        # emitted as PREFIX_NOT_COVERED, i.e. 255. Neither is usable, even
+                        # for a device type this command does not cover.
+                        for n in (size_list if isinstance(size_list, list) else [size_list]):
+                            if n not in (1, 2):
+                                raise ValueError(
+                                    f"{prefix} {c['name']} size: {n} is out of range; "
+                                    "must be 1 or 2 (the cached value is a uint16_t)")
+                        size_list_str = int_to_list(ndev_types, prefix, size_list,
+                                                    f"{prefix} {c['name']} size")
+                        s = addr_template.substitute(c, reg_list=reg_list_str, prefix=prefix,
+                                                     page=page_list_str, size=size_list_str)
                         print(s, file=fout_source)
                     print(r"};", file=fout_source)
     
