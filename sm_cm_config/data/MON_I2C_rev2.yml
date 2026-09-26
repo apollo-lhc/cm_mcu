@@ -33,15 +33,6 @@ define: &FF_SHARED_REGS
     units: ""
     type: PM_STATUS
     devicetypes: [25G4, 25G12]
-  - name: RX_POWER_ALARM
-    reg_size: 1
-    page: 0
-    reg_address: [-1, -1, 0x09, 0x0E]
-    size: 2
-    mask: 0xFFFF
-    units: ""
-    type: PM_STATUS
-    devicetypes: [25G4, 25G12]
   - name: TEMPERATURE_ALARM
     reg_size: 1
     page: 0
