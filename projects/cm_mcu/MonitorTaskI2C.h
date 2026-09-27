@@ -14,7 +14,7 @@ struct i2c_reg_command_t {
   int reg_size;             // number of bytes of register/command
   unsigned char page[4];    // I2C page address
   unsigned char command[4]; // I2c register address
-  int size;                 // number of bytes to read
+  unsigned char size[4];    // number of bytes to read, per device type
   char *name;               // text describing command
   uint16_t bit_mask;        // begin bit mask
   char *units;              // units for pretty printing

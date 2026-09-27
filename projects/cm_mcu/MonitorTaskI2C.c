@@ -176,7 +176,7 @@ void MonitorTaskI2C(void *parameters)
         // get the data from the I2C register
         uint32_t output_raw;
         int res = apollo_i2c_ctl_reg_r(args->i2c_dev, args->devices[device].dev_addr, args->commands[c].reg_size,
-                                       args->commands[c].command[devtype], args->commands[c].size, &output_raw);
+                                       args->commands[c].command[devtype], args->commands[c].size[devtype], &output_raw);
         if (res != 0) {
           log_error(LOG_MONI2C, "%s: %s read Error %s, break (ps=%d)\r\n",
                     args->name, args->commands[c].name, SMBUS_get_error(res), device);
