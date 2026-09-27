@@ -14,19 +14,6 @@
 #include "AlarmUtilities.h"
 #include <stdbool.h>
 
-#define X_MACRO_ALM_STATES \
-  X(ALM_INIT)              \
-  X(ALM_NORMAL)            \
-  X(ALM_WARN)              \
-  X(ALM_FAULT_ERRORING)    \
-  X(ALM_FAULT_ERROR_CLEARED)
-
-enum alarm_task_state {
-#define X(name) name,
-  X_MACRO_ALM_STATES
-#undef X
-};
-
 // alarm state names
 static const char *alarm_task_state_names[] = {
 #define X(name) #name,
@@ -175,6 +162,8 @@ void GenericAlarmTask(void *parameters)
     }
 
     currentState = nextState;
+    if (params->published_state)
+      *params->published_state = currentState;
 
     // monitor stack usage for this task
     CHECK_TASK_STACK_USAGE(params->stack_size);

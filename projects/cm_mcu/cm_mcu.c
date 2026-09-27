@@ -23,6 +23,7 @@
 #include "common/smbus.h"
 #include "common/log.h"
 #include "CommandLineTask.h"
+#include "ProgComTask.h"
 #include "InterruptHandlers.h"
 #include "MonitorTask.h"
 #include "MonUtils.h"
@@ -99,7 +100,9 @@ void SystemInitInterrupts(void)
 #if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
 #elif defined(REV2) || defined(REV3)
-  UART0Init(g_ui32SysClock); // ZYNQ UART
+  UART0Init(g_ui32SysClock); // ZYNQ UART unidirectiona, push mon data to Zynq
+  UART7Init(g_ui32SysClock); // non-CLI command interface to Zynq.
+
 #endif
   UART4Init(g_ui32SysClock); // front panel UART in Rev1 and Zynq comms in Rev2
 
@@ -202,6 +205,8 @@ volatile uint32_t g_ui32SysTickCount;
 CommandLineTaskArgs_t cli_uart;
 #ifdef REV1
 CommandLineTaskArgs_t cli_uart4;
+#else  // REV2 or REV3
+ProgComTaskArgs_t progcom_uart;
 #endif // REV1
 
 void ShortDelay(void)
@@ -269,6 +274,13 @@ __attribute__((noreturn)) int main(void)
   cli_uart.uart_base = ZQ_UART;
   cli_uart.UartStreamBuffer = xUART0StreamBuffer;
   cli_uart.stack_size = 4096U;
+
+  // and one for the programmatic (non-CLI) interface to the Zynq
+  xUART7StreamBuffer = xStreamBufferCreate(128, // length of stream buffer in bytes
+                                           1);  // number of items before a trigger is sent
+  progcom_uart.uart_base = ZC_UART;
+  progcom_uart.UartStreamBuffer = xUART7StreamBuffer;
+  progcom_uart.stack_size = 4096U;
 #endif // REV1
 
   // clear the various buffers
@@ -299,6 +311,11 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(ZynqMonTask, "ZMON", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", 256, &tempAlarmTask, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(GenericAlarmTask, "VALM", 256, &voltAlarmTask, tskIDLE_PRIORITY + 4, NULL);
+#if defined(REV2) || defined(REV3)
+  // created last: if the FreeRTOS heap is exhausted, this non-critical task is
+  // the one that fails to start rather than a monitoring or alarm task.
+  xTaskCreate(ProgComTask, "PRGCM", 384, &progcom_uart, tskIDLE_PRIORITY + 3, NULL);
+#endif // REV2 or REV3
   //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
   // -------------------------------------------------

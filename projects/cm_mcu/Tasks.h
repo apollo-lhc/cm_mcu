@@ -146,6 +146,31 @@ const char *getPowerControlStateName(enum power_system_state);
 const bool getPowerControlExternalAlarmState(void);
 const uint16_t getPowerControlIgnoreMask(void);
 
+// Task-owned snapshot of PowerSupplyTask's diagnostic state. It is published
+// only when its contents change. generation is odd while being written, even
+// and stable otherwise -- a remote client should read it before and after a
+// multi-transaction read of page 0x01 and retry if it changed, per the
+// "Coherent publication" rule.
+#define POWER_SNAPSHOT_MAX_SUPPLIES 14
+struct power_snapshot_t {
+  uint32_t generation;
+  uint8_t fsm_state;
+  bool blade_power_en;
+  bool cli_inhibit;
+  bool progcom_inhibit;
+  bool fault_latch; // power_supply_alarm
+  bool alarm_shutdown_latch;
+  bool f1_enable;
+  bool f2_enable;
+  uint16_t live_mask;     // supply_bitset, freshest reading each cycle
+  uint16_t expected_mask; // supply_ok_mask: full/final target, not a
+                          // per-sequencing-level submask
+  uint16_t software_ignore_mask;
+  uint16_t failed_mask;
+  uint8_t supply_states[POWER_SNAPSHOT_MAX_SUPPLIES];
+};
+const struct power_snapshot_t *getPowerSnapshot(void);
+
 void LGA80D_init(void);
 
 // --- Semi-generic PMBUS based I2C task
@@ -238,14 +263,35 @@ enum powdevice { GEN,
                  FPGA1,
                  FPGA2 };
 
+// Generic alarm task FSM states. Shared here (rather than private to
+// GenericAlarmTask.c) so each instance's published state -- see
+// getTempAlarmTaskState()/getVoltAlarmTaskState() below -- can be declared
+// with this type outside that file.
+#define X_MACRO_ALM_STATES \
+  X(ALM_INIT)              \
+  X(ALM_NORMAL)            \
+  X(ALM_WARN)              \
+  X(ALM_FAULT_ERRORING)    \
+  X(ALM_FAULT_ERROR_CLEARED)
+
+enum alarm_task_state {
+#define X(name) name,
+  X_MACRO_ALM_STATES
+#undef X
+};
+
 void GenericAlarmTask(void *parameters);
 
 int16_t getAlarmTemperature(enum device device_name);
 void setAlarmTemperature(enum device device_name, int16_t newtemp);
 uint32_t getTempAlarmStatus(void);
+uint32_t getWarnLatch(void);
+enum alarm_task_state getTempAlarmTaskState(void);
 float getAlarmVoltageThres(void);
 void setAlarmVoltageThres(float voltthres);
 uint32_t getVoltAlarmStatus(void);
+uint8_t getVoltStatusGroup(enum powdevice which);
+enum alarm_task_state getVoltAlarmTaskState(void);
 
 // Monitoring using the ADC inputs
 void ADCMonitorTask(void *parameters);
@@ -317,8 +363,8 @@ void task_watchdog_unregister_task(uint16_t task_id);
 void task_watchdog_feed_task(uint16_t task_id);
 uint16_t task_watchdog_get_status(void);
 
-// Programmatic UART interface for Zynq to send commands to the CM. Not a CLI interface.
-void ProgComTask(void *parameters);
+// Programmatic UART interface for Zynq to send commands to the CM. Not a CLI
+// interface -- see ProgComTask.h.
 
 // general
 // monitor stack usage for this task

@@ -177,6 +177,7 @@ header file. */
 #define ZQ_UART UART1_BASE // Zynq-facing UART
 #elif defined(REV2) || defined(REV3)
 #define ZQ_UART UART0_BASE // single UART in Rev 2
+#define ZC_UART UART7_BASE // Zynq-facing programmatic command UART (not a CLI)
 #endif
 
 #define SYSTEM_STACK_SIZE 128
