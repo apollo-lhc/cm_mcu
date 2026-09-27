@@ -437,8 +437,9 @@ static const char *progcom_access_clk(const struct progcom_cmd_t *cmd, uint8_t *
       if (r != SMBUS_OK)
         err = progcom_i2c_error("write failed", r);
     }
-    apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 0x0U); // clear the mux
   }
+  // always clear the mux, even if a step failed: a failed select may have left it set
+  apollo_i2c_ctl_w(CLOCK_I2C_DEV, mux_addr, 1, 0x0U);
 
   if (xSemaphoreGetMutexHolder(i2c2_sem) == xTaskGetCurrentTaskHandle())
     xSemaphoreGive(i2c2_sem);

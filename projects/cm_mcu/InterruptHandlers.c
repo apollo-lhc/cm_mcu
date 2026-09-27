@@ -72,7 +72,7 @@ void UART0IntHandler(void)
   while (ROM_UARTCharsAvail(UART0_BASE)) {
 
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART0_BASE);
-    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    // Put byte in queue (ISR safe function)
     if (++received == 8) {
       xStreamBufferSendFromISR(xUART0StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
@@ -114,7 +114,7 @@ void UART7IntHandler(void)
   while (ROM_UARTCharsAvail(UART7_BASE)) {
 
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART7_BASE);
-    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    // Put byte(s) in queue (ISR safe function)
     if (++received == 8) {
       if (xStreamBufferSendFromISR(xUART7StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken) != 8)
         progcom_rx_overflow = true; // buffer full -- ProgComTask stalled or falling behind
@@ -162,7 +162,7 @@ void UART1IntHandler(void)
   while (ROM_UARTCharsAvail(UART1_BASE)) {
 
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART1_BASE);
-    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    // Put byte(s) in queue (ISR safe function)
     if (++received == 8) {
       xStreamBufferSendFromISR(xUART1StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;
@@ -203,7 +203,7 @@ void UART4IntHandler(void)
   while (ROM_UARTCharsAvail(UART4_BASE)) {
 
     bytes[received] = (uint8_t)ROM_UARTCharGetNonBlocking(UART4_BASE);
-    // Put byte in queue (ISR safe function) -- should probably send more than one byte at a time?
+    // Put byte(s) in queue (ISR safe function)
     if (++received == 8) {
       xStreamBufferSendFromISR(xUART4StreamBuffer, &bytes, 8, &xHigherPriorityTaskWoken);
       received = 0;

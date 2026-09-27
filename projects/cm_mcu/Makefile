@@ -187,7 +187,6 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_units.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/smbus_helper.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/power_ctl.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/I2CCommunication.o
-${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGAUtils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/CommandLineTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/EEPROMTask.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/PowerSupplyTask.o
@@ -222,6 +221,7 @@ ${COMPILER}/cm_mcu.axf: ${COMPILER}/ClockCommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGACommands.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/ZynqCommands.o
 ifndef REV1 
+${COMPILER}/cm_mcu.axf: ${COMPILER}/FPGAUtils.o
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/MCU_Reg.o
 endif
 ${COMPILER}/cm_mcu.axf: ${COMPILER}/startup_${COMPILER}.o
