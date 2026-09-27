@@ -1,14 +1,11 @@
 # TODO: Large-Scale Improvements for `projects/cm_mcu`
 
-**Last verified against the tree:** 2026-09-26, branch `fix/ff-register-sizes` @ `9c62f0b`.
-Line numbers in the open and retracted items were re-checked against the source at that commit.
+**Last verified against the tree:** 2026-09-26, branch `feature/sm_uart` @ `bcd7f06` (rebased onto
+`master` @ `18a1d42`); re-checked 2026-09-27 against the working tree, which adds uncommitted
+`ProgComTask.c` / `InterruptHandlers.c` edits on top of that commit. Line numbers in the open and
+retracted items match that working tree.
 Items under **Resolved** quote the code as it stood *before* the fix, so their line numbers are
 historical and deliberately left alone.
-
-**Not on this branch:** item 17, and the `UART7IntHandler` half of item 2, describe the ProgCom
-work, which lives on `feature/sm_uart` — `ProgComTask.c` does not exist here. Their
-`ProgComTask.c` / `InterruptHandlers.c` line numbers stay anchored to `feature/sm_uart` @ `6ee7f58`
-and are marked inline.
 
 Item numbers are kept stable across revisions of this file (so #6 is absent, and resolved or
 retracted items move to the bottom rather than being deleted — #1 was demoted to Lower Priority and
@@ -23,11 +20,11 @@ mostly retracted on 2026-08-12).
 | `ADCMonitorTask.c:235,253,269,285` | 4 identical ADC trigger/wait/read blocks | ~16 lines each |
 | `FireflyUtils.c:385` `getFFoptpow()` | 12 identical `case` blocks in a switch | ~40 lines |
 | `ZynqMonTask.c:381` `zm_set_firefly_info()` | 6 nearly identical getter + stale-check blocks | ~70 lines |
-| `InterruptHandlers.c:51,94,135` | **3** near-identical UART ISRs (UART0, UART1, UART4) | ~40 lines each |
+| `InterruptHandlers.c:54,96,144,185` | **4** near-identical UART ISRs (UART0, UART7, UART1, UART4) | ~40 lines each |
 
-Three near-identical UART ISRs on this branch; `feature/sm_uart` adds a fourth (`UART7IntHandler`
-for ProgCom), so the duplication grows rather than shrinks when that work lands. That makes the
-ISRs the best candidate of the four rows.
+The UART ISR count went from 3 to 4 with the addition of `UART7IntHandler` for ProgCom, so the
+duplication is growing rather than shrinking. That makes the ISRs the best candidate of the four
+rows.
 
 **Action:** Refactor each into a data-driven loop or a parameterized helper. `getFFoptpow()` becomes
 a loop over channel index; the ADC blocks become a loop over a config struct array; the UART ISRs
@@ -50,8 +47,9 @@ almost certainly not what any caller intends.
 int index = ps * (args->n_commands * args->n_pages) + page * args->n_commands + c;
 ```
 
-`MonitorTaskI2C.c` has since gained a `devtype` bound check (`:145-148`) but still carries a
-`FIXME: this is backwards` on the `31 - __builtin_clz(devtype_mask)` selection.
+`MonitorTaskI2C.c` has since gained a `devtype_mask == 0` guard (`:140-143`) and a `devtype` bound
+check (`:149-153`) but still carries a `FIXME: this is backwards` (`:145`) on the
+`31 - __builtin_clz(devtype_mask)` selection.
 
 **Action:** Add a bounds-check macro or accessor wrapping the index calculation in `MonitorTask.c`.
 Separately, resolve the `devtype_mask` FIXME — a wrong device type silently reads the wrong command
@@ -61,8 +59,10 @@ table.
 
 ### 7. CLI Pagination State via `static` Variables — OPEN, but closed for free by REV1 retirement
 
-Nine handlers keep pagination state in function-local `static`s: `BufferCommands.c:40`,
-`ClockCommands.c:93`, `FireflyCommands.c:437,580,845,1129,1161`, `PowerCommands.c:84,111`. Related:
+Ten sites keep pagination state in function-local `static`s: `BufferCommands.c:40`,
+`ClockCommands.c:27,93`, `FireflyCommands.c:437,580,845,1129,1161`, `PowerCommands.c:84,111`.
+`FireflyCommands.c:580` sits inside the `FF_TABLE_CMD` macro, which is instantiated 11 times
+(`:765-1089`), so it alone accounts for 11 separate handler `static`s. Related:
 `CommandLineTask.c:24` shares one `static char m[SCRATCH_SIZE]` scratch buffer —
 same root cause, worse consequence.
 
@@ -74,7 +74,7 @@ xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 3, NUL
 xTaskCreate(vCommandLineTask, "CLIFP", 384, &cli_uart4, tskIDLE_PRIORITY + 3, NULL);
 #endif // REV1
 ```
-(`cm_mcu.c:283-286`; the `cli_uart4` args are likewise REV1-only, `:253-259`.)
+(`cm_mcu.c:296-298`; the `cli_uart4` args are likewise REV1-only, `:262-264`.)
 
 REV2/REV3 run a single CLI task, so the `static`s have exactly one user and there is no race today
 on the shipping revisions. **Retiring REV1 closes this item outright** — no
@@ -99,10 +99,10 @@ watchdog protection exists today at all:
 
 | Layer | Location | State |
 |---|---|---|
-| Task creation | `cm_mcu.c:302` | commented out — `WatchdogTask` never runs |
+| Task creation | `cm_mcu.c:319` | commented out — `WatchdogTask` never runs |
 | Hardware feed | `WatchdogTask.c:40` | commented out |
 | Hardware peripheral init | *nowhere in the tree* | `WDOG0` is never clocked, enabled, or `WatchdogResetEnable`d; the only `WATCHDOG0_BASE` reference is inside the dead feed |
-| Task registration | `MonitorTaskI2C.c:38` | only `kWatchdogTaskID_MonitorI2CTask` registers; `FireFly`, `XiMon`, `PSMon` IDs are declared (`Tasks.h:310-313`) but unused |
+| Task registration | `MonitorTaskI2C.c:38` | only `kWatchdogTaskID_MonitorI2CTask` registers; `FireFly`, `XiMon`, `PSMon` IDs are declared (`Tasks.h:356-359`) but unused |
 | Task feeding | `MonitorTaskI2C.c:226` | the sole `task_watchdog_feed_task()` call site is commented out |
 | CLI status | `SoftwareCommands.c:175-181` | `watchdog_ctl` is inside `#if 0` |
 
@@ -113,7 +113,7 @@ inconsistent by construction: `s_registered_tasks` gets bit 1 set, `s_fed_tasks`
 if ((s_fed_tasks & s_registered_tasks) == s_registered_tasks)  // (0 & 2) == 2 → always false
 ```
 
-always takes the else branch. Uncommenting only `cm_mcu.c:302` + `WatchdogTask.c:40` (plus adding
+always takes the else branch. Uncommenting only `cm_mcu.c:319` + `WatchdogTask.c:40` (plus adding
 the missing peripheral init) yields a reset every watchdog period, unconditionally.
 
 Two further hazards for any revival:
@@ -162,10 +162,10 @@ and iterate. Turns ~185 lines of fragile bit manipulation into a ~20-line loop. 
 
 `PowerSupplyTask.c`:
 
-- `:126-132` — force both FPGAs enabled if neither detected (`// HACK` … `// end HACK`)
-- `:190` — `// TODO: what about > 1 message` on the `xQueueReceive` in the main loop
-- `:213` — `bool ignorefail = false; // HACK THIS NEEDS TO BE FIXED TODO FIXME`
-- `:335` — `case POWER_L3ON: { // FIXME allow this transition to fail on Rev2`
+- `:136-142` — force both FPGAs enabled if neither detected (`// HACK` … `// end HACK`)
+- `:200` — `// TODO: what about > 1 message` on the `xQueueReceive` in the main loop
+- `:229` — `bool ignorefail = false; // HACK THIS NEEDS TO BE FIXED TODO FIXME`
+- `:351` — `case POWER_L3ON: { // FIXME allow this transition to fail on Rev2`
 
 The second REV2-transition FIXME previously noted around line 408 is no longer present.
 
@@ -206,9 +206,9 @@ if (!((1 << ff) & ff_PRESENT_mask) || !((1 << ff) & ff_USER_mask))
 This is the one place in the listed set with a genuine **two-variable invariant** read without
 atomicity, so a reader can observe the new USER mask against the old PRESENT mask. It is a real
 cross-task race: `readFFpresent()` → `setFFmask()` is called at **runtime** from
-`PowerSupplyTask.c:409` during a power transition (not only at init, as this item used to claim),
-while readers span the CLI (`FireflyCommands.c`, 10 sites), the monitor tasks
-(`MonUtils.c:199,214`, as `presentCallback`) and, on `feature/sm_uart`, `ProgComTask.c:245`.
+`PowerSupplyTask.c:425` during a power transition (not only at init, as this item used to claim),
+while readers span the CLI (`FireflyCommands.c`, 11 sites), the monitor tasks
+(`MonUtils.c:199,214`, as `presentCallback`) and `ProgComTask.c:288`.
 
 **Consequence is negligible.** For at most one cycle a Firefly is misclassified: wrongly enabled →
 an I2C read to an absent device → NACK, already handled by the monitor error path; wrongly disabled
@@ -218,24 +218,24 @@ an I2C read to an absent device → NACK, already handled by the monitor error p
 wrap `setFFmask()`/`isEnabledFF()` in a brief `taskENTER_CRITICAL`. Low value — fix only if touching
 this code anyway.
 
-**Separate, non-concurrency nit:** `currentState` (`PowerSupplyTask.c:37`) is a non-`static` global
-despite `getPowerControlState()` existing. Make it `static` for encapsulation. This is a style fix,
-not a race fix.
+**Separate, non-concurrency nit — done:** `currentState` (`PowerSupplyTask.c:37`) was a
+non-`static` global despite `getPowerControlState()` existing; it is now `static`.
 
 ### 15. I2CSlaveTask Computes Hottest Temperature on Every Read — OPEN
 
 `getSlaveData()` (`I2CSlaveTask.c:48`) loops over all Fireflies at register `0x16` (`:82-101`) and
-over all DCDC devices × pages at `0x18` (`:100-119`) on every I2C register read from the external
+over all DCDC devices × pages at `0x18` (`:102-123`) on every I2C register read from the external
 master. No caching.
 
 **Action:** Cache the hottest-temperature values, updated periodically by the monitor tasks. Note
 `AlarmUtilities.c` already computes exactly these maxima into `currentTemp[FF]` and
-`currentTemp[DCDC]` every 50 ms — reuse them rather than adding a third copy (coordinate with #1,
-which needs to make those reads safe anyway).
+`currentTemp[DCDC]` every 50 ms — reuse them rather than adding a third copy. `currentTemp[]` is
+`static` with no accessor (`AlarmUtilities.c:51`), so this needs a getter; per retraction 1a, a
+plain aligned `float` read needs no extra locking.
 
 ### 16. Magic Number Cleanup — OPEN (one reference corrected)
 
-- `MAX_TRIES = 500` (`Semaphore.c:61`) vs `I2C_MAX_TRIES = 25` (`I2CCommunication.c`) — see #3
+- `MAX_TRIES = 500` (`Semaphore.c:61`) — see #3
 - `pdMS_TO_TICKS(250)` polling interval (`MonitorTask.c`)
 - Hardcoded 5 suppliers: `ZynqMonTask.c:562`, `for (int j = 0; j < 5; ++j) // FIXME hardcoded value`
   (this was previously mis-attributed to `SensorControl.c`)
@@ -245,20 +245,18 @@ which needs to make those reads safe anyway).
 
 ### 17. ProgCom I2C Stall Can Starve the UART7 RX Path — OPEN (partial mitigation landed)
 
-*Line numbers in this item are against `feature/sm_uart` @ `6ee7f58`; none of this code is on the
-current branch.*
-
-`progcom_access_clk()` (`ProgComTask.c:403`) and `progcom_access_fpga()` (`:452`) each hold a bus
+`progcom_access_clk()` (`ProgComTask.c:403`) and `progcom_access_fpga()` (`:453`) each hold a bus
 mutex (`i2c2_sem`, `i2c5_sem`) across 3-4 chained I2C transactions (mux select, page select, data,
-mux clear). Any transaction hitting an unresponsive/NAK'ing device blocks the full
+mux clear). The clock path now clears the mux unconditionally, even after a failed step, so its
+failure path always issues that last transaction too. Any transaction hitting an unresponsive/NAK'ing device blocks the full
 `I2C_TIMEOUT_MS` (250 ms, `I2CCommunication.c:74,120`) via `ulTaskNotifyTake()` — worst case
 ~750-1000 ms per ProgCom command, all inside `ProgComTask`, the same task that drains
 `xUART7StreamBuffer`.
 
 While stalled, `UART7IntHandler` keeps pushing incoming bytes into the 128-byte buffer with nobody
-to service it. `9bbc2aa` ("overflow in uart7") landed detection for the resulting overflow: the ISR
+to service it. `376aae2` ("overflow in uart7") landed detection for the resulting overflow: the ISR
 sets `progcom_rx_overflow` (`InterruptHandlers.c:50,120,127`) when `xStreamBufferSendFromISR()`
-can't take every byte, and `add_progcom_char()` (`ProgComTask.c:543`) discards through the next line
+can't take every byte, and `add_progcom_char()` (`ProgComTask.c:532`) discards through the next line
 and replies `"e uart overflow, resync\n"` instead of silently splicing two commands together into a
 different, valid-looking one. **That closes the corruption failure mode, not the stall.** Two things
 are still true:
@@ -287,7 +285,7 @@ response to what remains. Measured burden at the time of the decision:
 
 The three examples this item used to cite do not support it:
 
-- **`PowerSupplyTask.c`** — exactly *one* `#ifdef REV1` (`:359`). The "different power levels per
+- **`PowerSupplyTask.c`** — exactly *one* `#ifdef REV1` (`:375`). The "different power levels per
   revision" claim was overstated.
 - **`ADCMonitorTask.c`** — 4 revision sites, but two (`:119`, `:121`) are a REV2-vs-REV3 split.
   Retiring REV1 removes 2 of 4 and leaves the divergence that actually matters.
@@ -313,7 +311,7 @@ existing mechanism handles revision sharing fine.
 **If revision divergence becomes painful again, extend the existing per-revision `.def` / pinout /
 YAML tables. Do not introduce a new abstraction layer.**
 
-**Bonus, tracked in item 7:** the second CLI task instance is REV1-only (`cm_mcu.c:283-286`), so
+**Bonus, tracked in item 7:** the second CLI task instance is REV1-only (`cm_mcu.c:296-298`), so
 REV1 retirement also closes item 7's race for free.
 
 ### 1a. "Unsynchronized `currentTemp[]` / `status_T` / `currentState`" — NOT A DEFECT
@@ -327,12 +325,12 @@ re-filed from a fresh read of the declarations.
 - **`currentTemp[4]` has no cross-task reader whatsoever.** It is `static` (`AlarmUtilities.c:51`)
   with no accessor. All references are inside `TempStatus()` (writes) and `TempErrorLog()` (reads);
   those, plus `TempClearErrorLog()`, are reachable only as function pointers in the `tempAlarmTask`
-  struct (`:254-257`), bound to the single `"TALM"` task (`cm_mcu.c:300`). Single task throughout.
+  struct (`:268-270`), bound to the single `"TALM"` task (`cm_mcu.c:312`). Single task throughout.
 - Even hypothetically, a mixed snapshot would be harmless: each sensor is compared against its own
   independent threshold, so there is no cross-element invariant to violate. Getting TM4C from sweep
   *n* and DCDC from sweep *n-1* changes no decision.
 - **`status_T` and `warnLatch`** are likewise single-task read-modify-write (only the temp alarm
-  task); the volt alarm task uses separate state (`currentVoltStatus[]`, `AlarmUtilities.c:284`).
+  task); the volt alarm task uses separate state (`currentVoltStatus[]`, `AlarmUtilities.c:299`).
   The sole cross-task read is `getTempAlarmStatus()` from `AlarmCommands.c:44` (CLI) — an atomic
   `uint32_t` load feeding a diagnostic printout. A mutex could not make that value fresher than the
   50 ms alarm period already does.
