@@ -72,7 +72,7 @@ void Task(void *params) {
 ```
 Priorities: 4 = critical (PowerSupply, I2CSlave, Init, ZynqMon, Alarm), 3 = monitoring.
 
-**Main Tasks:** InitTask (one-shot), EEPROMTask (queue), GenericAlarmTask (50ms), CommandLineTask (event), PowerSupplyTask (event), MonitorTask (10ms), MonitorTaskI2C (10ms), ADCMonitorTask (25ms), ZynqMonTask (25ms), I2CSlaveTask (event), LedTask (250ms), WatchdogTask (periodic).
+**Main Tasks:** InitTask (one-shot), EEPROMTask (queue), GenericAlarmTask (1s), CommandLineTask (event), PowerSupplyTask (25ms), MonitorTask (10ms/read, 250ms sweep period), MonitorTaskI2C (250ms sweep period), ADCMonitorTask (1s), ZynqMonTask (5s), I2CSlaveTask (event), LedTask (250ms), WatchdogTask (1s).
 
 **I2C Buses:** I2C0=Slave(0x40), I2C1=DCDC, I2C2=Clocks, I2C3=F2 Firefly, I2C4=F1 Firefly, I2C5=FPGA(REV2/3), I2C6=FPGA(REV1).
 
