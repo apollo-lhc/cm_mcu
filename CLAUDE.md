@@ -5,10 +5,11 @@ HL-LHC. It handles power sequencing, temperature/voltage monitoring, I2C/SMBus c
 FPGA/Firefly control for high-energy-physics detector readout.
 
 - **MCU**: TI Tiva TM4C1290NCPDT, ARM Cortex-M4F with FPU, 40 MHz
-- **Revisions**: REV1, REV2, REV3 (default REV3) — exactly one may be defined at build time
-- **Compiler**: `arm-none-eabi-gcc` 13.2.Rel1 from ARM — **not** the distribution package, which is
+- **Revisions**: REV1, REV2, REV3 (default REV3) — exactly one may be defined at build time. REV1 is deprecated.
+- **Compiler**: `arm-none-eabi-gcc` 13.2.Rel1 or later from ARM — **not** the distribution package, which is
   usually too old. `clang` (LLVM Embedded Toolchain for Arm) is also supported and built in CI.
 - **Debugger**: Segger J-LINK
+- needs local python, usually in conda base. if arm-none-eabi is not in path **ask**
 
 The revision drives the pin maps (`common/pinout_rev*.c`) and a good deal of conditional code.
 REV1 differs from REV2/REV3 in: the FPGA I2C bus (I2C6 vs I2C5), UART assignments, ADC channel-to-
@@ -195,6 +196,8 @@ caller's LR, decodable with `arm-none-eabi-addr2line`. Heap exhaustion calls
 - Use sized integer types (`uint32_t`, `int32_t`, …) rather than bare `int` for register-width values.
 - Float↔`uint32_t` conversion for EEPROM: `memcpy(&u32, &f, sizeof(float))`, never union type-punning.
 - When adding a CLI subcommand, update the help string in `CommandLineTask.c` too.
+- snprintf-like calls don't use %f; use float_to_int instead.
+- datasheets are available in local disk, if you can't find it, ask.
 
 ## Related resources
 
