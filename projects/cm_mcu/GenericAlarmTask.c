@@ -35,10 +35,12 @@ static const char *alarm_task_state_names[] = {
 //        ^                                  		         |
 //        +----------------------------------------------+
 // once we get into the ERROR state the only way to clear an error is via a message
-// sent to the CLI.
+// sent to the CLI or via programmatic UART.
 // Fault_erroring means the error is active and we are in a fault state
 // fault_error_cleared means the error has cleared but the fault remains.
 //
+
+#define ALM_TASK_PERIOD_MS 1000
 
 void GenericAlarmTask(void *parameters)
 {
@@ -53,8 +55,11 @@ void GenericAlarmTask(void *parameters)
 
   enum alarm_task_state currentState = ALM_INIT;
   for (;;) {
-    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
-    if (xQueueReceive(params->xAlmQueue, &message, 0)) {
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(ALM_TASK_PERIOD_MS));
+    // drain the queue so a burst of messages costs one skipped cycle, not one per message
+    bool got_message = false;
+    while (xQueueReceive(params->xAlmQueue, &message, 0)) {
+      got_message = true;
       log_debug(LOG_ALM, "%s: received message %d (%s)\r\n", taskName, message,
                 msgqueue_message_text[message]);
       switch (message) {
@@ -66,7 +71,9 @@ void GenericAlarmTask(void *parameters)
         default:
           break;
       }
-      continue; // we break out of the loop because we want data
+    }
+    if (got_message) {
+      continue; // we re-start loop because we want data
       // to refresh
     }
 
@@ -136,7 +143,9 @@ void GenericAlarmTask(void *parameters)
           nextState = ALM_NORMAL;
           // give the monitoring a moment to catch up. This is not a clean solution,
           // but for now it appears to work.
-          vTaskDelay(pdMS_TO_TICKS(5000));
+          // vTaskDelayUntil (not vTaskDelay) so xLastWakeTime advances with the hold:
+          // no catch-up burst afterwards, and the task keeps its phase.
+          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5000));
         }
         else {
           nextState = ALM_FAULT_ERROR_CLEARED;

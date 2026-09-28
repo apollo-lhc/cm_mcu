@@ -67,7 +67,7 @@ inter-task definitions live there. Full tree: [`repo_layout.md`](repo_layout.md)
 
 **Tasks.** All significant work happens in dedicated FreeRTOS tasks that communicate via queues:
 `EEPROMTask` (EEPROM gatekeeper), `InitTask` (one-shot startup), `GenericAlarmTask` (temperature and
-voltage alarm state machines, 50 ms), `CommandLineTask` (UART CLI), `ProgComTask` (programmatic UART7
+voltage alarm state machines, 1 s), `CommandLineTask` (UART CLI), `ProgComTask` (programmatic UART7
 interface, REV2/3), `MonitorTask`/`MonitorTaskI2C` (SMBus/I2C polling), `PowerSupplyTask`,
 `ADCMonitorTask`, `ZynqMonTask`, `WatchdogTask`, `LedTask`, `I2CSlaveTask`. Full table with source
 files in the cm_mcu README.

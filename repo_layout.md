@@ -35,7 +35,7 @@ apollo_cm_mcu/
 │   │   ├── EEPROMTask.c         # EEPROM gatekeeper task (queue-based, thread-safe)
 │   │   ├── CommandLineTask.c/h  # UART CLI interface (two instances); registers all commands
 │   │   ├── ProgComTask.c/h      # Programmatic (non-CLI) UART7 command interface, REV2/3 only
-│   │   ├── GenericAlarmTask.c   # Alarm state machine (runs every 50 ms)
+│   │   ├── GenericAlarmTask.c   # Alarm state machine (runs every 1 s)
 │   │   ├── AlarmUtilities.c/h   # Temperature and voltage alarm logic
 │   │   ├── PowerSupplyTask.c    # Power sequencing and TEMP_ALARM response
 │   │   ├── MonitorTask.c/h      # SMBus/PMBus polling of power supplies

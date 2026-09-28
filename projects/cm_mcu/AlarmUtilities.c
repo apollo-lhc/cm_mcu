@@ -152,7 +152,7 @@ int TempStatus(void)
   // I am assuming it stays that way!!!!!!!!
   currentTemp[DCDC] = -99.0f;
   // one bit per LGA80D device/page: set while its temperature is out of range,
-  // so the warning is logged once per transition rather than every 50 ms cycle
+  // so the warning is logged once per transition rather than every cycle
   static uint32_t dcdcInvalidMask = 0;
   configASSERT(dcdc_args.n_devices * dcdc_args.n_pages <= 32);
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
@@ -300,9 +300,12 @@ static uint8_t currentVoltStatus[3] = {0U, 0U, 0U};
 
 // Status flags of the voltage alarm task
 static uint32_t status_V = 0x0;
-// fractional value of a high voltage than an expected ADC value
+// worst offender of the last VoltStatus() call: signed deviation from target in
+// percent (negative = low), plus the channel and its measured/target values
 static float excess_volt = 0.0f;
 static int excess_volt_which_ch = 0;
+static float excess_volt_now = 0.0f;
+static float excess_volt_target = 0.0f;
 // read-only, so no need to use queue
 uint32_t getVoltAlarmStatus(void)
 {
@@ -378,6 +381,8 @@ int VoltStatus(void)
   uint32_t ch_alm_mask = 0x0U;
   excess_volt = 0.0f; // reset, so a cleared alarm doesn't report stale data
   excess_volt_which_ch = 0;
+  excess_volt_now = 0.0f;
+  excess_volt_target = 0.0f;
   // VALM_HIGHEST_V_CH is 0-based, so the highest channel must be included
   for (int i = 0; i <= VALM_HIGHEST_V_CH; ++i) {
     // check if the current channel contains a voltage measurement we care about
@@ -391,9 +396,11 @@ int VoltStatus(void)
 
     if (aexcess > threshold) {
       ch_alm_mask |= (0x1U << i);          // mark bit for failing supply
-      if (aexcess * 100.f > excess_volt) { // keep the worst offender, in percent
-        excess_volt = aexcess * 100.f;
+      if (aexcess * 100.f > ABS(excess_volt)) { // keep the worst offender, in percent
+        excess_volt = excess * 100.f;
         excess_volt_which_ch = i;
+        excess_volt_now = now_value;
+        excess_volt_target = target_value;
       }
       int tens, frac;
       float_to_ints(excess * 100, &tens, &frac);
@@ -436,11 +443,17 @@ int VoltStatus(void)
 
 void VoltErrorLog(void)
 {
-  int tens, frac;
-  float_to_ints(excess_volt, &tens, &frac);
-  if (excess_volt > 2.0f) {
-    log_warn(LOG_ALM, "Voltage high: status: 0x%04x at ADC ch %02d now +%02d.%02d %% off\r\n",
-             status_V, excess_volt_which_ch, tens, frac);
+  if (ABS(excess_volt) > 2.0f) {
+    // sign printed separately: float_to_ints() loses it for values in (-1, 0)
+    int pct_tens, pct_frac, now_tens, now_frac, tgt_tens, tgt_frac;
+    float_to_ints(ABS(excess_volt), &pct_tens, &pct_frac);
+    float_to_ints(excess_volt_now, &now_tens, &now_frac);
+    float_to_ints(excess_volt_target, &tgt_tens, &tgt_frac);
+    log_warn(LOG_ALM,
+             "Voltage %s: status: 0x%04x %s (ADC ch %02d) %d.%02d V, target %d.%02d V, %c%02d.%02d %% off\r\n",
+             (excess_volt < 0.f) ? "low" : "high", status_V, getADCname(excess_volt_which_ch),
+             excess_volt_which_ch, now_tens, now_frac, tgt_tens, tgt_frac,
+             (excess_volt < 0.f) ? '-' : '+', pct_tens, pct_frac);
   }
   // add voltage status as a data field in eeprom rather than its value
   errbuffer_volt_high((uint8_t)currentVoltStatus[GEN], (uint8_t)currentVoltStatus[FPGA1],

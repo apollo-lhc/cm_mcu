@@ -229,7 +229,7 @@ master. No caching.
 
 **Action:** Cache the hottest-temperature values, updated periodically by the monitor tasks. Note
 `AlarmUtilities.c` already computes exactly these maxima into `currentTemp[FF]` and
-`currentTemp[DCDC]` every 50 ms — reuse them rather than adding a third copy. `currentTemp[]` is
+`currentTemp[DCDC]` every 1 s — reuse them rather than adding a third copy. `currentTemp[]` is
 `static` with no accessor (`AlarmUtilities.c:51`), so this needs a getter; per retraction 1a, a
 plain aligned `float` read needs no extra locking.
 
@@ -333,7 +333,7 @@ re-filed from a fresh read of the declarations.
   task); the volt alarm task uses separate state (`currentVoltStatus[]`, `AlarmUtilities.c:299`).
   The sole cross-task read is `getTempAlarmStatus()` from `AlarmCommands.c:44` (CLI) — an atomic
   `uint32_t` load feeding a diagnostic printout. A mutex could not make that value fresher than the
-  50 ms alarm period already does.
+  1 s alarm period already does.
 - **`currentState`** has ~18 readers across many tasks, but every consumer does
   `if (getPowerControlState() != POWER_ON)`. That is an inherent TOCTOU: the state may change the
   instant after the check whether or not a lock is held. Locking cannot fix it; re-checking each
