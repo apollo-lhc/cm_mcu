@@ -68,6 +68,8 @@ You have Bash — use it. A compile check catches your own false positives:
 make -j $(sysctl -n hw.ncpu) 2>&1 | tail -40      # macOS; nproc does not exist here
 ```
 
+you'll need python, find it in a `conda activate base` environment.
+
 For each candidate finding, state to yourself the concrete failure: which inputs or which task/ISR interleaving, and what goes wrong. If you can't, don't report it. Re-read the actual file — never review from the diff alone or from memory of a prior read.
 
 ## Output

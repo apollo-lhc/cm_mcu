@@ -556,20 +556,6 @@ const struct pm_command_t pm_command_dcdc[] = {
     {0x8B, 2, "READ_VOUT", "V", PM_LINEAR16U},
     {0x8c, 2, "READ_IOUT", "A", PM_LINEAR11},
     {0x79, 2, "STATUS_WORD", "", PM_STATUS},
-    {0x4F, 2, "OT_FAULT_LIMIT", "C", PM_LINEAR11},
-    {0xE7, 2, "IOUT_AVG_OC_FAULT_LIMIT", "A", PM_LINEAR11},
-    {0x95, 2, "READ_FREQUENCY", "Hz", PM_LINEAR11},
-    {0x46, 2, "IOUT_OC_FAULT_LIMIT", "A", PM_LINEAR11},
-    {0x44, 2, "VOUT_UV_FAULT_LIMIT", "V", PM_LINEAR16U},
-    {0x37, 2, "INTERLEAVE", "", PM_STATUS},
-    {0x80, 1, "STATUS_MFR_SPECIFIC", "", PM_STATUS},
-    {0x28, 2, "VOUT_DROOP", "V/A", PM_LINEAR11},
-    {0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
-    {0x57, 2, "VIN_UV_WARN_LIMIT", "V", PM_LINEAR11},
-    {0x58, 2, "VIN_UV_FAULT_LIMIT", "V", PM_LINEAR11},
-    {0xD1, 2, "USER_CONFIG", "", PM_STATUS},
-    {0x01, 2, "OPERATION", "", PM_STATUS},
-    {0x02, 2, "ON_OFF_CONFIG", "", PM_STATUS},
 };
 float dcdc_values[NSUPPLIES_PS * NPAGES_PS * NCOMMANDS_PS];
 
