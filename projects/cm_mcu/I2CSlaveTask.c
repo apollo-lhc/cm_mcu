@@ -18,10 +18,6 @@
 #include "common/utils.h"
 #include "FireflyUtils.h"
 
-// Rev 2:
-// All that needs to be done is rename local_fpga_{v,k}u to
-// f{1,2} AFAIK.
-
 // This slave task is designed currently only for access to
 // registers, with a single byte address and a single byte data.
 // This is to respond to the IPMC needs.
@@ -43,11 +39,12 @@
 // one slave.
 static uint8_t testreg = 0x0U;
 
-static int local_fpga_f2, local_fpga_f1;
-
 static uint8_t getSlaveData(uint8_t address)
 {
   uint8_t value = 0x00U;
+#ifndef REV1
+  float fvalue = 0.0f;
+#endif // REV1
   switch (address) {
     case 0x0U: // reserved
       value = testreg;
@@ -56,29 +53,31 @@ static uint8_t getSlaveData(uint8_t address)
       value = (uint8_t)(getADCvalue(20) + 0.5f); // always valid
       break;
     case 0x12U: // FPGA F2 temp
-    {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      if (checkStale(pdTICKS_TO_S(fpga_args.updateTick), now)) {
-        value = 0xFEU; // stale
+#ifdef REV1
+      value = 0xFFU; // diode measurement not implemented in Rev1
+#else                // not REV1
+      fvalue = getADCvalue(ADC_INFO_F2_TEMP_ENTRY);
+      if (fvalue <= 0.0f || fvalue > 150.0f) {
+        value = 0xFFU; // invalid value
       }
       else {
-        value = (uint8_t)(local_fpga_f2 >= 0 ? fpga_args.pm_values[local_fpga_f2] : 0U);
-        if (value == 0)
-          value = 0xFFU; // invalid value
+        value = (uint8_t)(fvalue + 0.5f);
       }
-    } break;
+#endif               // REV1
+      break;
     case 0x14U: // FPGA F1 temp
-    {
-      TickType_t now = pdTICKS_TO_S(xTaskGetTickCount());
-      if (checkStale(pdTICKS_TO_S(fpga_args.updateTick), now)) {
-        value = 0xFEU; // stale
+#ifdef REV1
+      value = 0xFFU; // diode measurement not implemented in Rev1
+#else                // not REV1
+      fvalue = getADCvalue(ADC_INFO_F1_TEMP_ENTRY);
+      if (fvalue <= 0.0f || fvalue > 150.0f) {
+        value = 0xFFU; // invalid value
       }
       else {
-        value = (uint8_t)(local_fpga_f1 >= 0 ? fpga_args.pm_values[local_fpga_f1] : 0U);
-        if (value == 0)
-          value = 0xFFU; // invalid value
+        value = (uint8_t)(fvalue + 0.5f);
       }
-    } break;
+#endif               // REV1
+      break;
     case 0x16U: // hottest FF temp
     {
       if (isFFStale()) {
@@ -140,9 +139,6 @@ static void setSlaveData(uint8_t addr, uint8_t val)
 void I2CSlaveTask(void *parameters)
 {
   TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
-
-  local_fpga_f1 = get_f1_index();
-  local_fpga_f2 = get_f2_index();
 
   ROM_I2CSlaveEnable(SLAVE_I2C_BASE);
 
