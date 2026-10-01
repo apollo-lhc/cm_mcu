@@ -416,8 +416,10 @@ alm resettemp [ff|fpga|dcdc|tm4c|all]      # reset to compile-time defaults
 `requirePower` `MonitorTask` (FPGA) sees power leave `POWER_ON`, it clears its `pm_values[]` to the
 `-999.f` sentinel and backdates `updateTick` 60 s into the past. Both are needed: `-999` is ignored by
 numeric consumers (the `TempStatus` max-loops seed at `-99`, so `-999` never wins), while the stale
-`updateTick` makes `checkStale()`-based consumers (notably `I2CSlaveTask`, which casts `pm_values` to
-`uint8_t`) reject the entry instead of reading the sentinel. `-999.f` is the codebase-wide "no/stale
+`updateTick` makes `checkStale()`-based consumers (e.g. the `fpga` CLI command) flag the data as stale
+instead of presenting the sentinel as a reading. (`I2CSlaveTask` no longer reads FPGA `pm_values`: on
+REV2/REV3 it reports the FPGA temperatures from the MCU-ADC diode channels, and on REV1 it returns
+`0xFF`.) `-999.f` is the codebase-wide "no/stale
 data" sentinel for `pm_values` (also the boot-time init in `cm_mcu.c`).
 
 ## Building FreeRTOS
