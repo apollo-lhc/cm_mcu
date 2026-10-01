@@ -167,6 +167,13 @@ void MonitorTask(void *parameters)
           else {
             val = -98.0f; // should never get here
           }
+          // PSMON READ_TEMPERATURE_1 outside the LGA80D range: log the raw word, since
+          // TempStatus() rejects the value but only sees the decoded float
+          if (args == &dcdc_args && args->commands[c].command == 0x8d &&
+              !(val >= LGA80D_TEMP_MIN_C && val <= LGA80D_TEMP_MAX_C)) {
+            log_debug(LOG_MON, "%s: %s page %u: READ_TEMPERATURE_1 raw 0x%02x%02x out of range\r\n",
+                      args->name, args->devices[ps].name, page, data[1], data[0]);
+          }
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.
           args->updateTick = xTaskGetTickCount(); // current time in ticks, for the sake of stale data

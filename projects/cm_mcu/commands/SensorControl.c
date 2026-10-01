@@ -54,10 +54,11 @@ BaseType_t adc_ctl(int argc, char **argv, char *m)
   }
   for (; whichadc < 21; ++whichadc) {
     float val = getADCvalue(whichadc);
+    const char *sign;
     int tens, frac;
-    float_to_ints(val, &tens, &frac);
-    copied = clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%14s: %02d.%02d\r\n",
-                                            getADCname(whichadc), tens, frac),
+    float_to_ints(val, &sign, &tens, &frac);
+    copied = clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%14s: %s%02d.%02d\r\n",
+                                            getADCname(whichadc), sign, tens, frac),
                           SCRATCH_SIZE);
     // a row is >= 23 chars, and neither %14s nor %02d caps its field width
     if ((SCRATCH_SIZE - copied) < 32 && (whichadc < 20)) {

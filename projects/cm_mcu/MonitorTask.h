@@ -57,6 +57,12 @@ struct MonitorTaskArgs_t {
 #define NCOMMANDS_PS 6 // number of entries in dcdc_ array
 #define NPAGES_PS    2 // number of pages on the power supplies.
 
+// The LGA80D specifies 0..175 C for its temperature thresholds. Treat a
+// READ_TEMPERATURE_1 value outside that range as invalid rather than allowing
+// a malformed but ACKed Linear11 word to power down the board.
+#define LGA80D_TEMP_MIN_C (0.0f)
+#define LGA80D_TEMP_MAX_C (175.0f)
+
 extern struct MonitorTaskArgs_t dcdc_args;
 extern struct MonitorTaskArgs_t fpga_args;
 

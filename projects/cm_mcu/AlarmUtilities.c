@@ -22,12 +22,6 @@ extern struct MonitorTaskArgs_t fpga_args;
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
 // a shutdown message is sent
 
-// The LGA80D specifies 0..175 C for its temperature thresholds. Treat a
-// READ_TEMPERATURE_1 value outside that range as invalid rather than allowing
-// a malformed but ACKed Linear11 word to power down the board.
-#define LGA80D_TEMP_MIN_C (0.0f)
-#define LGA80D_TEMP_MAX_C (175.0f)
-
 // Hysteresis deadband (degrees C) for clearing a warn condition. A device's
 // warn bit is set as soon as its temperature rises above the threshold, but is
 // only cleared once the temperature drops at least this far below it. This
@@ -165,10 +159,11 @@ int TempStatus(void)
       uint32_t bit = 1UL << (ps * dcdc_args.n_pages + page);
       if (!(thistemp >= LGA80D_TEMP_MIN_C && thistemp <= LGA80D_TEMP_MAX_C)) {
         if (!(dcdcInvalidMask & bit)) {
+          const char *sign;
           int tens, fractions;
-          float_to_ints(thistemp, &tens, &fractions);
-          log_warn(LOG_ALM, "LGA80D %s page %d: invalid temp %d.%02d C; ignoring\r\n",
-                   dcdc_args.devices[ps].name, page, tens, fractions);
+          float_to_ints(thistemp, &sign, &tens, &fractions);
+          log_warn(LOG_ALM, "LGA80D %s page %d: invalid temp %s%d.%02d C; ignoring\r\n",
+                   dcdc_args.devices[ps].name, page, sign, tens, fractions);
           dcdcInvalidMask |= bit;
         }
         continue;
@@ -402,9 +397,11 @@ int VoltStatus(void)
         excess_volt_now = now_value;
         excess_volt_target = target_value;
       }
+      const char *sign;
       int tens, frac;
-      float_to_ints(excess * 100, &tens, &frac);
-      log_debug(LOG_ALM, "VoltAlm: %s: %02d.%02d %% off target\r\n", getADCname(i), tens, frac);
+      float_to_ints(excess * 100, &sign, &tens, &frac);
+      log_debug(LOG_ALM, "VoltAlm: %s: %s%02d.%02d %% off target\r\n", getADCname(i), sign, tens,
+                frac);
     }
   }
   // record which rails failed, per group, for the EEPROM error buffer. The shift
@@ -444,16 +441,16 @@ int VoltStatus(void)
 void VoltErrorLog(void)
 {
   if (ABS(excess_volt) > 2.0f) {
-    // sign printed separately: float_to_ints() loses it for values in (-1, 0)
+    const char *pct_sign, *now_sign, *tgt_sign;
     int pct_tens, pct_frac, now_tens, now_frac, tgt_tens, tgt_frac;
-    float_to_ints(ABS(excess_volt), &pct_tens, &pct_frac);
-    float_to_ints(excess_volt_now, &now_tens, &now_frac);
-    float_to_ints(excess_volt_target, &tgt_tens, &tgt_frac);
+    float_to_ints(excess_volt, &pct_sign, &pct_tens, &pct_frac);
+    float_to_ints(excess_volt_now, &now_sign, &now_tens, &now_frac);
+    float_to_ints(excess_volt_target, &tgt_sign, &tgt_tens, &tgt_frac);
     log_warn(LOG_ALM,
-             "Voltage %s: status: 0x%04x %s (ADC ch %02d) %d.%02d V, target %d.%02d V, %c%02d.%02d %% off\r\n",
+             "Voltage %s: status: 0x%04x %s (ADC ch %02d) %s%d.%02d V, target %s%d.%02d V, %s%02d.%02d %% off\r\n",
              (excess_volt < 0.f) ? "low" : "high", status_V, getADCname(excess_volt_which_ch),
-             excess_volt_which_ch, now_tens, now_frac, tgt_tens, tgt_frac,
-             (excess_volt < 0.f) ? '-' : '+', pct_tens, pct_frac);
+             excess_volt_which_ch, now_sign, now_tens, now_frac, tgt_sign, tgt_tens, tgt_frac,
+             (*pct_sign != '\0') ? pct_sign : "+", pct_tens, pct_frac);
   }
   // add voltage status as a data field in eeprom rather than its value
   errbuffer_volt_high((uint8_t)currentVoltStatus[GEN], (uint8_t)currentVoltStatus[FPGA1],

@@ -524,12 +524,22 @@ uint32_t stopwatch_getticks(void)
   return counter;
 }
 
-void float_to_ints(float val, int *tens, int *fraction)
+// Split val, rounded to the nearest hundredth, for printing without float printf
+// support: printf("%s%d.%02d", sign, whole, fraction). sign is "-" or ""; whole
+// and fraction are never negative, so values in (-1, 0) keep their sign. A value
+// that rounds to zero prints unsigned. NaN prints as 0.00; magnitudes too large
+// for an int are clamped.
+void float_to_ints(float val, const char **sign, int *whole, int *fraction)
 {
-  *tens = (int)val;
-  *fraction = (int)ABS((val - *tens) * 100.0f + 0.5f);
-
-  return;
+  float a = ABS(val);
+  if (__builtin_isnan(a))
+    a = 0.f;
+  const float max_hundredths = 2147483520.f; // largest float below INT32_MAX
+  float h = a * 100.0f + 0.5f;
+  int32_t hundredths = (h < max_hundredths) ? (int32_t)h : (int32_t)max_hundredths;
+  *sign = (val < 0.f && hundredths != 0) ? "-" : "";
+  *whole = hundredths / 100;
+  *fraction = hundredths % 100;
 }
 
 // compare two times in seconds and make sure they are within the last 60 seconds

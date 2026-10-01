@@ -851,10 +851,13 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
     bool isTx = (strstr(ff_moni2c_addrs[i].name, "Tx") != NULL);
     if (isEnabledFF(i) && !isTx) {
       float val = getFFavgoptpow(i);
+      const char *sign;
       int tens, frac;
-      float_to_ints(val, &tens, &frac);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: % 5d.%02d",
-                         ff_moni2c_addrs[i].name, tens, frac);
+      float_to_ints(val, &sign, &tens, &frac);
+      char whole[12]; // sign + whole part, so the sign is padded inside the field
+      snprintf(whole, sizeof(whole), "%s%d", sign, tens);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %5s.%02d",
+                         ff_moni2c_addrs[i].name, whole, frac);
     }
     else {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s:     ---",
@@ -890,9 +893,12 @@ BaseType_t ff_optpow_dev(int argc, char **argv, char *m)
   int nchannels = FireflyType(whichFF) == DEVICE_25G4 ? 4 : 12;
   for (int i = 0; i < nchannels; ++i) {
     float val = getFFoptpow(whichFF, i);
+    const char *sign;
     int tens, frac;
-    float_to_ints(val, &tens, &frac);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Ch %02d: % 5d.%02d\r\n", i, tens, frac);
+    float_to_ints(val, &sign, &tens, &frac);
+    char whole[12]; // sign + whole part, so the sign is padded inside the field
+    snprintf(whole, sizeof(whole), "%s%d", sign, tens);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Ch %02d: %5s.%02d\r\n", i, whole, frac);
   }
   return pdFALSE;
 }
@@ -1076,9 +1082,10 @@ static int ff_v3v3_row(char *m, int copied, int whichff)
   copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff)) {
     float val = (float)__builtin_bswap16(get_FF_VCC3V3_data(whichff)) * 100e-6f; // LSB is 100uV
+    const char *sign;
     int tens, frac;
-    float_to_ints(val, &tens, &frac);
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "% 2d.%02d", tens, frac);
+    float_to_ints(val, &sign, &tens, &frac);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s%2d.%02d", sign, tens, frac);
   }
   else {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, " --- ");
