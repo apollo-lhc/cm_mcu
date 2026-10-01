@@ -62,8 +62,9 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
 
     uint32_t adc_volt_stat = getVoltAlarmStatus();
     float voltthres = getAlarmVoltageThres() * 100;
+    const char *sign; // threshold is never negative
     int tens, frac;
-    float_to_ints(voltthres, &tens, &frac);
+    float_to_ints(voltthres, &sign, &tens, &frac);
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s (for FPGAs) \t Threshold: +/-%02d.%02d %%\r\n",
                  (adc_volt_stat) ? "ALARM" : "GOOD", tens, frac);

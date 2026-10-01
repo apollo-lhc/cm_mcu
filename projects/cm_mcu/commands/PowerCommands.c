@@ -44,9 +44,11 @@ BaseType_t psmon_ctl(int argc, char **argv, char *m)
     for (int page = 0; page < dcdc_args.n_pages; ++page) {
       float val = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
                                       page * dcdc_args.n_commands + i1];
+      const char *sign;
       int tens, frac;
-      float_to_ints(val, &tens, &frac);
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE %02d.%02d\t", tens, frac);
+      float_to_ints(val, &sign, &tens, &frac);
+      copied +=
+          snprintf(m + copied, SCRATCH_SIZE - copied, "VALUE %s%02d.%02d\t", sign, tens, frac);
     }
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
   }
@@ -244,22 +246,25 @@ BaseType_t snapshot(int argc, char **argv, char *m)
   uint8_t sn[32];
   snapdump(&pm_addrs_dcdc[which], page, sn, reset);
   snapshot_t *p0 = (snapshot_t *)&sn[0];
+  const char *sign;
   int tens, fraction;
-  float_to_ints(linear11_to_float(p0->v_in), &tens, &fraction);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VIN  = %d.%02d\r\n", tens, fraction);
-  float_to_ints(linear16u_to_float(p0->v_out), &tens, &fraction);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VOUT = %d.%02d\r\n", tens, fraction);
-  float_to_ints(linear11_to_float(p0->i_out), &tens, &fraction);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT = %d.%02d\r\n", tens, fraction);
-  float_to_ints(linear11_to_float(p0->i_out_max), &tens, &fraction);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT MAX = %d.%02d\r\n", tens, fraction);
-  float_to_ints(linear11_to_float(p0->duty_cycle), &tens, &fraction);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "duty cycle = %d.%02d\r\n", tens, fraction);
-  float_to_ints(linear11_to_float(p0->temperature), &tens, &fraction);
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP = %d.%02d\r\n", tens, fraction);
-  float_to_ints(linear11_to_float(p0->freq), &tens, &fraction);
-  copied +=
-      snprintf(m + copied, SCRATCH_SIZE - copied, "switching freq = %d.%02d\r\n", tens, fraction);
+  float_to_ints(linear11_to_float(p0->v_in), &sign, &tens, &fraction);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VIN  = %s%d.%02d\r\n", sign, tens, fraction);
+  float_to_ints(linear16u_to_float(p0->v_out), &sign, &tens, &fraction);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VOUT = %s%d.%02d\r\n", sign, tens, fraction);
+  float_to_ints(linear11_to_float(p0->i_out), &sign, &tens, &fraction);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT = %s%d.%02d\r\n", sign, tens, fraction);
+  float_to_ints(linear11_to_float(p0->i_out_max), &sign, &tens, &fraction);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "IOUT MAX = %s%d.%02d\r\n", sign, tens,
+                     fraction);
+  float_to_ints(linear11_to_float(p0->duty_cycle), &sign, &tens, &fraction);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "duty cycle = %s%d.%02d\r\n", sign, tens,
+                     fraction);
+  float_to_ints(linear11_to_float(p0->temperature), &sign, &tens, &fraction);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "TEMP = %s%d.%02d\r\n", sign, tens, fraction);
+  float_to_ints(linear11_to_float(p0->freq), &sign, &tens, &fraction);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "switching freq = %s%d.%02d\r\n", sign, tens,
+                     fraction);
   copied +=
       snprintf(m + copied, SCRATCH_SIZE - copied, "VOUT  STATUS: 0x%02x\r\n", p0->v_out_status);
   copied +=

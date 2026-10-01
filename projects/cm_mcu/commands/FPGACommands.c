@@ -53,11 +53,12 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
 
     for (; whichfpga < howmany; ++whichfpga) {
       float val = fpga_args.pm_values[whichfpga];
+      const char *sign;
       int tens, frac;
-      float_to_ints(val, &tens, &frac);
+      float_to_ints(val, &sign, &tens, &frac);
 
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%5s: %02d.%02d",
-                         fpga_args.devices[whichfpga].name, tens, frac);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%5s: %s%02d.%02d",
+                         fpga_args.devices[whichfpga].name, sign, tens, frac);
       if (whichfpga % 2 == 1)
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
       else

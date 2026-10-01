@@ -303,8 +303,8 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 384, &ff_f2_args, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(MonitorTaskI2C, clk_args.name, 384, &clk_args, tskIDLE_PRIORITY + 3, NULL);
 #endif // REV2
-  xTaskCreate(MonitorTask, dcdc_args.name, 256, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTask, fpga_args.name, 256, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTask, dcdc_args.name, 384, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTask, fpga_args.name, 384, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(I2CSlaveTask, "I2CS0", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);

@@ -132,7 +132,8 @@ uint32_t stopwatch_getticks(void);
 // freertos tick compare including rollover
 bool checkStale(unsigned oldTime, unsigned newTime);
 
-void float_to_ints(float val, int *tens, int *fraction);
+// print with "%s%d.%02d", sign, whole, fraction -- see utils.c
+void float_to_ints(float val, const char **sign, int *whole, int *fraction);
 // this will suffer from the double evaluation bug
 // #define MAX(a,b) (a)>(b)?(a):(b)
 // instead use these functions and a _generic macro

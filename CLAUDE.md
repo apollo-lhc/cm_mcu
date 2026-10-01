@@ -196,7 +196,9 @@ caller's LR, decodable with `arm-none-eabi-addr2line`. Heap exhaustion calls
 - Use sized integer types (`uint32_t`, `int32_t`, …) rather than bare `int` for register-width values.
 - Float↔`uint32_t` conversion for EEPROM: `memcpy(&u32, &f, sizeof(float))`, never union type-punning.
 - When adding a CLI subcommand, update the help string in `CommandLineTask.c` too.
-- snprintf-like calls don't use %f; use float_to_int instead.
+- snprintf-like calls don't use %f (cm_mcu builds with `PRINTF_DISABLE_SUPPORT_FLOAT`); use
+  `float_to_ints(val, &sign, &whole, &frac)` and print with `"%s%d.%02d", sign, whole, frac`
+  (add a width to `%d` if needed). It rounds to hundredths and keeps the sign for values in (-1, 0).
 - datasheets are available in local disk, if you can't find it, ask.
 
 ## Related resources
