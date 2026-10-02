@@ -467,7 +467,7 @@ BaseType_t ff_status(int argc, char **argv, char *m)
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: 0x%02x", ff_moni2c_addrs[whichff].name, val);
     }
     else { // empty value
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %4s", ff_moni2c_addrs[whichff].name, "--");
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %4s", ff_moni2c_addrs[whichff].name, "---");
     }
     copied = clamp_copied(copied, SCRATCH_SIZE);
     bool isTx = (strstr(ff_moni2c_addrs[whichff].name, "Tx") != NULL);
@@ -585,7 +585,8 @@ typedef int (*ff_table_row_fn)(char *m, int copied, int whichff);
 //
 // Expands to a static row function that reads one uint16_t monitoring register
 // and prints it as "   <device name>: 0xXXXX" followed by the appropriate
-// row terminator (tab for Tx devices, CRLF for others).
+// row terminator (tab for Tx devices, CRLF for others). Devices that are not
+// enabled (isEnabledFF) print "---" instead of the cached value.
 //
 // WHY A MACRO INSTEAD OF A FUNCTION POINTER?
 // The per-revision monitoring data accessors (e.g. get_FF_LOS_ALARM_data) are
@@ -613,9 +614,14 @@ typedef int (*ff_table_row_fn)(char *m, int copied, int whichff);
 #define FF_U16_HEX_ROW_FN(fn_name, getter_expr)                                \
   static int fn_name(char *m, int copied, int whichff)                          \
   {                                                                               \
-    uint16_t val = (getter_expr);                                                \
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: 0x%04x",       \
-                       ff_moni2c_addrs[whichff].name, val);                      \
+    copied = ff_table_append_name(m, copied, whichff);                           \
+    if (isEnabledFF(whichff)) {                                                  \
+      uint16_t val = (getter_expr);                                              \
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);      \
+    }                                                                            \
+    else {                                                                       \
+      copied = ff_table_append_na(m, copied, 6);                                 \
+    }                                                                            \
     return ff_table_append_row_end(m, copied, whichff);                          \
   }
 // clang-format on
@@ -655,6 +661,14 @@ static int ff_table_append_name(char *m, int copied, int whichff)
 {
   return clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: ",
                                         ff_moni2c_addrs[whichff].name),
+                      SCRATCH_SIZE);
+}
+
+// Placeholder for a slot that is not populated/enabled (or has no such register):
+// right-aligned in a field of `width` characters so it lines up with the value it replaces.
+static int ff_table_append_na(char *m, int copied, int width)
+{
+  return clamp_copied(copied + snprintf(m + copied, SCRATCH_SIZE - copied, "%*s", width, "---"),
                       SCRATCH_SIZE);
 }
 
@@ -779,12 +793,12 @@ static int ff_ch_disable_row(char *m, int copied, int whichff)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
+    copied = ff_table_append_na(m, copied, 6);
   }
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-// ff_ch_disable_row has custom logic (prints "--" for disabled devices) so it is
+// ff_ch_disable_row has custom logic (prints "---" for disabled devices) so it is
 // written out explicitly above; only the boilerplate command wrapper is generated here.
 FF_TABLE_CMD(ff_ch_disable_status, ff_ch_disable_row, "FIREFLY CHANNEL DISABLE:", FF_ROW_MIN_REM, true)
 
@@ -796,13 +810,13 @@ static int ff_cdr_lol_alarm_row(char *m, int copied, int whichff)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x", val);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --  ");
+    copied = ff_table_append_na(m, copied, 6);
   }
   return ff_table_append_row_end(m, copied, whichff);
 }
 
-// ff_cdr_lol_alarm_row and ff_power_alarm_row also have custom logic (they skip
-// non-25G devices) so their row functions are written explicitly; command wrappers only:
+// ff_cdr_lol_alarm_row and ff_power_alarm_row also have custom logic (they print
+// "---" for non-25G devices) so their row functions are written explicitly; command wrappers only:
 FF_TABLE_CMD(ff_cdr_lol_alarm, ff_cdr_lol_alarm_row, "FIREFLY CDR LOL ALARM:", FF_ROW_MIN_REM, true)
 FF_TABLE_CMD(ff_cdr_enable_status, ff_cdr_enable_row, "FF CDR Enable:", FF_ROW_MIN_REM, true)
 
@@ -815,7 +829,7 @@ static int ff_power_alarm_row(char *m, int copied, int whichff)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%04x 0x%04x", val0, val1);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "  --        --");
+    copied = ff_table_append_na(m, copied, 13);
   }
   return ff_table_append_row_end(m, copied, whichff);
 }
@@ -825,11 +839,12 @@ FF_TABLE_CMD(ff_power_alarm_status, ff_power_alarm_row, "FIREFLY POWER ALARM:", 
 static int ff_temp_row(char *m, int copied, int whichff)
 {
   int16_t val = getFFtemp(whichff);
+  copied = ff_table_append_name(m, copied, whichff);
   if (isEnabledFF(whichff) && val != FF_TEMP_INVALID) {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17s: %2d", ff_moni2c_addrs[whichff].name, val);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%3d", val);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: %2s", ff_moni2c_addrs[whichff].name, "--");
+    copied = ff_table_append_na(m, copied, 3);
   }
   return ff_table_append_row_end(m, copied, whichff);
 }
@@ -860,8 +875,8 @@ BaseType_t ff_optpow(int argc, char **argv, char *m)
                          ff_moni2c_addrs[i].name, whole, frac);
     }
     else {
-      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s:     ---",
-                         ff_moni2c_addrs[i].name);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%17.17s: ", ff_moni2c_addrs[i].name);
+      copied = ff_table_append_na(m, copied, 8);
     }
     if (isTx) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\t\t");
@@ -884,9 +899,13 @@ BaseType_t ff_optpow_dev(int argc, char **argv, char *m)
   // takes one argument
   BaseType_t whichFF = strtol(argv[1], NULL, 10);
   int copied = 0;
-  if (whichFF >= NFIREFLIES) {
+  if (whichFF < 0 || whichFF >= NFIREFLIES) {
     copied += snprintf(m, SCRATCH_SIZE, "%s: choose ff number less than %d\r\n",
                        argv[0], NFIREFLIES);
+    return pdFALSE;
+  }
+  if (!isEnabledFF(whichFF)) {
+    snprintf(m, SCRATCH_SIZE, "%s: FF %s not enabled\r\n", argv[0], ff_moni2c_addrs[whichFF].name);
     return pdFALSE;
   }
   copied += snprintf(m, SCRATCH_SIZE, "FF %s Optical Power (uW)\r\n", ff_moni2c_addrs[whichFF].name);
@@ -1157,7 +1176,7 @@ static int ff_fw_reg_row(char *m, int copied, int whichff)
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "0x%02x%02x%02x", fw_reg[0], fw_reg[1], fw_reg[2]);
   }
   else {
-    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "   ---   ");
+    copied = ff_table_append_na(m, copied, 8);
   }
   return ff_table_append_row_end(m, copied, whichff);
 }
