@@ -182,6 +182,10 @@ caller's LR, decodable with `arm-none-eabi-addr2line`. Heap exhaustion calls
 ## Rules when working in this repo
 
 - **Do not offer to commit.** The maintainer commits their own code.
+- **PR descriptions and commit messages:** keep them short, like the existing PRs in this repo: a
+  `Closes #N.` line and a few sentences on what changed and why. No headings, change lists or
+  tables unless the change needs them. Leave off Claude branding and attribution lines
+  (`Co-Authored-By`, "Generated with Claude Code").
 - **Do not fix or fret about formatting.** `clang-format` is version-sensitive and the maintainer
   handles it separately. Do not run `format-apply`, and do not block on format errors.
 - **Stay narrowly on the task at hand.** Do not expand scope beyond what was asked.
@@ -193,6 +197,9 @@ caller's LR, decodable with `arm-none-eabi-addr2line`. Heap exhaustion calls
   time-critical interrupt handlers, which must use the `…FromISR` API variants and must not log:
   `log_*` is task-context only, and its lock is a non-blocking 0-tick acquire so logging never stalls
   a caller.
+- **Preserve each file's line endings.** Some sources (e.g. `FireflyCommands.c`) use CRLF. Check with
+  `file <path>` before editing; do not rewrite via tools that normalize newlines (e.g. Python text-mode
+  `open()`), and confirm `git diff --stat` shows only the intended lines changed.
 - Use sized integer types (`uint32_t`, `int32_t`, …) rather than bare `int` for register-width values.
 - Float↔`uint32_t` conversion for EEPROM: `memcpy(&u32, &f, sizeof(float))`, never union type-punning.
 - When adding a CLI subcommand, update the help string in `CommandLineTask.c` too.
