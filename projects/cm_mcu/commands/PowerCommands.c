@@ -138,7 +138,7 @@ extern struct MonitorTaskArgs_t dcdc_args;
 extern const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
 extern const struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
 
-// Read out registers from LGA80D. Always read 16 bits, though some 
+// Read out registers from LGA80D. Always read 16 bits, though some
 // registers are only 8 bits. Caller needs to discard unused bits.
 BaseType_t psmon_reg(int argc, char **argv, char *m)
 {
@@ -189,7 +189,7 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
   else {
     uint16_t vv = (thevalue[0] | (thevalue[1] << 8));
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
-                     argv[0], vv);
+                       argv[0], vv);
   }
 
   // release the semaphore
