@@ -138,7 +138,8 @@ extern struct MonitorTaskArgs_t dcdc_args;
 extern const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC];
 extern const struct pm_command_t extra_cmds[N_EXTRA_CMDS]; // LocalTasks.c
 
-// Read out registers from LGA80D
+// Read out registers from LGA80D. Always read 16 bits, though some 
+// registers are only 8 bits. Caller needs to discard unused bits.
 BaseType_t psmon_reg(int argc, char **argv, char *m)
 {
   int copied = 0;
@@ -168,18 +169,28 @@ BaseType_t psmon_reg(int argc, char **argv, char *m)
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which], &extra_cmds[0], &ui8page);
   if (r) {
-    Print("error in psmon_reg (page)\r\n");
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: error(page)\r\n", argv[0]);
+    // release the semaphore
+    if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {
+      xSemaphoreGive(dcdc_args.xSem);
+    }
+    return pdFALSE;
+  }
+  else {
+    lga80d_settle(); // the LGA80D needs time after PAGE before the next command
   }
   // read register, 2 bytes
   uint8_t thevalue[2] = {0, 0};
   struct pm_command_t thecmd = {regAddress, 2, "dummy", "", PM_STATUS};
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, &pm_addrs_dcdc[which], &thecmd, thevalue);
   if (r) {
-    Print("error in psmon_reg (regr)\r\n");
+    snprintf(m + copied, SCRATCH_SIZE - copied, "%s: error(regr)\r\n", argv[0]);
   }
-  uint16_t vv = (thevalue[0] | (thevalue[1] << 8));
-  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
+  else {
+    uint16_t vv = (thevalue[0] | (thevalue[1] << 8));
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: read value 0x%04x\r\n",
                      argv[0], vv);
+  }
 
   // release the semaphore
   if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {

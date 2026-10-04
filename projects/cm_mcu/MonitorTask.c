@@ -67,6 +67,9 @@ void MonitorTask(void *parameters)
         log_warn(LOG_SERVICE, "%s could not get semaphore in time; continue\r\n", args->name);
         continue;
       }
+      // vTaskDelayUntil() does not sleep once its target time has passed, so time spent blocked on
+      // the semaphore would shorten the next delays in this pass. Restart the delay chain here.
+      xLastWakeTime = xTaskGetTickCount();
     }
 
     // loop over devices

@@ -12,6 +12,7 @@
 #define PROJECTS_CM_MCU_TASKS_H_
 
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include "task.h"
 #include "queue.h"
 #include "common/log.h"
 
@@ -183,6 +184,18 @@ void MonitorTaskI2C(void *parameters);
 #define N_PM_ADDRS_DCDC 7
 #endif
 #define N_EXTRA_CMDS 7
+
+// The LGA80D (ZL8802) glitches (READ_TEMPERATURE_1 returns 0xFFFF, STATUS_CML bit 1 sets) when a
+// command follows the PAGE write too closely. Wait this long after a PAGE write before the next
+// command. Callers hold i2c1_sem.
+#define LGA80D_PAGE_SETTLE_MS 10
+// vTaskDelay called mid-tick returns up to one tick early, so ceil(ms * rate / 1000) + 1 ticks
+// guarantees at least LGA80D_PAGE_SETTLE_MS of real time at any tick rate.
+#define LGA80D_SETTLE_TICKS ((LGA80D_PAGE_SETTLE_MS * configTICK_RATE_HZ + 999) / 1000 + 1)
+static inline void lga80d_settle(void)
+{
+  vTaskDelay(LGA80D_SETTLE_TICKS);
+}
 
 // MonitorI2C task
 // --- Firefly and Clock monitoring via I2C

@@ -441,6 +441,7 @@ static void snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint
     log_error(LOG_SERVICE, "page w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
     return;
   }
+  lga80d_settle(); // the LGA80D needs time after PAGE before the next command
 
   // actual command -- snapshot control copy NVRAM for reading
   uint8_t cmd = 0x1;
@@ -465,6 +466,7 @@ static void snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint
 
   if (reset) {
     // reset SNAPSHOT. This will fail if the device is on.
+    lga80d_settle(); // don't follow the block read immediately with another command
     cmd = 0x3;
     r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
     if (r) {
@@ -507,19 +509,25 @@ void LGA80D_init(void)
   uint16_t freqlin11 = float_to_linear11(457.14f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);
   // we do the same for all devices except the 0th one, which is the 1.8/3.3V device
-  for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
-    for (uint8_t page = 0; page < 2; ++page) {
+  // The LGA80D needs time after a PAGE write before the next command, so select the page on all the
+  // devices first, settle once, and then do that page's writes on each device.
+  for (uint8_t page = 0; page < 2; ++page) {
+    for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
       // page register
+      uint8_t pg = page; // apollo_pmbus_rw wants a writable buffer
       int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-                              pm_addrs_dcdc + dev, &extra_cmds[0], &page);
+                              pm_addrs_dcdc + dev, &extra_cmds[0], &pg);
       if (r) {
         log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev,
                   page, r);
         log_error(LOG_SERVICE, "LGA80D(0)\r\n");
       }
+    }
+    lga80d_settle();
+    for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
       // actual command -- frequency switch
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-                          pm_addrs_dcdc + dev, &extra_cmds[2], (uint8_t *)&freqlin11);
+      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+                              pm_addrs_dcdc + dev, &extra_cmds[2], (uint8_t *)&freqlin11);
       if (r) {
         log_error(LOG_SERVICE, "LGA80D(1)\r\n");
       }

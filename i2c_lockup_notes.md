@@ -75,7 +75,7 @@ if (ui32IntStatus & I2C_MASTER_INT_TIMEOUT) {
    with HL-LHC environment).
 2. ISR clears `FLAG_TRANSFER_IN_PROGRESS`, returns `SMBUS_TIMEOUT`.
 3. `SMBusMasterIntHandlerCore` sends task notification; `portYIELD_FROM_ISR` context-switches
-   to the waiting task within ~1–5 µs (80 MHz CPU).
+   to the waiting task within ~1–5 µs (estimate written for an 80 MHz CPU; the CPU runs at 40 MHz, so it may be up to ~2x longer).
 4. Hardware is still issuing its automatic STOP on the bus (~2.5–20 µs at 400–100 kHz).
 5. Task calls the next `apollo_i2c_ctl_xxx` → `SMBusMasterXxx` → `MAP_I2CMasterBusy()` = **true**
    → **`SMBUS_PERIPHERAL_BUSY`**.
