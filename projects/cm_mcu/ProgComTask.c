@@ -375,6 +375,8 @@ static const char *progcom_access_dcdc(const struct progcom_cmd_t *cmd, uint8_t 
   // extra_cmds[0] is the PMBus PAGE command (register 0x0, one byte)
   tSMBusStatus r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[cmd->dev_num],
                                    &extra_cmds[0], &page);
+  if (r == SMBUS_OK)
+    lga80d_settle(); // the LGA80D needs time after PAGE before the next command
   if (r != SMBUS_OK) {
     err = progcom_i2c_error("page select failed", r);
   }

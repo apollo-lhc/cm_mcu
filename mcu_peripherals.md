@@ -1,6 +1,6 @@
 # Apollo CM MCU Hardware Pin and Peripheral Assignments
 
-**MCU**: TI TM4C1290NCPDT (ARM Cortex-M4F, 80 MHz)  
+**MCU**: TI TM4C1290NCPDT (ARM Cortex-M4F, 40 MHz)  
 **Sources**: `common/pinout_rev1.c`, `common/pinout_rev2.c`, `common/gpio_pins_rev2.def`, `common/pinsel.h`, `projects/cm_mcu/ADCMonitorTask.c`, `common/LocalUart.c`, `common/i2c_reg.c`
 
 ---

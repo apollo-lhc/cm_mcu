@@ -55,7 +55,7 @@ void Task(void *parameters)
 
 The `vTaskDelayUntil` sets the frequency of the tasks being called, for tasks that are not real-time critical. 
 
-The microcontroller runs at 80 MHz and is idle most of the time. 
+The microcontroller runs at 40 MHz (`configCPU_CLOCK_HZ` in `FreeRTOSConfig.h`) and is idle most of the time. 
 
 The vector table is defined in `startup_gcc.c`. Interrupt handlers are either in `startup_gcc.c` or in `InterruptHandlers.c`.  FreeRTOS's configuration is in the standard   `FreeRTOSConfig.h`.
 

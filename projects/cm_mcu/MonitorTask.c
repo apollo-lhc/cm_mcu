@@ -67,6 +67,9 @@ void MonitorTask(void *parameters)
         log_warn(LOG_SERVICE, "%s could not get semaphore in time; continue\r\n", args->name);
         continue;
       }
+      // vTaskDelayUntil() does not sleep once its target time has passed, so time spent blocked on
+      // the semaphore would shorten the next delays in this pass. Restart the delay chain here.
+      xLastWakeTime = xTaskGetTickCount();
     }
 
     // loop over devices
@@ -122,6 +125,12 @@ void MonitorTask(void *parameters)
           }
           continue;
         }
+        // The LGA80D (ZL8802) datasheet recommends 5 ms between a command and the next one to the
+        // same device. The tick is 10 ms, so wait one tick period (about 9 ms after the PAGE write)
+        // before the first read. Only the PSMON instance; FPGA monitoring is left untouched.
+        if (args == &dcdc_args)
+          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+
         if (pageNackMask & pageNackBit) {
           log_info(LOG_MON, "%s: %s page %u SMBUS recovered\r\n", args->name,
                    args->devices[ps].name, page);
