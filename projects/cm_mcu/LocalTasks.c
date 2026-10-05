@@ -509,8 +509,18 @@ void LGA80D_init(void)
   uint16_t freqlin11 = float_to_linear11(457.14f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);
   // we do the same for all devices except the 0th one, which is the 1.8/3.3V device
-  // The LGA80D needs time after a PAGE write before the next command, so select the page on all the
-  // devices first, settle once, and then do that page's writes on each device.
+  // The LGA80D needs time between commands to the same device, so the loops run over commands: each
+  // command goes to all the devices, then settle once before the next one. That also spaces the PAGE
+  // writes from the commands before and after them.
+  uint8_t val = 0x7U; // multiphase_ramp_gain, by suggestion of Artesian
+  const struct {
+    const struct pm_command_t *cmd;
+    uint8_t *value;
+  } init_cmds[] = {
+      {&extra_cmds[2], (uint8_t *)&freqlin11},  // frequency switch
+      {&extra_cmds[5], (uint8_t *)&drooplin11}, // vout_droop
+      {&extra_cmds[6], &val},                   // multiphase_ramp_gain
+  };
   for (uint8_t page = 0; page < 2; ++page) {
     for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
       // page register
@@ -524,27 +534,15 @@ void LGA80D_init(void)
       }
     }
     lga80d_settle();
-    for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
-      // actual command -- frequency switch
-      int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-                              pm_addrs_dcdc + dev, &extra_cmds[2], (uint8_t *)&freqlin11);
-      if (r) {
-        log_error(LOG_SERVICE, "LGA80D(1)\r\n");
+    for (size_t c = 0; c < sizeof(init_cmds) / sizeof(init_cmds[0]); ++c) {
+      for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
+        int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
+                                pm_addrs_dcdc + dev, init_cmds[c].cmd, init_cmds[c].value);
+        if (r) {
+          log_error(LOG_SERVICE, "LGA80D(%d)\r\n", (int)(c + 1));
+        }
       }
-      // actual command -- vout_droop switch
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-                          pm_addrs_dcdc + dev, &extra_cmds[5],
-                          (uint8_t *)&drooplin11);
-      if (r) {
-        log_error(LOG_SERVICE, "LGA80D(2)\r\n");
-      }
-      // actual command -- multiphase_ramp_gain switch
-      uint8_t val = 0x7U; // by suggestion of Artesian
-      r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
-                          pm_addrs_dcdc + dev, &extra_cmds[6], &val);
-      if (r) {
-        log_error(LOG_SERVICE, "LGA80D(3)\r\n");
-      }
+      lga80d_settle();
     }
   }
 
