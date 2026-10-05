@@ -7,9 +7,18 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include <time.h>
+
 #include "AlarmUtilities.h"
+#include "FireflyUtils.h"
 #include "Tasks.h"
+#include "ZynqMonTask.h"
+#include "common/pinsel.h"
 #include "common/power_ctl.h"
+#include "driverlib/hibernate.h"
+#include "driverlib/rom.h"
+#include "inc/hw_hibernate.h"
+#include "inc/hw_types.h"
 
 // Page 0x01's per-supply state array assumes REV2/REV3's supply count; this
 // module isn't built for REV1 (no ProgCom UART support there).
@@ -53,7 +62,14 @@ static const struct field_span SYSTEM_FIELDS[] = {
     {SYS_OFF_UPTIME_S, 4},
     {SYS_OFF_RESET_CAUSE, 4},
     {SYS_OFF_GIT_VERSION, SYS_GIT_VERSION_LEN},
+    {SYS_OFF_FF_USER_MASK, 4},
+    {SYS_OFF_FF_PRESENT_MASK, 4},
+    {SYS_OFF_BUILD_TYPE, 1},
+    {SYS_OFF_BUILD_TIME, SYS_BUILD_TIME_LEN},
 };
+
+static_assert(sizeof(__TIME__ ", " __DATE__) <= SYS_BUILD_TIME_LEN,
+              "build-time string does not fit SYS_OFF_BUILD_TIME");
 
 static enum mcu_reg_result validate_span(const struct field_span *fields, size_t nfields,
                                          uint8_t address, uint8_t length)
@@ -87,11 +103,11 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
   buf[SYS_OFF_HW_REV] = (uint8_t)rev;
   buf[SYS_OFF_ADC_COUNT] = ADC_CHANNEL_COUNT;
 
-  // Only SYSTEM, POWER, ALARMS, ADC, and CONTROLS are implemented so far;
-  // the rest stay clear until their page is actually implemented, per the
+  // Only SYSTEM, POWER, ALARMS, ADC, CONTROLS, and RUNTIME are implemented so
+  // far; the rest stay clear until their page is actually implemented, per the
   // register-map design rule.
   put_u32_le(buf + SYS_OFF_CAPABILITIES, MCU_CAP_SYSTEM | MCU_CAP_POWER | MCU_CAP_ALARMS |
-                                             MCU_CAP_ADC | MCU_CAP_CONTROLS);
+                                             MCU_CAP_ADC | MCU_CAP_CONTROLS | MCU_CAP_RUNTIME);
 
   uint32_t health = 0U;
   if (getPowerControlState() == POWER_FAILURE)
@@ -112,6 +128,15 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
   // not the full gitVersion()/FIRMWARE_VERSION string. snprintf truncates
   // and NUL-terminates; the memset above already zero-padded the rest.
   snprintf((char *)(buf + SYS_OFF_GIT_VERSION), SYS_GIT_VERSION_LEN, "%s", GIT_DESCRIBE);
+
+  put_u32_le(buf + SYS_OFF_FF_USER_MASK, ff_USER_mask);
+  put_u32_le(buf + SYS_OFF_FF_PRESENT_MASK, ff_PRESENT_mask);
+#ifdef DEBUG
+  buf[SYS_OFF_BUILD_TYPE] = 1U;
+#else
+  buf[SYS_OFF_BUILD_TYPE] = 0U;
+#endif
+  snprintf((char *)(buf + SYS_OFF_BUILD_TIME), SYS_BUILD_TIME_LEN, "%s", buildTime());
 }
 
 static enum mcu_reg_result mcu_local_read0(uint8_t address, uint8_t length, uint8_t out[4])
@@ -155,6 +180,61 @@ static enum mcu_reg_result mcu_local_read3(uint8_t address, uint8_t length, uint
 
   uint8_t buf[ADC_PAGE_VALUES_LEN];
   build_adc_page(buf);
+  memcpy(out, buf + address, length);
+  return MCU_REG_OK;
+}
+
+// Field spans for page 0x06 (Runtime). 0x16-0x17 is an undeclared hole.
+static const struct field_span RUNTIME_FIELDS[] = {
+    {RT_OFF_HEAP_FREE, 4},
+    {RT_OFF_HEAP_MIN_FREE, 4},
+    {RT_OFF_HEAP_TOTAL, 4},
+    {RT_OFF_SYSSTACK_UNTOUCHED_WORDS, 4},
+    {RT_OFF_SYSSTACK_TOTAL_WORDS, 4},
+    {RT_OFF_ZYNQMON_TX_ENABLED, 1},
+    {RT_OFF_FPGA_DONE, 1},
+    {RT_OFF_RTC_DATE, 4},
+    {RT_OFF_RTC_TIME, 4},
+};
+
+static void build_runtime_page(uint8_t buf[RT_PAGE_USED_LEN])
+{
+  memset(buf, 0, RT_PAGE_USED_LEN);
+  put_u32_le(buf + RT_OFF_HEAP_FREE, (uint32_t)xPortGetFreeHeapSize());
+  put_u32_le(buf + RT_OFF_HEAP_MIN_FREE, (uint32_t)xPortGetMinimumEverFreeHeapSize());
+  put_u32_le(buf + RT_OFF_HEAP_TOTAL, (uint32_t)configTOTAL_HEAP_SIZE);
+  put_u32_le(buf + RT_OFF_SYSSTACK_UNTOUCHED_WORDS, (uint32_t)SystemStackWaterHighWaterMark());
+  put_u32_le(buf + RT_OFF_SYSSTACK_TOTAL_WORDS, (uint32_t)SYSTEM_STACK_SIZE);
+  buf[RT_OFF_ZYNQMON_TX_ENABLED] = getZynqMonTransmitEnabled() ? 1U : 0U;
+  // Raw pin levels: no bus, no semaphore, no write path.
+  buf[RT_OFF_FPGA_DONE] = (uint8_t)((read_gpio_pin(_F1_FPGA_DONE) ? 1U : 0U) |
+                                    (read_gpio_pin(_F2_FPGA_DONE) ? 2U : 0U));
+
+  // Validity is the hardware's own latch (as the `rtc` CLI command uses), not
+  // log.c's "tm_year < 120" plausibility test; the two can disagree. When
+  // invalid, both words stay zero so valid == 0.
+  uint32_t cal1 = HWREG(HIB_CAL1);
+  if (cal1 & HIB_CAL1_VALID) {
+    struct tm now;
+    ROM_HibernateCalendarGet(&now);
+    put_u32_le(buf + RT_OFF_RTC_DATE, ((uint32_t)(now.tm_year + 1900) << 16) |
+                                          ((uint32_t)(now.tm_mon + 1) << 8) |
+                                          (uint32_t)now.tm_mday);
+    put_u32_le(buf + RT_OFF_RTC_TIME, (1U << 24) | ((uint32_t)now.tm_hour << 16) |
+                                          ((uint32_t)now.tm_min << 8) | (uint32_t)now.tm_sec);
+  }
+}
+
+static enum mcu_reg_result mcu_local_read6(uint8_t address, uint8_t length, uint8_t out[4])
+{
+  enum mcu_reg_result r = validate_span(RUNTIME_FIELDS,
+                                        sizeof(RUNTIME_FIELDS) / sizeof(RUNTIME_FIELDS[0]),
+                                        address, length);
+  if (r != MCU_REG_OK)
+    return r;
+
+  uint8_t buf[RT_PAGE_USED_LEN];
+  build_runtime_page(buf);
   memcpy(out, buf + address, length);
   return MCU_REG_OK;
 }
@@ -282,6 +362,16 @@ static enum mcu_reg_result mcu_local_write7f(uint8_t address, const uint8_t *dat
     return (ok1 == pdPASS && ok2 == pdPASS) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
   }
 
+  if (data[0] == CTRL_CMD_ZYNQMON_ENABLE_TRANSMIT ||
+      data[0] == CTRL_CMD_ZYNQMON_DISABLE_TRANSMIT) {
+    // ZynqMonTask has its own queue, so these cannot join the xPwrQueue switch
+    // below. The CLI sends the same messages with a 10 ms timeout; ProgCom
+    // uses 0 ticks per this page's non-blocking rule.
+    uint32_t zmsg = (data[0] == CTRL_CMD_ZYNQMON_ENABLE_TRANSMIT) ? ZYNQMON_ENABLE_TRANSMIT
+                                                                   : ZYNQMON_DISABLE_TRANSMIT;
+    return (xQueueSendToBack(xZynqMonQueue, &zmsg, 0) == pdPASS) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
+  }
+
   uint32_t msg;
   switch (data[0]) {
     case CTRL_CMD_ASSERT_PROGCOM_POWER_INHIBIT:
@@ -314,6 +404,8 @@ mcu_reg_read(uint8_t page, uint8_t address, uint8_t length, uint8_t out[4])
       return mcu_local_read2(address, length, out);
     case MCU_REG_PAGE_ADC:
       return mcu_local_read3(address, length, out);
+    case MCU_REG_PAGE_RUNTIME:
+      return mcu_local_read6(address, length, out);
     case MCU_REG_PAGE_CONTROL:
       return MCU_REG_WRITE_ONLY;
     default:
@@ -329,6 +421,7 @@ mcu_reg_write(uint8_t page, uint8_t address, const uint8_t *data, size_t length)
     case MCU_REG_PAGE_POWER:
     case MCU_REG_PAGE_ALARM:
     case MCU_REG_PAGE_ADC:
+    case MCU_REG_PAGE_RUNTIME:
       return MCU_REG_READ_ONLY;
     case MCU_REG_PAGE_CONTROL:
       return mcu_local_write7f(address, data, length);

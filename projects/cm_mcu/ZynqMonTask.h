@@ -22,6 +22,7 @@
 #define ZYNQMON_TEST_RAW         0x7
 
 extern QueueHandle_t xZynqMonQueue;
+bool getZynqMonTransmitEnabled(void);
 void ZynqMonTask(void *parameters);
 // data for zynqmon task to be sent to Zynq
 #define ZM_NUM_ENTRIES ZMON_VALID_ENTRIES

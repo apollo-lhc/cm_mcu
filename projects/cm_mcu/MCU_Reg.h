@@ -39,7 +39,7 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define MCU_REG_PAGE_SYSTEM 0x00
 
 #define MCU_MAP_MAJOR 1
-#define MCU_MAP_MINOR 0
+#define MCU_MAP_MINOR 1
 
 #define SYS_OFF_MAGIC        0x00 // 4  ASCII magic "CMCU"
 #define SYS_OFF_MAP_MAJOR    0x04 // 1
@@ -54,7 +54,13 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 // 0x1c-0x2b (16 bytes) reserved; 0x2c-0x3f undeclared hole.
 #define SYS_OFF_GIT_VERSION 0x40 // 20, NUL-padded
 #define SYS_GIT_VERSION_LEN 20
-#define SYS_PAGE_USED_LEN   (SYS_OFF_GIT_VERSION + SYS_GIT_VERSION_LEN)
+// 0x54-0x77 added at map minor 1. 0x5d-0x5f is an undeclared hole.
+#define SYS_OFF_FF_USER_MASK    0x54 // 4  ff_USER_mask, bit n = Firefly index n
+#define SYS_OFF_FF_PRESENT_MASK 0x58 // 4  ff_PRESENT_mask
+#define SYS_OFF_BUILD_TYPE      0x5c // 1  0 = release, 1 = DEBUG
+#define SYS_OFF_BUILD_TIME      0x60 // 24, NUL-padded, buildTime()
+#define SYS_BUILD_TIME_LEN      24
+#define SYS_PAGE_USED_LEN       (SYS_OFF_BUILD_TIME + SYS_BUILD_TIME_LEN)
 
 #define MCU_CAP_SYSTEM (1U << 0)
 #define MCU_CAP_POWER  (1U << 1)
@@ -64,11 +70,31 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 // design entirely. Not reassigned.
 #define MCU_CAP_PERSISTENT_LOG (1U << 5)
 #define MCU_CAP_CONTROLS       (1U << 6)
+// bit 7 CONFIG and bit 9 CONFIG_WRITE are assigned to the config page (Phase 2).
+#define MCU_CAP_RUNTIME (1U << 8)
 
 #define MCU_HEALTH_POWER_FAULT       (1U << 0)
 #define MCU_HEALTH_TEMPERATURE_ALARM (1U << 1)
 #define MCU_HEALTH_VOLTAGE_ALARM     (1U << 2)
 #define MCU_HEALTH_ADC_ERROR         (1U << 3)
+
+// ---- Page 0x06 (Runtime) wire layout. Read-only, no generation counter: every
+// field is a single atomic word/byte, except the RTC, which is two words that
+// a client reads time -> date -> time and retries on a second rollover.
+
+#define MCU_REG_PAGE_RUNTIME 0x06
+
+#define RT_OFF_HEAP_FREE               0x00 // 4  bytes
+#define RT_OFF_HEAP_MIN_FREE           0x04 // 4  bytes, minimum ever free
+#define RT_OFF_HEAP_TOTAL              0x08 // 4  bytes
+#define RT_OFF_SYSSTACK_UNTOUCHED_WORDS 0x0c // 4  words; falling = worse
+#define RT_OFF_SYSSTACK_TOTAL_WORDS    0x10 // 4  words
+#define RT_OFF_ZYNQMON_TX_ENABLED      0x14 // 1  0/1
+#define RT_OFF_FPGA_DONE               0x15 // 1  raw pin level, bit0 = F1, bit1 = F2
+// 0x16-0x17 undeclared hole (alignment before the RTC pair)
+#define RT_OFF_RTC_DATE 0x18 // 4  (year << 16) | (month << 8) | day; 0 when invalid
+#define RT_OFF_RTC_TIME 0x1c // 4  (valid << 24) | (hour << 16) | (min << 8) | sec
+#define RT_PAGE_USED_LEN 0x20
 
 // ---- Page 0x03 (ADC sample) wire layout.
 
@@ -129,5 +155,9 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define CTRL_CMD_RELEASE_PROGCOM_POWER_INHIBIT 2
 #define CTRL_CMD_CLEAR_POWER_FAULT             3
 #define CTRL_CMD_CLEAR_ALARM_LATCHES           4
+// Sticky: nothing re-enables ZynqMon transmit except the CLI ("zmon enable")
+// or a reboot.
+#define CTRL_CMD_ZYNQMON_ENABLE_TRANSMIT  5
+#define CTRL_CMD_ZYNQMON_DISABLE_TRANSMIT 6
 
 #endif // MCU_REG_H

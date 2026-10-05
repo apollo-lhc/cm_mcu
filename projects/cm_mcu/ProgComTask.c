@@ -350,12 +350,7 @@ static const char *progcom_access_mcu(const struct progcom_cmd_t *cmd, uint8_t *
   if (cmd->op == PROGCOM_OP_READ) {
     return progcom_mcu_error(mcu_reg_read(cmd->page, cmd->address, cmd->read_len, out));
   }
-  else if (cmd->op == PROGCOM_OP_WRITE) {
-    return progcom_mcu_error(mcu_reg_write(cmd->page, cmd->address, cmd->data, cmd->ndata));
-  }
-  else {
-    return "invalid MCU OP";
-  }
+  return progcom_mcu_error(mcu_reg_write(cmd->page, cmd->address, cmd->data, cmd->ndata));
 }
 
 // LGA80D DC-DC converters, via PMBus. apollo_pmbus_rw() selects the mux itself,
