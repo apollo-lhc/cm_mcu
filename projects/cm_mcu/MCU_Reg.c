@@ -33,6 +33,12 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause)
   cached_reset_cause = raw_reset_cause;
 }
 
+static void put_u16_le(uint8_t *dst, uint16_t value)
+{
+  dst[0] = (uint8_t)(value >> 0);
+  dst[1] = (uint8_t)(value >> 8);
+}
+
 static void put_u32_le(uint8_t *dst, uint32_t value)
 {
   dst[0] = (uint8_t)(value >> 0);
@@ -103,11 +109,12 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
   buf[SYS_OFF_HW_REV] = (uint8_t)rev;
   buf[SYS_OFF_ADC_COUNT] = ADC_CHANNEL_COUNT;
 
-  // Only SYSTEM, POWER, ALARMS, ADC, CONTROLS, and RUNTIME are implemented so
-  // far; the rest stay clear until their page is actually implemented, per the
-  // register-map design rule.
+  // Only SYSTEM, POWER, ALARMS, ADC, CONTROLS, CONFIG (read-only), and RUNTIME
+  // are implemented so far; the rest stay clear until their page is actually
+  // implemented, per the register-map design rule.
   put_u32_le(buf + SYS_OFF_CAPABILITIES, MCU_CAP_SYSTEM | MCU_CAP_POWER | MCU_CAP_ALARMS |
-                                             MCU_CAP_ADC | MCU_CAP_CONTROLS | MCU_CAP_RUNTIME);
+                                             MCU_CAP_ADC | MCU_CAP_CONTROLS | MCU_CAP_CONFIG |
+                                             MCU_CAP_RUNTIME);
 
   uint32_t health = 0U;
   if (getPowerControlState() == POWER_FAILURE)
@@ -180,6 +187,60 @@ static enum mcu_reg_result mcu_local_read3(uint8_t address, uint8_t length, uint
 
   uint8_t buf[ADC_PAGE_VALUES_LEN];
   build_adc_page(buf);
+  memcpy(out, buf + address, length);
+  return MCU_REG_OK;
+}
+
+// Field spans for page 0x05 (Config). The widths are #defines in MCU_Reg.h so
+// the client contract test can read them without parsing this initializer.
+static const struct field_span CONFIG_FIELDS[] = {
+    {CFG_OFF_ALARM_TEMP_FF, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_TEMP_DCDC, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_TEMP_TM4C, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_TEMP_FPGA, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_VOLT_CPCT, CFG_LEN_ALARM_VOLT},
+};
+
+// The four temperature offsets are derived from enum device, so its order must
+// stay FF, DCDC, TM4C, FPGA (the same order the CLI and the EEPROM table use).
+static_assert(FF == 0 && DCDC == 1 && TM4C == 2 && FPGA == 3,
+              "page 0x05 temperature offsets assume enum device order FF, DCDC, TM4C, FPGA");
+static_assert(CFG_OFF_ALARM_TEMP_DCDC == CFG_OFF_ALARM_TEMP_FF + CFG_LEN_ALARM_TEMP &&
+                  CFG_OFF_ALARM_TEMP_TM4C == CFG_OFF_ALARM_TEMP_DCDC + CFG_LEN_ALARM_TEMP &&
+                  CFG_OFF_ALARM_TEMP_FPGA == CFG_OFF_ALARM_TEMP_TM4C + CFG_LEN_ALARM_TEMP,
+              "page 0x05 temperature fields must be contiguous");
+
+static void build_config_page(uint8_t buf[CFG_PAGE_USED_LEN])
+{
+  memset(buf, 0, CFG_PAGE_USED_LEN);
+  // int16_t -> uint16_t is a bit-pattern conversion, so negative thresholds
+  // (older CLI-set EEPROM content) read back in two's complement.
+  for (int dev = FF; dev <= FPGA; ++dev)
+    put_u16_le(buf + CFG_OFF_ALARM_TEMP_FF + CFG_LEN_ALARM_TEMP * dev,
+               (uint16_t)getAlarmTemperature((enum device)dev));
+
+  // Clamp before the cast: converting an out-of-range float to an integer is
+  // undefined, and nothing structurally keeps alarmVolt inside the 0.01-0.50
+  // band the CLI enforces. `!(v >= 0)` also catches NaN. Rounded by hand to
+  // avoid pulling in libm (lrintf is not otherwise used in this firmware).
+  float v = getAlarmVoltageThres();
+  if (!(v >= 0.f))
+    v = 0.f;
+  else if (v > 6.5535f)
+    v = 6.5535f;
+  put_u16_le(buf + CFG_OFF_ALARM_VOLT_CPCT, (uint16_t)(v * 10000.f + 0.5f));
+}
+
+static enum mcu_reg_result mcu_local_read5(uint8_t address, uint8_t length, uint8_t out[4])
+{
+  enum mcu_reg_result r = validate_span(CONFIG_FIELDS,
+                                        sizeof(CONFIG_FIELDS) / sizeof(CONFIG_FIELDS[0]),
+                                        address, length);
+  if (r != MCU_REG_OK)
+    return r;
+
+  uint8_t buf[CFG_PAGE_USED_LEN];
+  build_config_page(buf);
   memcpy(out, buf + address, length);
   return MCU_REG_OK;
 }
@@ -404,6 +465,8 @@ mcu_reg_read(uint8_t page, uint8_t address, uint8_t length, uint8_t out[4])
       return mcu_local_read2(address, length, out);
     case MCU_REG_PAGE_ADC:
       return mcu_local_read3(address, length, out);
+    case MCU_REG_PAGE_CONFIG:
+      return mcu_local_read5(address, length, out);
     case MCU_REG_PAGE_RUNTIME:
       return mcu_local_read6(address, length, out);
     case MCU_REG_PAGE_CONTROL:
@@ -421,6 +484,7 @@ mcu_reg_write(uint8_t page, uint8_t address, const uint8_t *data, size_t length)
     case MCU_REG_PAGE_POWER:
     case MCU_REG_PAGE_ALARM:
     case MCU_REG_PAGE_ADC:
+    case MCU_REG_PAGE_CONFIG:
     case MCU_REG_PAGE_RUNTIME:
       return MCU_REG_READ_ONLY;
     case MCU_REG_PAGE_CONTROL:

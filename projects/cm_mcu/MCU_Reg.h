@@ -39,7 +39,7 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define MCU_REG_PAGE_SYSTEM 0x00
 
 #define MCU_MAP_MAJOR 1
-#define MCU_MAP_MINOR 1
+#define MCU_MAP_MINOR 2
 
 #define SYS_OFF_MAGIC        0x00 // 4  ASCII magic "CMCU"
 #define SYS_OFF_MAP_MAJOR    0x04 // 1
@@ -70,13 +70,32 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 // design entirely. Not reassigned.
 #define MCU_CAP_PERSISTENT_LOG (1U << 5)
 #define MCU_CAP_CONTROLS       (1U << 6)
-// bit 7 CONFIG and bit 9 CONFIG_WRITE are assigned to the config page (Phase 2).
+#define MCU_CAP_CONFIG  (1U << 7) // page 0x05 readable
 #define MCU_CAP_RUNTIME (1U << 8)
+// bit 9 CONFIG_WRITE is reserved for the config page's write path (Phase 2b).
 
 #define MCU_HEALTH_POWER_FAULT       (1U << 0)
 #define MCU_HEALTH_TEMPERATURE_ALARM (1U << 1)
 #define MCU_HEALTH_VOLTAGE_ALARM     (1U << 2)
 #define MCU_HEALTH_ADC_ERROR         (1U << 3)
+
+// ---- Page 0x05 (Config) wire layout. Read-only at map minor 2. Five
+// independent 16-bit policy values, each a naturally-aligned halfword (a single
+// atomic access on Cortex-M4), so there is no generation counter.
+
+#define MCU_REG_PAGE_CONFIG 0x05
+
+// Temperature thresholds, int16_t degrees C. Offset = CFG_OFF_ALARM_TEMP_FF +
+// 2 * (enum device): FF, DCDC, TM4C, FPGA, the same order as Tasks.h.
+#define CFG_LEN_ALARM_TEMP       2
+#define CFG_OFF_ALARM_TEMP_FF    0x00
+#define CFG_OFF_ALARM_TEMP_DCDC  0x02
+#define CFG_OFF_ALARM_TEMP_TM4C  0x04
+#define CFG_OFF_ALARM_TEMP_FPGA  0x06
+// Voltage-alarm threshold, uint16_t centi-percent (500 = 5 %).
+#define CFG_LEN_ALARM_VOLT       2
+#define CFG_OFF_ALARM_VOLT_CPCT  0x08
+#define CFG_PAGE_USED_LEN        0x0a
 
 // ---- Page 0x06 (Runtime) wire layout. Read-only, no generation counter: every
 // field is a single atomic word/byte, except the RTC, which is two words that
