@@ -240,7 +240,7 @@ extern struct clk_program_t clkprog_args[5]; // NSUPPLIES_CLK + NSUPPLIES_CLKR0A
 #define ADDR_TEMP_FPGA       (ADDR_TEMP_ALARM_BASE + 0x0CU) // 0x18C: FPGA alarm temp
 // Voltage alarm threshold, same block. Stored as centi-percent (percent * 100)
 // zero-extended to 32 bits, so 0xFFFFFFFF stays the uninitialized sentinel.
-#define ADDR_ALARM_VOLT      (ADDR_TEMP_ALARM_BASE + 0x10U) // 0x190: voltage alarm threshold
+#define ADDR_ALARM_VOLT (ADDR_TEMP_ALARM_BASE + 0x10U) // 0x190: voltage alarm threshold
 
 // Enable or disable the 3.8V power supplies for the SamTec Fireflies
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff);

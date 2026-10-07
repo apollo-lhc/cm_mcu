@@ -14,7 +14,7 @@ enum mcu_reg_result {
   MCU_REG_WRITE_ONLY,
   MCU_REG_BUSY,
   MCU_REG_QUEUE_FULL,
-  MCU_REG_INVALID_COMMAND, // valid address/length, unrecognized command payload
+  MCU_REG_INVALID_COMMAND,      // valid address/length, unrecognized command payload
   MCU_REG_INVALID_WRITE_LENGTH, // write length != the target field's width
   MCU_REG_INVALID_VALUE,        // valid address/length, value outside the clamp
   MCU_REG_INTERNAL_ERROR,
@@ -72,9 +72,9 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 // design entirely. Not reassigned.
 #define MCU_CAP_PERSISTENT_LOG (1U << 5)
 #define MCU_CAP_CONTROLS       (1U << 6)
-#define MCU_CAP_CONFIG  (1U << 7) // page 0x05 readable
-#define MCU_CAP_RUNTIME (1U << 8)
-#define MCU_CAP_CONFIG_WRITE (1U << 9) // page 0x05 writable (Phase 2b, map minor 3)
+#define MCU_CAP_CONFIG         (1U << 7) // page 0x05 readable
+#define MCU_CAP_RUNTIME        (1U << 8)
+#define MCU_CAP_CONFIG_WRITE   (1U << 9) // page 0x05 writable (Phase 2b, map minor 3)
 
 #define MCU_HEALTH_POWER_FAULT       (1U << 0)
 #define MCU_HEALTH_TEMPERATURE_ALARM (1U << 1)
@@ -89,24 +89,24 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 
 // Temperature thresholds, int16_t degrees C. Offset = CFG_OFF_ALARM_TEMP_FF +
 // 2 * (enum device): FF, DCDC, TM4C, FPGA, the same order as Tasks.h.
-#define CFG_LEN_ALARM_TEMP       2
-#define CFG_OFF_ALARM_TEMP_FF    0x00
-#define CFG_OFF_ALARM_TEMP_DCDC  0x02
-#define CFG_OFF_ALARM_TEMP_TM4C  0x04
-#define CFG_OFF_ALARM_TEMP_FPGA  0x06
+#define CFG_LEN_ALARM_TEMP      2
+#define CFG_OFF_ALARM_TEMP_FF   0x00
+#define CFG_OFF_ALARM_TEMP_DCDC 0x02
+#define CFG_OFF_ALARM_TEMP_TM4C 0x04
+#define CFG_OFF_ALARM_TEMP_FPGA 0x06
 // Voltage-alarm threshold, uint16_t centi-percent (500 = 5 %).
-#define CFG_LEN_ALARM_VOLT       2
-#define CFG_OFF_ALARM_VOLT_CPCT  0x08
-#define CFG_PAGE_USED_LEN        0x0a
+#define CFG_LEN_ALARM_VOLT      2
+#define CFG_OFF_ALARM_VOLT_CPCT 0x08
+#define CFG_PAGE_USED_LEN       0x0a
 
 // Write clamps (reads are unclamped: EEPROM can hold older CLI-set values).
 // Raising a temperature threshold persistently reduces thermal protection;
 // lowering it can force a power-down that no inhibit bit reflects. The console
 // keeps its wider ranges on purpose.
-#define CFG_TEMP_MIN_C         50
-#define CFG_TEMP_MAX_C         100
-#define CFG_VOLT_MIN_CPCT      100  // 1 %
-#define CFG_VOLT_MAX_CPCT      1000 // 10 %
+#define CFG_TEMP_MIN_C    50
+#define CFG_TEMP_MAX_C    100
+#define CFG_VOLT_MIN_CPCT 100  // 1 %
+#define CFG_VOLT_MAX_CPCT 1000 // 10 %
 
 // ---- Page 0x06 (Runtime) wire layout. Read-only, no generation counter: every
 // field is a single atomic word/byte, except the RTC, which is two words that
@@ -114,16 +114,16 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 
 #define MCU_REG_PAGE_RUNTIME 0x06
 
-#define RT_OFF_HEAP_FREE               0x00 // 4  bytes
-#define RT_OFF_HEAP_MIN_FREE           0x04 // 4  bytes, minimum ever free
-#define RT_OFF_HEAP_TOTAL              0x08 // 4  bytes
+#define RT_OFF_HEAP_FREE                0x00 // 4  bytes
+#define RT_OFF_HEAP_MIN_FREE            0x04 // 4  bytes, minimum ever free
+#define RT_OFF_HEAP_TOTAL               0x08 // 4  bytes
 #define RT_OFF_SYSSTACK_UNTOUCHED_WORDS 0x0c // 4  words; falling = worse
-#define RT_OFF_SYSSTACK_TOTAL_WORDS    0x10 // 4  words
-#define RT_OFF_ZYNQMON_TX_ENABLED      0x14 // 1  0/1
-#define RT_OFF_FPGA_DONE               0x15 // 1  raw pin level, bit0 = F1, bit1 = F2
+#define RT_OFF_SYSSTACK_TOTAL_WORDS     0x10 // 4  words
+#define RT_OFF_ZYNQMON_TX_ENABLED       0x14 // 1  0/1
+#define RT_OFF_FPGA_DONE                0x15 // 1  raw pin level, bit0 = F1, bit1 = F2
 // 0x16-0x17 undeclared hole (alignment before the RTC pair)
-#define RT_OFF_RTC_DATE 0x18 // 4  (year << 16) | (month << 8) | day; 0 when invalid
-#define RT_OFF_RTC_TIME 0x1c // 4  (valid << 24) | (hour << 16) | (min << 8) | sec
+#define RT_OFF_RTC_DATE  0x18 // 4  (year << 16) | (month << 8) | day; 0 when invalid
+#define RT_OFF_RTC_TIME  0x1c // 4  (valid << 24) | (hour << 16) | (min << 8) | sec
 #define RT_PAGE_USED_LEN 0x20
 
 // ---- Page 0x03 (ADC sample) wire layout.

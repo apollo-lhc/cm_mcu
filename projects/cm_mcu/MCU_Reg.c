@@ -469,7 +469,7 @@ static enum mcu_reg_result mcu_local_write7f(uint8_t address, const uint8_t *dat
     // below. The CLI sends the same messages with a 10 ms timeout; ProgCom
     // uses 0 ticks per this page's non-blocking rule.
     uint32_t zmsg = (data[0] == CTRL_CMD_ZYNQMON_ENABLE_TRANSMIT) ? ZYNQMON_ENABLE_TRANSMIT
-                                                                   : ZYNQMON_DISABLE_TRANSMIT;
+                                                                  : ZYNQMON_DISABLE_TRANSMIT;
     return (xQueueSendToBack(xZynqMonQueue, &zmsg, 0) == pdPASS) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
   }
 
