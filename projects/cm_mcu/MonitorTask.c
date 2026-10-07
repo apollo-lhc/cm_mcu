@@ -125,11 +125,14 @@ void MonitorTask(void *parameters)
           }
           continue;
         }
-        // The LGA80D (ZL8802) datasheet recommends 5 ms between a command and the next one to the
-        // same device. The tick is 10 ms, so wait one tick period (about 9 ms after the PAGE write)
-        // before the first read. Only the PSMON instance; FPGA monitoring is left untouched.
-        if (args == &dcdc_args)
-          vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+        // The LGA80D needs time after the PAGE write before the next command. Only the PSMON
+        // instance; FPGA monitoring is left untouched. This is a relative delay, not
+        // vTaskDelayUntil(): that does not sleep if xLastWakeTime has fallen behind (e.g. after an I2C
+        // timeout), which would collapse the gap. Restart the delay chain for the reads that follow.
+        if (args == &dcdc_args) {
+          lga80d_settle();
+          xLastWakeTime = xTaskGetTickCount();
+        }
 
         if (pageNackMask & pageNackBit) {
           log_info(LOG_MON, "%s: %s page %u SMBUS recovered\r\n", args->name,
