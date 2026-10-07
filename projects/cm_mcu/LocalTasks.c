@@ -432,14 +432,18 @@ const struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
 };
 
 // Does the snapshot transactions; assumes i2c1_sem is already held.
-// Returns early on the first failed transaction.
-static void snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+// Returns early (false) on the first failed transaction. Returns true only if
+// the page select, control write and block read all succeeded and the block
+// was a full 32 bytes. A short block is logged and returns false, but the
+// optional reset below still runs. No other I2C call may sit between the
+// control write and the block read: the block read does no mux select.
+static bool snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
   if (r) {
     log_error(LOG_SERVICE, "page w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
-    return;
+    return false;
   }
   lga80d_settle(); // the LGA80D needs time after PAGE before the next command
 
@@ -448,7 +452,7 @@ static void snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint
   r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
   if (r) {
     log_error(LOG_SERVICE, "ctrl w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
-    return;
+    return false;
   }
   // The device needs time to copy NVRAM into the snapshot register after the
   // SNAPSHOT_CONTROL write. The old polling code provided ~20ms of implicit
@@ -461,7 +465,13 @@ static void snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint
   r = apollo_i2c_ctl_block_r(1, add->dev_addr, extra_cmds[3].command, &snapshot[0]);
   if (r != SMBUS_OK) {
     log_error(LOG_SERVICE, "block %d\r\n", r);
-    return;
+    return false;
+  }
+  // the driver accepts any block length 1-32; i2c1_sem is held, so the received
+  // count of this transfer cannot be disturbed
+  bool ok = (SMBusRxPacketSizeGet(&g_sMaster1) == 32);
+  if (!ok) {
+    log_error(LOG_SERVICE, "short snapshot, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
   }
 
   if (reset) {
@@ -473,9 +483,12 @@ static void snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint
       log_error(LOG_SERVICE, "error reset %s\r\n", add->name);
     }
   }
+  return ok;
 }
 
-void snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+// Returns true if the snapshot in snapshot[] is a complete, valid read. On any
+// failure snapshot[] is zeroed.
+bool snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
 {
   // zero out snapshot buffer, in case of early return on error
   memset(snapshot, 0, 32);
@@ -483,15 +496,19 @@ void snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[3
   // grab the semaphore to ensure unique access to I2C controller
   if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
     log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
-    return;
+    return false;
   }
 
-  snapdump_locked(add, page, snapshot, reset);
+  bool ok = snapdump_locked(add, page, snapshot, reset);
+  if (!ok) {
+    memset(snapshot, 0, 32); // a short read has already written part of the buffer
+  }
 
   // always release the semaphore, including on the helper's error paths
   if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c1_sem);
   }
+  return ok;
 }
 
 // Initialization function for the LGA80D. These settings

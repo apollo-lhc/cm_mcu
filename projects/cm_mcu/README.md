@@ -113,14 +113,14 @@ whole translation unit compiles away. Protocol per [issue #210](https://github.c
 The remote host sends one command per line; the MCU replies with exactly one line.
 
 ```
-r <DC|FF|CL|MC> <devnum> <page> <addr> [<length>] \n
-w <DC|FF|CL|MC> <devnum> <page> <addr> <data> ... \n
+r <DC|FF|CL|MC|FP|SN> <devnum> <page> <addr> [<length>] \n
+w <DC|FF|CL|MC|FP|SN> <devnum> <page> <addr> <data> ... \n
 ```
 
 | Field | Meaning |
 | --- | --- |
 | `r` / `w` | read or write |
-| `DC` `FF` `CL` `MC` `FP` | LGA80D DC-DC, Firefly, clock synth, MCU, FPGA generic endpoint |
+| `DC` `FF` `CL` `MC` `FP` `SN` | LGA80D DC-DC, Firefly, clock synth, MCU, FPGA generic endpoint, LGA80D SNAPSHOT |
 | `devnum` | device index within that type, 1–2 hex digits |
 | `page` | page register value, 1–2 hex digits |
 | `addr` | register address within the page, 1-2 hex digits |
@@ -151,6 +151,8 @@ r MC 0 0 0 4     ->  d 43 4D 43 55
 r MC 0 0 14 4    ->  d 2A 01 00 00
 w MC 0 7F 0 03   ->  c
 r FP 0 0 12 4    ->  d 00 00 00 01
+w SN 0 0 0 01    ->  c
+r SN 0 0 0 4     ->  d XX XX XX XX   (raw snapshot bytes 0-3)
 ```
 
 Per-device notes:
@@ -426,3 +428,16 @@ data" sentinel for `pm_values` (also the boot-time init in `cm_mcu.c`).
 ## Building FreeRTOS
 
 FreeRTOS is now included as a git submodule. 
+* **`SN`** — the 32-byte LGA80D `SNAPSHOT` (PMBus `0xEA`), an SMBus block read that cannot fit
+  the 4-byte transfer limit, so it is a capture/read pair. `devnum` and `page` are as for `DC`.
+  `w SN <dev> <page> 00 01` runs PAGE, `SNAPSHOT_CONTROL` (`0xF3`) = 1, a ~40 ms wait and the
+  block read under `i2c1_sem`, and caches the 32 bytes (one slot). It replies `c`, or
+  `e SN capture failed` (the detail is in the MCU log); it blocks this task for ~45-60 ms,
+  and far longer if `i2c1_sem` is contended, so use a generous host timeout. Any other write
+  (address not `00`, data not `01`) is `e invalid SN command`. `r SN <dev> <page> <off> [<len>]`
+  returns `len` (1-4) cached bytes at `off` (`00`-`1f`) with no I2C access; it returns
+  `e no SN capture for dev/page` if there is no successful capture for that dev/page (none yet,
+  the last capture failed, or it was for another supply) and `e invalid SN span` if
+  `off + len > 32`. The cache is never aged, so always capture first. Bytes are the raw device
+  register (`snapshot_t` in `commands/PowerCommands.c`); decoding is the host's job. Snapshot
+  reset is not part of `SN`: use `w DC <dev> <page> F3 03` (supply off).
