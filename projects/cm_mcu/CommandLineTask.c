@@ -45,7 +45,7 @@ static const struct command_t commands[] = {
      "  status  -- show alarms/thresh\r\n"
      "  settemp [ff|fpga|dcdc|tm4c] T -- set temp thresh T C (EEPROM)\r\n"
      "  resettemp [ff|fpga|dcdc|tm4c|all] -- reset temp thresh default\r\n"
-     "  setvoltthres PCT -- set volt alarm +/-PCT%%\r\n"
+     "  setvoltthres PCT -- set volt alarm +/-PCT%% (persists to EEPROM)\r\n"
      "  clear -- clear alarm state\r\n",
      -1},
     {"bootloader", bl_ctl, "Call bootloader\r\n", 0},

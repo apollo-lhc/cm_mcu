@@ -109,12 +109,12 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
   buf[SYS_OFF_HW_REV] = (uint8_t)rev;
   buf[SYS_OFF_ADC_COUNT] = ADC_CHANNEL_COUNT;
 
-  // Only SYSTEM, POWER, ALARMS, ADC, CONTROLS, CONFIG (read-only), and RUNTIME
+  // Only SYSTEM, POWER, ALARMS, ADC, CONTROLS, CONFIG (+ CONFIG_WRITE), and RUNTIME
   // are implemented so far; the rest stay clear until their page is actually
   // implemented, per the register-map design rule.
   put_u32_le(buf + SYS_OFF_CAPABILITIES, MCU_CAP_SYSTEM | MCU_CAP_POWER | MCU_CAP_ALARMS |
                                              MCU_CAP_ADC | MCU_CAP_CONTROLS | MCU_CAP_CONFIG |
-                                             MCU_CAP_RUNTIME);
+                                             MCU_CAP_CONFIG_WRITE | MCU_CAP_RUNTIME);
 
   uint32_t health = 0U;
   if (getPowerControlState() == POWER_FAILURE)
@@ -243,6 +243,46 @@ static enum mcu_reg_result mcu_local_read5(uint8_t address, uint8_t length, uint
   build_config_page(buf);
   memcpy(out, buf + address, length);
   return MCU_REG_OK;
+}
+
+// A write must name one whole field: landing mid-field or in a hole is an
+// address error; landing on a field start with the wrong width is a length
+// error, so a client can tell a bad offset from a bad width.
+static enum mcu_reg_result validate_exact_field(const struct field_span *fields, size_t nfields,
+                                                uint8_t address, size_t length)
+{
+  for (size_t i = 0; i < nfields; ++i) {
+    if (address == fields[i].offset)
+      return (length == fields[i].size) ? MCU_REG_OK : MCU_REG_INVALID_WRITE_LENGTH;
+  }
+  return MCU_REG_INVALID_ADDRESS;
+}
+
+// Page 0x05 write: one whole field per transaction, clamped, then queued to the
+// EEPROM gatekeeper with a non-blocking send (ProgCom must never stall; a full
+// queue returns MCU_REG_QUEUE_FULL and changes nothing). The temperature
+// thresholds drive the over-temperature power-down in GenericAlarmTask, so the
+// clamp is a safety control, not input hygiene.
+static enum mcu_reg_result mcu_local_write5(uint8_t address, const uint8_t *data, size_t length)
+{
+  enum mcu_reg_result r = validate_exact_field(CONFIG_FIELDS,
+                                               sizeof(CONFIG_FIELDS) / sizeof(CONFIG_FIELDS[0]),
+                                               address, length);
+  if (r != MCU_REG_OK)
+    return r;
+
+  uint16_t raw = (uint16_t)(data[0] | ((uint16_t)data[1] << 8));
+  if (address == CFG_OFF_ALARM_VOLT_CPCT) {
+    if (raw < CFG_VOLT_MIN_CPCT || raw > CFG_VOLT_MAX_CPCT)
+      return MCU_REG_INVALID_VALUE;
+    return setAlarmVoltageThresTry(raw) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
+  }
+
+  int16_t celsius = (int16_t)raw; // two's complement, so negatives are rejected below
+  if (celsius < CFG_TEMP_MIN_C || celsius > CFG_TEMP_MAX_C)
+    return MCU_REG_INVALID_VALUE;
+  enum device dev = (enum device)((address - CFG_OFF_ALARM_TEMP_FF) / CFG_LEN_ALARM_TEMP);
+  return setAlarmTemperatureTry(dev, celsius) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
 }
 
 // Field spans for page 0x06 (Runtime). 0x16-0x17 is an undeclared hole.
@@ -484,9 +524,10 @@ mcu_reg_write(uint8_t page, uint8_t address, const uint8_t *data, size_t length)
     case MCU_REG_PAGE_POWER:
     case MCU_REG_PAGE_ALARM:
     case MCU_REG_PAGE_ADC:
-    case MCU_REG_PAGE_CONFIG:
     case MCU_REG_PAGE_RUNTIME:
       return MCU_REG_READ_ONLY;
+    case MCU_REG_PAGE_CONFIG:
+      return mcu_local_write5(address, data, length);
     case MCU_REG_PAGE_CONTROL:
       return mcu_local_write7f(address, data, length);
     default:

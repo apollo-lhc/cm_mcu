@@ -29,6 +29,10 @@ void setupActiveLowPins(void);
 #define EEPROM_ID_PS_IGNORE_MASK (EEPROM_ID_FF_ADDR + 4) // 0x48
 
 void write_eeprom(uint32_t data, uint32_t addr);
+void write_eeprom_if_diff(uint32_t data, uint32_t addr);
+// Non-blocking write_eeprom_if_diff(): returns false, and queues nothing, if the
+// gatekeeper queue is full. For callers that must never stall (ProgCom).
+bool write_eeprom_if_diff_try(uint32_t data, uint32_t addr);
 uint32_t read_eeprom_single(uint32_t addr);
 uint64_t read_eeprom_multi(uint32_t addr);
 

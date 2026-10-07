@@ -34,6 +34,24 @@ void write_eeprom(uint32_t data, uint32_t addr)
   return;
 }
 
+// write single word to eeprom only if it differs from what is stored there.
+// The compare happens in the gatekeeper task, so no reply is needed.
+void write_eeprom_if_diff(uint32_t data, uint32_t addr)
+{
+  uint64_t message;
+  message = EPRMMessage((uint64_t)EPRM_WRITE_IF_DIFF, addr, data);
+  xQueueSendToBack(xEPRMQueue_in, &message, portMAX_DELAY);
+  return;
+}
+
+// Non-blocking write_eeprom_if_diff(): zero-tick send, false if the queue is
+// full. The caller must surface the failure, never swallow it.
+bool write_eeprom_if_diff_try(uint32_t data, uint32_t addr)
+{
+  uint64_t message = EPRMMessage((uint64_t)EPRM_WRITE_IF_DIFF, addr, data);
+  return xQueueSendToBack(xEPRMQueue_in, &message, 0) == pdPASS;
+}
+
 // write single word to eeprom, bypassing the gatekeeper task
 // this should only be used in ISR-like routines
 void write_eeprom_raw(uint32_t data, uint32_t addr)

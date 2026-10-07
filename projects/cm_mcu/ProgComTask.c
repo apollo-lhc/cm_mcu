@@ -336,6 +336,10 @@ static const char *progcom_mcu_error(enum mcu_reg_result r)
       return "MCU queue full";
     case MCU_REG_INVALID_COMMAND:
       return "invalid MCU command";
+    case MCU_REG_INVALID_WRITE_LENGTH:
+      return "invalid MCU write span";
+    case MCU_REG_INVALID_VALUE:
+      return "invalid MCU value";
     case MCU_REG_INTERNAL_ERROR:
     default:
       return "MCU internal error";

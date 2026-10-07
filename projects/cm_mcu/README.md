@@ -344,6 +344,7 @@ Block 6:  0x180–0x1BF   Temperature alarm thresholds (runtime-configurable)
   0x184 ADDR_TEMP_DCDC   DCDC alarm temp
   0x188 ADDR_TEMP_TM4C   TM4C alarm temp
   0x18C ADDR_TEMP_FPGA   FPGA alarm temp
+  0x190 ADDR_ALARM_VOLT  Voltage alarm threshold (centi-percent; 0xFFFFFFFF = default 5 %)
 Blocks 7+: 0x1C0+        Available
 ```
 
@@ -396,7 +397,7 @@ Exceeding a threshold by more than the +5 °C tolerance triggers a power-off shu
 
 ```
 alm status                                 # current thresholds and alarm status
-alm settemp [ff|fpga|dcdc|tm4c] <temp>     # set threshold (persists to EEPROM)
+alm settemp [ff|fpga|dcdc|tm4c] <temp>     # set threshold (persists to EEPROM; only written if changed)
 alm resettemp [ff|fpga|dcdc|tm4c|all]      # reset to compile-time defaults
 ```
 

@@ -15,6 +15,8 @@ enum mcu_reg_result {
   MCU_REG_BUSY,
   MCU_REG_QUEUE_FULL,
   MCU_REG_INVALID_COMMAND, // valid address/length, unrecognized command payload
+  MCU_REG_INVALID_WRITE_LENGTH, // write length != the target field's width
+  MCU_REG_INVALID_VALUE,        // valid address/length, value outside the clamp
   MCU_REG_INTERNAL_ERROR,
 };
 
@@ -39,7 +41,7 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define MCU_REG_PAGE_SYSTEM 0x00
 
 #define MCU_MAP_MAJOR 1
-#define MCU_MAP_MINOR 2
+#define MCU_MAP_MINOR 3
 
 #define SYS_OFF_MAGIC        0x00 // 4  ASCII magic "CMCU"
 #define SYS_OFF_MAP_MAJOR    0x04 // 1
@@ -72,14 +74,14 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define MCU_CAP_CONTROLS       (1U << 6)
 #define MCU_CAP_CONFIG  (1U << 7) // page 0x05 readable
 #define MCU_CAP_RUNTIME (1U << 8)
-// bit 9 CONFIG_WRITE is reserved for the config page's write path (Phase 2b).
+#define MCU_CAP_CONFIG_WRITE (1U << 9) // page 0x05 writable (Phase 2b, map minor 3)
 
 #define MCU_HEALTH_POWER_FAULT       (1U << 0)
 #define MCU_HEALTH_TEMPERATURE_ALARM (1U << 1)
 #define MCU_HEALTH_VOLTAGE_ALARM     (1U << 2)
 #define MCU_HEALTH_ADC_ERROR         (1U << 3)
 
-// ---- Page 0x05 (Config) wire layout. Read-only at map minor 2. Five
+// ---- Page 0x05 (Config) wire layout. Read-only at map minor 2, writable from 3. Five
 // independent 16-bit policy values, each a naturally-aligned halfword (a single
 // atomic access on Cortex-M4), so there is no generation counter.
 
@@ -96,6 +98,15 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define CFG_LEN_ALARM_VOLT       2
 #define CFG_OFF_ALARM_VOLT_CPCT  0x08
 #define CFG_PAGE_USED_LEN        0x0a
+
+// Write clamps (reads are unclamped: EEPROM can hold older CLI-set values).
+// Raising a temperature threshold persistently reduces thermal protection;
+// lowering it can force a power-down that no inhibit bit reflects. The console
+// keeps its wider ranges on purpose.
+#define CFG_TEMP_MIN_C         50
+#define CFG_TEMP_MAX_C         100
+#define CFG_VOLT_MIN_CPCT      100  // 1 %
+#define CFG_VOLT_MAX_CPCT      1000 // 10 %
 
 // ---- Page 0x06 (Runtime) wire layout. Read-only, no generation counter: every
 // field is a single atomic word/byte, except the RTC, which is two words that

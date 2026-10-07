@@ -113,7 +113,19 @@ void setAlarmTemperature(enum device theDevice, int16_t temperature)
   // Zero-extend int16_t to uint32_t for EEPROM storage.
   // 0xFFFFFFFF is reserved as the uninitialized-EEPROM sentinel and cannot
   // be produced by zero-extension (upper 16 bits are always 0).
-  write_eeprom((uint32_t)(uint16_t)temperature, alarmTempAddr[theDevice]);
+  // The gatekeeper programs the word only if it differs from what is stored,
+  // so repeated sets do not wear the EEPROM.
+  write_eeprom_if_diff((uint32_t)(uint16_t)temperature, alarmTempAddr[theDevice]);
+}
+
+// Queue the EEPROM write first and change the live threshold only if it was
+// accepted, so a "queue full" reply to the client means nothing changed.
+bool setAlarmTemperatureTry(enum device theDevice, int16_t temperature)
+{
+  if (!write_eeprom_if_diff_try((uint32_t)(uint16_t)temperature, alarmTempAddr[theDevice]))
+    return false;
+  alarmTemp[theDevice] = temperature;
+  return true;
 }
 
 // Load alarm temperature thresholds from EEPROM into the alarmTemp[] array.
@@ -288,6 +300,31 @@ float getAlarmVoltageThres(void)
 void setAlarmVoltageThres(float voltthres)
 {
   alarmVolt = voltthres;
+  // Stored as centi-percent (fraction * 10000), rounded, zero-extended to 32 bits
+  // so 0xFFFFFFFF stays the uninitialized sentinel. Never the float bit pattern.
+  uint32_t cpct = (uint32_t)(voltthres * 10000.0f + 0.5f);
+  write_eeprom_if_diff(cpct, ADDR_ALARM_VOLT);
+}
+
+bool setAlarmVoltageThresTry(uint16_t cpct)
+{
+  if (!write_eeprom_if_diff_try(cpct, ADDR_ALARM_VOLT))
+    return false;
+  alarmVolt = (float)cpct / 10000.0f;
+  return true;
+}
+
+// Load the voltage alarm threshold from EEPROM into alarmVolt.
+// An uninitialized or out-of-range word (valid range is the CLI's 1-50 %) keeps
+// the compile-time default.
+// Must be called after the EEPROM gatekeeper task and its queues are running.
+void loadAlarmVoltageFromEEPROM(void)
+{
+  uint32_t raw = read_eeprom_single(ADDR_ALARM_VOLT);
+  if (raw < 100U || raw > 5000U) {
+    return; // uninitialized (0xFFFFFFFF) or corrupt: keep the default
+  }
+  alarmVolt = (float)raw / 10000.0f;
 }
 
 // current status of voltages
