@@ -263,7 +263,7 @@ BaseType_t snapshot(int argc, char **argv, char *m)
 
   uint8_t sn[32];
   bool ok = snapdump(&pm_addrs_dcdc[which], page, sn);
-  if ( ! ok ) {
+  if (!ok) {
     copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: snapdump failed\r\n", argv[0]);
     return pdFALSE;
   }
