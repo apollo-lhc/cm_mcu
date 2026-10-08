@@ -2,6 +2,7 @@
 #include "Tasks.h"
 #include "MonitorTask.h"
 #include "FireflyUtils.h"
+#include "MCU_Reg.h"
 
 #include "common/log.h"
 #include "common/pinsel.h"
@@ -289,42 +290,45 @@ struct GenericAlarmParams_t tempAlarmTask = {
 //
 ///////////////////////////////////////////////////////////
 
-// current value of the thresholds
-#define INITIAL_ALARM_VOLT_PERCENT 0.05f // +/-5% from the ADC thresholds
-static float alarmVolt = INITIAL_ALARM_VOLT_PERCENT;
+// current value of the threshold, in centi-percent (500 = +/-5.00 %). This is
+// also the EEPROM and ProgCom unit; VoltStatus() is the only place it is
+// converted to a fraction.
+#define INITIAL_ALARM_VOLT_CPCT 500 // +/-5% from the ADC thresholds
+static uint16_t alarmVoltCpct = INITIAL_ALARM_VOLT_CPCT;
 
-float getAlarmVoltageThres(void)
+uint16_t getAlarmVoltageThresCpct(void)
 {
-  return alarmVolt;
+  return alarmVoltCpct;
 }
-void setAlarmVoltageThres(float voltthres)
+
+// Zero-extended to 32 bits in EEPROM, so 0xFFFFFFFF stays the uninitialized
+// sentinel.
+void setAlarmVoltageThresCpct(uint16_t cpct)
 {
-  alarmVolt = voltthres;
-  // Stored as centi-percent (fraction * 10000), rounded, zero-extended to 32 bits
-  // so 0xFFFFFFFF stays the uninitialized sentinel. Never the float bit pattern.
-  uint32_t cpct = (uint32_t)(voltthres * 10000.0f + 0.5f);
+  alarmVoltCpct = cpct;
   write_eeprom_if_diff(cpct, ADDR_ALARM_VOLT);
 }
 
-bool setAlarmVoltageThresTry(uint16_t cpct)
+bool setAlarmVoltageThresCpctTry(uint16_t cpct)
 {
   if (!write_eeprom_if_diff_try(cpct, ADDR_ALARM_VOLT))
     return false;
-  alarmVolt = (float)cpct / 10000.0f;
+  alarmVoltCpct = cpct;
   return true;
 }
 
-// Load the voltage alarm threshold from EEPROM into alarmVolt.
-// An uninitialized or out-of-range word (valid range is the CLI's 1-50 %) keeps
-// the compile-time default.
+// Load the voltage alarm threshold from EEPROM into alarmVoltCpct.
+// An uninitialized or out-of-range word (valid range is ProgCom's
+// CFG_VOLT_MIN_CPCT-CFG_VOLT_MAX_CPCT, which the CLI shares) keeps the
+// compile-time default.
 // Must be called after the EEPROM gatekeeper task and its queues are running.
 void loadAlarmVoltageFromEEPROM(void)
 {
   uint32_t raw = read_eeprom_single(ADDR_ALARM_VOLT);
-  if (raw < 100U || raw > 5000U) {
+  if (raw < CFG_VOLT_MIN_CPCT || raw > CFG_VOLT_MAX_CPCT) {
     return; // uninitialized (0xFFFFFFFF) or corrupt: keep the default
   }
-  alarmVolt = (float)raw / 10000.0f;
+  alarmVoltCpct = (uint16_t)raw;
 }
 
 // current status of voltages
@@ -409,7 +413,7 @@ int VoltStatus(void)
     }
   }
   // Loop over ADC values.
-  const float threshold = getAlarmVoltageThres();
+  const float threshold = (float)getAlarmVoltageThresCpct() / 10000.f; // fraction
   uint32_t ch_alm_mask = 0x0U;
   excess_volt = 0.0f; // reset, so a cleared alarm doesn't report stale data
   excess_volt_which_ch = 0;

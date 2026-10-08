@@ -175,11 +175,28 @@ Per-device notes:
   one command byte). Pages `0x30`/`0x31` (persistent error log) are frozen but not served.
   Multi-byte values are little-endian; a read may not cross a field boundary, and reserved
   offsets return `e invalid MCU address` rather than zero. No I2C and no blocking.
+  Page `0x05` (Config) writes persist to EEPROM block 6. A word is programmed only when the
+  value changes, but there is no rate limit, so a host must set thresholds once and never write
+  them in a loop (each change costs an EEPROM write cycle, as with `alm settemp`). The datasheet
+  rates a word for >500K writes, but endurance is shared across an 8-block meta-block.
   See `MCU_Reg.h` and `cm_interface/MCU_REGISTER_MAP.md` for the authoritative layout.
 * **`FP`** — FPGA generic I2C endpoint. `devnum` is `0` for F1 or `1` for F2, `page` must be
   `0`, and `addr` is a register in the FPGA diagnostic block. Goes through
   `fpga_i2c_reg_r/w()` on I2C bus 5 via mux `0x70` to slave address `0x2b` only; takes
   `i2c5_sem`. The register map is defined by the loaded bitfile, not by this firmware.
+* **`SN`** — the 32-byte LGA80D `SNAPSHOT` (PMBus `0xEA`), an SMBus block read that cannot fit
+  the 4-byte transfer limit, so it is a capture/read pair. `devnum` and `page` are as for `DC`.
+  `w SN <dev> <page> 00 01` runs PAGE, `SNAPSHOT_CONTROL` (`0xF3`) = 1, a ~40 ms wait and the
+  block read under `i2c1_sem`, and caches the 32 bytes (one slot). It replies `c`, or
+  `e SN capture failed` (the detail is in the MCU log); it blocks this task for ~45-60 ms,
+  and far longer if `i2c1_sem` is contended, so use a generous host timeout. Any other write
+  (address not `00`, data not `01`) is `e invalid SN command`. `r SN <dev> <page> <off> [<len>]`
+  returns `len` (1-4) cached bytes at `off` (`00`-`1f`) with no I2C access; it returns
+  `e no SN capture for dev/page` if there is no successful capture for that dev/page (none yet,
+  the last capture failed, or it was for another supply) and `e invalid SN span` if
+  `off + len > 32`. The cache is never aged, so always capture first. Bytes are the raw device
+  register (`snapshot_t` in `commands/PowerCommands.c`); decoding is the host's job. Snapshot
+  reset is not part of `SN`: use `w DC <dev> <page> F3 03` (supply off).
 
 The four I2C-backed device paths (`DC`, `FF`, `CL`, `FP`) take the same per-bus semaphore as
 the monitor tasks, so an in-flight
@@ -428,16 +445,3 @@ data" sentinel for `pm_values` (also the boot-time init in `cm_mcu.c`).
 ## Building FreeRTOS
 
 FreeRTOS is now included as a git submodule. 
-* **`SN`** — the 32-byte LGA80D `SNAPSHOT` (PMBus `0xEA`), an SMBus block read that cannot fit
-  the 4-byte transfer limit, so it is a capture/read pair. `devnum` and `page` are as for `DC`.
-  `w SN <dev> <page> 00 01` runs PAGE, `SNAPSHOT_CONTROL` (`0xF3`) = 1, a ~40 ms wait and the
-  block read under `i2c1_sem`, and caches the 32 bytes (one slot). It replies `c`, or
-  `e SN capture failed` (the detail is in the MCU log); it blocks this task for ~45-60 ms,
-  and far longer if `i2c1_sem` is contended, so use a generous host timeout. Any other write
-  (address not `00`, data not `01`) is `e invalid SN command`. `r SN <dev> <page> <off> [<len>]`
-  returns `len` (1-4) cached bytes at `off` (`00`-`1f`) with no I2C access; it returns
-  `e no SN capture for dev/page` if there is no successful capture for that dev/page (none yet,
-  the last capture failed, or it was for another supply) and `e invalid SN span` if
-  `off + len > 32`. The cache is never aged, so always capture first. Bytes are the raw device
-  register (`snapshot_t` in `commands/PowerCommands.c`); decoding is the host's job. Snapshot
-  reset is not part of `SN`: use `w DC <dev> <page> F3 03` (supply off).

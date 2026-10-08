@@ -84,6 +84,9 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 // ---- Page 0x05 (Config) wire layout. Read-only at map minor 2, writable from 3. Five
 // independent 16-bit policy values, each a naturally-aligned halfword (a single
 // atomic access on Cortex-M4), so there is no generation counter.
+// Writes persist to EEPROM block 6, programmed only when the value changes and
+// with no rate limit: a host must not write these in a loop (EEPROM wear;
+// >500K writes per word, endurance shared across an 8-block meta-block).
 
 #define MCU_REG_PAGE_CONFIG 0x05
 
@@ -99,10 +102,11 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define CFG_OFF_ALARM_VOLT_CPCT 0x08
 #define CFG_PAGE_USED_LEN       0x0a
 
-// Write clamps (reads are unclamped: EEPROM can hold older CLI-set values).
-// Raising a temperature threshold persistently reduces thermal protection;
-// lowering it can force a power-down that no inhibit bit reflects. The console
-// keeps its wider ranges on purpose.
+// Write clamps. Temperature reads are unclamped: EEPROM can hold older CLI-set
+// values. Raising a temperature threshold persistently reduces thermal
+// protection; lowering it can force a power-down that no inhibit bit reflects.
+// The console keeps its wider temperature ranges on purpose. The voltage range
+// is shared by the CLI (setvoltthres) and the EEPROM load at boot.
 #define CFG_TEMP_MIN_C    50
 #define CFG_TEMP_MAX_C    100
 #define CFG_VOLT_MIN_CPCT 100  // 1 %
@@ -185,8 +189,8 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define CTRL_CMD_RELEASE_PROGCOM_POWER_INHIBIT 2
 #define CTRL_CMD_CLEAR_POWER_FAULT             3
 #define CTRL_CMD_CLEAR_ALARM_LATCHES           4
-// Sticky: nothing re-enables ZynqMon transmit except the CLI ("zmon enable")
-// or a reboot.
+// Disabling ZynqMon transmit persists until command 5, the CLI ("zmon enable")
+// or a reboot re-enables it.
 #define CTRL_CMD_ZYNQMON_ENABLE_TRANSMIT  5
 #define CTRL_CMD_ZYNQMON_DISABLE_TRANSMIT 6
 

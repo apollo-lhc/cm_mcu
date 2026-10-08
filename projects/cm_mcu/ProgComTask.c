@@ -523,7 +523,7 @@ static const char *progcom_access_snap(const struct progcom_cmd_t *cmd, uint8_t 
     // a failed capture must not leave the previous capture readable
     sn_cache.dev = 0xFF;
     // snapdump() takes i2c1_sem itself and zeroes the buffer on failure
-    if (!snapdump(&pm_addrs_dcdc[cmd->dev_num], cmd->page, sn_cache.data, false))
+    if (!snapdump(&pm_addrs_dcdc[cmd->dev_num], cmd->page, sn_cache.data))
       return "SN capture failed";
     sn_cache.dev = cmd->dev_num;
     sn_cache.page = cmd->page;

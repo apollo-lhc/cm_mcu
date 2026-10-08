@@ -303,8 +303,8 @@ void setAlarmTemperature(enum device device_name, int16_t newtemp);
 uint32_t getTempAlarmStatus(void);
 uint32_t getWarnLatch(void);
 enum alarm_task_state getTempAlarmTaskState(void);
-float getAlarmVoltageThres(void);
-void setAlarmVoltageThres(float voltthres);
+uint16_t getAlarmVoltageThresCpct(void);
+void setAlarmVoltageThresCpct(uint16_t cpct);
 uint32_t getVoltAlarmStatus(void);
 uint8_t getVoltStatusGroup(enum powdevice which);
 enum alarm_task_state getVoltAlarmTaskState(void);
@@ -361,7 +361,8 @@ void InitRTC(void);
 #endif // REV2 or 3
 
 struct dev_i2c_addr_t; // forward reference
-bool snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
+bool snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32]);
+bool snapreset(const struct dev_i2c_addr_t *add, uint8_t page);
 
 // Xilinx MonitorTask
 int get_f1_index(void);

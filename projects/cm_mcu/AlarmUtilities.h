@@ -44,11 +44,12 @@ void clearWarnLatch(void);
 
 // voltage alarms
 //    first some commands for setting/getting the thresholds
-float getAlarmVoltageThres(void);
-void setAlarmVoltageThres(float voltthres);
-// Non-blocking variant for ProgCom, in centi-percent: false (and no change) if
-// the EEPROM queue is full.
-bool setAlarmVoltageThresTry(uint16_t cpct);
+// in centi-percent (500 = +/-5.00 %)
+uint16_t getAlarmVoltageThresCpct(void);
+void setAlarmVoltageThresCpct(uint16_t cpct);
+// Non-blocking variant for ProgCom: false (and no change) if the EEPROM queue
+// is full.
+bool setAlarmVoltageThresCpctTry(uint16_t cpct);
 void loadAlarmVoltageFromEEPROM(void);
 void getAlarmVoltageStatus(void);
 //    callback functions

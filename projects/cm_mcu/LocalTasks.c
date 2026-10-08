@@ -434,10 +434,10 @@ const struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
 // Does the snapshot transactions; assumes i2c1_sem is already held.
 // Returns early (false) on the first failed transaction. Returns true only if
 // the page select, control write and block read all succeeded and the block
-// was a full 32 bytes. A short block is logged and returns false, but the
-// optional reset below still runs. No other I2C call may sit between the
-// control write and the block read: the block read does no mux select.
-static bool snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+// was a full 32 bytes. A short block is logged and returns false. No other I2C
+// call may sit between the control write and the block read: the block read
+// does no mux select.
+static bool snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32])
 {
   // page register
   int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
@@ -473,22 +473,12 @@ static bool snapdump_locked(const struct dev_i2c_addr_t *add, uint8_t page, uint
   if (!ok) {
     log_error(LOG_SERVICE, "short snapshot, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
   }
-
-  if (reset) {
-    // reset SNAPSHOT. This will fail if the device is on.
-    lga80d_settle(); // don't follow the block read immediately with another command
-    cmd = 0x3;
-    r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
-    if (r) {
-      log_error(LOG_SERVICE, "error reset %s\r\n", add->name);
-    }
-  }
   return ok;
 }
 
 // Returns true if the snapshot in snapshot[] is a complete, valid read. On any
 // failure snapshot[] is zeroed.
-bool snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset)
+bool snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32])
 {
   // zero out snapshot buffer, in case of early return on error
   memset(snapshot, 0, 32);
@@ -499,12 +489,45 @@ bool snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[3
     return false;
   }
 
-  bool ok = snapdump_locked(add, page, snapshot, reset);
+  bool ok = snapdump_locked(add, page, snapshot);
   if (!ok) {
     memset(snapshot, 0, 32); // a short read has already written part of the buffer
   }
 
   // always release the semaphore, including on the helper's error paths
+  if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(i2c1_sem);
+  }
+  return ok;
+}
+
+// Sends the SNAPSHOT erase (SNAPSHOT_CONTROL = 3) to one page of an LGA80D.
+// Returns true if both writes were ACKed. That does not prove the erase: the
+// device ignores it while its output is on.
+bool snapreset(const struct dev_i2c_addr_t *add, uint8_t page)
+{
+  if (acquireI2CSemaphore(i2c1_sem) == pdFAIL) {
+    log_warn(LOG_SERVICE, "could not get semaphore in time\r\n");
+    return false;
+  }
+
+  bool ok = false;
+  int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[0], &page);
+  if (r) {
+    log_error(LOG_SERVICE, "page w fail, dev 0x%x (%s)\r\n", add->dev_addr, add->name);
+  }
+  else {
+    lga80d_settle(); // the LGA80D needs time after PAGE before the next command
+    uint8_t cmd = 0x3;
+    r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, add, &extra_cmds[4], &cmd);
+    if (r) {
+      log_error(LOG_SERVICE, "error reset %s\r\n", add->name);
+    }
+    else {
+      ok = true;
+    }
+  }
+
   if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c1_sem);
   }

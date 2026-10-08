@@ -218,17 +218,7 @@ static void build_config_page(uint8_t buf[CFG_PAGE_USED_LEN])
   for (int dev = FF; dev <= FPGA; ++dev)
     put_u16_le(buf + CFG_OFF_ALARM_TEMP_FF + CFG_LEN_ALARM_TEMP * dev,
                (uint16_t)getAlarmTemperature((enum device)dev));
-
-  // Clamp before the cast: converting an out-of-range float to an integer is
-  // undefined, and nothing structurally keeps alarmVolt inside the 0.01-0.50
-  // band the CLI enforces. `!(v >= 0)` also catches NaN. Rounded by hand to
-  // avoid pulling in libm (lrintf is not otherwise used in this firmware).
-  float v = getAlarmVoltageThres();
-  if (!(v >= 0.f))
-    v = 0.f;
-  else if (v > 6.5535f)
-    v = 6.5535f;
-  put_u16_le(buf + CFG_OFF_ALARM_VOLT_CPCT, (uint16_t)(v * 10000.f + 0.5f));
+  put_u16_le(buf + CFG_OFF_ALARM_VOLT_CPCT, getAlarmVoltageThresCpct());
 }
 
 static enum mcu_reg_result mcu_local_read5(uint8_t address, uint8_t length, uint8_t out[4])
@@ -275,7 +265,7 @@ static enum mcu_reg_result mcu_local_write5(uint8_t address, const uint8_t *data
   if (address == CFG_OFF_ALARM_VOLT_CPCT) {
     if (raw < CFG_VOLT_MIN_CPCT || raw > CFG_VOLT_MAX_CPCT)
       return MCU_REG_INVALID_VALUE;
-    return setAlarmVoltageThresTry(raw) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
+    return setAlarmVoltageThresCpctTry(raw) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
   }
 
   int16_t celsius = (int16_t)raw; // two's complement, so negatives are rejected below
@@ -452,7 +442,7 @@ static enum mcu_reg_result mcu_local_write7f(uint8_t address, const uint8_t *dat
   if (address != CTRL_OFF_COMMAND)
     return MCU_REG_INVALID_ADDRESS;
   if (length != 1)
-    return MCU_REG_INVALID_LENGTH;
+    return MCU_REG_INVALID_WRITE_LENGTH;
 
   if (data[0] == CTRL_CMD_CLEAR_ALARM_LATCHES) {
     // matches alarm_ctl clear exactly: same two independent sends, same

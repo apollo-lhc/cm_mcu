@@ -12,6 +12,7 @@
 #include "AlarmUtilities.h"
 #include "commands/AlarmCommands.h"
 #include "commands/parameters.h"
+#include "MCU_Reg.h"
 #include "common/utils.h"
 #include "Tasks.h"
 #include "projdefs.h"
@@ -61,10 +62,8 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
                  (stat & ALM_STAT_TM4C_OVERTEMP) ? "ALARM" : "GOOD", getAlarmTemperature(TM4C));
 
     uint32_t adc_volt_stat = getVoltAlarmStatus();
-    float voltthres = getAlarmVoltageThres() * 100;
-    const char *sign; // threshold is never negative
-    int tens, frac;
-    float_to_ints(voltthres, &sign, &tens, &frac);
+    uint16_t cpct = getAlarmVoltageThresCpct();
+    int tens = cpct / 100, frac = cpct % 100;
     copied +=
         snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s (for FPGAs) \t Threshold: +/-%02d.%02d %%\r\n",
                  (adc_volt_stat) ? "ALARM" : "GOOD", tens, frac);
@@ -154,13 +153,14 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     errno = 0;
     char *endptr = NULL;
     long pct = strtol(argv[2], &endptr, 10);
-    if (endptr == argv[2] || *endptr != '\0' || errno == ERANGE || pct < 1 || pct > 50) {
-      snprintf(m, s, "Invalid pct '%s'; must be 1-50\r\n", argv[2]);
+    // same range as ProgCom page 0x05
+    if (endptr == argv[2] || *endptr != '\0' || errno == ERANGE ||
+        pct < CFG_VOLT_MIN_CPCT / 100 || pct > CFG_VOLT_MAX_CPCT / 100) {
+      snprintf(m, s, "Invalid pct '%s'; must be %d-%d\r\n", argv[2], CFG_VOLT_MIN_CPCT / 100,
+               CFG_VOLT_MAX_CPCT / 100);
       return pdFALSE;
     }
-    // stored as a fraction, not a percent: VoltStatus() compares it against
-    // (now - target)/target, and alarm_ctl status prints it back * 100
-    setAlarmVoltageThres((float)pct / 100.f);
+    setAlarmVoltageThresCpct((uint16_t)(pct * 100)); // stored in centi-percent
     snprintf(m, s, "alarm voltages are set their threshold by +/-%ld %% \r\n", pct);
     return pdFALSE;
   }
