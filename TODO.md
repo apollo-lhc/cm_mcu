@@ -272,6 +272,21 @@ queue-driven worker so the task servicing UART7 never blocks on I2C, or bounding
 protocol-level ack/retry. Both are larger, cross-cutting changes — treat as a separate follow-up from
 the overflow-detection mitigation already landed.
 
+### 22. Latched Voltage-Alarm Rail Not Exposed via ProgCom — OPEN
+
+Added 2026-10-08 (issue 301 work, branch `fix/vmon`). `VoltErrorLog()` (`AlarmUtilities.c`) now
+latches the worst rail of the most recent voltage alarm (`latch_volt_*`: ADC channel, measured
+value, target, % off), held until `ALM_CLEAR_ALL`. Only the CLI shows it (`alm status`, via
+`getVoltAlarmLatch()`).
+
+ProgCom still exposes only the alarm task state and the `currentVoltStatus[]` group bits
+(`MCU_Reg.c:351-356`, `ALM_OFF_VOLT_*`). Those group bits are rewritten on the next `VoltStatus()`
+pass in `POWER_OFF`/`POWER_ON`, so after a fault a remote client can't reliably tell which supply
+tripped.
+
+**Action:** Add the latched channel (and optionally value/target/%) to the alarm register page in
+`MCU_Reg.c`/`MCU_Reg.h`, with the matching decoder change in `../cm_interface`.
+
 ## Retracted
 
 ### 4. Hardware Revision Abstraction Layer — DROPPED (superseded by the REV1 retirement plan)
