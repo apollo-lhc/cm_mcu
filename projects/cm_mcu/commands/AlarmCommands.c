@@ -65,8 +65,8 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     uint16_t cpct = getAlarmVoltageThresCpct();
     int tens = cpct / 100, frac = cpct % 100;
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s (for FPGAs) \t Threshold: +/-%02d.%02d %%\r\n",
-                 (adc_volt_stat) ? "ALARM" : "GOOD", tens, frac);
+        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s \t Warn: +/-%02d.%02d %%, fault: +/-%02d.%02d %% or 2 warning rails\r\n",
+                 (adc_volt_stat) ? "ALARM" : "GOOD", tens, frac, (2 * cpct) / 100, (2 * cpct) % 100);
 
     configASSERT(copied < SCRATCH_SIZE);
 

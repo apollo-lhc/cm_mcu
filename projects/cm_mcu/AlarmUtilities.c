@@ -362,7 +362,7 @@ enum alarm_task_state getVoltAlarmTaskState(void)
   return voltAlarmState;
 }
 // check the current voltage status.
-// returns +1 for warning, +2 or higher for error
+// returns 1 for one warning rail, 2 for two warning rails or one severe rail
 // these flags represent positions into thestruct ADC_Info_t ADCs[] array in
 // the ADCMonitorTask.c
 #ifdef REV1
@@ -391,7 +391,8 @@ int VoltStatus(void)
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
 
-  int retval = 0;
+  int warn_rails = 0;
+  bool severe_rail = false;
   status_V = 0x0U;
 
   // change what we do, if power is on or not.
@@ -414,6 +415,7 @@ int VoltStatus(void)
   }
   // Loop over ADC values.
   const float threshold = (float)getAlarmVoltageThresCpct() / 10000.f; // fraction
+  const float fault_threshold = 2.f * threshold;
   uint32_t ch_alm_mask = 0x0U;
   excess_volt = 0.0f; // reset, so a cleared alarm doesn't report stale data
   excess_volt_which_ch = 0;
@@ -431,6 +433,10 @@ int VoltStatus(void)
     float aexcess = ABS(excess);
 
     if (aexcess > threshold) {
+      ++warn_rails;
+      if (aexcess > fault_threshold) {
+        severe_rail = true;
+      }
       ch_alm_mask |= (0x1U << i);               // mark bit for failing supply
       if (aexcess * 100.f > ABS(excess_volt)) { // keep the worst offender, in percent
         excess_volt = excess * 100.f;
@@ -465,18 +471,16 @@ int VoltStatus(void)
   status_V = 0x0U;
   if (ch_alm_mask & (VALM_BASE_MASK | VALM_GEN_MASK)) {
     status_V |= ALM_STAT_GEN_OVERVOLT;
-    ++retval;
   }
   if (ch_alm_mask & VALM_F1_MASK) {
     status_V |= ALM_STAT_FPGA1_OVERVOLT;
-    ++retval;
   }
   if (ch_alm_mask & VALM_F2_MASK) {
     status_V |= ALM_STAT_FPGA2_OVERVOLT;
-    ++retval;
   }
 
-  return retval;
+  // Severity counts individual rails; groups above are diagnostics only.
+  return (severe_rail || warn_rails > 1) ? 2 : warn_rails;
 }
 
 void VoltErrorLog(void)
