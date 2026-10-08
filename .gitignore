@@ -71,3 +71,4 @@ projects/cm_mcu/MonI2C_addresses.h
 CornellCM_MCU.tgz
 CornellCM_MCU.tar.gz
 PL_MEM_CM_rev3.xml
+.pydevproject

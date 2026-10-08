@@ -7,9 +7,18 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include <time.h>
+
 #include "AlarmUtilities.h"
+#include "FireflyUtils.h"
 #include "Tasks.h"
+#include "ZynqMonTask.h"
+#include "common/pinsel.h"
 #include "common/power_ctl.h"
+#include "driverlib/hibernate.h"
+#include "driverlib/rom.h"
+#include "inc/hw_hibernate.h"
+#include "inc/hw_types.h"
 
 // Page 0x01's per-supply state array assumes REV2/REV3's supply count; this
 // module isn't built for REV1 (no ProgCom UART support there).
@@ -22,6 +31,12 @@ static uint32_t cached_reset_cause = 0U;
 void mcu_reg_set_reset_cause(uint32_t raw_reset_cause)
 {
   cached_reset_cause = raw_reset_cause;
+}
+
+static void put_u16_le(uint8_t *dst, uint16_t value)
+{
+  dst[0] = (uint8_t)(value >> 0);
+  dst[1] = (uint8_t)(value >> 8);
 }
 
 static void put_u32_le(uint8_t *dst, uint32_t value)
@@ -53,7 +68,14 @@ static const struct field_span SYSTEM_FIELDS[] = {
     {SYS_OFF_UPTIME_S, 4},
     {SYS_OFF_RESET_CAUSE, 4},
     {SYS_OFF_GIT_VERSION, SYS_GIT_VERSION_LEN},
+    {SYS_OFF_FF_USER_MASK, 4},
+    {SYS_OFF_FF_PRESENT_MASK, 4},
+    {SYS_OFF_BUILD_TYPE, 1},
+    {SYS_OFF_BUILD_TIME, SYS_BUILD_TIME_LEN},
 };
+
+static_assert(sizeof(__TIME__ ", " __DATE__) <= SYS_BUILD_TIME_LEN,
+              "build-time string does not fit SYS_OFF_BUILD_TIME");
 
 static enum mcu_reg_result validate_span(const struct field_span *fields, size_t nfields,
                                          uint8_t address, uint8_t length)
@@ -87,11 +109,12 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
   buf[SYS_OFF_HW_REV] = (uint8_t)rev;
   buf[SYS_OFF_ADC_COUNT] = ADC_CHANNEL_COUNT;
 
-  // Only SYSTEM, POWER, ALARMS, ADC, and CONTROLS are implemented so far;
-  // the rest stay clear until their page is actually implemented, per the
-  // register-map design rule.
+  // Only SYSTEM, POWER, ALARMS, ADC, CONTROLS, CONFIG (+ CONFIG_WRITE), and RUNTIME
+  // are implemented so far; the rest stay clear until their page is actually
+  // implemented, per the register-map design rule.
   put_u32_le(buf + SYS_OFF_CAPABILITIES, MCU_CAP_SYSTEM | MCU_CAP_POWER | MCU_CAP_ALARMS |
-                                             MCU_CAP_ADC | MCU_CAP_CONTROLS);
+                                             MCU_CAP_ADC | MCU_CAP_CONTROLS | MCU_CAP_CONFIG |
+                                             MCU_CAP_CONFIG_WRITE | MCU_CAP_RUNTIME);
 
   uint32_t health = 0U;
   if (getPowerControlState() == POWER_FAILURE)
@@ -112,6 +135,15 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
   // not the full gitVersion()/FIRMWARE_VERSION string. snprintf truncates
   // and NUL-terminates; the memset above already zero-padded the rest.
   snprintf((char *)(buf + SYS_OFF_GIT_VERSION), SYS_GIT_VERSION_LEN, "%s", GIT_DESCRIBE);
+
+  put_u32_le(buf + SYS_OFF_FF_USER_MASK, ff_USER_mask);
+  put_u32_le(buf + SYS_OFF_FF_PRESENT_MASK, ff_PRESENT_mask);
+#ifdef DEBUG
+  buf[SYS_OFF_BUILD_TYPE] = 1U;
+#else
+  buf[SYS_OFF_BUILD_TYPE] = 0U;
+#endif
+  snprintf((char *)(buf + SYS_OFF_BUILD_TIME), SYS_BUILD_TIME_LEN, "%s", buildTime());
 }
 
 static enum mcu_reg_result mcu_local_read0(uint8_t address, uint8_t length, uint8_t out[4])
@@ -155,6 +187,145 @@ static enum mcu_reg_result mcu_local_read3(uint8_t address, uint8_t length, uint
 
   uint8_t buf[ADC_PAGE_VALUES_LEN];
   build_adc_page(buf);
+  memcpy(out, buf + address, length);
+  return MCU_REG_OK;
+}
+
+// Field spans for page 0x05 (Config). The widths are #defines in MCU_Reg.h so
+// the client contract test can read them without parsing this initializer.
+static const struct field_span CONFIG_FIELDS[] = {
+    {CFG_OFF_ALARM_TEMP_FF, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_TEMP_DCDC, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_TEMP_TM4C, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_TEMP_FPGA, CFG_LEN_ALARM_TEMP},
+    {CFG_OFF_ALARM_VOLT_CPCT, CFG_LEN_ALARM_VOLT},
+};
+
+// The four temperature offsets are derived from enum device, so its order must
+// stay FF, DCDC, TM4C, FPGA (the same order the CLI and the EEPROM table use).
+static_assert(FF == 0 && DCDC == 1 && TM4C == 2 && FPGA == 3,
+              "page 0x05 temperature offsets assume enum device order FF, DCDC, TM4C, FPGA");
+static_assert(CFG_OFF_ALARM_TEMP_DCDC == CFG_OFF_ALARM_TEMP_FF + CFG_LEN_ALARM_TEMP &&
+                  CFG_OFF_ALARM_TEMP_TM4C == CFG_OFF_ALARM_TEMP_DCDC + CFG_LEN_ALARM_TEMP &&
+                  CFG_OFF_ALARM_TEMP_FPGA == CFG_OFF_ALARM_TEMP_TM4C + CFG_LEN_ALARM_TEMP,
+              "page 0x05 temperature fields must be contiguous");
+
+static void build_config_page(uint8_t buf[CFG_PAGE_USED_LEN])
+{
+  memset(buf, 0, CFG_PAGE_USED_LEN);
+  // int16_t -> uint16_t is a bit-pattern conversion, so negative thresholds
+  // (older CLI-set EEPROM content) read back in two's complement.
+  for (int dev = FF; dev <= FPGA; ++dev)
+    put_u16_le(buf + CFG_OFF_ALARM_TEMP_FF + CFG_LEN_ALARM_TEMP * dev,
+               (uint16_t)getAlarmTemperature((enum device)dev));
+  put_u16_le(buf + CFG_OFF_ALARM_VOLT_CPCT, getAlarmVoltageThresCpct());
+}
+
+static enum mcu_reg_result mcu_local_read5(uint8_t address, uint8_t length, uint8_t out[4])
+{
+  enum mcu_reg_result r = validate_span(CONFIG_FIELDS,
+                                        sizeof(CONFIG_FIELDS) / sizeof(CONFIG_FIELDS[0]),
+                                        address, length);
+  if (r != MCU_REG_OK)
+    return r;
+
+  uint8_t buf[CFG_PAGE_USED_LEN];
+  build_config_page(buf);
+  memcpy(out, buf + address, length);
+  return MCU_REG_OK;
+}
+
+// A write must name one whole field: landing mid-field or in a hole is an
+// address error; landing on a field start with the wrong width is a length
+// error, so a client can tell a bad offset from a bad width.
+static enum mcu_reg_result validate_exact_field(const struct field_span *fields, size_t nfields,
+                                                uint8_t address, size_t length)
+{
+  for (size_t i = 0; i < nfields; ++i) {
+    if (address == fields[i].offset)
+      return (length == fields[i].size) ? MCU_REG_OK : MCU_REG_INVALID_WRITE_LENGTH;
+  }
+  return MCU_REG_INVALID_ADDRESS;
+}
+
+// Page 0x05 write: one whole field per transaction, clamped, then queued to the
+// EEPROM gatekeeper with a non-blocking send (ProgCom must never stall; a full
+// queue returns MCU_REG_QUEUE_FULL and changes nothing). The temperature
+// thresholds drive the over-temperature power-down in GenericAlarmTask, so the
+// clamp is a safety control, not input hygiene.
+static enum mcu_reg_result mcu_local_write5(uint8_t address, const uint8_t *data, size_t length)
+{
+  enum mcu_reg_result r = validate_exact_field(CONFIG_FIELDS,
+                                               sizeof(CONFIG_FIELDS) / sizeof(CONFIG_FIELDS[0]),
+                                               address, length);
+  if (r != MCU_REG_OK)
+    return r;
+
+  uint16_t raw = (uint16_t)(data[0] | ((uint16_t)data[1] << 8));
+  if (address == CFG_OFF_ALARM_VOLT_CPCT) {
+    if (raw < CFG_VOLT_MIN_CPCT || raw > CFG_VOLT_MAX_CPCT)
+      return MCU_REG_INVALID_VALUE;
+    return setAlarmVoltageThresCpctTry(raw) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
+  }
+
+  int16_t celsius = (int16_t)raw; // two's complement, so negatives are rejected below
+  if (celsius < CFG_TEMP_MIN_C || celsius > CFG_TEMP_MAX_C)
+    return MCU_REG_INVALID_VALUE;
+  enum device dev = (enum device)((address - CFG_OFF_ALARM_TEMP_FF) / CFG_LEN_ALARM_TEMP);
+  return setAlarmTemperatureTry(dev, celsius) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
+}
+
+// Field spans for page 0x06 (Runtime). 0x16-0x17 is an undeclared hole.
+static const struct field_span RUNTIME_FIELDS[] = {
+    {RT_OFF_HEAP_FREE, 4},
+    {RT_OFF_HEAP_MIN_FREE, 4},
+    {RT_OFF_HEAP_TOTAL, 4},
+    {RT_OFF_SYSSTACK_UNTOUCHED_WORDS, 4},
+    {RT_OFF_SYSSTACK_TOTAL_WORDS, 4},
+    {RT_OFF_ZYNQMON_TX_ENABLED, 1},
+    {RT_OFF_FPGA_DONE, 1},
+    {RT_OFF_RTC_DATE, 4},
+    {RT_OFF_RTC_TIME, 4},
+};
+
+static void build_runtime_page(uint8_t buf[RT_PAGE_USED_LEN])
+{
+  memset(buf, 0, RT_PAGE_USED_LEN);
+  put_u32_le(buf + RT_OFF_HEAP_FREE, (uint32_t)xPortGetFreeHeapSize());
+  put_u32_le(buf + RT_OFF_HEAP_MIN_FREE, (uint32_t)xPortGetMinimumEverFreeHeapSize());
+  put_u32_le(buf + RT_OFF_HEAP_TOTAL, (uint32_t)configTOTAL_HEAP_SIZE);
+  put_u32_le(buf + RT_OFF_SYSSTACK_UNTOUCHED_WORDS, (uint32_t)SystemStackWaterHighWaterMark());
+  put_u32_le(buf + RT_OFF_SYSSTACK_TOTAL_WORDS, (uint32_t)SYSTEM_STACK_SIZE);
+  buf[RT_OFF_ZYNQMON_TX_ENABLED] = getZynqMonTransmitEnabled() ? 1U : 0U;
+  // Raw pin levels: no bus, no semaphore, no write path.
+  buf[RT_OFF_FPGA_DONE] = (uint8_t)((read_gpio_pin(_F1_FPGA_DONE) ? 1U : 0U) |
+                                    (read_gpio_pin(_F2_FPGA_DONE) ? 2U : 0U));
+
+  // Validity is the hardware's own latch (as the `rtc` CLI command uses), not
+  // log.c's "tm_year < 120" plausibility test; the two can disagree. When
+  // invalid, both words stay zero so valid == 0.
+  uint32_t cal1 = HWREG(HIB_CAL1);
+  if (cal1 & HIB_CAL1_VALID) {
+    struct tm now;
+    ROM_HibernateCalendarGet(&now);
+    put_u32_le(buf + RT_OFF_RTC_DATE, ((uint32_t)(now.tm_year + 1900) << 16) |
+                                          ((uint32_t)(now.tm_mon + 1) << 8) |
+                                          (uint32_t)now.tm_mday);
+    put_u32_le(buf + RT_OFF_RTC_TIME, (1U << 24) | ((uint32_t)now.tm_hour << 16) |
+                                          ((uint32_t)now.tm_min << 8) | (uint32_t)now.tm_sec);
+  }
+}
+
+static enum mcu_reg_result mcu_local_read6(uint8_t address, uint8_t length, uint8_t out[4])
+{
+  enum mcu_reg_result r = validate_span(RUNTIME_FIELDS,
+                                        sizeof(RUNTIME_FIELDS) / sizeof(RUNTIME_FIELDS[0]),
+                                        address, length);
+  if (r != MCU_REG_OK)
+    return r;
+
+  uint8_t buf[RT_PAGE_USED_LEN];
+  build_runtime_page(buf);
   memcpy(out, buf + address, length);
   return MCU_REG_OK;
 }
@@ -271,7 +442,7 @@ static enum mcu_reg_result mcu_local_write7f(uint8_t address, const uint8_t *dat
   if (address != CTRL_OFF_COMMAND)
     return MCU_REG_INVALID_ADDRESS;
   if (length != 1)
-    return MCU_REG_INVALID_LENGTH;
+    return MCU_REG_INVALID_WRITE_LENGTH;
 
   if (data[0] == CTRL_CMD_CLEAR_ALARM_LATCHES) {
     // matches alarm_ctl clear exactly: same two independent sends, same
@@ -280,6 +451,16 @@ static enum mcu_reg_result mcu_local_write7f(uint8_t address, const uint8_t *dat
     BaseType_t ok1 = xQueueSendToBack(tempAlarmTask.xAlmQueue, &msg, 0);
     BaseType_t ok2 = xQueueSendToBack(voltAlarmTask.xAlmQueue, &msg, 0);
     return (ok1 == pdPASS && ok2 == pdPASS) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
+  }
+
+  if (data[0] == CTRL_CMD_ZYNQMON_ENABLE_TRANSMIT ||
+      data[0] == CTRL_CMD_ZYNQMON_DISABLE_TRANSMIT) {
+    // ZynqMonTask has its own queue, so these cannot join the xPwrQueue switch
+    // below. The CLI sends the same messages with a 10 ms timeout; ProgCom
+    // uses 0 ticks per this page's non-blocking rule.
+    uint32_t zmsg = (data[0] == CTRL_CMD_ZYNQMON_ENABLE_TRANSMIT) ? ZYNQMON_ENABLE_TRANSMIT
+                                                                  : ZYNQMON_DISABLE_TRANSMIT;
+    return (xQueueSendToBack(xZynqMonQueue, &zmsg, 0) == pdPASS) ? MCU_REG_OK : MCU_REG_QUEUE_FULL;
   }
 
   uint32_t msg;
@@ -314,6 +495,10 @@ mcu_reg_read(uint8_t page, uint8_t address, uint8_t length, uint8_t out[4])
       return mcu_local_read2(address, length, out);
     case MCU_REG_PAGE_ADC:
       return mcu_local_read3(address, length, out);
+    case MCU_REG_PAGE_CONFIG:
+      return mcu_local_read5(address, length, out);
+    case MCU_REG_PAGE_RUNTIME:
+      return mcu_local_read6(address, length, out);
     case MCU_REG_PAGE_CONTROL:
       return MCU_REG_WRITE_ONLY;
     default:
@@ -329,7 +514,10 @@ mcu_reg_write(uint8_t page, uint8_t address, const uint8_t *data, size_t length)
     case MCU_REG_PAGE_POWER:
     case MCU_REG_PAGE_ALARM:
     case MCU_REG_PAGE_ADC:
+    case MCU_REG_PAGE_RUNTIME:
       return MCU_REG_READ_ONLY;
+    case MCU_REG_PAGE_CONFIG:
+      return mcu_local_write5(address, data, length);
     case MCU_REG_PAGE_CONTROL:
       return mcu_local_write7f(address, data, length);
     default:

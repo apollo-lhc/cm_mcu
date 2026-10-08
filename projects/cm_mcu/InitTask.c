@@ -45,6 +45,7 @@ void InitTask(void *parameters)
   // Load temperature alarm thresholds from EEPROM (falls back to compile-time
   // defaults if EEPROM is uninitialized)
   loadAlarmTemperaturesFromEEPROM();
+  loadAlarmVoltageFromEEPROM();
 
 // wait for 3.3V power to come up. Wait indefinitely.
 // in Rev1 the clocks cannot be accessed before the 3.3 V is on.

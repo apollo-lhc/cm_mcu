@@ -238,6 +238,9 @@ extern struct clk_program_t clkprog_args[5]; // NSUPPLIES_CLK + NSUPPLIES_CLKR0A
 #define ADDR_TEMP_DCDC       (ADDR_TEMP_ALARM_BASE + 0x04U) // 0x184: DCDC alarm temp
 #define ADDR_TEMP_TM4C       (ADDR_TEMP_ALARM_BASE + 0x08U) // 0x188: TM4C alarm temp
 #define ADDR_TEMP_FPGA       (ADDR_TEMP_ALARM_BASE + 0x0CU) // 0x18C: FPGA alarm temp
+// Voltage alarm threshold, same block. Stored as centi-percent (percent * 100)
+// zero-extended to 32 bits, so 0xFFFFFFFF stays the uninitialized sentinel.
+#define ADDR_ALARM_VOLT (ADDR_TEMP_ALARM_BASE + 0x10U) // 0x190: voltage alarm threshold
 
 // Enable or disable the 3.8V power supplies for the SamTec Fireflies
 int enable_3v8(UBaseType_t ffmask[2], bool turnOff);
@@ -300,8 +303,8 @@ void setAlarmTemperature(enum device device_name, int16_t newtemp);
 uint32_t getTempAlarmStatus(void);
 uint32_t getWarnLatch(void);
 enum alarm_task_state getTempAlarmTaskState(void);
-float getAlarmVoltageThres(void);
-void setAlarmVoltageThres(float voltthres);
+uint16_t getAlarmVoltageThresCpct(void);
+void setAlarmVoltageThresCpct(uint16_t cpct);
 uint32_t getVoltAlarmStatus(void);
 uint8_t getVoltStatusGroup(enum powdevice which);
 enum alarm_task_state getVoltAlarmTaskState(void);
@@ -326,6 +329,8 @@ extern QueueHandle_t xEPRMQueue_out;
 #define EPRM_LOCK_BLOCK   4
 #define EPRM_UNLOCK_BLOCK 5
 #define EPRM_PASS_SET     6
+// program the word only if the EEPROM does not already hold it
+#define EPRM_WRITE_IF_DIFF 7
 
 uint64_t EPRMMessage(uint64_t action, uint64_t addr, uint64_t data);
 void EEPROMTask(void *parameters);
@@ -356,7 +361,8 @@ void InitRTC(void);
 #endif // REV2 or 3
 
 struct dev_i2c_addr_t; // forward reference
-void snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32], bool reset);
+bool snapdump(const struct dev_i2c_addr_t *add, uint8_t page, uint8_t snapshot[32]);
+bool snapreset(const struct dev_i2c_addr_t *add, uint8_t page);
 
 // Xilinx MonitorTask
 int get_f1_index(void);

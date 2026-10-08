@@ -123,6 +123,14 @@ unsigned long g_ulBitTime;
 
 QueueHandle_t xZynqMonQueue;
 
+// Whether ZynqMonTask is transmitting; read by MCU_Reg.c for the Runtime page.
+static volatile bool zm_transmit_enabled = true;
+
+bool getZynqMonTransmitEnabled(void)
+{
+  return zm_transmit_enabled;
+}
+
 // category | count
 // -------- | -----
 // FPGA     | 4*N_FPGA
@@ -688,7 +696,6 @@ void ZynqMonTask(void *parameters)
   // reset the data we will send
   memset(zynqmon_data, 0, ZM_NUM_ENTRIES * sizeof(struct zynqmon_data_t));
 
-  bool enable = true;
   // initialize to the current tick time
   TickType_t xLastWakeTime = xTaskGetTickCount();
 
@@ -699,20 +706,20 @@ void ZynqMonTask(void *parameters)
     if (xQueueReceive(xZynqMonQueue, &qmessage, 0)) {
       switch (qmessage) {
         case ZYNQMON_ENABLE_TRANSMIT:
-          enable = true;
+          zm_transmit_enabled = true;
           break;
         case ZYNQMON_DISABLE_TRANSMIT:
-          enable = false;
+          zm_transmit_enabled = false;
           break;
 #ifdef ZYNQMON_TEST_MODE
         case ZYNQMON_TEST_SINGLE:
           inTestMode = true;
-          enable = true;
+          zm_transmit_enabled = true;
           testmode = 0;
           break;
         case ZYNQMON_TEST_INCREMENT:
           inTestMode = true;
-          enable = true;
+          zm_transmit_enabled = true;
           testmode = 1;
           break;
         case ZYNQMON_TEST_OFF:
@@ -720,7 +727,7 @@ void ZynqMonTask(void *parameters)
           break;
         case ZYNQMON_TEST_SEND_ONE:
           inTestMode = true;
-          enable = true;
+          zm_transmit_enabled = true;
           testmode = 0;
           break;
         case ZYNQMON_TEST_RAW:
@@ -730,13 +737,13 @@ void ZynqMonTask(void *parameters)
           message[3] = 0xaa;
           message[4] = 0x55;
           inTestMode = true;
-          enable = true;
+          zm_transmit_enabled = true;
           testmode = 2;
           break;
 #endif // ZYNQMON_TEST_MODE
       }
     }
-    if (enable) {
+    if (zm_transmit_enabled) {
 #ifdef REV1
       // Enable the interrupts during transmission
       ROM_IntEnable(INT_TIMER0A);
@@ -752,7 +759,7 @@ void ZynqMonTask(void *parameters)
           }
           // one shot mode -- disable
           if (qmessage == ZYNQMON_TEST_SEND_ONE)
-            enable = false;
+            zm_transmit_enabled = false;
         }
         // increment test mode, send
         else if (testmode == 1) {

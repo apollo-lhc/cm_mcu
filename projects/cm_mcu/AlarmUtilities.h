@@ -1,6 +1,8 @@
 #ifndef PROJECTS_CM_MCU_ALARMUTILITIES_H_
 #define PROJECTS_CM_MCU_ALARMUTILITIES_H_
 
+#include <stdbool.h>
+
 #include "Tasks.h"
 
 // Compile-time default temperature alarm thresholds (integer degrees Celsius)
@@ -30,6 +32,8 @@ extern struct GenericAlarmParams_t voltAlarmTask;
 //    first some commands for setting/getting the thresholds
 int16_t getAlarmTemperature(enum device theDevice);
 void setAlarmTemperature(enum device theDevice, int16_t temperature);
+// Non-blocking variant for ProgCom: false (and no change) if the EEPROM queue is full.
+bool setAlarmTemperatureTry(enum device theDevice, int16_t temperature);
 void loadAlarmTemperaturesFromEEPROM(void);
 void getAlarmTemperatureStatus(void);
 //    callback functions
@@ -40,8 +44,13 @@ void clearWarnLatch(void);
 
 // voltage alarms
 //    first some commands for setting/getting the thresholds
-float getAlarmVoltageThres(void);
-void setAlarmVoltageThres(float voltthres);
+// in centi-percent (500 = +/-5.00 %)
+uint16_t getAlarmVoltageThresCpct(void);
+void setAlarmVoltageThresCpct(uint16_t cpct);
+// Non-blocking variant for ProgCom: false (and no change) if the EEPROM queue
+// is full.
+bool setAlarmVoltageThresCpctTry(uint16_t cpct);
+void loadAlarmVoltageFromEEPROM(void);
 void getAlarmVoltageStatus(void);
 //    callback functions
 int VoltStatus(void);

@@ -6,7 +6,8 @@ The remote host initiates all transactions by transmitting a command as a string
 
 - command: "r" = read, "w" = write
 - device type: "DC" = DC-DC converter, "FF" = Firefly, "CL" = clock devices, "MC" = MCU,
-  "FP" = FPGA generic I2C register (device number 0 = F1, 1 = F2; page must be 0)
+  "FP" = FPGA generic I2C register (device number 0 = F1, 1 = F2; page must be 0),
+  "SN" = LGA80D 32-byte SNAPSHOT (see below)
 - device number: hex number representing the device number (one byte)
 - page: hex number which is the page address (one byte)
 - address: hex number that is the register address within the selected page (one byte)
@@ -15,6 +16,17 @@ The remote host initiates all transactions by transmitting a command as a string
 - line terminator: "\n" symbol (code 0x0A). A preceding "\r" is tolerated and ignored.
 
 Reads return one to four bytes. Omitting the read length preserves the legacy one-byte behavior.
+
+"SN" reads the 32-byte LGA80D SNAPSHOT (PMBus 0xEA), an SMBus block read that cannot be
+split into 4-byte transactions. It is a two-step capture/read pair; device number and page
+are the DC device number and PMBus page:
+- "w SN <dev> <page> 00 01" captures: runs PAGE, SNAPSHOT_CONTROL=1, a ~40 ms wait and the
+  block read, and caches the 32 bytes. Replies "c", or "e SN capture failed". Blocks this
+  task for ~45-60 ms (much longer if the I2C semaphore is contended).
+- "r SN <dev> <page> <offset> [<len>]" returns <len> (1-4) bytes at <offset> (0x00-0x1f) of
+  the cached capture, with no I2C access. Errors if there is no successful capture for that
+  dev/page ("e no SN capture for dev/page") or the span exceeds 32 ("e invalid SN span").
+The cache is never aged: always capture, then read. A failed capture invalidates it.
 
 If the command was a read command, the MCU responds with the data read out from the device
 by transmitting a string in the following format:
@@ -79,6 +91,7 @@ enum progcom_dev_t {
   PROGCOM_DEV_CLK,  // "CL"
   PROGCOM_DEV_MCU,  // "MC"
   PROGCOM_DEV_FPGA, // "FP"
+  PROGCOM_DEV_SNAP, // "SN"
 };
 
 // a parsed command line
@@ -116,8 +129,8 @@ static inline bool is_hex_digit(char c)
 //
 // Grammar (fields separated by one or more spaces, line terminator already
 // stripped by the caller):
-//   r <DC|FF|CL|MC|FP> <devnum> <page> <addr> [<length>]
-//   w <DC|FF|CL|MC|FP> <devnum> <page> <addr> <data> ...
+//   r <DC|FF|CL|MC|FP|SN> <devnum> <page> <addr> [<length>]
+//   w <DC|FF|CL|MC|FP|SN> <devnum> <page> <addr> <data> ...
 // All numeric fields are one or two hex digits, i.e. a single byte.
 // ---------------------------------------------------------------------------
 
@@ -192,6 +205,8 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
     cmd->dev = PROGCOM_DEV_MCU;
   else if (strncmp(p, "FP", 2) == 0)
     cmd->dev = PROGCOM_DEV_FPGA;
+  else if (strncmp(p, "SN", 2) == 0)
+    cmd->dev = PROGCOM_DEV_SNAP;
   else
     return "invalid device type";
   p += 2;
@@ -336,6 +351,10 @@ static const char *progcom_mcu_error(enum mcu_reg_result r)
       return "MCU queue full";
     case MCU_REG_INVALID_COMMAND:
       return "invalid MCU command";
+    case MCU_REG_INVALID_WRITE_LENGTH:
+      return "invalid MCU write span";
+    case MCU_REG_INVALID_VALUE:
+      return "invalid MCU value";
     case MCU_REG_INTERNAL_ERROR:
     default:
       return "MCU internal error";
@@ -350,12 +369,7 @@ static const char *progcom_access_mcu(const struct progcom_cmd_t *cmd, uint8_t *
   if (cmd->op == PROGCOM_OP_READ) {
     return progcom_mcu_error(mcu_reg_read(cmd->page, cmd->address, cmd->read_len, out));
   }
-  else if (cmd->op == PROGCOM_OP_WRITE) {
-    return progcom_mcu_error(mcu_reg_write(cmd->page, cmd->address, cmd->data, cmd->ndata));
-  }
-  else {
-    return "invalid MCU OP";
-  }
+  return progcom_mcu_error(mcu_reg_write(cmd->page, cmd->address, cmd->data, cmd->ndata));
 }
 
 // LGA80D DC-DC converters, via PMBus. apollo_pmbus_rw() selects the mux itself,
@@ -484,6 +498,47 @@ static const char *progcom_access_fpga(const struct progcom_cmd_t *cmd, uint8_t 
   return err;
 }
 
+// LGA80D SNAPSHOT (PMBus 0xEA). The register is a 32-byte SMBus block read, so
+// it cannot be returned through the 4-byte transfer limit: a write captures it
+// into sn_cache, and reads are served from the cache with no I2C access.
+#define SN_BYTES 32
+// only ProgComTask touches the cache, so it needs no locking. dev == 0xFF means
+// "no valid capture" (valid dev numbers are < NSUPPLIES_PS).
+static struct {
+  uint8_t dev;
+  uint8_t page;
+  uint8_t data[SN_BYTES];
+} sn_cache = {.dev = 0xFF};
+
+static const char *progcom_access_snap(const struct progcom_cmd_t *cmd, uint8_t *out)
+{
+  if (cmd->dev_num >= NSUPPLIES_PS)
+    return "invalid DCDC device number";
+  if (cmd->page >= NPAGES_PS)
+    return "invalid DCDC page";
+
+  if (cmd->op == PROGCOM_OP_WRITE) {
+    if (cmd->address != 0 || cmd->ndata != 1 || cmd->data[0] != 1)
+      return "invalid SN command";
+    // a failed capture must not leave the previous capture readable
+    sn_cache.dev = 0xFF;
+    // snapdump() takes i2c1_sem itself and zeroes the buffer on failure
+    if (!snapdump(&pm_addrs_dcdc[cmd->dev_num], cmd->page, sn_cache.data))
+      return "SN capture failed";
+    sn_cache.dev = cmd->dev_num;
+    sn_cache.page = cmd->page;
+    return NULL;
+  }
+
+  if (sn_cache.dev != cmd->dev_num || sn_cache.page != cmd->page)
+    return "no SN capture for dev/page";
+  // address and read_len are uint8_t: do the sum in 32 bits so it cannot wrap
+  if ((uint32_t)cmd->address + cmd->read_len > SN_BYTES)
+    return "invalid SN span";
+  memcpy(out, &sn_cache.data[cmd->address], cmd->read_len);
+  return NULL;
+}
+
 // Parse and execute one command line, then send the response out the UART.
 static void progcom_handle_line(uint32_t uart_base, const char *line)
 {
@@ -507,6 +562,9 @@ static void progcom_handle_line(uint32_t uart_base, const char *line)
         break;
       case PROGCOM_DEV_FPGA:
         err = progcom_access_fpga(&cmd, value);
+        break;
+      case PROGCOM_DEV_SNAP:
+        err = progcom_access_snap(&cmd, value);
         break;
       default:
         err = "unknown device type";

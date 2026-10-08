@@ -220,11 +220,18 @@ typedef struct __attribute__((packed)) {
 
 BaseType_t sn_all(int argc, char **argv, char *m)
 {
+  int copied = 0;
   for (int which = 0; which < N_PM_ADDRS_DCDC; ++which) {
-    for (int page_d = 0; page_d < 2; ++page_d) { // for reading two pages per device
-      uint8_t sn[32];
-      snapdump(&pm_addrs_dcdc[which], page_d, sn, true);
+    for (int page_d = 0; page_d < 2; ++page_d) { // two pages per device
+      if (!snapreset(&pm_addrs_dcdc[which], page_d)) {
+        copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reset failed, %s page %d\r\n",
+                           argv[0], pm_addrs_dcdc[which].name, page_d);
+      }
     }
+  }
+  if (copied == 0) {
+    // an ACK does not prove the erase: the device ignores it while its output is on
+    snprintf(m, SCRATCH_SIZE, "%s: reset sent to all snapshots (ignored if supply on)\r\n", argv[0]);
   }
   return pdFALSE;
 }
@@ -238,7 +245,7 @@ BaseType_t snapshot(int argc, char **argv, char *m)
   page = page % 10;
   if (page < 0 || page > 1) {
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: page %d must be between 0-1\r\n",
-             argv[0], page + 1);
+             argv[0], page);
     return pdFALSE;
   }
   if (which < 0 || which > (NSUPPLIES_PS - 1)) {
@@ -255,7 +262,11 @@ BaseType_t snapshot(int argc, char **argv, char *m)
     reset = true;
 
   uint8_t sn[32];
-  snapdump(&pm_addrs_dcdc[which], page, sn, reset);
+  bool ok = snapdump(&pm_addrs_dcdc[which], page, sn);
+  if (!ok) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: snapdump failed\r\n", argv[0]);
+    return pdFALSE;
+  }
   snapshot_t *p0 = (snapshot_t *)&sn[0];
   const char *sign;
   int tens, fraction;
@@ -289,5 +300,9 @@ BaseType_t snapshot(int argc, char **argv, char *m)
   copied +=
       snprintf(m + copied, SCRATCH_SIZE - copied, "flash STATUS: 0x%02x\r\n", p0->flash_status);
 
+  // reset only after a complete read, so a failed read never loses the snapshot
+  if (reset && !snapreset(&pm_addrs_dcdc[which], page)) {
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reset failed\r\n", argv[0]);
+  }
   return pdFALSE;
 }

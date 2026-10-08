@@ -67,6 +67,14 @@ void EEPROMTask(void *parameters)
       case EPRM_WRITE_SINGLE:
         write_single(data, addr);
         break;
+      case EPRM_WRITE_IF_DIFF: {
+        uint32_t current;
+        MAP_EEPROMRead(&current, addr, 4);
+        if (current != data) {
+          write_single(data, addr);
+        }
+        break;
+      }
       case EPRM_READ_SINGLE:
         message_out = read_single(addr);
         xQueueSendToBack(xEPRMQueue_out, &message_out, portMAX_DELAY);
