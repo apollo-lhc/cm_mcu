@@ -65,8 +65,26 @@ BaseType_t alarm_ctl(int argc, char **argv, char *m)
     uint16_t cpct = getAlarmVoltageThresCpct();
     int tens = cpct / 100, frac = cpct % 100;
     copied +=
-        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s (for FPGAs) \t Threshold: +/-%02d.%02d %%\r\n",
-                 (adc_volt_stat) ? "ALARM" : "GOOD", tens, frac);
+        snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT ADC: %s \t Warn: +/-%02d.%02d %%, fault: +/-%02d.%02d %% or 2 warning rails\r\n",
+                 (adc_volt_stat) ? "ALARM" : "GOOD", tens, frac, (2 * cpct) / 100, (2 * cpct) % 100);
+    copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT state: %s\r\n",
+                       getAlarmTaskStateName(getVoltAlarmTaskState()));
+    int ch;
+    float now, target, pct;
+    if (getVoltAlarmLatch(&ch, &now, &target, &pct)) {
+      const char *pct_sign, *now_sign, *tgt_sign;
+      int pct_tens, pct_frac, now_tens, now_frac, tgt_tens, tgt_frac;
+      float_to_ints(pct, &pct_sign, &pct_tens, &pct_frac);
+      float_to_ints(now, &now_sign, &now_tens, &now_frac);
+      float_to_ints(target, &tgt_sign, &tgt_tens, &tgt_frac);
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                         "VOLT last alarm: %s (ADC ch %02d) %s%d.%02d V, target %s%d.%02d V, %s%02d.%02d %% off\r\n",
+                         getADCname(ch), ch, now_sign, now_tens, now_frac, tgt_sign, tgt_tens, tgt_frac,
+                         (*pct_sign != '\0') ? pct_sign : "+", pct_tens, pct_frac);
+    }
+    else {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "VOLT last alarm: none\r\n");
+    }
 
     configASSERT(copied < SCRATCH_SIZE);
 

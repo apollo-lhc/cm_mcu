@@ -21,6 +21,13 @@ static const char *alarm_task_state_names[] = {
 #undef X
 };
 
+const char *getAlarmTaskStateName(enum alarm_task_state state)
+{
+  if ((unsigned)state >= sizeof(alarm_task_state_names) / sizeof(alarm_task_state_names[0]))
+    return "UNKNOWN";
+  return alarm_task_state_names[state];
+}
+
 // ALARM TASK STATE MACHINE
 // +------+
 // | INIT |
@@ -99,7 +106,7 @@ void GenericAlarmTask(void *parameters)
       case ALM_WARN: {
         if (!status) {
           // we are back to normal
-          params->errorlog_clearerror();
+          params->errorlog_clearerror(false);
           nextState = ALM_NORMAL;
         }
         else if (status > 1) {
@@ -123,7 +130,7 @@ void GenericAlarmTask(void *parameters)
         if (!status) {
           // error has cleared, log and move to fault state
           if (params->errorlog_clearerror)
-            params->errorlog_clearerror();
+            params->errorlog_clearerror(true);
           nextState = ALM_FAULT_ERROR_CLEARED;
         }
         else {

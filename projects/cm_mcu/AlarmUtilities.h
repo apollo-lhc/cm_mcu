@@ -14,7 +14,9 @@
 struct GenericAlarmParams_t {
   int (*checkStatus)(void); // return 0 for normal, 1 for warn, >1 for error
   void (*errorlog_registererror)(void);
-  void (*errorlog_clearerror)(void);
+  // fault_latched: false on WARN->NORMAL (truly back to normal); true on
+  // FAULT_ERRORING->FAULT_ERROR_CLEARED (condition gone, power-off still latched)
+  void (*errorlog_clearerror)(bool fault_latched);
   void (*clearHysteresis)(void); // called on ALM_CLEAR_ALL; NULL = no-op
   QueueHandle_t xAlmQueue;
   UBaseType_t stack_size;                 // stack size of task
@@ -39,7 +41,7 @@ void getAlarmTemperatureStatus(void);
 //    callback functions
 int TempStatus(void);
 void TempErrorLog(void);
-void TempClearErrorLog(void);
+void TempClearErrorLog(bool fault_latched);
 void clearWarnLatch(void);
 
 // voltage alarms
@@ -55,6 +57,13 @@ void getAlarmVoltageStatus(void);
 //    callback functions
 int VoltStatus(void);
 void VoltErrorLog(void);
-void VoltClearErrorLog(void);
+void VoltClearErrorLog(bool fault_latched);
+void clearVoltAlarmLatch(void);
+// Worst rail of the most recent voltage alarm, latched until ALM_CLEAR_ALL.
+// Returns false (outputs untouched) if nothing has been latched.
+bool getVoltAlarmLatch(int *ch, float *now, float *target, float *pct);
+
+// name of a GenericAlarmTask FSM state
+const char *getAlarmTaskStateName(enum alarm_task_state state);
 
 #endif // PROJECTS_CM_MCU_ALARMUTILITIES_H_

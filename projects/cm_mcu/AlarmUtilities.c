@@ -266,9 +266,13 @@ void TempErrorLog(void)
                       (uint8_t)currentTemp[FF], (uint8_t)currentTemp[DCDC]);
 }
 
-void TempClearErrorLog(void)
+// the EEPROM entry is EBUF_TEMP_NORMAL either way
+void TempClearErrorLog(bool fault_latched)
 {
-  log_info(LOG_ALM, "Temperature error cleared\r\n");
+  if (fault_latched)
+    log_info(LOG_ALM, "Temperature fault no longer detected; power-off latched until alarms cleared\r\n");
+  else
+    log_info(LOG_ALM, "Temperature error cleared\r\n");
   errbuffer_put(EBUF_TEMP_NORMAL, 0);
 }
 
@@ -342,6 +346,37 @@ static float excess_volt = 0.0f;
 static int excess_volt_which_ch = 0;
 static float excess_volt_now = 0.0f;
 static float excess_volt_target = 0.0f;
+// copy of the above taken when an alarm is registered. Unlike the live values it
+// survives VoltStatus() resetting them (e.g. power off or POWER_FAILURE), so the
+// failing rail is still visible after a fault. Cleared on ALM_CLEAR_ALL.
+static bool latch_volt_valid = false;
+static float latch_volt_pct = 0.0f;
+static int latch_volt_ch = 0;
+static float latch_volt_now = 0.0f;
+static float latch_volt_target = 0.0f;
+
+void clearVoltAlarmLatch(void)
+{
+  latch_volt_valid = false;
+}
+
+bool getVoltAlarmLatch(int *ch, float *now, float *target, float *pct)
+{
+  // prevent tearing with a critical section.
+  taskENTER_CRITICAL();
+
+  if (!latch_volt_valid) {
+    taskEXIT_CRITICAL();
+    return false;
+  }
+  *ch = latch_volt_ch;
+  *now = latch_volt_now;
+  *target = latch_volt_target;
+  *pct = latch_volt_pct;
+
+  taskEXIT_CRITICAL();
+  return true;
+}
 // read-only, so no need to use queue
 uint32_t getVoltAlarmStatus(void)
 {
@@ -362,7 +397,7 @@ enum alarm_task_state getVoltAlarmTaskState(void)
   return voltAlarmState;
 }
 // check the current voltage status.
-// returns +1 for warning, +2 or higher for error
+// returns 1 for one warning rail, 2 for two warning rails or one severe rail
 // these flags represent positions into thestruct ADC_Info_t ADCs[] array in
 // the ADCMonitorTask.c
 #ifdef REV1
@@ -391,7 +426,8 @@ int VoltStatus(void)
   bool f1_enable = isFPGAF1_PRESENT();
   bool f2_enable = isFPGAF2_PRESENT();
 
-  int retval = 0;
+  int warn_rails = 0;
+  bool severe_rail = false;
   status_V = 0x0U;
 
   // change what we do, if power is on or not.
@@ -414,6 +450,7 @@ int VoltStatus(void)
   }
   // Loop over ADC values.
   const float threshold = (float)getAlarmVoltageThresCpct() / 10000.f; // fraction
+  const float fault_threshold = 2.f * threshold;
   uint32_t ch_alm_mask = 0x0U;
   excess_volt = 0.0f; // reset, so a cleared alarm doesn't report stale data
   excess_volt_which_ch = 0;
@@ -431,6 +468,10 @@ int VoltStatus(void)
     float aexcess = ABS(excess);
 
     if (aexcess > threshold) {
+      ++warn_rails;
+      if (aexcess > fault_threshold) {
+        severe_rail = true;
+      }
       ch_alm_mask |= (0x1U << i);               // mark bit for failing supply
       if (aexcess * 100.f > ABS(excess_volt)) { // keep the worst offender, in percent
         excess_volt = excess * 100.f;
@@ -465,22 +506,27 @@ int VoltStatus(void)
   status_V = 0x0U;
   if (ch_alm_mask & (VALM_BASE_MASK | VALM_GEN_MASK)) {
     status_V |= ALM_STAT_GEN_OVERVOLT;
-    ++retval;
   }
   if (ch_alm_mask & VALM_F1_MASK) {
     status_V |= ALM_STAT_FPGA1_OVERVOLT;
-    ++retval;
   }
   if (ch_alm_mask & VALM_F2_MASK) {
     status_V |= ALM_STAT_FPGA2_OVERVOLT;
-    ++retval;
   }
 
-  return retval;
+  // Severity counts individual rails; groups above are diagnostics only.
+  return (severe_rail || warn_rails > 1) ? 2 : warn_rails;
 }
 
 void VoltErrorLog(void)
 {
+  // called on NORMAL->WARN and again on WARN->FAULT, so after a fault this holds
+  // the reading that tripped it
+  latch_volt_pct = excess_volt;
+  latch_volt_ch = excess_volt_which_ch;
+  latch_volt_now = excess_volt_now;
+  latch_volt_target = excess_volt_target;
+  latch_volt_valid = true;
   if (ABS(excess_volt) > 2.0f) {
     const char *pct_sign, *now_sign, *tgt_sign;
     int pct_tens, pct_frac, now_tens, now_frac, tgt_tens, tgt_frac;
@@ -498,9 +544,14 @@ void VoltErrorLog(void)
                       (uint8_t)currentVoltStatus[FPGA2]);
 }
 
-void VoltClearErrorLog(void)
+// the EEPROM entry is EBUF_VOLT_NORMAL either way. "no longer detected" rather
+// than "normal": with power off the faulting rail is no longer measured at all.
+void VoltClearErrorLog(bool fault_latched)
 {
-  log_info(LOG_ALM, "Voltage normal\r\n");
+  if (fault_latched)
+    log_info(LOG_ALM, "Voltage fault no longer detected; power-off latched until alarms cleared\r\n");
+  else
+    log_info(LOG_ALM, "Voltage normal\r\n");
   errbuffer_put(EBUF_VOLT_NORMAL, 0);
 }
 
@@ -508,6 +559,7 @@ struct GenericAlarmParams_t voltAlarmTask = {
     .checkStatus = &VoltStatus,
     .errorlog_registererror = &VoltErrorLog,
     .errorlog_clearerror = &VoltClearErrorLog,
+    .clearHysteresis = &clearVoltAlarmLatch,
     .stack_size = 4096,
     .published_state = &voltAlarmState,
 };
