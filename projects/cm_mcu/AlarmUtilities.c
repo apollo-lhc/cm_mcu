@@ -362,12 +362,19 @@ void clearVoltAlarmLatch(void)
 
 bool getVoltAlarmLatch(int *ch, float *now, float *target, float *pct)
 {
-  if (!latch_volt_valid)
+  // prevent tearing with a critical section. 
+  taskENTER_CRITICAL();
+
+  if (!latch_volt_valid) {
+    taskEXIT_CRITICAL();
     return false;
+  }
   *ch = latch_volt_ch;
   *now = latch_volt_now;
   *target = latch_volt_target;
   *pct = latch_volt_pct;
+
+  taskEXIT_CRITICAL();
   return true;
 }
 // read-only, so no need to use queue
