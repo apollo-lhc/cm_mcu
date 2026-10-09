@@ -11,7 +11,7 @@
  */
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h> // memset
+#include <string.h> // memset, memcpy
 #include <time.h>   // struct tm
 
 #include "FireflyUtils.h"
@@ -28,6 +28,8 @@
 #include "common/smbus_helper.h"
 #include "I2CCommunication.h"
 #include "common/log.h"
+#include "common/power_ctl.h"
+#include "common/utils.h"
 
 #ifdef REV1
 // -------------------------------------------------
@@ -429,6 +431,7 @@ const struct pm_command_t extra_cmds[N_EXTRA_CMDS] = {
     {0xF3, 1, "SNAPSHOP_CONTROL", "", PM_STATUS},
     {0x28, 2, "VOUT_DROOP", "", PM_LINEAR11},
     {0xD5, 1, "MULTIPHASE_RAMP_GAIN", "", PM_STATUS},
+    {0x21, 2, "VOUT_COMMAND", "V", PM_LINEAR16U},
 };
 
 // Does the snapshot transactions; assumes i2c1_sem is already held.
@@ -534,11 +537,59 @@ bool snapreset(const struct dev_i2c_addr_t *add, uint8_t page)
   return ok;
 }
 
-// Initialization function for the LGA80D. These settings
-// need to be called when the supply output is OFF
-// this is currently not ensured in this code.
+#if defined(REV2) || defined(REV3)
+// ADC channel that monitors the same rail as each LGA80D device/page (order of pm_addrs_dcdc);
+// its target value in ADCMonitorTask.c is the nominal for the VOUT_COMMAND check in LGA80D_init.
+static const char *const vout_adc_names[NSUPPLIES_PS][2] = {
+    {"VCC_1V8", "VCC_3V3"},     // 3V3/1V8
+    {"F1_VCCINT", "F1_VCCINT"}, // F1VCCINT1
+    {"F1_VCCINT", "F1_VCCINT"}, // F1VCCINT2
+    {"F2_VCCINT", "F2_VCCINT"}, // F2VCCINT1
+    {"F2_VCCINT", "F2_VCCINT"}, // F2VCCINT2
+    {"F1_AVTT", "F1_AVCC"},     // F1AVTT/CC
+    {"F2_AVTT", "F2_AVCC"},     // F2AVTT/CC
+};
+#endif // REV2 || REV3
+
+// how long to wait for the power-goods of one priority level to drop after its enables go low
+#define PS_OFF_TIMEOUT_MS 100
+
+// Initialization function for the LGA80D. These settings need to be written
+// while the supply outputs are OFF. We expect that to be true on every path
+// that gets here: every reset except a core-only VECTRESET tri-states the
+// GPIOs, and the pull-downs on the enables hold them low through the boot
+// loader window. Turning the enables off and checking the power-goods below
+// only makes that explicit and is not expected to trip; a "still hi (EN=0)" warning
+// means the assumption is broken (reset type changed, or a stuck PG) and the
+// writes may have gone to a live supply.
+// After the writes, the VOUT setpoints of all devices are read back and logged.
 void LGA80D_init(void)
 {
+  // turn off the enables, highest priority first like disable_ps(), and check
+  // that the power-goods of each level drop
+  for (int prio = PS_NUM_PRIORITIES; prio > 0; --prio) {
+    for (int e = 0; e < N_PS_ENABLES; ++e) {
+      if (enables[e].priority == prio) {
+        write_gpio_pin(enables[e].pin_number, 0x0);
+      }
+    }
+    for (TickType_t t = 0;; ++t) {
+      bool timeout = (t >= pdMS_TO_TICKS(PS_OFF_TIMEOUT_MS));
+      bool any_high = false;
+      for (int o = 0; o < N_PS_OKS; ++o) {
+        if (oks[o].priority == prio && read_gpio_pin(oks[o].pin_number) == 1) {
+          any_high = true;
+          if (timeout) {
+            log_warn(LOG_SERVICE, "%s still hi (EN=0)\r\n", oks[o].name);
+          }
+        }
+      }
+      if (!any_high || timeout) {
+        break;
+      }
+      vTaskDelay(1);
+    }
+  }
 
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
@@ -562,7 +613,9 @@ void LGA80D_init(void)
       {&extra_cmds[6], &val},                   // multiphase_ramp_gain
   };
   for (uint8_t page = 0; page < 2; ++page) {
-    for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
+    // the PAGE write includes device 0 for the VOUT readback below
+    uint8_t page_ok = 0; // bit per device that ACKed the PAGE write
+    for (int dev = 0; dev < NSUPPLIES_PS; dev += 1) {
       // page register
       uint8_t pg = page; // apollo_pmbus_rw wants a writable buffer
       int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
@@ -571,6 +624,9 @@ void LGA80D_init(void)
         log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev,
                   page, r);
         log_error(LOG_SERVICE, "LGA80D(0)\r\n");
+      }
+      else {
+        page_ok |= 1U << dev;
       }
     }
     lga80d_settle();
@@ -582,7 +638,78 @@ void LGA80D_init(void)
           log_error(LOG_SERVICE, "LGA80D(%d)\r\n", (int)(c + 1));
         }
       }
-      lga80d_settle();
+      lga80d_settle(); // after the last write this also spaces it from the reads below
+    }
+
+    // read back the VOUT setpoints (issue #300), skipping devices whose PAGE write failed.
+    // VOUT_COMMAND is LINEAR16U with the exponent fixed at -13 (LGA80D TRN, ZL8802 datasheet).
+    for (int dev = 0; dev < NSUPPLIES_PS; dev += 1) {
+      if (!(page_ok & (1U << dev))) {
+        continue;
+      }
+      uint16_t vcmd;
+      if (apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, pm_addrs_dcdc + dev, &extra_cmds[7],
+                          (uint8_t *)&vcmd)) {
+        log_error(LOG_SERVICE, "%s p%d: %s read failed\r\n", pm_addrs_dcdc[dev].name, page,
+                  extra_cmds[7].name);
+        continue;
+      }
+      float v = linear16u_to_float(vcmd);
+      const char *sign;
+      int whole, frac;
+      float_to_ints(v, &sign, &whole, &frac);
+      log_info(LOG_SERVICE, "%s p%d: VOUT %s%d.%02d V (0x%04x)\r\n",
+               pm_addrs_dcdc[dev].name, page, sign, whole, frac, vcmd);
+#if defined(REV2) || defined(REV3)
+      int i = 0;
+      while (i < ADC_CHANNEL_COUNT && strcmp(getADCname(i), vout_adc_names[dev][page]) != 0) {
+        ++i;
+      }
+      configASSERT(i < ADC_CHANNEL_COUNT);
+      float nom = getADCtargetValue(i);
+      float diff = v - nom;
+      if (diff < 0) {
+        diff = -diff;
+      }
+      if (diff > 0.01f * nom) {
+        const char *nsign;
+        int nwhole, nfrac;
+        float_to_ints(nom, &nsign, &nwhole, &nfrac);
+        log_warn(LOG_SERVICE, "%s p%d: VOUT off nominal %s%d.%02d V\r\n",
+                 pm_addrs_dcdc[dev].name, page, nsign, nwhole, nfrac);
+      }
+#endif // REV2 || REV3
+    }
+    lga80d_settle();
+
+    // read back the init writes and warn on a mismatch; the LINEAR11 values are compared
+    // decoded, in case the device returns a different encoding of the same value
+    for (size_t c = 0; c < sizeof(init_cmds) / sizeof(init_cmds[0]); ++c) {
+      const struct pm_command_t *cmd = init_cmds[c].cmd;
+      uint16_t wr = 0;
+      memcpy(&wr, init_cmds[c].value, cmd->size);
+      for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
+        if (!(page_ok & (1U << dev))) {
+          continue;
+        }
+        uint16_t rd = 0;
+        if (apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, pm_addrs_dcdc + dev, cmd, (uint8_t *)&rd)) {
+          log_error(LOG_SERVICE, "%s p%d: %s read failed\r\n", pm_addrs_dcdc[dev].name, page, cmd->name);
+          continue;
+        }
+        bool match = (rd == wr);
+        if (!match && cmd->type == PM_LINEAR11) {
+          linear11_val_t r = {.raw = rd}, w = {.raw = wr};
+          float diff = linear11_to_float(r) - linear11_to_float(w);
+          float wv = linear11_to_float(w);
+          match = (diff < 0 ? -diff : diff) <= 0.01f * (wv < 0 ? -wv : wv);
+        }
+        if (!match) {
+          log_warn(LOG_SERVICE, "%s p%d: %s rd 0x%x wr 0x%x\r\n", pm_addrs_dcdc[dev].name, page,
+                   cmd->name, rd, wr);
+        }
+      }
+      lga80d_settle(); // the last one also spaces the reads from the next page's PAGE writes
     }
   }
 

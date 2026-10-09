@@ -23,7 +23,7 @@
 //
 // ------------------------------------------
 // if you update this you need to update N_PS_ENABLES
-static const struct gpio_pin_t enables[] = {
+const struct gpio_pin_t enables[] = {
     {  CTRL_F1_VCCINT_PWR_EN, "CTRL_F1_VCCINT_PWR_EN", 1},
     {  CTRL_F2_VCCINT_PWR_EN, "CTRL_F2_VCCINT_PWR_EN", 1},
     {  CTRL_VCC_1V8_PWR_EN, "CTRL_VCC_1V8_PWR_EN", 2},
@@ -69,7 +69,7 @@ struct gpio_pin_t oks[] = {
 //
 // ------------------------------------------
 // if you update this you need to update N_PS_ENABLES
-static const struct gpio_pin_t enables[N_PS_ENABLES] = {
+const struct gpio_pin_t enables[N_PS_ENABLES] = {
     {  EN_F1_INT, "EN_F1_INT", 1},
     {  EN_F2_INT, "EN_F2_INT", 1},
     {  EN_1V8, "EN_1V8", 2},
