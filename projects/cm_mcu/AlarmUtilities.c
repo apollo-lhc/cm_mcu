@@ -362,7 +362,7 @@ void clearVoltAlarmLatch(void)
 
 bool getVoltAlarmLatch(int *ch, float *now, float *target, float *pct)
 {
-  // prevent tearing with a critical section. 
+  // prevent tearing with a critical section.
   taskENTER_CRITICAL();
 
   if (!latch_volt_valid) {
