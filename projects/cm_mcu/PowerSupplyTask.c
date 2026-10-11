@@ -610,6 +610,6 @@ void PowerSupplyTask(void *parameters)
     if (xTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(30)) == pdFALSE) {
       vTaskDelay(pdMS_TO_TICKS(30));
       xLastWakeTime = xTaskGetTickCount();
-    }  
+    }
   }
 }

@@ -682,8 +682,8 @@ void LGA80D_init(void)
     }
     lga80d_settle();
 
-    // read back the init writes and warn on a mismatch; the LINEAR11 values are compared
-    // decoded, in case the device returns a different encoding of the same value
+    // read back the init writes and warn on a mismatch. The raw words are compared: the device
+    // returns the stored encoding unchanged (checked on F1VCCINT1 and F2VCCINT2)
     for (size_t c = 0; c < sizeof(init_cmds) / sizeof(init_cmds[0]); ++c) {
       const struct pm_command_t *cmd = init_cmds[c].cmd;
       uint16_t wr = 0;
@@ -697,14 +697,7 @@ void LGA80D_init(void)
           log_error(LOG_SERVICE, "%s p%d: %s read failed\r\n", pm_addrs_dcdc[dev].name, page, cmd->name);
           continue;
         }
-        bool match = (rd == wr);
-        if (!match && cmd->type == PM_LINEAR11) {
-          linear11_val_t r = {.raw = rd}, w = {.raw = wr};
-          float diff = linear11_to_float(r) - linear11_to_float(w);
-          float wv = linear11_to_float(w);
-          match = (diff < 0 ? -diff : diff) <= 0.01f * (wv < 0 ? -wv : wv);
-        }
-        if (!match) {
+        if (rd != wr) {
           log_warn(LOG_SERVICE, "%s p%d: %s rd 0x%x wr 0x%x\r\n", pm_addrs_dcdc[dev].name, page,
                    cmd->name, rd, wr);
         }

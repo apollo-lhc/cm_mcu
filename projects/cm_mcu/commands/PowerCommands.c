@@ -227,9 +227,9 @@ BaseType_t sn_all(int argc, char **argv, char *m)
         copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reset failed, %s page %d\r\n",
                            argv[0], pm_addrs_dcdc[which].name, page_d);
       }
-      if (page_d==0) { // if we stay on the same module .... 
+      if (page_d == 0) { // if we stay on the same module ....
         lga80d_settle(); // the LGA80D needs time after RESET before the next command cycle.
-      } 
+      }
     }
   }
   if (copied == 0) {
@@ -305,7 +305,7 @@ BaseType_t snapshot(int argc, char **argv, char *m)
 
   // reset only after a complete read, so a failed read never loses the snapshot
   if (reset) {
-    lga80d_settle(); // the LGA80D needs time after capture before the RESET command. 
+    lga80d_settle(); // the LGA80D needs time after capture before the RESET command.
     if (!snapreset(&pm_addrs_dcdc[which], page)) {
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: reset failed\r\n", argv[0]);
     }

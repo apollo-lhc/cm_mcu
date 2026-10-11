@@ -161,7 +161,7 @@ void MonitorTask(void *parameters)
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
-            if (args==&dcdc_args && page==0) {
+            if (args == &dcdc_args && page == 0) {
               lga80d_settle(); // the LGA80D needs time after PAGE before the next command
             }
             break;
