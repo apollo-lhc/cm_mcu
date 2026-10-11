@@ -667,10 +667,7 @@ void LGA80D_init(void)
       }
       configASSERT(i < ADC_CHANNEL_COUNT);
       float nom = getADCtargetValue(i);
-      float diff = v - nom;
-      if (diff < 0) {
-        diff = -diff;
-      }
+      float diff = ABS(v - nom);
       if (diff > 0.01f * nom) {
         const char *nsign;
         int nwhole, nfrac;
