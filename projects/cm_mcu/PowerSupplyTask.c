@@ -557,7 +557,7 @@ void PowerSupplyTask(void *parameters)
     currentState = nextState;
 
     // Publish a new MC page 0x01 snapshot only when its contents change. A
-    // remote read takes longer than this task's 25ms period, so incrementing
+    // remote read takes longer than this task's period, so incrementing
     // generation unconditionally would prevent any coherent read completing.
     uint8_t supply_states[N_PS_OKS];
     bool snapshot_changed =
@@ -603,7 +603,13 @@ void PowerSupplyTask(void *parameters)
     static UBaseType_t vv = 4096;
     CHECK_TASK_STACK_USAGE(vv);
 
+    // disable_ps() can take longer than one period; resync instead of running catch-up passes
+    // back-to-back, which would re-enable and check PG with no time in between
     // wait here for the x msec, where x is 2nd argument below.
-    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));
+    // Beware of integer truncation and a 100 Hz tick rate when setting the delay time
+    if (xTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(30)) == pdFALSE) {
+      vTaskDelay(pdMS_TO_TICKS(30));
+      xLastWakeTime = xTaskGetTickCount();
+    }  
   }
 }
