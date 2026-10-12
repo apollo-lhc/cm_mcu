@@ -183,7 +183,7 @@ void MonitorTaskI2C(void *parameters);
 #elif defined(REV2) || defined(REV3) // Rev 2 or 3
 #define N_PM_ADDRS_DCDC 7
 #endif
-#define N_EXTRA_CMDS 7
+#define N_EXTRA_CMDS 8
 
 // The LGA80D (ZL8802) glitches (READ_TEMPERATURE_1 returns 0xFFFF, STATUS_CML bit 1 sets) when a
 // command follows the PAGE write too closely. Wait this long after a PAGE write before the next

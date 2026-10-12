@@ -181,6 +181,51 @@ either formalize the workaround with documentation or remove it.
 **Action:** Check return codes and report errors (error buffer or return queue). Make the
 unlock/write/lock sequence a single compound message type to guarantee atomicity.
 
+### 23. DCDC Temperature Alarm Uses Only the Controller-Die Sensor — OPEN
+
+Added 2026-10-10 (LGA80D review, `lga80d-review-2026-10-09.md` #3). The DCDC over-temperature
+alarm (`AlarmUtilities.c:158-193`) and the IPMC "hottest regulator" value (`I2CSlaveTask.c:102-123`,
+register `0x18`) both use command index 0, READ_TEMPERATURE_1 (0x8D, controller die). The power
+stage is the hotspot; its sensor is READ_TEMPERATURE_3 (0x8F, DrMOS TMON), already read every
+PSMON loop as index 1 but unused.
+
+Measured 2026-10-10 under load (TEMP_3 − TEMP_1):
+
+- Up to about 8 A per output: within about ±2 °C, often negative. That is within sensor accuracy.
+- F1AVTT/CC at 24 A: TEMP_3 is **+7 °C** above TEMP_1.
+
+The module's own OT limits (125 °C fault, 110 °C warning) also apply to TEMP_1. The only TMON
+threshold (MFR_VMON_OV_FAULT_LIMIT, 2.4 V default) corresponds to about 225 °C, so the controller
+never trips on the power-stage temperature.
+
+**Action:** Use the higher of TEMP_1 and TEMP_3 per device/page. Don't switch to TEMP_3 alone: it
+reads 1-2 °C lower at light load.
+
+- Apply the existing `LGA80D_TEMP_MIN_C`/`MAX_C` range check to both readings. The −0.50 °C
+  (raw 0xFFFF) glitch can hit TEMP_3 too, and today only index 0 is checked.
+- Give TEMP_3 its own bits in `dcdcInvalidMask`. That is 28 bits, which still fits in a
+  `uint32_t`; update the `configASSERT` at `:164` to match.
+- Replace the hard-coded index 0 (see the "I am assuming it stays that way" comment at `:158-159`)
+  with a lookup by command code.
+
+**Decisions:**
+
+- **IPMC register `0x18`:** change it too for consistency, or keep it on TEMP_1 if the Service
+  Module side has thresholds tuned to the old value. It is an external interface. Note that this
+  path has no range check today.
+- **The 70 °C default threshold:** with the max, the alarm trips earlier under load. TEMP_3 on
+  VCCINT at full FPGA load is unmeasured (only about 4 A per phase so far). Check against a fully
+  loaded board before shipping, to avoid nuisance shutdowns.
+
+Prerequisite (met in practice): TEMP_3 is only meaningful with VMON/TMON in temperature mode
+(USER_GLOBAL_CONFIG bit 12). That was read on one module; all 7 modules give plausible TEMP_3
+values.
+
+Optional, separate: MFR_VMON_OV_FAULT_LIMIT is R/W (protectable). Setting it to a real
+temperature would give module-level power-stage protection, but the voltage-to-°C scaling of the
+limit is unconfirmed, the response is auto-restart (`0xBF`), and the warning-threshold wording in
+the TRN is contradictory. Test before relying on it.
+
 ## Lower Priority
 
 ### 1. Firefly Enable-Mask Pair Read Non-Atomically — OPEN (demoted from High; scope corrected)

@@ -131,6 +131,7 @@ bool disable_ps(void);
 void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio);
 void blade_power_ok(bool isok);
 
+extern const struct gpio_pin_t enables[N_PS_ENABLES];
 extern const struct gpio_pin_t oks[N_PS_OKS];
 
 #endif /* COMMON_POWER_CTL_H_ */

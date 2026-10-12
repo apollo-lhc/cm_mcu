@@ -123,6 +123,9 @@ void MonitorTask(void *parameters)
               pageNackMask |= pageNackBit;
             }
           }
+          if (args == &dcdc_args && page == 0) {
+            lga80d_settle(); // the LGA80D needs time after PAGE before the next command
+          }
           continue;
         }
         // The LGA80D needs time after the PAGE write before the next command. Only the PSMON
@@ -153,11 +156,14 @@ void MonitorTask(void *parameters)
               log_warn(LOG_MON, "%s: Error %s, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
                        SMBUS_get_error(r), ps, c, page);
             }
-            // abort reading this device. NOTE this leaves the other values of this device stale.
+            // abort reading this page. NOTE this leaves the other values of this device+page stale.
             // FIXME -- should we set the other values to sentinel value -999?
             args->pm_values[index] = __builtin_nanf("");
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
+            if (args == &dcdc_args && page == 0) {
+              lga80d_settle(); // the LGA80D needs time after PAGE before the next command
+            }
             break;
           }
           data[0] = output_raw & 0xFFU;

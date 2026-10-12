@@ -81,7 +81,7 @@ IPATH+=${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
 GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
 
 CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
-CFLAGS+=-DTARGET_IS_TM4C129_RA2
+CFLAGS+=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
 #ugh
 #CFLAGS:=$(filter-out -DDEBUG,$(CFLAGS))
 
@@ -149,7 +149,6 @@ ${COMPILER}/prod_test.axf: ${COMPILER}/heap_4.o
 ${COMPILER}/prod_test.axf: prod_test.ld
 SCATTERgcc_prod_test=prod_test.ld
 ENTRY_prod_test=ResetISR
-CFLAGSgcc=-DTARGET_IS_TM4C129_RA1 -DUSE_FREERTOS
 
 # this rule forces the main function to be recompiled when
 # any of the dependencies are out of date, to get the
