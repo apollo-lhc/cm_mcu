@@ -12,7 +12,6 @@
 // this command takes no arguments and never returns.
 __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
 {
-  disable_ps();
   // Set LED to white (all channels on) to indicate bootloader mode.
   // Write GPIO directly since the scheduler will be stopped momentarily.
   write_gpio_pin(MCU_LED_RED, 0x1);
@@ -20,6 +19,10 @@ __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
   write_gpio_pin(MCU_LED_BLUE, 0x1);
   Print("Jumping to bootloader\r\n");
   ROM_SysCtlDelay(100000);
+  // after Print (it takes a semaphore); interrupts off keeps PowerSupplyTask
+  // from turning supplies back on mid-shutdown
+  taskDISABLE_INTERRUPTS();
+  disable_ps_failsafe();
   // this code is copied from the JumpToBootLoader()
   // stack from the boot_demo1 application in the
   // ek-tm4c129exl part of tiva ware.

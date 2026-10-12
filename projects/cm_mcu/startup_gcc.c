@@ -342,6 +342,7 @@ of this function. */
   psr = pulFaultStackAddress[7];
   // save the originating interrupt
   errbuffer_put_raw(EBUF_HARDFAULT, (uint16_t)psr & 0xfUL);
+  disable_ps_failsafe();
 
 #ifdef DEBUG
   /* When the following line is hit, the variables contain the register values. */
