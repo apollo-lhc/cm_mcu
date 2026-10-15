@@ -22,9 +22,13 @@
 // This command takes no arguments
 BaseType_t restart_mcu(int argc, char **argv, char *m)
 {
+  // interrupts off keeps PowerSupplyTask from turning supplies back on mid-shutdown
+  taskDISABLE_INTERRUPTS();
   disable_ps();
-  snprintf(m, SCRATCH_SIZE, "Restarting MCU\r\n");
+  UARTPrint(ZQ_UART, "Restarting MCU\r\n");
+  ROM_SysCtlDelay(100000);
   MAP_SysCtlReset(); // This function does not return
+  ROM_SysCtlReset(); // This function does not return
   __builtin_unreachable();
   return pdFALSE;
 }
