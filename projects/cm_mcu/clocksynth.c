@@ -37,13 +37,21 @@ int clear_clk_stickybits(void)
                clk_moni2c_addrs[i].name);
       return res;
     }
-    // clear the sticky flag
-    res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].dev_addr, 1,
-                               CLOCK_SYNTH_STICKY_FLAG_REGISTER, 1, 0);
+    // select page 0 via the change page register
+    res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].dev_addr, 1, CLOCK_CHANGEPAGE_REG_ADDR, 1, 0);
     if (res != 0) {
-      log_warn(LOG_SERVICE, "Sticky flag error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
-               clk_moni2c_addrs[i].name);
+      log_warn(LOG_SERVICE, "Page error %s, break (instance=%s)\r\n", SMBUS_get_error(res), clk_moni2c_addrs[i].name);
       return res;
+    }
+    // clear the four sticky flag registers
+    for (int j = 0; j < 4; ++j) {
+      res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].dev_addr, 1,
+                                 CLOCK_SYNTH_STICKY_FLAG_REGISTER + j, 1, 0);
+      if (res != 0) {
+        log_warn(LOG_SERVICE, "Sticky flag error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
+                 clk_moni2c_addrs[i].name);
+        return res;
+      }
     }
   }
   return 0;
