@@ -15,7 +15,8 @@ int load_clock(void);
 #define CLOCK_I2C_BASE                                2
 #define CLOCK_SYNTH5341_I2C_ADDRESS                   0x77
 #define CLOCK_SYNTH5395_I2C_ADDRESS                   0x6b
-#define CLOCK_SYNTH_STICKY_FLAG_REGISTER              0x11 // sticky flags for internal status register
+#define CLOCK_SYNTH_STICKY_FLAG_REGISTER              0x11 // first sticky flag register (page 0)
+#define CLOCK_SYNTH_STICKY_FLAG_NREGS                 4    // 0x11-0x14 (Si5341 documents only 0x11-0x12)
 #define CLOCK_SWITCH_I2C_ADDRESS                      0x70 // TCA9548A
 #define CLOCK_SWITCH_ENABLEMAP                        0xc1
 #define CLOCK_R0_EXPANDER_I2C_ADDRESS                 0x20 // TCA9555, I2C expander for R0A/R0B clock synth chips

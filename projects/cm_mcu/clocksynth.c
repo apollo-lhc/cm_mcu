@@ -43,10 +43,27 @@ int clear_clk_stickybits(void)
       log_warn(LOG_SERVICE, "Page error %s, break (instance=%s)\r\n", SMBUS_get_error(res), clk_moni2c_addrs[i].name);
       return res;
     }
-    // clear the four sticky flag registers
-    for (int j = 0; j < 4; ++j) {
-      res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].dev_addr, 1,
-                                 CLOCK_SYNTH_STICKY_FLAG_REGISTER + j, 1, 0);
+    // clear the sticky flag registers 0x11-0x14 with read-modify-write, touching only the
+    // documented _FLG bits. Si5395 RM Rev 1.3 tables 16.12-16.15; the Si5341 (RM Rev 1.3
+    // tables 14.12-14.13) has only 0x11-0x12, and undescribed registers must not be written.
+    static const uint8_t si5395_flg_masks[CLOCK_SYNTH_STICKY_FLAG_NREGS] = {0x2b, 0xff, 0x22, 0x20};
+    const uint8_t *masks = si5395_flg_masks;
+#ifdef REV2
+    // on REV2, R0A (device 0) is an Si5341
+    static const uint8_t si5341_flg_masks[CLOCK_SYNTH_STICKY_FLAG_NREGS] = {0x2f, 0x0f, 0x00, 0x00};
+    if (i == 0)
+      masks = si5341_flg_masks;
+#endif // REV2
+    for (int j = 0; j < CLOCK_SYNTH_STICKY_FLAG_NREGS; ++j) {
+      if (masks[j] == 0)
+        continue;
+      uint32_t val = 0;
+      res = apollo_i2c_ctl_reg_r(CLOCK_I2C_BASE, clk_moni2c_addrs[i].dev_addr, 1,
+                                 CLOCK_SYNTH_STICKY_FLAG_REGISTER + j, 1, &val);
+      if (res == 0 && (val & masks[j]) != 0) {
+        res = apollo_i2c_ctl_reg_w(CLOCK_I2C_BASE, clk_moni2c_addrs[i].dev_addr, 1,
+                                   CLOCK_SYNTH_STICKY_FLAG_REGISTER + j, 1, val & ~masks[j] & 0xffU);
+      }
       if (res != 0) {
         log_warn(LOG_SERVICE, "Sticky flag error %s, break (instance=%s)\r\n", SMBUS_get_error(res),
                  clk_moni2c_addrs[i].name);
