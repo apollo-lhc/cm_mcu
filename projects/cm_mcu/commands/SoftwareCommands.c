@@ -18,7 +18,7 @@ __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
   write_gpio_pin(MCU_LED_GREEN, 0x1);
   write_gpio_pin(MCU_LED_BLUE, 0x1);
   Print("Jumping to bootloader\r\n");
-  ROM_SysCtlDelay(100000);
+  DELAY_MS(10);
   // after Print (it takes a semaphore); interrupts off keeps PowerSupplyTask
   // from turning supplies back on mid-shutdown
   taskDISABLE_INTERRUPTS();

@@ -139,6 +139,20 @@ void setPSWaitIgnoreMask(uint16_t mask)
   ps_wait_ignore_mask = mask;
 }
 
+#ifndef REV1
+// true once every FPGA whose DONE can be read back has cleared (DONE is active low).
+// /Fx_CFG_DONE is read through a FET whose drain is pulled up to the switched V_3V3
+// (sheets 5.04/6.04), so with that rail off, or with the FPGA not installed, the line
+// can read 'configured' forever. Don't wait on those.
+static bool fpgas_cleared(void)
+{
+  if (read_gpio_pin(PG_3V3) == 0)
+    return true;
+  return (!isFPGAF1_PRESENT() || read_gpio_pin(_F1_FPGA_DONE) == 1) &&
+         (!isFPGAF2_PRESENT() || read_gpio_pin(_F2_FPGA_DONE) == 1);
+}
+#endif // REV1
+
 // turn off all power supplies in the proper order
 // de-assert BLADE_POWER_OK on successful exit.
 // Returns false if the power-goods of some level did not drop within PS_OFF_TIMEOUT_MS.
@@ -162,7 +176,7 @@ bool disable_ps(void)
   write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
   write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
   for (TickType_t t = 0; t < pdMS_TO_TICKS(PS_OFF_TIMEOUT_MS); ++t) {
-    if (read_gpio_pin(_F1_FPGA_DONE) == 1 && read_gpio_pin(_F2_FPGA_DONE) == 1)
+    if (fpgas_cleared())
       break;
     vTaskDelay(1);
   }
@@ -228,16 +242,14 @@ void disable_ps_failsafe(void)
   }
   running = true;
 
-  const uint32_t one_ms = configCPU_CLOCK_HZ / 3000U; // SysCtlDelay is 3 cycles per loop
-
 #ifndef REV1
   // hold the FPGAs in PROGRAM so they are cleared before any rail drops (DONE is active low)
   write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
   write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
   for (int t = 0; t < PS_OFF_TIMEOUT_MS; ++t) {
-    if (read_gpio_pin(_F1_FPGA_DONE) == 1 && read_gpio_pin(_F2_FPGA_DONE) == 1)
+    if (fpgas_cleared())
       break;
-    ROM_SysCtlDelay(one_ms);
+    DELAY_MS(1);
   }
 #endif // REV1
 
@@ -258,7 +270,7 @@ void disable_ps_failsafe(void)
       }
       if (all_off)
         break;
-      ROM_SysCtlDelay(one_ms);
+      DELAY_MS(1);
     }
   }
 
@@ -268,7 +280,7 @@ void disable_ps_failsafe(void)
   write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
 #endif // REV1
   // ZL8802 Eq. 1 EN-low time, see disable_ps()
-  ROM_SysCtlDelay(50U * one_ms);
+  DELAY_MS(50);
 }
 
 // check the power supplies and turn them on one by one

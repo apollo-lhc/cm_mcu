@@ -25,8 +25,11 @@ BaseType_t restart_mcu(int argc, char **argv, char *m)
   // interrupts off keeps PowerSupplyTask from turning supplies back on mid-shutdown
   taskDISABLE_INTERRUPTS();
   disable_ps_failsafe();
-  snprintf(m, SCRATCH_SIZE, "Restarting MCU\r\n");
-  MAP_SysCtlReset(); // This function does not return
+  // polled write to the CLI UART; Print() would take a mutex and re-enable interrupts
+  UARTPrint(ZQ_UART, "Restarting MCU\r\n");
+  while (MAP_UARTBusy(ZQ_UART))
+    ;
+  ROM_SysCtlReset(); // This function does not return
   __builtin_unreachable();
   return pdFALSE;
 }

@@ -75,6 +75,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_PWR_FAILURE_CLR 16
 #define EBUF_VOLT_HIGH       17
 #define EBUF_CLKINIT_FAILURE 18
+#define EBUF_PWR_OFF_TIMEOUT 19
 
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT
@@ -206,11 +207,14 @@ inline unsigned long long maxull(unsigned long long const x, unsigned long long 
        double: fabs)(n))
 // clang-format on
 
-#ifdef USE_FREERTOS
-// busy-loop a delay from Tivaware ROM. SysCtlDelay is 3 clock cyles.
+// busy-loop delays from Tivaware ROM. SysCtlDelay is 3 clock cycles per loop.
+// The caller needs configCPU_CLOCK_HZ (FreeRTOSConfig.h) and driverlib/rom.h.
+// Use where FreeRTOS delays are not available (interrupts off, fault handlers).
 // round the us number with this arithmetic.
 #define DELAY_US(us) \
   ROM_SysCtlDelay((((us) * configCPU_CLOCK_HZ) + 1500000UL) / 3000000UL)
-#endif // USE_FREERTOS
+// same for ms; DELAY_US overflows 32 bits above ~100 us. Safe up to ~100 s.
+#define DELAY_MS(ms) \
+  ROM_SysCtlDelay((((ms) * (configCPU_CLOCK_HZ / 1000UL)) + 1UL) / 3UL)
 
 #endif /* COMMON_UTILS_H_ */

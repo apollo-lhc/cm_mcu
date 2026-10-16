@@ -82,7 +82,7 @@ BaseType_t fpga_ctl(int argc, char **argv, char *m)
 #if defined(REV2) || defined(REV3)
 BaseType_t fpga_flash(int argc, char **argv, char *m)
 {
-  const TickType_t kDELAY = 1 / portTICK_PERIOD_MS; // 1 ms delay
+  const TickType_t kDELAY = 10 / portTICK_PERIOD_MS; // 10 ms delay
   char *which = NULL;
   if (strcmp(argv[1], "f2") == 0) {
     write_gpio_pin(FPGA_CFG_FROM_FLASH, 0x1);
@@ -110,7 +110,7 @@ BaseType_t fpga_flash(int argc, char **argv, char *m)
 // This command takes 1 argument, either f1 or f2
 BaseType_t fpga_reset(int argc, char **argv, char *m)
 {
-  const TickType_t delay = 1 / portTICK_PERIOD_MS; // 1 ms delay
+  const TickType_t delay = 10 / portTICK_PERIOD_MS; // 10 ms delay
   char *which = NULL;
   if (strcmp(argv[1], "f2") == 0) {
     write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
