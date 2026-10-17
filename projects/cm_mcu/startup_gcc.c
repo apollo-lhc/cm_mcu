@@ -342,6 +342,10 @@ of this function. */
   psr = pulFaultStackAddress[7];
   // save the originating interrupt
   errbuffer_put_raw(EBUF_HARDFAULT, (uint16_t)psr & 0xfUL);
+  // a bus fault inside this handler would lock up the core (no reset, watchdog not armed),
+  // e.g. GPIO touched before its clock is on; have the core ignore it instead
+  HWREG(NVIC_CFG_CTRL) |= NVIC_CFG_CTRL_BFHFNMIGN;
+  disable_ps_failsafe();
 
 #ifdef DEBUG
   /* When the following line is hit, the variables contain the register values. */

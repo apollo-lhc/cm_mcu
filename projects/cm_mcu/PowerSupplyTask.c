@@ -162,6 +162,7 @@ void PowerSupplyTask(void *parameters)
   }
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
   ignore_mask = getPSFailMask();
+  setPSWaitIgnoreMask(ignore_mask); // so disable_ps_failsafe() doesn't wait on a masked power-good
   if (ignore_mask) {
 #define SZ 128
     char tmp[SZ];

@@ -226,6 +226,25 @@ temperature would give module-level power-stage protection, but the voltage-to-�
 limit is unconfirmed, the response is auto-restart (`0xBF`), and the warning-threshold wording in
 the TRN is contradictory. Test before relying on it.
 
+### 24. prod_test: LGA80D PAGE-to-Command Gap Not Guaranteed — OPEN
+
+This item is in `projects/prod_test`, not cm_mcu. The ZL8802 needs 5 ms between commands to the same
+device (2 ms READ to READ; zl8802.pdf p.52). cm_mcu enforces it with `lga80d_settle()`; prod_test has
+no equivalent. Its `apollo_pmbus_rw()` (`prod_test/I2CCommunication.c:184`) polls with
+`vTaskDelay(pdMS_TO_TICKS(10))`, which is one tick at 100 Hz, so a call returns at the next tick
+boundary: the gap after PAGE to the next command is about 0.3-10 ms, under 5 ms roughly half the time.
+Affected: PAGE then USER_DATA_00 (`PowerI2CCommands.c:101`) and PAGE then READ_VOUT (`:229`). That is
+the PAGE-to-read gap the ABA soak tied to the LGA80D -0.50 C temperature glitch in cm_mcu (#307/#308);
+in prod_test it would show as a bad VOUT delta or a USER_DATA readback mismatch (inferred, not observed).
+
+`pdMS_TO_TICKS(5)` truncates to 0 at 100 Hz, so the delay must be a literal tick count.
+`apollo_pmbus_rw()` is only used for the LGA80Ds, so a delay there touches nothing else.
+
+**Action:** Either change the poll delay at line 203 to `vTaskDelay(2)` (10-20 ms, but skipped if the
+transfer is already done at the first status check, e.g. after a time-slice switch to another
+equal-priority task), or add an unconditional `vTaskDelay(2)` after the poll loop (always >= 10 ms,
+one to two ticks extra per transaction). The second is the only one that guarantees the gap.
+
 ## Lower Priority
 
 ### 1. Firefly Enable-Mask Pair Read Non-Atomically — OPEN (demoted from High; scope corrected)

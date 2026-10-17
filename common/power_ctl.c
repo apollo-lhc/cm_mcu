@@ -9,6 +9,7 @@
 #include "common/pinsel.h"
 #include "common/utils.h"
 #include "power_ctl.h"
+#include "driverlib/rom.h"
 
 #ifdef USE_FREERTOS
 #include "FreeRTOS.h" // IWYU pragma: keep
@@ -126,6 +127,17 @@ void setPSStatus(int i, enum ps_state theState)
   states[i] = theState;
 }
 
+// how long to wait for the power-goods of one priority level to drop after its enables go low
+#define PS_OFF_TIMEOUT_MS 100
+
+// power-goods to skip when waiting for a level to turn off; set by PowerSupplyTask
+// from the EEPROM PS ignore mask. The enables are turned off regardless.
+static uint16_t ps_wait_ignore_mask = 0;
+void setPSWaitIgnoreMask(uint16_t mask)
+{
+  ps_wait_ignore_mask = mask;
+}
+
 // turn off all power supplies in the proper order
 // de-assert BLADE_POWER_OK on successful exit.
 bool disable_ps(void)
@@ -176,6 +188,51 @@ bool disable_ps(void)
   // Beware of integer truncation and a 100 Hz tick rate when setting the delay time.
   vTaskDelay(pdMS_TO_TICKS(50));
   return true;
+}
+
+// Same power-down as disable_ps(), for paths that are about to reset or halt
+// (restart, bl, asserts, fault handlers). It busy-waits and makes no FreeRTOS
+// calls; the caller disables interrupts first so PowerSupplyTask cannot run.
+// Deliberately duplicated rather than shared, so disable_ps() stays unchanged.
+void disable_ps_failsafe(void)
+{
+  // a fault in here must not re-enter; fall through to the caller's reset/halt
+  static volatile bool running = false;
+  if (running) {
+    return;
+  }
+  running = true;
+
+  // disable in reverse order, bounded wait for each level's power-goods to drop;
+  // a power-good that timed out is not waited on again at lower levels
+  uint16_t timed_out = 0;
+  for (int prio = PS_NUM_PRIORITIES; prio > 0; --prio) {
+    for (int e = 0; e < N_PS_ENABLES; ++e) {
+      if (enables[e].priority == prio) {
+        write_gpio_pin(enables[e].pin_number, 0x0);
+      }
+    }
+    for (int t = 0;; ++t) {
+      uint16_t still_on = 0;
+      for (int o = 0; o < N_PS_OKS; ++o) {
+        if (oks[o].priority >= prio && ((ps_wait_ignore_mask | timed_out) & (1U << o)) == 0 &&
+            read_gpio_pin(oks[o].pin_number) == 1) {
+          still_on |= 1U << o;
+        }
+      }
+      if (still_on == 0)
+        break;
+      if (t >= PS_OFF_TIMEOUT_MS) {
+        timed_out |= still_on;
+        break;
+      }
+      DELAY_MS(1);
+    }
+  }
+
+  write_gpio_pin(BLADE_POWER_OK, 0x0);
+  // ZL8802 Eq. 1 EN-low time, see disable_ps()
+  DELAY_MS(50);
 }
 
 // check the power supplies and turn them on one by one
