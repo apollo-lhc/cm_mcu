@@ -127,8 +127,7 @@ void setPSStatus(int i, enum ps_state theState)
   states[i] = theState;
 }
 
-// how long to wait for the FPGAs to clear, and for the power-goods of one
-// priority level to drop after its enables go low
+// how long to wait for the power-goods of one priority level to drop after its enables go low
 #define PS_OFF_TIMEOUT_MS 100
 
 // power-goods to skip when waiting for a level to turn off; set by PowerSupplyTask
@@ -139,23 +138,8 @@ void setPSWaitIgnoreMask(uint16_t mask)
   ps_wait_ignore_mask = mask;
 }
 
-#ifndef REV1
-// true once every FPGA whose DONE can be read back has cleared (DONE is active low).
-// /Fx_CFG_DONE is read through a FET whose drain is pulled up to the switched V_3V3
-// (sheets 5.04/6.04), so with that rail off, or with the FPGA not installed, the line
-// can read 'configured' forever. Don't wait on those.
-static bool fpgas_cleared(void)
-{
-  if (read_gpio_pin(PG_3V3) == 0)
-    return true;
-  return (!isFPGAF1_PRESENT() || read_gpio_pin(_F1_FPGA_DONE) == 1) &&
-         (!isFPGAF2_PRESENT() || read_gpio_pin(_F2_FPGA_DONE) == 1);
-}
-#endif // REV1
-
 // turn off all power supplies in the proper order
 // de-assert BLADE_POWER_OK on successful exit.
-// Returns false if the power-goods of some level did not drop within PS_OFF_TIMEOUT_MS.
 bool disable_ps(void)
 {
   // first set the supplies to off to tell the
@@ -171,18 +155,6 @@ bool disable_ps(void)
   vTaskDelay(pdMS_TO_TICKS(500));
 #endif // REV1
 
-#ifndef REV1
-  // hold the FPGAs in PROGRAM so they are cleared before any rail drops (DONE is active low)
-  write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
-  write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
-  for (TickType_t t = 0; t < pdMS_TO_TICKS(PS_OFF_TIMEOUT_MS); ++t) {
-    if (fpgas_cleared())
-      break;
-    vTaskDelay(1);
-  }
-#endif // REV1
-
-  bool success = true;
   // disable in reverse order
   for (int prio = PS_NUM_PRIORITIES; prio > 0; --prio) {
     // disable the supplies at the relevant priority
@@ -192,11 +164,10 @@ bool disable_ps(void)
       }
     } // loop over enables
     bool ready_to_proceed = false;
-    TickType_t t = 0;
     while (!ready_to_proceed) {
       bool all_ready = true;
       for (int o = 0; o < N_PS_OKS; ++o) {
-        if (oks[o].priority >= prio && (ps_wait_ignore_mask & (1U << o)) == 0) {
+        if (oks[o].priority >= prio) {
           uint8_t val = read_gpio_pin(oks[o].pin_number);
           if (val == 1) { // all supplies are supposed to be off now
             all_ready = false;
@@ -206,33 +177,23 @@ bool disable_ps(void)
       } // loop over 'ok' bits
       if (all_ready)
         ready_to_proceed = true;
-      else if (t++ >= pdMS_TO_TICKS(PS_OFF_TIMEOUT_MS)) {
-        success = false;
-        break;
-      }
-      else
-        vTaskDelay(1);
     }
     // lowest_enabled_ps_prio = prio;
   } // loop over priorities
 
   // turn off POWER_OK when we are done
   write_gpio_pin(BLADE_POWER_OK, 0x0);
-#ifndef REV1
-  write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-  write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-#endif // REV1
   // ZL8802 Eq. 1: EN must stay low >= TOFF_DELAY + TOFF_FALL + 10.5 ms (20.5 ms as configured)
   // before the next rising edge. Enforce it here so no caller can re-enable too soon.
   // Beware of integer truncation and a 100 Hz tick rate when setting the delay time.
   vTaskDelay(pdMS_TO_TICKS(50));
-  return success;
+  return true;
 }
 
 // Same power-down as disable_ps(), for paths that are about to reset or halt
 // (restart, bl, asserts, fault handlers). It busy-waits and makes no FreeRTOS
 // calls; the caller disables interrupts first so PowerSupplyTask cannot run.
-// Deliberately duplicated rather than shared, to keep the changes to disable_ps() small.
+// Deliberately duplicated rather than shared, so disable_ps() stays unchanged.
 void disable_ps_failsafe(void)
 {
   // a fault in here must not re-enter; fall through to the caller's reset/halt
@@ -242,43 +203,34 @@ void disable_ps_failsafe(void)
   }
   running = true;
 
-#ifndef REV1
-  // hold the FPGAs in PROGRAM so they are cleared before any rail drops (DONE is active low)
-  write_gpio_pin(F1_FPGA_PROGRAM, 0x1);
-  write_gpio_pin(F2_FPGA_PROGRAM, 0x1);
-  for (int t = 0; t < PS_OFF_TIMEOUT_MS; ++t) {
-    if (fpgas_cleared())
-      break;
-    DELAY_MS(1);
-  }
-#endif // REV1
-
-  // disable in reverse order, bounded wait for each level's power-goods to drop
+  // disable in reverse order, bounded wait for each level's power-goods to drop;
+  // a power-good that timed out is not waited on again at lower levels
+  uint16_t timed_out = 0;
   for (int prio = PS_NUM_PRIORITIES; prio > 0; --prio) {
     for (int e = 0; e < N_PS_ENABLES; ++e) {
       if (enables[e].priority == prio) {
         write_gpio_pin(enables[e].pin_number, 0x0);
       }
     }
-    for (int t = 0; t < PS_OFF_TIMEOUT_MS; ++t) {
-      bool all_off = true;
+    for (int t = 0;; ++t) {
+      uint16_t still_on = 0;
       for (int o = 0; o < N_PS_OKS; ++o) {
-        if (oks[o].priority >= prio && (ps_wait_ignore_mask & (1U << o)) == 0 &&
+        if (oks[o].priority >= prio && ((ps_wait_ignore_mask | timed_out) & (1U << o)) == 0 &&
             read_gpio_pin(oks[o].pin_number) == 1) {
-          all_off = false;
+          still_on |= 1U << o;
         }
       }
-      if (all_off)
+      if (still_on == 0)
         break;
+      if (t >= PS_OFF_TIMEOUT_MS) {
+        timed_out |= still_on;
+        break;
+      }
       DELAY_MS(1);
     }
   }
 
   write_gpio_pin(BLADE_POWER_OK, 0x0);
-#ifndef REV1
-  write_gpio_pin(F1_FPGA_PROGRAM, 0x0);
-  write_gpio_pin(F2_FPGA_PROGRAM, 0x0);
-#endif // REV1
   // ZL8802 Eq. 1 EN-low time, see disable_ps()
   DELAY_MS(50);
 }

@@ -78,18 +78,6 @@ void printfail(uint16_t failed_mask, uint16_t supply_ok_mask, uint16_t supply_bi
             state, failed_mask, supply_ok_mask, supply_bitset);
 }
 
-// disable_ps(), recording when a power-good did not drop within the timeout:
-// the lower-priority supplies were then turned off out of order.
-static void disable_ps_logged(void)
-{
-  if (!disable_ps()) {
-    uint16_t stuck = check_ps_oks() & ~getPSFailMask();
-    log_error(LOG_PWRCTL, "power-down timeout, PG still high: 0x%04x\r\n", stuck);
-    errbuffer_put(EBUF_PWR_OFF_TIMEOUT, (stuck >> 8) & 0xFFU);
-    errbuffer_put(EBUF_CONTINUATION, stuck & 0xFFU);
-  }
-}
-
 static const char *const power_system_state_names[] = {
 #define X(state) #state,
     X_MACRO_PS_SYSTEM_STATES
@@ -174,7 +162,7 @@ void PowerSupplyTask(void *parameters)
   }
   // exceptions are stored in the internal EEPROM -- the IGNORE mask.
   ignore_mask = getPSFailMask();
-  setPSWaitIgnoreMask(ignore_mask); // so disable_ps() doesn't wait on a masked power-good
+  setPSWaitIgnoreMask(ignore_mask); // so disable_ps_failsafe() doesn't wait on a masked power-good
   if (ignore_mask) {
 #define SZ 128
     char tmp[SZ];
@@ -288,7 +276,7 @@ void PowerSupplyTask(void *parameters)
           printfail(failed_mask, supply_ok_mask, supply_bitset);
           errbuffer_power_fail(failed_mask);
           // turn off all supplies
-          disable_ps_logged();
+          disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
         }
@@ -296,7 +284,7 @@ void PowerSupplyTask(void *parameters)
           log_info(LOG_PWRCTL, "external alarm power down\r\n");
           errbuffer_put(EBUF_POWER_OFF_TEMP, 0);
           // turn off all supplies
-          disable_ps_logged();
+          disable_ps();
           nextState = POWER_FAILURE;
         }
         else if (!blade_power_enable || cli_powerdown_request || progcom_inhibit_request) {
@@ -309,7 +297,7 @@ void PowerSupplyTask(void *parameters)
         break;
       }
       case POWER_DOWN: {
-        disable_ps_logged();
+        disable_ps();
         errbuffer_put(EBUF_POWER_OFF, 0);
         log_info(LOG_PWRCTL, "power-down completed\r\n");
         nextState = POWER_OFF;
@@ -334,7 +322,7 @@ void PowerSupplyTask(void *parameters)
           failed_mask = (~supply_bitset) & supply_ok_mask_L1;
           printfail(failed_mask, supply_ok_mask_L1, supply_bitset);
           errbuffer_power_fail(failed_mask);
-          disable_ps_logged();
+          disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
         }
@@ -350,7 +338,7 @@ void PowerSupplyTask(void *parameters)
           failed_mask = (~supply_bitset) & supply_ok_mask_L2;
           printfail(failed_mask, supply_ok_mask_L2, supply_bitset);
           errbuffer_power_fail(failed_mask);
-          disable_ps_logged();
+          disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
         }
@@ -374,7 +362,7 @@ void PowerSupplyTask(void *parameters)
           printfail(failed_mask, supply_ok_mask_L4, supply_bitset);
           errbuffer_power_fail(failed_mask);
 
-          disable_ps_logged();
+          disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
         }
@@ -392,7 +380,7 @@ void PowerSupplyTask(void *parameters)
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
           errbuffer_power_fail(failed_mask);
 
-          disable_ps_logged();
+          disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
         }
@@ -410,7 +398,7 @@ void PowerSupplyTask(void *parameters)
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
           errbuffer_power_fail(failed_mask);
 
-          disable_ps_logged();
+          disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
         }
@@ -426,7 +414,7 @@ void PowerSupplyTask(void *parameters)
           printfail(failed_mask, supply_ok_mask_L6, supply_bitset);
           errbuffer_power_fail(failed_mask);
 
-          disable_ps_logged();
+          disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
         }
@@ -457,7 +445,7 @@ void PowerSupplyTask(void *parameters)
             int ret = enable_3v8(ffmask, false); // enable v38 (no-op if ffmask is {0,0})
             if (ret != 0) {
               log_error(LOG_PWRCTL, "enable 3v8 failed with %d\r\n", ret);
-              disable_ps_logged(); // turn off power
+              disable_ps(); // turn off power
               power_supply_alarm = true;
               nextState = POWER_FAILURE;
             }
@@ -469,7 +457,7 @@ void PowerSupplyTask(void *parameters)
               int ret = load_all_clocks();
               if (ret != 0) {
                 log_error(LOG_PWRCTL, "load_all_clocks failed with %d\r\n", ret);
-                disable_ps_logged(); // turn off power
+                disable_ps(); // turn off power
                 power_supply_alarm = true;
                 nextState = POWER_FAILURE;
               }
@@ -484,7 +472,7 @@ void PowerSupplyTask(void *parameters)
               log_info(LOG_PWRCTL, "disable 3v8\r\n");
             else
               log_warn(LOG_PWRCTL, "disable 3v8 failed with %d\r\n", ret);
-            disable_ps_logged();
+            disable_ps();
             power_supply_alarm = true;
             nextState = POWER_FAILURE;
           }

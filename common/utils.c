@@ -175,7 +175,6 @@ static const char *ebuf_errstrings[] = {
     "Power Failure CLEAR",
     "Volt High (GEN FPGA1 FPGA2)",
     "Clock Init failed",
-    "Power Off Timeout (PG mask)",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 

@@ -17,12 +17,13 @@ __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
   write_gpio_pin(MCU_LED_RED, 0x1);
   write_gpio_pin(MCU_LED_GREEN, 0x1);
   write_gpio_pin(MCU_LED_BLUE, 0x1);
-  Print("Jumping to bootloader\r\n");
-  DELAY_MS(10);
-  // after Print (it takes a semaphore); interrupts off keeps PowerSupplyTask
-  // from turning supplies back on mid-shutdown
+  // interrupts off keeps PowerSupplyTask from turning supplies back on mid-shutdown
   taskDISABLE_INTERRUPTS();
   disable_ps_failsafe();
+  // polled write to the CLI UART; Print() would take a mutex and re-enable interrupts
+  UARTPrint(ZQ_UART, "Jumping to bootloader\r\n");
+  while (MAP_UARTBusy(ZQ_UART))
+    ;
   // this code is copied from the JumpToBootLoader()
   // stack from the boot_demo1 application in the
   // ek-tm4c129exl part of tiva ware.
