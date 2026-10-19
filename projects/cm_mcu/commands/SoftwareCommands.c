@@ -12,14 +12,21 @@
 // this command takes no arguments and never returns.
 __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
 {
-  disable_ps();
   // Set LED to white (all channels on) to indicate bootloader mode.
   // Write GPIO directly since the scheduler will be stopped momentarily.
   write_gpio_pin(MCU_LED_RED, 0x1);
   write_gpio_pin(MCU_LED_GREEN, 0x1);
   write_gpio_pin(MCU_LED_BLUE, 0x1);
-  Print("Jumping to bootloader\r\n");
-  ROM_SysCtlDelay(100000);
+  // interrupts off keeps PowerSupplyTask from turning supplies back on mid-shutdown.
+  // BASEPRI stays raised into the boot loader, which never clears it. That is safe only
+  // because the boot loader leaves via a reset ("PW HACK" in COMMAND_RUN, bl_main.c);
+  // a direct branch to the app would start it with interrupts masked.
+  taskDISABLE_INTERRUPTS();
+  disable_ps_failsafe();
+  // polled write to the CLI UART; Print() would take a mutex and re-enable interrupts
+  UARTPrint(ZQ_UART, "Jumping to bootloader\r\n");
+  while (MAP_UARTBusy(ZQ_UART))
+    ;
   // this code is copied from the JumpToBootLoader()
   // stack from the boot_demo1 application in the
   // ek-tm4c129exl part of tiva ware.

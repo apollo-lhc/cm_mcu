@@ -427,6 +427,7 @@ __attribute__((noreturn)) void vApplicationStackOverflowHook(TaskHandle_t pxTask
     ;
   // log the error
   errbuffer_put_raw(EBUF_STACKOVERFLOW, 0);
+  disable_ps_failsafe();
 #ifdef DEBUG
   // wait here for the debugger
   for (;;)
@@ -466,11 +467,17 @@ void vApplicationIdleHook(void)
 #if (configUSE_MALLOC_FAILED_HOOK == 1)
 void vApplicationMallocFailedHook(void)
 {
+  taskDISABLE_INTERRUPTS();
   UARTPrint(ZQ_UART, "vApplicationMallocFailedHook\r\n");
   while (MAP_UARTBusy(ZQ_UART))
     ;
-
+  disable_ps_failsafe();
+#ifdef DEBUG
+  // wait here for the debugger
   for (;;)
     ;
+#else  // DEBUG
+  ROM_SysCtlReset();
+#endif // DEBUG
 }
 #endif

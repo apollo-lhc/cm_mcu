@@ -33,7 +33,7 @@ void Print(const char *str);
 __attribute__((noreturn)) BaseType_t bl_ctl(int argc, char **argv, char *m)
 {
   Print("Jumping to bootloader\r\n");
-  ROM_SysCtlDelay(100000);
+  DELAY_MS(10);
   // this code is copied from the JumpToBootLoader()
   // stack from the boot_demo1 application in the
   // ek-tm4c129exl part of tiva ware.

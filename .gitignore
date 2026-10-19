@@ -55,6 +55,7 @@
 .settings/*
 .cproject
 .project
+.clangd
 *.prefs
 compile_commands.json
 .vscode/*

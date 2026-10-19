@@ -150,11 +150,15 @@ header file. */
   errbuffer_put_raw(EBUF_CONTINUATION, ((uint32_t)pc >> 8) & 0xFFU);  \
   errbuffer_put_raw(EBUF_CONTINUATION, (uint32_t)pc & 0xFFU)
 
+// orderly power-down before halting or resetting (common/power_ctl.c)
+void disable_ps_failsafe(void);
+
 #ifdef DEBUG
 #define APOLLO_ASSERT(exp)    \
   if (!(exp)) {               \
     taskDISABLE_INTERRUPTS(); \
     APOLLO_ASSERT_RECORD();   \
+    disable_ps_failsafe();    \
     for (;;)                  \
       ;                       \
     __builtin_unreachable();  \
@@ -164,6 +168,7 @@ header file. */
   if (!(exp)) {               \
     taskDISABLE_INTERRUPTS(); \
     APOLLO_ASSERT_RECORD();   \
+    disable_ps_failsafe();    \
     ROM_SysCtlReset();        \
     __builtin_unreachable();  \
   }

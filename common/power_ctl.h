@@ -128,6 +128,8 @@ void setPSStatus(int i, enum ps_state theState);
 bool turn_on_ps(uint16_t);
 bool check_ps(void);
 bool disable_ps(void);
+void disable_ps_failsafe(void);
+void setPSWaitIgnoreMask(uint16_t mask);
 void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio);
 void blade_power_ok(bool isok);
 
