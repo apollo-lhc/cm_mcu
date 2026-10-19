@@ -472,8 +472,12 @@ void vApplicationMallocFailedHook(void)
   while (MAP_UARTBusy(ZQ_UART))
     ;
   disable_ps_failsafe();
-
+#ifdef DEBUG
+  // wait here for the debugger
   for (;;)
     ;
+#else  // DEBUG
+  ROM_SysCtlReset();
+#endif // DEBUG
 }
 #endif

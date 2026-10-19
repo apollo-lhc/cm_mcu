@@ -175,6 +175,7 @@ static const char *ebuf_errstrings[] = {
     "Power Failure CLEAR",
     "Volt High (GEN FPGA1 FPGA2)",
     "Clock Init failed",
+    "Power Off - PG timeout",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -224,6 +225,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
       ERRBUF_APPEND("(ISRNUM= 0x%02x)", errdata);
       break;
     case EBUF_PWR_FAILURE:
+    case EBUF_PS_OFF_TIMEOUT:
       ERRBUF_APPEND("(supply mask) 0x%02x", errdata);
       break;
     case EBUF_ASSERT:

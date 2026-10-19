@@ -10,4 +10,4 @@ Diagnostics:
 CompileFlags:
   CompilationDatabase: .
   Remove: [-mfp16-format=ieee]
-  Add: [-Wunused-parameter]
+  Add: [-Wunused-parameter, -I/nfs/cms/hw/wittich/cmtest/cm_mcu/projects/cm_mcu]

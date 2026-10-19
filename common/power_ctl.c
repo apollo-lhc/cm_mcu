@@ -229,6 +229,13 @@ void disable_ps_failsafe(void)
       DELAY_MS(1);
     }
   }
+#ifdef USE_ERROR_EPROM
+  // record power-goods that did not drop; the order was not enforced past them
+  if (timed_out != 0) {
+    errbuffer_put_raw(EBUF_PS_OFF_TIMEOUT, (timed_out >> 8) & 0xFFU);
+    errbuffer_put_raw(EBUF_CONTINUATION, timed_out & 0xFFU);
+  }
+#endif // USE_ERROR_EPROM
 
   write_gpio_pin(BLADE_POWER_OK, 0x0);
   // ZL8802 Eq. 1 EN-low time, see disable_ps()

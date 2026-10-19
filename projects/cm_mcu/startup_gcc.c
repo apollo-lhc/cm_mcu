@@ -331,6 +331,13 @@ of this function. */
   volatile uint32_t pc;  /* Program counter. */
   volatile uint32_t psr; /* Program status register. */
 
+  // a precise bus fault in this handler (e.g. a GPIO or EEPROM read with the
+  // peripheral unclocked) would lock up the core: no reset, watchdog not armed.
+  // Have the core ignore it instead. Set first, so it covers errbuffer_put_raw().
+  // Imprecise faults (buffered stores) are not covered, but they only pend here
+  // and are cleared by the reset.
+  HWREG(NVIC_CFG_CTRL) |= NVIC_CFG_CTRL_BFHFNMIGN;
+
   r0 = pulFaultStackAddress[0];
   r1 = pulFaultStackAddress[1];
   r2 = pulFaultStackAddress[2];
@@ -342,9 +349,6 @@ of this function. */
   psr = pulFaultStackAddress[7];
   // save the originating interrupt
   errbuffer_put_raw(EBUF_HARDFAULT, (uint16_t)psr & 0xfUL);
-  // a bus fault inside this handler would lock up the core (no reset, watchdog not armed),
-  // e.g. GPIO touched before its clock is on; have the core ignore it instead
-  HWREG(NVIC_CFG_CTRL) |= NVIC_CFG_CTRL_BFHFNMIGN;
   disable_ps_failsafe();
 
 #ifdef DEBUG
