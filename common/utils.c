@@ -176,6 +176,7 @@ static const char *ebuf_errstrings[] = {
     "Volt High (GEN FPGA1 FPGA2)",
     "Clock Init failed",
     "Power Off - PG timeout",
+    "Power Config failed",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -235,6 +236,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
       ERRBUF_APPEND(" (dev = %c)", (char)errdata);
       break;
     case EBUF_CLKINIT_FAILURE:
+    case EBUF_POWER_CONFIG_FAIL:
       ERRBUF_APPEND(" ");
       break;
     default:

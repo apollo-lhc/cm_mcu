@@ -183,11 +183,6 @@ void PowerSupplyTask(void *parameters)
 #endif                                 // REV2
   }
 
-#if defined(ECN001) || defined(REV2) || defined(REV3)
-  // configure the LGA80D supplies. This call takes some time.
-  LGA80D_init();
-#endif // ECN001
-
   bool power_supply_alarm = false;
   uint16_t failed_mask = 0x0U;
 
@@ -243,17 +238,18 @@ void PowerSupplyTask(void *parameters)
     // OFF1 .. OFF6 are the six states of the turn-off sequence
     // in the transition to FAIL we turn off all the supplies in sequence,
     // even if they were not yet turned on (i.e., transition from ON3 -> FAIL)
-    //                     +-------------------+
-    //              +------+       FAIL        +<-----+
-    // +-------+    |      +--+-------------+--+      |
-    // | INIT  |    |         ^             ^         |
-    // +---+---+    v         |             |         |
-    //     |     ---+--+   +--+-+         +-+--+  +---+--+
-    //     +---->+ OFF +---> ON1+-> ....  | ON6+->+  ON  |
-    //           +--+--+   +----+         +----+  +---+--+
-    //              |            +------+             |
-    //              +-----<------| DOWN <-------------+
-    //                           +------+
+    // CONFIG runs LGA80D_init() with the supplies off and turns on ON1 if it succeeds
+    //                      +-------------------------------------+
+    //               +------+                FAIL                 +<-----+
+    // +-------+     |      +--+---------+-------------+----------+      |
+    // | INIT  |     |         ^         ^             ^                 |
+    // +---+---+     v         |         |             |                 |
+    //     |      +--+--+   +--+-----+ +-+--+        +-+--+          +---+--+
+    //     +----->+ OFF +-->+ CONFIG +-> ON1+-> .... | ON6+--------->+  ON  |
+    //            +--+--+   +--------+ +----+        +----+          +---+--+
+    //               |                 +------+                          |
+    //               +-----<-----------| DOWN <--------------------------+
+    //                                 +------+
 
     // Nota Bene:
     // ON3 does not have a FAIL transition because those supplies
@@ -267,6 +263,31 @@ void PowerSupplyTask(void *parameters)
       case POWER_INIT: {
         // only run on first boot
         nextState = POWER_OFF;
+        break;
+      }
+      case POWER_CONFIG: {
+        // run after power off, when powering back on
+#if defined(ECN001) || defined(REV2) || defined(REV3)
+        bool config_ok = LGA80D_init();
+        if (!config_ok) {
+          log_error(LOG_PWRCTL, "LGA80D_init failed\r\n");
+          power_supply_alarm = true;
+          errbuffer_put(EBUF_POWER_CONFIG_FAIL, 0);
+          // we don't need to turn off the supplies here since they are already off.
+          // failure is logged in LGA80D_init, so we just go to the failure state.
+          nextState = POWER_FAILURE;
+        }
+        else {
+          // config succeeded, so turn on the first priority level of supplies
+          turn_on_ps_at_prio(f2_enable, f1_enable, 1);
+          errbuffer_put(EBUF_POWER_ON, 0);
+          nextState = POWER_L1ON;
+        }
+#else  // ECN001 or REV2 or REV3
+        turn_on_ps_at_prio(f2_enable, f1_enable, 1);
+        errbuffer_put(EBUF_POWER_ON, 0);
+        nextState = POWER_L1ON;
+#endif // ECN001 or REV2 or REV3
         break;
       }
       case POWER_ON: {
@@ -308,9 +329,7 @@ void PowerSupplyTask(void *parameters)
         if (blade_power_enable && !cli_powerdown_request && !progcom_inhibit_request &&
             !external_alarm && !power_supply_alarm) {
           log_info(LOG_PWRCTL, "power-up requested\r\n");
-          turn_on_ps_at_prio(f2_enable, f1_enable, 1);
-          errbuffer_put(EBUF_POWER_ON, 0);
-          nextState = POWER_L1ON;
+          nextState = POWER_CONFIG;
         }
         else {
           nextState = POWER_OFF;
@@ -518,6 +537,7 @@ void PowerSupplyTask(void *parameters)
         switch (currentState) {
           case POWER_OFF:
           case POWER_INIT:
+          case POWER_CONFIG:
             // ... but the power state is "off" or
             // we are just initializing / turning on
             setPSStatus(i, PWR_OFF);
@@ -543,6 +563,11 @@ void PowerSupplyTask(void *parameters)
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);
+      if (nextState == POWER_FAILURE)
+        log_info(LOG_PWRCTL, "entering POWER_FAILURE from %s\r\n",
+                 power_system_state_names[currentState]);
+      else if (currentState == POWER_FAILURE)
+        log_info(LOG_PWRCTL, "leaving POWER_FAILURE, alarms cleared\r\n");
       const LedMsg_t *led_msg = NULL;
       if (nextState == POWER_OFF)
         led_msg = &LED_STATUS_PS_OFF;
