@@ -558,11 +558,14 @@ static const char *const vout_adc_names[NSUPPLIES_PS][2] = {
 // while the supply outputs are OFF. We expect that to be true on every path
 // that gets here: every reset except a core-only VECTRESET tri-states the
 // GPIOs, and the pull-downs on the enables hold them low through the boot
-// loader window. Turning the enables off and checking the power-goods below
-// only makes that explicit and is not expected to trip; a "still hi (EN=0)" warning
-// means the assumption is broken (reset type changed, or a stuck PG) and the
-// writes may have gone to a live supply.
-// After the writes, the VOUT setpoints of all devices are read back and logged.
+// loader window, and PowerSupplyTask only calls this from POWER_CONFIG, after
+// POWER_OFF. Turning the enables off and checking the power-goods below makes
+// that explicit; a "still hi (EN=0)" warning means the assumption is broken
+// (reset type changed, or a stuck PG), and the function returns false before
+// any write.
+// After the writes, the VOUT setpoints and the init writes are read back.
+// Returns false on any PAGE/write/read failure, VOUT off nominal or readback
+// mismatch, so that the power-up is blocked.
 // Power-goods in the PS ignore mask are not waited on or checked.
 bool LGA80D_init(void)
 {
@@ -587,7 +590,7 @@ bool LGA80D_init(void)
             read_gpio_pin(oks[o].pin_number) == 1) {
           any_high = true;
           if (timeout) {
-            log_warn(LOG_SERVICE, "%s still hi (EN=0)\r\n", oks[o].name);
+            log_error(LOG_SERVICE, "%s still hi (EN=0)\r\n", oks[o].name);
             abort = true; // we didn't power down in time
           }
         }
@@ -635,7 +638,8 @@ bool LGA80D_init(void)
       if (r) {
         log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev,
                   page, r);
-        log_error(LOG_SERVICE, "LGA80D(0)\r\n");
+        log_error(LOG_SERVICE, "%s p%d: %s write failed\r\n", pm_addrs_dcdc[dev].name, page,
+                  extra_cmds[0].name);
         abort = true;
       }
       else {
@@ -653,7 +657,8 @@ bool LGA80D_init(void)
                                 pm_addrs_dcdc + dev, init_cmds[c].cmd, init_cmds[c].value);
         if (r) {
           abort = true;
-          log_error(LOG_SERVICE, "LGA80D(%d)\r\n", (int)(c + 1));
+          log_error(LOG_SERVICE, "%s p%d: %s write failed\r\n", pm_addrs_dcdc[dev].name, page,
+                    init_cmds[c].cmd->name);
         }
       }
       lga80d_settle(); // after the last write this also spaces it from the reads below
