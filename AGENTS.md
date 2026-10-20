@@ -76,7 +76,7 @@ Priorities: 4 = critical (PowerSupply, I2CSlave, Init, ZynqMon, Alarm), 3 = moni
 
 **I2C Buses:** I2C0=Slave(0x40), I2C1=DCDC, I2C2=Clocks, I2C3=F2 Firefly, I2C4=F1 Firefly, I2C5=FPGA(REV2/3), I2C6=FPGA(REV1).
 
-**Power FSM:** `POWER_FAILURE → POWER_INIT → POWER_DOWN → POWER_OFF → POWER_CONFIG → POWER_L1ON → ... → POWER_L6ON → POWER_ON`. TEMP_ALARM → POWER_OFF. `POWER_CONFIG` runs `LGA80D_init()` on every power-up; a failure latches `POWER_FAILURE`.
+**Power FSM:** `POWER_INIT → POWER_OFF → POWER_CONFIG → POWER_L1ON → ... → POWER_L6ON → POWER_ON → POWER_DOWN → POWER_OFF`. A supply failure, TEMP_ALARM or init failure goes to `POWER_FAILURE`, which returns to `POWER_OFF` once cleared. `POWER_CONFIG` runs `LGA80D_init()` on every power-up; a failure latches `POWER_FAILURE`.
 
 ## Generated Files
 

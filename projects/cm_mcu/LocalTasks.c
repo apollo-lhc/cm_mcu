@@ -560,7 +560,7 @@ static const char *const vout_adc_names[NSUPPLIES_PS][2] = {
 // GPIOs, and the pull-downs on the enables hold them low through the boot
 // loader window, and PowerSupplyTask only calls this from POWER_CONFIG, after
 // POWER_OFF. Turning the enables off and checking the power-goods below makes
-// that explicit; a "still hi (EN=0)" warning means the assumption is broken
+// that explicit; a "still hi (EN=0)" error means the assumption is broken
 // (reset type changed, or a stuck PG), and the function returns false before
 // any write.
 // After the writes, the VOUT setpoints and the init writes are read back.

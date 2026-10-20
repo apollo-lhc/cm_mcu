@@ -563,6 +563,11 @@ void PowerSupplyTask(void *parameters)
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);
+      if (nextState == POWER_FAILURE)
+        log_info(LOG_PWRCTL, "entering POWER_FAILURE from %s\r\n",
+                 power_system_state_names[currentState]);
+      else if (currentState == POWER_FAILURE)
+        log_info(LOG_PWRCTL, "leaving POWER_FAILURE, alarms cleared\r\n");
       const LedMsg_t *led_msg = NULL;
       if (nextState == POWER_OFF)
         led_msg = &LED_STATUS_PS_OFF;
