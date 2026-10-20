@@ -563,10 +563,16 @@ static const char *const vout_adc_names[NSUPPLIES_PS][2] = {
 // means the assumption is broken (reset type changed, or a stuck PG) and the
 // writes may have gone to a live supply.
 // After the writes, the VOUT setpoints of all devices are read back and logged.
-void LGA80D_init(void)
+// Power-goods in the PS ignore mask are not waited on or checked.
+bool LGA80D_init(void)
 {
+  log_info(LOG_SERVICE, "%s\r\n", __func__);
+  bool abort = false;
+  uint16_t ignore_mask = getPSWaitIgnoreMask();
+
   // turn off the enables, highest priority first like disable_ps(), and check
-  // that the power-goods of each level drop
+  // that the power-goods of each level drop.
+  // In theory they should already be off before we call this function.
   for (int prio = PS_NUM_PRIORITIES; prio > 0; --prio) {
     for (int e = 0; e < N_PS_ENABLES; ++e) {
       if (enables[e].priority == prio) {
@@ -577,10 +583,12 @@ void LGA80D_init(void)
       bool timeout = (t >= pdMS_TO_TICKS(PS_OFF_TIMEOUT_MS));
       bool any_high = false;
       for (int o = 0; o < N_PS_OKS; ++o) {
-        if (oks[o].priority == prio && read_gpio_pin(oks[o].pin_number) == 1) {
+        if (oks[o].priority == prio && (ignore_mask & (1U << o)) == 0 &&
+            read_gpio_pin(oks[o].pin_number) == 1) {
           any_high = true;
           if (timeout) {
             log_warn(LOG_SERVICE, "%s still hi (EN=0)\r\n", oks[o].name);
+            abort = true; // we didn't power down in time
           }
         }
       }
@@ -590,12 +598,16 @@ void LGA80D_init(void)
       vTaskDelay(1);
     }
   }
+  // exit if any of the power-goods are still high, to avoid writing to a live supply
+  if (abort) {
+    return false;
+  }
 
   // grab the semaphore to ensure unique access to I2C controller
   // otherwise, block its operations indefinitely until it's available
   acquireI2CSemaphoreBlock(i2c1_sem);
 
-  log_info(LOG_SERVICE, "LGA80D_init\r\n");
+  abort = false; // it's already false right now, but make it explicit.
   // set up the switching frequency
   uint16_t freqlin11 = float_to_linear11(457.14f);
   uint16_t drooplin11 = float_to_linear11(0.0700f);
@@ -624,6 +636,7 @@ void LGA80D_init(void)
         log_debug(LOG_SERVICE, "dev = %d, page = %d, r= %d\r\n", dev,
                   page, r);
         log_error(LOG_SERVICE, "LGA80D(0)\r\n");
+        abort = true;
       }
       else {
         page_ok |= 1U << dev;
@@ -632,9 +645,14 @@ void LGA80D_init(void)
     lga80d_settle();
     for (size_t c = 0; c < sizeof(init_cmds) / sizeof(init_cmds[0]); ++c) {
       for (int dev = 1; dev < NSUPPLIES_PS; dev += 1) {
+        // skip devices whose PAGE write failed; the writes would go to the wrong page
+        if (!(page_ok & (1U << dev))) {
+          continue;
+        }
         int r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false,
                                 pm_addrs_dcdc + dev, init_cmds[c].cmd, init_cmds[c].value);
         if (r) {
+          abort = true;
           log_error(LOG_SERVICE, "LGA80D(%d)\r\n", (int)(c + 1));
         }
       }
@@ -652,6 +670,7 @@ void LGA80D_init(void)
                           (uint8_t *)&vcmd)) {
         log_error(LOG_SERVICE, "%s p%d: %s read failed\r\n", pm_addrs_dcdc[dev].name, page,
                   extra_cmds[7].name);
+        abort = true;
         continue;
       }
       float v = linear16u_to_float(vcmd);
@@ -674,6 +693,7 @@ void LGA80D_init(void)
         float_to_ints(nom, &nsign, &nwhole, &nfrac);
         log_warn(LOG_SERVICE, "%s p%d: VOUT off nominal %s%d.%02d V\r\n",
                  pm_addrs_dcdc[dev].name, page, nsign, nwhole, nfrac);
+        abort = true; // don't continue power-on sequence
       }
 #endif // REV2 || REV3
     }
@@ -692,11 +712,13 @@ void LGA80D_init(void)
         uint16_t rd = 0;
         if (apollo_pmbus_rw(&g_sMaster1, &eStatus1, true, pm_addrs_dcdc + dev, cmd, (uint8_t *)&rd)) {
           log_error(LOG_SERVICE, "%s p%d: %s read failed\r\n", pm_addrs_dcdc[dev].name, page, cmd->name);
+          abort = true;
           continue;
         }
         if (rd != wr) {
           log_warn(LOG_SERVICE, "%s p%d: %s rd 0x%x wr 0x%x\r\n", pm_addrs_dcdc[dev].name, page,
                    cmd->name, rd, wr);
+          abort = true; // don't continue power-on sequence
         }
       }
       lga80d_settle(); // the last one also spaces the reads from the next page's PAGE writes
@@ -707,7 +729,10 @@ void LGA80D_init(void)
   if (xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle()) {
     xSemaphoreGive(i2c1_sem);
   }
-  return;
+  if (abort) {
+    return false;
+  }
+  return true;
 }
 
 // if you change the length of this array, you also need to change

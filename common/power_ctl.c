@@ -137,6 +137,10 @@ void setPSWaitIgnoreMask(uint16_t mask)
 {
   ps_wait_ignore_mask = mask;
 }
+uint16_t getPSWaitIgnoreMask(void)
+{
+  return ps_wait_ignore_mask;
+}
 
 // turn off all power supplies in the proper order
 // de-assert BLADE_POWER_OK on successful exit.

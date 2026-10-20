@@ -130,6 +130,7 @@ bool check_ps(void);
 bool disable_ps(void);
 void disable_ps_failsafe(void);
 void setPSWaitIgnoreMask(uint16_t mask);
+uint16_t getPSWaitIgnoreMask(void);
 void turn_on_ps_at_prio(bool f2_enable, bool f1_enable, int prio);
 void blade_power_ok(bool isok);
 

@@ -79,9 +79,11 @@ ProgCom run at `+3`; `LedTask` at `+1`. Most tasks are a short init block follow
 `vTaskDelayUntil` loop.
 
 **Power state machine.** `PowerSupplyTask` walks
-`POWER_FAILURE → POWER_INIT → POWER_DOWN → POWER_OFF → POWER_L1ON … POWER_L6ON → POWER_ON`
+`POWER_FAILURE → POWER_INIT → POWER_DOWN → POWER_OFF → POWER_CONFIG → POWER_L1ON … POWER_L6ON → POWER_ON`
 (the `X_MACRO_PS_SYSTEM_STATES` list in `Tasks.h`). A `TEMP_ALARM` forces a transition to
-`POWER_OFF`.
+`POWER_OFF`. `POWER_CONFIG` runs `LGA80D_init()` with the supplies off on every power-up; a
+failure latches `POWER_FAILURE` until `PS_ANYFAIL_ALARM_CLEAR`. It is last in the X-macro list,
+so the numeric values of the other states (sent raw on ProgCom MC page 0x01) are unchanged.
 
 **I2C buses.** Fixed assignment, `cm_mcu` and `prod_test` alike:
 

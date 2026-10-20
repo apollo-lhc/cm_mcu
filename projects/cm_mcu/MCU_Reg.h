@@ -160,7 +160,7 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define MCU_REG_PAGE_POWER 0x01
 
 #define PWR_OFF_GENERATION    0x00 // 4
-#define PWR_OFF_STATE         0x04 // 1  power_system_state (0-10)
+#define PWR_OFF_STATE         0x04 // 1  power_system_state (0-11)
 #define PWR_OFF_FLAGS         0x05 // 1  see PWR_FLAG_* below
 #define PWR_OFF_LIVE_MASK     0x08 // 4  supply_bitset, freshest reading
 #define PWR_OFF_EXPECTED_MASK 0x0c // 4  supply_ok_mask: full/final target,
