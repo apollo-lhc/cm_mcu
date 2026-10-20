@@ -857,6 +857,43 @@ void InitRTC(void)
   // set the RTC to calendar mode
   ROM_HibernateCounterMode(HIBERNATE_COUNTER_24HR);
 }
+
+static bool is_leap_year(int year)
+{
+  return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+}
+
+static int RTCDaysInMonth(int year, int month)
+{
+  static const uint8_t days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  return (month == 2 && is_leap_year(year)) ? 29 : days[month - 1];
+}
+
+// The calendar load is two register writes, so this and the CLI "time set"
+// (not serialised) could leave one caller's time with the other's date.
+void RTCSetLocalSeconds(uint32_t seconds)
+{
+  struct tm t = {0};
+  uint32_t days = seconds / 86400U;
+  uint32_t rem = seconds % 86400U;
+  t.tm_hour = (int)(rem / 3600U);
+  t.tm_min = (int)((rem / 60U) % 60U);
+  t.tm_sec = (int)(rem % 60U);
+  int year = 1970;
+  while (days >= (is_leap_year(year) ? 366U : 365U)) {
+    days -= is_leap_year(year) ? 366U : 365U;
+    ++year;
+  }
+  int month = 1;
+  while (days >= (uint32_t)RTCDaysInMonth(year, month)) {
+    days -= (uint32_t)RTCDaysInMonth(year, month);
+    ++month;
+  }
+  t.tm_year = year - 1900;
+  t.tm_mon = month - 1;
+  t.tm_mday = (int)days + 1;
+  ROM_HibernateCalendarSet(&t);
+}
 #endif // REV2
 #ifdef REV1
 int init_registers_clk(void)

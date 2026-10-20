@@ -359,6 +359,8 @@ int load_all_clocks(void);
 
 // hibernate/RTC
 void InitRTC(void);
+// seconds since 1970-01-01 of the local wall clock, >= 2000-01-01 (hardware limit)
+void RTCSetLocalSeconds(uint32_t seconds);
 #endif // REV2 or 3
 
 struct dev_i2c_addr_t; // forward reference

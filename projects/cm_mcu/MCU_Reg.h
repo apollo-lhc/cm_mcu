@@ -41,7 +41,7 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define MCU_REG_PAGE_SYSTEM 0x00
 
 #define MCU_MAP_MAJOR 1
-#define MCU_MAP_MINOR 3
+#define MCU_MAP_MINOR 4
 
 #define SYS_OFF_MAGIC        0x00 // 4  ASCII magic "CMCU"
 #define SYS_OFF_MAP_MAJOR    0x04 // 1
@@ -74,7 +74,8 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define MCU_CAP_CONTROLS       (1U << 6)
 #define MCU_CAP_CONFIG         (1U << 7) // page 0x05 readable
 #define MCU_CAP_RUNTIME        (1U << 8)
-#define MCU_CAP_CONFIG_WRITE   (1U << 9) // page 0x05 writable (Phase 2b, map minor 3)
+#define MCU_CAP_CONFIG_WRITE   (1U << 9)  // page 0x05 writable (Phase 2b, map minor 3)
+#define MCU_CAP_RTC_WRITE      (1U << 10) // page 0x7f offset 0x04 (map minor 4)
 
 #define MCU_HEALTH_POWER_FAULT       (1U << 0)
 #define MCU_HEALTH_TEMPERATURE_ALARM (1U << 1)
@@ -182,8 +183,10 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 // ---- Page 0x7f (Control) wire layout. Write-only: one command byte at
 // offset 0x00. See MCU_REGISTER_MAP.md for the safety-review context.
 
-#define MCU_REG_PAGE_CONTROL 0x7f
-#define CTRL_OFF_COMMAND     0x00 // 1
+#define MCU_REG_PAGE_CONTROL   0x7f
+#define CTRL_OFF_COMMAND       0x00        // 1
+#define CTRL_OFF_RTC_SET_LOCAL 0x04        // 4  local-time seconds since 1970 (not Unix time)
+#define RTC_SET_MIN_SECONDS    1767225600U // 2026-01-01 00:00:00
 
 #define CTRL_CMD_ASSERT_PROGCOM_POWER_INHIBIT  1
 #define CTRL_CMD_RELEASE_PROGCOM_POWER_INHIBIT 2
