@@ -171,8 +171,9 @@ Per-device notes:
   and `addr` a byte offset within it. Implemented pages: `0x00` System (magic, map version,
   hardware revision, capability and health bitmaps, board ID, uptime, reset cause, git
   version), `0x01` Power (generation counter, FSM state, flags, PG masks, per-supply state),
-  `0x02` Alarm, `0x03` ADC (21 little-endian binary16 values) and `0x7f` Control (write-only,
-  one command byte). Pages `0x30`/`0x31` (persistent error log) are frozen but not served.
+  `0x02` Alarm, `0x03` ADC (21 little-endian binary16 values) and `0x7f` Control (write-only:
+  one command byte at `0x00`, or a 4-byte local-time seconds-since-1970 word at `0x04` that
+  sets the RTC, rejected below 2026-01-01). Pages `0x30`/`0x31` (persistent error log) are frozen but not served.
   Multi-byte values are little-endian; a read may not cross a field boundary, and reserved
   offsets return `e invalid MCU address` rather than zero. No I2C and no blocking.
   Page `0x05` (Config) writes persist to EEPROM block 6. A word is programmed only when the

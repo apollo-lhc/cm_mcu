@@ -306,7 +306,7 @@ static void build_runtime_page(uint8_t buf[RT_PAGE_USED_LEN])
   // invalid, both words stay zero so valid == 0.
   uint32_t cal1 = HWREG(HIB_CAL1);
   if (cal1 & HIB_CAL1_VALID) {
-    struct tm now;
+    struct tm now = {0}; // CalendarGet returns -1 without filling it if CAL1 changed mid-read
     ROM_HibernateCalendarGet(&now);
     put_u32_le(buf + RT_OFF_RTC_DATE, ((uint32_t)(now.tm_year + 1900) << 16) |
                                           ((uint32_t)(now.tm_mon + 1) << 8) |
@@ -431,7 +431,9 @@ static enum mcu_reg_result mcu_local_read1(uint8_t address, uint8_t length, uint
   return MCU_REG_OK;
 }
 
-// Page 0x7f (Control): write-only, one command byte. Commands 3/4 reuse
+// Page 0x7f (Control): write-only. Offset 0x04 takes a 4-byte RTC set word
+// (local-time seconds, applied synchronously); offset 0x00 takes one command
+// byte. Commands 3/4 reuse
 // existing internal messages already reachable via the unauthenticated CLI
 // (power_ctl clearfail / alarm_ctl clear); commands 1/2 are the only new
 // input to PowerSupplyTask's FSM added for this page (progcom_inhibit_request

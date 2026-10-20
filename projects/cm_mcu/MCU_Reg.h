@@ -181,7 +181,8 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 #define PWR_FLAG_F2_ENABLE            (1U << 6)
 
 // ---- Page 0x7f (Control) wire layout. Write-only: one command byte at
-// offset 0x00. See MCU_REGISTER_MAP.md for the safety-review context.
+// offset 0x00, or a 4-byte RTC set word at offset 0x04. See
+// MCU_REGISTER_MAP.md for the safety-review context.
 
 #define MCU_REG_PAGE_CONTROL   0x7f
 #define CTRL_OFF_COMMAND       0x00        // 1
