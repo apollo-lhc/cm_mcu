@@ -66,16 +66,16 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_VOLT_NORMAL    10
 
 // error codes with data
-#define EBUF_WITH_DATA       11 // value used to determine which codes have data
-#define EBUF_CONTINUATION    11
-#define EBUF_PWR_FAILURE     12
-#define EBUF_TEMP_HIGH       13
-#define EBUF_MARK            14
-#define EBUF_I2C             15
-#define EBUF_PWR_FAILURE_CLR 16
-#define EBUF_VOLT_HIGH       17
-#define EBUF_CLKINIT_FAILURE 18
-#define EBUF_PS_OFF_TIMEOUT  19
+#define EBUF_WITH_DATA         11 // value used to determine which codes have data
+#define EBUF_CONTINUATION      11
+#define EBUF_PWR_FAILURE       12
+#define EBUF_TEMP_HIGH         13
+#define EBUF_MARK              14
+#define EBUF_I2C               15
+#define EBUF_PWR_FAILURE_CLR   16
+#define EBUF_VOLT_HIGH         17
+#define EBUF_CLKINIT_FAILURE   18
+#define EBUF_PS_OFF_TIMEOUT    19
 #define EBUF_POWER_CONFIG_FAIL 20
 
 // Restart Reasons, values of reset cause (RESC) register,
