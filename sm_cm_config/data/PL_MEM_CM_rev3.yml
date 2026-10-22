@@ -163,7 +163,7 @@ config:
       - DEVICE_REV
       - I2C_ADDR
       - LOL
-      - LOSXAXB
+      - INT_STATUS
       - LOSOOF_IN
       - STICKY_FLG
   - name: clkr0aconfigversion

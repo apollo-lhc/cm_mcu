@@ -162,7 +162,7 @@ config:
       - I2C_ADDR
       - STATUS
       - LOL
-      - LOSXAXB
+      - INT_STATUS
       - LOSOOF_IN
       - STICKY_FLG
   - name: clkr0aconfigversion
