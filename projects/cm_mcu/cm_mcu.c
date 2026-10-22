@@ -368,7 +368,6 @@ __attribute__((noreturn)) int main(void)
 #endif // ECN001
   Print("----------------------------\r\n");
 
-
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
   // should never get here

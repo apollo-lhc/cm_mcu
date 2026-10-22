@@ -238,7 +238,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
 
       BaseType_t month, year, day;
 
-      month = atoi(pp[0]); 
+      month = atoi(pp[0]);
       day = atoi(pp[1]);
       year = atoi(pp[2]);
       struct tm t = {0};
@@ -249,7 +249,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       t.tm_year = year >= 100 ? year - 1900 : year + 100; // years since 1900
       t.tm_mday = (day - 1) % 31 + 1;                     // 1-31
       t.tm_mon = (month - 1) % 12;                        // month goes from 0-11
-      
+
       copied += snprintf(m + copied, SCRATCH_SIZE - copied, "New time: %02d:%02d:%02d %02d/%02d/%d\r\n",
                          t.tm_hour, t.tm_min, t.tm_sec, t.tm_mon + 1, t.tm_mday, t.tm_year + 1900);
       ROM_HibernateCalendarSet(&t);
