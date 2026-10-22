@@ -112,6 +112,8 @@ void SystemInitInterrupts(void)
   // initialize the EEPROM.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
   ROM_EEPROMInit();
+  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
+
   // Set the reference to external
   ROM_ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V);
   ROM_ADCReferenceSet(ADC1_BASE, ADC_REF_EXT_3V);
@@ -366,7 +368,6 @@ __attribute__((noreturn)) int main(void)
 #endif // ECN001
   Print("----------------------------\r\n");
 
-  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
