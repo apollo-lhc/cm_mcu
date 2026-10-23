@@ -161,7 +161,8 @@ int TempStatus(void)
   // one bit per LGA80D device/page: set while its temperature is out of range,
   // so the warning is logged once per transition rather than every cycle
   static uint32_t dcdcInvalidMask = 0;
-  configASSERT(dcdc_args.n_devices * dcdc_args.n_pages <= 32);
+  // dcdc_args is initialized from these macros in LocalTasks.c
+  static_assert(NSUPPLIES_PS * NPAGES_PS <= 32, "dcdcInvalidMask has too few bits");
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
     for (int page = 0; page < dcdc_args.n_pages; ++page) {
       size_t index =

@@ -213,6 +213,8 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
         if (*p == ':') {
           pp[i++] = p + 1;
           *p = '\0';
+          if (i >= 3)
+            break; // overflow, don't let it go past the end of pp
         }
         ++p;
       }
@@ -228,6 +230,8 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
         if (*p == '/') {
           pp[i++] = p + 1;
           *p = '\0';
+          if (i >= 3)
+            break; // overflow, don't let it go past the end of pp
         }
         ++p;
       }
@@ -237,7 +241,7 @@ BaseType_t time_ctl(int argc, char **argv, char *m)
       month = atoi(pp[0]);
       day = atoi(pp[1]);
       year = atoi(pp[2]);
-      struct tm t;
+      struct tm t = {0};
       // no real checking of the values; just normalize it to the right range
       t.tm_hour = hour % 24;                              // 0-23
       t.tm_min = min % 60;                                // 0-59

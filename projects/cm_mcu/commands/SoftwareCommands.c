@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <strings.h>
 
 #include "commands/SoftwareCommands.h"
@@ -157,7 +158,7 @@ BaseType_t TaskStatsCommand(int argc, char **argv, char *m)
 
   /* Minus three for the null terminator and half the number of characters in
   "Task" so the column lines up with the centre of the heading. */
-  configASSERT(configMAX_TASK_NAME_LEN > 3);
+  static_assert(configMAX_TASK_NAME_LEN > 3, "configMAX_TASK_NAME_LEN must > 3 for task stats table.");
   for (xSpacePadding = strlen("Task"); xSpacePadding < (configMAX_TASK_NAME_LEN - 3);
        xSpacePadding++) {
     /* Add a space to align columns after the task's name. */

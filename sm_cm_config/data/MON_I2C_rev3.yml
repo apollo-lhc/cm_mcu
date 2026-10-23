@@ -277,12 +277,12 @@ devices:
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395]
-    - name: LOSXAXB
+    - name: INT_STATUS
       reg_size: 1
       page: 0
-      reg_address: 0xB
+      reg_address: 0xC
       size: 1
-      mask: 0x02
+      mask: 0x2B
       units: ""
       type: PM_STATUS
       devicetypes: [SI5395]

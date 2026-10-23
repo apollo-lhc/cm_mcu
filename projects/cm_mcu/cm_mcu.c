@@ -112,6 +112,8 @@ void SystemInitInterrupts(void)
   // initialize the EEPROM.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
   ROM_EEPROMInit();
+  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
+
   // Set the reference to external
   ROM_ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V);
   ROM_ADCReferenceSet(ADC1_BASE, ADC_REF_EXT_3V);
@@ -291,7 +293,7 @@ __attribute__((noreturn)) int main(void)
 
   // start the tasks here
   xTaskCreate(PowerSupplyTask, "POW", 384, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(LedTask, "LED", 128, NULL, tskIDLE_PRIORITY + 1, NULL);
+  xTaskCreate(LedTask, "LED", 128, NULL, tskIDLE_PRIORITY + 2, NULL);
   xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 3, NULL);
 #ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 384, &cli_uart4, tskIDLE_PRIORITY + 3, NULL);
@@ -308,7 +310,7 @@ __attribute__((noreturn)) int main(void)
   xTaskCreate(I2CSlaveTask, "I2CS0", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(ZynqMonTask, "ZMON", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", 192, NULL, tskIDLE_PRIORITY + 1, NULL);
   xTaskCreate(GenericAlarmTask, "TALM", 256, &tempAlarmTask, tskIDLE_PRIORITY + 4, NULL);
   xTaskCreate(GenericAlarmTask, "VALM", 256, &voltAlarmTask, tskIDLE_PRIORITY + 4, NULL);
 #if defined(REV2) || defined(REV3)
@@ -365,8 +367,6 @@ __attribute__((noreturn)) int main(void)
   Print("Includes ECN001 code mods\r\n");
 #endif // ECN001
   Print("----------------------------\r\n");
-
-  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
 
   // start the scheduler -- this function should not return
   vTaskStartScheduler();
