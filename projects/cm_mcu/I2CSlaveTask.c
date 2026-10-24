@@ -9,8 +9,10 @@
 #include <stdbool.h>
 
 #include "inc/hw_memmap.h"
+#include "inc/hw_ints.h"
 #include "driverlib/rom.h" // to be removed
 #include "driverlib/i2c.h" // to be removed
+#include "common/i2c_reg.h"
 #include "InterruptHandlers.h"
 #include "Tasks.h"
 #include "MonitorTask.h"
@@ -31,6 +33,9 @@
 #if defined(REV1) || defined(REV2) || defined(REV3) // why is this here
 #define SLAVE_I2C_BASE I2C0_BASE
 #endif
+#define I2C0_SLAVE_ADDRESS 0x40
+
+extern uint32_t g_ui32SysClock;
 
 // IPMC register map documented here
 // https://github.com/apollo-lhc/cm_mcu/wiki/MCU-slave-documentation
@@ -138,9 +143,16 @@ static void setSlaveData(uint8_t addr, uint8_t val)
 
 void I2CSlaveTask(void *parameters)
 {
+  // Set the ISR's handle before the slave can ACK its address. Until here the
+  // slave is off and NACKs, rather than stretching SCL with no task to serve it.
   TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
 
-  ROM_I2CSlaveEnable(SLAVE_I2C_BASE);
+  initI2C0(g_ui32SysClock); // enables the slave
+  ROM_I2CSlaveAddressSet(SLAVE_I2C_BASE, 0, I2C0_SLAVE_ADDRESS);
+  ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
+  // ignore I2C_SLAVE_INT_START, I2C_SLAVE_INT_STOP
+  ROM_I2CSlaveIntEnableEx(SLAVE_I2C_BASE, I2C_SLAVE_INT_DATA);
+  ROM_IntEnable(INT_I2C0);
 
   enum I2C_STATE {
     I2C_READY,
@@ -174,7 +186,6 @@ void I2CSlaveTask(void *parameters)
       val = 0U;
       continue;
     }
-    TaskNotifyI2CSlave = xTaskGetCurrentTaskHandle();
 
     log_trace(LOG_I2C, "INT is 0x%08x\r\n", interruptStatus);
     // read the I2C slave status register I2CSCSR

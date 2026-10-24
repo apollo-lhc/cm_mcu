@@ -49,8 +49,6 @@
 #include "portmacro.h"
 #include "Semaphore.h"
 
-#define I2C0_SLAVE_ADDRESS 0x40
-
 uint32_t g_ui32SysClock = 0;
 
 void Print(const char *str)
@@ -130,7 +128,7 @@ void SystemInitInterrupts(void)
   ROM_IntEnable(INT_ADC1SS0);
 
   // Set up the I2C controllers
-  initI2C0(g_ui32SysClock); // Slave controller
+  // I2C0 (slave) is set up by I2CSlaveTask
   initI2C1(g_ui32SysClock); // controller for power supplies
   initI2C2(g_ui32SysClock); // controller for clocks
   initI2C3(g_ui32SysClock); // controller for V (F2) optics
@@ -154,7 +152,6 @@ void SystemInitInterrupts(void)
   SMBusMasterInit(&g_sMaster5, I2C5_BASE, g_ui32SysClock);
 #endif
   // FreeRTOS insists that the priority of interrupts be set up like this.
-  ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C1, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C2, configKERNEL_INTERRUPT_PRIORITY);
   ROM_IntPrioritySet(INT_I2C3, configKERNEL_INTERRUPT_PRIORITY);
@@ -176,15 +173,6 @@ void SystemInitInterrupts(void)
 #elif defined(REV2) || defined(REV3)
   SMBusMasterIntEnable(&g_sMaster5);
 #endif
-
-  // I2C slave
-  ROM_I2CSlaveAddressSet(I2C0_BASE, 0, I2C0_SLAVE_ADDRESS);
-
-  ROM_IntPrioritySet(INT_I2C0, configKERNEL_INTERRUPT_PRIORITY);
-
-  // ignore I2C_SLAVE_INT_START, I2C_SLAVE_INT_STOP
-  ROM_I2CSlaveIntEnableEx(I2C0_BASE, I2C_SLAVE_INT_DATA);
-  ROM_IntEnable(INT_I2C0);
 
   //
   // Enable processor interrupts.

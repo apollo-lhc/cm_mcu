@@ -361,16 +361,15 @@ void I2CSlave0Interrupt(void)
 
   // clear the interrupt register
   ROM_I2CSlaveIntClear(I2C0_BASE);
-  /* At this point xTaskToNotify should not be NULL as a transmission was
-      in progress. */
+  // I2CSlaveTask sets the handle once, before it enables this interrupt, and
+  // never clears it: the master starts transfers, so there is no window in
+  // which the ISR may run without a task to notify.
   configASSERT(TaskNotifyI2CSlave != NULL);
 
-  /* Notify the task that the transmission is complete. */
+  // Notify the task. A second interrupt before the task wakes overwrites the
+  // value; the task services whatever I2CSCSR shows.
   xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus, eSetValueWithOverwrite,
                      &xHigherPriorityTaskWoken);
-
-  /* There are no transmissions in progress, so no tasks to notify. */
-  TaskNotifyI2CSlave = NULL;
 
   /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
       should be performed to ensure the interrupt returns directly to the highest
