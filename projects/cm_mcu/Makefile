@@ -116,7 +116,7 @@ release: ${ZYNQMON_YAML_FILES}
 		else \
 			echo ${ROOT}/sm_cm_config/src/xml_generate.py -d ${ROOT} $$f; \
 		fi; \
-		python ${ROOT}/sm_cm_config/src/xml_generate.py -d ${ROOT} $$f; \
+		python ${ROOT}/sm_cm_config/src/xml_generate.py -d ${ROOT} $$f || exit 1; \
 	done
 
 #

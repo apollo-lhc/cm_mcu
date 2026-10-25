@@ -607,7 +607,17 @@ void zm_set_psmon(struct zynqmon_data_t data[], int start)
         int index =
             j * (dcdc_args.n_commands * dcdc_args.n_pages) + l * dcdc_args.n_commands + k;
 
-        if (stale) {
+        if (dcdc_args.commands[k].type == PM_STATUS) {
+          // bit field (STATUS_WORD): send the raw word, as fp16 rounds values above
+          // 2048 and corrupts the low bits. 0xFFFF = no data (stale, power-off
+          // sentinel, read error); the LGA80D never sets bits 8 and 10.
+          float v = dcdc_args.pm_values[index];
+          if (stale || !(v >= 0.f && v <= 65535.f))
+            data[ll].data.us = 0xFFFFU;
+          else
+            data[ll].data.us = (uint16_t)v;
+        }
+        else if (stale) {
           data[ll].data.f = (__fp16)__builtin_nanf("");
         }
         else {

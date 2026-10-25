@@ -5,6 +5,27 @@ metadata:
   - sm_fw_rev: 2
   - revision: 1
 
+# Bit layouts for bitfields entries, referenced below with *name.
+# PMBus STATUS_WORD, from the LGA80D datasheet (Rev 3.3, p.52); bits 8 and 10 are not used.
+# zm_set_psmon sends 0xFFFF for no data, so NO_DATA (bit 8) is set only then: ignore the other
+# bits of that row. LGA80D-specific: generic PMBus devices may set bit 8 (UNKNOWN).
+pmbus_status_word: &pmbus_status_word
+  NO_DATA: 0x0100
+  VOUT: 0x8000
+  IOUT: 0x4000
+  INPUT: 0x2000
+  MFR: 0x1000
+  PGOOD_N: 0x0800
+  OTHER: 0x0200
+  BUSY: 0x0080
+  "OFF": 0x0040 # quoted: YAML reads a bare OFF as false
+  VOUT_OV: 0x0020
+  IOUT_OC: 0x0010
+  VIN_UV: 0x0008
+  TEMPERATURE: 0x0004
+  CML: 0x0002
+  NONE_OF_ABOVE: 0x0001
+
 # weird overwrites of address at location 0x00 so avoid that
 # location, and start at 0x02 instead. Should figure this out
 # eventually.
@@ -87,6 +108,15 @@ config:
       - VOUT
       - IOUT
       - STATUS_WORD
+    # STATUS_WORD is a bit field: sent as the raw word (fp16 rounds values above 2048
+    # and corrupts the low bits); 0xFFFF = no data (stale, supply off, read error).
+    # postfix_types must match the PM_STATUS commands in zm_set_psmon.
+    postfix_types:
+      STATUS_WORD: uint16_t
+    bitfields:
+      STATUS_WORD:
+        extra: Table=CM_MON_STATUS;Status=2
+        fields: *pmbus_status_word
   - name: gitversion
     start: 248
     count: 10

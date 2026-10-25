@@ -4,7 +4,16 @@ import xml.etree.ElementTree as ET
 from pprint import pprint
 import argparse
 import os
+import sys
 import yaml
+
+n_errors = 0  # any error makes the script exit non-zero, after writing the XML
+
+def error(*msg):
+    """report an error and count it"""
+    global n_errors  # pylint: disable=global-statement
+    print("ERROR:", *msg)
+    n_errors += 1
 
 zm_num_entries = 1024
 
@@ -43,7 +52,7 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
         width = 16
         theformat = "u"
     else:
-        print("ERROR: unknown type", thedict['type'])
+        error("unknown type", thedict['type'])
         return None
     if 'size' in thedict:  # if there is a size, it cannot have a mask
         thenode.set('size', str(hex(thedict['size'])))
@@ -76,6 +85,49 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
         extra = ""
     thenode.set('parameters', "Format=" + theformat + ";" + extra)
     return thenode
+
+def split_bitfields(entry: dict) -> tuple:
+    """a bitfields entry is either {field: mask}, or {extra: ..., fields: {field: mask}}"""
+    if 'fields' in entry:
+        return entry['fields'], entry.get('extra') or ""
+    return entry, ""
+
+def make_bitfields(parent: ET.Element, valnode: ET.Element, thedict: dict, fields: dict,
+                   bit: int, row: str = "", extra: str = ""):
+    """add a node per bit field of a value, at the address of the value's node.
+    fields maps a field name to its mask within the value; the field is decoded
+    by the mask, so it is shown shifted down to bit 0.
+    Without extra, each field is a row in the value's table and column.
+    With extra (Table=...), each field is a column of that table, in row 'row'."""
+    if thedict['type'] == 'uint16_t':
+        width = 16
+    elif thedict['type'] == 'uint32_t':
+        width = 32
+    else:
+        error("bitfields need type uint16_t or uint32_t, not", thedict['type'])
+        return
+    shift = 16 if bit == 1 else 0
+    # same Table, Status and Column as the value; own Row; unsigned
+    params = [p for p in valnode.get('parameters').split(';')
+              if not p.startswith('Format=') and not p.startswith('Row=')]
+    for fname, fmask in fields.items():
+        if not isinstance(fname, str):  # e.g. a bare OFF/ON/NO in YAML reads as a bool
+            error("bit field name", fname, "is not a string; quote it, in",
+                  valnode.get('id'))
+            continue
+        if not isinstance(fmask, int) or fmask <= 0 or fmask >= (1 << width):
+            error("bit field", fname, "has a mask that does not fit in",
+                  valnode.get('id'))
+            continue
+        node = ET.SubElement(parent, 'node')
+        node.set('id', valnode.get('id') + "_" + fname if extra else fname)
+        node.set('address', valnode.get('address'))
+        node.set('permission', 'r')
+        node.set('mask', "0x{0:08X}".format(fmask << shift))
+        if extra:
+            node.set('parameters', "Format=u;Row=" + row + ";Column=" + fname + ";" + extra)
+        else:
+            node.set('parameters', ";".join(["Format=u", "Row=" + fname] + params))
 
 
 def calc_size(thedict: dict) -> int:
@@ -175,6 +227,21 @@ for c in config:  # loop over entries in configuration (sensor category)
     names = c['names']
     start = c['start']
     count = c['count']
+    # bitfields are keyed by name, or by postfix in a block with postfixes. An
+    # entry with its own extra (Table=...) puts its fields in that table, as
+    # columns of the name's row; postfix entries need one, since the row is the name
+    bitfields = c.get('bitfields') or {}
+    keys = c['postfixes'] if 'postfixes' in c else names
+    for b, entry in bitfields.items():
+        if b not in keys:
+            error("bitfields for", b, "which is not a name or postfix in", c['name'])
+        if 'postfixes' in c and not split_bitfields(entry)[1]:
+            error("bitfields for postfix", b, "need an extra, in", c['name'])
+    # postfix_types: postfix -> type, for one postfix whose type differs from the block's
+    postfix_types = c.get('postfix_types') or {}
+    for p, t in postfix_types.items():
+        if p not in c.get('postfixes', []) or calc_size(dict(c, type=t)) != calc_size(c):
+            error("postfix_types", p, t, "must be a postfix of the same size, in", c['name'])
     for n in names:  # loop over names of sensors within a category
         if 'postfixes' in c:
             postfixes = c['postfixes']
@@ -186,23 +253,27 @@ for c in config:  # loop over entries in configuration (sensor category)
                     i += 1
                     j += 1
                     continue
+                cp = dict(c, type=postfix_types[p]) if p in postfix_types else c
                 # the previous name node has odd bytes so this postfix node uses the
                 # previous postfix address but masks off the lower byte
                 if (bit == 1 and j == 0):   
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
                     pp.set('address', str(hex(prev_addr)))
-                    node = make_node(pp, p, c, j, bit, n)
+                    node = make_node(pp, p, cp, j, bit, n)
                 elif (bit == 0 and j == 0): #starting a new postfix node in a new name node
                     pp = node = ET.SubElement(cm, 'node')
                     pp.set('id', n)
                     pp.set('address', str(hex(addr)))
-                    node = make_node(pp, p, c, j, bit, n)
+                    node = make_node(pp, p, cp, j, bit, n)
                 else: # any non-first byte in a name node
                     if prev_bit == 0: #the upper byte of the previous postfix node
-                        node = make_node(pp, p, c, j, bit, n)
+                        node = make_node(pp, p, cp, j, bit, n)
                     else :               #the low byte with an increasing postfix node by one
-                        node = make_node(pp, p, c, j+1, bit, n)
+                        node = make_node(pp, p, cp, j+1, bit, n)
+                if p in bitfields and node is not None:
+                    fields, extra = split_bitfields(bitfields[p])
+                    make_bitfields(pp, node, cp, fields, bit, n, extra)
                 if (prev_bit == bit and prev_addr == addr and prev_addr != 0) :
                     print("warning : please check if masks overlapped at node ", 
                           n, " addr ", hex(prev_addr))
@@ -212,7 +283,10 @@ for c in config:  # loop over entries in configuration (sensor category)
                 i += 1
                 j += 1
         else:
-            make_node(cm, n, c, start+i, (start+i)%2, "")
+            valnode = make_node(cm, n, c, start+i, (start+i)%2, "")
+            if n in bitfields and valnode is not None:
+                fields, extra = split_bitfields(bitfields[n])
+                make_bitfields(cm, valnode, c, fields, (start+i)%2, n, extra)
             if (prev_bit == (start+i)%2 and prev_addr == int((start+i)/2) and prev_addr != 0) :
                 print("warning : please check if masks overlapped at node ", n, 
                       " addr ", hex(prev_addr))
@@ -270,7 +344,11 @@ if args.verbose:
 for i in range(len(entries)):
     for j in range(i+1, len(entries)):
         if entries[i].overlaps(entries[j]):
-            print(f"{entries[i].name} overlaps with {entries[j].name}")
+            error(f"{entries[i].name} overlaps with {entries[j].name}")
 
 if entries[len(entries)-1].overloads():
-    print(f"{entries[len(entries)-1].name} overloads")
+    error(f"{entries[len(entries)-1].name} overloads")
+
+if n_errors:
+    print(f"{n_errors} error(s) in {args.input_file}")
+    sys.exit(1)
