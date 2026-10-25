@@ -77,6 +77,12 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
     thenode.set('parameters', "Format=" + theformat + ";" + extra)
     return thenode
 
+def split_bitfields(entry: dict) -> tuple:
+    """a bitfields entry is either {field: mask}, or {extra: ..., fields: {field: mask}}"""
+    if 'fields' in entry:
+        return entry['fields'], entry.get('extra') or ""
+    return entry, ""
+
 def make_bitfields(parent: ET.Element, valnode: ET.Element, thedict: dict, fields: dict,
                    bit: int, row: str = "", extra: str = ""):
     """add a node per bit field of a value, at the address of the value's node.
@@ -212,16 +218,16 @@ for c in config:  # loop over entries in configuration (sensor category)
     names = c['names']
     start = c['start']
     count = c['count']
-    # bitfields are keyed by name, or by postfix in a block with postfixes; the
-    # latter go to their own table, given by bitfield_extra
+    # bitfields are keyed by name, or by postfix in a block with postfixes. An
+    # entry with its own extra (Table=...) puts its fields in that table, as
+    # columns of the name's row; postfix entries need one, since the row is the name
     bitfields = c.get('bitfields') or {}
-    bitfield_extra = c.get('bitfield_extra') or ""
     keys = c['postfixes'] if 'postfixes' in c else names
-    for b in bitfields:
+    for b, entry in bitfields.items():
         if b not in keys:
             print("ERROR: bitfields for", b, "which is not a name or postfix in", c['name'])
-    if bitfields and 'postfixes' in c and not bitfield_extra:
-        print("ERROR: bitfields on postfixes need bitfield_extra, in", c['name'])
+        if 'postfixes' in c and not split_bitfields(entry)[1]:
+            print("ERROR: bitfields for postfix", b, "need an extra, in", c['name'])
     # postfix_types: postfix -> type, for one postfix whose type differs from the block's
     postfix_types = c.get('postfix_types') or {}
     for p, t in postfix_types.items():
@@ -257,7 +263,8 @@ for c in config:  # loop over entries in configuration (sensor category)
                     else :               #the low byte with an increasing postfix node by one
                         node = make_node(pp, p, cp, j+1, bit, n)
                 if p in bitfields and node is not None:
-                    make_bitfields(pp, node, cp, bitfields[p], bit, n, bitfield_extra)
+                    fields, extra = split_bitfields(bitfields[p])
+                    make_bitfields(pp, node, cp, fields, bit, n, extra)
                 if (prev_bit == bit and prev_addr == addr and prev_addr != 0) :
                     print("warning : please check if masks overlapped at node ", 
                           n, " addr ", hex(prev_addr))
@@ -269,7 +276,8 @@ for c in config:  # loop over entries in configuration (sensor category)
         else:
             valnode = make_node(cm, n, c, start+i, (start+i)%2, "")
             if n in bitfields and valnode is not None:
-                make_bitfields(cm, valnode, c, bitfields[n], (start+i)%2)
+                fields, extra = split_bitfields(bitfields[n])
+                make_bitfields(cm, valnode, c, fields, (start+i)%2, n, extra)
             if (prev_bit == (start+i)%2 and prev_addr == int((start+i)/2) and prev_addr != 0) :
                 print("warning : please check if masks overlapped at node ", n, 
                       " addr ", hex(prev_addr))
