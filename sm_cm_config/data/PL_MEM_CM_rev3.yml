@@ -87,6 +87,28 @@ config:
       - VOUT
       - IOUT
       - STATUS_WORD
+    # STATUS_WORD is a bit field: sent as the raw word (fp16 rounds values above 2048
+    # and corrupts the low bits); 0xFFFF = no data (stale, supply off, read error).
+    # Bits from the LGA80D datasheet (Rev 3.3, p.52); bits 8 and 10 are not used.
+    postfix_types:
+      STATUS_WORD: uint16_t
+    bitfield_extra: Table=CM_MON_STATUS;Status=2
+    bitfields:
+      STATUS_WORD:
+        VOUT: 0x8000
+        IOUT: 0x4000
+        INPUT: 0x2000
+        MFR: 0x1000
+        PGOOD_N: 0x0800
+        OTHER: 0x0200
+        BUSY: 0x0080
+        "OFF": 0x0040 # quoted: YAML reads a bare OFF as false
+        VOUT_OV: 0x0020
+        IOUT_OC: 0x0010
+        VIN_UV: 0x0008
+        TEMPERATURE: 0x0004
+        CML: 0x0002
+        NONE_OF_ABOVE: 0x0001
   - name: gitversion
     start: 248
     count: 10
