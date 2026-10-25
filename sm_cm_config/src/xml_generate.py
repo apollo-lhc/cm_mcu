@@ -4,7 +4,16 @@ import xml.etree.ElementTree as ET
 from pprint import pprint
 import argparse
 import os
+import sys
 import yaml
+
+n_errors = 0  # any error makes the script exit non-zero, after writing the XML
+
+def error(*msg):
+    """report an error and count it"""
+    global n_errors  # pylint: disable=global-statement
+    print("ERROR:", *msg)
+    n_errors += 1
 
 zm_num_entries = 1024
 
@@ -43,7 +52,7 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
         width = 16
         theformat = "u"
     else:
-        print("ERROR: unknown type", thedict['type'])
+        error("unknown type", thedict['type'])
         return None
     if 'size' in thedict:  # if there is a size, it cannot have a mask
         thenode.set('size', str(hex(thedict['size'])))
@@ -95,7 +104,7 @@ def make_bitfields(parent: ET.Element, valnode: ET.Element, thedict: dict, field
     elif thedict['type'] == 'uint32_t':
         width = 32
     else:
-        print("ERROR: bitfields need type uint16_t or uint32_t, not", thedict['type'])
+        error("bitfields need type uint16_t or uint32_t, not", thedict['type'])
         return
     shift = 16 if bit == 1 else 0
     # same Table, Status and Column as the value; own Row; unsigned
@@ -103,11 +112,11 @@ def make_bitfields(parent: ET.Element, valnode: ET.Element, thedict: dict, field
               if not p.startswith('Format=') and not p.startswith('Row=')]
     for fname, fmask in fields.items():
         if not isinstance(fname, str):  # e.g. a bare OFF/ON/NO in YAML reads as a bool
-            print("ERROR: bit field name", fname, "is not a string; quote it, in",
+            error("bit field name", fname, "is not a string; quote it, in",
                   valnode.get('id'))
             continue
         if not isinstance(fmask, int) or fmask <= 0 or fmask >= (1 << width):
-            print("ERROR: bit field", fname, "has a mask that does not fit in",
+            error("bit field", fname, "has a mask that does not fit in",
                   valnode.get('id'))
             continue
         node = ET.SubElement(parent, 'node')
@@ -225,14 +234,14 @@ for c in config:  # loop over entries in configuration (sensor category)
     keys = c['postfixes'] if 'postfixes' in c else names
     for b, entry in bitfields.items():
         if b not in keys:
-            print("ERROR: bitfields for", b, "which is not a name or postfix in", c['name'])
+            error("bitfields for", b, "which is not a name or postfix in", c['name'])
         if 'postfixes' in c and not split_bitfields(entry)[1]:
-            print("ERROR: bitfields for postfix", b, "need an extra, in", c['name'])
+            error("bitfields for postfix", b, "need an extra, in", c['name'])
     # postfix_types: postfix -> type, for one postfix whose type differs from the block's
     postfix_types = c.get('postfix_types') or {}
     for p, t in postfix_types.items():
         if p not in c.get('postfixes', []) or calc_size(dict(c, type=t)) != calc_size(c):
-            print("ERROR: postfix_types", p, t, "must be a postfix of the same size, in", c['name'])
+            error("postfix_types", p, t, "must be a postfix of the same size, in", c['name'])
     for n in names:  # loop over names of sensors within a category
         if 'postfixes' in c:
             postfixes = c['postfixes']
@@ -335,7 +344,11 @@ if args.verbose:
 for i in range(len(entries)):
     for j in range(i+1, len(entries)):
         if entries[i].overlaps(entries[j]):
-            print(f"{entries[i].name} overlaps with {entries[j].name}")
+            error(f"{entries[i].name} overlaps with {entries[j].name}")
 
 if entries[len(entries)-1].overloads():
-    print(f"{entries[len(entries)-1].name} overloads")
+    error(f"{entries[len(entries)-1].name} overloads")
+
+if n_errors:
+    print(f"{n_errors} error(s) in {args.input_file}")
+    sys.exit(1)

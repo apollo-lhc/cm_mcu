@@ -245,6 +245,19 @@ transfer is already done at the first status check, e.g. after a time-slice swit
 equal-priority task), or add an unconditional `vTaskDelay(2)` after the poll loop (always >= 10 ms,
 one to two ticks extra per transaction). The second is the only one that guarantees the gap.
 
+### 28. Out-of-Band Validity for Status Words over ZynqMon — OPEN
+
+Added 2026-10-24 (follow-up to PR #321). `zm_set_psmon` sends a raw `PM_STATUS` word as 0xFFFF when
+there is no data (power-off sentinel -999, NaN after a read error, or stale), and the YAML decodes
+bit 8 as `NO_DATA`. That only works because the LGA80D leaves bits 8 and 10 unused; generic PMBus
+devices use them (UNKNOWN, FANS), and a register that uses all 16 bits has no free value at all.
+
+**Action:** Send validity outside the word, e.g. one slot per block with a bit per device/page
+(decoded with `bitfields:`) or the age of the PSMON data in seconds, and gate the status bits on it.
+Needed before decoding other status registers (PMBus STATUS_VOUT/IOUT/INPUT/TEMPERATURE, the
+Firefly alarm masks, the clock INT_STATUS/STICKY_FLG). Firmware change plus new slots in the
+ZynqMon map, so a schema/layout change.
+
 ## Lower Priority
 
 ### 1. Firefly Enable-Mask Pair Read Non-Atomically — OPEN (demoted from High; scope corrected)

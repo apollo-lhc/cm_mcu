@@ -7,7 +7,10 @@ metadata:
 
 # Bit layouts for bitfields entries, referenced below with *name.
 # PMBus STATUS_WORD, from the LGA80D datasheet (Rev 3.3, p.52); bits 8 and 10 are not used.
+# zm_set_psmon sends 0xFFFF for no data, so NO_DATA (bit 8) is set only then: ignore the other
+# bits of that row. LGA80D-specific: generic PMBus devices may set bit 8 (UNKNOWN).
 pmbus_status_word: &pmbus_status_word
+  NO_DATA: 0x0100
   VOUT: 0x8000
   IOUT: 0x4000
   INPUT: 0x2000
