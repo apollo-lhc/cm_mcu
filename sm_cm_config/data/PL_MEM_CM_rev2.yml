@@ -109,6 +109,9 @@ config:
     # STATUS_WORD is a bit field: sent as the raw word (fp16 rounds values above 2048
     # and corrupts the low bits); 0xFFFF = no data (stale, supply off, read error).
     # postfix_types must match the PM_STATUS commands in zm_set_psmon.
+    columns: # without these both TEMP1 and TEMP3 land in column TEMP_C (TODO #27)
+      TEMP1: TEMP1_C
+      TEMP3: TEMP3_C
     postfix_types:
       STATUS_WORD: uint16_t
     bitfields:
