@@ -1,0 +1,2495 @@
+{
+  "title": "Apollo CM diagnostics ($WhichApollo)",
+  "uid": "apollo-cm-diag",
+  "tags": [
+    "apollo",
+    "cm_mcu"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "editable": true,
+  "refresh": "1m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "DS",
+        "label": "Graphite",
+        "type": "datasource",
+        "query": "graphite",
+        "current": {},
+        "hide": 0
+      },
+      {
+        "name": "WhichApollo",
+        "label": "Apollo",
+        "type": "query",
+        "datasource": {
+          "type": "graphite",
+          "uid": "${DS}"
+        },
+        "query": "shelf.00.*",
+        "current": {
+          "text": "AP3010",
+          "value": "AP3010"
+        },
+        "refresh": 1,
+        "hide": 0
+      }
+    ]
+  },
+  "links": [
+    {
+      "title": "Fleet overview",
+      "type": "link",
+      "url": "/d/apollo-cm-fleet",
+      "keepTime": true,
+      "icon": "dashboard"
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Indicators (alarm on these)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "MCU health",
+      "description": "Non-zero: power fault, temperature or voltage alarm active now (see HEALTH_* bits).",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG.MCU_HEALTH.VALUE, 'max'), 'health')",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Power state",
+      "description": "POWER_FAILURE is red.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 3,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_STATE.VALUE, 'last'), 'state')",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 10
+              },
+              {
+                "color": "blue",
+                "value": 11
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILURE",
+                  "index": 0
+                },
+                "1": {
+                  "text": "INIT",
+                  "index": 1
+                },
+                "2": {
+                  "text": "DOWN",
+                  "index": 2
+                },
+                "3": {
+                  "text": "OFF",
+                  "index": 3
+                },
+                "4": {
+                  "text": "L1ON",
+                  "index": 4
+                },
+                "5": {
+                  "text": "L2ON",
+                  "index": 5
+                },
+                "6": {
+                  "text": "L3ON",
+                  "index": 6
+                },
+                "7": {
+                  "text": "L4ON",
+                  "index": 7
+                },
+                "8": {
+                  "text": "L5ON",
+                  "index": 8
+                },
+                "9": {
+                  "text": "L6ON",
+                  "index": 9
+                },
+                "10": {
+                  "text": "ON",
+                  "index": 10
+                },
+                "11": {
+                  "text": "CONFIG",
+                  "index": 11
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Previous boot ended in",
+      "description": "Newest fatal error-log entry of the previous boot. Suspect if RESET_CAUSE is not SW.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'last'), 'prev fatal')",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "none",
+                  "index": 0
+                },
+                "7": {
+                  "text": "HARD FAULT",
+                  "index": 1
+                },
+                "8": {
+                  "text": "ASSERT",
+                  "index": 2
+                },
+                "9": {
+                  "text": "STACK OVERFLOW",
+                  "index": 3
+                },
+                "21": {
+                  "text": "MALLOC FAIL",
+                  "index": 4
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Power failures in range",
+      "description": "Increase of the PWR_* failure counters over the time range.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 1,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(nonNegativeDerivative(keepLastValue(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_SUPPLY_FAIL,PWR_ALARM_OFF,PWR_CONFIG_FAIL}.VALUE)), 'sum'), 4)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "I2C master errors in range",
+      "description": "Failed transfer starts and non-NACK errors per bus (NACKs are not counted).",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 1,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(nonNegativeDerivative(keepLastValue(shelf.00.$WhichApollo.CM_DIAG_I2C.*.{START_FAIL,ERROR})), 'sum'), 4, 5)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Min free stack (words)",
+      "description": "Lowest stack high-water mark over all tasks. Thresholds are a suggestion.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 19,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "alias(minSeries(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_STACK.*.FREE_WORDS, 'min')), 'min')",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 32
+              },
+              {
+                "color": "green",
+                "value": 64
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "MCU uptime",
+      "description": "Drops to 0 at a reset; all counters restart then.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 22,
+        "y": 1,
+        "w": 2,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_MON.MCU_UPTIME.MINUTES, 'last'), 'uptime')",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "I2C slave (IPMC) events in range",
+      "description": "Duplicate DATA interrupts and unhandled I2CSCSR values.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(nonNegativeDerivative(keepLastValue(shelf.00.$WhichApollo.CM_DIAG_I2CS.{I2CS_DUP_IRQ,I2CS_UNHANDLED}.VALUE)), 'sum'), 4)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "I2C slave timeouts in range",
+      "description": "Also counts harmless lone 1-byte writes, so only a fast rise matters.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 5,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(nonNegativeDerivative(keepLastValue(shelf.00.$WhichApollo.CM_DIAG_I2CS.I2CS_TIMEOUTS.VALUE)), 'sum'), 4)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "LGA80D bad temperature reads in range",
+      "description": "READ_TEMPERATURE_1 (BADT1) / _3 (BADT3) words outside 0..175 C; FFFF = the -0.50 C glitch.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 5,
+        "w": 10,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(nonNegativeDerivative(keepLastValue(shelf.00.$WhichApollo.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE)), 'sum'), 4)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Diag schema",
+      "description": "This dashboard was built for DIAG_SCHEMA 8.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 19,
+        "y": 5,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG.DIAG_SCHEMA.VALUE, 'last'), 'schema')",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 8
+              },
+              {
+                "color": "red",
+                "value": 9
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "Diagnostics: power",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 14,
+          "type": "state-timeline",
+          "title": "Power state",
+          "description": "PWR_FAIL_STEP 0 means no failure since boot.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 10,
+            "w": 12,
+            "h": 6
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_STATE.VALUE, 'last'), 'state')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            },
+            {
+              "refId": "B",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_FAIL_STEP.VALUE, 'last'), 'last failure entered from')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "showValue": "auto",
+            "mergeValues": true,
+            "rowHeight": 0.9,
+            "legend": {
+              "showLegend": false
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "FAILURE",
+                      "index": 0
+                    },
+                    "1": {
+                      "text": "INIT",
+                      "index": 1
+                    },
+                    "2": {
+                      "text": "DOWN",
+                      "index": 2
+                    },
+                    "3": {
+                      "text": "OFF",
+                      "index": 3
+                    },
+                    "4": {
+                      "text": "L1ON",
+                      "index": 4
+                    },
+                    "5": {
+                      "text": "L2ON",
+                      "index": 5
+                    },
+                    "6": {
+                      "text": "L3ON",
+                      "index": 6
+                    },
+                    "7": {
+                      "text": "L4ON",
+                      "index": 7
+                    },
+                    "8": {
+                      "text": "L5ON",
+                      "index": 8
+                    },
+                    "9": {
+                      "text": "L6ON",
+                      "index": 9
+                    },
+                    "10": {
+                      "text": "ON",
+                      "index": 10
+                    },
+                    "11": {
+                      "text": "CONFIG",
+                      "index": 11
+                    }
+                  }
+                }
+              ],
+              "color": {
+                "mode": "palette-classic"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 15,
+          "type": "stat",
+          "title": "Supply masks",
+          "description": "One bit per supply (PS_OKS order). FAILED_MASK says which supplies failed.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 10,
+            "w": 12,
+            "h": 6
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_LIVE_MASK,PWR_EXPECTED_MASK,PWR_IGNORE_MASK,PWR_FAILED_MASK}.VALUE, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "hex0x",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 16,
+          "type": "stat",
+          "title": "Power state flags",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 16,
+            "w": 24,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_BLADE_POWER_EN,PWR_CLI_INHIBIT,PWR_PROGCOM_INHIBIT,PWR_FAULT_LATCH,PWR_ALARM_SHUTDOWN_LATCH,PWR_F1_ENABLE,PWR_F2_ENABLE}.VALUE, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "text",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 17,
+          "type": "timeseries",
+          "title": "Power failure counters (since boot)",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 20,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_SUPPLY_FAIL,PWR_ALARM_OFF,PWR_CONFIG_FAIL}.VALUE, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "lineInterpolation": "stepAfter",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 18,
+          "type": "timeseries",
+          "title": "Snapshot generation",
+          "description": "Increments by 2 per power snapshot change.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 20,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_GENERATION.VALUE, 'last'), 'generation')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "lineInterpolation": "stepAfter",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "row",
+      "title": "Diagnostics: reset",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 20,
+          "type": "stat",
+          "title": "Previous boot fatal entry",
+          "description": "Error-log entry: code (7 hard fault, 8 assert, 9 stack overflow, 21 malloc) and data.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 29,
+            "w": 8,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'last'), 'code')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            },
+            {
+              "refId": "B",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_DATA.VALUE, 'last'), 'data')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            },
+            {
+              "refId": "C",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_ENTRY.VALUE, 'last'), 'entry')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "hex0x",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 21,
+          "type": "stat",
+          "title": "Assert PC",
+          "description": "Decode with arm-none-eabi-addr2line -e cm_mcu.axf <PC> for the matching build.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 29,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_ASSERT_PC.VALUE, 'last'), 'PC')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "hex0x",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 22,
+          "type": "stat",
+          "title": "Reset cause",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 29,
+            "w": 12,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.RESET_CAUSE.VALUE, 'last'), 'RESC')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            },
+            {
+              "refId": "B",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.{RESET_POR,RESET_EXT,RESET_SW,RESET_BOR,RESET_WDOG0,RESET_WDOG1,RESET_HIB,RESET_HSRVREQ}.VALUE, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "text",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "type": "row",
+      "title": "Diagnostics: I2C",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 24,
+          "type": "timeseries",
+          "title": "I2C master counters (since boot)",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 34,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2C.*.{START_FAIL,ERROR}, 'last'), 4, 5)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "lineInterpolation": "stepAfter",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 25,
+          "type": "timeseries",
+          "title": "I2C slave counters (since boot)",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 34,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.{I2CS_DUP_IRQ,I2CS_TIMEOUTS,I2CS_UNHANDLED}.VALUE, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "lineInterpolation": "stepAfter",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 26,
+          "type": "stat",
+          "title": "I2C slave registers",
+          "description": "SNAP_* describe the first duplicate interrupt (meaningful once DUP_IRQ > 0).",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 42,
+            "w": 12,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.{I2CS_LAST_UNHANDLED,I2CS_SNAP_INT,I2CS_SNAP_SCSR}.VALUE, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "hex0x",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 27,
+          "type": "stat",
+          "title": "First duplicate: task state",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 42,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.I2CS_SNAP_STATE.VALUE, 'last'), 'state')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "READY",
+                      "index": 0
+                    },
+                    "1": {
+                      "text": "FIRSTBYTE",
+                      "index": 1
+                    },
+                    "2": {
+                      "text": "RX_B0",
+                      "index": 2
+                    },
+                    "3": {
+                      "text": "RX_B1",
+                      "index": 3
+                    },
+                    "4": {
+                      "text": "TX_B0",
+                      "index": 4
+                    },
+                    "5": {
+                      "text": "TX_B1",
+                      "index": 5
+                    },
+                    "255": {
+                      "text": "none",
+                      "index": 6
+                    }
+                  }
+                }
+              ],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 28,
+          "type": "stat",
+          "title": "First duplicate: interrupted task",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 18,
+            "y": 42,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.I2CS_SNAP_TASK.VALUE, 'last'), 'task')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "POW",
+                      "index": 0
+                    },
+                    "1": {
+                      "text": "LED",
+                      "index": 1
+                    },
+                    "2": {
+                      "text": "CLIZY",
+                      "index": 2
+                    },
+                    "3": {
+                      "text": "ADC",
+                      "index": 3
+                    },
+                    "4": {
+                      "text": "FF_F1",
+                      "index": 4
+                    },
+                    "5": {
+                      "text": "FF_F2",
+                      "index": 5
+                    },
+                    "6": {
+                      "text": "CLK",
+                      "index": 6
+                    },
+                    "7": {
+                      "text": "PSMON",
+                      "index": 7
+                    },
+                    "8": {
+                      "text": "XIMON",
+                      "index": 8
+                    },
+                    "9": {
+                      "text": "I2CS0",
+                      "index": 9
+                    },
+                    "10": {
+                      "text": "EPRM",
+                      "index": 10
+                    },
+                    "11": {
+                      "text": "ZMON",
+                      "index": 11
+                    },
+                    "12": {
+                      "text": "TALM",
+                      "index": 12
+                    },
+                    "13": {
+                      "text": "VALM",
+                      "index": 13
+                    },
+                    "14": {
+                      "text": "PRGCM",
+                      "index": 14
+                    },
+                    "254": {
+                      "text": "other",
+                      "index": 15
+                    },
+                    "255": {
+                      "text": "none",
+                      "index": 16
+                    }
+                  }
+                }
+              ],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "type": "row",
+      "title": "Diagnostics: LGA80D",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 46,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 30,
+          "type": "stat",
+          "title": "TEMP1: latest bad word",
+          "description": "0 until this sensor's first bad read.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 47,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT1_RAW.VALUE, 'last'), 'raw')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "hex0x",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 31,
+          "type": "stat",
+          "title": "TEMP1: latest bad rail",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 6,
+            "y": 47,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT1_ROW.VALUE, 'last'), 'rail')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "1V8",
+                      "index": 0
+                    },
+                    "1": {
+                      "text": "3V3",
+                      "index": 1
+                    },
+                    "2": {
+                      "text": "F1VCCINT1_S1",
+                      "index": 2
+                    },
+                    "3": {
+                      "text": "F1VCCINT1_S2",
+                      "index": 3
+                    },
+                    "4": {
+                      "text": "F1VCCINT2_S1",
+                      "index": 4
+                    },
+                    "5": {
+                      "text": "F1VCCINT2_S2",
+                      "index": 5
+                    },
+                    "6": {
+                      "text": "F2VCCINT1_S1",
+                      "index": 6
+                    },
+                    "7": {
+                      "text": "F2VCCINT1_S2",
+                      "index": 7
+                    },
+                    "8": {
+                      "text": "F2VCCINT2_S1",
+                      "index": 8
+                    },
+                    "9": {
+                      "text": "F2VCCINT2_S2",
+                      "index": 9
+                    },
+                    "10": {
+                      "text": "F1AVTT",
+                      "index": 10
+                    },
+                    "11": {
+                      "text": "F1AVCC",
+                      "index": 11
+                    },
+                    "12": {
+                      "text": "F2AVTT",
+                      "index": 12
+                    },
+                    "13": {
+                      "text": "F2AVCC",
+                      "index": 13
+                    },
+                    "255": {
+                      "text": "none",
+                      "index": 14
+                    }
+                  }
+                }
+              ],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 32,
+          "type": "stat",
+          "title": "TEMP3: latest bad word",
+          "description": "0 until this sensor's first bad read.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 47,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT3_RAW.VALUE, 'last'), 'raw')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "hex0x",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 33,
+          "type": "stat",
+          "title": "TEMP3: latest bad rail",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 18,
+            "y": 47,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT3_ROW.VALUE, 'last'), 'rail')",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto",
+            "justifyMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "1V8",
+                      "index": 0
+                    },
+                    "1": {
+                      "text": "3V3",
+                      "index": 1
+                    },
+                    "2": {
+                      "text": "F1VCCINT1_S1",
+                      "index": 2
+                    },
+                    "3": {
+                      "text": "F1VCCINT1_S2",
+                      "index": 3
+                    },
+                    "4": {
+                      "text": "F1VCCINT2_S1",
+                      "index": 4
+                    },
+                    "5": {
+                      "text": "F1VCCINT2_S2",
+                      "index": 5
+                    },
+                    "6": {
+                      "text": "F2VCCINT1_S1",
+                      "index": 6
+                    },
+                    "7": {
+                      "text": "F2VCCINT1_S2",
+                      "index": 7
+                    },
+                    "8": {
+                      "text": "F2VCCINT2_S1",
+                      "index": 8
+                    },
+                    "9": {
+                      "text": "F2VCCINT2_S2",
+                      "index": 9
+                    },
+                    "10": {
+                      "text": "F1AVTT",
+                      "index": 10
+                    },
+                    "11": {
+                      "text": "F1AVCC",
+                      "index": 11
+                    },
+                    "12": {
+                      "text": "F2AVTT",
+                      "index": 12
+                    },
+                    "13": {
+                      "text": "F2AVCC",
+                      "index": 13
+                    },
+                    "255": {
+                      "text": "none",
+                      "index": 14
+                    }
+                  }
+                }
+              ],
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 34,
+          "type": "timeseries",
+          "title": "LGA80D TEMP1 (controller)",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 51,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(shelf.00.$WhichApollo.CM_MON.*.TEMP1_C, 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "custom": {
+                "lineInterpolation": "linear",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 35,
+          "type": "timeseries",
+          "title": "LGA80D TEMP3 (power stage)",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 51,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(shelf.00.$WhichApollo.CM_MON.*.TEMP3_C, 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "custom": {
+                "lineInterpolation": "linear",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 36,
+          "type": "timeseries",
+          "title": "LGA80D STATUS_WORD",
+          "description": "0x0840 = output off (OFF + PGOOD#); 0xFFFF = no data (NO_DATA bit).",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 59,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_MON.*.STATUS_WORD, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "hex0x",
+              "custom": {
+                "lineInterpolation": "stepAfter",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 37,
+          "type": "timeseries",
+          "title": "Bad-temperature counters (since boot)",
+          "description": "",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 59,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE, 'last'), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "lineInterpolation": "stepAfter",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "type": "row",
+      "title": "Diagnostics: task stacks",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 67,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 39,
+          "type": "timeseries",
+          "title": "Free stack per task (words)",
+          "description": "High-water mark: only goes down within a boot. 65535 (task not created) is hidden.",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 68,
+            "w": 24,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "aliasByNode(removeAboveValue(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_STACK.*.FREE_WORDS, 'min'), 65534), 4)",
+              "datasource": {
+                "type": "graphite",
+                "uid": "${DS}"
+              }
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "lineInterpolation": "stepAfter",
+                "spanNulls": true,
+                "showPoints": "never",
+                "fillOpacity": 0
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          }
+        }
+      ]
+    }
+  ]
+}

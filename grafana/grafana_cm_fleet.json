@@ -1,0 +1,1119 @@
+{
+  "title": "Apollo CM fleet",
+  "uid": "apollo-cm-fleet",
+  "tags": [
+    "apollo",
+    "cm_mcu"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "editable": true,
+  "refresh": "1m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "links": [
+    {
+      "title": "Blade diagnostics",
+      "type": "link",
+      "url": "/d/apollo-cm-diag",
+      "keepTime": true,
+      "icon": "dashboard"
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS",
+        "label": "Graphite",
+        "type": "datasource",
+        "query": "graphite",
+        "current": {},
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Power state",
+      "description": "POWER_FAILURE red, ON green, anything else (OFF, sequencing) blue.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG_PWR.PWR_STATE.VALUE, 'last'), 2)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 10
+              },
+              {
+                "color": "blue",
+                "value": 11
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILURE",
+                  "index": 0
+                },
+                "1": {
+                  "text": "INIT",
+                  "index": 1
+                },
+                "2": {
+                  "text": "DOWN",
+                  "index": 2
+                },
+                "3": {
+                  "text": "OFF",
+                  "index": 3
+                },
+                "4": {
+                  "text": "L1ON",
+                  "index": 4
+                },
+                "5": {
+                  "text": "L2ON",
+                  "index": 5
+                },
+                "6": {
+                  "text": "L3ON",
+                  "index": 6
+                },
+                "7": {
+                  "text": "L4ON",
+                  "index": 7
+                },
+                "8": {
+                  "text": "L5ON",
+                  "index": 8
+                },
+                "9": {
+                  "text": "L6ON",
+                  "index": 9
+                },
+                "10": {
+                  "text": "ON",
+                  "index": 10
+                },
+                "11": {
+                  "text": "CONFIG",
+                  "index": 11
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "MCU health",
+      "description": "Non-zero: power fault, temperature or voltage alarm active now.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG.MCU_HEALTH.VALUE, 'max'), 2)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Previous boot ended in",
+      "description": "Fatal error-log entry of the previous boot.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'last'), 2)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "none",
+                  "index": 0
+                },
+                "7": {
+                  "text": "HARD FAULT",
+                  "index": 1
+                },
+                "8": {
+                  "text": "ASSERT",
+                  "index": 2
+                },
+                "9": {
+                  "text": "STACK OVERFLOW",
+                  "index": 3
+                },
+                "21": {
+                  "text": "MALLOC FAIL",
+                  "index": 4
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Uptime",
+      "description": "Current MCU uptime; orange below 60 min.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_MON.MCU_UPTIME.MINUTES, 'last'), 2)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 60
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Reboots in range",
+      "description": "MCU resets in the time range (drops of MCU_UPTIME).",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(groupByNode(isNonNull(removeAboveValue(derivative(keepLastValue(shelf.00.*.CM_MON.MCU_UPTIME.MINUTES)), -1)), 2, 'sum'), 'sum'), 0)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Power failures in range",
+      "description": "Supply failures and LGA80D_init failures.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_PWR.{PWR_SUPPLY_FAIL,PWR_CONFIG_FAIL}.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Alarm power-downs in range",
+      "description": "Temperature/voltage alarm power-downs (protection worked).",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_PWR.PWR_ALARM_OFF.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "I2C master errors in range",
+      "description": "All 5 buses; NACKs are not counted.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_I2C.*.{START_FAIL,ERROR})), 2, 'sum'), 'sum'), 0)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "I2C slave (IPMC) events in range",
+      "description": "Duplicate DATA interrupts and unhandled I2CSCSR values.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_I2CS.{I2CS_DUP_IRQ,I2CS_UNHANDLED}.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "LGA80D bad temperature reads in range",
+      "description": "READ_TEMPERATURE_1/_3 words outside 0..175 C.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Min free stack (words)",
+      "description": "Lowest high-water mark over all tasks.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(groupByNode(removeAboveValue(shelf.00.*.CM_DIAG_STACK.*.FREE_WORDS, 65534), 2, 'min'), 'min'), 0)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 32
+              },
+              {
+                "color": "green",
+                "value": 64
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Diag schema",
+      "description": "Green only at 8, the layout these dashboards expect: other values mean older or newer firmware/XML.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG.DIAG_SCHEMA.VALUE, 'last'), 2)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "vertical",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 8
+              },
+              {
+                "color": "red",
+                "value": 9
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "LGA80D bad temperature reads per hour",
+      "description": "Fleet-wide rate of the -0.50 C (0xFFFF) and other bad LGA80D temperature words.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "groupByNode(summarize(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE)), '1h', 'sum'), 2, 'sum')",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineInterpolation": "linear",
+            "spanNulls": false,
+            "showPoints": "never"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "MCU uptime",
+      "description": "A drop to 0 is a reset; drops on several blades at once point to a shelf event.",
+      "datasource": {
+        "type": "graphite",
+        "uid": "${DS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_MON.MCU_UPTIME.MINUTES, 'min'), 2)",
+          "datasource": {
+            "type": "graphite",
+            "uid": "${DS}"
+          }
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineInterpolation": "linear",
+            "spanNulls": true,
+            "showPoints": "never"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open ${__series.name}",
+              "targetBlank": false,
+              "url": "/d/apollo-cm-diag?var-WhichApollo=${__series.name}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": []
+      }
+    }
+  ]
+}
