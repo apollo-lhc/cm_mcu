@@ -71,6 +71,30 @@ static uint8_t i2c_txbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BYTES_ADDR + MA
 #define MAX_BLOCK_BYTES 32 // SMBus spec maximum block-read payload
 static uint8_t i2c_block_rxbuf[sizeof(pSMBus) / sizeof(pSMBus[0])][MAX_BLOCK_BYTES];
 
+// Per-bus failure counters for the ZynqMon diagnostics block, indexed like pSMBus[]: failed
+// transfer initiations, and non-NACK errors after a transfer (timeouts included). Incremented
+// in a critical section, since the raw i2c* CLI commands, ff_present and
+// readFFpresentSignals(false) call these functions without holding the bus mutex.
+static uint16_t i2c_start_fail[sizeof(pSMBus) / sizeof(pSMBus[0])];
+static uint16_t i2c_error[sizeof(pSMBus) / sizeof(pSMBus[0])];
+
+static void i2c_count(uint16_t *counter)
+{
+  taskENTER_CRITICAL();
+  sat_inc16(counter);
+  taskEXIT_CRITICAL();
+}
+
+uint16_t i2c_get_start_fail(uint8_t device)
+{
+  return (device < sizeof(pSMBus) / sizeof(pSMBus[0])) ? i2c_start_fail[device] : 0;
+}
+
+uint16_t i2c_get_error(uint8_t device)
+{
+  return (device < sizeof(pSMBus) / sizeof(pSMBus[0])) ? i2c_error[device] : 0;
+}
+
 #define I2C_TIMEOUT_MS 250
 
 // Bounded wait (microseconds) for the on-chip I2C master FSM to finish a prior
@@ -149,6 +173,7 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_count(&i2c_start_fail[device]);
     i2c_log_busy(device, "read", r);
     memcpy(data, rxbuf, nbytes); // hand back zeros (rxbuf was memset)
     return r;
@@ -160,6 +185,7 @@ int apollo_i2c_ctl_r(uint8_t device, uint8_t address, uint8_t nbytes, uint8_t da
     }
     else {
       log_error(LOG_I2C, "dev %d read fail %s\r\n", device, SMBUS_get_error(r));
+      i2c_count(&i2c_error[device]);
     }
   }
   return r;
@@ -194,6 +220,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_count(&i2c_start_fail[device]);
     i2c_log_busy(device, "reg read", r);
     return r;
   }
@@ -209,6 +236,7 @@ int apollo_i2c_ctl_reg_r(uint8_t device, uint8_t address, uint8_t nbytes_addr,
     }
     else {
       log_error(LOG_I2C, "dev %d reg read fail %s\r\n", device, SMBUS_get_error(r));
+      i2c_count(&i2c_error[device]);
     }
   }
   return r;
@@ -249,6 +277,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_count(&i2c_start_fail[device]);
     i2c_log_busy(device, "reg write", r);
     return r;
   }
@@ -259,6 +288,7 @@ int apollo_i2c_ctl_reg_w(uint8_t device, uint8_t address, uint8_t nbytes_addr, u
     }
     else {
       log_error(LOG_I2C, "dev %d reg write fail %s\r\n", device, SMBUS_get_error(r));
+      i2c_count(&i2c_error[device]);
     }
   }
   return r;
@@ -286,6 +316,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_count(&i2c_start_fail[device]);
     i2c_log_busy(device, "write", r);
     return r;
   }
@@ -296,6 +327,7 @@ int apollo_i2c_ctl_w(uint8_t device, uint8_t address, uint8_t nbytes, unsigned i
     }
     else {
       log_error(LOG_I2C, "dev %d write fail %s\r\n", device, SMBUS_get_error(r));
+      i2c_count(&i2c_error[device]);
     }
   }
   return r;
@@ -323,6 +355,7 @@ int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uin
   }
   else {
     TaskNotifySMBus[device] = NULL; // clean up if initiation failed
+    i2c_count(&i2c_start_fail[device]);
     log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
     return r;
   }
@@ -333,6 +366,7 @@ int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uin
     }
     else {
       log_error(LOG_I2C, "dev %d block read fail %s\r\n", device, SMBUS_get_error(r));
+      i2c_count(&i2c_error[device]);
     }
   }
   else {
@@ -386,6 +420,7 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
   if (r != SMBUS_OK) {
     i2c_log_busy(device, read ? "pmbus read" : "pmbus write", r);
     TaskNotifySMBus[device] = NULL;
+    i2c_count(&i2c_start_fail[device]);
     return r;
   }
   i2c_wait_for_transfer(device);
@@ -397,6 +432,8 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
   }
   // ISR writes the per-bus status (SMBUS_OK or specific error).
   r = *smbus_status;
+  if (r != SMBUS_OK && !SMBUS_is_NACK(r))
+    i2c_count(&i2c_error[device]);
 
   return r;
 }

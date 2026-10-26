@@ -72,6 +72,22 @@ void SMBusMasterIntHandler6(void);
 extern TaskHandle_t TaskNotifyI2CSlave;
 void I2CSlave0Interrupt(void);
 
+// I2C slave diagnostics for the ZynqMon diagnostics block; counters saturate. The ISR writes
+// dup_irq and, on the first duplicate, snap_int/snap_task and sets snap_pending;
+// I2CSlaveTask writes the rest and fills snap_scsr/snap_state at its next wake.
+struct i2cs_diag_t {
+  uint16_t dup_irq;        // DATA interrupts while the task's previous wake was still pending
+  uint16_t timeouts;       // waits in a transaction that timed out (also a lone 1-byte write)
+  uint16_t unhandled;      // DATA interrupts with an I2CSCSR value the task does not handle (incl. 0)
+  uint16_t last_unhandled; // I2CSCSR of the latest of those
+  uint16_t snap_int;       // first duplicate: interrupt status (I2CSMIS) read by the ISR
+  uint16_t snap_scsr;      // first duplicate: I2CSCSR at the task's next wake
+  uint16_t snap_state;     // first duplicate: the task's state at that wake; 0xFF = none yet
+  TaskHandle_t snap_task;  // first duplicate: the task the ISR interrupted
+  bool snap_pending;       // snap_scsr/snap_state still to be filled by the task
+};
+extern volatile struct i2cs_diag_t i2cs_diag;
+
 // ADC interrupts
 extern TaskHandle_t TaskNotifyADC;
 

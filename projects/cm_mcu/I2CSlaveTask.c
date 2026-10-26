@@ -154,6 +154,7 @@ void I2CSlaveTask(void *parameters)
   ROM_I2CSlaveIntEnableEx(SLAVE_I2C_BASE, I2C_SLAVE_INT_DATA);
   ROM_IntEnable(INT_I2C0);
 
+  // order is also the I2CS_SNAP_STATE_NAME list in PL_MEM_CM_rev{2,3}.yml
   enum I2C_STATE {
     I2C_READY,
     I2C_FIRSTBYTE,
@@ -181,6 +182,7 @@ void I2CSlaveTask(void *parameters)
     unsigned long ulNotificationValue =
         xTaskNotifyWait(0UL, 0xFFFFFFFFUL, &interruptStatus, xTicksToWait);
     if (ulNotificationValue == pdFALSE) {
+      sat_inc16(&i2cs_diag.timeouts);
       theState = I2C_READY;
       addr = 0U;
       val = 0U;
@@ -191,6 +193,11 @@ void I2CSlaveTask(void *parameters)
     // read the I2C slave status register I2CSCSR
     uint32_t status = ROM_I2CSlaveStatus(SLAVE_I2C_BASE);
     log_trace(LOG_I2C, "Slave status is 0x%08x\r\n", status);
+    if (i2cs_diag.snap_pending) { // first wake after a duplicate interrupt
+      i2cs_diag.snap_scsr = (uint16_t)status;
+      i2cs_diag.snap_state = (uint16_t)theState;
+      i2cs_diag.snap_pending = false;
+    }
 
     // we received an interrupt.
     // only possible values of the interrupt are the values set in the slave
@@ -249,6 +256,10 @@ void I2CSlaveTask(void *parameters)
             theState = I2C_READY;
             break;
         }
+      }
+      else { // e.g. a Quick Command (QCMDST, 0x12): holds SCL low, and no timeout catches it
+        sat_inc16(&i2cs_diag.unhandled);
+        i2cs_diag.last_unhandled = (uint16_t)status;
       }
     } // receive request
 

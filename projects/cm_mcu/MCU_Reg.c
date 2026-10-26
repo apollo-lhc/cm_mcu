@@ -33,6 +33,45 @@ void mcu_reg_set_reset_cause(uint32_t raw_reset_cause)
   cached_reset_cause = raw_reset_cause;
 }
 
+uint32_t mcu_reg_get_reset_cause(void)
+{
+  return cached_reset_cause;
+}
+
+uint32_t mcu_reg_get_health(void)
+{
+  uint32_t health = 0U;
+  if (getPowerControlState() == POWER_FAILURE)
+    health |= MCU_HEALTH_POWER_FAULT;
+  if (getTempAlarmStatus() != 0U)
+    health |= MCU_HEALTH_TEMPERATURE_ALARM;
+  if (getVoltAlarmStatus() != 0U)
+    health |= MCU_HEALTH_VOLTAGE_ALARM;
+  // MCU_HEALTH_ADC_ERROR: no source published yet; left clear rather than
+  // fabricated.
+  return health;
+}
+
+uint8_t mcu_reg_power_flags(const struct power_snapshot_t *snap)
+{
+  uint8_t flags = 0;
+  if (snap->blade_power_en)
+    flags |= PWR_FLAG_BLADE_POWER_EN;
+  if (snap->cli_inhibit)
+    flags |= PWR_FLAG_CLI_INHIBIT;
+  if (snap->progcom_inhibit)
+    flags |= PWR_FLAG_PROGCOM_INHIBIT;
+  if (snap->fault_latch)
+    flags |= PWR_FLAG_FAULT_LATCH;
+  if (snap->alarm_shutdown_latch)
+    flags |= PWR_FLAG_ALARM_SHUTDOWN_LATCH;
+  if (snap->f1_enable)
+    flags |= PWR_FLAG_F1_ENABLE;
+  if (snap->f2_enable)
+    flags |= PWR_FLAG_F2_ENABLE;
+  return flags;
+}
+
 static void put_u16_le(uint8_t *dst, uint16_t value)
 {
   dst[0] = (uint8_t)(value >> 0);
@@ -116,16 +155,7 @@ static void build_system_page(uint8_t buf[SYS_PAGE_USED_LEN])
                                              MCU_CAP_ADC | MCU_CAP_CONTROLS | MCU_CAP_CONFIG |
                                              MCU_CAP_CONFIG_WRITE | MCU_CAP_RUNTIME | MCU_CAP_RTC_WRITE);
 
-  uint32_t health = 0U;
-  if (getPowerControlState() == POWER_FAILURE)
-    health |= MCU_HEALTH_POWER_FAULT;
-  if (getTempAlarmStatus() != 0U)
-    health |= MCU_HEALTH_TEMPERATURE_ALARM;
-  if (getVoltAlarmStatus() != 0U)
-    health |= MCU_HEALTH_VOLTAGE_ALARM;
-  // MCU_HEALTH_ADC_ERROR: no source published yet; left clear rather than
-  // fabricated.
-  put_u32_le(buf + SYS_OFF_HEALTH, health);
+  put_u32_le(buf + SYS_OFF_HEALTH, mcu_reg_get_health());
 
   put_u32_le(buf + SYS_OFF_BOARD_ID, id);
   put_u32_le(buf + SYS_OFF_UPTIME_S, (uint32_t)pdTICKS_TO_S(xTaskGetTickCount()));
@@ -391,22 +421,7 @@ static void build_power_page(uint8_t buf[PWR_PAGE_USED_LEN])
   put_u32_le(buf + PWR_OFF_GENERATION, snap->generation);
   buf[PWR_OFF_STATE] = snap->fsm_state;
 
-  uint8_t flags = 0;
-  if (snap->blade_power_en)
-    flags |= PWR_FLAG_BLADE_POWER_EN;
-  if (snap->cli_inhibit)
-    flags |= PWR_FLAG_CLI_INHIBIT;
-  if (snap->progcom_inhibit)
-    flags |= PWR_FLAG_PROGCOM_INHIBIT;
-  if (snap->fault_latch)
-    flags |= PWR_FLAG_FAULT_LATCH;
-  if (snap->alarm_shutdown_latch)
-    flags |= PWR_FLAG_ALARM_SHUTDOWN_LATCH;
-  if (snap->f1_enable)
-    flags |= PWR_FLAG_F1_ENABLE;
-  if (snap->f2_enable)
-    flags |= PWR_FLAG_F2_ENABLE;
-  buf[PWR_OFF_FLAGS] = flags;
+  buf[PWR_OFF_FLAGS] = mcu_reg_power_flags(snap);
 
   put_u32_le(buf + PWR_OFF_LIVE_MASK, snap->live_mask);
   put_u32_le(buf + PWR_OFF_EXPECTED_MASK, snap->expected_mask);

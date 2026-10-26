@@ -63,6 +63,18 @@ struct MonitorTaskArgs_t {
 #define LGA80D_TEMP_MIN_C (0.0f)
 #define LGA80D_TEMP_MAX_C (175.0f)
 
+// LGA80D READ_TEMPERATURE_1 and _3 reads outside that range, for the ZynqMon diagnostics
+// block, one record per sensor: saturating counts of 0xFFFF and of other bad words, and that
+// sensor's latest bad read. PSMON writes them in a critical section and getLGA80DBadTempCopy()
+// copies them in one, so a reader never mixes two events.
+struct lga80d_badt_t {
+  uint16_t n_ffff;  // raw word 0xFFFF (-0.50 C)
+  uint16_t n_other; // any other out-of-range word
+  uint16_t raw;     // latest bad read: raw word
+  uint16_t row;     // latest bad read: ps * NPAGES_PS + page (the psmon row order); 0xFF = none
+};
+void getLGA80DBadTempCopy(struct lga80d_badt_t out[2]); // [0] TEMP_1, [1] TEMP_3
+
 extern struct MonitorTaskArgs_t dcdc_args;
 extern struct MonitorTaskArgs_t fpga_args;
 
