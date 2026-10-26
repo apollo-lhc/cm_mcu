@@ -54,6 +54,9 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
     else:
         error("unknown type", thedict['type'])
         return None
+    # formats: name or postfix -> BUTool display format. Not x/X for anything Grafana needs:
+    # BUTool sends the formatted text (0x...) to Graphite, which drops it
+    theformat = (thedict.get('formats') or {}).get(myid, theformat)
     if 'size' in thedict:  # if there is a size, it cannot have a mask
         thenode.set('size', str(hex(thedict['size'])))
     else:
@@ -75,6 +78,8 @@ def make_node(parent: ET.Element, myid: str, thedict: dict, addr2: int, bit: int
                 colid = "IOUT"
             elif "temp" in myid.lower():
                 colid = "TEMP_C"
+            # columns: name or postfix -> column, e.g. to keep two temperatures apart
+            colid = (thedict.get('columns') or {}).get(myid, colid)
             extra = extra + ";Column=" + colid
         if not "Row" in extra:
             if parent_id != "":
@@ -95,8 +100,9 @@ def split_bitfields(entry: dict) -> tuple:
 def make_bitfields(parent: ET.Element, valnode: ET.Element, thedict: dict, fields: dict,
                    bit: int, row: str = "", extra: str = ""):
     """add a node per bit field of a value, at the address of the value's node.
-    fields maps a field name to its mask within the value; the field is decoded
-    by the mask, so it is shown shifted down to bit 0.
+    fields maps a field name to its mask within the value, or to {mask: ..., format: ...}
+    for a display format other than u; the field is decoded by the mask, so it is
+    shown shifted down to bit 0.
     Without extra, each field is a row in the value's table and column.
     With extra (Table=...), each field is a column of that table, in row 'row'."""
     if thedict['type'] == 'uint16_t':
@@ -111,6 +117,10 @@ def make_bitfields(parent: ET.Element, valnode: ET.Element, thedict: dict, field
     params = [p for p in valnode.get('parameters').split(';')
               if not p.startswith('Format=') and not p.startswith('Row=')]
     for fname, fmask in fields.items():
+        fformat = "u"
+        if isinstance(fmask, dict):
+            fformat = fmask.get('format') or fformat
+            fmask = fmask.get('mask')
         if not isinstance(fname, str):  # e.g. a bare OFF/ON/NO in YAML reads as a bool
             error("bit field name", fname, "is not a string; quote it, in",
                   valnode.get('id'))
@@ -125,9 +135,9 @@ def make_bitfields(parent: ET.Element, valnode: ET.Element, thedict: dict, field
         node.set('permission', 'r')
         node.set('mask', "0x{0:08X}".format(fmask << shift))
         if extra:
-            node.set('parameters', "Format=u;Row=" + row + ";Column=" + fname + ";" + extra)
+            node.set('parameters', "Format=" + fformat + ";Row=" + row + ";Column=" + fname + ";" + extra)
         else:
-            node.set('parameters', ";".join(["Format=u", "Row=" + fname] + params))
+            node.set('parameters', ";".join(["Format=" + fformat, "Row=" + fname] + params))
 
 
 def calc_size(thedict: dict) -> int:
@@ -237,6 +247,11 @@ for c in config:  # loop over entries in configuration (sensor category)
             error("bitfields for", b, "which is not a name or postfix in", c['name'])
         if 'postfixes' in c and not split_bitfields(entry)[1]:
             error("bitfields for postfix", b, "need an extra, in", c['name'])
+    # formats / columns: name or postfix -> display format / column
+    for key in ('formats', 'columns'):
+        for f in c.get(key) or {}:
+            if f not in keys:
+                error(key, "for", f, "which is not a name or postfix in", c['name'])
     # postfix_types: postfix -> type, for one postfix whose type differs from the block's
     postfix_types = c.get('postfix_types') or {}
     for p, t in postfix_types.items():
