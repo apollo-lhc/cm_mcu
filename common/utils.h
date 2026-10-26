@@ -77,6 +77,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_CLKINIT_FAILURE   18
 #define EBUF_PS_OFF_TIMEOUT    19
 #define EBUF_POWER_CONFIG_FAIL 20
+#define EBUF_MALLOC_FAIL       21
 
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT

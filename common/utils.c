@@ -177,6 +177,7 @@ static const char *ebuf_errstrings[] = {
     "Clock Init failed",
     "Power Off - PG timeout",
     "Power Config failed",
+    "Malloc failed",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -237,6 +238,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
       break;
     case EBUF_CLKINIT_FAILURE:
     case EBUF_POWER_CONFIG_FAIL:
+    case EBUF_MALLOC_FAIL:
       ERRBUF_APPEND(" ");
       break;
     default:

@@ -50,6 +50,7 @@
 #include "Semaphore.h"
 
 uint32_t g_ui32SysClock = 0;
+static volatile bool cli_uart_ready = false;
 
 void Print(const char *str)
 {
@@ -88,6 +89,12 @@ void SystemInit(void)
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
+
+  // initialize the EEPROM and the error log first, so that a failure while main()
+  // creates the queues and tasks (assert, malloc failure) is logged
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  ROM_EEPROMInit();
+  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
 }
 // This set of functions partially contains calls that require
 // the FreeRTOS to be further configured.
@@ -97,8 +104,10 @@ void SystemInitInterrupts(void)
   // this also sets up the interrupts
 #if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
+  cli_uart_ready = true;
 #elif defined(REV2) || defined(REV3)
   UART0Init(g_ui32SysClock); // ZYNQ UART unidirectiona, push mon data to Zynq
+  cli_uart_ready = true;
   UART7Init(g_ui32SysClock); // non-CLI command interface to Zynq.
 
 #endif
@@ -107,10 +116,6 @@ void SystemInitInterrupts(void)
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
-  // initialize the EEPROM.
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
-  ROM_EEPROMInit();
-  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
 
   // Set the reference to external
   ROM_ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V);
@@ -456,9 +461,13 @@ void vApplicationIdleHook(void)
 void vApplicationMallocFailedHook(void)
 {
   taskDISABLE_INTERRUPTS();
-  UARTPrint(ZQ_UART, "vApplicationMallocFailedHook\r\n");
-  while (MAP_UARTBusy(ZQ_UART))
-    ;
+  // Allocations can fail before the CLI UART is initialized; record the error first.
+  errbuffer_put_raw(EBUF_MALLOC_FAIL, 0);
+  if (cli_uart_ready) {
+    UARTPrint(ZQ_UART, "vApplicationMallocFailedHook\r\n");
+    while (MAP_UARTBusy(ZQ_UART))
+      ;
+  }
   disable_ps_failsafe();
 #ifdef DEBUG
   // wait here for the debugger
