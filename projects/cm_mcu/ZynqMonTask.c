@@ -9,6 +9,7 @@
  *  already available in the system.
  */
 // includes for types
+#include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -33,6 +34,11 @@
 
 #include "ZynqMon_addresses.h"
 #include "ZynqMonTask.h"
+#if defined(REV2) || defined(REV3)
+#include "MCU_Reg.h" // not built for REV1
+#include "I2CCommunication.h"
+#include "InterruptHandlers.h"
+#endif
 
 // Rev 2
 // this was split into a SoftUART version (Rev1) and a hard UART version (Rev2+)
@@ -678,6 +684,138 @@ void zm_set_fpga(struct zynqmon_data_t data[], int start)
     data[j].sensor = j + start;
   }
 }
+
+TaskHandle_t zm_stack_tasks[ZM_STACK_NTASKS];
+
+#if defined(REV2) || defined(REV3)
+// Diagnostics block, see the diag_* entries in PL_MEM_CM_rev{2,3}.yml.
+// Bump the version whenever the layout of the block changes.
+#define ZM_DIAG_SCHEMA_VERSION 8
+
+static_assert(MCU_HEALTH_ADC_ERROR <= 0xFFFFU, "health bits must fit in one 16-bit slot");
+
+static void zm_set_u16s(struct zynqmon_data_t data[], int start, const uint16_t values[], int n)
+{
+  for (int i = 0; i < n; ++i) {
+    data[i].sensor = start + i;
+    data[i].data.us = values[i];
+  }
+}
+#define ZM_SET_U16S(data, start, values) \
+  zm_set_u16s(data, start, values, (int)(sizeof(values) / sizeof(values[0])))
+
+static void zm_set_u32(struct zynqmon_data_t data[], int start, uint32_t value)
+{
+  // lower 16 bits first, as in zm_set_uptime()
+  const uint16_t values[] = {(uint16_t)(value & 0xFFFFU), (uint16_t)(value >> 16)};
+  ZM_SET_U16S(data, start, values);
+}
+
+void zm_set_diag_hdr(struct zynqmon_data_t data[], int start)
+{
+  const uint16_t values[] = {ZM_DIAG_SCHEMA_VERSION, (uint16_t)mcu_reg_get_health()};
+  ZM_SET_U16S(data, start, values);
+}
+
+void zm_set_diag_reset_cause(struct zynqmon_data_t data[], int start)
+{
+  zm_set_u32(data, start, mcu_reg_get_reset_cause());
+}
+
+// Why the previous boot ended, from the error log: its newest fatal entry (assert, hard
+// fault, stack overflow, malloc failure; 0 if none) and, for an assert, the PC.
+void zm_set_diag_prev_assert_pc(struct zynqmon_data_t data[], int start)
+{
+  zm_set_u32(data, start, errbuffer_prev_assert_pc());
+}
+
+void zm_set_diag_prev_fatal(struct zynqmon_data_t data[], int start)
+{
+  const uint16_t values[] = {errbuffer_prev_fatal()};
+  ZM_SET_U16S(data, start, values);
+}
+
+// The same fields as ProgCom page 0x01. The Zynq does not poll ProgCom, so
+// this duplication is deliberate: ZynqMon is its only path to monitoring.
+void zm_set_diag_pwr(struct zynqmon_data_t data[], int start)
+{
+  struct power_snapshot_t snap;
+  getPowerSnapshotCopy(&snap);
+  const uint16_t values[] = {
+      (uint16_t)snap.generation,
+      (uint16_t)(snap.fsm_state | (mcu_reg_power_flags(&snap) << 8)),
+      snap.live_mask,
+      snap.expected_mask,
+      snap.software_ignore_mask,
+      snap.failed_mask,
+  };
+  ZM_SET_U16S(data, start, values);
+}
+
+// Power failure counters and the state POWER_FAILURE was last entered from
+void zm_set_diag_pwr_fail(struct zynqmon_data_t data[], int start)
+{
+  const struct power_diag_t *d = getPowerDiag();
+  const uint16_t values[] = {d->fail_step, d->supply_fail, d->alarm_off, d->config_fail};
+  ZM_SET_U16S(data, start, values);
+}
+
+// I2C master failure counters, buses 1-5 (the FPGA bus is I2C5 on REV2/3), each
+// {START_FAIL, ERROR}, in the order of the diag_i2c names and postfixes
+void zm_set_diag_i2c(struct zynqmon_data_t data[], int start)
+{
+  uint16_t values[10];
+  for (uint8_t bus = 1; bus <= 5; ++bus) {
+    values[2 * (bus - 1)] = i2c_get_start_fail(bus);
+    values[2 * (bus - 1) + 1] = i2c_get_error(bus);
+  }
+  ZM_SET_U16S(data, start, values);
+}
+
+// I2C slave diagnostics, copied with the ISR masked so the snapshot is consistent
+void zm_set_diag_i2cs(struct zynqmon_data_t data[], int start)
+{
+  struct i2cs_diag_t d;
+  taskENTER_CRITICAL();
+  d = i2cs_diag;
+  taskEXIT_CRITICAL();
+  // interrupted task as its index in zm_stack_tasks (the CM_DIAG_STACK order);
+  // 0xFE = another task (e.g. IDLE), 0xFF = no duplicate yet
+  uint16_t task = 0xFFU;
+  if (d.snap_task != NULL) {
+    task = 0xFEU;
+    for (int i = 0; i < ZM_STACK_NTASKS; ++i) {
+      if (zm_stack_tasks[i] == d.snap_task)
+        task = (uint16_t)i;
+    }
+  }
+  const uint16_t values[] = {d.dup_irq, d.timeouts, d.unhandled, d.last_unhandled,
+                             d.snap_int, d.snap_scsr, d.snap_state, task};
+  ZM_SET_U16S(data, start, values);
+}
+
+// LGA80D bad READ_TEMPERATURE_1/_3 reads, copied in one so a dump never mixes two events
+void zm_set_diag_lga80d_badt(struct zynqmon_data_t data[], int start)
+{
+  struct lga80d_badt_t b[2];
+  getLGA80DBadTempCopy(b);
+  const uint16_t values[] = {b[0].n_ffff, b[0].n_other, b[0].raw, b[0].row,
+                             b[1].n_ffff, b[1].n_other, b[1].raw, b[1].row};
+  ZM_SET_U16S(data, start, values);
+}
+
+// Stack high-water mark in words. 0xFFFF if the task was never created:
+// uxTaskGetStackHighWaterMark(NULL) would report ZMON's own stack instead.
+void zm_set_diag_stack(struct zynqmon_data_t data[], int start)
+{
+  uint16_t values[ZM_STACK_NTASKS];
+  for (int i = 0; i < ZM_STACK_NTASKS; ++i)
+    values[i] = (zm_stack_tasks[i] != NULL)
+                    ? (uint16_t)uxTaskGetStackHighWaterMark(zm_stack_tasks[i])
+                    : 0xFFFFU;
+  ZM_SET_U16S(data, start, values);
+}
+#endif // REV2 or REV3
 
 void zm_send_data(struct zynqmon_data_t data[])
 {

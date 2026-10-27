@@ -109,6 +109,28 @@ const struct power_snapshot_t *getPowerSnapshot(void)
   return &power_snapshot;
 }
 
+// Coherent copy: the snapshot is updated inside a critical section, so
+// copying inside one never sees a half-written update.
+void getPowerSnapshotCopy(struct power_snapshot_t *out)
+{
+  taskENTER_CRITICAL();
+  *out = power_snapshot;
+  taskEXIT_CRITICAL();
+}
+
+static struct power_diag_t power_diag;
+const struct power_diag_t *getPowerDiag(void)
+{
+  return &power_diag;
+}
+
+// a supply failed: log it and count it
+static void supply_failure(uint16_t failed_mask)
+{
+  errbuffer_power_fail(failed_mask);
+  sat_inc16(&power_diag.supply_fail);
+}
+
 // monitor and control the power supplies
 void PowerSupplyTask(void *parameters)
 {
@@ -273,6 +295,7 @@ void PowerSupplyTask(void *parameters)
           log_error(LOG_PWRCTL, "LGA80D_init failed\r\n");
           power_supply_alarm = true;
           errbuffer_put(EBUF_POWER_CONFIG_FAIL, 0);
+          sat_inc16(&power_diag.config_fail);
           // we don't need to turn off the supplies here since they are already off.
           // failure is logged in LGA80D_init, so we just go to the failure state.
           nextState = POWER_FAILURE;
@@ -295,7 +318,7 @@ void PowerSupplyTask(void *parameters)
           // log erroring supplies
           failed_mask = (~supply_bitset) & supply_ok_mask;
           printfail(failed_mask, supply_ok_mask, supply_bitset);
-          errbuffer_power_fail(failed_mask);
+          supply_failure(failed_mask);
           // turn off all supplies
           disable_ps();
           power_supply_alarm = true;
@@ -304,6 +327,7 @@ void PowerSupplyTask(void *parameters)
         else if (external_alarm) {
           log_info(LOG_PWRCTL, "external alarm power down\r\n");
           errbuffer_put(EBUF_POWER_OFF_TEMP, 0);
+          sat_inc16(&power_diag.alarm_off);
           // turn off all supplies
           disable_ps();
           nextState = POWER_FAILURE;
@@ -340,7 +364,7 @@ void PowerSupplyTask(void *parameters)
         if (((supply_bitset & supply_ok_mask_L1) != supply_ok_mask_L1) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L1;
           printfail(failed_mask, supply_ok_mask_L1, supply_bitset);
-          errbuffer_power_fail(failed_mask);
+          supply_failure(failed_mask);
           disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
@@ -356,7 +380,7 @@ void PowerSupplyTask(void *parameters)
         if (((supply_bitset & supply_ok_mask_L2) != supply_ok_mask_L2) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L2;
           printfail(failed_mask, supply_ok_mask_L2, supply_bitset);
-          errbuffer_power_fail(failed_mask);
+          supply_failure(failed_mask);
           disable_ps();
           power_supply_alarm = true;
           nextState = POWER_FAILURE;
@@ -379,7 +403,7 @@ void PowerSupplyTask(void *parameters)
         if (((supply_bitset & supply_ok_mask_L4) != supply_ok_mask_L4) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L4;
           printfail(failed_mask, supply_ok_mask_L4, supply_bitset);
-          errbuffer_power_fail(failed_mask);
+          supply_failure(failed_mask);
 
           disable_ps();
           power_supply_alarm = true;
@@ -397,7 +421,7 @@ void PowerSupplyTask(void *parameters)
         if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
-          errbuffer_power_fail(failed_mask);
+          supply_failure(failed_mask);
 
           disable_ps();
           power_supply_alarm = true;
@@ -415,7 +439,7 @@ void PowerSupplyTask(void *parameters)
         if (((supply_bitset & supply_ok_mask_L5) != supply_ok_mask_L5) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L5;
           printfail(failed_mask, supply_ok_mask_L5, supply_bitset);
-          errbuffer_power_fail(failed_mask);
+          supply_failure(failed_mask);
 
           disable_ps();
           power_supply_alarm = true;
@@ -431,7 +455,7 @@ void PowerSupplyTask(void *parameters)
         if (((supply_bitset & supply_ok_mask_L6) != supply_ok_mask_L6) && !ignorefail) {
           failed_mask = (~supply_bitset) & supply_ok_mask_L6;
           printfail(failed_mask, supply_ok_mask_L6, supply_bitset);
-          errbuffer_power_fail(failed_mask);
+          supply_failure(failed_mask);
 
           disable_ps();
           power_supply_alarm = true;
@@ -563,9 +587,11 @@ void PowerSupplyTask(void *parameters)
     if (currentState != nextState) {
       log_debug(LOG_PWRCTL, "%s: change from state %s to %s\r\n", pcTaskGetName(NULL),
                 power_system_state_names[currentState], power_system_state_names[nextState]);
-      if (nextState == POWER_FAILURE)
+      if (nextState == POWER_FAILURE) {
         log_info(LOG_PWRCTL, "entering POWER_FAILURE from %s\r\n",
                  power_system_state_names[currentState]);
+        power_diag.fail_step = (uint16_t)currentState;
+      }
       else if (currentState == POWER_FAILURE)
         log_info(LOG_PWRCTL, "leaving POWER_FAILURE, alarms cleared\r\n");
       const LedMsg_t *led_msg = NULL;

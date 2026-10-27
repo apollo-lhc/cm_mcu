@@ -36,6 +36,27 @@
 // the PAGE command is an SMBUS standard at register 0
 #define PAGE_COMMAND 0x0
 
+// [0] READ_TEMPERATURE_1, [1] READ_TEMPERATURE_3; row 0xFF = no bad read yet (0 is a real row)
+static struct lga80d_badt_t lga80d_badt[2] = {{.row = 0xFFU}, {.row = 0xFFU}};
+
+void getLGA80DBadTempCopy(struct lga80d_badt_t out[2])
+{
+  taskENTER_CRITICAL();
+  out[0] = lga80d_badt[0];
+  out[1] = lga80d_badt[1];
+  taskEXIT_CRITICAL();
+}
+
+static void lga80d_badt_record(uint8_t command, uint16_t raw, uint8_t row)
+{
+  struct lga80d_badt_t *b = &lga80d_badt[command == 0x8d ? 0 : 1];
+  taskENTER_CRITICAL();
+  sat_inc16((raw == 0xFFFFU) ? &b->n_ffff : &b->n_other);
+  b->raw = raw;
+  b->row = row;
+  taskEXIT_CRITICAL();
+}
+
 void MonitorTask(void *parameters)
 {
   // initialize to the current tick time
@@ -185,12 +206,15 @@ void MonitorTask(void *parameters)
           else {
             val = -98.0f; // should never get here
           }
-          // PSMON READ_TEMPERATURE_1 outside the LGA80D range: log the raw word, since
-          // TempStatus() rejects the value but only sees the decoded float
-          if (args == &dcdc_args && args->commands[c].command == 0x8d &&
+          // PSMON READ_TEMPERATURE_1/_3 outside the LGA80D range: log and count the raw
+          // word, since TempStatus() rejects TEMP_1 but only sees the decoded float
+          if (args == &dcdc_args &&
+              (args->commands[c].command == 0x8d || args->commands[c].command == 0x8f) &&
               !(val >= LGA80D_TEMP_MIN_C && val <= LGA80D_TEMP_MAX_C)) {
-            log_debug(LOG_MON, "%s: %s page %u: READ_TEMPERATURE_1 raw 0x%02x%02x out of range\r\n",
-                      args->name, args->devices[ps].name, page, data[1], data[0]);
+            log_debug(LOG_MON, "%s: %s page %u: %s raw 0x%02x%02x out of range\r\n", args->name,
+                      args->devices[ps].name, page, args->commands[c].name, data[1], data[0]);
+            lga80d_badt_record(args->commands[c].command, (uint16_t)((data[1] << 8) | data[0]),
+                               (uint8_t)(ps * args->n_pages + page));
           }
           args->pm_values[index] = val;
           // wait here for the x msec, where x is 2nd argument below.

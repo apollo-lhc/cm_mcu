@@ -53,7 +53,8 @@ uint64_t read_eeprom_multi(uint32_t addr);
 // Number of repeated entries that initiates a hardware counter update (re-write entry)
 #define EBUF_COUNTER_UPDATE 19
 
-// error codes without data
+// error codes without data; the fatal ones are also the PREV_FATAL_NAME list in
+// sm_cm_config/data/PL_MEM_CM_rev{2,3}.yml
 #define EBUF_RESTART        1
 #define EBUF_RESET_BUFFER   2
 #define EBUF_POWER_OFF      3
@@ -77,6 +78,7 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_CLKINIT_FAILURE   18
 #define EBUF_PS_OFF_TIMEOUT    19
 #define EBUF_POWER_CONFIG_FAIL 20
+#define EBUF_MALLOC_FAIL       21
 
 // Restart Reasons, values of reset cause (RESC) register,
 // at 0x5c offset in TM4C1290NCPDT
@@ -109,6 +111,10 @@ uint32_t errbuffer_minaddr(void);
 uint32_t errbuffer_maxaddr(void);
 uint32_t errbuffer_head(void);
 uint16_t errbuffer_last(void);
+// newest fatal entry (assert, hard fault, stack overflow, malloc failure) logged during the
+// previous boot, found by errbuffer_init(); 0 if none. For an assert, also its PC.
+uint16_t errbuffer_prev_fatal(void);
+uint32_t errbuffer_prev_assert_pc(void);
 uint16_t errbuffer_counter(void);
 uint16_t errbuffer_continue(void);
 
@@ -137,6 +143,13 @@ uint32_t stopwatch_getticks(void);
 
 // freertos tick compare including rollover
 bool checkStale(unsigned oldTime, unsigned newTime);
+
+// increment a 16-bit diagnostic counter, saturating at UINT16_MAX instead of wrapping
+static inline void sat_inc16(volatile uint16_t *counter)
+{
+  if (*counter != UINT16_MAX)
+    ++*counter;
+}
 
 // print with "%s%d.%02d", sign, whole, fraction -- see utils.c
 void float_to_ints(float val, const char **sign, int *whole, int *fraction);

@@ -351,6 +351,7 @@ void ADCSeq1Interrupt(void)
 
 // -----------------------------------------
 TaskHandle_t TaskNotifyI2CSlave = NULL;
+volatile struct i2cs_diag_t i2cs_diag = {.snap_state = 0xFFU}; // 0xFF: no duplicate yet
 
 void I2CSlave0Interrupt(void)
 {
@@ -366,10 +367,19 @@ void I2CSlave0Interrupt(void)
   // which the ISR may run without a task to notify.
   configASSERT(TaskNotifyI2CSlave != NULL);
 
-  // Notify the task. A second interrupt before the task wakes overwrites the
-  // value; the task services whatever I2CSCSR shows.
-  xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus, eSetValueWithOverwrite,
-                     &xHigherPriorityTaskWoken);
+  // Notify the task. A second interrupt before the task wakes keeps the first
+  // value (the task services whatever I2CSCSR shows) and is counted; the first
+  // such duplicate is snapshotted. Do not read I2CSCSR here: QCMDST is
+  // clear-on-read (datasheet p.1311).
+  if (xTaskNotifyFromISR(TaskNotifyI2CSlave, ui32InterruptStatus, eSetValueWithoutOverwrite,
+                         &xHigherPriorityTaskWoken) == pdFAIL) {
+    if (i2cs_diag.dup_irq == 0) {
+      i2cs_diag.snap_int = (uint16_t)ui32InterruptStatus;
+      i2cs_diag.snap_task = xTaskGetCurrentTaskHandle();
+      i2cs_diag.snap_pending = true;
+    }
+    sat_inc16(&i2cs_diag.dup_irq);
+  }
 
   /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
       should be performed to ensure the interrupt returns directly to the highest

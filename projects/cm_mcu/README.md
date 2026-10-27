@@ -30,7 +30,7 @@ INIT               0    <1%
 ## Code structure
 Upon boot, the TM4C first calls the reset vector code (`ResetISR` in startup_gcc.c). The code is copied from on-board flash to SRAM, initializes the vector table and the various memory regions. Then the code jumps to `main`, which is in cm_mcu.c. 
 
-In `main` the initalization sequence first sets up the pins of the TM4C (special function, direction, etc), then sets up various semaphores, mutexes, queues, data strucutres and interrupts (without enabling the global interrupt), adds tasks to the FreeRTOS scheduler, and finally starts the FreeRTOS scheduler. (The scheduler also enables the global interrupts.)
+In `main` the initalization sequence first sets up the pins of the TM4C (special function, direction, etc), then sets up various semaphores, mutexes, queues, data strucutres and interrupts (without enabling the global interrupt), adds tasks to the FreeRTOS scheduler, and finally starts the FreeRTOS scheduler. (The scheduler also enables the global interrupts.) The exception is the I2C0 slave: `I2CSlaveTask` sets up I2C0 and enables its interrupt itself, after setting the ISR's notification handle, because the IPMC can address the slave at any time (#320).
 
 Tasks are located in their own C files and are identified by names such as `XXXTask.c`. Most tasks have the following structure: a short initialization block, followed by an infinite loop with a delay. 
 
@@ -75,6 +75,44 @@ The vector table is defined in `startup_gcc.c`. Interrupt handlers are either in
 | PowerSupplyTask.c | Turns non-management power on and off on the board in proper order. Uses GPIOs. |
 | ProgComTask.c | Programmatic (non-CLI) command interface for the Zynq, on UART7. REV2/REV3 only. See below. |
 | ZynqMonTask.c | Sends monitoring data to the Zynq SoC on the Apollo SM. Acts as a soft UART, with only the Tx function implemented. Uses a hardware timer and GPIOs.|  
+
+## ZynqMon diagnostics block
+
+REV2/REV3 publish a diagnostics block at ZynqMon addresses 512 and up (the `diag_*` entries in
+`sm_cm_config/data/PL_MEM_CM_rev{2,3}.yml`, tables `CM_DIAG`, `CM_DIAG_RESET`, `CM_DIAG_PWR`,
+`CM_DIAG_STACK`, `CM_DIAG_I2C`, `CM_DIAG_I2CS` and `CM_DIAG_LGA80D`) for fleet monitoring. Its first
+entry, `DIAG_SCHEMA`, is the layout version (`ZM_DIAG_SCHEMA_VERSION` in `ZynqMonTask.c`).
+`MCU_HEALTH`, `RESET_CAUSE` and the `PWR_*` entries duplicate ProgCom pages 0x00 and
+0x01 on purpose: the Zynq does not poll ProgCom, so ZynqMon is its only path into monitoring.
+`PREV_FATAL_ENTRY` and `PREV_ASSERT_PC` say why the previous boot ended: its newest fatal
+error-log entry (assert, hard fault, stack overflow, malloc failure; 0 if none) and an assert's PC.
+`PWR_SUPPLY_FAIL`, `PWR_ALARM_OFF`, `PWR_CONFIG_FAIL` and the `CM_DIAG_I2C` `START_FAIL`/`ERROR`
+entries are saturating 16-bit counters since boot; `PWR_FAIL_STEP` is the state `POWER_FAILURE`
+was last entered from (0 = never).
+`CM_DIAG_I2CS` counts I2C slave duplicate interrupts, timeouts and unhandled I2CSCSR values,
+with a snapshot of the first duplicate; `CM_DIAG_LGA80D` counts LGA80D READ_TEMPERATURE_1 and _3 reads
+outside 0..175 C, per sensor, and latches each sensor's latest one.
+`STACK_<task>` is each task's stack high-water mark in words (0xFFFF if the task was not created);
+the task order is `enum zm_stack_task` in `ZynqMonTask.h`.
+
+### Which entries to monitor, and which explain
+
+The entries fall into two groups. **Indicators** say that something bad happened and are what
+Grafana should alarm on. **Diagnostics** say what it was, and are only worth reading once an
+indicator has fired. All counters are saturating 16-bit counts since the MCU booted, so alarm on
+an *increase*, and expect them to restart from 0 when `MCU_UPTIME` (CM_MON) drops.
+
+| Table | Indicators (alarm on these) | Diagnostics (read after an indicator fires) |
+| ----- | --------------------------- | ------------------------------------------- |
+| `CM_DIAG` | `MCU_HEALTH` != 0 (now in power fault / temperature or voltage alarm) | `HEALTH_*` bits: which one |
+| `CM_DIAG_RESET` | `PREV_FATAL_ENTRY` != 0: the previous boot ended in an assert, hard fault, stack overflow or malloc failure | `PREV_FATAL_NAME`/`_CODE`/`_DATA`, `PREV_ASSERT_PC` (decode with `arm-none-eabi-addr2line`), `RESET_CAUSE` + `RESET_*` (a fatal entry with a cause other than SW is suspect) |
+| `CM_DIAG_PWR` | `PWR_SUPPLY_FAIL`, `PWR_ALARM_OFF`, `PWR_CONFIG_FAIL` increase; `PWR_STATE` = 0 (POWER_FAILURE) | `PWR_FAIL_STEP`/`_NAME` (state the failure was entered from), `PWR_FAILED_MASK` (which supplies), `PWR_LIVE_MASK`/`_EXPECTED_MASK`/`_IGNORE_MASK`, `PWR_STATE_FLAGS` bits (`PWR_FAULT_LATCH`, `PWR_ALARM_SHUTDOWN_LATCH`, ...), `PWR_GENERATION` |
+| `CM_DIAG_STACK` | any `STACK_<task>` falling towards 0 free words (e.g. below 32) | the task name in the row |
+| `CM_DIAG_I2C` | `START_FAIL` or `ERROR` increases on a bus (NACKs are not counted) | the row: which bus |
+| `CM_DIAG_I2CS` | `I2CS_DUP_IRQ` or `I2CS_UNHANDLED` increases; `I2CS_TIMEOUTS` increasing *quickly* (it also counts a lone 1-byte write) | `I2CS_LAST_UNHANDLED`, and for the first duplicate `I2CS_SNAP_INT`/`_SCSR`/`_STATE`/`_TASK` (+ `_NAME`) |
+| `CM_DIAG_LGA80D` | `LGA80D_BADT1_*` or `LGA80D_BADT3_*` `_FFFF`/`_OTHER` increase | `..._RAW` (the bad word) and `..._ROW`/`_ROW_NAME` (which rail and page) of that sensor's latest bad read |
+
+`DIAG_SCHEMA` is neither: dashboards should check it matches the layout they were built for.
 
 ## LED Status Signals
 

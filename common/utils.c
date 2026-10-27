@@ -177,6 +177,7 @@ static const char *ebuf_errstrings[] = {
     "Clock Init failed",
     "Power Off - PG timeout",
     "Power Config failed",
+    "Malloc failed",
 };
 #define EBUF_N_ERRSTRINGS (sizeof(ebuf_errstrings) / sizeof(ebuf_errstrings[0]))
 
@@ -237,6 +238,7 @@ int errbuffer_get_messagestr(const uint32_t word, char *m, size_t s)
       break;
     case EBUF_CLKINIT_FAILURE:
     case EBUF_POWER_CONFIG_FAIL:
+    case EBUF_MALLOC_FAIL:
       ERRBUF_APPEND(" ");
       break;
     default:
@@ -300,6 +302,49 @@ uint32_t errbuffer_findhead(void)
   return head;
 }
 
+// the previous boot's fatal entry, see errbuffer_find_prev_fatal()
+static uint16_t prev_fatal = 0;
+static uint32_t prev_assert_pc = 0;
+
+static bool errbuffer_is_fatal(uint16_t errcode)
+{
+  return errcode == EBUF_ASSERT || errcode == EBUF_HARDFAULT || errcode == EBUF_STACKOVERFLOW ||
+         errcode == EBUF_MALLOC_FAIL;
+}
+
+// Walk back from the head to the newest EBUF_RESTART, i.e. over the previous boot, and keep
+// its newest fatal entry. Searching rather than taking the newest entry, because
+// disable_ps_failsafe() may log EBUF_PS_OFF_TIMEOUT after it. Raw reads: errbuffer_init()
+// only, before this boot logs its own restart.
+static void errbuffer_find_prev_fatal(void)
+{
+  uint32_t addr = ebuf->head;
+  for (uint32_t i = 0; i < ebuf->capacity; ++i) {
+    addr = (addr == ebuf->minaddr) ? ebuf->maxaddr : addr - 4;
+    uint32_t entry = read_eeprom_raw(addr);
+    if (entry == 0 || entry == 0xFFFFFFFFU) // empty
+      return;
+    uint16_t errcode = EBUF_ERRCODE(entry);
+    if (errcode == EBUF_RESTART)
+      return;
+    if (!errbuffer_is_fatal(errcode))
+      continue;
+    prev_fatal = EBUF_ENTRY(entry);
+    if (errcode == EBUF_ASSERT) { // PC from this entry and the next three continuations
+      uint32_t pc = EBUF_DATA(entry);
+      for (int b = 0; b < 3; ++b) {
+        addr = (addr == ebuf->maxaddr) ? ebuf->minaddr : addr + 4;
+        entry = read_eeprom_raw(addr);
+        if (EBUF_ERRCODE(entry) != EBUF_CONTINUATION)
+          return; // incomplete record: PC stays 0
+        pc = (pc << 8) | EBUF_DATA(entry);
+      }
+      prev_assert_pc = pc;
+    }
+    return;
+  }
+}
+
 void errbuffer_init(uint8_t minblk, uint8_t maxblk)
 {
   ebuf->minaddr = EEPROMAddrFromBlock(minblk);
@@ -309,6 +354,16 @@ void errbuffer_init(uint8_t minblk, uint8_t maxblk)
   ebuf->last = 0;
   ebuf->counter = 0;
   ebuf->n_continue = 0;
+  errbuffer_find_prev_fatal();
+}
+
+uint16_t errbuffer_prev_fatal(void)
+{
+  return prev_fatal;
+}
+uint32_t errbuffer_prev_assert_pc(void)
+{
+  return prev_assert_pc;
 }
 
 void errbuffer_reset(void)

@@ -55,6 +55,42 @@ void zm_set_allclk(struct zynqmon_data_t data[], int start);
 void zm_set_firefly_optpow12(struct zynqmon_data_t data[], int start);
 void zm_set_firefly_optpow4(struct zynqmon_data_t data[], int start);
 
+// Diagnostics block (REV2/REV3). Handles of the tasks whose stack high-water
+// mark is published, filled in by xTaskCreate in cm_mcu.c. The order must
+// match the names of the diag_stack block in PL_MEM_CM_rev{2,3}.yml.
+enum zm_stack_task {
+  ZM_STACK_POW,
+  ZM_STACK_LED,
+  ZM_STACK_CLIZY,
+  ZM_STACK_ADC,
+  ZM_STACK_FF_F1,
+  ZM_STACK_FF_F2,
+  ZM_STACK_CLK,
+  ZM_STACK_PSMON,
+  ZM_STACK_XIMON,
+  ZM_STACK_I2CS0,
+  ZM_STACK_EPRM,
+  ZM_STACK_ZMON,
+  ZM_STACK_TALM,
+  ZM_STACK_VALM,
+  ZM_STACK_PRGCM,
+  ZM_STACK_NTASKS
+};
+extern TaskHandle_t zm_stack_tasks[ZM_STACK_NTASKS];
+
+#if defined(REV2) || defined(REV3)
+void zm_set_diag_hdr(struct zynqmon_data_t data[], int start);
+void zm_set_diag_reset_cause(struct zynqmon_data_t data[], int start);
+void zm_set_diag_prev_assert_pc(struct zynqmon_data_t data[], int start);
+void zm_set_diag_prev_fatal(struct zynqmon_data_t data[], int start);
+void zm_set_diag_pwr_fail(struct zynqmon_data_t data[], int start);
+void zm_set_diag_i2c(struct zynqmon_data_t data[], int start);
+void zm_set_diag_i2cs(struct zynqmon_data_t data[], int start);
+void zm_set_diag_lga80d_badt(struct zynqmon_data_t data[], int start);
+void zm_set_diag_pwr(struct zynqmon_data_t data[], int start);
+void zm_set_diag_stack(struct zynqmon_data_t data[], int start);
+#endif // REV2 or REV3
+
 #ifdef ZYNQMON_TEST_MODE
 void setZYNQMonTestData(uint8_t sensor, uint16_t value);
 uint8_t getZYNQMonTestMode(void);

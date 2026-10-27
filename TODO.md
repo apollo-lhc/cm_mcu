@@ -245,6 +245,135 @@ transfer is already done at the first status check, e.g. after a time-slice swit
 equal-priority task), or add an unconditional `vTaskDelay(2)` after the poll loop (always >= 10 ms,
 one to two ticks extra per transaction). The second is the only one that guarantees the gap.
 
+### 25. I2C Slave ISR Assert at Boot — FIX MERGED (#320), not yet confirmed on hardware
+
+Seen once, on one REV3 board running DEBUG `21eb54d` (2026-10-21): error log entry
+`Assertion failed (pc) 0x00 0x01 0x3e 0x7a` at uptime 00:00. A rebuild of that commit (DEBUG, REV3,
+gcc 14.2) puts `GET_PC`'s `mov r3, pc` at 0x13E76, which reads 0x13E7A, inside
+`configASSERT(TaskNotifyI2CSlave != NULL)` in `I2CSlave0Interrupt()`. In a release build that is
+`disable_ps_failsafe()` plus a reset, triggered by traffic from the IPMC.
+
+Cause (best explanation, not reproduced): a boot-time race, needing only one interrupt. Before #320,
+`SystemInitInterrupts()` (called from `main()` after the tasks are created) enabled the slave
+(`initI2C0()` -> `I2CSlaveInit` sets SFE and DA), set address 0x40 and enabled INT_I2C0, while the
+handle was set only when `I2CSlaveTask` first ran. FreeRTOS masks kernel-priority interrupts (BASEPRI)
+from the first API call until the first task starts, so an IPMC read of 0x40 during the rest of
+`main()` (including the busy-wait startup banner, roughly 25 ms by estimate) stays pending in the
+NVIC. It fires as soon as the first task starts, which is VALM (the last-created +4 task), not I2CS0,
+and finds the handle NULL. The window then stayed open until I2CS0 first ran. Uptime 00:00 fits.
+The boot loader does not touch I2C0 (`I2C_ENABLE_UPDATE` is off), and every reset gates its clock.
+
+The earlier theory, a second DATA interrupt between the ISR NULLing the handle and the task
+re-arming it, is not needed to explain this and remains unexplained: the slave stretches SCL until
+I2CSDR is serviced (I2CSCSR TREQ/RREQ, datasheet p.1311), and the task re-armed before servicing it.
+
+Fix (#320, `15a1405`): `I2CSlaveTask` sets the handle first, then does all I2C0 setup itself
+(`initI2C0`, address 0x40, IRQ priority, DATA interrupt mask, `IntEnable(INT_I2C0)`); `cm_mcu.c` no
+longer touches I2C0. The ISR no longer NULLs the handle and the task no longer re-arms it, so the
+`configASSERT` is now a pure invariant check, and duplicate DATA interrupts collapse into one wake
+(`eSetValueWithOverwrite`; the task services whatever I2CSCSR shows). During CM boot the slave is
+off, so the IPMC gets a NACK instead of a stretched SCL. The other ISRs were checked and do not have
+this pattern: the SMBus masters and ADC only interrupt after their task starts an operation, and
+the UARTs write to stream buffers created before their interrupts are enabled.
+
+**Still open:** confirm on hardware by resetting/power-cycling the CM while the IPMC polls, with
+`i2cerr 1` on the IPMC (status 2 = timeout; NACKs during boot are expected). Counting duplicate
+interrupts is not part of #320; see #26 phase 5.
+
+Context: IPMC fw `b412689` (apollo-ipmc main, 2026-10-08) added five reads of 0x40 per Zynq publish
+and PIM refresh, run at IPMC startup and after FPGA DONE drops (`e91ca93`, `fc2627c`). The IPMC's I2C3
+has a 25 ms SMBus SCL-low timeout (`TIMEOUTR` 0x84C4 at a 100 MHz I2CCLK).
+
+Related, not this assert: a Quick Command read sets QCMDST, so I2CSCSR reads 0x12, the task's exact
+`status == I2C_SLAVE_ACT_TREQ` test fails, I2CSDR is never written, and SCL is held low.
+
+### 26. Fleet Diagnostics Block over ZynqMon — OPEN (all 6 phases written; 1-4 HW-tested on REV3 2026-10-24/25)
+
+Rare faults such as #25 are only visible today in each board's EEPROM error log. Publish a block of
+health values, counters and snapshots over the existing ZynqMon UART stream so the Zynq can feed it
+to Grafana. REV2 and REV3 only; the block starts at 512 on both (REV2's map ends at 459, REV3's at
+463). Full plan, layout and test results: `diag_blob_plan.md` (60 slots with phase 6).
+
+ZynqMon is the Zynq's only path into Grafana; it does not poll ProgCom. The entries marked
+"mirror" duplicate ProgCom pages 0x00/0x01 on purpose. Document that at the YAML blocks and in the
+ZynqMon section of `projects/cm_mcu/README.md`.
+
+| Slots | Type | Entries | Phase |
+|---|---|---|---|
+| 512-513 | u16 | `DIAG_SCHEMA` (layout version), `MCU_HEALTH` (mirror, page 0x00) | 1 |
+| 514-515 | u32 | `RESET_CAUSE` (mirror; `cached_reset_cause`, MOSCFAIL is bit 16) | 1 |
+| 516-521 | u16 | `PWR_GENERATION` (low 16 bits), `PWR_STATE_FLAGS`, `PWR_LIVE_MASK`, `PWR_EXPECTED_MASK`, `PWR_IGNORE_MASK`, `PWR_FAILED_MASK` (mirror, page 0x01) | 1 |
+| 522-536 | u16 | `STACK_<task>`: stack high-water mark in words, one slot per task, 15 tasks | 1 |
+| 537 | | unused (keeps `PREV_ASSERT_PC` on an even slot) | |
+| 538-539 | u32 | `PREV_ASSERT_PC` | 2 |
+| 540 | u16 | `PREV_FATAL_ENTRY`: newest fatal error-log entry (assert, hard fault, stack overflow, malloc) of the previous boot | 2 |
+| 541-544 | u16 | `PWR_FAIL_STEP`, `PWR_SUPPLY_FAIL`, `PWR_ALARM_OFF`, `PWR_CONFIG_FAIL` | 3 |
+| 545 | | unused (keeps the I2C slave 32-bit entry on an even slot) | |
+| 546-555 | u16 | `I2C1`..`I2C5` x {`START_FAIL`, `ERROR`} | 4 |
+| 556-557 | u32 | `I2CS_SNAP_TICK` | 5 |
+| 558-565 | u16 | `I2CS_DUP_IRQ`, `I2CS_TIMEOUTS`, `I2CS_UNHANDLED`, `I2CS_LAST_UNHANDLED`, `I2CS_SNAP_INT`, `I2CS_SNAP_SCSR`, `I2CS_SNAP_STATE`, `I2CS_SNAP_TASK` | 5 |
+
+Codegen constraints:
+
+- `xml_generate.py:221` advances one slot per name, so a 32-bit block must hold exactly one name and
+  start at an even slot (as `uptime` at 162 does); otherwise the Zynq XML maps two values onto one
+  word. Values can share a slot if each one is listed under `bitfields:` in the YAML.
+- `mcu_generate.py`: one type per block, `count` must match the names, every block needs an
+  `mcu_extra_call` key, and blocks must be in ascending address order (the overlap check only
+  compares neighbours). No C enum is generated; the order of `names` is the contract with the C code.
+- Each phase adds only its own blocks, so there are no placeholder zeros; `DIAG_SCHEMA` is bumped
+  per phase.
+
+Implementation notes:
+
+- `zm_set_diag_*` under `#if defined(REV2) || defined(REV3)`: `MCU_Reg.o` is not linked for REV1.
+- Phase 1: `mcu_reg_get_health()` factored out of `build_system_page()`, a reset-cause getter, and a
+  `power_snapshot` copy taken inside `taskENTER_CRITICAL` (the writer updates inside one, so no
+  generation retry is needed). Keep the 16 task handles from `xTaskCreate`; a NULL handle publishes
+  0xFFFF, because `uxTaskGetStackHighWaterMark(NULL)` would return ZMON's own value. INIT
+  self-deletes and IDLE needs `INCLUDE_xTaskGetIdleTaskHandle` (0, defined twice in
+  `FreeRTOSConfig.h`), so both are left out. Do not use `uxTaskGetSystemState()`: it allocates.
+- Phase 2: read the previous boot's entries with `errbuffer_get()` in `InitTask` before `EBUF_RESTART`
+  is written. `errbuffer_last()` does not work: `errbuffer_init()` resets it to 0. For `EBUF_ASSERT`,
+  rebuild the PC from the three continuation bytes. The malloc-failed hook writes no entry (not fixed
+  here).
+- Phase 3: supply-failure sites at L1, L2, L4, L5, L6 (`PowerSupplyTask.c:434`) and POWER_ON, plus
+  `EBUF_POWER_OFF_TEMP` and `EBUF_POWER_CONFIG_FAIL`. No slot for why `LGA80D_init()` failed until
+  such failures are seen: it would need the function to return a mask of failure kinds (7 `abort`
+  sites) instead of `bool`; slot 547 is free for it.
+- Phase 4: count every failed transfer start (including block-read starts) and every non-NACK error
+  after a transfer, timeouts included. Increment inside a critical section: the raw `i2c*` CLI
+  commands, `ff_present` and `readFFpresentSignals(false)` skip the bus mutex. I2C6 is REV1-only.
+- Phase 5 (handle already armed once by #320): the ISR notifies with
+  `eSetValueWithoutOverwrite` and counts a failed notify as a duplicate, latching the interrupt
+  status, tick and running task number on the first one. The ISR must not read I2CSCSR: QCMDST is
+  clear-on-read (datasheet p.1311). The task records SCSR and its state on the next wake, counts
+  timeouts (`I2CSlaveTask.c:171`), and counts DATA interrupts with an unhandled status (e.g. a Quick
+  Command, 0x12), which hold SCL low without ever reaching the timeout path.
+
+Cut after review: ADC counters (the ADC assert conversion goes to the assert review instead, and
+needs a staleness flag), minimum free heap, log-drop counter, I2C slave ISR-entry and task-wake
+counters, health at failure, packed stack values, `LGA80D_init` failure reason (deferred).
+
+Out of scope: EEPROM error-log changes, ProgCom, the Zynq/Grafana side (which should also alarm when
+`MCU_UPTIME` (slot 162) stops advancing, catching a starved ZMON), REV1.
+
+**Action:** Implement phases 1-5 in order, each as its own change built with `DEBUG=1`, regenerating
+and committing `ZynqMon_addresses.c/.h` and checking the release XML by hand.
+
+### 27. Zynq XML Maps LGA80D TEMP1 and TEMP3 to the Same Column — FIXED on feature/diag_blob (2026-10-25)
+
+Added 2026-10-23. `xml_generate.py:65` sets `Column=TEMP_C` for any id containing "temp". In the
+`psmon` block (`PL_MEM_CM_rev{2,3}.yml`, postfixes TEMP1/TEMP3/...), both TEMP1 and TEMP3 of each of
+the 14 device/page rows therefore get the same `Row=<name>;Table=CM_MON;Column=TEMP_C` (checked in the
+regenerated REV3 XML, e.g. `F1AVCC` at 0x73). If the Zynq ingest keys on Row/Column, one temperature
+overwrites the other in Grafana. Which one survives depends on the Zynq side (not checked).
+
+Fixed with a per-block `columns:` override in `xml_generate.py`: the psmon TEMP1/TEMP3 postfixes
+now go to columns TEMP1_C / TEMP3_C. BUTool keeps the later-added cell (`rowColMap[row][col] =`),
+so the old shared TEMP_C most likely showed TEMP3. Grafana panels on `CM_MON.<rail>.TEMP_C` must
+move to TEMP1_C / TEMP3_C.
+
 ### 28. Out-of-Band Validity for Status Words over ZynqMon — OPEN
 
 Added 2026-10-24 (follow-up to PR #321). `zm_set_psmon` sends a raw `PM_STATUS` word as 0xFFFF when

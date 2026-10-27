@@ -35,6 +35,12 @@ enum mcu_reg_result mcu_reg_write(
 // behavior.
 void mcu_reg_set_reset_cause(uint32_t raw_reset_cause);
 
+// Shared with ZynqMonTask.c, which publishes the same values to the Zynq.
+uint32_t mcu_reg_get_reset_cause(void);
+uint32_t mcu_reg_get_health(void); // MCU_HEALTH_* bits, as on page 0x00
+struct power_snapshot_t;
+uint8_t mcu_reg_power_flags(const struct power_snapshot_t *snap); // PWR_FLAG_* bits, as on page 0x01
+
 // ---- Page 0x00 (System) wire layout. See MCU_REGISTER_MAP.md for the full,
 // authoritative register list, including pages not implemented yet.
 

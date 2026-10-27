@@ -50,6 +50,7 @@
 #include "Semaphore.h"
 
 uint32_t g_ui32SysClock = 0;
+static volatile bool cli_uart_ready = false;
 
 void Print(const char *str)
 {
@@ -88,6 +89,12 @@ void SystemInit(void)
 
   // initialize all pins, using file setup by TI PINMUX tool
   PinoutSet();
+
+  // initialize the EEPROM and the error log first, so that a failure while main()
+  // creates the queues and tasks (assert, malloc failure) is logged
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+  ROM_EEPROMInit();
+  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
 }
 // This set of functions partially contains calls that require
 // the FreeRTOS to be further configured.
@@ -97,8 +104,10 @@ void SystemInitInterrupts(void)
   // this also sets up the interrupts
 #if defined(REV1)
   UART1Init(g_ui32SysClock); // ZYNQ UART
+  cli_uart_ready = true;
 #elif defined(REV2) || defined(REV3)
   UART0Init(g_ui32SysClock); // ZYNQ UART unidirectiona, push mon data to Zynq
+  cli_uart_ready = true;
   UART7Init(g_ui32SysClock); // non-CLI command interface to Zynq.
 
 #endif
@@ -107,10 +116,6 @@ void SystemInitInterrupts(void)
   // initialize the ADCs.
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
-  // initialize the EEPROM.
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
-  ROM_EEPROMInit();
-  errbuffer_init(EBUF_MINBLK, EBUF_MAXBLK);
 
   // Set the reference to external
   ROM_ADCReferenceSet(ADC0_BASE, ADC_REF_EXT_3V);
@@ -279,32 +284,32 @@ __attribute__((noreturn)) int main(void)
   for (int i = 0; i < fpga_args.n_values; ++i)
     fpga_args.pm_values[i] = -999.f;
 
-  // start the tasks here
-  xTaskCreate(PowerSupplyTask, "POW", 384, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(LedTask, "LED", 128, NULL, tskIDLE_PRIORITY + 2, NULL);
-  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 3, NULL);
+  // start the tasks here; handles feed the stack entries of the ZynqMon diagnostics block
+  xTaskCreate(PowerSupplyTask, "POW", 384, NULL, tskIDLE_PRIORITY + 4, &zm_stack_tasks[ZM_STACK_POW]);
+  xTaskCreate(LedTask, "LED", 128, NULL, tskIDLE_PRIORITY + 2, &zm_stack_tasks[ZM_STACK_LED]);
+  xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_CLIZY]);
 #ifdef REV1
   xTaskCreate(vCommandLineTask, "CLIFP", 384, &cli_uart4, tskIDLE_PRIORITY + 3, NULL);
 #endif // REV1
-  xTaskCreate(ADCMonitorTask, "ADC", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(ADCMonitorTask, "ADC", 192, NULL, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_ADC]);
 
 #if defined(REV2) || defined(REV3)
-  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 384, &ff_f1_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 384, &ff_f2_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTaskI2C, clk_args.name, 384, &clk_args, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTaskI2C, ff_f1_args.name, 384, &ff_f1_args, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_FF_F1]);
+  xTaskCreate(MonitorTaskI2C, ff_f2_args.name, 384, &ff_f2_args, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_FF_F2]);
+  xTaskCreate(MonitorTaskI2C, clk_args.name, 384, &clk_args, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_CLK]);
 #endif // REV2
-  xTaskCreate(MonitorTask, dcdc_args.name, 384, &dcdc_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(MonitorTask, fpga_args.name, 384, &fpga_args, tskIDLE_PRIORITY + 3, NULL);
-  xTaskCreate(I2CSlaveTask, "I2CS0", 192, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(MonitorTask, dcdc_args.name, 384, &dcdc_args, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_PSMON]);
+  xTaskCreate(MonitorTask, fpga_args.name, 384, &fpga_args, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_XIMON]);
+  xTaskCreate(I2CSlaveTask, "I2CS0", 192, NULL, tskIDLE_PRIORITY + 4, &zm_stack_tasks[ZM_STACK_I2CS0]);
+  xTaskCreate(EEPROMTask, "EPRM", 192, NULL, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_EPRM]);
   xTaskCreate(InitTask, "INIT", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(ZynqMonTask, "ZMON", 192, NULL, tskIDLE_PRIORITY + 1, NULL);
-  xTaskCreate(GenericAlarmTask, "TALM", 256, &tempAlarmTask, tskIDLE_PRIORITY + 4, NULL);
-  xTaskCreate(GenericAlarmTask, "VALM", 256, &voltAlarmTask, tskIDLE_PRIORITY + 4, NULL);
+  xTaskCreate(ZynqMonTask, "ZMON", 192, NULL, tskIDLE_PRIORITY + 1, &zm_stack_tasks[ZM_STACK_ZMON]);
+  xTaskCreate(GenericAlarmTask, "TALM", 256, &tempAlarmTask, tskIDLE_PRIORITY + 4, &zm_stack_tasks[ZM_STACK_TALM]);
+  xTaskCreate(GenericAlarmTask, "VALM", 256, &voltAlarmTask, tskIDLE_PRIORITY + 4, &zm_stack_tasks[ZM_STACK_VALM]);
 #if defined(REV2) || defined(REV3)
   // created last: if the FreeRTOS heap is exhausted, this non-critical task is
   // the one that fails to start rather than a monitoring or alarm task.
-  xTaskCreate(ProgComTask, "PRGCM", 384, &progcom_uart, tskIDLE_PRIORITY + 3, NULL);
+  xTaskCreate(ProgComTask, "PRGCM", 384, &progcom_uart, tskIDLE_PRIORITY + 3, &zm_stack_tasks[ZM_STACK_PRGCM]);
 #endif // REV2 or REV3
   //  xTaskCreate(WatchdogTask, "WATCH", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
@@ -456,9 +461,13 @@ void vApplicationIdleHook(void)
 void vApplicationMallocFailedHook(void)
 {
   taskDISABLE_INTERRUPTS();
-  UARTPrint(ZQ_UART, "vApplicationMallocFailedHook\r\n");
-  while (MAP_UARTBusy(ZQ_UART))
-    ;
+  // Allocations can fail before the CLI UART is initialized; record the error first.
+  errbuffer_put_raw(EBUF_MALLOC_FAIL, 0);
+  if (cli_uart_ready) {
+    UARTPrint(ZQ_UART, "vApplicationMallocFailedHook\r\n");
+    while (MAP_UARTBusy(ZQ_UART))
+      ;
+  }
   disable_ps_failsafe();
 #ifdef DEBUG
   // wait here for the debugger

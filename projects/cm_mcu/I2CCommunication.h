@@ -37,6 +37,10 @@ int apollo_i2c_ctl_block_r(uint8_t device, uint8_t address, uint8_t command, uin
 // read/write a register using the PMBUS protocol
 tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *smbus_status, bool read,
                              const struct dev_i2c_addr_t *add, const struct pm_command_t *cmd, uint8_t *value);
+// per-bus failure counters (saturating): failed transfer initiations, and non-NACK
+// errors after a transfer, timeouts included
+uint16_t i2c_get_start_fail(uint8_t device);
+uint16_t i2c_get_error(uint8_t device);
 // return the I2C bus/device index (1-6) for an SMBus controller, or 0 if not found
 uint8_t smbus_get_device_index(tSMBus *smbus);
 

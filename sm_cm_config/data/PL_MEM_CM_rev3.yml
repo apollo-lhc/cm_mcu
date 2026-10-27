@@ -111,6 +111,9 @@ config:
     # STATUS_WORD is a bit field: sent as the raw word (fp16 rounds values above 2048
     # and corrupts the low bits); 0xFFFF = no data (stale, supply off, read error).
     # postfix_types must match the PM_STATUS commands in zm_set_psmon.
+    columns: # without these both TEMP1 and TEMP3 land in column TEMP_C (TODO #27)
+      TEMP1: TEMP1_C
+      TEMP3: TEMP3_C
     postfix_types:
       STATUS_WORD: uint16_t
     bitfields:
@@ -310,3 +313,230 @@ config:
       - CH1
       - CH2
       - CH3
+  # Diagnostics block for fleet monitoring (TODO.md #26). diag_hdr, diag_reset_cause
+  # and diag_pwr duplicate ProgCom pages 0x00/0x01 on purpose: the Zynq does not poll
+  # ProgCom, so ZynqMon is its only path to monitoring. Uptime is MCU_UPTIME above.
+  # A 32-bit block must hold exactly one name and start at an even address, or
+  # xml_generate.py maps two values onto one word. Slot 537 is unused.
+  # bitfields: name -> {field: mask within the value}; xml_generate.py adds a node per
+  # field at the value's address, so the Zynq shows each field decoded (uint types only).
+  - name: diag_hdr
+    start: 512
+    count: 2
+    type: uint16_t
+    mcu_call: diag_hdr
+    mcu_extra_call: null
+    extra: Table=CM_DIAG;Status=1
+    default_col: VALUE
+    names:
+      - DIAG_SCHEMA
+      - MCU_HEALTH
+    bitfields:
+      MCU_HEALTH: # MCU_HEALTH_* in MCU_Reg.h
+        HEALTH_POWER_FAULT: 0x0001
+        HEALTH_TEMPERATURE_ALARM: 0x0002
+        HEALTH_VOLTAGE_ALARM: 0x0004
+        HEALTH_ADC_ERROR: 0x0008
+  - name: diag_reset_cause
+    start: 514
+    count: 2
+    type: uint32_t
+    mcu_call: diag_reset_cause
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_RESET;Status=1
+    default_col: VALUE
+    names:
+      - RESET_CAUSE
+    bitfields:
+      RESET_CAUSE: # SYSCTL_CAUSE_* in driverlib/sysctl.h
+        RESET_EXT: 0x0001
+        RESET_POR: 0x0002
+        RESET_BOR: 0x0004
+        RESET_WDOG0: 0x0008
+        RESET_SW: 0x0010
+        RESET_WDOG1: 0x0020
+        RESET_HIB: 0x0040
+        RESET_HSRVREQ: 0x1000
+  - name: diag_pwr
+    start: 516
+    count: 6
+    type: uint16_t
+    mcu_call: diag_pwr
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_PWR;Status=1
+    default_col: VALUE
+    names:
+      - PWR_GENERATION
+      - PWR_STATE_FLAGS
+      - PWR_LIVE_MASK
+      - PWR_EXPECTED_MASK
+      - PWR_IGNORE_MASK
+      - PWR_FAILED_MASK
+    bitfields:
+      PWR_STATE_FLAGS: # low byte: enum power_system_state (Tasks.h); high byte: PWR_FLAG_* (MCU_Reg.h)
+        PWR_STATE: 0x00FF
+        # the same byte as a name (Graphite gets the number); t_<value>_<name>_...,
+        # names without '_', order as in Tasks.h
+        PWR_STATE_NAME:
+          mask: 0x00FF
+          format: t_0_FAILURE_1_INIT_2_DOWN_3_OFF_4_L1ON_5_L2ON_6_L3ON_7_L4ON_8_L5ON_9_L6ON_10_ON_11_CONFIG
+        PWR_BLADE_POWER_EN: 0x0100
+        PWR_CLI_INHIBIT: 0x0200
+        PWR_PROGCOM_INHIBIT: 0x0400
+        PWR_FAULT_LATCH: 0x0800
+        PWR_ALARM_SHUTDOWN_LATCH: 0x1000
+        PWR_F1_ENABLE: 0x2000
+        PWR_F2_ENABLE: 0x4000
+  # order must match enum zm_stack_task in ZynqMonTask.h
+  - name: diag_stack
+    start: 522
+    count: 15
+    type: uint16_t
+    mcu_call: diag_stack
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_STACK;Status=1
+    default_col: FREE_WORDS
+    names:
+      - STACK_POW
+      - STACK_LED
+      - STACK_CLIZY
+      - STACK_ADC
+      - STACK_FF_F1
+      - STACK_FF_F2
+      - STACK_CLK
+      - STACK_PSMON
+      - STACK_XIMON
+      - STACK_I2CS0
+      - STACK_EPRM
+      - STACK_ZMON
+      - STACK_TALM
+      - STACK_VALM
+      - STACK_PRGCM
+  # Phase 2: why the previous boot ended, from the error log (errbuffer_find_prev_fatal):
+  # its newest fatal entry (0 if none) and, for an assert, the PC. Slot 537 is unused.
+  # A fatal entry ends in a SW reset (release builds), so PREV_FATAL with RESET_CAUSE
+  # other than SW is suspect: the boot in between may have reset before logging its restart.
+  - name: diag_prev_assert_pc
+    start: 538
+    count: 2
+    type: uint32_t
+    mcu_call: diag_prev_assert_pc
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_RESET;Status=1
+    default_col: VALUE
+    names:
+      - PREV_ASSERT_PC
+  - name: diag_prev_fatal
+    start: 540
+    count: 1
+    type: uint16_t
+    mcu_call: diag_prev_fatal
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_RESET;Status=1
+    default_col: VALUE
+    names:
+      - PREV_FATAL_ENTRY
+    bitfields:
+      PREV_FATAL_ENTRY: # error log entry: counter, EBUF_* code, data (common/utils.h)
+        PREV_FATAL_CODE: 0x1F00
+        PREV_FATAL_NAME: # the code as a name
+          mask: 0x1F00
+          format: t_0_NONE_7_HARDFAULT_8_ASSERT_9_STACKOVF_21_MALLOC
+        PREV_FATAL_DATA: 0x00FF
+  # Phase 3: power failure counters (saturating) and the state POWER_FAILURE was last
+  # entered from (0 = never). Slot 545 is unused (reserved for an LGA80D_init failure mask).
+  - name: diag_pwr_fail
+    start: 541
+    count: 4
+    type: uint16_t
+    mcu_call: diag_pwr_fail
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_PWR;Status=1
+    default_col: VALUE
+    names:
+      - PWR_FAIL_STEP
+      - PWR_SUPPLY_FAIL
+      - PWR_ALARM_OFF
+      - PWR_CONFIG_FAIL
+    bitfields:
+      PWR_FAIL_STEP:
+        PWR_FAIL_STEP_NAME: # the state as a name; order as in Tasks.h
+          mask: 0x00FF
+          format: t_0_NONE_1_INIT_2_DOWN_3_OFF_4_L1ON_5_L2ON_6_L3ON_7_L4ON_8_L5ON_9_L6ON_10_ON_11_CONFIG
+  # Phase 4: I2C master failure counters (saturating), buses 1-5: failed transfer
+  # initiations, and non-NACK errors after a transfer (timeouts included)
+  - name: diag_i2c
+    start: 546
+    count: 10
+    type: uint16_t
+    mcu_call: diag_i2c
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_I2C;Status=1
+    default_col: null
+    names:
+      - I2C1
+      - I2C2
+      - I2C3
+      - I2C4
+      - I2C5
+    postfixes:
+      - START_FAIL
+      - ERROR
+  # Phase 5: I2C slave (I2C0) diagnostics, counters saturate. The I2CS_SNAP_* values
+  # describe the first duplicate DATA interrupt, i.e. are meaningful once I2CS_DUP_IRQ > 0.
+  # I2CS_TIMEOUTS also counts a lone 1-byte write; I2CS_UNHANDLED also counts I2CSCSR = 0.
+  - name: diag_i2cs
+    start: 556
+    count: 8
+    type: uint16_t
+    mcu_call: diag_i2cs
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_I2CS;Status=1
+    default_col: VALUE
+    names:
+      - I2CS_DUP_IRQ
+      - I2CS_TIMEOUTS
+      - I2CS_UNHANDLED
+      - I2CS_LAST_UNHANDLED
+      - I2CS_SNAP_INT
+      - I2CS_SNAP_SCSR
+      - I2CS_SNAP_STATE
+      - I2CS_SNAP_TASK
+    bitfields:
+      I2CS_SNAP_STATE:
+        I2CS_SNAP_STATE_NAME: # enum I2C_STATE in I2CSlaveTask.c
+          mask: 0x00FF
+          format: t_0_READY_1_FIRSTBYTE_2_RXB0_3_RXB1_4_TXB0_5_TXB1_255_NONE
+      I2CS_SNAP_TASK:
+        I2CS_SNAP_TASK_NAME: # enum zm_stack_task in ZynqMonTask.h
+          mask: 0x00FF
+          format: t_0_POW_1_LED_2_CLIZY_3_ADC_4_FFF1_5_FFF2_6_CLK_7_PSMON_8_XIMON_9_I2CS0_10_EPRM_11_ZMON_12_TALM_13_VALM_14_PRGCM_254_OTHER_255_NONE
+  # Phase 6: LGA80D READ_TEMPERATURE_1 (BADT1_*) and _3 (BADT3_*) reads outside 0..175 C:
+  # per sensor, saturating counts of 0xFFFF and of other bad words, and that sensor's latest
+  # bad read (raw word and psmon row, ps * pages + page; row 255 = none yet)
+  - name: diag_lga80d_badt
+    start: 564
+    count: 8
+    type: uint16_t
+    mcu_call: diag_lga80d_badt
+    mcu_extra_call: null
+    extra: Table=CM_DIAG_LGA80D;Status=1
+    default_col: VALUE
+    names:
+      - LGA80D_BADT1_FFFF
+      - LGA80D_BADT1_OTHER
+      - LGA80D_BADT1_RAW
+      - LGA80D_BADT1_ROW
+      - LGA80D_BADT3_FFFF
+      - LGA80D_BADT3_OTHER
+      - LGA80D_BADT3_RAW
+      - LGA80D_BADT3_ROW
+    bitfields:
+      LGA80D_BADT1_ROW:
+        LGA80D_BADT1_ROW_NAME: # the psmon row names above, without '_'
+          mask: 0x00FF
+          format: t_0_1V8_1_3V3_2_F1VCCINT1S1_3_F1VCCINT1S2_4_F1VCCINT2S1_5_F1VCCINT2S2_6_F2VCCINT1S1_7_F2VCCINT1S2_8_F2VCCINT2S1_9_F2VCCINT2S2_10_F1AVTT_11_F1AVCC_12_F2AVTT_13_F2AVCC_255_NONE
+      LGA80D_BADT3_ROW:
+        LGA80D_BADT3_ROW_NAME:
+          mask: 0x00FF
+          format: t_0_1V8_1_3V3_2_F1VCCINT1S1_3_F1VCCINT1S2_4_F1VCCINT2S1_5_F1VCCINT2S2_6_F2VCCINT1S1_7_F2VCCINT1S2_8_F2VCCINT2S1_9_F2VCCINT2S2_10_F1AVTT_11_F1AVCC_12_F2AVTT_13_F2AVCC_255_NONE

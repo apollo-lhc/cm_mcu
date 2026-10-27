@@ -123,6 +123,7 @@ void PowerSupplyTask(void *parameters);
 extern QueueHandle_t xPwrQueue;
 
 // power system state x-macros
+// order is also the PWR_STATE_NAME / PWR_FAIL_STEP_NAME lists in PL_MEM_CM_rev{2,3}.yml
 #define X_MACRO_PS_SYSTEM_STATES \
   X(POWER_FAILURE)               \
   X(POWER_INIT)                  \
@@ -172,6 +173,17 @@ struct power_snapshot_t {
   uint8_t supply_states[POWER_SNAPSHOT_MAX_SUPPLIES];
 };
 const struct power_snapshot_t *getPowerSnapshot(void);
+void getPowerSnapshotCopy(struct power_snapshot_t *out);
+
+// PowerSupplyTask failure counters (saturating) for the ZynqMon diagnostics block. Only that
+// task writes them; each is a 16-bit value, read whole.
+struct power_diag_t {
+  uint16_t fail_step;   // state from which POWER_FAILURE was last entered; 0 (POWER_FAILURE) = never
+  uint16_t supply_fail; // supply failures, while sequencing or at POWER_ON
+  uint16_t alarm_off;   // power-downs from an external (temperature/voltage) alarm
+  uint16_t config_fail; // LGA80D_init failures in POWER_CONFIG
+};
+const struct power_diag_t *getPowerDiag(void);
 
 bool LGA80D_init(void);
 
