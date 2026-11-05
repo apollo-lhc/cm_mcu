@@ -177,7 +177,7 @@ void MonitorTask(void *parameters)
               log_warn(LOG_MON, "%s: Error %s, break out of loop (ps=%d,c=%d,p=%d) ...\r\n", args->name,
                        SMBUS_get_error(r), ps, c, page);
             }
-            // abort reading this page. NOTE this leaves the other values of this device+page stale.
+            // abort reading this page. 
             // set all values for this device+page for this and later commands to NaN
             for (int i = c; i < args->n_commands; ++i) {
               int idx = ps * (args->n_commands * args->n_pages) + page * args->n_commands + i;
