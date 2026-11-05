@@ -178,8 +178,12 @@ void MonitorTask(void *parameters)
                        SMBUS_get_error(r), ps, c, page);
             }
             // abort reading this page. NOTE this leaves the other values of this device+page stale.
-            // FIXME -- should we set the other values to sentinel value -999?
-            args->pm_values[index] = __builtin_nanf("");
+            // set all values for this device+page for this and later commands to NaN
+            for (int i = c; i < args->n_commands; ++i) {
+              int idx = ps * (args->n_commands * args->n_pages) + page * args->n_commands + i;
+              args->pm_values[idx] = __builtin_nanf("");
+            }
+            args->pm_values[index] = __builtin_nanf(""); // superfluous, but make sure the current value is NaN too
             if (log)
               errbuffer_put(EBUF_I2C, (uint16_t)args->name[0]);
             if (args == &dcdc_args && page == 0) {
