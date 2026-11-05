@@ -8,7 +8,6 @@
 #include "common/pinsel.h"
 #include "common/utils.h"
 #include <assert.h>
-#include <math.h>
 #include <stdbool.h>
 
 ///////////////////////////////////////////////////////////
@@ -16,8 +15,6 @@
 // Temperature Alarms
 //
 ///////////////////////////////////////////////////////////
-
-extern struct MonitorTaskArgs_t fpga_args;
 
 #define ALM_OVERTEMP_THRESHOLD 5
 // if the temperature is above the threshold by OVERTEMP_THRESHOLD
@@ -43,7 +40,12 @@ static const uint32_t alarmTempAddr[4] = {
     ADDR_TEMP_FPGA, // FPGA = 3
 };
 // current value of temperatures
-static float currentTemp[4] = {0.f, 0.f, 0.f, 0.f};
+static float currentTemp[4] = {-99.f, -99.f, -99.f, -99.f};
+
+float getCurrentTemperature(enum device theDevice)
+{
+  return currentTemp[theDevice];
+}
 
 // Status flags of the temperature alarm task
 static uint32_t status_T = 0x0;
@@ -155,42 +157,50 @@ int TempStatus(void)
   currentTemp[TM4C] = getADCvalue(ADC_INFO_TEMP_ENTRY);
   retval += evalTempHyst(currentTemp[TM4C] - getAlarmTemperature(TM4C), ALM_STAT_TM4C_OVERTEMP);
 
-  // DCDC. The first command is READ_TEMPERATURE_1.
-  // I am assuming it stays that way!!!!!!!!
-  currentTemp[DCDC] = -99.0f;
+  // DCDC. The first command is READ_TEMPERATURE_1. Second command is READ_TEMPERATURE_3. We
+  // take the max of all the DCDC temps, which are the first two commands for each device/page.
+  // The LGA80D specifies 0..175 C for its valid temperature range.
+  // I am assuming the indices stay this way.
+  float dcdcCurrentMax = -99.0f;
   // one bit per LGA80D device/page: set while its temperature is out of range,
   // so the warning is logged once per transition rather than every cycle
   static uint32_t dcdcInvalidMask = 0;
   // dcdc_args is initialized from these macros in LocalTasks.c
-  static_assert(NSUPPLIES_PS * NPAGES_PS <= 32, "dcdcInvalidMask has too few bits");
+  static_assert(NSUPPLIES_PS * NPAGES_PS * DCDC_CMD_READ_TEMPERATURE_NUM_INDEXES <= 32,
+                "dcdcInvalidMask has too few bits");
   for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
-    for (int page = 0; page < dcdc_args.n_pages; ++page) {
-      size_t index =
-          ps * (dcdc_args.n_commands * dcdc_args.n_pages) + page * dcdc_args.n_commands + 0;
-      float thistemp = dcdc_args.pm_values[index];
-      if (thistemp <= -999.f)
-        continue; // sentinel
-      uint32_t bit = 1UL << (ps * dcdc_args.n_pages + page);
-      if (!(thistemp >= LGA80D_TEMP_MIN_C && thistemp <= LGA80D_TEMP_MAX_C)) {
-        if (!(dcdcInvalidMask & bit)) {
-          const char *sign;
-          int tens, fractions;
-          float_to_ints(thistemp, &sign, &tens, &fractions);
-          log_warn(LOG_ALM, "LGA80D %s page %d: invalid temp %s%d.%02d C; ignoring\r\n",
-                   dcdc_args.devices[ps].name, page, sign, tens, fractions);
-          dcdcInvalidMask |= bit;
+    for (int page = 0; page < NPAGES_PS; ++page) {
+      for (int cmd_index = 0; cmd_index < DCDC_CMD_READ_TEMPERATURE_NUM_INDEXES; ++cmd_index) {
+        // first two commands are temperatures, stop after
+        size_t index =
+            ps * (dcdc_args.n_commands * NPAGES_PS) + (page * dcdc_args.n_commands) + cmd_index;
+        float thistemp = dcdc_args.pm_values[index];
+        if (thistemp <= -999.f)
+          continue;                                                                                          // sentinel
+        uint32_t bit = 1UL << ((ps * NPAGES_PS + page) * DCDC_CMD_READ_TEMPERATURE_NUM_INDEXES + cmd_index); // bit per device/page/command
+        if (!(thistemp >= LGA80D_TEMP_MIN_C && thistemp <= LGA80D_TEMP_MAX_C)) {
+          if (!(dcdcInvalidMask & bit)) {
+            const char *sign;
+            int tens;
+            int fractions;
+            float_to_ints(thistemp, &sign, &tens, &fractions);
+            log_warn(LOG_ALM, "LGA80D %s TEMP_%d page %d: invalid temp %s%d.%02d C; ignoring\r\n",
+                     dcdc_args.devices[ps].name, cmd_index == 0 ? 1 : 3, page, sign, tens, fractions);
+            dcdcInvalidMask |= bit;
+          }
+          continue;
         }
-        continue;
+        if (dcdcInvalidMask & bit) {
+          log_info(LOG_ALM, "LGA80D %s TEMP_%d page %d: temp valid again\r\n",
+                   dcdc_args.devices[ps].name, cmd_index == 0 ? 1 : 3, page);
+          dcdcInvalidMask &= ~bit;
+        }
+        if (thistemp > dcdcCurrentMax)
+          dcdcCurrentMax = thistemp;
       }
-      if (dcdcInvalidMask & bit) {
-        log_info(LOG_ALM, "LGA80D %s page %d: temp valid again\r\n", dcdc_args.devices[ps].name,
-                 page);
-        dcdcInvalidMask &= ~bit;
-      }
-      if (thistemp > currentTemp[DCDC])
-        currentTemp[DCDC] = thistemp;
     }
   }
+  currentTemp[DCDC] = dcdcCurrentMax; // update once at end
   retval += evalTempHyst(currentTemp[DCDC] - getAlarmTemperature(DCDC), ALM_STAT_DCDC_OVERTEMP);
 #ifdef REV1
   // tests below here require the power to be on

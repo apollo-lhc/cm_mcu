@@ -57,6 +57,9 @@ struct MonitorTaskArgs_t {
 #define NCOMMANDS_PS 6 // number of entries in dcdc_ array
 #define NPAGES_PS    2 // number of pages on the power supplies.
 
+// First two indices of DCDC are TEMP_1 and TEMP_3
+#define DCDC_CMD_READ_TEMPERATURE_NUM_INDEXES 2
+
 // The LGA80D specifies 0..175 C for its temperature thresholds. Treat a
 // READ_TEMPERATURE_1 value outside that range as invalid rather than allowing
 // a malformed but ACKed Linear11 word to power down the board.

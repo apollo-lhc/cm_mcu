@@ -34,6 +34,7 @@ extern struct GenericAlarmParams_t voltAlarmTask;
 //    first some commands for setting/getting the thresholds
 int16_t getAlarmTemperature(enum device theDevice);
 void setAlarmTemperature(enum device theDevice, int16_t temperature);
+float getCurrentTemperature(enum device theDevice);
 // Non-blocking variant for ProgCom: false (and no change) if the EEPROM queue is full.
 bool setAlarmTemperatureTry(enum device theDevice, int16_t temperature);
 void loadAlarmTemperaturesFromEEPROM(void);
