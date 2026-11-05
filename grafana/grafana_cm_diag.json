@@ -32,10 +32,10 @@
           "type": "graphite",
           "uid": "${DS}"
         },
-        "query": "shelf.00.*",
+        "query": "shelf.00.AP30{0[0-9],1[0-9],2[0-8]}",
         "current": {
-          "text": "AP3010",
-          "value": "AP3010"
+          "text": "AP3007",
+          "value": "AP3007"
         },
         "refresh": 1,
         "hide": 0
@@ -159,7 +159,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_STATE.VALUE, 'last'), 'state')",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_STATE.VALUE, 'max'), 'state')",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -284,7 +284,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'last'), 'prev fatal')",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'max'), 'prev fatal')",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -566,7 +566,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_MON.MCU_UPTIME.MINUTES, 'last'), 'uptime')",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_MON.MCU_UPTIME.MINUTES, 'min'), 'uptime')",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -818,7 +818,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG.DIAG_SCHEMA.VALUE, 'last'), 'schema')",
+          "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG.DIAG_SCHEMA.VALUE, 'max'), 'schema')",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -897,7 +897,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_STATE.VALUE, 'last'), 'state')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_STATE.VALUE, 'max'), 'state')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -905,7 +905,7 @@
             },
             {
               "refId": "B",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_FAIL_STEP.VALUE, 'last'), 'last failure entered from')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_FAIL_STEP.VALUE, 'max'), 'last failure entered from')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -928,51 +928,63 @@
                   "options": {
                     "0": {
                       "text": "FAILURE",
-                      "index": 0
+                      "index": 0,
+                      "color": "red"
                     },
                     "1": {
                       "text": "INIT",
-                      "index": 1
+                      "index": 1,
+                      "color": "yellow"
                     },
                     "2": {
                       "text": "DOWN",
-                      "index": 2
+                      "index": 2,
+                      "color": "yellow"
                     },
                     "3": {
                       "text": "OFF",
-                      "index": 3
+                      "index": 3,
+                      "color": "blue"
                     },
                     "4": {
                       "text": "L1ON",
-                      "index": 4
+                      "index": 4,
+                      "color": "yellow"
                     },
                     "5": {
                       "text": "L2ON",
-                      "index": 5
+                      "index": 5,
+                      "color": "yellow"
                     },
                     "6": {
                       "text": "L3ON",
-                      "index": 6
+                      "index": 6,
+                      "color": "yellow"
                     },
                     "7": {
                       "text": "L4ON",
-                      "index": 7
+                      "index": 7,
+                      "color": "yellow"
                     },
                     "8": {
                       "text": "L5ON",
-                      "index": 8
+                      "index": 8,
+                      "color": "yellow"
                     },
                     "9": {
                       "text": "L6ON",
-                      "index": 9
+                      "index": 9,
+                      "color": "yellow"
                     },
                     "10": {
                       "text": "ON",
-                      "index": 10
+                      "index": 10,
+                      "color": "green"
                     },
                     "11": {
                       "text": "CONFIG",
-                      "index": 11
+                      "index": 11,
+                      "color": "yellow"
                     }
                   }
                 }
@@ -990,7 +1002,86 @@
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "last failure entered from"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "none",
+                            "index": 0,
+                            "color": "green"
+                          },
+                          "1": {
+                            "text": "INIT",
+                            "index": 1,
+                            "color": "red"
+                          },
+                          "2": {
+                            "text": "DOWN",
+                            "index": 2,
+                            "color": "red"
+                          },
+                          "3": {
+                            "text": "OFF",
+                            "index": 3,
+                            "color": "red"
+                          },
+                          "4": {
+                            "text": "L1ON",
+                            "index": 4,
+                            "color": "red"
+                          },
+                          "5": {
+                            "text": "L2ON",
+                            "index": 5,
+                            "color": "red"
+                          },
+                          "6": {
+                            "text": "L3ON",
+                            "index": 6,
+                            "color": "red"
+                          },
+                          "7": {
+                            "text": "L4ON",
+                            "index": 7,
+                            "color": "red"
+                          },
+                          "8": {
+                            "text": "L5ON",
+                            "index": 8,
+                            "color": "red"
+                          },
+                          "9": {
+                            "text": "L6ON",
+                            "index": 9,
+                            "color": "red"
+                          },
+                          "10": {
+                            "text": "ON",
+                            "index": 10,
+                            "color": "red"
+                          },
+                          "11": {
+                            "text": "CONFIG",
+                            "index": 11,
+                            "color": "red"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         },
         {
@@ -1011,7 +1102,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_LIVE_MASK,PWR_EXPECTED_MASK,PWR_IGNORE_MASK,PWR_FAILED_MASK}.VALUE, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_LIVE_MASK,PWR_EXPECTED_MASK,PWR_IGNORE_MASK,PWR_FAILED_MASK}.VALUE, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1070,7 +1161,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_BLADE_POWER_EN,PWR_CLI_INHIBIT,PWR_PROGCOM_INHIBIT,PWR_FAULT_LATCH,PWR_ALARM_SHUTDOWN_LATCH,PWR_F1_ENABLE,PWR_F2_ENABLE}.VALUE, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_BLADE_POWER_EN,PWR_CLI_INHIBIT,PWR_PROGCOM_INHIBIT,PWR_FAULT_LATCH,PWR_ALARM_SHUTDOWN_LATCH,PWR_F1_ENABLE,PWR_F2_ENABLE}.VALUE, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1129,7 +1220,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_SUPPLY_FAIL,PWR_ALARM_OFF,PWR_CONFIG_FAIL}.VALUE, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.{PWR_SUPPLY_FAIL,PWR_ALARM_OFF,PWR_CONFIG_FAIL}.VALUE, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1181,7 +1272,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_GENERATION.VALUE, 'last'), 'generation')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_PWR.PWR_GENERATION.VALUE, 'max'), 'generation')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1247,7 +1338,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'last'), 'code')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'max'), 'code')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1255,7 +1346,7 @@
             },
             {
               "refId": "B",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_DATA.VALUE, 'last'), 'data')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_DATA.VALUE, 'max'), 'data')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1263,7 +1354,7 @@
             },
             {
               "refId": "C",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_ENTRY.VALUE, 'last'), 'entry')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_FATAL_ENTRY.VALUE, 'max'), 'entry')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1322,7 +1413,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_ASSERT_PC.VALUE, 'last'), 'PC')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.PREV_ASSERT_PC.VALUE, 'max'), 'PC')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1381,7 +1472,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.RESET_CAUSE.VALUE, 'last'), 'RESC')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.RESET_CAUSE.VALUE, 'max'), 'RESC')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1389,7 +1480,7 @@
             },
             {
               "refId": "B",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.{RESET_POR,RESET_EXT,RESET_SW,RESET_BOR,RESET_WDOG0,RESET_WDOG1,RESET_HIB,RESET_HSRVREQ}.VALUE, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_RESET.{RESET_POR,RESET_EXT,RESET_SW,RESET_BOR,RESET_WDOG0,RESET_WDOG1,RESET_HIB,RESET_HSRVREQ}.VALUE, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1462,7 +1553,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2C.*.{START_FAIL,ERROR}, 'last'), 4, 5)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2C.*.{START_FAIL,ERROR}, 'max'), 4, 5)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1514,7 +1605,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.{I2CS_DUP_IRQ,I2CS_TIMEOUTS,I2CS_UNHANDLED}.VALUE, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.{I2CS_DUP_IRQ,I2CS_TIMEOUTS,I2CS_UNHANDLED}.VALUE, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1566,7 +1657,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.{I2CS_LAST_UNHANDLED,I2CS_SNAP_INT,I2CS_SNAP_SCSR}.VALUE, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.{I2CS_LAST_UNHANDLED,I2CS_SNAP_INT,I2CS_SNAP_SCSR}.VALUE, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1625,7 +1716,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.I2CS_SNAP_STATE.VALUE, 'last'), 'state')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.I2CS_SNAP_STATE.VALUE, 'max'), 'state')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1718,7 +1809,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.I2CS_SNAP_TASK.VALUE, 'last'), 'task')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_I2CS.I2CS_SNAP_TASK.VALUE, 'max'), 'task')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1865,7 +1956,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT1_RAW.VALUE, 'last'), 'raw')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT1_RAW.VALUE, 'max'), 'raw')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -1924,7 +2015,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT1_ROW.VALUE, 'last'), 'rail')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT1_ROW.VALUE, 'max'), 'rail')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -2049,7 +2140,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT3_RAW.VALUE, 'last'), 'raw')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT3_RAW.VALUE, 'max'), 'raw')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -2108,7 +2199,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT3_ROW.VALUE, 'last'), 'rail')",
+              "target": "alias(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.LGA80D_BADT3_ROW.VALUE, 'max'), 'rail')",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -2337,7 +2428,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_MON.*.STATUS_WORD, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_MON.*.STATUS_WORD, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"
@@ -2389,7 +2480,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE, 'last'), 4)",
+              "target": "aliasByNode(consolidateBy(shelf.00.$WhichApollo.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE, 'max'), 4)",
               "datasource": {
                 "type": "graphite",
                 "uid": "${DS}"

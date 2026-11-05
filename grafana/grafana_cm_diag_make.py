@@ -11,11 +11,12 @@ def nid():
 
 # Graphite averages points when a range has more of them than the panel is wide. That is
 # right for temperatures, but turns states, codes, masks and raw words into meaningless
-# fractions (e.g. power state 6.11), so those keep the last value of each merged bucket.
+# fractions (e.g. power state 6.11), so those keep the max of each merged bucket ('last' would
+# be better, but Graphite before 1.1 rejects it). Uptime keeps the min so a reset shows.
 def consolidation(expr):
     if "consolidateBy" in expr or "TEMP1_C" in expr or "TEMP3_C" in expr:
         return expr
-    func = "min" if "FREE_WORDS" in expr else "max" if "MCU_HEALTH" in expr else "last"
+    func = "min" if "FREE_WORDS" in expr or "MCU_UPTIME" in expr else "max"
     return re.sub(r"(shelf\.00\.\$WhichApollo(?:[\w.*$]|\{[^}]*\})+)", r"consolidateBy(\1, '%s')" % func, expr)
 
 # Grafana's Graphite query editor only parses a brace list that is a whole path element of
@@ -35,8 +36,10 @@ def tgt(expr, ref="A"):
 def targets(exprs):
     return [tgt(e, chr(ord("A") + i)) for i, e in enumerate(exprs)]
 
-def mapping(d):
-    return [{"type": "value", "options": {str(k): {"text": v, "index": i} for i, (k, v) in enumerate(d.items())}}]
+# colors: optional {value: color}
+def mapping(d, colors=None):
+    return [{"type": "value", "options": {str(k): {"text": v, "index": i, **({"color": colors[k]} if colors and k in colors else {})}
+                                          for i, (k, v) in enumerate(d.items())}}]
 
 def thresholds(steps):
     return {"mode": "absolute", "steps": [{"color": c, "value": v} for v, c in steps]}
@@ -64,13 +67,17 @@ def ts(title, exprs, x, w, h=8, unit="none", desc="", stepped=False):
             "fieldConfig": {"defaults": {"unit": unit, "custom": custom, "color": {"mode": "palette-classic"}},
                             "overrides": []}}
 
-def timeline(title, exprs, x, w, maps, h=6, desc=""):
+# series_maps: {series alias: (mapping, colors)} for series that need a mapping other than maps
+def timeline(title, exprs, x, w, maps, h=6, desc="", colors=None, series_maps=None):
+    overrides = [{"matcher": {"id": "byName", "options": name},
+                  "properties": [{"id": "mappings", "value": mapping(*m)}]}
+                 for name, m in (series_maps or {}).items()]
     return {"id": nid(), "type": "state-timeline", "title": title, "description": desc, "datasource": DS,
             "gridPos": {"x": x, "y": y[0], "w": w, "h": h}, "targets": targets(exprs),
             "options": {"showValue": "auto", "mergeValues": True, "rowHeight": 0.9,
                         "legend": {"showLegend": False}},
-            "fieldConfig": {"defaults": {"mappings": mapping(maps), "color": {"mode": "palette-classic"},
-                                         "thresholds": thresholds([(None, "green")])}, "overrides": []}}
+            "fieldConfig": {"defaults": {"mappings": mapping(maps, colors), "color": {"mode": "palette-classic"},
+                                         "thresholds": thresholds([(None, "green")])}, "overrides": overrides}}
 
 def row(title, collapsed, children):
     r = {"id": nid(), "type": "row", "title": title, "collapsed": collapsed,
@@ -141,7 +148,9 @@ y0 = y[0]
 r["panels"] += [
     timeline("Power state", [f"alias({P}.CM_DIAG_PWR.PWR_STATE.VALUE, 'state')",
                              f"alias({P}.CM_DIAG_PWR.PWR_FAIL_STEP.VALUE, 'last failure entered from')"],
-             0, 12, PWR, desc="PWR_FAIL_STEP 0 means no failure since boot."),
+             0, 12, PWR, desc="PWR_FAIL_STEP 0 means no failure since boot.",
+             colors={k: {"FAILURE": "red", "ON": "green", "OFF": "blue"}.get(v, "yellow") for k, v in PWR.items()},
+             series_maps={"last failure entered from": (STEP, {k: "green" if k == 0 else "red" for k in STEP})}),
     stat("Supply masks", [f"aliasByNode({P}.CM_DIAG_PWR.PWR_{{LIVE,EXPECTED,IGNORE,FAILED}}_MASK.VALUE, 4)"], 12, 12,
          h=6, unit="hex0x", desc="One bit per supply (PS_OKS order). FAILED_MASK says which supplies failed."),
 ]
@@ -241,8 +250,8 @@ dash = {
     "time": {"from": "now-24h", "to": "now"},
     "templating": {"list": [
         {"name": "DS", "label": "Graphite", "type": "datasource", "query": "graphite", "current": {}, "hide": 0},
-        {"name": "WhichApollo", "label": "Apollo", "type": "query", "datasource": DS, "query": "shelf.00.*",
-         "current": {"text": "AP3010", "value": "AP3010"}, "refresh": 1, "hide": 0},
+        {"name": "WhichApollo", "label": "Apollo", "type": "query", "datasource": DS, "query": "shelf.00.AP30{0[0-9],1[0-9],2[0-8]}",
+         "current": {"text": "AP3007", "value": "AP3007"}, "refresh": 1, "hide": 0},
     ]},
     "links": [{"title": "Fleet overview", "type": "link", "url": "/d/apollo-cm-fleet",
                "keepTime": True, "icon": "dashboard"}],

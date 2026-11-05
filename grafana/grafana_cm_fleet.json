@@ -57,7 +57,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG_PWR.PWR_STATE.VALUE, 'last'), 2)",
+          "target": "aliasByNode(consolidateBy(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_PWR.PWR_STATE.VALUE, 'max'), 2)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -189,7 +189,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG.MCU_HEALTH.VALUE, 'max'), 2)",
+          "target": "aliasByNode(consolidateBy(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG.MCU_HEALTH.VALUE, 'max'), 2)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -269,7 +269,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'last'), 2)",
+          "target": "aliasByNode(consolidateBy(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_RESET.PREV_FATAL_CODE.VALUE, 'max'), 2)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -365,7 +365,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_MON.MCU_UPTIME.MINUTES, 'last'), 2)",
+          "target": "aliasByNode(consolidateBy(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_MON.MCU_UPTIME.MINUTES, 'min'), 2)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -435,7 +435,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(groupByNode(isNonNull(removeAboveValue(derivative(keepLastValue(shelf.00.*.CM_MON.MCU_UPTIME.MINUTES)), -1)), 2, 'sum'), 'sum'), 0)",
+          "target": "aliasByNode(consolidateBy(groupByNode(transformNull(offset(scale(removeAboveValue(derivative(keepLastValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_MON.MCU_UPTIME.MINUTES)), -1), 0), 1), 0), 2, 'sumSeries'), 'sum'), 0)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -505,7 +505,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_PWR.{PWR_SUPPLY_FAIL,PWR_CONFIG_FAIL}.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_PWR.{PWR_SUPPLY_FAIL,PWR_CONFIG_FAIL}.VALUE)), 2, 'sumSeries'), 'sum'), 0)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -575,7 +575,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_PWR.PWR_ALARM_OFF.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_PWR.PWR_ALARM_OFF.VALUE)), 2, 'sumSeries'), 'sum'), 0)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -645,7 +645,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_I2C.*.{START_FAIL,ERROR})), 2, 'sum'), 'sum'), 0)",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_I2C.*.{START_FAIL,ERROR})), 2, 'sumSeries'), 'sum'), 0)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -719,7 +719,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_I2CS.{I2CS_DUP_IRQ,I2CS_UNHANDLED}.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_I2CS.{I2CS_DUP_IRQ,I2CS_UNHANDLED}.VALUE)), 2, 'sumSeries'), 'sum'), 0)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -789,7 +789,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE)), 2, 'sum'), 'sum'), 0)",
+          "target": "aliasByNode(consolidateBy(groupByNode(nonNegativeDerivative(keepLastValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE)), 2, 'sumSeries'), 'sum'), 0)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -859,7 +859,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(groupByNode(removeAboveValue(shelf.00.*.CM_DIAG_STACK.*.FREE_WORDS, 65534), 2, 'min'), 'min'), 0)",
+          "target": "aliasByNode(consolidateBy(groupByNode(removeAboveValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_STACK.*.FREE_WORDS, 65534), 2, 'minSeries'), 'min'), 0)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -933,7 +933,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_DIAG.DIAG_SCHEMA.VALUE, 'last'), 2)",
+          "target": "aliasByNode(consolidateBy(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG.DIAG_SCHEMA.VALUE, 'max'), 2)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -1007,7 +1007,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "groupByNode(summarize(nonNegativeDerivative(keepLastValue(shelf.00.*.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE)), '1h', 'sum'), 2, 'sum')",
+          "target": "groupByNode(summarize(nonNegativeDerivative(keepLastValue(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_DIAG_LGA80D.{LGA80D_BADT1_FFFF,LGA80D_BADT1_OTHER,LGA80D_BADT3_FFFF,LGA80D_BADT3_OTHER}.VALUE)), '1h', 'sum'), 2, 'sumSeries')",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
@@ -1070,7 +1070,7 @@
       "targets": [
         {
           "refId": "A",
-          "target": "aliasByNode(consolidateBy(shelf.00.*.CM_MON.MCU_UPTIME.MINUTES, 'min'), 2)",
+          "target": "aliasByNode(consolidateBy(shelf.00.AP30{0[0-9],1[0-9],2[0-8]}.CM_MON.MCU_UPTIME.MINUTES, 'min'), 2)",
           "datasource": {
             "type": "graphite",
             "uid": "${DS}"
