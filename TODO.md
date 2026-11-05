@@ -179,62 +179,6 @@ either formalize the workaround with documentation or remove it.
 **Action:** Check return codes and report errors (error buffer or return queue). Make the
 unlock/write/lock sequence a single compound message type to guarantee atomicity.
 
-### 23. DCDC Temperature Alarm Uses Only the Controller-Die Sensor — IMPLEMENTED (uncommitted), open points remain
-
-Added 2026-10-10 (LGA80D review, `lga80d-review-2026-10-09.md` #3). The DCDC over-temperature
-alarm (`AlarmUtilities.c:158-194`) and the IPMC "hottest regulator" value (`I2CSlaveTask.c:106-127`,
-register `0x18`) both use command index 0, READ_TEMPERATURE_1 (0x8D, controller die). The power
-stage is the hotspot; its sensor is READ_TEMPERATURE_3 (0x8F, DrMOS TMON), already read every
-PSMON loop as index 1 but unused.
-
-Measured 2026-10-10 under load (TEMP_3 − TEMP_1):
-
-- Up to about 8 A per output: within about ±2 °C, often negative. That is within sensor accuracy.
-- F1AVTT/CC at 24 A: TEMP_3 is **+7 °C** above TEMP_1.
-
-The module's own OT limits (125 °C fault, 110 °C warning) also apply to TEMP_1. The only TMON
-threshold (MFR_VMON_OV_FAULT_LIMIT, 2.4 V default) corresponds to about 225 °C, so the controller
-never trips on the power-stage temperature.
-
-**Done (working tree, 2026-11-05):** `TempStatus()` (`AlarmUtilities.c:160-204`) takes the max of
-TEMP_1 and TEMP_3 over all devices/pages. Both readings are range-checked against
-`LGA80D_TEMP_MIN_C`/`MAX_C`. Each sensor has its own bit in `dcdcInvalidMask` (28 bits, with the
-`static_assert` updated), and the log messages name TEMP_1/TEMP_3. The max is built in a local and
-stored to `currentTemp[DCDC]` once, so readers never see a partial value. A new getter,
-`getCurrentTemperature()`, exists, and IPMC register `0x18` (`I2CSlaveTask.c:107-121`) now reads it.
-So 0x18 is range-checked and includes TEMP_3. `currentTemp[]` starts at -99 so 0x18 reports 0xFF,
-not 0 C, before the first alarm cycle.
-
-**Still open:**
-
-- **Stale TEMP_3 after a TEMP_1 NACK:** MonitorTask sets the failing command to NaN and `break`s
-  (`MonitorTask.c:182-188`), so TEMP_3 (index 1) keeps its last value. `dcdc_args.updateTick` is
-  still advanced by the other devices, so the stale check doesn't catch it, and the old TEMP_3 keeps
-  feeding the alarm. Same root cause as the existing FIXME there (set the rest of the page to the
-  -999 sentinel on abort).
-- **The 70 °C default threshold:** with the max, the alarm trips earlier under load. TEMP_3 on
-  VCCINT at full FPGA load is unmeasured (only about 4 A per phase so far). Check against a fully
-  loaded board before shipping, to avoid nuisance shutdowns.
-- **IPMC register `0x18` is an external interface:** it now reports max(TEMP_1, TEMP_3). Check
-  whether the Service Module side has thresholds tuned to the old TEMP_1-only value.
-- **0x18 staleness:** it checks `dcdc_args.updateTick`, but the value now comes from TALM. If TALM
-  stalls while PSMON keeps running, 0x18 serves an old value without reporting 0xFE.
-- **Positional indexes:** TEMP_1/TEMP_3 are still assumed to be `pm_command_dcdc[]` indexes 0 and 1
-  (the "I am assuming the indices stay this way" comment at `:163`). A lookup by command code
-  (0x8D/0x8F) would remove that assumption.
-
-Since #322 the diagnostics block counts TEMP_1 and TEMP_3 words outside 0..175 °C per sensor
-(`CM_DIAG_LGA80D`, slots 564-571), so the glitch rate on TEMP_3 can be measured independently.
-
-Prerequisite (met in practice): TEMP_3 is only meaningful with VMON/TMON in temperature mode
-(USER_GLOBAL_CONFIG bit 12). That was read on one module; all 7 modules give plausible TEMP_3
-values.
-
-Optional, separate: MFR_VMON_OV_FAULT_LIMIT is R/W (protectable). Setting it to a real
-temperature would give module-level power-stage protection, but the voltage-to-°C scaling of the
-limit is unconfirmed, the response is auto-restart (`0xBF`), and the warning-threshold wording in
-the TRN is contradictory. Test before relying on it.
-
 ### 24. prod_test: LGA80D PAGE-to-Command Gap Not Guaranteed — OPEN
 
 This item is in `projects/prod_test`, not cm_mcu. The ZL8802 needs 5 ms between commands to the same
@@ -311,6 +255,34 @@ Needed before decoding other status registers (PMBus STATUS_VOUT/IOUT/INPUT/TEMP
 Firefly alarm masks, the clock INT_STATUS/STICKY_FLG). Firmware change plus new slots in the
 ZynqMon map, so a schema/layout change.
 
+### 30. DCDC Temperature Alarm Follow-ups (from item 23) — OPEN
+
+Added 2026-11-05. Item 23 (alarm and IPMC `0x18` use max(TEMP_1, TEMP_3)) is resolved; these points
+were left open.
+
+- **The 70 °C default threshold:** with the max, the alarm trips earlier under load (TEMP_3 is
+  +7 °C over TEMP_1 at 24 A). TEMP_3 on VCCINT at full FPGA load is unmeasured (only about 4 A per
+  phase so far). Check against a fully loaded board before shipping, to avoid nuisance shutdowns.
+- **IPMC register `0x18` is an external interface:** it now reports max(TEMP_1, TEMP_3). Check
+  whether the Service Module side has thresholds tuned to the old TEMP_1-only value.
+- **0x18 staleness:** it checks `dcdc_args.updateTick`, but the value now comes from TALM via
+  `getCurrentTemperature()`. If TALM stalls while PSMON keeps running, 0x18 serves an old value
+  without reporting 0xFE.
+- **Positional indexes:** TEMP_1/TEMP_3 are still assumed to be `pm_command_dcdc[]` indexes 0 and 1
+  (the "I am assuming the indices stay this way" comment in `TempStatus()`). A lookup by command
+  code (0x8D/0x8F) would remove that assumption.
+- **PAGE-write failure:** that path in `MonitorTask()` (`continue` after the PAGE write) still
+  leaves the whole device/page stale. Predates item 23.
+
+Prerequisite (met in practice): TEMP_3 is only meaningful with VMON/TMON in temperature mode
+(USER_GLOBAL_CONFIG bit 12). That was read on one module; all 7 modules give plausible TEMP_3
+values.
+
+Optional, separate: MFR_VMON_OV_FAULT_LIMIT is R/W (protectable). Setting it to a real
+temperature would give module-level power-stage protection, but the voltage-to-°C scaling of the
+limit is unconfirmed, the response is auto-restart (`0xBF`), and the warning-threshold wording in
+the TRN is contradictory. Test before relying on it.
+
 ## Lower Priority
 
 ### 1. Firefly Enable-Mask Pair Read Non-Atomically — OPEN (demoted from High; scope corrected)
@@ -351,17 +323,22 @@ this code anyway.
 **Separate, non-concurrency nit — done:** `currentState` (`PowerSupplyTask.c:37`) was a
 non-`static` global despite `getPowerControlState()` existing; it is now `static`.
 
-### 15. I2CSlaveTask Computes Hottest Temperature on Every Read — OPEN
+### 15. I2CSlaveTask Computes Hottest Temperature on Every Read — OPEN (0x18 done, 0x16 optional)
 
 `getSlaveData()` (`I2CSlaveTask.c:47`) loops over all Fireflies at register `0x16` (`:86-105`) and
 over all DCDC devices × pages at `0x18` (`:106-127`) on every I2C register read from the external
 master. No caching.
 
-**Action:** Cache the hottest-temperature values, updated periodically by the monitor tasks. Note
-`AlarmUtilities.c` already computes exactly these maxima into `currentTemp[FF]` and
-`currentTemp[DCDC]` every 1 s — reuse them rather than adding a third copy. `currentTemp[]` is
-`static` with no accessor (`AlarmUtilities.c:46`), so this needs a getter; per retraction 1a, a
-plain aligned `float` read needs no extra locking.
+**0x18 done** (`fix/lga80d_tempmon`, with item 23): it now reads `getCurrentTemperature(DCDC)`, the
+range-checked max that `TempStatus()` stores once per 1 s cycle. The loop in `I2CSlaveTask.c` is
+gone. Its staleness check still uses `dcdc_args.updateTick` (see item 30).
+
+**0x16 left as is, possibly for good.** Reusing `currentTemp[FF]` would be a detour: the Firefly
+temperatures are `int16_t`, `TempStatus()` stores their max as a `float`, and 0x16 would convert it
+back to an integer. That path also isn't a drop-in replacement: on REV2/REV3, `TempStatus()`
+returns before the Firefly block when power is not fully on, so `currentTemp[FF]` keeps its last
+value, while 0x16 gates on `isFFStale()`. The current loop is 0x16's only cost, and it is small.
+If it is ever changed, an integer getter for the Firefly max would avoid the round trip.
 
 ### 16. Magic Number Cleanup — OPEN (one reference corrected)
 
@@ -493,6 +470,24 @@ needs a concrete failure mode — a torn value, a lost update, or a violated mul
 — demonstrated against real call sites. Absent that, do not file it.
 
 ## Resolved
+
+### 23. DCDC Temperature Alarm Uses Only the Controller-Die Sensor — RESOLVED (`fix/lga80d_tempmon`, 2026-11-05)
+
+The DCDC over-temperature alarm and IPMC register `0x18` used only READ_TEMPERATURE_1 (0x8D,
+controller die). The power-stage sensor READ_TEMPERATURE_3 (0x8F, DrMOS TMON) was read but unused.
+Measured 2026-10-10 (TEMP_3 − TEMP_1): within about ±2 °C up to about 8 A per output, +7 °C on
+F1AVTT/CC at 24 A. The module's own OT limits also apply to TEMP_1 only, and the TMON fault limit
+(MFR_VMON_OV_FAULT_LIMIT, 2.4 V default) corresponds to about 225 °C.
+
+`TempStatus()` now takes the max of TEMP_1 and TEMP_3 over all devices/pages. Both are range-checked
+against `LGA80D_TEMP_MIN_C`/`MAX_C`, each sensor has its own `dcdcInvalidMask` bit, and the logs name
+the sensor. The max is built in a local and stored to `currentTemp[DCDC]` once. Register `0x18` reads
+it through the new `getCurrentTemperature()`, so it is range-checked too; `currentTemp[]` starts at
+-99, so 0x18 reports 0xFF before the first alarm cycle. On a read NACK, MonitorTask sets the failing
+command and all later ones for that device/page to NaN, so a TEMP_3 left over from an earlier cycle
+no longer feeds the alarm. Side effect: a TEMP_1 NACK logs "invalid temp" for both sensors, printed
+as 0.00 C (`float_to_ints()` maps NaN to 0). Since #322 the diag block counts out-of-range TEMP_1
+and TEMP_3 words per sensor (`CM_DIAG_LGA80D`, slots 564-571). Open points: item 30.
 
 ### 26. Fleet Diagnostics Block over ZynqMon — RESOLVED (#322, `c6c4f2d`, 2026-10-26)
 
