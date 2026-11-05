@@ -1,11 +1,9 @@
 # TODO: Large-Scale Improvements for `projects/cm_mcu`
 
-**Last verified against the tree:** 2026-09-26, branch `feature/sm_uart` @ `bcd7f06` (rebased onto
-`master` @ `18a1d42`); re-checked 2026-09-27 against the working tree, which adds uncommitted
-`ProgComTask.c` / `InterruptHandlers.c` edits on top of that commit. Line numbers in the open and
-retracted items match that working tree.
-Items under **Resolved** quote the code as it stood *before* the fix, so their line numbers are
-historical and deliberately left alone.
+**Last verified against the tree:** 2026-11-02, `master` @ `c6c4f2d` (after #322). Line numbers in
+the open items match that commit.
+Items under **Retracted** and **Resolved** quote the code as it stood when they were written, so their
+line numbers are historical and deliberately left alone.
 
 Item numbers are kept stable across revisions of this file (so #6 is absent, and resolved or
 retracted items move to the bottom rather than being deleted — #1 was demoted to Lower Priority and
@@ -19,7 +17,7 @@ mostly retracted on 2026-08-12).
 |---|---|---|
 | `ADCMonitorTask.c:235,253,269,285` | 4 identical ADC trigger/wait/read blocks | ~16 lines each |
 | `FireflyUtils.c:385` `getFFoptpow()` | 12 identical `case` blocks in a switch | ~40 lines |
-| `ZynqMonTask.c:381` `zm_set_firefly_info()` | 6 nearly identical getter + stale-check blocks | ~70 lines |
+| `ZynqMonTask.c:395` `zm_set_firefly_info()` | 6 nearly identical getter + stale-check blocks | ~70 lines |
 | `InterruptHandlers.c:54,96,144,185` | **4** near-identical UART ISRs (UART0, UART7, UART1, UART4) | ~40 lines each |
 
 The UART ISR count went from 3 to 4 with the addition of `UART7IntHandler` for ProgCom, so the
@@ -41,7 +39,7 @@ almost certainly not what any caller intends.
 
 ### 5. Monitor Task Data Array Indexing — No Bounds Checking — OPEN (one of two fixed)
 
-`MonitorTask.c:134` still computes a flat index with 3-level nesting and no bounds validation:
+`MonitorTask.c:170` still computes a flat index with 3-level nesting and no bounds validation:
 
 ```c
 int index = ps * (args->n_commands * args->n_pages) + page * args->n_commands + c;
@@ -74,7 +72,7 @@ xTaskCreate(vCommandLineTask, "CLIZY", 512, &cli_uart, tskIDLE_PRIORITY + 3, NUL
 xTaskCreate(vCommandLineTask, "CLIFP", 384, &cli_uart4, tskIDLE_PRIORITY + 3, NULL);
 #endif // REV1
 ```
-(`cm_mcu.c:296-298`; the `cli_uart4` args are likewise REV1-only, `:262-264`.)
+(`cm_mcu.c:291-292`; the `cli_uart4` args are likewise REV1-only, `:257-259`.)
 
 REV2/REV3 run a single CLI task, so the `static`s have exactly one user and there is no race today
 on the shipping revisions. **Retiring REV1 closes this item outright** — no
@@ -99,12 +97,12 @@ watchdog protection exists today at all:
 
 | Layer | Location | State |
 |---|---|---|
-| Task creation | `cm_mcu.c:319` | commented out — `WatchdogTask` never runs |
+| Task creation | `cm_mcu.c:314` | commented out — `WatchdogTask` never runs |
 | Hardware feed | `WatchdogTask.c:40` | commented out |
 | Hardware peripheral init | *nowhere in the tree* | `WDOG0` is never clocked, enabled, or `WatchdogResetEnable`d; the only `WATCHDOG0_BASE` reference is inside the dead feed |
-| Task registration | `MonitorTaskI2C.c:38` | only `kWatchdogTaskID_MonitorI2CTask` registers; `FireFly`, `XiMon`, `PSMon` IDs are declared (`Tasks.h:356-359`) but unused |
+| Task registration | `MonitorTaskI2C.c:38` | only `kWatchdogTaskID_MonitorI2CTask` registers; `FireFly`, `XiMon`, `PSMon` IDs are declared (`Tasks.h:390-393`) but unused |
 | Task feeding | `MonitorTaskI2C.c:226` | the sole `task_watchdog_feed_task()` call site is commented out |
-| CLI status | `SoftwareCommands.c:175-181` | `watchdog_ctl` is inside `#if 0` |
+| CLI status | `commands/SoftwareCommands.c:183` | `watchdog_ctl` is inside `#if 0` |
 
 **The naive re-enable is guaranteed to brick the board into a reset loop.** Rows 4 and 5 are
 inconsistent by construction: `s_registered_tasks` gets bit 1 set, `s_fed_tasks` never does, so
@@ -113,7 +111,7 @@ inconsistent by construction: `s_registered_tasks` gets bit 1 set, `s_fed_tasks`
 if ((s_fed_tasks & s_registered_tasks) == s_registered_tasks)  // (0 & 2) == 2 → always false
 ```
 
-always takes the else branch. Uncommenting only `cm_mcu.c:319` + `WatchdogTask.c:40` (plus adding
+always takes the else branch. Uncommenting only `cm_mcu.c:314` + `WatchdogTask.c:40` (plus adding
 the missing peripheral init) yields a reset every watchdog period, unconditionally.
 
 Two further hazards for any revival:
@@ -162,10 +160,10 @@ and iterate. Turns ~185 lines of fragile bit manipulation into a ~20-line loop. 
 
 `PowerSupplyTask.c`:
 
-- `:136-142` — force both FPGAs enabled if neither detected (`// HACK` … `// end HACK`)
-- `:200` — `// TODO: what about > 1 message` on the `xQueueReceive` in the main loop
-- `:229` — `bool ignorefail = false; // HACK THIS NEEDS TO BE FIXED TODO FIXME`
-- `:351` — `case POWER_L3ON: { // FIXME allow this transition to fail on Rev2`
+- `:158-164` — force both FPGAs enabled if neither detected (`// HACK` … `// end HACK`)
+- `:218` — `// TODO: what about > 1 message` on the `xQueueReceive` in the main loop
+- `:247` — `bool ignorefail = false; // HACK THIS NEEDS TO BE FIXED TODO FIXME`
+- `:395` — `case POWER_L3ON: { // FIXME allow this transition to fail on Rev2`
 
 The second REV2-transition FIXME previously noted around line 408 is no longer present.
 
@@ -181,10 +179,10 @@ either formalize the workaround with documentation or remove it.
 **Action:** Check return codes and report errors (error buffer or return queue). Make the
 unlock/write/lock sequence a single compound message type to guarantee atomicity.
 
-### 23. DCDC Temperature Alarm Uses Only the Controller-Die Sensor — OPEN
+### 23. DCDC Temperature Alarm Uses Only the Controller-Die Sensor — IMPLEMENTED (uncommitted), open points remain
 
 Added 2026-10-10 (LGA80D review, `lga80d-review-2026-10-09.md` #3). The DCDC over-temperature
-alarm (`AlarmUtilities.c:158-193`) and the IPMC "hottest regulator" value (`I2CSlaveTask.c:102-123`,
+alarm (`AlarmUtilities.c:158-194`) and the IPMC "hottest regulator" value (`I2CSlaveTask.c:106-127`,
 register `0x18`) both use command index 0, READ_TEMPERATURE_1 (0x8D, controller die). The power
 stage is the hotspot; its sensor is READ_TEMPERATURE_3 (0x8F, DrMOS TMON), already read every
 PSMON loop as index 1 but unused.
@@ -198,24 +196,35 @@ The module's own OT limits (125 °C fault, 110 °C warning) also apply to TEMP_1
 threshold (MFR_VMON_OV_FAULT_LIMIT, 2.4 V default) corresponds to about 225 °C, so the controller
 never trips on the power-stage temperature.
 
-**Action:** Use the higher of TEMP_1 and TEMP_3 per device/page. Don't switch to TEMP_3 alone: it
-reads 1-2 °C lower at light load.
+**Done (working tree, 2026-11-05):** `TempStatus()` (`AlarmUtilities.c:160-204`) takes the max of
+TEMP_1 and TEMP_3 over all devices/pages. Both readings are range-checked against
+`LGA80D_TEMP_MIN_C`/`MAX_C`. Each sensor has its own bit in `dcdcInvalidMask` (28 bits, with the
+`static_assert` updated), and the log messages name TEMP_1/TEMP_3. The max is built in a local and
+stored to `currentTemp[DCDC]` once, so readers never see a partial value. A new getter,
+`getCurrentTemperature()`, exists, and IPMC register `0x18` (`I2CSlaveTask.c:107-121`) now reads it.
+So 0x18 is range-checked and includes TEMP_3. `currentTemp[]` starts at -99 so 0x18 reports 0xFF,
+not 0 C, before the first alarm cycle.
 
-- Apply the existing `LGA80D_TEMP_MIN_C`/`MAX_C` range check to both readings. The −0.50 °C
-  (raw 0xFFFF) glitch can hit TEMP_3 too, and today only index 0 is checked.
-- Give TEMP_3 its own bits in `dcdcInvalidMask`. That is 28 bits, which still fits in a
-  `uint32_t`; update the `configASSERT` at `:164` to match.
-- Replace the hard-coded index 0 (see the "I am assuming it stays that way" comment at `:158-159`)
-  with a lookup by command code.
+**Still open:**
 
-**Decisions:**
-
-- **IPMC register `0x18`:** change it too for consistency, or keep it on TEMP_1 if the Service
-  Module side has thresholds tuned to the old value. It is an external interface. Note that this
-  path has no range check today.
+- **Stale TEMP_3 after a TEMP_1 NACK:** MonitorTask sets the failing command to NaN and `break`s
+  (`MonitorTask.c:182-188`), so TEMP_3 (index 1) keeps its last value. `dcdc_args.updateTick` is
+  still advanced by the other devices, so the stale check doesn't catch it, and the old TEMP_3 keeps
+  feeding the alarm. Same root cause as the existing FIXME there (set the rest of the page to the
+  -999 sentinel on abort).
 - **The 70 °C default threshold:** with the max, the alarm trips earlier under load. TEMP_3 on
   VCCINT at full FPGA load is unmeasured (only about 4 A per phase so far). Check against a fully
   loaded board before shipping, to avoid nuisance shutdowns.
+- **IPMC register `0x18` is an external interface:** it now reports max(TEMP_1, TEMP_3). Check
+  whether the Service Module side has thresholds tuned to the old TEMP_1-only value.
+- **0x18 staleness:** it checks `dcdc_args.updateTick`, but the value now comes from TALM. If TALM
+  stalls while PSMON keeps running, 0x18 serves an old value without reporting 0xFE.
+- **Positional indexes:** TEMP_1/TEMP_3 are still assumed to be `pm_command_dcdc[]` indexes 0 and 1
+  (the "I am assuming the indices stay this way" comment at `:163`). A lookup by command code
+  (0x8D/0x8F) would remove that assumption.
+
+Since #322 the diagnostics block counts TEMP_1 and TEMP_3 words outside 0..175 °C per sensor
+(`CM_DIAG_LGA80D`, slots 564-571), so the glitch rate on TEMP_3 can be measured independently.
 
 Prerequisite (met in practice): TEMP_3 is only meaningful with VMON/TMON in temperature mode
 (USER_GLOBAL_CONFIG bit 12). That was read on one module; all 7 modules give plausible TEMP_3
@@ -277,8 +286,10 @@ this pattern: the SMBus masters and ADC only interrupt after their task starts a
 the UARTs write to stream buffers created before their interrupts are enabled.
 
 **Still open:** confirm on hardware by resetting/power-cycling the CM while the IPMC polls, with
-`i2cerr 1` on the IPMC (status 2 = timeout; NACKs during boot are expected). Counting duplicate
-interrupts is not part of #320; see #26 phase 5.
+`i2cerr 1` on the IPMC (status 2 = timeout; NACKs during boot are expected). Since #322 the
+diagnostics block also counts duplicate DATA interrupts, timeouts and unhandled statuses
+(`I2CS_DUP_IRQ`, `I2CS_TIMEOUTS`, `I2CS_UNHANDLED`, slots 558-560), so a fleet that stays at zero
+across reboots is supporting evidence too.
 
 Context: IPMC fw `b412689` (apollo-ipmc main, 2026-10-08) added five reads of 0x40 per Zynq publish
 and PIM refresh, run at IPMC startup and after FPGA DONE drops (`e91ca93`, `fc2627c`). The IPMC's I2C3
@@ -286,93 +297,6 @@ has a 25 ms SMBus SCL-low timeout (`TIMEOUTR` 0x84C4 at a 100 MHz I2CCLK).
 
 Related, not this assert: a Quick Command read sets QCMDST, so I2CSCSR reads 0x12, the task's exact
 `status == I2C_SLAVE_ACT_TREQ` test fails, I2CSDR is never written, and SCL is held low.
-
-### 26. Fleet Diagnostics Block over ZynqMon — OPEN (all 6 phases written; 1-4 HW-tested on REV3 2026-10-24/25)
-
-Rare faults such as #25 are only visible today in each board's EEPROM error log. Publish a block of
-health values, counters and snapshots over the existing ZynqMon UART stream so the Zynq can feed it
-to Grafana. REV2 and REV3 only; the block starts at 512 on both (REV2's map ends at 459, REV3's at
-463). Full plan, layout and test results: `diag_blob_plan.md` (60 slots with phase 6).
-
-ZynqMon is the Zynq's only path into Grafana; it does not poll ProgCom. The entries marked
-"mirror" duplicate ProgCom pages 0x00/0x01 on purpose. Document that at the YAML blocks and in the
-ZynqMon section of `projects/cm_mcu/README.md`.
-
-| Slots | Type | Entries | Phase |
-|---|---|---|---|
-| 512-513 | u16 | `DIAG_SCHEMA` (layout version), `MCU_HEALTH` (mirror, page 0x00) | 1 |
-| 514-515 | u32 | `RESET_CAUSE` (mirror; `cached_reset_cause`, MOSCFAIL is bit 16) | 1 |
-| 516-521 | u16 | `PWR_GENERATION` (low 16 bits), `PWR_STATE_FLAGS`, `PWR_LIVE_MASK`, `PWR_EXPECTED_MASK`, `PWR_IGNORE_MASK`, `PWR_FAILED_MASK` (mirror, page 0x01) | 1 |
-| 522-536 | u16 | `STACK_<task>`: stack high-water mark in words, one slot per task, 15 tasks | 1 |
-| 537 | | unused (keeps `PREV_ASSERT_PC` on an even slot) | |
-| 538-539 | u32 | `PREV_ASSERT_PC` | 2 |
-| 540 | u16 | `PREV_FATAL_ENTRY`: newest fatal error-log entry (assert, hard fault, stack overflow, malloc) of the previous boot | 2 |
-| 541-544 | u16 | `PWR_FAIL_STEP`, `PWR_SUPPLY_FAIL`, `PWR_ALARM_OFF`, `PWR_CONFIG_FAIL` | 3 |
-| 545 | | unused (keeps the I2C slave 32-bit entry on an even slot) | |
-| 546-555 | u16 | `I2C1`..`I2C5` x {`START_FAIL`, `ERROR`} | 4 |
-| 556-557 | u32 | `I2CS_SNAP_TICK` | 5 |
-| 558-565 | u16 | `I2CS_DUP_IRQ`, `I2CS_TIMEOUTS`, `I2CS_UNHANDLED`, `I2CS_LAST_UNHANDLED`, `I2CS_SNAP_INT`, `I2CS_SNAP_SCSR`, `I2CS_SNAP_STATE`, `I2CS_SNAP_TASK` | 5 |
-
-Codegen constraints:
-
-- `xml_generate.py:221` advances one slot per name, so a 32-bit block must hold exactly one name and
-  start at an even slot (as `uptime` at 162 does); otherwise the Zynq XML maps two values onto one
-  word. Values can share a slot if each one is listed under `bitfields:` in the YAML.
-- `mcu_generate.py`: one type per block, `count` must match the names, every block needs an
-  `mcu_extra_call` key, and blocks must be in ascending address order (the overlap check only
-  compares neighbours). No C enum is generated; the order of `names` is the contract with the C code.
-- Each phase adds only its own blocks, so there are no placeholder zeros; `DIAG_SCHEMA` is bumped
-  per phase.
-
-Implementation notes:
-
-- `zm_set_diag_*` under `#if defined(REV2) || defined(REV3)`: `MCU_Reg.o` is not linked for REV1.
-- Phase 1: `mcu_reg_get_health()` factored out of `build_system_page()`, a reset-cause getter, and a
-  `power_snapshot` copy taken inside `taskENTER_CRITICAL` (the writer updates inside one, so no
-  generation retry is needed). Keep the 16 task handles from `xTaskCreate`; a NULL handle publishes
-  0xFFFF, because `uxTaskGetStackHighWaterMark(NULL)` would return ZMON's own value. INIT
-  self-deletes and IDLE needs `INCLUDE_xTaskGetIdleTaskHandle` (0, defined twice in
-  `FreeRTOSConfig.h`), so both are left out. Do not use `uxTaskGetSystemState()`: it allocates.
-- Phase 2: read the previous boot's entries with `errbuffer_get()` in `InitTask` before `EBUF_RESTART`
-  is written. `errbuffer_last()` does not work: `errbuffer_init()` resets it to 0. For `EBUF_ASSERT`,
-  rebuild the PC from the three continuation bytes. The malloc-failed hook writes no entry (not fixed
-  here).
-- Phase 3: supply-failure sites at L1, L2, L4, L5, L6 (`PowerSupplyTask.c:434`) and POWER_ON, plus
-  `EBUF_POWER_OFF_TEMP` and `EBUF_POWER_CONFIG_FAIL`. No slot for why `LGA80D_init()` failed until
-  such failures are seen: it would need the function to return a mask of failure kinds (7 `abort`
-  sites) instead of `bool`; slot 547 is free for it.
-- Phase 4: count every failed transfer start (including block-read starts) and every non-NACK error
-  after a transfer, timeouts included. Increment inside a critical section: the raw `i2c*` CLI
-  commands, `ff_present` and `readFFpresentSignals(false)` skip the bus mutex. I2C6 is REV1-only.
-- Phase 5 (handle already armed once by #320): the ISR notifies with
-  `eSetValueWithoutOverwrite` and counts a failed notify as a duplicate, latching the interrupt
-  status, tick and running task number on the first one. The ISR must not read I2CSCSR: QCMDST is
-  clear-on-read (datasheet p.1311). The task records SCSR and its state on the next wake, counts
-  timeouts (`I2CSlaveTask.c:171`), and counts DATA interrupts with an unhandled status (e.g. a Quick
-  Command, 0x12), which hold SCL low without ever reaching the timeout path.
-
-Cut after review: ADC counters (the ADC assert conversion goes to the assert review instead, and
-needs a staleness flag), minimum free heap, log-drop counter, I2C slave ISR-entry and task-wake
-counters, health at failure, packed stack values, `LGA80D_init` failure reason (deferred).
-
-Out of scope: EEPROM error-log changes, ProgCom, the Zynq/Grafana side (which should also alarm when
-`MCU_UPTIME` (slot 162) stops advancing, catching a starved ZMON), REV1.
-
-**Action:** Implement phases 1-5 in order, each as its own change built with `DEBUG=1`, regenerating
-and committing `ZynqMon_addresses.c/.h` and checking the release XML by hand.
-
-### 27. Zynq XML Maps LGA80D TEMP1 and TEMP3 to the Same Column — FIXED on feature/diag_blob (2026-10-25)
-
-Added 2026-10-23. `xml_generate.py:65` sets `Column=TEMP_C` for any id containing "temp". In the
-`psmon` block (`PL_MEM_CM_rev{2,3}.yml`, postfixes TEMP1/TEMP3/...), both TEMP1 and TEMP3 of each of
-the 14 device/page rows therefore get the same `Row=<name>;Table=CM_MON;Column=TEMP_C` (checked in the
-regenerated REV3 XML, e.g. `F1AVCC` at 0x73). If the Zynq ingest keys on Row/Column, one temperature
-overwrites the other in Grafana. Which one survives depends on the Zynq side (not checked).
-
-Fixed with a per-block `columns:` override in `xml_generate.py`: the psmon TEMP1/TEMP3 postfixes
-now go to columns TEMP1_C / TEMP3_C. BUTool keeps the later-added cell (`rowColMap[row][col] =`),
-so the old shared TEMP_C most likely showed TEMP3. Grafana panels on `CM_MON.<rail>.TEMP_C` must
-move to TEMP1_C / TEMP3_C.
 
 ### 28. Out-of-Band Validity for Status Words over ZynqMon — OPEN
 
@@ -412,7 +336,7 @@ if (!((1 << ff) & ff_PRESENT_mask) || !((1 << ff) & ff_USER_mask))
 This is the one place in the listed set with a genuine **two-variable invariant** read without
 atomicity, so a reader can observe the new USER mask against the old PRESENT mask. It is a real
 cross-task race: `readFFpresent()` → `setFFmask()` is called at **runtime** from
-`PowerSupplyTask.c:425` during a power transition (not only at init, as this item used to claim),
+`PowerSupplyTask.c:469` during a power transition (not only at init, as this item used to claim),
 while readers span the CLI (`FireflyCommands.c`, 11 sites), the monitor tasks
 (`MonUtils.c:199,214`, as `presentCallback`) and `ProgComTask.c:288`.
 
@@ -429,21 +353,21 @@ non-`static` global despite `getPowerControlState()` existing; it is now `static
 
 ### 15. I2CSlaveTask Computes Hottest Temperature on Every Read — OPEN
 
-`getSlaveData()` (`I2CSlaveTask.c:48`) loops over all Fireflies at register `0x16` (`:82-101`) and
-over all DCDC devices × pages at `0x18` (`:102-123`) on every I2C register read from the external
+`getSlaveData()` (`I2CSlaveTask.c:47`) loops over all Fireflies at register `0x16` (`:86-105`) and
+over all DCDC devices × pages at `0x18` (`:106-127`) on every I2C register read from the external
 master. No caching.
 
 **Action:** Cache the hottest-temperature values, updated periodically by the monitor tasks. Note
 `AlarmUtilities.c` already computes exactly these maxima into `currentTemp[FF]` and
 `currentTemp[DCDC]` every 1 s — reuse them rather than adding a third copy. `currentTemp[]` is
-`static` with no accessor (`AlarmUtilities.c:51`), so this needs a getter; per retraction 1a, a
+`static` with no accessor (`AlarmUtilities.c:46`), so this needs a getter; per retraction 1a, a
 plain aligned `float` read needs no extra locking.
 
 ### 16. Magic Number Cleanup — OPEN (one reference corrected)
 
 - `MAX_TRIES = 500` (`Semaphore.c:61`) — see #3
 - `pdMS_TO_TICKS(250)` polling interval (`MonitorTask.c`)
-- Hardcoded 5 suppliers: `ZynqMonTask.c:562`, `for (int j = 0; j < 5; ++j) // FIXME hardcoded value`
+- Hardcoded 5 suppliers: `ZynqMonTask.c:576`, `for (int j = 0; j < 5; ++j) // FIXME hardcoded value`
   (this was previously mis-attributed to `SensorControl.c`)
 - `cm_mcu.c:10` — `// TODO: break this out into separate files. Too much clutter here.`
 
@@ -451,18 +375,18 @@ plain aligned `float` read needs no extra locking.
 
 ### 17. ProgCom I2C Stall Can Starve the UART7 RX Path — OPEN (partial mitigation landed)
 
-`progcom_access_clk()` (`ProgComTask.c:403`) and `progcom_access_fpga()` (`:453`) each hold a bus
+`progcom_access_clk()` (`ProgComTask.c:419`) and `progcom_access_fpga()` (`:469`) each hold a bus
 mutex (`i2c2_sem`, `i2c5_sem`) across 3-4 chained I2C transactions (mux select, page select, data,
 mux clear). The clock path now clears the mux unconditionally, even after a failed step, so its
 failure path always issues that last transaction too. Any transaction hitting an unresponsive/NAK'ing device blocks the full
-`I2C_TIMEOUT_MS` (250 ms, `I2CCommunication.c:74,120`) via `ulTaskNotifyTake()` — worst case
+`I2C_TIMEOUT_MS` (250 ms, `I2CCommunication.c:98`) via `ulTaskNotifyTake()` — worst case
 ~750-1000 ms per ProgCom command, all inside `ProgComTask`, the same task that drains
 `xUART7StreamBuffer`.
 
 While stalled, `UART7IntHandler` keeps pushing incoming bytes into the 128-byte buffer with nobody
 to service it. `376aae2` ("overflow in uart7") landed detection for the resulting overflow: the ISR
 sets `progcom_rx_overflow` (`InterruptHandlers.c:50,120,127`) when `xStreamBufferSendFromISR()`
-can't take every byte, and `add_progcom_char()` (`ProgComTask.c:532`) discards through the next line
+can't take every byte, and `add_progcom_char()` (`ProgComTask.c:592`) discards through the next line
 and replies `"e uart overflow, resync\n"` instead of silently splicing two commands together into a
 different, valid-looking one. **That closes the corruption failure mode, not the stall.** Two things
 are still true:
@@ -492,6 +416,10 @@ tripped.
 
 **Action:** Add the latched channel (and optionally value/target/%) to the alarm register page in
 `MCU_Reg.c`/`MCU_Reg.h`, with the matching decoder change in `../cm_interface`.
+
+### 29. Firefly page select delays for B04 - OPEN
+
+The datasheet for the Firefly B04 (4 channel transceivers) says that there is a long (600 ms) delay needed between setting upper page numbers before the data being valid. This is currently not respected in the FW. From a cursory inspection none of the other 12 channel datasheets we use list any similar restriction. The Monitoring isn't affected right now because those are all on the lower 128 registers (don't need page select.)
 
 ## Retracted
 
@@ -565,6 +493,35 @@ needs a concrete failure mode — a torn value, a lost update, or a violated mul
 — demonstrated against real call sites. Absent that, do not file it.
 
 ## Resolved
+
+### 26. Fleet Diagnostics Block over ZynqMon — RESOLVED (#322, `c6c4f2d`, 2026-10-26)
+
+All phases merged, including phase 6 (LGA80D bad-temperature counters). REV2/REV3 only, ZynqMon
+slots 512-571, `DIAG_SCHEMA` 8. Layout, what to alarm on and what explains an alarm: ZynqMon section
+of `projects/cm_mcu/README.md` and the `CM_DIAG*` blocks in `PL_MEM_CM_rev{2,3}.yml`. Grafana
+dashboards for it are in `grafana/`. Slot 537 is unused; slot 545 is reserved for an `LGA80D_init()`
+failure mask, deferred until such failures are seen. The design notes (`diag_blob_plan.md`) were
+never committed.
+
+Codegen constraints that still apply to any new block:
+
+- `xml_generate.py` advances one slot per name, so a 32-bit block must hold exactly one name and
+  start at an even slot; otherwise the Zynq XML maps two values onto one word. Values can share a
+  slot if each one is listed under `bitfields:` in the YAML.
+- `mcu_generate.py`: one type per block, `count` must match the names, every block needs an
+  `mcu_extra_call` key, and blocks must be in ascending address order (the overlap check only
+  compares neighbours). No C enum is generated; the order of `names` is the contract with the C code.
+- Bump `DIAG_SCHEMA` on any layout change; `grafana_cm_fleet` hard-codes 8.
+
+Follow-ups not yet done: a GDB fatal-entry injection test of `PREV_FATAL_ENTRY`, and alarming on
+`MCU_UPTIME` (slot 162) not advancing on the Zynq/Grafana side, to catch a starved ZMON.
+
+### 27. Zynq XML Maps LGA80D TEMP1 and TEMP3 to the Same Column — RESOLVED (#322)
+
+`xml_generate.py` set `Column=TEMP_C` for any id containing "temp", so the psmon TEMP1 and TEMP3 of
+each rail shared one cell and BUTool kept the later one (most likely TEMP3). A per-block `columns:`
+override now sends them to TEMP1_C / TEMP3_C. Grafana panels on `CM_MON.<rail>.TEMP_C` must move
+to TEMP1_C / TEMP3_C.
 
 ### 13. Misplaced GPIO Logic in LED Task — RESOLVED
 
