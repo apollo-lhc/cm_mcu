@@ -21,5 +21,5 @@ to replace an existing copy. The expected DIAG_SCHEMA (8) is set in both generat
 
 Graphite/BUTool notes: BUTool upper-cases row and column names; never use `Format=x` in the XML
 for values Grafana reads (BUTool sends the text "0x..." and Graphite drops it, use the Grafana unit
-`hex0x` instead); states, codes and masks need `consolidateBy(.., 'last')`, or Graphite averages
+`hex0x` instead); states, codes and masks need `consolidateBy(.., 'max')` (our Graphite predates 1.1 and rejects `'last'`), or Graphite averages
 them when it merges points.
