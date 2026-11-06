@@ -239,6 +239,49 @@ BaseType_t sn_all(int argc, char **argv, char *m)
   return pdFALSE;
 }
 
+// Send CLEAR_FAULTS (0x03, PMBus send byte) to one LGA80D, or to all of them.
+// CLEAR_FAULTS is global on the LGA80D (both pages), so no PAGE write is needed.
+// Faults whose condition persists re-assert immediately.
+BaseType_t psclearfaults(int argc, char **argv, char *m)
+{
+  int first = 0;
+  int last = NSUPPLIES_PS - 1;
+  if (strcmp(argv[1], "all") != 0) {
+    char *end;
+    long which = strtol(argv[1], &end, 10);
+    if (end == argv[1] || *end != '\0' || which < 0 || which > (NSUPPLIES_PS - 1)) {
+      snprintf(m, SCRATCH_SIZE, "%s: device must be 0-%d or all\r\n", argv[0], (NSUPPLIES_PS - 1));
+      return pdFALSE;
+    }
+    first = last = (int)which;
+  }
+
+  if (acquireI2CSemaphore(dcdc_args.xSem) == pdFAIL) {
+    snprintf(m, SCRATCH_SIZE, "%s: could not get semaphore in time\r\n", argv[0]);
+    return pdFALSE;
+  }
+  static const struct pm_command_t clear_faults = {0x03, 0, "CLEAR_FAULTS", "", PM_STATUS};
+  int copied = 0;
+  for (int which = first; which <= last; ++which) {
+    // size 0: apollo_pmbus_rw() sends the command byte alone and ignores value
+    tSMBusStatus r = apollo_pmbus_rw(&g_sMaster1, &eStatus1, false, &pm_addrs_dcdc[which],
+                                     &clear_faults, NULL);
+    if (r != SMBUS_OK) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s failed: %s\r\n", argv[0],
+                         pm_addrs_dcdc[which].name, SMBUS_get_error(r));
+    }
+  }
+  if (xSemaphoreGetMutexHolder(dcdc_args.xSem) == xTaskGetCurrentTaskHandle()) {
+    xSemaphoreGive(dcdc_args.xSem);
+  }
+
+  if (copied == 0) {
+    snprintf(m, SCRATCH_SIZE, "%s: CLEAR_FAULTS sent to %s\r\n", argv[0],
+             (first == last) ? pm_addrs_dcdc[first].name : "all LGA80Ds");
+  }
+  return pdFALSE;
+}
+
 BaseType_t snapshot(int argc, char **argv, char *m)
 {
   _Static_assert(sizeof(snapshot_t) == 32, "sizeof snapshot_t");
