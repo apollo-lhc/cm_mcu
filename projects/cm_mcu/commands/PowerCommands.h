@@ -8,5 +8,6 @@ BaseType_t power_ctl(int argc, char **argv, char *m);
 BaseType_t psmon_reg(int argc, char **argv, char *m);
 BaseType_t snapshot(int argc, char **argv, char *m);
 BaseType_t sn_all(int argc, char **argv, char *m);
+BaseType_t psclearfaults(int argc, char **argv, char *m);
 
 #endif
