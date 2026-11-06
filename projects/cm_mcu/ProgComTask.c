@@ -256,7 +256,8 @@ static const char *progcom_parse(const char *line, struct progcom_cmd_t *cmd)
     }
   }
 
-  if (cmd->op == PROGCOM_OP_WRITE && cmd->ndata == 0)
+  // DC allows zero data bytes: PMBus send byte (e.g. CLEAR_FAULTS)
+  if (cmd->op == PROGCOM_OP_WRITE && cmd->ndata == 0 && cmd->dev != PROGCOM_DEV_DCDC)
     return "write with no data";
 
   return NULL; // success

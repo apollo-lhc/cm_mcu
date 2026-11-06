@@ -257,6 +257,7 @@ static const struct command_t commands[] = {
         "failures\r\n",
         1,
     },
+    {"psclr", psclearfaults, "<dev|all>. Send CLEAR_FAULTS to LGA80D dev (0-n, both pages) or all\r\n", 1},
     {"psmon", psmon_ctl, "Show state of power supplies\r\n", 1},
     {"psreg", psmon_reg, "<which> <reg>. which: LGA80D (10*dev+page), reg: reg address in hex\r\n", 2},
     {"restart_mcu", restart_mcu, "Restart the microcontroller\r\n", 0},

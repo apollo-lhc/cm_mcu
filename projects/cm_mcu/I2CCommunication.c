@@ -414,6 +414,10 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
     const size_t sz = cmd->size;
     r = SMBusMasterByteWordRead(smbus, add->dev_addr, cmd->command, v, sz);
   }
+  else if (cmd->size == 0) {
+    // PMBus send byte (command code only, e.g. CLEAR_FAULTS)
+    r = SMBusMasterByteSend(smbus, add->dev_addr, cmd->command);
+  }
   else {
     r = SMBusMasterByteWordWrite(smbus, add->dev_addr, cmd->command, value, cmd->size);
   }
