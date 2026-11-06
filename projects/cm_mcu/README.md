@@ -163,7 +163,7 @@ w <DC|FF|CL|MC|FP|SN> <devnum> <page> <addr> <data> ... \n
 | `page` | page register value, 1–2 hex digits |
 | `addr` | register address within the page, 1-2 hex digits |
 | `length` | optional read length, 1-4 bytes; defaults to 1 when omitted |
-| `data` | write payload, 1-4 space-separated hex bytes |
+| `data` | write payload, 1-4 space-separated hex bytes; `DC` also accepts none (PMBus send byte) |
 
 Fields are separated by one or more spaces or tabs. Lines are terminated by `\n`; a preceding
 `\r` is accepted and ignored. Responses always end in a bare `\n`.
@@ -183,6 +183,7 @@ Examples:
 r FF 0 0 16      ->  d 2C
 w FF 0 0 56 01   ->  c
 r DC 0 0 8B 2    ->  d 1A 20
+w DC 0 0 03      ->  c            (CLEAR_FAULTS, no data)
 r CL 0 1 2       ->  d 5F
 r CL 0 0 2 2     ->  d 95 53
 r MC 0 0 0 4     ->  d 43 4D 43 55
@@ -202,7 +203,8 @@ Per-device notes:
   written to the page select byte (`0x7F`) when `addr > 0x7F`; lower-page accesses ignore it.
   Writes take a single data byte. Fireflies disabled in the USER mask return `e Firefly not enabled`.
 * **`DC`** — `devnum` is the LGA80D index (`0 … NSUPPLIES_PS-1`), `page` is the PMBus PAGE value
-  (`0 … NPAGES_PS-1`). Uses `apollo_pmbus_rw()`, which selects the mux itself.
+  (`0 … NPAGES_PS-1`). Uses `apollo_pmbus_rw()`, which selects the mux itself. Writes take 0-2
+  data bytes; with none, the command code is sent alone (PMBus send byte, e.g. `03` CLEAR_FAULTS).
 * **`CL`** — `devnum` is the clock synth index (`0 … NDEVICES_CLK-1`, ordering of
   `clk_moni2c_addrs[]`), `page` is written to `CLOCK_CHANGEPAGE_REG_ADDR` (`0x01`).
 * **`MC`** — MCU-internal state. `devnum` must be `0`; `page` selects a register page
