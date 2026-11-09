@@ -19,6 +19,7 @@
 #include "common/log.h"
 #include "common/utils.h"
 #include "FireflyUtils.h"
+#include "AlarmUtilities.h"
 
 // This slave task is designed currently only for access to
 // registers, with a single byte address and a single byte data.
@@ -110,15 +111,8 @@ static uint8_t getSlaveData(uint8_t address)
         value = 0xFEU; // stale
       }
       else {
-        float max_temp = -99.0f;
-        for (int ps = 0; ps < dcdc_args.n_devices; ++ps) {
-          for (int page = 0; page < dcdc_args.n_pages; ++page) {
-            float thistemp = dcdc_args.pm_values[ps * (dcdc_args.n_commands * dcdc_args.n_pages) +
-                                                 page * dcdc_args.n_commands + 0];
-            if (thistemp > max_temp)
-              max_temp = thistemp;
-          }
-        }
+        // hottest regulator temp is the max of all the DCDC temps
+        float max_temp = getCurrentTemperature(DCDC);
         if (max_temp < 0)
           value = 0xFFU; // invalid
         else
