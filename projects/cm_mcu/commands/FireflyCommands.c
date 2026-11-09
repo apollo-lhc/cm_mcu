@@ -419,7 +419,7 @@ BaseType_t ff_mux_reset(int argc, char **argv, char *m)
     pin = _F2_OPTICS_I2C_RESET;
   // toggle the pin
   write_gpio_pin(pin, 0); // active low signal
-  DELAY_US(1); // TCA9548A reset pulse min 6 ns
+  DELAY_US(1);            // TCA9548A reset pulse min 6 ns
   write_gpio_pin(pin, 1); // active low signal
 
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
