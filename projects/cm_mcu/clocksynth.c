@@ -244,7 +244,7 @@ int resetClockSynth(int device)
              clk_moni2c_addrs[device].name);
     return res;
   }
-  vTaskDelay(pdMS_TO_TICKS(10)); // hold reset low for 10 ms
+  vTaskDelay(pdMS_TO_TICKS(10) + 1); // >= 10 ms: vTaskDelay(n) can return up to a tick early
   // set the bit corresponding to the reset pin to de-assert reset
   output_port |= (1 << bit_pos);
   res = apollo_i2c_ctl_reg_w(CLOCK_I2C_DEV, expander_addr, 1,
