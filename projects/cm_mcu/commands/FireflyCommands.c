@@ -377,8 +377,8 @@ BaseType_t ff_reset(int argc, char **argv, char *m)
   // set reset bit 0 which is active low
   reset_reg &= ~FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
-  // wait a tick
-  vTaskDelay(pdMS_TO_TICKS(1));
+  // FireFly ResetL must be low > 200 us to reset
+  DELAY_MS(1);
   // clear the active low reset bit
   reset_reg |= FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
@@ -419,7 +419,7 @@ BaseType_t ff_mux_reset(int argc, char **argv, char *m)
     pin = _F2_OPTICS_I2C_RESET;
   // toggle the pin
   write_gpio_pin(pin, 0); // active low signal
-  vTaskDelay(pdMS_TO_TICKS(1));
+  DELAY_US(1); // TCA9548A reset pulse min 6 ns
   write_gpio_pin(pin, 1); // active low signal
 
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
