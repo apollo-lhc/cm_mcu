@@ -385,9 +385,9 @@ BaseType_t ff_reset(int argc, char **argv, char *m)
   // clear the mux
   ret += apollo_i2c_ctl_w(i2c_dev, FF_RESET_MUX_ADDR, 1, 0);
 
-  // Initialization time is 2 s. We hold the semaphore until the Firefly 
+  // Initialization time is 2 s. We hold the semaphore until the Firefly
   // is back to working. Extra 100 ms for CYA + 1 tick
-  vTaskDelay(pdMS_TO_TICKS(2100)+1);
+  vTaskDelay(pdMS_TO_TICKS(2100) + 1);
 
   // release the semaphore
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
