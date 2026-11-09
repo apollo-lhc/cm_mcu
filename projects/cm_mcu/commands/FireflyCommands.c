@@ -370,18 +370,25 @@ BaseType_t ff_reset(int argc, char **argv, char *m)
     return pdFALSE;
   }
   // select the appropriate output for the mux
-  apollo_i2c_ctl_w(i2c_dev, FF_RESET_MUX_ADDR, 1, FF_RESET_MUX_BIT_MASK);
+  int ret = apollo_i2c_ctl_w(i2c_dev, FF_RESET_MUX_ADDR, 1, FF_RESET_MUX_BIT_MASK);
   // read/modify/write the reset register
   uint32_t reset_reg;
-  int ret = apollo_i2c_ctl_reg_r(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, &reset_reg);
+  ret += apollo_i2c_ctl_reg_r(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, &reset_reg);
   // set reset bit 0 which is active low
   reset_reg &= ~FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
-  // wait a tick
-  vTaskDelay(pdMS_TO_TICKS(1));
+  // FireFly ResetL must be low > 200 us to reset
+  DELAY_MS(1);
   // clear the active low reset bit
   reset_reg |= FF_RESET_IOEXP_REG_BIT;
   ret += apollo_i2c_ctl_reg_w(i2c_dev, FF_RESET_IOEXP_ADDR, 1, FF_RESET_IOEXP_REG_ADDR, 1, reset_reg);
+  // clear the mux
+  ret += apollo_i2c_ctl_w(i2c_dev, FF_RESET_MUX_ADDR, 1, 0);
+
+  // Initialization time is 2 s. We hold the semaphore until the Firefly
+  // is back to working. Extra 100 ms for CYA + 1 tick
+  vTaskDelay(pdMS_TO_TICKS(2100) + 1);
+
   // release the semaphore
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
     xSemaphoreGive(s);
@@ -419,7 +426,7 @@ BaseType_t ff_mux_reset(int argc, char **argv, char *m)
     pin = _F2_OPTICS_I2C_RESET;
   // toggle the pin
   write_gpio_pin(pin, 0); // active low signal
-  vTaskDelay(pdMS_TO_TICKS(1));
+  DELAY_US(1);            // TCA9548A reset pulse min 6 ns
   write_gpio_pin(pin, 1); // active low signal
 
   if (xSemaphoreGetMutexHolder(s) == xTaskGetCurrentTaskHandle())
