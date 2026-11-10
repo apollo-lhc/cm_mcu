@@ -28,14 +28,6 @@ rows.
 a loop over channel index; the ADC blocks become a loop over a config struct array; the UART ISRs
 become one body parameterized by `{base, queue, notify-target}`.
 
-### 3. I2C Semaphore Polling Loop — OPEN
-
-`acquireI2CSemaphoreTime()` (`Semaphore.c:63-78`) calls `xSemaphoreTake()` in a loop up to
-`MAX_TRIES` (500, `Semaphore.c:61`) times. FreeRTOS semaphores already block efficiently, and since
-the loop passes the *same* `tickWaits` each iteration the effective timeout is `500 × tickWaits` —
-almost certainly not what any caller intends.
-
-**Action:** Replace with a single `xSemaphoreTake(s, totalTimeout)`.
 
 ### 5. Monitor Task Data Array Indexing — No Bounds Checking — OPEN (one of two fixed)
 
@@ -471,7 +463,14 @@ needs a concrete failure mode — a torn value, a lost update, or a violated mul
 
 ## Resolved
 
-### 23. DCDC Temperature Alarm Uses Only the Controller-Die Sensor — RESOLVED (`fix/lga80d_tempmon`, 2026-11-05)
+### 3. I2C Semaphore Polling Loop — resolved (chore/i2csem, 2026-11-10)
+
+was: `acquireI2CSemaphoreTime()` (`Semaphore.c:63-78`) calls `xSemaphoreTake()` in a loop up to
+`MAX_TRIES` (500, `Semaphore.c:61`) times. FreeRTOS semaphores already block efficiently, and since
+the loop passes the *same* `tickWaits` each iteration the effective timeout is `500 × tickWaits` —
+almost certainly not what any caller intends.
+\
+### 23. DCDC Temperature Alarm Uses Only the Controller-Die Sensor — RESOLVED (#324, 2026-11-05)
 
 The DCDC over-temperature alarm and IPMC register `0x18` used only READ_TEMPERATURE_1 (0x8D,
 controller die). The power-stage sensor READ_TEMPERATURE_3 (0x8F, DrMOS TMON) was read but unused.
