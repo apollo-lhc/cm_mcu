@@ -58,23 +58,15 @@ SemaphoreHandle_t getSemaphore(int number)
   return s;
 }
 
-#define MAX_TRIES 500
-
-int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits)
+// wait timeWaitms miliseconds to acquire the semaphore.
+// block if timeWaitms is portMAX_DELAY. Return pdTRUE if acquired, pdFAIL if not.
+int acquireI2CSemaphoreTime(SemaphoreHandle_t s, uint32_t timeWaitms)
 {
   if (s == NULL) {
     return pdFAIL;
   }
-  int retval = pdTRUE;
-  int tries = 0;
-  while (xSemaphoreTake(s, tickWaits) == pdFALSE) {
-    ++tries;
-    if (tries > MAX_TRIES) {
-      retval = pdFAIL;
-      break;
-    }
-  }
-  return retval;
+  TickType_t ticks = (timeWaitms == portMAX_DELAY) ? portMAX_DELAY : pdMS_TO_TICKS(timeWaitms) + 1;
+  return xSemaphoreTake(s, ticks) == pdFALSE? pdFAIL: pdTRUE;
 }
 
 // Used as the log_set_lock() callback. take==true acquires, false releases.

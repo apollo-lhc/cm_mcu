@@ -32,12 +32,15 @@ SemaphoreHandle_t getSemaphore(int number);
 
 #define SEM_ACCESS_ERROR (-5)
 
-int acquireI2CSemaphoreTime(SemaphoreHandle_t s, TickType_t tickWaits);
+// wait timeWaitms miliseconds to acquire the semaphore. If wait time is portMAX_DELAY,
+// block. Return pdTRUE if acquired, pdFAIL if not.
+int acquireI2CSemaphoreTime(SemaphoreHandle_t s, uint32_t timeWaitms);
 
 #define acquireI2CSemaphore(s) \
-  acquireI2CSemaphoreTime(s, 10)
+  acquireI2CSemaphoreTime(s, 50000) // 50 s wait time -- arbitrary/too long, but preserves existing behavior
 
-#define acquireI2CSemaphoreBlock(s) \
-  acquireI2CSemaphoreTime(s, portMAX_DELAY)
+// block until semaphore is available
+#define acquireI2CSemaphoreBlock(s) acquireI2CSemaphoreTime(s, portMAX_DELAY)
+
 
 #endif /* PROJECTS_CM_MCU_SEMAPHORE_H_ */

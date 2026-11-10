@@ -289,8 +289,8 @@ Each I2C master bus (1â€“6) is protected by its own FreeRTOS mutex (`i2c1_sem` â
 the duration. The monitor tasks, the `clocksynth`/`FireflyUtils` helpers, and the `commands/`
 handlers (`FireflyCommands`, `ClockCommands`, `PowerCommands`) all acquire the correct per-bus mutex.
 
-Both acquire macros wrap `acquireI2CSemaphoreTime(s, ticks)`, which retries up to `MAX_TRIES` (500)
-and returns `pdTRUE` or `pdFAIL`. `acquireI2CSemaphore(s)` waits 10 ticks per attempt;
+Both acquire macros wrap `acquireI2CSemaphoreTime(s, timeMS)`, which waits up to timeMS ms
+and returns `pdTRUE` or `pdFAIL`. `acquireI2CSemaphore(s)` waits 50 s;
 `acquireI2CSemaphoreBlock(s)` waits `portMAX_DELAY`, i.e. it blocks until the mutex is free and
 does not return `pdFAIL` for a valid handle (`INCLUDE_vTaskSuspend` is 1).
 Release with the guarded give used throughout the tree:
@@ -353,7 +353,7 @@ That excludes the monitor tasks for the duration and makes the shared buffer/not
 forget:
 
 1. Default the one-shot diagnostics (`ff_present`) to a *bounded-timeout* acquire
-   (`acquireI2CSemaphoreTime(s, pdMS_TO_TICKS(100))`) and print `bus busy, try again` on failure;
+   (`acquireI2CSemaphoreTime(s, 100)`) and print `bus busy, try again` on failure;
    keep an explicit `force` argument for the genuine wedged-bus case rather than skipping the lock by
    default.
 2. Give the `force`/bypass path its **own dedicated scratch buffer**, separate from the monitor-task

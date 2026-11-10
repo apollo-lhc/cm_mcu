@@ -162,17 +162,12 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 
   SemaphoreHandle_t s5 = getSemaphore(5);
   if (i == 0) { // on first entry, grab the semaphore and set the mux
-    if (acquireI2CSemaphoreTime(s5, 10) != pdTRUE) {
+    if (acquireI2CSemaphoreTime(s5, 5000) != pdTRUE) {
       int copied = snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
       // do I have the semaphore already?
       if (xSemaphoreGetMutexHolder(s5) == xTaskGetCurrentTaskHandle()) {
         snprintf(m + copied, SCRATCH_SIZE - copied, "Note: I2C semaphore already held by this task\r\n");
       }
-      return pdFALSE;
-    }
-    bool have_semaphore = xSemaphoreGetMutexHolder(s5) == xTaskGetCurrentTaskHandle();
-    if (!have_semaphore) {
-      snprintf(m, SCRATCH_SIZE, "Semaphore not held after acquire\r\n");
       return pdFALSE;
     }
 
@@ -233,7 +228,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 
     // grab semaphore for I2C 2
     SemaphoreHandle_t s2 = getSemaphore(2);
-    if (acquireI2CSemaphoreTime(s2, 10) != pdTRUE) {
+    if (acquireI2CSemaphoreTime(s2, 5000) != pdTRUE) {
       snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C2 semaphore\r\n");
       xSemaphoreGive(s5);
       i = 0;
@@ -259,8 +254,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
 #define TCA9555_REG_OUTPUT_P0 0x2
     uint32_t data;
     r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
-                                                                               //      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "Pre  TCA9555 value: 0x%04x\r\n",
-                                                                               //                data);
+
     data &= 0xF0;                                                              // clear bottom nybble
     if (useR0A) {
       data |= 0x0; // set nybble low to 0x0
@@ -269,8 +263,6 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
       data |= 0xF; // set nybble low to 0xF
     }
     r += apollo_i2c_ctl_reg_w(2, i2c_addr, 1, TCA9555_REG_OUTPUT_P0, 1, data); // set nybble to new value
-    // read back for testing
-    // r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
 
     r += apollo_i2c_ctl_w(2, 0x70, 1, 0x0); // clear the mux
     if (r) {
@@ -348,7 +340,7 @@ BaseType_t clk_prog_name(int argc, char **argv, char *m)
   char from_chip[10];
   char from_eeprom[10];
   SemaphoreHandle_t s = getSemaphore(2);
-  if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
+  if (acquireI2CSemaphoreTime(s, 1000) != pdTRUE) {
     snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
     return pdFALSE;
   }
@@ -370,7 +362,7 @@ BaseType_t clk_reset(int argc, char **argv, char *m)
     return pdFALSE;
   }
   SemaphoreHandle_t s = getSemaphore(2);
-  if (acquireI2CSemaphoreTime(s, 1) != pdTRUE) {
+  if (acquireI2CSemaphoreTime(s, 1000) != pdTRUE) {
     snprintf(m, SCRATCH_SIZE, "Failed to acquire I2C semaphore\r\n");
     return pdFALSE;
   }
@@ -394,7 +386,7 @@ BaseType_t clearclk_ctl(int argc, char **argv, char *m)
   int status = -1; // shut up clang compiler warning
 
   // acquire the semaphore
-  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+  if (acquireI2CSemaphoreTime(i2c2_sem, 2500) == pdFAIL) {
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: couldn't get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
@@ -432,7 +424,7 @@ BaseType_t init_load_clock_ctl(int argc, char **argv, char *m)
   }
 
   // acquire the semaphore
-  if (acquireI2CSemaphore(i2c2_sem) == pdFAIL) {
+  if (acquireI2CSemaphoreTime(i2c2_sem, 2500) == pdFAIL) {
     snprintf(m + copied, SCRATCH_SIZE - copied, "%s: could not get semaphore in time\r\n", argv[0]);
     return pdFALSE;
   }
