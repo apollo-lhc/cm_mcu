@@ -42,5 +42,4 @@ int acquireI2CSemaphoreTime(SemaphoreHandle_t s, uint32_t timeWaitms);
 // block until semaphore is available
 #define acquireI2CSemaphoreBlock(s) acquireI2CSemaphoreTime(s, portMAX_DELAY)
 
-
 #endif /* PROJECTS_CM_MCU_SEMAPHORE_H_ */

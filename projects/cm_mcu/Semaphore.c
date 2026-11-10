@@ -66,7 +66,7 @@ int acquireI2CSemaphoreTime(SemaphoreHandle_t s, uint32_t timeWaitms)
     return pdFAIL;
   }
   TickType_t ticks = (timeWaitms == portMAX_DELAY) ? portMAX_DELAY : pdMS_TO_TICKS(timeWaitms) + 1;
-  return xSemaphoreTake(s, ticks) == pdFALSE? pdFAIL: pdTRUE;
+  return xSemaphoreTake(s, ticks) == pdFALSE ? pdFAIL : pdTRUE;
 }
 
 // Used as the log_set_lock() callback. take==true acquires, false releases.

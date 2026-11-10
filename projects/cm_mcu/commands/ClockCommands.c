@@ -255,7 +255,7 @@ BaseType_t clk_freq_fpga_cmd(int argc, char **argv, char *m)
     uint32_t data;
     r += apollo_i2c_ctl_reg_r(2, i2c_addr, 1, TCA9555_REG_INPUT_P0, 1, &data); // read current value
 
-    data &= 0xF0;                                                              // clear bottom nybble
+    data &= 0xF0; // clear bottom nybble
     if (useR0A) {
       data |= 0x0; // set nybble low to 0x0
     }
