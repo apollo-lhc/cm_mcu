@@ -228,6 +228,14 @@ static const struct command_t commands[] = {
         "Scan current I2C bus\r\n",
         1,
     },
+    {"i2c_reset", i2c_reset,
+     "args: <dev>\r\nClear stuck bus: SCL clocks + STOP, reset controller.\r\n"
+     "Set mux and hold semaphore first\r\n",
+     1},
+    {"i2c_reset_dcdc", i2c_reset_dcdc,
+     "args: [<n>]\r\nTake sem 1, clear bus 1, select LGA80D n's mux channel, clear again, deselect mux.\r\n"
+     "No arg: list devices. A stuck mux needs a reset pulse instead\r\n",
+     -1},
 #if defined(REV2) || defined(REV3)
     {
         "jtag_sm",

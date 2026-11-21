@@ -35,6 +35,12 @@
 #include "driverlib/i2c.h"     // I2CMasterBusy
 #include "driverlib/rom.h"     // ROM_SysCtlDelay (used by DELAY_US)
 #include "driverlib/rom_map.h" // MAP_I2CMasterBusy
+#include "driverlib/sysctl.h"    // bus reset: peripheral reset
+#include "driverlib/interrupt.h" // bus reset: MAP_IntDisable
+#include "inc/hw_ints.h"         // INT_I2Cn
+#include "common/i2c_reg.h"      // i2c_bus_recover
+
+extern uint32_t g_ui32SysClock;
 
 extern tSMBus g_sMaster1;
 extern tSMBus g_sMaster2;
@@ -440,4 +446,71 @@ tSMBusStatus apollo_pmbus_rw(tSMBus *smbus, volatile tSMBusStatus *const smbus_s
     i2c_count(&i2c_error[device]);
 
   return r;
+}
+
+// I2C bus recovery: clock out a stuck slave and STOP (common/i2c_reg.c), then reset
+// the controller and re-init the SMBus instance, since the master FSM may still
+// think the bus is busy or arbitration is lost. Caller must hold the bus mutex.
+// Behind a mux, only the selected channel is recovered.
+int apollo_i2c_bus_reset(uint8_t device, struct i2c_recover_info *info)
+{
+  // indexed like pSMBus[]; 0 = not a master bus on this revision
+  static const uint32_t periph_tab[7] = {0, SYSCTL_PERIPH_I2C1, SYSCTL_PERIPH_I2C2, SYSCTL_PERIPH_I2C3,
+                                         SYSCTL_PERIPH_I2C4,
+#ifdef REV1
+                                         0, SYSCTL_PERIPH_I2C6};
+  static const uint32_t irq_tab[7] = {0, INT_I2C1, INT_I2C2, INT_I2C3, INT_I2C4, 0, INT_I2C6};
+#else
+                                         SYSCTL_PERIPH_I2C5, 0};
+  static const uint32_t irq_tab[7] = {0, INT_I2C1, INT_I2C2, INT_I2C3, INT_I2C4, INT_I2C5, 0};
+#endif
+  if (device >= 7 || irq_tab[device] == 0) {
+    info->pre = info->post = info->nclocks = 0;
+    info->status = I2C_RECOVER_BAD_BUS;
+    return I2C_RECOVER_BAD_BUS;
+  }
+  const uint32_t periph = periph_tab[device];
+  const uint32_t irq = irq_tab[device];
+  tSMBus *smbus = pSMBus[device];
+
+  MAP_IntDisable(irq);
+  int status = i2c_bus_recover(device, info);
+
+  // fresh controller: reset, re-init as at startup (cm_mcu.c), clear per-bus state
+  MAP_SysCtlPeripheralReset(periph);
+  while (!MAP_SysCtlPeripheralReady(periph))
+    ;
+  SMBusMasterInit(smbus, smbus->ui32I2CBase, g_ui32SysClock);
+  *eStatus[device] = SMBUS_OK;
+  I2CMasterErrorLatched[device] = false;
+  TaskNotifySMBus[device] = NULL;
+  MAP_IntPendClear(irq);
+  SMBusMasterIntEnable(smbus); // also re-enables irq in the NVIC
+
+  log_info(LOG_I2C, "dev %d bus reset: %s, %d clocks, SCL/SDA %d%d -> %d%d\r\n", device,
+           i2c_recover_status_str(status), info->nclocks, !!(info->pre & I2C_MBMON_SCL),
+           !!(info->pre & I2C_MBMON_SDA), !!(info->post & I2C_MBMON_SCL),
+           !!(info->post & I2C_MBMON_SDA));
+  return status;
+}
+
+// Recover one mux channel: recover whatever channel is selected now (a stuck slave
+// there also blocks the mux write), select mux_bit on mux_addr, recover again, then
+// deselect all mux channels (write 0) on exit. info[0]/info[1] get the two passes,
+// each with its own status; if the select fails, info[1] is zeroed with status
+// I2C_RECOVER_MUX_FAIL. Returns the final status, or I2C_RECOVER_MUX_FAIL if the
+// deselect fails after a good recovery. Caller must hold the bus mutex.
+int apollo_i2c_bus_reset_mux(uint8_t device, uint8_t mux_addr, uint8_t mux_bit,
+                             struct i2c_recover_info info[2])
+{
+  info[1].pre = info[1].post = info[1].nclocks = 0;
+  info[1].status = I2C_RECOVER_MUX_FAIL;
+  if (apollo_i2c_bus_reset(device, &info[0]) == I2C_RECOVER_BAD_BUS)
+    return I2C_RECOVER_BAD_BUS;
+  int status = I2C_RECOVER_MUX_FAIL;
+  if (apollo_i2c_ctl_w(device, mux_addr, 1, 0x1U << mux_bit) == SMBUS_OK)
+    status = apollo_i2c_bus_reset(device, &info[1]);
+  if (apollo_i2c_ctl_w(device, mux_addr, 1, 0) != SMBUS_OK && status == I2C_RECOVER_OK)
+    status = I2C_RECOVER_MUX_FAIL;
+  return status;
 }
