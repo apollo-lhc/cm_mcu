@@ -315,8 +315,9 @@ void initI2C6(const uint32_t sysclockfreq)
 
 // ---------------------------------------------------------------------------
 // I2C bus recovery (I2C spec UM10204 3.1.16 "Bus clear").
-// A slave interrupted mid-read can hold SDA low indefinitely. Clock SCL until it
-// lets go (at most I2C_RECOVER_MAX_CLOCKS), then issue a STOP.
+// A slave interrupted mid-read can hold SDA low indefinitely. Always clock SCL
+// I2C_RECOVER_MIN_CLOCKS times, more while SDA is still low (at most
+// I2C_RECOVER_MAX_CLOCKS), then issue a STOP.
 //
 // The pins are run as open-drain GPIOs with the output latch at 0, and the
 // direction register does the work: input = released (external pull-up takes the
@@ -349,6 +350,7 @@ static const struct i2c_recover_pins_t i2c_recover_pins[] = {
 };
 #define N_RECOVER_BUSES (sizeof(i2c_recover_pins) / sizeof(i2c_recover_pins[0]))
 
+#define I2C_RECOVER_MIN_CLOCKS  9
 #define I2C_RECOVER_MAX_CLOCKS  16
 #define I2C_RECOVER_STRETCH_US  1000 // max wait for SCL to rise (clock stretching)
 #define I2C_RECOVER_HALF_PER_US 5    // ~100 kHz
@@ -388,8 +390,9 @@ int i2c_bus_recover(uint8_t bus, struct i2c_recover_info *info)
     status = I2C_RECOVER_SCL_STUCK;
   }
   else {
-    // clock until the slave releases SDA
-    while (!MAP_GPIOPinRead(base, p->sda_pin) && info->nclocks < I2C_RECOVER_MAX_CLOCKS) {
+    // 9 clocks unconditionally, then more until the slave releases SDA
+    while ((info->nclocks < I2C_RECOVER_MIN_CLOCKS || !MAP_GPIOPinRead(base, p->sda_pin)) &&
+           info->nclocks < I2C_RECOVER_MAX_CLOCKS) {
       MAP_GPIODirModeSet(base, p->scl_pin, GPIO_DIR_MODE_OUT);
       DELAY_US(I2C_RECOVER_HALF_PER_US);
       ++info->nclocks;

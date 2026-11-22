@@ -39,7 +39,7 @@ bool writeI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
 bool readI2C(const uint32_t i2cbase, const uint8_t ui8Addr, uint8_t *Data,
              const uint8_t ui8ByteCount);
 
-// I2C bus recovery: bit-bang up to 16 SCL clocks until SDA is released, then a
+// I2C bus recovery: bit-bang 9 SCL clocks (up to 16 while SDA is low), then a
 // STOP, then hand the pins back to the I2C controller. Buses 1-6 only (bus 0 is
 // our slave port). Does not reset the controller or touch interrupts; the caller
 // does that, and must own the bus.
@@ -48,7 +48,7 @@ enum i2c_recover_status {
   I2C_RECOVER_BAD_BUS,   // bus not valid for this revision
   I2C_RECOVER_SCL_STUCK, // SCL held low; clocking cannot help
   I2C_RECOVER_SDA_STUCK, // SDA still low after 16 clocks + STOP
-  I2C_RECOVER_MUX_FAIL,  // mux select failed between passes (apollo_i2c_bus_reset_mux)
+  I2C_RECOVER_MUX_FAIL,  // mux select failed (apollo_i2c_bus_reset_mux)
 };
 struct i2c_recover_info {
   uint8_t pre;     // I2C_O_MBMON before: bit 0 SCL, bit 1 SDA
