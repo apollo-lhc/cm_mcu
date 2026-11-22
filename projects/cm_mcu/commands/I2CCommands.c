@@ -258,10 +258,9 @@ BaseType_t i2c_reset_dcdc(int argc, char **argv, char *m)
 
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s (mux 0x%02x bit %d)\r\n",
                      argv[0], dev->name, dev->mux_addr, dev->mux_bit);
-  struct i2c_recover_info info[2];
-  int status = apollo_i2c_bus_reset_mux(bus, dev->mux_addr, dev->mux_bit, info);
-  copied = print_recover(m, copied, "current channel", &info[0]);
-  copied = print_recover(m, copied, "target channel", &info[1]);
+  struct i2c_recover_info info;
+  int status = apollo_i2c_bus_reset_mux(bus, dev->mux_addr, dev->mux_bit, &info);
+  copied = print_recover(m, copied, "channel", &info);
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "result (mux deselected): %s\r\n",
                      i2c_recover_status_str(status));
 

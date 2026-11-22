@@ -494,22 +494,19 @@ int apollo_i2c_bus_reset(uint8_t device, struct i2c_recover_info *info)
   return status;
 }
 
-// Recover one mux channel: recover whatever channel is selected now (a stuck slave
-// there also blocks the mux write), select mux_bit on mux_addr, recover again, then
-// deselect all mux channels (write 0) on exit. info[0]/info[1] get the two passes,
-// each with its own status; if the select fails, info[1] is zeroed with status
-// I2C_RECOVER_MUX_FAIL. Returns the final status, or I2C_RECOVER_MUX_FAIL if the
-// deselect fails after a good recovery. Caller must hold the bus mutex.
+// Recover one mux channel: select mux_bit on mux_addr, recover, then deselect all
+// mux channels (write 0) on exit. If the select fails, info is zeroed with status
+// I2C_RECOVER_MUX_FAIL. Returns the recovery status, or I2C_RECOVER_MUX_FAIL if the
+// select fails or the deselect fails after a good recovery. Caller must hold the
+// bus mutex.
 int apollo_i2c_bus_reset_mux(uint8_t device, uint8_t mux_addr, uint8_t mux_bit,
-                             struct i2c_recover_info info[2])
+                             struct i2c_recover_info *info)
 {
-  info[1].pre = info[1].post = info[1].nclocks = 0;
-  info[1].status = I2C_RECOVER_MUX_FAIL;
-  if (apollo_i2c_bus_reset(device, &info[0]) == I2C_RECOVER_BAD_BUS)
-    return I2C_RECOVER_BAD_BUS;
+  info->pre = info->post = info->nclocks = 0;
+  info->status = I2C_RECOVER_MUX_FAIL;
   int status = I2C_RECOVER_MUX_FAIL;
   if (apollo_i2c_ctl_w(device, mux_addr, 1, 0x1U << mux_bit) == SMBUS_OK)
-    status = apollo_i2c_bus_reset(device, &info[1]);
+    status = apollo_i2c_bus_reset(device, info);
   if (apollo_i2c_ctl_w(device, mux_addr, 1, 0) != SMBUS_OK && status == I2C_RECOVER_OK)
     status = I2C_RECOVER_MUX_FAIL;
   return status;

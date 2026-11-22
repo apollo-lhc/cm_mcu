@@ -47,9 +47,9 @@ uint8_t smbus_get_device_index(tSMBus *smbus);
 // recover a stuck bus (SCL clocks + STOP) and reset its controller; caller holds
 // the bus mutex. Returns an i2c_recover_status (common/i2c_reg.h).
 int apollo_i2c_bus_reset(uint8_t device, struct i2c_recover_info *info);
-// same, for one mux channel: reset, select 1<<mux_bit on mux_addr, reset again,
-// then deselect the mux (0) on exit
+// same, for one mux channel: select 1<<mux_bit on mux_addr, reset, then
+// deselect the mux (0) on exit
 int apollo_i2c_bus_reset_mux(uint8_t device, uint8_t mux_addr, uint8_t mux_bit,
-                             struct i2c_recover_info info[2]);
+                             struct i2c_recover_info *info);
 
 #endif /* PROJECTS_CM_MCU_I2CCOMMUNICATION_H_ */
