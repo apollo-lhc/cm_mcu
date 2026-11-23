@@ -30,11 +30,11 @@
 #include "InterruptHandlers.h"
 
 // TI hardware register access for I2C master state diagnostics
-#include "inc/hw_types.h"      // HWREG
-#include "inc/hw_i2c.h"        // I2C_O_MCS, I2C_MCS_BUSY, I2C_MCS_BUSBSY
-#include "driverlib/i2c.h"     // I2CMasterBusy
-#include "driverlib/rom.h"     // ROM_SysCtlDelay (used by DELAY_US)
-#include "driverlib/rom_map.h" // MAP_I2CMasterBusy
+#include "inc/hw_types.h"        // HWREG
+#include "inc/hw_i2c.h"          // I2C_O_MCS, I2C_MCS_BUSY, I2C_MCS_BUSBSY
+#include "driverlib/i2c.h"       // I2CMasterBusy
+#include "driverlib/rom.h"       // ROM_SysCtlDelay (used by DELAY_US)
+#include "driverlib/rom_map.h"   // MAP_I2CMasterBusy
 #include "driverlib/sysctl.h"    // bus reset: peripheral reset
 #include "driverlib/interrupt.h" // bus reset: MAP_IntDisable
 #include "inc/hw_ints.h"         // INT_I2Cn
