@@ -16,6 +16,7 @@
 #include "common/pinsel.h"
 #include "common/utils.h"
 
+#include "FreeRTOSConfig.h" // configCPU_CLOCK_HZ for DELAY_US
 #ifdef USE_FREERTOS
 #include "FreeRTOS.h"
 #endif // USE_FREERTOS
@@ -311,3 +312,125 @@ void initI2C6(const uint32_t sysclockfreq)
   write_gpio_pin(_FPGA_I2C_RESET, 0x1); // active low
 }
 #endif
+
+// ---------------------------------------------------------------------------
+// I2C bus recovery (I2C spec UM10204 3.1.16 "Bus clear").
+// A slave interrupted mid-read can hold SDA low indefinitely. Always clock SCL
+// I2C_RECOVER_MIN_CLOCKS times, more while SDA is still low (at most
+// I2C_RECOVER_MAX_CLOCKS), then issue a STOP.
+//
+// The pins are run as open-drain GPIOs with the output latch at 0, and the
+// direction register does the work: input = released (external pull-up takes the
+// line high, and the read is the pad), output = driven low. The I2C module has no
+// hardware bus-clear (nothing in inc/hw_i2c.h), hence the bit-bang.
+//
+// Behind a TCA9548 mux only the currently selected channel(s) see these clocks.
+struct i2c_recover_pins_t {
+  uint32_t i2c_base;
+  uint32_t gpio_base;
+  uint8_t scl_pin;
+  uint8_t sda_pin;
+  uint32_t scl_cfg;
+  uint32_t sda_cfg;
+};
+
+// indexed by bus number; pin assignments as in pinout_rev1.c / pinout_rev2.c
+static const struct i2c_recover_pins_t i2c_recover_pins[] = {
+    {0, 0, 0, 0, 0, 0}, // bus 0 is the I2C slave, not recoverable from here
+    {I2C1_BASE, GPIO_PORTG_BASE, GPIO_PIN_0, GPIO_PIN_1, GPIO_PG0_I2C1SCL, GPIO_PG1_I2C1SDA},
+    {I2C2_BASE, GPIO_PORTG_BASE, GPIO_PIN_2, GPIO_PIN_3, GPIO_PG2_I2C2SCL, GPIO_PG3_I2C2SDA},
+    {I2C3_BASE, GPIO_PORTG_BASE, GPIO_PIN_4, GPIO_PIN_5, GPIO_PG4_I2C3SCL, GPIO_PG5_I2C3SDA},
+    {I2C4_BASE, GPIO_PORTG_BASE, GPIO_PIN_6, GPIO_PIN_7, GPIO_PG6_I2C4SCL, GPIO_PG7_I2C4SDA},
+#ifdef REV1
+    {0, 0, 0, 0, 0, 0}, // bus 5 unused on REV1
+    {I2C6_BASE, GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_PIN_7, GPIO_PA6_I2C6SCL, GPIO_PA7_I2C6SDA},
+#else
+    {I2C5_BASE, GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_PIN_1, GPIO_PB0_I2C5SCL, GPIO_PB1_I2C5SDA},
+#endif
+};
+#define N_RECOVER_BUSES (sizeof(i2c_recover_pins) / sizeof(i2c_recover_pins[0]))
+
+#define I2C_RECOVER_MIN_CLOCKS  9
+#define I2C_RECOVER_MAX_CLOCKS  16
+#define I2C_RECOVER_STRETCH_US  1000 // max wait for SCL to rise (clock stretching)
+#define I2C_RECOVER_HALF_PER_US 5    // ~100 kHz
+
+// release SCL and wait (bounded) for it to go high; false if it stays low
+static bool scl_release_wait(const struct i2c_recover_pins_t *p)
+{
+  MAP_GPIODirModeSet(p->gpio_base, p->scl_pin, GPIO_DIR_MODE_IN);
+  for (uint32_t us = 0; us < I2C_RECOVER_STRETCH_US; ++us) {
+    if (MAP_GPIOPinRead(p->gpio_base, p->scl_pin))
+      return true;
+    DELAY_US(1);
+  }
+  return false;
+}
+
+int i2c_bus_recover(uint8_t bus, struct i2c_recover_info *info)
+{
+  info->pre = info->post = info->nclocks = 0;
+  info->status = I2C_RECOVER_BAD_BUS;
+  if (bus >= N_RECOVER_BUSES || i2c_recover_pins[bus].i2c_base == 0)
+    return I2C_RECOVER_BAD_BUS;
+  const struct i2c_recover_pins_t *p = &i2c_recover_pins[bus];
+  const uint32_t base = p->gpio_base;
+  const uint32_t mbmon_mask = I2C_MBMON_SCL | I2C_MBMON_SDA;
+
+  info->pre = HWREG(p->i2c_base + I2C_O_MBMON) & mbmon_mask;
+
+  // Take the pins away from the controller without a glitch: latch 0, then
+  // direction-in (which also clears AFSEL). The pads are already open-drain from
+  // GPIOPinTypeI2C/I2CSCL, so direction-out pulls down and never drives high.
+  MAP_GPIOPinWrite(base, p->scl_pin | p->sda_pin, 0);
+  MAP_GPIODirModeSet(base, p->scl_pin | p->sda_pin, GPIO_DIR_MODE_IN);
+
+  int status = I2C_RECOVER_OK;
+  if (!scl_release_wait(p)) {
+    status = I2C_RECOVER_SCL_STUCK;
+  }
+  else {
+    // 9 clocks unconditionally, then more until the slave releases SDA
+    while ((info->nclocks < I2C_RECOVER_MIN_CLOCKS || !MAP_GPIOPinRead(base, p->sda_pin)) &&
+           info->nclocks < I2C_RECOVER_MAX_CLOCKS) {
+      MAP_GPIODirModeSet(base, p->scl_pin, GPIO_DIR_MODE_OUT);
+      DELAY_US(I2C_RECOVER_HALF_PER_US);
+      ++info->nclocks;
+      if (!scl_release_wait(p)) {
+        status = I2C_RECOVER_SCL_STUCK;
+        break;
+      }
+      DELAY_US(I2C_RECOVER_HALF_PER_US);
+    }
+    if (status == I2C_RECOVER_OK) {
+      // STOP: SDA rises while SCL is high
+      MAP_GPIODirModeSet(base, p->scl_pin, GPIO_DIR_MODE_OUT);
+      DELAY_US(I2C_RECOVER_HALF_PER_US);
+      MAP_GPIODirModeSet(base, p->sda_pin, GPIO_DIR_MODE_OUT);
+      DELAY_US(I2C_RECOVER_HALF_PER_US);
+      (void)scl_release_wait(p);
+      DELAY_US(I2C_RECOVER_HALF_PER_US);
+      MAP_GPIODirModeSet(base, p->sda_pin, GPIO_DIR_MODE_IN);
+      DELAY_US(I2C_RECOVER_HALF_PER_US);
+    }
+  }
+
+  // hand the pins back to the controller, as in pinout_rev*.c
+  MAP_GPIODirModeSet(base, p->scl_pin | p->sda_pin, GPIO_DIR_MODE_IN);
+  MAP_GPIOPinConfigure(p->scl_cfg);
+  MAP_GPIOPinTypeI2CSCL(base, p->scl_pin);
+  MAP_GPIOPinConfigure(p->sda_cfg);
+  MAP_GPIOPinTypeI2C(base, p->sda_pin);
+
+  info->post = HWREG(p->i2c_base + I2C_O_MBMON) & mbmon_mask;
+  if (status == I2C_RECOVER_OK && info->post != mbmon_mask)
+    status = (info->post & I2C_MBMON_SCL) ? I2C_RECOVER_SDA_STUCK : I2C_RECOVER_SCL_STUCK;
+  info->status = status;
+  return status;
+}
+
+const char *i2c_recover_status_str(int status)
+{
+  static const char *const str[] = {"OK", "bad bus", "SCL stuck low", "SDA stuck low", "mux select failed"};
+  return (status >= 0 && status < (int)(sizeof(str) / sizeof(str[0]))) ? str[status] : "unknown";
+}

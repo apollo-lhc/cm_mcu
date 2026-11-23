@@ -8,6 +8,8 @@
 #include "I2CCommands.h"
 #include "commands/parameters.h"
 #include "common/smbus_helper.h"
+#include "Semaphore.h"
+#include "inc/hw_i2c.h" // I2C_MBMON_SCL/SDA
 
 static bool isValidDevice(int device)
 {
@@ -188,5 +190,82 @@ BaseType_t i2c_scan(int argc, char **argv, char *m)
   copied += snprintf(m + copied, SCRATCH_SIZE - copied, "\r\n");
   configASSERT(copied < SCRATCH_SIZE);
 
+  return pdFALSE;
+}
+
+static int print_recover(char *m, int copied, const char *what, const struct i2c_recover_info *info)
+{
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied,
+                     "%s: %s, %d clocks, SCL/SDA %d%d -> %d%d\r\n", what,
+                     i2c_recover_status_str(info->status), info->nclocks, !!(info->pre & I2C_MBMON_SCL),
+                     !!(info->pre & I2C_MBMON_SDA), !!(info->post & I2C_MBMON_SCL),
+                     !!(info->post & I2C_MBMON_SDA));
+  return copied;
+}
+
+// Recover bus <dev>: SCL clocks + STOP, then controller reset. Like the other raw
+// i2c commands it does not take the bus semaphore; the user holds it (and sets
+// the mux) by hand.
+BaseType_t i2c_reset(int argc, char **argv, char *m)
+{
+  BaseType_t device = strtol(argv[1], NULL, 10);
+  if (device == 0 || !isValidDevice(device)) {
+    snprintf(m, SCRATCH_SIZE, "%s: invalid device %ld\r\n", argv[0], device);
+    return pdFALSE;
+  }
+  struct i2c_recover_info info;
+  apollo_i2c_bus_reset(device, &info);
+  print_recover(m, 0, argv[0], &info);
+  return pdFALSE;
+}
+
+extern const struct dev_i2c_addr_t pm_addrs_dcdc[N_PM_ADDRS_DCDC]; // LocalTasks.c
+
+// Recover the bus 1 mux channel of LGA80D <n> with apollo_i2c_bus_reset_mux(),
+// holding i2c1_sem. No mux read-back: on a stuck bus it would only add a failed
+// transfer to the counters.
+BaseType_t i2c_reset_dcdc(int argc, char **argv, char *m)
+{
+  int copied = 0;
+  if (argc == 1) {
+    for (int i = 0; i < N_PM_ADDRS_DCDC; ++i) {
+      copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%d: %-10s mux 0x%02x bit %d addr 0x%02x\r\n",
+                         i, pm_addrs_dcdc[i].name, pm_addrs_dcdc[i].mux_addr,
+                         pm_addrs_dcdc[i].mux_bit, pm_addrs_dcdc[i].dev_addr);
+    }
+    return pdFALSE;
+  }
+  if (argc != 2) {
+    snprintf(m, SCRATCH_SIZE, "%s: expect 0 or 1 arguments\r\n", argv[0]);
+    return pdFALSE;
+  }
+  BaseType_t n = strtol(argv[1], NULL, 10);
+  if (n < 0 || n >= N_PM_ADDRS_DCDC) {
+    snprintf(m, SCRATCH_SIZE, "%s: device must be 0-%d\r\n", argv[0], N_PM_ADDRS_DCDC - 1);
+    return pdFALSE;
+  }
+  const struct dev_i2c_addr_t *dev = &pm_addrs_dcdc[n];
+  const uint8_t bus = 1;
+
+  bool took = false;
+  if (xSemaphoreGetMutexHolder(i2c1_sem) != xTaskGetCurrentTaskHandle()) {
+    if (xSemaphoreTake(i2c1_sem, pdMS_TO_TICKS(5000)) != pdTRUE) {
+      snprintf(m, SCRATCH_SIZE, "%s: could not take semaphore %d\r\n", argv[0], bus);
+      return pdFALSE;
+    }
+    took = true;
+  }
+
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "%s: %s (mux 0x%02x bit %d)\r\n",
+                     argv[0], dev->name, dev->mux_addr, dev->mux_bit);
+  struct i2c_recover_info info;
+  int status = apollo_i2c_bus_reset_mux(bus, dev->mux_addr, dev->mux_bit, &info);
+  copied = print_recover(m, copied, "channel", &info);
+  copied += snprintf(m + copied, SCRATCH_SIZE - copied, "result (mux deselected): %s\r\n",
+                     i2c_recover_status_str(status));
+
+  if (took && xSemaphoreGetMutexHolder(i2c1_sem) == xTaskGetCurrentTaskHandle())
+    xSemaphoreGive(i2c1_sem);
+  configASSERT(copied < SCRATCH_SIZE);
   return pdFALSE;
 }
